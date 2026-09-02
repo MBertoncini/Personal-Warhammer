@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schieramento Old World</title>
+<meta name="description" content="Catalogo della collezione, liste New Recruit e simulatore di schieramento per Warhammer: The Old World.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="./styles/app.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <h1>Schieramento Old World</h1>
+    <span class="sub">Collezione, liste e dispiegamento</span>
+  </div>
+  <nav class="tabs">
+    <button class="btn tab on" data-tab="deploy">Tavolo</button>
+    <button class="btn tab" data-tab="catalog">Catalogo</button>
+    <button class="btn tab" data-tab="lists">Liste</button>
+    <button class="btn tab" data-tab="matchup">Matchup</button>
+  </nav>
+  <div class="spacer"></div>
+  <div class="tools">
+    <button class="btn" id="btn-export" title="Scarica un backup di catalogo, liste e schieramenti">Backup</button>
+    <button class="btn" id="btn-import">Ripristina</button>
+    <input type="file" id="file-backup" accept=".json" hidden>
+    <button class="btn" id="btn-theme">Tema</button>
+  </div>
+</header>
+
+<div data-panel="deploy">
+<main>
+  <aside>
+    <div>
+      <div class="panel-title">Importa liste</div>
+      <div class="drop" id="drop" tabindex="0" role="button">
+        <strong>Trascina qui i JSON di New Recruit</strong>
+        <small>o clicca per sceglierli — legge anche <span class="mono">.ros</span>. Due file insieme = Esercito A e B; uno alla volta si alternano.</small>
+      </div>
+      <input type="file" id="file" accept=".json,.ros,.xml,application/json,text/xml" multiple="" hidden="">
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+        <button class="btn tiny" id="btn-paste">Incolla JSON…</button>
+        <button class="btn tiny" id="btn-demo">Carica esempio</button>
+        <button class="btn tiny" id="btn-clear">Svuota liste</button>
+      </div>
+      <div id="paste-box" hidden="" style="margin-top:8px;">
+        <textarea id="paste-area" rows="5" style="width:100%;border:1px solid var(--line-strong);border-radius:var(--r);background:var(--panel);padding:6px;font-family:&#39;IBM Plex Mono&#39;,monospace;font-size:11px;" placeholder="Incolla qui il contenuto del file…"></textarea>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <button class="btn tiny primary" id="btn-paste-a">→ Esercito A</button>
+          <button class="btn tiny" id="btn-paste-b">→ Esercito B</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="armies"></div>
+
+    <div>
+      <div class="panel-title">Elemento selezionato</div>
+      <div id="inspector"><p class="empty">Clicca un'unità nella lista o un pezzo sul campo.</p></div>
+    </div>
+
+    <div>
+      <div class="panel-title">Terreno</div>
+      <div class="palette" id="palette"><button class="btn tiny"><span class="pdot" style="background:var(--t-hill);"></span>Collina</button><button class="btn tiny"><span class="pdot" style="background:var(--t-wood);"></span>Bosco</button><button class="btn tiny"><span class="pdot" style="background:var(--t-marsh);"></span>Palude</button><button class="btn tiny"><span class="pdot" style="background:var(--t-ruins);"></span>Rovine</button><button class="btn tiny"><span class="pdot" style="background:var(--t-wall);"></span>Muretto</button><button class="btn tiny"><span class="pdot" style="background:var(--t-mono);border-radius:50%;"></span>Monolite</button><button class="btn tiny"><span class="pdot" style="background:var(--t-ruins);"></span>Piramide</button><button class="btn tiny"><span class="pdot" style="background:var(--t-treasure);border-radius:50%;"></span>Tesoro</button></div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+        <button class="btn tiny" id="btn-terr-reset">Terreno dello scenario</button>
+        <button class="btn tiny" id="btn-terr-clear">Togli tutto</button>
+      </div>
+      <div id="terrain-list" style="margin-top:8px;"></div>
+      <div id="terrain-warn" style="margin-top:8px;"></div>
+    </div>
+
+    <p class="note">I quattro scenari <b>Battle March</b> riproducono le mappe fornite: nessun elemento supera i 12″ sul lato lungo e i tesori (base tonda 40 mm) stanno oltre 3″ da ogni pezzo di terreno. Se sposti qualcosa, il controllo si aggiorna da solo. Gli altri scenari usano zone generiche regolabili.</p>
+
+    <details class="raw" id="raw-wrap" hidden="">
+      <summary>Cosa ho letto dai file (diagnostica)</summary>
+      <pre id="raw"></pre>
+    </details>
+  </aside>
+
+  <section class="board-wrap">
+    <div class="board-bar">
+      <label class="field inline"><span>Scenario</span><select id="scenario"><optgroup label="Battle March"><option value="bm-guado">Il Guado di Sangue — 600 pt</option><option value="bm-monolite">Il Monolite nella Palude — 650 pt</option><option value="bm-strada">La Strada delle Pietre — 750 pt</option><option value="bm-rovine">Le Rovine di Xhotl — 750 pt</option></optgroup><optgroup label="Generici"><option value="open">Battaglia Campale</option><option value="meeting">Scontro di Incontro</option><option value="flank">Attacco sul Fianco</option><option value="pass">Passo di Montagna</option><option value="cross">Fronti Incrociati</option></optgroup></select></label>
+      <div class="sep"></div>
+      <button class="btn" id="btn-auto">Schiera tutto</button>
+      <button class="btn" id="btn-recall">Ritira tutto</button>
+      <div class="sep"></div>
+      <button class="btn on" id="btn-snap">Snap ¼″</button>
+      <button class="btn" id="btn-labels">Numeri</button>
+      <button class="btn" id="btn-ranges">Raggi</button>
+      <button class="btn" id="btn-measure">Misura</button>
+      <div class="sep"></div>
+      <label class="field inline"><span>Tavolo</span>
+        <select id="table-size">
+          <option value="44x30">44″ × 30″</option>
+          <option value="48x36">48″ × 36″</option>
+          <option value="72x48">72″ × 48″</option>
+          <option value="72x72">72″ × 72″</option>
+          <option value="96x48">96″ × 48″</option>
+        </select>
+      </label>
+      <label class="field inline"><span>Dalla mediana</span>
+        <select id="zone-gap">
+          <option value="6">6″</option><option value="9">9″</option>
+          <option value="12">12″</option><option value="15">15″</option><option value="18">18″</option>
+        </select>
+      </label>
+      <div class="spacer"></div>
+      <span class="mono" id="stat" style="font-size:12px;color:var(--muted);">16/16 schierate</span>
+    </div>
+
+    <div class="board-scroll"><svg id="board" xmlns="http://www.w3.org/2000/svg" viewBox="-46 -46 1311.1999999999998 1006.4" preserveAspectRatio="xMidYMid meet"></svg></div>
+
+    <div class="legend">
+      <span><b id="sc-name">Le Rovine di Xhotl · 750 pt</b> · <span id="sc-desc">La piramide centrale divide il tavolo in due corsie e i due tesori stanno uno per corsia: nessuno può presidiarli entrambi.</span></span>
+      <div class="spacer"></div>
+      <span><span class="kbd">Q</span>/<span class="kbd">E</span> ruota</span>
+      <span><span class="kbd">←↑↓→</span> sposta</span>
+      <span><span class="kbd">Canc</span> ritira / elimina</span>
+    </div>
+  </section>
+</main>
+</div>
+
+<div data-panel="catalog" hidden>
+  <div class="page">
+    <div class="panel-title">Catalogo della collezione</div>
+    <p class="note">Una voce per tipo di modello, con quante ne hai e una foto. È da qui che le liste pescano le immagini.</p>
+    <div id="catalog"></div>
+  </div>
+</div>
+
+<div data-panel="lists" hidden>
+  <div class="page">
+    <div class="panel-title">Liste</div>
+    <p class="note">Importa i JSON di New Recruit. Le unità si agganciano da sole al catalogo quando il nome combacia; quando non combacia lo scegli una volta e l'app se lo ricorda.</p>
+    <div id="lists"></div>
+  </div>
+</div>
+
+<div data-panel="matchup" hidden>
+  <div class="page">
+    <div class="panel-title">Matchup</div>
+    <p class="note">Due liste a confronto e la verifica di cosa hai davvero in vetrina.</p>
+    <div id="matchup"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
