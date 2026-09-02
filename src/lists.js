@@ -74,6 +74,8 @@ export async function linkUnit(listId, unitIndex, catId){
   if (!l) return;
   const u = l.units[unitIndex];
   u.catId = catId || null;
+  /* sganciare a mano e' una scelta: healLinks non deve disfarla */
+  if (catId) delete u.noLink; else u.noLink = true;
   if (catId) await linkAlias(catId, u.name);   // impara: non lo richiedera' piu'
   /* lo stesso nome in questa lista si aggancia da solo */
   for (const other of l.units) {
@@ -82,18 +84,35 @@ export async function linkUnit(listId, unitIndex, catId){
   await persist();
 }
 
+/* Ri-aggancia quello che si puo' ri-agganciare: unita' rimaste senza voce
+   (al momento dell'import il catalogo era vuoto) e unita' che puntano a una
+   voce sparita (fusa nel suo doppione). Senza questo l'aggancio resta quello
+   del giorno dell'import e le foto aggiunte dopo non si vedono mai. */
+export async function healLinks(){
+  let changed = false;
+  for (const l of lists){
+    for (const u of l.units){
+      if (u.catId && catEntry(u.catId)) continue;
+      if (!u.catId && u.noLink) continue;
+      const id = matchUnitName(u.name);
+      if (id !== (u.catId || null)){ u.catId = id; changed = true; }
+    }
+  }
+  if (changed) await persist();
+  return changed;
+}
+
 /* crea al volo una voce di catalogo a partire da un'unita' non agganciata */
 export async function entryFromUnit(listId, unitIndex){
   const l = getList(listId);
   const u = l && l.units[unitIndex];
   if (!u) return;
-  await upsertEntry({
+  const id = await upsertEntry({
     name: u.name, faction: u.faction || l.info?.catalogue || "Altro",
     baseId: u.baseId, baseW: u.baseW, baseH: u.baseH,
     owned: u.models, aliases: [normalize(u.name)],
-  });
-  const match = matchUnitName(u.name);
-  if (match) await linkUnit(listId, unitIndex, match);
+  }, { merge: true });   // se quel tipo c'e' gia', somma invece di duplicare
+  if (id) await linkUnit(listId, unitIndex, id);
 }
 
 /* riepilogo di copertura di una lista rispetto alla collezione */

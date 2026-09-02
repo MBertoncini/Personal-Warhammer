@@ -7,9 +7,9 @@
 
 import { $ } from './util.js';
 import { initCatalog, renderCatalog } from './catalog.js';
-import { initLists, renderLists } from './lists.js';
+import { initLists, renderLists, healLinks as healListLinks } from './lists.js';
 import { initMatchup, renderMatchup } from './matchup.js';
-import { bootDeploy, renderAll } from './deploy.js';
+import { bootDeploy, renderAll, refreshLinks as refreshBoardLinks } from './deploy.js';
 import { exportAll, importAll } from './store.js';
 import { on } from './bus.js';
 
@@ -33,8 +33,14 @@ function showTab(name){
 document.querySelectorAll("[data-tab]").forEach(b =>
   b.addEventListener("click", () => showTab(b.dataset.tab)));
 
-/* ---------- il catalogo cambia: si ridisegna chi lo usa ---------- */
-on("catalog:changed", () => { renderAll(); renderLists(); renderMatchup(); });
+/* ---------- il catalogo cambia: prima si ri-aggancia, poi si ridisegna ----------
+   Una foto aggiunta adesso, o due voci appena fuse, devono arrivare a liste e
+   tavolo senza reimportare niente. */
+on("catalog:changed", async () => {
+  await healListLinks();
+  refreshBoardLinks();
+  renderAll(); renderLists(); renderMatchup();
+});
 on("lists:changed",   () => { renderMatchup(); });
 
 /* ---------- backup ---------- */
@@ -65,6 +71,7 @@ $("#file-backup").addEventListener("change", async e => {
   await initCatalog();
   await initLists();
   await initMatchup();
+  await healListLinks();   // agganci rimasti indietro da import vecchi
   await bootDeploy();
   showTab(localStorage.getItem("tow-tab") || "deploy");
 })();

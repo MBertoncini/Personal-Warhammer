@@ -6,7 +6,7 @@ import { parseRoster, parseAny } from './parser.js';
 import { TERRAIN, TREASURE_CLEAR, BM_MAX_SIDE } from './terrain.js';
 import { R, T, SCENARIOS, geometry } from './scenarios.js';
 import { saveDoc, loadDoc } from './store.js';
-import { photoForUnit, catEntry, matchUnitName } from './catalog.js';
+import { photoForUnit, photoFor, catEntry, matchUnitName } from './catalog.js';
 
 function currentScenario(){
   const def = SCENARIOS[state.scenario] || SCENARIOS.open;
@@ -24,7 +24,7 @@ const state = {
   scenario:"bm-guado",
   tableW:44 * MM, tableH:30 * MM, gap:6 * MM,
   sel:null,                       // {type:'unit'|'terr', id}
-  snap:true, labels:true, ranges:false, measure:false, measurePts:[],
+  snap:true, labels:true, ranges:false, measure:false, measurePts:[], photos:true,
   rawInfo:"",
 };
 let uidSeq = 1, tidSeq = 1;
@@ -147,6 +147,19 @@ function miniStrip(u){
   }
   if (u.models > n) out += `<span class="mdl more">+${u.models - n}</span>`;
   return out + "</span>";
+}
+
+/* Le unita' sul tavolo si portano dietro il catId del giorno dell'import.
+   Se quella voce non esiste piu' (fusa con un doppione) o non c'era ancora,
+   si riprova adesso: e' cosi' che una foto aggiunta dopo si vede subito. */
+function healLinks(){
+  let changed = false;
+  for (const u of state.units){
+    if (u.catId && catEntry(u.catId)) continue;
+    const id = matchUnitName(u.name);
+    if (id !== (u.catId || null)){ u.catId = id; changed = true; }
+  }
+  return changed;
 }
 
 function renderArmies(){
@@ -388,6 +401,56 @@ function renderTerrainInspector(host){
 /* ============================================================
    7 · CAMPO DI BATTAGLIA
    ============================================================ */
+
+/* Foto sulle basi: una <symbol> per foto dentro <defs>, poi un <use>
+   per modello. Cosi' il dataURL e' scritto una volta sola invece che
+   su ogni base, e il nodo <defs> viene riusato fra un ridisegno e
+   l'altro: trascinare un reggimento non ricarica le immagini. */
+const XLINK = "http://www.w3.org/1999/xlink";
+const setHref = (el, v) => {
+  el.setAttribute("href", v);
+  el.setAttributeNS(XLINK, "xlink:href", v);   // Safari di qualche anno fa
+};
+
+let photoDefs = null, photoDefsKey = "";
+
+function photoDefsFor(svg){
+  const ids = new Map();
+  if (!state.photos) return ids;
+
+  const key = [];
+  for (const u of state.units){
+    if (!u.placed || !u.catId || ids.has(u.catId)) continue;
+    const p = photoForUnit(u);
+    if (!p) continue;
+    ids.set(u.catId, "ph-" + u.catId);
+    key.push(u.catId + ":" + p.length);       // foto cambiata = chiave diversa
+  }
+  if (!ids.size) return ids;
+
+  const k = key.join("|");
+  if (k !== photoDefsKey){
+    const defs = document.createElementNS(SVGNS, "defs");
+    for (const [catId, id] of ids){
+      const sym = document.createElementNS(SVGNS, "symbol");
+      sym.setAttribute("id", id);
+      sym.setAttribute("viewBox", "0 0 100 100");
+      sym.setAttribute("preserveAspectRatio", "xMidYMid slice");
+      const im = document.createElementNS(SVGNS, "image");
+      im.setAttribute("x", 0); im.setAttribute("y", 0);
+      im.setAttribute("width", 100); im.setAttribute("height", 100);
+      im.setAttribute("preserveAspectRatio", "xMidYMid slice");
+      setHref(im, photoFor(catId));
+      sym.appendChild(im);
+      defs.appendChild(sym);
+    }
+    photoDefs = defs;
+    photoDefsKey = k;
+  }
+  svg.appendChild(photoDefs);
+  return ids;
+}
+
 function drawBoard(){
   reindex();
   const svg = $("#board"), sc = currentScenario();
@@ -510,6 +573,7 @@ function drawBoard(){
   }
 
   // unità
+  const photoIds = photoDefsFor(svg);
   const layer = g(svg, "g", {});
   for (const u of state.units){
     if (!u.placed) continue;
@@ -522,8 +586,25 @@ function drawBoard(){
                     stroke: st.key === "bad" ? "var(--bad)" : (st.key === "warn" ? "var(--warn)" : col),
                     "stroke-width": st.key === "ok" ? 1.4 : 3,
                     "stroke-dasharray": u.loose ? "8 5" : "none" });
-    const inner = g(gg, "g", { stroke:"var(--paper)", "stroke-width":.8, opacity:".45" });
     const stepW = u.baseW + unitStep(u), stepH = u.baseH + unitStep(u);
+
+    /* una foto per base. Restano dritte anche se il reggimento e'
+       girato: il fronte lo dice gia' la riga bianca sul davanti. */
+    const phId = photoIds.get(u.catId);
+    if (phId){
+      const pad = unitStep(u) / 2;
+      const pg = g(gg, "g", { opacity:".93", "pointer-events":"none" });
+      for (let i = 0; i < u.models; i++){
+        const cx = -Wu/2 + (i % u.frontage) * stepW + pad + u.baseW / 2;
+        const cy = -Du/2 + Math.floor(i / u.frontage) * stepH + pad + u.baseH / 2;
+        const use = g(pg, "use", { x: cx - u.baseW / 2, y: cy - u.baseH / 2,
+                                   width: u.baseW, height: u.baseH,
+                                   transform:`rotate(${-u.rot} ${cx} ${cy})` });
+        setHref(use, "#" + phId);
+      }
+    }
+
+    const inner = g(gg, "g", { stroke:"var(--paper)", "stroke-width":.8, opacity:".45" });
     for (let i = 1; i < u.frontage; i++) g(inner, "line", { x1:-Wu/2 + i*stepW, y1:-Du/2, x2:-Wu/2 + i*stepW, y2:Du/2 });
     for (let i = 1; i < ranksOf(u); i++) g(inner, "line", { x1:-Wu/2, y1:-Du/2 + i*stepH, x2:Wu/2, y2:-Du/2 + i*stepH });
     g(gg, "line", { x1:-Wu/2, y1:-Du/2, x2:Wu/2, y2:-Du/2, stroke:"var(--paper)", "stroke-width":3.5, opacity:".9" });
@@ -945,6 +1026,7 @@ const toggle = (sel, key) => {
 };
 toggle("#btn-snap", "snap"); toggle("#btn-labels", "labels");
 toggle("#btn-ranges", "ranges"); toggle("#btn-measure", "measure");
+toggle("#btn-photos", "photos");
 $("#btn-auto").addEventListener("click", autoDeploy);
 $("#btn-recall").addEventListener("click", () => { for (const u of state.units) u.placed = false; renderAll(); });
 $("#btn-theme").addEventListener("click", () => {
@@ -979,7 +1061,7 @@ function snapshot(){
              B:{ name:state.armies.B.name, info:state.armies.B.info } },
     units:state.units, terrain:state.terrain, scenario:state.scenario,
     tableW:state.tableW, tableH:state.tableH, gap:state.gap,
-    snap:state.snap, labels:state.labels, ranges:state.ranges,
+    snap:state.snap, labels:state.labels, ranges:state.ranges, photos:state.photos,
   };
 }
 function save(){
@@ -994,6 +1076,7 @@ function applySnapshot(s){
   state.armies.A.info = s.armies?.A?.info || null;
   state.armies.B.info = s.armies?.B?.info || null;
   state.units = s.units;
+  healLinks();
   state.terrain = Array.isArray(s.terrain) ? s.terrain : [];
   uidSeq = Math.max(1, ...state.units.map(u => u.uid || 0)) + 1;
   tidSeq = Math.max(1, ...state.terrain.map(t => t.tid || 0)) + 1;
@@ -1004,12 +1087,14 @@ function applySnapshot(s){
   state.snap = s.snap !== false;
   state.labels = s.labels !== false;
   state.ranges = !!s.ranges;
+  state.photos = s.photos !== false;
   scSel.value = state.scenario;
   $("#table-size").value = `${Math.round(inch(state.tableW))}x${Math.round(inch(state.tableH))}`;
   $("#zone-gap").value = String(Math.round(inch(state.gap)));
   $("#btn-snap").classList.toggle("on", state.snap);
   $("#btn-labels").classList.toggle("on", state.labels);
   $("#btn-ranges").classList.toggle("on", state.ranges);
+  $("#btn-photos").classList.toggle("on", state.photos);
   return true;
 }
 
@@ -1036,4 +1121,9 @@ async function bootDeploy(){
   else { setScenario("bm-guado"); $("#btn-demo").click(); }
 }
 
-export { state, renderAll, bootDeploy, loadArmyFromList, snapshot, applySnapshot, setScenario };
+/* chiamata da main.js quando il catalogo cambia */
+function refreshLinks(){
+  if (healLinks()) save();
+}
+
+export { state, renderAll, bootDeploy, loadArmyFromList, snapshot, applySnapshot, setScenario, refreshLinks };

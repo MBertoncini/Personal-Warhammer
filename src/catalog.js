@@ -83,16 +83,47 @@ function score(rawName, entry){
   return hit / b.length;           // quanto della voce di catalogo e' coperto
 }
 
+/* Due voci sono lo stesso TIPO se nome normalizzato e fazione coincidono.
+   La fazione passa dai token perche' New Recruit scrive "Orc and Goblin
+   Tribes" e il catalogo "Orc & Goblin Tribes": senza questo ogni import
+   creerebbe un doppione. */
+const kindKey = (name, faction) => normalize(name) + "|" + tokens(faction).join(" ");
+const kindOf  = e => kindKey(e.name, e.faction);
+
+/* Fra voci dello stesso tipo vince quella con la foto, poi la piu' fornita:
+   e' l'unica che ha qualcosa da mostrare nelle liste e sul tavolo. */
+function bestOf(list){
+  return list.slice().sort((a, b) =>
+    (photos.has(b.id) ? 1 : 0) - (photos.has(a.id) ? 1 : 0) ||
+    (+b.owned || 0) - (+a.owned || 0))[0] || null;
+}
+
+/* la voce gia' esistente per questo tipo, se c'e' */
+export const findKind = (name, faction) =>
+  bestOf(entries.filter(e => kindOf(e) === kindKey(name, faction)));
+
 /* ritorna l'id se l'aggancio e' sicuro, altrimenti null:
    meglio chiedere una volta che sbagliare in silenzio */
 export function matchUnitName(name){
   const n = normalize(name);
   if (!n) return null;
-  for (const e of entries){
-    if (normalize(e.name) === n) return e.id;
-    if ((e.aliases || []).some(a => a === n)) return e.id;
+
+  const exact = entries.filter(e =>
+    normalize(e.name) === n || (e.aliases || []).includes(n));
+  if (exact.length) return bestOf(exact).id;
+
+  /* un tipo = un candidato, altrimenti due doppioni a pari punteggio
+     si annullano a vicenda e non aggancia mai niente */
+  const byKind = new Map();
+  for (const r of candidatesFor(name, 12)){
+    const k = kindOf(r.entry);
+    if (byKind.has(k)) byKind.get(k).list.push(r.entry);
+    else byKind.set(k, { score: r.score, list: [r.entry] });
   }
-  const ranked = candidatesFor(name, 2);
+  const ranked = [...byKind.values()]
+    .map(g => ({ entry: bestOf(g.list), score: g.score }))
+    .sort((a, b) => b.score - a.score);
+
   if (ranked.length && ranked[0].score >= 0.75 &&
       (ranked.length < 2 || ranked[0].score - ranked[1].score >= 0.2)) {
     return ranked[0].entry.id;
@@ -130,16 +161,89 @@ export async function unlinkAlias(entryId, alias){
    ============================================================ */
 const newId = () => "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
-export async function upsertEntry(data){
+const sortEntries = () => entries.sort((a, b) =>
+  (a.faction || "").localeCompare(b.faction) || a.name.localeCompare(b.name));
+
+/* Ritorna l'id della voce scritta. Con { merge: true } una creazione che
+   ricade su un tipo gia' presente somma le quantita' invece di aggiungere
+   un doppione: e' il caso di "+ crea voce" premuto da liste diverse. */
+export async function upsertEntry(data, { merge = false } = {}){
   const e = data.id && catEntry(data.id);
-  if (e) Object.assign(e, data);
-  else entries.push({
+  if (e){
+    Object.assign(e, data);
+    sortEntries();
+    await persist();
+    return e.id;
+  }
+
+  const twin = merge ? findKind(data.name, data.faction) : null;
+  if (twin){
+    twin.owned = (+twin.owned || 0) + (+data.owned || 0);
+    twin.aliases = [...new Set([...(twin.aliases || []), ...(data.aliases || [])])];
+    sortEntries();
+    await persist();
+    return twin.id;
+  }
+
+  const fresh = {
     id: newId(), name: "Nuova voce", faction: "Altro",
     baseId: "25x25", baseW: 25, baseH: 25, owned: 1, aliases: [], notes: "",
     ...data,
-  });
-  entries.sort((a, b) => (a.faction || "").localeCompare(b.faction) || a.name.localeCompare(b.name));
+  };
+  entries.push(fresh);
+  sortEntries();
   await persist();
+  return fresh.id;
+}
+
+/* ============================================================
+   3b · DOPPIONI GIA' IN ARCHIVIO
+   Prima che upsertEntry imparasse a fondere, ogni "+ crea voce"
+   aggiungeva una voce nuova: quattro "Skink Skirmishers" da 10
+   invece di una da 40, con la foto su una sola.
+   ============================================================ */
+export function duplicateGroups(){
+  const by = new Map();
+  for (const e of entries){
+    const k = kindOf(e);
+    if (!by.has(k)) by.set(k, []);
+    by.get(k).push(e);
+  }
+  return [...by.values()].filter(g => g.length > 1);
+}
+
+/* fonde ogni gruppo di doppioni nella voce migliore.
+   Ritorna { groups, removed } — removed serve a chi teneva quegli id. */
+export async function mergeDuplicates(){
+  const groups = duplicateGroups();
+  const removed = [];
+  for (const g of groups){
+    const keeper = bestOf(g);
+    for (const other of g){
+      if (other === keeper) continue;
+      keeper.owned = (+keeper.owned || 0) + (+other.owned || 0);
+      keeper.aliases = [...new Set([...(keeper.aliases || []), ...(other.aliases || [])])];
+      if (other.notes && !(keeper.notes || "").includes(other.notes))
+        keeper.notes = [keeper.notes, other.notes].filter(Boolean).join(" \u00b7 ");
+      /* la foto si perde solo se non ce n'e' nessuna da salvare */
+      if (!photos.has(keeper.id) && photos.has(other.id)){
+        const data = photos.get(other.id);
+        photos.set(keeper.id, data);
+        await saveDoc("photo:" + keeper.id, data);
+      }
+      removed.push(other.id);
+    }
+  }
+  if (!removed.length) return { groups: 0, removed: [] };
+
+  const gone = new Set(removed);
+  entries = entries.filter(e => !gone.has(e.id));
+  for (const id of removed){
+    photos.delete(id);
+    await deleteDoc("photo:" + id);
+  }
+  await persist();
+  return { groups: groups.length, removed };
 }
 
 export async function removeEntry(id){
@@ -149,15 +253,18 @@ export async function removeEntry(id){
   await persist();
 }
 
+/* separata da setPhoto perche' il picker non si puo' aprire dai test */
+export async function setPhotoData(id, data){
+  photos.set(id, data);
+  await saveDoc("photo:" + id, data);
+  emit("catalog:changed");
+}
+
 export async function setPhoto(id){
   const f = await pickImage();
   if (!f) return;
-  try {
-    const data = await shrinkImage(f);
-    photos.set(id, data);
-    await saveDoc("photo:" + id, data);
-    emit("catalog:changed");
-  } catch (_) { alert("Non riesco a leggere questa immagine."); }
+  try { await setPhotoData(id, await shrinkImage(f)); }
+  catch (_) { alert("Non riesco a leggere questa immagine."); }
 }
 
 export async function clearPhoto(id){
@@ -185,11 +292,13 @@ export function renderCatalog(){
     (e.aliases || []).some(a => a.includes(q))) : entries;
 
   const total = entries.reduce((s, e) => s + (+e.owned || 0), 0);
+  const dups = duplicateGroups();
 
   host.innerHTML = `
     <div class="bar">
       <input type="search" id="cat-q" placeholder="Cerca per nome, fazione o alias\u2026" value="${esc(filter)}">
       <button class="btn primary" id="cat-add">Nuova voce</button>
+      ${dups.length ? `<button class="btn" id="cat-merge">Unisci doppioni (${dups.length})</button>` : ""}
     </div>
     <p class="note" id="cat-usage">${entries.length} voci \u00b7 ${total} miniature in collezione</p>
     ${editing ? editorHTML() : ""}
@@ -200,6 +309,17 @@ export function renderCatalog(){
   $("#cat-q").addEventListener("input", e => { filter = e.target.value; renderCatalog(); });
   $("#cat-add").addEventListener("click", () => {
     editing = { id: null, name: "", faction: "Orc & Goblin Tribes", baseId: "25x25", owned: 1, aliases: [] };
+    renderCatalog();
+  });
+  const mergeBtn = $("#cat-merge");
+  if (mergeBtn) mergeBtn.addEventListener("click", async () => {
+    const detail = dups.map(g =>
+      `\u2022 ${g.length}\u00d7 ${g[0].name} \u2192 ${g.reduce((n, e) => n + (+e.owned || 0), 0)} in collezione`).join("\n");
+    if (!confirm(
+      `Unisco i doppioni sommando le quantit\u00e0 e tenendo la foto dove c'\u00e8:\n\n` +
+      detail +
+      `\n\nLe liste e il tavolo si riagganciano da soli.`)) return;
+    await mergeDuplicates();
     renderCatalog();
   });
 
@@ -265,14 +385,25 @@ function wireEditor(){
     const b = baseById($("#ed-base").value) || { w: 25, h: 25 };
     const name = $("#ed-name").value.trim();
     if (!name) return alert("Serve un nome.");
+    const faction = $("#ed-faction").value;
+
+    /* una seconda voce con lo stesso nome spezza la collezione in due:
+       si puo' fare, ma solo dicendolo */
+    let merge = false;
+    if (!editing.id){
+      const twin = findKind(name, faction);
+      if (twin) merge = confirm(
+        `"${twin.name}" c'\u00e8 gi\u00e0 (${twin.owned} in collezione).\n\n` +
+        `OK = sommo le quantit\u00e0 a quella voce.\nAnnulla = creo comunque una voce separata.`);
+    }
+
     await upsertEntry({
       id: editing.id || undefined,
-      name,
-      faction: $("#ed-faction").value,
+      name, faction,
       baseId: $("#ed-base").value, baseW: b.w, baseH: b.h,
       owned: Math.max(0, +$("#ed-owned").value || 0),
       aliases: editing.aliases || [],
-    });
+    }, { merge });
     editing = null;
     renderCatalog();
   });

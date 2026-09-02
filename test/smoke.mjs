@@ -92,6 +92,36 @@ ok('nessuna unita orfana', cov.unlinked === 0);
 ok('mancano 2 miniature in tutto', cov.missing === 2);
 ok('lo scoperto e ripartito su due voci', cov.rows.filter(r => r.short).length === 2);
 
+console.log('\ndoppioni');
+/* stesso tipo, fazione scritta come la scrive New Recruit:
+   deve sommare sulla voce che c'e' gia', non crearne un'altra */
+const before = cat.catalogAll().length;
+const mergedId = await cat.upsertEntry(
+  { name: 'Orc Boy', faction: 'Orc and Goblin Tribes', baseId: '25x25', owned: 6 }, { merge: true });
+ok('merge: nessuna voce in piu', cat.catalogAll().length === before);
+ok('merge: finisce sulla voce esistente', mergedId === orcBoy.id);
+ok('merge: quantita sommate (24 + 6)', cat.catEntry(mergedId).owned === 30);
+
+/* senza merge il doppione si crea (scelta esplicita), poi si fonde a mano */
+const dupId = await cat.upsertEntry(
+  { name: 'Orc Boy', faction: 'Orc & Goblin Tribes', baseId: '25x25', owned: 5 });
+ok('doppione creato di proposito', cat.catalogAll().length === before + 1);
+ok('il doppione viene visto', cat.duplicateGroups().length === 1);
+const fusione = await cat.mergeDuplicates();
+ok('un doppione rimosso', fusione.removed.length === 1 && cat.catalogAll().length === before);
+ok('vince la voce piu fornita', cat.catEntry(dupId) === null);
+ok('quantita tutte insieme (30 + 5)', cat.catEntry(orcBoy.id).owned === 35);
+
+console.log('\nri-aggancio');
+list.units[0].catId = null;
+list.units[1].catId = 'voce-sparita';
+await lists.healLinks();
+ok('unita senza voce riagganciata', !!list.units[0].catId);
+ok('voce sparita sostituita', cat.catEntry(list.units[1].catId)?.name === 'Black Orc');
+await lists.linkUnit(list.id, 0, null);
+await lists.healLinks();
+ok('lo sgancio a mano resta', list.units[0].catId === null);
+
 console.log('\npersistenza');
 await store.saveDoc('prova', { a: 1 });
 ok('rilettura da IndexedDB', (await store.loadDoc('prova')).a === 1);

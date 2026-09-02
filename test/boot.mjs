@@ -56,6 +56,29 @@ for (const t of ['catalog', 'lists', 'matchup', 'deploy']) {
 }
 ok('nessun errore dopo il giro delle schede', errors.length === 0);
 
+console.log('\nfoto sul campo');
+/* La lista d'esempio parte con il catalogo vuoto: la voce e la foto
+   arrivano dopo, come quando le carichi a mano. Devono comparire sul
+   campo senza reimportare niente. */
+const cat = await import('../src/catalog.js');
+const catId = await cat.upsertEntry(
+  { name: 'Saurus Warriors', faction: 'Lizardmen', baseId: '30x30', baseW: 30, baseH: 30, owned: 12 },
+  { merge: true });
+await cat.setPhotoData(catId, 'data:image/jpeg;base64,AAAA');
+await new Promise(r => setTimeout(r, 100));
+
+const board = doc.querySelector('#board');
+ok('la foto sta nei defs una volta sola', board.querySelectorAll('symbol').length === 1);
+ok('una foto per base', board.querySelectorAll('use').length === 12);
+ok('le anteprime del pannello si aggiornano',
+   doc.querySelectorAll('#armies .minis img').length === 12);
+
+doc.querySelector('#btn-photos').dispatchEvent(new window.Event('click'));
+ok('la levetta Foto le toglie', board.querySelectorAll('use').length === 0);
+doc.querySelector('#btn-photos').dispatchEvent(new window.Event('click'));
+ok('e le rimette', board.querySelectorAll('use').length === 12);
+ok('nessun errore con le foto accese', errors.length === 0);
+
 if (errors.length) console.log('\nerrori:\n  ' + errors.join('\n  '));
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);
