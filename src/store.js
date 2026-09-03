@@ -119,6 +119,29 @@ export function pickImage(){
   });
 }
 
+/* Archivio persistente: senza questa richiesta il browser considera i
+   dati "best effort" e puo' buttarli via da solo (Safari dopo ~7 giorni
+   senza visite, Chrome quando il disco va in pressione). Con il permesso
+   concesso restano finche' non li cancella l'utente. Va chiesto ad ogni
+   avvio: e' idempotente, se il permesso c'e' gia' risponde subito true.
+   Su file:// l'API non esiste e torniamo null: nessun errore, ma nemmeno
+   nessuna garanzia. */
+export async function requestPersistence(){
+  if (!navigator.storage || !navigator.storage.persist) return null;
+  try {
+    if (await navigator.storage.persisted()) return true;
+    return await navigator.storage.persist();
+  } catch (_) { return null; }
+}
+
+/* Sola lettura: Firefox mostra un permesso quando si chiama persist(),
+   quindi per disegnare lo stato nel catalogo si guarda e basta. */
+export async function isPersisted(){
+  if (!navigator.storage || !navigator.storage.persisted) return null;
+  try { return await navigator.storage.persisted(); }
+  catch (_) { return null; }
+}
+
 /* ------------------------------------------------------------------
    Esporta / importa tutto: serve per spostare la collezione da un
    dispositivo all'altro, visto che IndexedDB e' legato al browser.

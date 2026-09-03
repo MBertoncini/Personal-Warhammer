@@ -5,7 +5,10 @@
  * da 25 in una lista e due mob da 12 in un'altra, quindi l'unico
  * conteggio che regge e' "tipo + quantita'".
  *
- *   { id, name, faction, baseId, baseW, baseH, owned, aliases[], notes }
+ *   { id, name, faction, baseId, baseW, baseH, owned, painted, aliases[], notes }
+ *
+ * "painted" e' quante ne hai finite: la domanda vera prima di un
+ * torneo non e' "ce le ho?" ma "sono dipinte?".
  *
  * Le foto stanno su chiavi separate ("photo:<id>") cosi' salvare una
  * quantita' non riscrive i megabyte delle immagini.
@@ -13,7 +16,7 @@
 
 import { $, esc } from './util.js';
 import { BASES, baseById } from './bases.js';
-import { loadDoc, saveDoc, deleteDoc, pickImage, shrinkImage, usage } from './store.js';
+import { loadDoc, saveDoc, deleteDoc, pickImage, shrinkImage, usage, isPersisted } from './store.js';
 import { emit } from './bus.js';
 
 const CAT_KEY = "catalog:entries";
@@ -47,6 +50,9 @@ function persist(){
 
 export const catalogAll = () => entries.slice();
 export const catEntry = id => entries.find(e => e.id === id) || null;
+/* dipinte: mai piu' di quante ne possiedi, e le voci vecchie che non
+   hanno il campo valgono zero senza rompere niente */
+export const paintedOf = e => Math.max(0, Math.min(+(e && e.owned) || 0, +(e && e.painted) || 0));
 export const photoForUnit = u => (u && u.catId ? photos.get(u.catId) || null : null);
 export const photoFor = id => photos.get(id) || null;
 
@@ -179,6 +185,7 @@ export async function upsertEntry(data, { merge = false } = {}){
   const twin = merge ? findKind(data.name, data.faction) : null;
   if (twin){
     twin.owned = (+twin.owned || 0) + (+data.owned || 0);
+    twin.painted = (+twin.painted || 0) + (+data.painted || 0);
     twin.aliases = [...new Set([...(twin.aliases || []), ...(data.aliases || [])])];
     sortEntries();
     await persist();
@@ -187,7 +194,7 @@ export async function upsertEntry(data, { merge = false } = {}){
 
   const fresh = {
     id: newId(), name: "Nuova voce", faction: "Altro",
-    baseId: "25x25", baseW: 25, baseH: 25, owned: 1, aliases: [], notes: "",
+    baseId: "25x25", baseW: 25, baseH: 25, owned: 1, painted: 0, aliases: [], notes: "",
     ...data,
   };
   entries.push(fresh);
@@ -222,6 +229,7 @@ export async function mergeDuplicates(){
     for (const other of g){
       if (other === keeper) continue;
       keeper.owned = (+keeper.owned || 0) + (+other.owned || 0);
+      keeper.painted = (+keeper.painted || 0) + (+other.painted || 0);
       keeper.aliases = [...new Set([...(keeper.aliases || []), ...(other.aliases || [])])];
       if (other.notes && !(keeper.notes || "").includes(other.notes))
         keeper.notes = [keeper.notes, other.notes].filter(Boolean).join(" \u00b7 ");
@@ -292,6 +300,8 @@ export function renderCatalog(){
     (e.aliases || []).some(a => a.includes(q))) : entries;
 
   const total = entries.reduce((s, e) => s + (+e.owned || 0), 0);
+  const done  = entries.reduce((s, e) => s + paintedOf(e), 0);
+  const pct   = total ? Math.round(done / total * 100) : 0;
   const dups = duplicateGroups();
 
   host.innerHTML = `
@@ -300,7 +310,8 @@ export function renderCatalog(){
       <button class="btn primary" id="cat-add">Nuova voce</button>
       ${dups.length ? `<button class="btn" id="cat-merge">Unisci doppioni (${dups.length})</button>` : ""}
     </div>
-    <p class="note" id="cat-usage">${entries.length} voci \u00b7 ${total} miniature in collezione</p>
+    <p class="note" id="cat-usage">${entries.length} voci \u00b7 ${total} miniature in collezione \u00b7 ${done} dipinte${total ? ` (${pct}%)` : ""}</p>
+    ${total ? `<div class="paintbar" title="${done} dipinte su ${total}"><span style="width:${pct}%"></span></div>` : ""}
     ${editing ? editorHTML() : ""}
     <div class="cat-grid">
       ${shown.map(cardHTML).join("") || `<p class="empty">Nessuna voce. Comincia da "Nuova voce".</p>`}
@@ -308,7 +319,7 @@ export function renderCatalog(){
 
   $("#cat-q").addEventListener("input", e => { filter = e.target.value; renderCatalog(); });
   $("#cat-add").addEventListener("click", () => {
-    editing = { id: null, name: "", faction: "Orc & Goblin Tribes", baseId: "25x25", owned: 1, aliases: [] };
+    editing = { id: null, name: "", faction: "Orc & Goblin Tribes", baseId: "25x25", owned: 1, painted: 0, aliases: [] };
     renderCatalog();
   });
   const mergeBtn = $("#cat-merge");
@@ -346,7 +357,7 @@ function cardHTML(e){
       <div class="cat-body">
         <b>${esc(e.name)}</b>
         <span class="mono">${esc(e.faction)} \u00b7 ${e.baseW}\u00d7${e.baseH} mm</span>
-        <span class="owned">${e.owned} in collezione</span>
+        <span class="owned">${e.owned} in collezione \u00b7 <span class="${paintedOf(e) >= (+e.owned || 0) ? "done" : "todo"}">${paintedOf(e)} dipinte</span></span>
         ${(e.aliases || []).length
           ? `<span class="mono dim">alias: ${e.aliases.map(esc).join(", ")}</span>` : ""}
       </div>
@@ -366,6 +377,7 @@ function editorHTML(){
         </select></label>
         <label class="field">Quantit\u00e0 posseduta<input type="number" id="ed-owned" min="0" max="999" value="${+e.owned || 0}"></label>
       </div>
+      <label class="field">Quante ne hai dipinte<input type="number" id="ed-painted" min="0" max="999" value="${paintedOf(e)}"></label>
       <label class="field">Basetta<select id="ed-base">
         ${BASES.map(b => `<option value="${b.id}" ${b.id === e.baseId ? "selected" : ""}>${esc(b.label)}</option>`).join("")}
       </select></label>
@@ -402,6 +414,7 @@ function wireEditor(){
       name, faction,
       baseId: $("#ed-base").value, baseW: b.w, baseH: b.h,
       owned: Math.max(0, +$("#ed-owned").value || 0),
+      painted: Math.max(0, +$("#ed-painted").value || 0),
       aliases: editing.aliases || [],
     }, { merge });
     editing = null;
@@ -421,9 +434,15 @@ function wireEditor(){
 }
 
 async function showUsage(){
-  const u = await usage();
   const el = $("#cat-usage");
-  if (!u || !el) return;
-  const mb = n => (n / 1048576).toFixed(1);
-  el.textContent += ` \u00b7 ${mb(u.usage)} MB usati`;
+  if (!el) return;
+  const u = await usage();
+  if (u) {
+    const mb = n => (n / 1048576).toFixed(1);
+    el.textContent += ` \u00b7 ${mb(u.usage)} MB usati`;
+  }
+  /* archivio non protetto = il browser puo' fare pulizia da solo: meglio
+     dirlo qui, accanto ai MB, che scoprirlo a collezione sparita */
+  if (await isPersisted() === false)
+    el.textContent += " \u00b7 archivio non protetto, tieni un Backup";
 }

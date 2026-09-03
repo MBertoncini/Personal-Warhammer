@@ -7,9 +7,24 @@ import { TERRAIN, TREASURE_CLEAR, BM_MAX_SIDE } from './terrain.js';
 import { R, T, SCENARIOS, geometry } from './scenarios.js';
 import { saveDoc, loadDoc } from './store.js';
 import { photoForUnit, photoFor, catEntry, matchUnitName } from './catalog.js';
+import { rectPoly, pointInRect, boxCorners, polysOverlap,
+         distPointToBox, toWorld } from './geom.js';
+import { createHistory } from './history.js';
+import { createView, wireViewGestures } from './view.js';
+import { exportPNG } from './imgexport.js';
+import { shareUrl, decodeBoard, readShareCode, copyText } from './share.js';
+import * as G from './game.js';
+import { initScenarioKit, customScenarioMap, saveCustom, removeCustom,
+         randomTerrain, allCustom } from './scenariokit.js';
+import { survey, frontArcPoly, movementBands } from './tactics.js';
+
+/* Gli scenari sono quelli del manuale piu' quelli salvati dall'utente:
+   da qui in giu' non c'e' differenza fra i due. */
+const allScenarios = () => ({ ...SCENARIOS, ...customScenarioMap() });
+const scenarioDef = id => allScenarios()[id] || SCENARIOS.open;
 
 function currentScenario(){
-  const def = SCENARIOS[state.scenario] || SCENARIOS.open;
+  const def = scenarioDef(state.scenario);
   const geo = geometry(def.deploy, state.tableW, state.tableH, state.gap);
   return { ...def, ...geo };
 }
@@ -25,13 +40,24 @@ const state = {
   tableW:44 * MM, tableH:30 * MM, gap:6 * MM,
   sel:null,                       // {type:'unit'|'terr', id}
   snap:true, labels:true, ranges:false, measure:false, measurePts:[], photos:true,
+  /* righelli lasciati sul tavolo, uno per coppia di punti: la misura
+     usa-e-getta serviva a poco, in partita se ne tengono tre o quattro */
+  rulers:[],
+  /* aiuti tattici sull'unita' selezionata */
+  distances:false, arcs:false,
+  game: G.emptyGame(),
   rawInfo:"",
 };
 let uidSeq = 1, tidSeq = 1;
 
+/* Modelli ancora in piedi: fuori partita sono tutti, in partita sono
+   quelli che restano. Il reggimento si accorcia da dietro, come al tavolo. */
+const liveModels = u => Math.max(1, (u.models || 1) - (u.lost || 0));
+const effModels = u => (state.game.on ? liveModels(u) : (u.models || 1));
+
 const unitStep = u => u.loose ? 12.7 : 0;                       // spaziatura schermagliatori
-const unitW = u => u.frontage * (u.baseW + unitStep(u));
-const ranksOf = u => Math.ceil(u.models / u.frontage);
+const unitW = u => Math.min(u.frontage, effModels(u)) * (u.baseW + unitStep(u));
+const ranksOf = u => Math.ceil(effModels(u) / u.frontage);
 const unitD = u => ranksOf(u) * (u.baseH + unitStep(u));
 
 /* -------- geometria -------- */
@@ -41,39 +67,69 @@ function boxOf(o){
   const w = (o.w ?? cfg.w) * MM, h = (o.h ?? cfg.h) * MM;
   return { x:o.x, y:o.y, w, h, rot:o.rot || 0 };
 }
-function corners(o){
-  const b = boxOf(o), a = b.rot * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
-  return [[-b.w/2,-b.h/2],[b.w/2,-b.h/2],[b.w/2,b.h/2],[-b.w/2,b.h/2]]
-    .map(([px, py]) => [b.x + px*c - py*s, b.y + px*s + py*c]);
-}
-function polysOverlap(A, B){
-  for (const poly of [A, B]){
-    for (let i = 0; i < poly.length; i++){
-      const p1 = poly[i], p2 = poly[(i + 1) % poly.length];
-      const ax = -(p2[1] - p1[1]), ay = p2[0] - p1[0];
-      let minA = Infinity, maxA = -Infinity, minB = Infinity, maxB = -Infinity;
-      for (const p of A){ const d = p[0]*ax + p[1]*ay; if (d<minA) minA=d; if (d>maxA) maxA=d; }
-      for (const p of B){ const d = p[0]*ax + p[1]*ay; if (d<minB) minB=d; if (d>maxB) maxB=d; }
-      if (maxA <= minB + 0.05 || maxB <= minA + 0.05) return false;
-    }
-  }
-  return true;
-}
-const rectPoly = r => [[r.x,r.y],[r.x+r.w,r.y],[r.x+r.w,r.y+r.h],[r.x,r.y+r.h]];
-const inRect = (p, r, tol = 0.6) =>
-  p[0] >= r.x - tol && p[0] <= r.x + r.w + tol && p[1] >= r.y - tol && p[1] <= r.y + r.h + tol;
+const corners = o => boxCorners(boxOf(o));
+const inRect = pointInRect;
 
 // distanza fra un punto e il bordo di un pezzo (0 se dentro)
-function distToPiece(pt, o){
-  const b = boxOf(o), a = -b.rot * Math.PI / 180;
-  const dx = pt[0] - b.x, dy = pt[1] - b.y;
-  const lx = dx * Math.cos(a) - dy * Math.sin(a);
-  const ly = dx * Math.sin(a) + dy * Math.cos(a);
-  if (TERRAIN[o.kind] && TERRAIN[o.kind].shape === "circle")
-    return Math.max(0, Math.hypot(lx, ly) - b.w / 2);
-  const ox = Math.max(Math.abs(lx) - b.w / 2, 0);
-  const oy = Math.max(Math.abs(ly) - b.h / 2, 0);
-  return Math.hypot(ox, oy);
+const distToPiece = (pt, o) =>
+  distPointToBox(pt, boxOf(o), !!(TERRAIN[o.kind] && TERRAIN[o.kind].shape === "circle"));
+
+/* ============================================================
+   5b · ANNULLA, RIPETI, INQUADRATURA
+   Ogni gesto che cambia il tavolo passa da act(): mette da parte lo
+   stato di prima, esegue, ridisegna. E' l'unico posto in cui la rete
+   di sicurezza va ricordata, quindi e' difficile dimenticarsela.
+   ============================================================ */
+const svgEl = $("#board");
+const BOARD_PAD = 46;
+
+const baseBox = () => ({
+  x: -BOARD_PAD, y: -BOARD_PAD,
+  w: state.tableW + BOARD_PAD * 2, h: state.tableH + BOARD_PAD * 2,
+});
+
+const view = createView(svgEl, {
+  getBase: baseBox,
+  onChange: ({ zoom }) => {
+    const el = $("#zoom-level");
+    if (el) el.textContent = Math.round(zoom * 100) + "%";
+    const fitBtn = $("#btn-fit");
+    if (fitBtn) fitBtn.classList.toggle("on", Math.abs(zoom - 1) < 0.01);
+  },
+});
+
+const history = createHistory({
+  capture: () => snapshot(),
+  restore: s => { applySnapshot(s); renderAll(); },
+  onChange: ({ canUndo, canRedo, undoLabel, redoLabel }) => {
+    const u = $("#btn-undo"), r = $("#btn-redo");
+    if (u){ u.disabled = !canUndo; u.title = canUndo ? `Annulla: ${undoLabel} (Ctrl+Z)` : "Niente da annullare"; }
+    if (r){ r.disabled = !canRedo; r.title = canRedo ? `Ripeti: ${redoLabel} (Ctrl+Y)` : "Niente da ripetere"; }
+  },
+});
+
+/* label: quello che si legge nel tooltip di Annulla.
+   coalesce: millisecondi entro cui un gesto continuo (scrivere, tenere
+   premuta una freccia) resta un passo solo invece di trenta. */
+function act(label, fn, { coalesce = 0, render = true } = {}){
+  history.push(label, { coalesce });
+  fn();
+  if (render) renderAll();
+}
+
+/* cambia solo cosa e' selezionato: non e' una modifica del tavolo e
+   nella storia non ci deve entrare */
+function select(sel){ state.sel = sel; renderAll(); }
+
+function focusUnit(u){
+  if (!u || !u.placed) return;
+  const xs = corners(u).map(p => p[0]), ys = corners(u).map(p => p[1]);
+  /* tetto basso: su una basetta da 30 mm il calcolo chiederebbe il
+     massimo ingrandimento, e a quel punto si vede l'unità e nient'altro
+     di quello che le sta attorno — che è proprio il motivo per cui ci
+     si stava andando */
+  view.focus({ x:Math.min(...xs), y:Math.min(...ys),
+               w:Math.max(...xs) - Math.min(...xs), h:Math.max(...ys) - Math.min(...ys) }, 2);
 }
 
 function zonesFor(army, sc){
@@ -98,7 +154,7 @@ function unitStatus(u, sc){
 // controlli sul terreno: regola dei 12″ e distanza dei tesori
 function terrainIssues(){
   const out = new Map();
-  const isBM = (SCENARIOS[state.scenario] || {}).group === "Battle March";
+  const isBM = scenarioDef(state.scenario).group === "Battle March";
   for (const t of state.terrain){
     const cfg = TERRAIN[t.kind];
     const longest = Math.max(t.w ?? cfg.w, t.h ?? cfg.h);
@@ -135,17 +191,30 @@ const selIs = (type, id) => state.sel && state.sel.type === type && state.sel.id
    ============================================================ */
 const MAX_DOTS = 60;   /* quante anteprime disegnare per riga */
 
-/* una anteprima per ogni modello dell'unita' */
-function miniStrip(u){
-  const n = Math.min(u.models, MAX_DOTS);
+/* Prima si ripeteva la stessa foto per ogni modello: venti Orc Mobs
+   facevano due righe di quadratini identici, che spingevano in basso
+   tutto il pannello per dire una cosa che il testo diceva gia'. Ora la
+   riga chiusa mostra una foto e il moltiplicatore; la striscia intera
+   resta sull'unita' selezionata, dove serve a contare i modelli.
+   (E photoForUnit si chiama UNA volta, non sessanta.) */
+function miniStrip(u, { full = false } = {}){
+  const p = photoForUnit(u);
+  const col = state.armies[u.army].color;
+  const cell = () => p
+    ? `<img class="mdl" src="${p}" alt="" loading="lazy">`
+    : `<span class="mdl ph" style="background:${col}"></span>`;
+
+  const shown = effModels(u);
+  if (!full)
+    return `<span class="minis">${cell()}<span class="mdl more">×${shown}</span>` +
+      (state.game.on && (u.lost || 0) ? `<span class="mdl more lost">−${u.lost}</span>` : "") +
+      `</span>`;
+
+  const n = Math.min(shown, MAX_DOTS);
   let out = '<span class="minis">';
-  for (let i = 0; i < n; i++){
-    const p = photoForUnit(u);
-    out += p
-      ? `<img class="mdl" src="${p}" alt="" loading="lazy">`
-      : `<span class="mdl ph" style="background:${state.armies[u.army].color}"></span>`;
-  }
-  if (u.models > n) out += `<span class="mdl more">+${u.models - n}</span>`;
+  for (let i = 0; i < n; i++) out += cell();
+  if (shown > n) out += `<span class="mdl more">+${shown - n}</span>`;
+  if (state.game.on && (u.lost || 0)) out += `<span class="mdl more lost">−${u.lost}</span>`;
   return out + "</span>";
 }
 
@@ -218,21 +287,26 @@ function catLabel(u){
 }
 
 function unitRow(u, sc){
+  const sel = selIs("unit", u.uid);
   const el = document.createElement("div");
-  el.className = "row" + (selIs("unit", u.uid) ? " sel" : "");
+  el.className = "row u-row" + (sel ? " sel" : "") + (u.dead ? " dead" : "") + (u.fled ? " fled" : "");
   const st = unitStatus(u, sc);
-  el.classList.add("u-row");
   el.innerHTML = `
     <span class="nm">
       <b><span class="idx" style="background:${state.armies[u.army].color}">${u.idx}</span><span class="txt">${esc(u.name)}</span></b>
-      <span class="mono">${u.models}× ${u.baseW}×${u.baseH} · ${u.frontage} di fronte · ${inch(unitW(u)).toFixed(1)}×${inch(unitD(u)).toFixed(1)}″ · ${u.pts} pt</span>
+      <span class="mono">${effModels(u)}× ${u.baseW}×${u.baseH} · ${u.frontage} di fronte · ${inch(unitW(u)).toFixed(1)}×${inch(unitD(u)).toFixed(1)}″ · ${u.pts} pt</span>
     </span>
     <span class="chip ${st.key}">${st.text}</span>
-    ${miniStrip(u)}`;
+    ${miniStrip(u, { full: sel })}`;
   el.addEventListener("click", () => {
-    state.sel = { type:"unit", id:u.uid };
-    if (!u.placed) place(u);
-    renderAll();
+    /* cliccare un'unita' gia' selezionata la inquadra: con lo zoom
+       acceso e' il modo piu' corto per andarci sopra */
+    if (sel && u.placed){ focusUnit(u); return; }
+    if (u.placed || u.dead) return select({ type:"unit", id:u.uid });
+    act("schiera " + shortName(u.name), () => {
+      state.sel = { type:"unit", id:u.uid };
+      place(u);
+    });
   });
   return el;
 }
@@ -260,7 +334,7 @@ function renderTerrainList(){
       </svg>
       <span class="nm"><b>${cfg.label}</b><span class="mono">${dims} · ${inch(t.x).toFixed(0)},${inch(t.y).toFixed(0)}″</span></span>
       ${iss ? `<span class="chip ${iss.key}">${iss.text}</span>` : `<span class="chip idle">ok</span>`}`;
-    el.addEventListener("click", () => { state.sel = { type:"terr", id:t.tid }; renderAll(); });
+    el.addEventListener("click", () => select({ type:"terr", id:t.tid }));
     tray.appendChild(el);
   }
   host.appendChild(tray);
@@ -327,14 +401,19 @@ function renderInspector(){
       </div>
       ${u.rules.length ? `<div class="tags">${u.rules.map(r => `<span class="tag">${esc(r)}</span>`).join("")}</div>` : ""}
       ${u.weapons.length ? `<p class="note"><b>Armi:</b> ${u.weapons.map(w => esc(w.name) + (w.range && w.range !== "-" ? ` (${esc(w.range)})` : "")).join(" · ")}</p>` : ""}
+      ${gameBlockHTML(u)}
+      ${nearbyHTML(u)}
       <div class="grid2"><button class="btn" id="i-rot-l">↺ 90°</button><button class="btn" id="i-rot-r">↻ 90°</button></div>
       <div class="grid2"><button class="btn" id="i-swap">Cambia esercito</button>
         <button class="btn" id="i-recall">${u.placed ? "Ritira" : "Schiera"}</button></div>
       <button class="btn ghost" id="i-del" style="color:var(--bad)">Rimuovi dalla lista</button>
     </div>`;
 
-  const upd = fn => { fn(); renderAll(); };
-  $("#i-name").addEventListener("input", e => { u.name = e.target.value; renderArmies(); });
+  const upd = (fn, label = "modifica") => act(label, fn);
+  $("#i-name").addEventListener("input", e => {
+    history.push("rinomina", { coalesce: 900 });
+    u.name = e.target.value; renderArmies();
+  });
 
   $("#i-models").addEventListener("change", e => upd(() => {
     u.models = Math.max(1, +e.target.value || 1);
@@ -355,13 +434,61 @@ function renderInspector(){
     u.loose = e.target.checked;
     u.frontage = defaultFrontage(u.troop, u.models, u.loose);
   }));
-  $("#i-rot-l").addEventListener("click", () => upd(() => { u.rot = (u.rot + 270) % 360; }));
-  $("#i-rot-r").addEventListener("click", () => upd(() => { u.rot = (u.rot + 90) % 360; }));
-  $("#i-swap").addEventListener("click", () => upd(() => { u.army = u.army === "A" ? "B" : "A"; if (u.placed) place(u); }));
-  $("#i-recall").addEventListener("click", () => upd(() => { if (u.placed) u.placed = false; else place(u); }));
+  $("#i-rot-l").addEventListener("click", () => upd(() => { u.rot = (u.rot + 270) % 360; }, "ruota"));
+  $("#i-rot-r").addEventListener("click", () => upd(() => { u.rot = (u.rot + 90) % 360; }, "ruota"));
+  $("#i-swap").addEventListener("click", () => upd(() => { u.army = u.army === "A" ? "B" : "A"; if (u.placed) place(u); }, "cambia esercito"));
+  $("#i-recall").addEventListener("click", () => upd(() => { if (u.placed) u.placed = false; else place(u); }, u.placed ? "ritira" : "schiera"));
   $("#i-del").addEventListener("click", () => upd(() => {
     state.units = state.units.filter(x => x !== u); state.sel = null;
-  }));
+  }, "rimuovi unità"));
+  wireGameControls(u, upd);
+}
+
+/* ---- perdite e stato dell'unità, solo a partita aperta ---- */
+function gameBlockHTML(u){
+  if (!state.game.on) return "";
+  return `
+    <div class="photo-box">
+      <div class="readout"><span>Modelli in piedi</span><b>${G.alive(u)} / ${u.models}</b></div>
+      <div class="losses">
+        <button class="btn tiny" id="i-loss-m">−1</button>
+        <input type="number" id="i-loss" min="0" max="${u.models}" value="${u.lost || 0}">
+        <button class="btn tiny" id="i-loss-p">+1</button>
+        <span class="mono">perdite</span>
+      </div>
+      <div class="grid2">
+        <button class="btn tiny${u.fled ? " on" : ""}" id="i-flee">${u.fled ? "In rotta" : "Segna in rotta"}</button>
+        <button class="btn tiny" id="i-dead">${u.dead ? "Rimetti in gioco" : "Distrutta"}</button>
+      </div>
+    </div>`;
+}
+
+function wireGameControls(u, upd){
+  if (!state.game.on) return;
+  const set = n => upd(() => G.setLost(u, n), "perdite");
+  $("#i-loss").addEventListener("change", e => set(+e.target.value || 0));
+  $("#i-loss-m").addEventListener("click", () => set((u.lost || 0) - 1));
+  $("#i-loss-p").addEventListener("click", () => set((u.lost || 0) + 1));
+  $("#i-flee").addEventListener("click", () => upd(() => G.flee(u), "rotta"));
+  $("#i-dead").addEventListener("click", () =>
+    upd(() => (u.dead ? G.revive(u) : G.destroy(u)), u.dead ? "rimetti in gioco" : "distrutta"));
+}
+
+/* ---- chi ho intorno: le tre distanze che si guardano davvero ---- */
+function nearbyHTML(u){
+  if (!u.placed) return "";
+  const rows = surveyFor(u).slice(0, 4);
+  if (!rows.length) return "";
+  const bands = movementBands(u);
+  return `
+    <div>
+      <div class="readout"><span>Nemico più vicino</span><b>${rows[0].dist.toFixed(1)}″</b></div>
+      ${rows.map(r => `
+        <div class="readout near${r.blocked ? " dim" : ""}">
+          <span>${esc(shortName(r.unit.name))}${r.blocked ? ` · dietro ${esc(r.blockedBy.toLowerCase())}` : ""}</span>
+          <b${bands && r.dist <= bands.charge && !r.blocked ? ' style="color:var(--ok)"' : ""}>${r.dist.toFixed(1)}″</b>
+        </div>`).join("")}
+    </div>`;
 }
 
 function renderTerrainInspector(host){
@@ -385,7 +512,7 @@ function renderTerrainInspector(host){
       ${t.kind === "treasure" ? "" : `<div class="grid2"><button class="btn" id="t-rot-l">↺ 15°</button><button class="btn" id="t-rot-r">↻ 15°</button></div>`}
       <button class="btn ghost" id="t-del" style="color:var(--bad)">Togli dal tavolo</button>
     </div>`;
-  const upd = fn => { fn(); renderAll(); };
+  const upd = (fn, label = "terreno") => act(label, fn);
   if ($("#t-w")) $("#t-w").addEventListener("change", e => upd(() => {
     t.w = Math.max(1, +e.target.value || cfg.w);
     if (round) t.h = t.w;
@@ -395,7 +522,7 @@ function renderTerrainInspector(host){
   if ($("#t-rot-r")) $("#t-rot-r").addEventListener("click", () => upd(() => { t.rot = ((t.rot || 0) + 15) % 360; }));
   $("#t-del").addEventListener("click", () => upd(() => {
     state.terrain = state.terrain.filter(x => x !== t); state.sel = null;
-  }));
+  }, "togli " + cfg.label.toLowerCase()));
 }
 
 /* ============================================================
@@ -453,10 +580,12 @@ function photoDefsFor(svg){
 
 function drawBoard(){
   reindex();
-  const svg = $("#board"), sc = currentScenario();
-  const W = state.tableW, H = state.tableH, pad = 46;
-  svg.setAttribute("viewBox", `${-pad} ${-pad} ${W + pad * 2} ${H + pad * 2}`);
+  const svg = svgEl, sc = currentScenario();
+  const W = state.tableW, H = state.tableH;
+  /* il riquadro visibile lo decide view.js: qui si disegna e basta,
+     sempre nelle stesse coordinate in millimetri */
   svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+  view.apply();
   svg.innerHTML = "";
   const g = (parent, name, attrs = {}) => {
     const e = document.createElementNS(SVGNS, name);
@@ -594,7 +723,7 @@ function drawBoard(){
     if (phId){
       const pad = unitStep(u) / 2;
       const pg = g(gg, "g", { opacity:".93", "pointer-events":"none" });
-      for (let i = 0; i < u.models; i++){
+      for (let i = 0; i < effModels(u); i++){
         const cx = -Wu/2 + (i % u.frontage) * stepW + pad + u.baseW / 2;
         const cy = -Du/2 + Math.floor(i / u.frontage) * stepH + pad + u.baseH / 2;
         const use = g(pg, "use", { x: cx - u.baseW / 2, y: cy - u.baseH / 2,
@@ -608,8 +737,18 @@ function drawBoard(){
     for (let i = 1; i < u.frontage; i++) g(inner, "line", { x1:-Wu/2 + i*stepW, y1:-Du/2, x2:-Wu/2 + i*stepW, y2:Du/2 });
     for (let i = 1; i < ranksOf(u); i++) g(inner, "line", { x1:-Wu/2, y1:-Du/2 + i*stepH, x2:Wu/2, y2:-Du/2 + i*stepH });
     g(gg, "line", { x1:-Wu/2, y1:-Du/2, x2:Wu/2, y2:-Du/2, stroke:"var(--paper)", "stroke-width":3.5, opacity:".9" });
+
+    /* Il colore dell'esercito va SOPRA le foto: sotto lo coprono, e con
+       le foto accese A e B si distinguevano solo dalla posizione. */
+    g(gg, "rect", { x:-Wu/2, y:-Du/2, width:Wu, height:Du, fill:"none", stroke:col,
+                    "stroke-width":2.6, "stroke-dasharray": u.loose ? "8 5" : "none",
+                    "pointer-events":"none" });
+    if (st.key !== "ok")
+      g(gg, "rect", { x:-Wu/2 - 2.5, y:-Du/2 - 2.5, width:Wu + 5, height:Du + 5, fill:"none",
+                      stroke: st.key === "bad" ? "var(--bad)" : "var(--warn)",
+                      "stroke-width":2.4, "pointer-events":"none" });
     if (selIs("unit", u.uid))
-      g(gg, "rect", { x:-Wu/2 - 4, y:-Du/2 - 4, width:Wu + 8, height:Du + 8, fill:"none",
+      g(gg, "rect", { x:-Wu/2 - 5, y:-Du/2 - 5, width:Wu + 10, height:Du + 10, fill:"none",
                       stroke:"var(--accent)", "stroke-width":2, "stroke-dasharray":"7 5" });
   }
 
@@ -623,7 +762,8 @@ function drawBoard(){
       t.textContent = String(u.idx);
     }
     if (selIs("unit", u.uid)){
-      const txt = `${u.idx}. ${shortName(u.name)} — ${u.models} mod.`;
+      const txt = `${u.idx}. ${shortName(u.name)} — ${effModels(u)} mod.` +
+                  (state.game.on && u.lost ? ` (−${u.lost})` : "");
       const wBox = txt.length * 12 + 20;
       const yTop = Math.max(-40, Math.min(...corners(u).map(p => p[1])) - 44);
       g(lab, "rect", { x:u.x - wBox/2, y:yTop, width:wBox, height:30, rx:5, fill:"var(--panel)", stroke:"var(--accent)", "stroke-width":1.4 });
@@ -645,18 +785,40 @@ function drawBoard(){
     const t = g(ruler, "text", { x:-11, y:y + 4, "text-anchor":"end" }); t.textContent = i;
   }
 
-  if (state.measurePts.length){
-    const m = g(svg, "g", { "pointer-events":"none" });
-    const [p1, p2] = state.measurePts;
-    g(m, "circle", { cx:p1[0], cy:p1[1], r:4, fill:"var(--accent)" });
-    if (p2){
-      g(m, "line", { x1:p1[0], y1:p1[1], x2:p2[0], y2:p2[1], stroke:"var(--accent)", "stroke-width":2 });
-      g(m, "circle", { cx:p2[0], cy:p2[1], r:4, fill:"var(--accent)" });
-      const mx = (p1[0]+p2[0])/2, my = (p1[1]+p2[1])/2;
-      g(m, "rect", { x:mx - 36, y:my - 27, width:72, height:23, rx:4, fill:"var(--panel)", stroke:"var(--accent)", "stroke-width":1 });
-      const t = g(m, "text", { x:mx, y:my - 11, "text-anchor":"middle", "font-size":15, fill:"var(--ink)" });
-      t.textContent = (Math.hypot(p2[0]-p1[0], p2[1]-p1[1]) / MM).toFixed(2) + "″";
-    }
+  /* ---- aiuti tattici sull'unità selezionata ---- */
+  drawTactics(svg, g, selUnit);
+
+  /* ---- righelli: restano sul tavolo finché non li togli ---- */
+  const ruler2 = g(svg, "g", { "pointer-events":"none" });
+  const drawRuler = ([p1, p2], live) => {
+    const col = live ? "var(--accent)" : "var(--muted)";
+    g(ruler2, "line", { x1:p1[0], y1:p1[1], x2:p2[0], y2:p2[1], stroke:col, "stroke-width":2,
+                        "stroke-dasharray": live ? "none" : "9 5" });
+    g(ruler2, "circle", { cx:p1[0], cy:p1[1], r:4, fill:col });
+    g(ruler2, "circle", { cx:p2[0], cy:p2[1], r:4, fill:col });
+    const mx = (p1[0]+p2[0])/2, my = (p1[1]+p2[1])/2;
+    g(ruler2, "rect", { x:mx - 36, y:my - 27, width:72, height:23, rx:4, fill:"var(--panel)", stroke:col, "stroke-width":1 });
+    const t = g(ruler2, "text", { x:mx, y:my - 11, "text-anchor":"middle", "font-size":15, fill:"var(--ink)" });
+    t.textContent = (Math.hypot(p2[0]-p1[0], p2[1]-p1[1]) / MM).toFixed(2) + "″";
+  };
+  for (const r of state.rulers) drawRuler(r, false);
+  if (state.measurePts.length === 1){
+    const [p1] = state.measurePts;
+    g(ruler2, "circle", { cx:p1[0], cy:p1[1], r:5, fill:"none", stroke:"var(--accent)", "stroke-width":2 });
+    g(ruler2, "circle", { cx:p1[0], cy:p1[1], r:3, fill:"var(--accent)" });
+  }
+
+  /* ---- maniglia di rotazione sul pezzo selezionato ----
+     Ruotare stava solo su Q/E e sui due bottoni dell'ispettore: è un
+     gesto che si fa cento volte per schieramento e vuole il mouse. */
+  const selObj = selectedObject();
+  if (selObj && (selObj.uid === undefined || selObj.placed)){
+    const b = boxOf(selObj), hp = handlePos(selObj), fc = toWorld([0, -b.h/2], b);
+    const hg = g(svg, "g", { class:"handle" });
+    hg.dataset.handle = "1";
+    g(hg, "line", { x1:fc[0], y1:fc[1], x2:hp[0], y2:hp[1], stroke:"var(--accent)", "stroke-width":1.6, "stroke-dasharray":"4 3" });
+    g(hg, "circle", { cx:hp[0], cy:hp[1], r:11, fill:"var(--panel)", stroke:"var(--accent)", "stroke-width":2.2 });
+    g(hg, "circle", { cx:hp[0], cy:hp[1], r:3.4, fill:"var(--accent)" });
   }
 
   $("#sc-name").textContent = sc.label + (sc.pts ? ` · ${sc.pts} pt` : "");
@@ -668,19 +830,126 @@ function shortName(n){
   const s = String(n).replace(/\(.*?\)/g, "").trim();
   return s.length > 18 ? s.slice(0, 17) + "…" : s;
 }
+
+/* ============================================================
+   7b · AIUTI TATTICI
+   La geometria c'era gia' per i controlli di legalita': queste sono
+   solo le viste che mancavano. Distanze misurate dal BORDO, come si
+   misura al tavolo, non dal centro come tornava comodo al codice.
+   ============================================================ */
+function sightPieces(){
+  return state.terrain.filter(t => TERRAIN[t.kind].los).map(t => {
+    const b = boxOf(t), circle = TERRAIN[t.kind].shape === "circle";
+    const poly = boxCorners(b);
+    return {
+      blocks:true, circle, box:b, poly, label:TERRAIN[t.kind].label,
+      contains: p => circle
+        ? Math.hypot(p[0] - b.x, p[1] - b.y) <= b.w / 2
+        : polysOverlap([[p[0]-1,p[1]-1],[p[0]+1,p[1]-1],[p[0]+1,p[1]+1],[p[0]-1,p[1]+1]], poly),
+    };
+  });
+}
+
+export function surveyFor(u){
+  if (!u || !u.placed) return [];
+  const enemies = state.units.filter(o => o.army !== u.army && o.placed && !o.dead);
+  return survey(u, enemies, { cornersOf: corners, boxOf, sightPieces: sightPieces(), inch });
+}
+
+function drawTactics(svg, g, u){
+  if (!u || !u.placed) return;
+  const col = state.armies[u.army].color;
+
+  /* arco frontale e portata di carica: chi ci finisce dentro lo si può
+     caricare senza girare, ed è la domanda che ci si fa per prima */
+  if (state.arcs){
+    const bands = movementBands(u);
+    if (bands){
+      const layer = g(svg, "g", { "pointer-events":"none" });
+      for (const [reach, op, dash] of [[bands.chargeMax, .10, "none"], [bands.charge, .16, "none"]]){
+        const poly = frontArcPoly(boxOf(u), reach * MM);
+        g(layer, "polygon", { points: poly.map(p => p.join(",")).join(" "),
+                              fill: col, opacity: op, stroke: col, "stroke-width":1.2,
+                              "stroke-dasharray": dash, "stroke-opacity":.5 });
+      }
+      const tip = toWorld([0, -boxOf(u).h/2 - bands.charge * MM], boxOf(u));
+      const t = g(layer, "text", { x:tip[0], y:tip[1] - 6, "text-anchor":"middle", "font-size":15, fill:col, opacity:.9 });
+      t.textContent = `carica ${bands.charge}″ · max ${bands.chargeMax}″`;
+    }
+  }
+
+  if (!state.distances) return;
+  const layer = g(svg, "g", { "pointer-events":"none" });
+  const rows = surveyFor(u);
+  const arc = movementBands(u) ? frontArcPoly(boxOf(u), movementBands(u).chargeMax * MM) : null;
+  for (const r of rows.slice(0, 8)){
+    const inArc = arc && polysOverlap(arc, corners(r.unit));
+    const stroke = r.blocked ? "var(--muted)" : (inArc ? "var(--ok)" : col);
+    g(layer, "line", { x1:r.from[0], y1:r.from[1], x2:r.to[0], y2:r.to[1],
+                       stroke, "stroke-width":1.5, opacity: r.blocked ? .35 : .7,
+                       "stroke-dasharray": r.blocked ? "5 6" : "none" });
+    /* il cartellino sta vicino al bersaglio, non a metà strada: le
+       linee partono tutte dallo stesso punto e a metà i numeri si
+       accavallano uno sull'altro */
+    const k = 0.78;
+    const mx = r.from[0] + (r.to[0] - r.from[0]) * k;
+    const my = r.from[1] + (r.to[1] - r.from[1]) * k;
+    const label = r.dist.toFixed(1) + "″" + (r.blocked ? " ✕" : "");
+    const w = label.length * 9 + 10;
+    g(layer, "rect", { x:mx - w/2, y:my - 12, width:w, height:19, rx:4,
+                       fill:"var(--panel)", stroke, "stroke-width":1, opacity:.95 });
+    const t = g(layer, "text", { x:mx, y:my + 2, "text-anchor":"middle", "font-size":13,
+                                 fill: r.blocked ? "var(--muted)" : "var(--ink)" });
+    t.textContent = label;
+  }
+}
+/* La riga di stato diceva quanti problemi c'erano ma non dove: per
+   trovare l'unità fuori zona toccava scorrere il pannello. Ora ogni
+   avviso è un pulsante che seleziona e inquadra il colpevole, e
+   ripremendolo si passa al successivo. */
+let statCycle = 0;
 function updateStat(sc){
   const placed = state.units.filter(u => u.placed);
-  const bad = placed.filter(u => unitStatus(u, sc).key === "bad").length;
-  const warn = placed.filter(u => unitStatus(u, sc).key === "warn").length;
-  const parts = [`${placed.length}/${state.units.length} schierate`];
-  if (warn) parts.push(`${warn} fuori zona`);
-  if (bad) parts.push(`${bad} in conflitto`);
-  const ti = terrainIssues().size;
-  if (ti) parts.push(`${ti} avvisi terreno`);
-  $("#stat").textContent = parts.join(" · ");
+  const bad  = placed.filter(u => unitStatus(u, sc).key === "bad");
+  const warn = placed.filter(u => unitStatus(u, sc).key === "warn");
+  const terr = [...terrainIssues().keys()];
+  const host = $("#stat");
+  host.innerHTML = "";
+
+  const add = (txt, cls, list, kind) => {
+    /* i contatori di problemi spariscono quando non c'e' niente da
+       segnalare; le indicazioni fisse (schierate, turno, punteggio)
+       non puntano a nessuna lista e restano sempre */
+    if (kind && !list.length) return;
+    const el = document.createElement(list.length ? "button" : "span");
+    el.className = "statchip" + (cls ? " " + cls : "");
+    el.textContent = txt;
+    if (list.length){
+      el.title = "Vai al primo · ripremi per il successivo";
+      el.addEventListener("click", () => {
+        const it = list[statCycle++ % list.length];
+        if (kind === "unit"){ state.sel = { type:"unit", id:it.uid }; focusUnit(it); }
+        else state.sel = { type:"terr", id:it };
+        renderAll();
+      });
+    }
+    host.appendChild(el);
+  };
+
+  add(`${placed.length}/${state.units.length} schierate`, "", [], null);
+  add(`${warn.length} fuori zona`, "warn", warn, "unit");
+  add(`${bad.length} in conflitto`, "bad", bad, "unit");
+  add(`${terr.length} avvisi terreno`, "warn", terr, "terr");
+  if (state.game.on){
+    const s = G.score();
+    add(`T${state.game.turn} ${G.phaseLabel()}`, "turn", [], null);
+    add(`−${s.A.lostPts} / −${s.B.lostPts} pt`, "", [], null);
+  }
 }
 function renderAll(){
-  reindex(); renderArmies(); renderInspector(); renderTerrainList(); drawBoard(); save();
+  reindex(); syncImportBox(); renderArmies(); renderInspector(); renderTerrainList();
+  G.renderGamePanel($("#game"), { esc });
+  drawBoard(); save();
 }
 
 /* ============================================================
@@ -751,45 +1020,136 @@ function autoDeploy(){
     u.x = x; u.y = y;
   }
   renderAll();
-  toast("Schieramento automatico completato — ora sistemalo a mano.");
+  toast("Schieramento automatico completato — Ctrl+Z se preferivi prima.");
 }
 
 /* ============================================================
    9 · INTERAZIONE
    ============================================================ */
-const svgEl = $("#board");
-let drag = null;
-function toSvg(evt){
-  const pt = svgEl.createSVGPoint();
-  pt.x = evt.clientX; pt.y = evt.clientY;
-  const p = pt.matrixTransform(svgEl.getScreenCTM().inverse());
-  return [p.x, p.y];
-}
+let drag = null, spin = null;
+const toSvg = evt => view.toBoard(evt);
 const snapVal = v => state.snap ? Math.round(v / (MM / 4)) * (MM / 4) : v;
 
+/* ------------------------------------------------------------------
+   Magnetismo fra reggimenti
+   La griglia da un quarto di pollice non serve a granche': il gesto
+   vero del wargame e' mettere due unita' in linea o spalla a spalla, e
+   a mano non viene mai preciso. Qui, se il pezzo trascinato si avvicina
+   al fianco o alla linea di un'altra unita' con lo stesso orientamento,
+   ci si aggancia.
+   ------------------------------------------------------------------ */
+const MAGNET = MM * 0.35;                     // poco piu' di un terzo di pollice
+
+function magnetise(u, x, y){
+  if (!state.snap) return [x, y];
+  const rot = ((u.rot % 360) + 360) % 360;
+  const a = -rot * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+  const toLoc = (px, py) => [px * c - py * s, px * s + py * c];
+  const toWld = (px, py) => [px * c + py * s, -px * s + py * c];
+
+  const halfW = unitW(u) / 2, halfD = unitD(u) / 2;
+  let [lx, ly] = toLoc(x, y);
+  let bestX = null, bestY = null, dX = MAGNET, dY = MAGNET;
+
+  for (const o of state.units){
+    if (o === u || !o.placed || o.dead) continue;
+    if ((((o.rot % 360) + 360) % 360) !== rot) continue;     // solo chi guarda dove guardo io
+    const [ox, oy] = toLoc(o.x, o.y);
+    const oW = unitW(o) / 2, oD = unitD(o) / 2;
+
+    /* fianco a fianco: il mio bordo destro contro il suo sinistro e
+       viceversa, con i fronti allineati */
+    for (const cand of [ox - oW - halfW, ox + oW + halfW]){
+      const d = Math.abs(lx - cand);
+      if (d < dX && Math.abs(ly - oy) < (halfD + oD)){ dX = d; bestX = cand; }
+    }
+    for (const cand of [oy - oD - halfD, oy + oD + halfD, oy]){
+      const d = Math.abs(ly - cand);
+      if (d < dY && Math.abs(lx - ox) < (halfW + oW) * 1.6){ dY = d; bestY = cand; }
+    }
+    /* e l'allineamento dei fianchi, per le seconde linee */
+    for (const cand of [ox, ox - oW + halfW, ox + oW - halfW]){
+      const d = Math.abs(lx - cand);
+      if (d < dX){ dX = d; bestX = cand; }
+    }
+  }
+  if (bestX !== null) lx = bestX;
+  if (bestY !== null) ly = bestY;
+  if (bestX === null && bestY === null) return [x, y];
+  const [wx, wy] = toWld(lx, ly);
+  return [bestX !== null ? wx : x, bestY !== null ? wy : y];
+}
+
+/* la maniglia di rotazione: un pallino davanti al pezzo selezionato */
+const HANDLE_OUT = 34;
+function handlePos(o){
+  const b = boxOf(o);
+  return toWorld([0, -b.h / 2 - HANDLE_OUT], b);
+}
+
 svgEl.addEventListener("pointerdown", e => {
+  if (e.button === 1 || e.shiftKey) return;         // quello e' scorrimento, se ne occupa view.js
   const p = toSvg(e);
+
   if (state.measure){
     if (state.measurePts.length >= 2) state.measurePts = [];
-    state.measurePts.push(p); drawBoard(); return;
+    state.measurePts.push(p);
+    if (state.measurePts.length === 2){
+      act("misura", () => {
+        state.rulers.push(state.measurePts.slice());
+        if (state.rulers.length > 8) state.rulers.shift();
+        state.measurePts = [];
+      });
+    } else drawBoard();
+    return;
   }
+
+  if (e.target.closest("[data-handle]")){
+    const obj = selectedObject();
+    if (obj){
+      history.push("ruota");
+      spin = { obj, start: obj.rot || 0 };
+      try { svgEl.setPointerCapture(e.pointerId); } catch (_) {}
+    }
+    return;
+  }
+
   const host = e.target.closest("[data-uid],[data-tid]");
-  if (!host){ state.sel = null; renderAll(); return; }
+  if (!host){
+    /* il vuoto non deseleziona subito: prima si prova a scorrere, e se
+       il dito non si e' mosso allora era davvero un clic a vuoto */
+    gestures.beginPan(e);
+    return;
+  }
   let obj = null;
   if (host.dataset.uid){ obj = state.units.find(x => x.uid === +host.dataset.uid); state.sel = { type:"unit", id:obj.uid }; }
   else { obj = state.terrain.find(x => x.tid === +host.dataset.tid); state.sel = { type:"terr", id:obj.tid }; }
-  drag = { obj, dx: obj.x - p[0], dy: obj.y - p[1] };
-  svgEl.setPointerCapture(e.pointerId);
+  history.push("sposta " + (obj.uid !== undefined ? shortName(obj.name) : TERRAIN[obj.kind].label.toLowerCase()));
+  drag = { obj, dx: obj.x - p[0], dy: obj.y - p[1], moved:false };
+  try { svgEl.setPointerCapture(e.pointerId); } catch (_) {}
   renderArmies(); renderInspector(); renderTerrainList(); drawBoard();
 });
+
 svgEl.addEventListener("pointermove", e => {
+  if (spin){
+    const p = toSvg(e);
+    let deg = Math.atan2(p[1] - spin.obj.y, p[0] - spin.obj.x) * 180 / Math.PI + 90;
+    if (!e.altKey) deg = Math.round(deg / (spin.obj.uid !== undefined ? 15 : 5)) * (spin.obj.uid !== undefined ? 15 : 5);
+    spin.obj.rot = ((Math.round(deg) % 360) + 360) % 360;
+    drawBoard();
+    return;
+  }
   if (!drag) return;
   const p = toSvg(e);
-  drag.obj.x = snapVal(p[0] + drag.dx);
-  drag.obj.y = snapVal(p[1] + drag.dy);
+  let x = snapVal(p[0] + drag.dx), y = snapVal(p[1] + drag.dy);
+  if (drag.obj.uid !== undefined) [x, y] = magnetise(drag.obj, x, y);
+  drag.obj.x = x; drag.obj.y = y;
+  drag.moved = true;
   drawBoard();
 });
+
 function endDrag(e){
+  if (spin){ spin = null; try { svgEl.releasePointerCapture(e.pointerId); } catch (_) {} renderAll(); return; }
   if (!drag) return;
   drag = null;
   try { svgEl.releasePointerCapture(e.pointerId); } catch (_) {}
@@ -798,34 +1158,97 @@ function endDrag(e){
 svgEl.addEventListener("pointerup", endDrag);
 svgEl.addEventListener("pointercancel", endDrag);
 
+/* rotella con Shift sopra un pezzo selezionato: cambia il fronte.
+   E' il secondo gesto piu' ripetuto dopo lo spostamento. */
+svgEl.addEventListener("wheel", e => {
+  if (!e.shiftKey) return;                  // senza Shift la rotella e' lo zoom
+  const u = selectedUnit();
+  if (!u) return;
+  /* stopImmediatePropagation e non stopPropagation: quando la rotella
+     arriva sull'SVG stesso, lo zoom di view.js e' un altro ascoltatore
+     dello STESSO elemento e la propagazione fermata non lo tocca —
+     cambierebbe il fronte e ingrandirebbe insieme */
+  e.preventDefault(); e.stopImmediatePropagation();
+  act("fronte", () => {
+    u.frontage = Math.max(1, Math.min(u.models, u.frontage + (e.deltaY > 0 ? -1 : 1)));
+  }, { coalesce: 500 });
+}, { passive:false, capture:true });
+
+const gestures = wireViewGestures(svgEl, view, {
+  onPanEnd: moved => { if (!moved && !drag && !spin) select(null); },
+});
+
+const selectedUnit = () =>
+  state.sel && state.sel.type === "unit" ? state.units.find(u => u.uid === state.sel.id) : null;
+const selectedTerrain = () =>
+  state.sel && state.sel.type === "terr" ? state.terrain.find(t => t.tid === state.sel.id) : null;
+const selectedObject = () => selectedUnit() || selectedTerrain();
+
 document.addEventListener("keydown", e => {
-  if (/input|select|textarea/i.test(e.target.tagName) || !state.sel) return;
+  if (/input|select|textarea/i.test(e.target.tagName)) return;
+
+  /* annulla e ripeti valgono sempre, anche senza niente selezionato */
+  const mod = e.ctrlKey || e.metaKey;
+  if (mod && (e.key === "z" || e.key === "Z") && !e.shiftKey){ e.preventDefault(); doUndo(); return; }
+  if (mod && ((e.key === "y" || e.key === "Y") || ((e.key === "z" || e.key === "Z") && e.shiftKey))){
+    e.preventDefault(); doRedo(); return;
+  }
+  if (mod) return;
+
+  /* inquadratura */
+  if (e.key === "+" || e.key === "="){ e.preventDefault(); view.zoomBy(1.25); return; }
+  if (e.key === "-" || e.key === "_"){ e.preventDefault(); view.zoomBy(1 / 1.25); return; }
+  if (e.key === "0"){ e.preventDefault(); view.fit(); return; }
+
+  if (!state.sel) return;
   const isUnit = state.sel.type === "unit";
-  const obj = isUnit ? state.units.find(x => x.uid === state.sel.id) : state.terrain.find(x => x.tid === state.sel.id);
+  const obj = selectedObject();
   if (!obj) return;
   const step = e.shiftKey ? MM : MM / 4;
-  const spin = isUnit ? 90 : 15;
-  let handled = true;
+  const turn = isUnit ? 90 : 15;
+  /* prima si decide cosa fare, poi act() mette da parte lo stato di
+     prima e solo dopo esegue: al contrario si salverebbe il tavolo
+     gia' modificato e Annulla non tornerebbe da nessuna parte */
+  let label = "sposta", change = null;
   switch (e.key){
-    case "ArrowLeft":  obj.x -= step; break;
-    case "ArrowRight": obj.x += step; break;
-    case "ArrowUp":    obj.y -= step; break;
-    case "ArrowDown":  obj.y += step; break;
-    case "q": case "Q": obj.rot = ((obj.rot || 0) + 360 - spin) % 360; break;
-    case "e": case "E": obj.rot = ((obj.rot || 0) + spin) % 360; break;
+    case "ArrowLeft":  change = () => { obj.x -= step; }; break;
+    case "ArrowRight": change = () => { obj.x += step; }; break;
+    case "ArrowUp":    change = () => { obj.y -= step; }; break;
+    case "ArrowDown":  change = () => { obj.y += step; }; break;
+    case "q": case "Q": label = "ruota"; change = () => { obj.rot = ((obj.rot || 0) + 360 - turn) % 360; }; break;
+    case "e": case "E": label = "ruota"; change = () => { obj.rot = ((obj.rot || 0) + turn) % 360; }; break;
+    case "[": if (isUnit){ label = "fronte"; change = () => { obj.frontage = Math.max(1, obj.frontage - 1); }; } break;
+    case "]": if (isUnit){ label = "fronte"; change = () => { obj.frontage = Math.min(obj.models, obj.frontage + 1); }; } break;
     case "Delete": case "Backspace":
-      if (isUnit) obj.placed = false;
-      else { state.terrain = state.terrain.filter(x => x !== obj); state.sel = null; }
+      label = isUnit ? "ritira" : "togli";
+      change = () => {
+        if (isUnit) obj.placed = false;
+        else { state.terrain = state.terrain.filter(x => x !== obj); state.sel = null; }
+      };
       break;
-    default: handled = false;
   }
-  if (handled){ e.preventDefault(); renderAll(); }
+  if (!change) return;
+  e.preventDefault();
+  act(label, change, { coalesce: /^(sposta|ruota|fronte)$/.test(label) ? 700 : 0 });
 });
+
+function doUndo(){
+  const l = history.undo();
+  if (l) toast("Annullato: " + l);
+  else toast("Non c'è altro da annullare.");
+}
+function doRedo(){
+  const l = history.redo();
+  if (l) toast("Rifatto: " + l);
+}
 
 /* ============================================================
    10 · IMPORT
    ============================================================ */
 function addRoster(parsed, armyId){
+  /* importare sostituisce in blocco un esercito: se e' il file
+     sbagliato, Ctrl+Z deve riportare indietro quello di prima */
+  history.push("importa esercito " + armyId);
   const army = state.armies[armyId];
   // se la lista è intitolata come uno scenario, per l'esercito usiamo la fazione
   const isScenarioTitle = Object.values(SCENARIOS).some(s =>
@@ -834,7 +1257,9 @@ function addRoster(parsed, armyId){
   army.info = { catalogue: parsed.catalogue, forceName: parsed.forceName, limit: parsed.limit, total: parsed.total };
   state.units = state.units.filter(u => u.army !== armyId);
   for (const p of parsed.units)
-    state.units.push({ uid: uidSeq++, army: armyId, ...p, catId: matchUnitName(p.name), x:0, y:0, rot: armyId === "A" ? 0 : 180, placed:false });
+    state.units.push({ uid: uidSeq++, army: armyId, ...p, catId: matchUnitName(p.name),
+                       x:0, y:0, rot: armyId === "A" ? 0 : 180, placed:false,
+                       lost:0, dead:false, fled:false });
 
   const sum = parsed.units.reduce((s, u) => s + u.pts, 0);
   state.rawInfo = `[${armyId}] ${parsed.rosterName} — ${parsed.catalogue || "?"} · ${parsed.forceName || "?"}\n` +
@@ -899,13 +1324,12 @@ document.addEventListener("drop", e => {
 $("#btn-paste").addEventListener("click", () => { $("#paste-box").hidden = !$("#paste-box").hidden; });
 $("#btn-paste-a").addEventListener("click", () => handleText($("#paste-area").value, "A"));
 $("#btn-paste-b").addEventListener("click", () => handleText($("#paste-area").value, "B"));
-$("#btn-clear").addEventListener("click", () => {
+$("#btn-clear").addEventListener("click", () => act("svuota le liste", () => {
   state.units = []; state.sel = null; state.rawInfo = "";
   state.armies.A = { id:"A", name:"Esercito A", color:"var(--armyA)", info:null };
   state.armies.B = { id:"B", name:"Esercito B", color:"var(--armyB)", info:null };
   $("#raw-wrap").hidden = true;
-  renderAll();
-});
+}));
 
 /* ---------- lista d'esempio ---------- */
 const DEMO = {
@@ -925,6 +1349,7 @@ const DEMO = {
   ]},
 };
 $("#btn-demo").addEventListener("click", () => {
+  history.push("carica l'esempio");
   state.units = [];
   for (const id of ["A", "B"]){
     state.armies[id].name = DEMO[id].name;
@@ -938,6 +1363,7 @@ $("#btn-demo").addEventListener("click", () => {
         frontage: defaultFrontage(troop, models, loose), loose,
         pts, us, troop, unitSize:"", stats, rules, weapons:[], maxRange, slot:"", faction:"",
         x:0, y:0, rot: id === "A" ? 0 : 180, placed:false,
+        lost:0, dead:false, fled:false,
       });
     }
   }
@@ -948,16 +1374,21 @@ $("#btn-demo").addEventListener("click", () => {
    11 · CONTROLLI
    ============================================================ */
 const scSel = $("#scenario");
-(function fillScenarios(){
+function fillScenarioSelect(){
   const groups = {};
-  for (const [id, s] of Object.entries(SCENARIOS)) (groups[s.group] ||= []).push([id, s]);
-  scSel.innerHTML = Object.entries(groups).map(([gname, items]) =>
-    `<optgroup label="${gname}">${items.map(([id, s]) =>
-      `<option value="${id}">${s.label}${s.pts ? ` — ${s.pts} pt` : ""}</option>`).join("")}</optgroup>`).join("");
-})();
+  for (const [id, s] of Object.entries(allScenarios())) (groups[s.group] ||= []).push([id, s]);
+  const order = ["Battle March", "Generici", "Miei scenari"];
+  const keys = Object.keys(groups).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  const keep = scSel.value;
+  scSel.innerHTML = keys.map(gname =>
+    `<optgroup label="${gname}">${groups[gname].map(([id, s]) =>
+      `<option value="${esc(id)}">${esc(s.label)}${s.pts ? ` — ${s.pts} pt` : ""}</option>`).join("")}</optgroup>`).join("");
+  if (keep) scSel.value = keep;
+}
+fillScenarioSelect();
 
 function loadTerrain(id){
-  const def = SCENARIOS[id];
+  const def = scenarioDef(id);
   state.terrain = (def.terrain || []).map(t => ({
     tid: tidSeq++, kind:t.kind,
     x: t.x * MM, y: t.y * MM,
@@ -965,70 +1396,195 @@ function loadTerrain(id){
     rot: t.rot || 0,
   }));
 }
-function setScenario(id, keepTerrain){
-  const def = SCENARIOS[id];
+function setScenario(id, keepTerrain, { render = true } = {}){
+  const def = scenarioDef(id);
   state.scenario = id;
   state.tableW = def.table[0] * MM;
   state.tableH = def.table[1] * MM;
   state.gap = def.gap * MM;
+  fillScenarioSelect();
   scSel.value = id;
   $("#table-size").value = `${def.table[0]}x${def.table[1]}`;
   $("#zone-gap").value = String(def.gap);
   if (!keepTerrain && def.terrain) loadTerrain(id);
   else if (!keepTerrain && !def.terrain) { /* gli scenari generici lasciano il terreno com'è */ }
   for (const u of state.units) if (u.placed) place(u);
-  renderAll();
+  view.fit();
+  if (render) renderAll();
 }
-scSel.addEventListener("change", () => setScenario(scSel.value));
-$("#table-size").addEventListener("change", e => {
+scSel.addEventListener("change", () => act("scenario", () => setScenario(scSel.value, false, { render:false }), { render:true }));
+$("#table-size").addEventListener("change", e => act("misura del tavolo", () => {
   const [w, h] = e.target.value.split("x").map(Number);
   state.tableW = w * MM; state.tableH = h * MM;
   for (const u of state.units) if (u.placed) place(u);
-  renderAll();
-});
-$("#zone-gap").addEventListener("change", e => { state.gap = +e.target.value * MM; renderAll(); });
+  view.fit();
+}));
+$("#zone-gap").addEventListener("change", e => act("zone", () => { state.gap = +e.target.value * MM; }));
 
 (function fillPalette(){
   const host = $("#palette");
+  /* l'HTML ne disegna una copia statica per chi arriva a moduli non
+     ancora caricati: senza questa riga restava sotto, muta, e la
+     tavolozza appariva doppia */
+  host.innerHTML = "";
   for (const [kind, cfg] of Object.entries(TERRAIN)){
     const b = document.createElement("button");
     b.className = "btn tiny";
     b.innerHTML = `<span class="pdot" style="background:${cfg.color};${cfg.shape === "circle" || cfg.shape === "token" ? "border-radius:50%;" : ""}"></span>${cfg.label}`;
     b.addEventListener("click", () => {
-      const t = { tid: tidSeq++, kind, x: state.tableW / 2, y: state.tableH / 2, w: cfg.w, h: cfg.h, rot: 0 };
-      // scosta leggermente se il centro è già occupato
-      let n = state.terrain.length;
-      t.x += (n % 5) * 30 - 60; t.y += Math.floor(n / 5) * 30 - 30;
-      state.terrain.push(t);
-      state.sel = { type:"terr", id:t.tid };
-      renderAll();
+      act("aggiungi " + cfg.label.toLowerCase(), () => {
+        const t = { tid: tidSeq++, kind, x: state.tableW / 2, y: state.tableH / 2, w: cfg.w, h: cfg.h, rot: 0 };
+        // scosta leggermente se il centro è già occupato
+        const n = state.terrain.length;
+        t.x += (n % 5) * 30 - 60; t.y += Math.floor(n / 5) * 30 - 30;
+        state.terrain.push(t);
+        state.sel = { type:"terr", id:t.tid };
+      });
     });
     host.appendChild(b);
   }
 })();
 $("#btn-terr-reset").addEventListener("click", () => {
-  const def = SCENARIOS[state.scenario];
+  const def = scenarioDef(state.scenario);
   if (!def.terrain){ toast("Questo scenario non ha una mappa di terreno predefinita."); return; }
-  loadTerrain(state.scenario); renderAll();
+  act("terreno dello scenario", () => loadTerrain(state.scenario));
   toast("Terreno riportato alla mappa dello scenario.");
 });
-$("#btn-terr-clear").addEventListener("click", () => { state.terrain = []; state.sel = null; renderAll(); });
+$("#btn-terr-clear").addEventListener("click", () =>
+  act("svuota il terreno", () => { state.terrain = []; state.sel = null; }));
 
-const toggle = (sel, key) => {
+const TOGGLES = [
+  ["#btn-snap", "snap"], ["#btn-labels", "labels"], ["#btn-ranges", "ranges"],
+  ["#btn-measure", "measure"], ["#btn-photos", "photos"],
+  ["#btn-dist", "distances"], ["#btn-arcs", "arcs"],
+];
+for (const [sel, key] of TOGGLES){
   const b = $(sel);
-  const sync = () => b.classList.toggle("on", !!state[key]);
+  if (!b) continue;
   b.addEventListener("click", () => {
     state[key] = !state[key];
     if (key === "measure" && !state.measure) state.measurePts = [];
-    sync(); drawBoard(); save();
+    b.classList.toggle("on", !!state[key]);
+    drawBoard(); save();
   });
-  sync();
-};
-toggle("#btn-snap", "snap"); toggle("#btn-labels", "labels");
-toggle("#btn-ranges", "ranges"); toggle("#btn-measure", "measure");
-toggle("#btn-photos", "photos");
-$("#btn-auto").addEventListener("click", autoDeploy);
-$("#btn-recall").addEventListener("click", () => { for (const u of state.units) u.placed = false; renderAll(); });
+  b.classList.toggle("on", !!state[key]);
+}
+$("#btn-auto").addEventListener("click", () => act("schiera tutto", autoDeploy, { render:false }));
+$("#btn-recall").addEventListener("click", () =>
+  act("ritira tutto", () => { for (const u of state.units) u.placed = false; }));
+
+/* ---------- inquadratura ---------- */
+$("#btn-zoom-in").addEventListener("click", () => view.zoomBy(1.3));
+$("#btn-zoom-out").addEventListener("click", () => view.zoomBy(1 / 1.3));
+$("#btn-fit").addEventListener("click", () => view.fit());
+
+/* ---------- annulla / ripeti ---------- */
+$("#btn-undo").addEventListener("click", doUndo);
+$("#btn-redo").addEventListener("click", doRedo);
+
+/* ---------- righelli ---------- */
+$("#btn-rulers-clear").addEventListener("click", () => act("togli i righelli", () => {
+  state.rulers = []; state.measurePts = [];
+}));
+
+/* ---------- immagine e link ---------- */
+$("#btn-png").addEventListener("click", async () => {
+  const prevSel = state.sel;
+  state.sel = null; drawBoard();                 // niente maniglie nell'immagine
+  try {
+    await exportPNG(svgEl, {
+      box: baseBox(), width: 2400,
+      filename: `${(scenarioDef(state.scenario).label || "tavolo").replace(/[^\w\-]+/g, "-").toLowerCase()}.png`,
+    });
+    toast("Immagine del tavolo scaricata.");
+  } catch (err){ toast("Non riesco a creare l'immagine: " + err.message); }
+  state.sel = prevSel; drawBoard();
+});
+
+$("#btn-share").addEventListener("click", async () => {
+  try {
+    const url = await shareUrl(snapshot());
+    if (url.length > 60000){ toast("Schieramento troppo grande per un link."); return; }
+    const ok = await copyText(url);
+    toast(ok ? `Link copiato (${(url.length / 1024).toFixed(1)} kB) — le foto restano qui da te.`
+             : "Non riesco a copiare: il link è nella barra degli indirizzi.");
+    if (!ok) location.hash = url.slice(url.indexOf("#") + 1);
+  } catch (err){ toast("Non riesco a creare il link: " + err.message); }
+});
+
+/* ---------- terreno casuale e scenari propri ---------- */
+$("#btn-terr-random").addEventListener("click", () => {
+  const def = scenarioDef(state.scenario);
+  act("terreno casuale", () => {
+    const list = randomTerrain(inch(state.tableW), inch(state.tableH), {
+      pieces: 8, mirror: true, treasures: def.group === "Battle March" ? 3 : 2,
+      battleMarch: def.group === "Battle March",
+    });
+    state.terrain = list.map(t => ({
+      tid: tidSeq++, kind:t.kind, x:t.x * MM, y:t.y * MM, w:t.w, h:t.h, rot:t.rot || 0,
+    }));
+    state.sel = null;
+  });
+  toast("Terreno generato a specchio: stessi appigli per tutti e due.");
+});
+
+$("#btn-scen-save").addEventListener("click", async () => {
+  const name = prompt("Nome dello scenario:", scenarioDef(state.scenario).label + " (mio)");
+  if (name === null) return;
+  const id = await saveCustom({
+    name: name.trim() || "Scenario mio",
+    table: [Math.round(inch(state.tableW)), Math.round(inch(state.tableH))],
+    gap: Math.round(inch(state.gap)),
+    deploy: scenarioDef(state.scenario).deploy,
+    desc: "Terreno salvato dal tavolo il " + new Date().toLocaleDateString("it-IT") + ".",
+    terrain: state.terrain.map(t => ({
+      kind:t.kind, x:+inch(t.x).toFixed(2), y:+inch(t.y).toFixed(2),
+      w:t.w, h:t.h, rot:t.rot || 0,
+    })),
+  });
+  fillScenarioSelect();
+  state.scenario = id; scSel.value = id;
+  renderAll();
+  toast("Scenario salvato: lo ritrovi in “Miei scenari”.");
+});
+
+$("#btn-scen-del").addEventListener("click", async () => {
+  const cur = allCustom().find(s => s.id === state.scenario);
+  if (!cur){ toast("Questo non è uno scenario tuo: quelli del manuale restano dove sono."); return; }
+  if (!confirm(`Elimino lo scenario “${cur.label}”? Il terreno sul tavolo resta.`)) return;
+  await removeCustom(cur.id);
+  fillScenarioSelect();
+  setScenario("open", true);
+  toast("Scenario eliminato.");
+});
+/* ---------- pannello a scomparsa (tablet e telefono) ---------- */
+const drawerBtn = $("#btn-drawer");
+if (drawerBtn){
+  drawerBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    document.body.classList.toggle("drawer-open");
+  });
+  document.addEventListener("click", e => {
+    if (!document.body.classList.contains("drawer-open")) return;
+    if (e.target.closest("aside") || e.target.closest("#btn-drawer")) return;
+    document.body.classList.remove("drawer-open");
+  });
+}
+
+/* ---------- "Importa liste" si ripiega quando le liste ci sono già ----------
+   Occupava il primo schermo per sempre, anche a tavolo pieno. Se però
+   l'utente lo apre o lo chiude a mano, da lì in poi decide lui. */
+let importBoxTouched = false;
+const importBox = $("#import-box");
+if (importBox){
+  importBox.addEventListener("toggle", () => { importBoxTouched = true; });
+}
+function syncImportBox(){
+  if (!importBox || importBoxTouched) return;
+  const want = !state.units.length;
+  if (importBox.open !== want) importBox.open = want;
+}
+
 $("#btn-theme").addEventListener("click", () => {
   const cur = document.documentElement.getAttribute("data-theme");
   const next = cur === "dark" ? "light" : (cur === "light" ? null : "dark");
@@ -1062,6 +1618,8 @@ function snapshot(){
     units:state.units, terrain:state.terrain, scenario:state.scenario,
     tableW:state.tableW, tableH:state.tableH, gap:state.gap,
     snap:state.snap, labels:state.labels, ranges:state.ranges, photos:state.photos,
+    distances:state.distances, arcs:state.arcs,
+    rulers:state.rulers, game:state.game, sel:state.sel,
   };
 }
 function save(){
@@ -1080,7 +1638,7 @@ function applySnapshot(s){
   state.terrain = Array.isArray(s.terrain) ? s.terrain : [];
   uidSeq = Math.max(1, ...state.units.map(u => u.uid || 0)) + 1;
   tidSeq = Math.max(1, ...state.terrain.map(t => t.tid || 0)) + 1;
-  state.scenario = SCENARIOS[s.scenario] ? s.scenario : state.scenario;
+  state.scenario = allScenarios()[s.scenario] ? s.scenario : state.scenario;
   state.tableW = s.tableW || state.tableW;
   state.tableH = s.tableH || state.tableH;
   state.gap = s.gap || state.gap;
@@ -1088,24 +1646,31 @@ function applySnapshot(s){
   state.labels = s.labels !== false;
   state.ranges = !!s.ranges;
   state.photos = s.photos !== false;
+  state.distances = !!s.distances;
+  state.arcs = !!s.arcs;
+  state.rulers = Array.isArray(s.rulers) ? s.rulers : [];
+  state.game = s.game && typeof s.game === "object" ? s.game : G.emptyGame();
+  state.game.log = Array.isArray(state.game.log) ? state.game.log : [];
+  state.sel = s.sel && typeof s.sel === "object" ? s.sel : null;
+  state.measurePts = [];
+  fillScenarioSelect();
   scSel.value = state.scenario;
   $("#table-size").value = `${Math.round(inch(state.tableW))}x${Math.round(inch(state.tableH))}`;
   $("#zone-gap").value = String(Math.round(inch(state.gap)));
-  $("#btn-snap").classList.toggle("on", state.snap);
-  $("#btn-labels").classList.toggle("on", state.labels);
-  $("#btn-ranges").classList.toggle("on", state.ranges);
-  $("#btn-photos").classList.toggle("on", state.photos);
+  for (const [sel, key] of TOGGLES) $(sel).classList.toggle("on", !!state[key]);
   return true;
 }
 
 /* carica una lista salvata dentro un esercito del tavolo */
 function loadArmyFromList(list, armyId){
+  history.push("carica " + (list.name || "lista"));
   state.units = state.units.filter(u => u.army !== armyId);
   for (const p of list.units){
     state.units.push({
       uid: uidSeq++, army: armyId, ...p,
       catId: p.catId || matchUnitName(p.name),
       x:0, y:0, rot: armyId === "A" ? 0 : 180, placed:false,
+      lost:0, dead:false, fled:false,
     });
   }
   state.armies[armyId].name = list.name;
@@ -1113,12 +1678,48 @@ function loadArmyFromList(list, armyId){
   renderAll();
 }
 
+/* Incollare un link condiviso in una scheda gia' aperta cambia solo il
+   frammento: il browser non ricarica niente e senza questo ascoltatore
+   non succederebbe assolutamente nulla. */
+async function loadShared(code){
+  try {
+    const shared = await decodeBoard(code);
+    if (!applySnapshot(shared)) throw new Error("schieramento vuoto");
+    history.reset(); view.fit(); renderAll();
+    toast("Schieramento condiviso caricato — le foto sono quelle del tuo catalogo.");
+    return true;
+  } catch (err){
+    toast("Il link non è leggibile: " + err.message);
+    return false;
+  }
+}
+
+window.addEventListener("hashchange", () => {
+  const code = readShareCode();
+  if (!code) return;
+  if (!confirm("Questo link contiene uno schieramento. Lo apro al posto di quello sul tavolo?")) return;
+  loadShared(code);
+});
+
 async function bootDeploy(){
   const th = localStorage.getItem("tow-theme");
   if (th) document.documentElement.setAttribute("data-theme", th);
+
+  await initScenarioKit();
+  fillScenarioSelect();
+  G.initGame({ getState: () => state, act });
+
+  /* un link condiviso vince sull'ultimo tavolo: se sei arrivato qui da
+     un #s=… e' quello che vuoi vedere */
+  const code = readShareCode();
+  if (code && await loadShared(code)) return { shared: true };
+
   const saved = await loadDoc(BOARD_KEY, null);
   if (saved && applySnapshot(saved) && state.units.length) renderAll();
   else { setScenario("bm-guado"); $("#btn-demo").click(); }
+  history.reset();
+  view.fit();
+  return { shared: false };
 }
 
 /* chiamata da main.js quando il catalogo cambia */
@@ -1126,4 +1727,5 @@ function refreshLinks(){
   if (healLinks()) save();
 }
 
-export { state, renderAll, bootDeploy, loadArmyFromList, snapshot, applySnapshot, setScenario, refreshLinks };
+export { state, renderAll, bootDeploy, loadArmyFromList, snapshot, applySnapshot,
+         setScenario, refreshLinks, history, view, act, toast, effModels };

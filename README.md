@@ -1,12 +1,13 @@
 # Schieramento Old World
 
-Tre cose che si tengono per mano, per **Warhammer: The Old World**:
+Quattro cose che si tengono per mano, per **Warhammer: The Old World**:
 
 1. **Catalogo** — la collezione di miniature, una voce per tipo di modello, con quante ne possiedi e una foto.
 2. **Liste** — i roster esportati da New Recruit, con ogni unità agganciata a una voce del catalogo.
 3. **Matchup e tavolo** — due liste a confronto, la verifica di cosa hai davvero in vetrina, e il simulatore di schieramento con zone, terreno e controlli di legalità.
+4. **Partita** — turni, fasi, perdite e tabellino, per quando lo schieramento è finito e si comincia a giocare.
 
-Tutto gira nel browser. Nessun server, nessun account, nessun dato che esce dal dispositivo.
+Tutto gira nel browser. Nessun server, nessun account, nessun dato che esce dal dispositivo. Si installa come app e funziona senza rete.
 
 ---
 
@@ -21,11 +22,14 @@ Scheda **Catalogo** → *Nuova voce*. Una voce è un **tipo di modello**, non un
 | Nome | `Black Orc` |
 | Fazione | `Orc & Goblin Tribes` |
 | Quantità posseduta | `12` |
+| Quante ne hai dipinte | `8` |
 | Basetta | `25×25 — fanteria` |
 
 Poi tocca il riquadro della foto e carica un'immagine delle tue miniature dipinte. Viene ridotta a un quadrato da 256 px (~15 KB) prima di essere salvata: le foto da telefono così come sono riempirebbero la quota in poche decine di scatti.
 
 Perché per tipo e non per singola miniatura: i tuoi 24 Orc Boyz sono un mob da 25 in una lista e due mob da 12 in un'altra. L'unico conteggio che regge sotto queste condizioni è *tipo + quantità*.
+
+Il campo **dipinte** serve alla domanda che ci si fa davvero prima di un torneo, che non è "ce le ho?" ma "sono finite?". In cima al catalogo c'è la percentuale sull'intera collezione; nel matchup diventa *quante ne restano da dipingere per giocare proprio questa lista* — contando solo quelle che possiedi già, perché quelle che non hai sono un problema diverso e stanno nella riga dello scoperto.
 
 ### 2. Importa le liste
 
@@ -42,7 +46,9 @@ Scheda **Matchup**: scegli le due liste e dichiara chi porta le miniature.
 - **Solo l'esercito A (o B) è mio** — la verifica confronta quella lista con la collezione.
 - **Entrambi dalla mia collezione** — le due liste vengono **sommate** prima del confronto. È il caso in cui giochi in casa con entrambi gli eserciti tuoi: se una voce compare in tutte e due, gli stessi modelli fisici non possono essere schierati due volte, e senza la somma il controllo direbbe di sì a torto.
 
-Il verdetto elenca ogni voce con `richiesti/posseduti` e segna in rosso lo scoperto.
+Il verdetto elenca ogni voce con `richiesti/posseduti`, segna in rosso lo scoperto e in giallo quello che possiedi ma non hai ancora dipinto. Sopra, i due eserciti sono messi **a confronto**: punti, unità, modelli, unit strength, quante unità tirano, punti per unità — chi è in vantaggio su ogni riga è in grassetto.
+
+*Copia cosa manca* mette negli appunti due elenchi in chiaro, **da procurare** e **da dipingere**, da incollare dove vuoi.
 
 *Porta sul tavolo* carica le due liste negli eserciti A e B del simulatore.
 
@@ -50,9 +56,49 @@ Il verdetto elenca ogni voce con `richiesti/posseduti` e segna in rosso lo scope
 
 Scenari Battle March e generici, zone di schieramento, terreno con i controlli (tesori a più di 3″ da ogni elemento, nessun pezzo oltre i 12″ sul lato lungo), rotazione, snap a ¼″, misurazione.
 
-Ogni unità nella lista laterale mostra **un'anteprima per modello**: 11 Black Orc = 11 anteprime, con la foto presa dal catalogo. Finché la foto non c'è restano quadrati nel colore dell'esercito.
+**Annulla e ripeti.** `Ctrl+Z` e `Ctrl+Y`, o le due frecce nella barra. Vale per tutto: uno spostamento, una rotazione, un *Schiera tutto* premuto per sbaglio sopra dieci minuti di lavoro, una generazione di terreno, una perdita segnata di troppo. Il tooltip dice sempre cosa si sta per annullare.
+
+**Zoom e scorrimento.** Rotella per ingrandire attorno al puntatore, `Shift`+trascinamento (o trascinare il vuoto) per spostarsi, pizzico a due dita su tablet, `+` `−` `0` da tastiera, *Adatta* per tornare al tavolo intero. Su 96″×48″ senza zoom una basetta da 25 mm è tre pixel.
+
+**Magnetismo.** Con lo Snap acceso il pezzo trascinato non si aggancia solo alla griglia da ¼″: se si avvicina al fianco o alla linea di un'altra unità **con lo stesso orientamento**, ci si allinea da solo. È il gesto che al tavolo si fa cento volte e a mano non viene mai preciso.
+
+**Maniglia di rotazione.** Sul pezzo selezionato compare un pallino davanti al fronte: trascinandolo si ruota (a scatti di 15° per le unità, 5° per il terreno; `Alt` per la rotazione libera). `[` e `]` — o `Shift`+rotella — cambiano il numero di modelli di fronte.
+
+**Aiuti tattici.** *Distanze* misura dal **bordo** verso ogni nemico, come si misura davvero, e segna tratteggiate le linee che un bosco o un monolite interrompono. *Archi* disegna l'arco frontale e la portata di carica (M+7 media, M+12 massima). Chi finisce nell'arco entro la carica è verde.
+
+**Righelli.** *Misura*, due clic, e la misura **resta** sul tavolo; se ne tengono fino a otto. Il tasto `⌫` accanto le toglie tutte.
+
+**Terreno casuale.** Genera una mappa **a specchio** — quello che mette in una metà lo ripete ruotato di mezzo giro nell'altra — rispettando da sola i vincoli che l'app già controlla. *Salva come scenario* mette tavolo, zone e terreno fra i **Miei scenari**, accanto a quelli del manuale.
+
+**Immagine e link.** *Immagine* scarica il tavolo intero come PNG da mandare nel gruppo o stampare. *Link* copia un indirizzo che **contiene** lo schieramento: sta nel frammento dopo il `#`, quindi non arriva a nessun server, e un tavolo con ventiquattro unità occupa meno di un kilobyte. Le foto non ci viaggiano dentro: chi apre il link vede le sue.
+
+Ogni unità nella lista laterale mostra una foto e il moltiplicatore; l'**unità selezionata** apre la striscia intera, un'anteprima per modello.
 
 *Salva schieramento* dalla scheda Matchup archivia la disposizione corrente; la ritrovi in fondo alla stessa scheda.
+
+### 5. Partita
+
+*Comincia la partita*, nel pannello di sinistra. Non arbitra niente e non conosce le regole: tiene il conto di quello che al tavolo si dimentica sempre.
+
+- **Turno e fase** — Strategia, Movimento, Tiro, Corpo a corpo, poi passa la mano; finito il giro il turno cresce.
+- **Perdite** — nell'ispettore dell'unità. Tolti i modelli, il reggimento **perde i ranghi di dietro e sul tavolo si accorcia da solo**, come le miniature vere. Arrivato a zero esce dal campo.
+- **Tabellino** — quanti punti restano in campo e quanti ne sono andati, per parte, calcolati in proporzione ai modelli persi.
+- **Registro** — ogni perdita e ogni annotazione, con turno e fase.
+
+Anche qui vale l'annulla: una perdita segnata sull'unità sbagliata si toglie con `Ctrl+Z`.
+
+---
+
+## Installarla
+
+C'è un manifest e un service worker: Chrome, Edge e Safari propongono **Installa app**. Ne guadagni due cose, e la seconda vale più della prima:
+
+1. al circolo non c'è campo, e l'app si apre lo stesso — il guscio è in cache, i dati sono già locali;
+2. un sito installato ottiene da Chrome ed Edge la **persistenza dell'archivio** senza chiedere niente, cioè il browser smette di poter buttare via la collezione nelle sue pulizie automatiche.
+
+Le icone si rigenerano con `npm run icons` (le disegna [`tools/make-icons.mjs`](tools/make-icons.mjs) scrivendo il PNG a mano, così il progetto resta senza dipendenze anche per quelle).
+
+Quando pubblichi una versione nuova, la prima apertura mostra ancora quella vecchia e avvisa; alla ricarica successiva è aggiornata.
 
 ---
 
@@ -92,6 +138,8 @@ In **IndexedDB**, nel browser, sotto il dominio da cui apri la pagina. localStor
 
 Conseguenza da tenere a mente: i dati sono **legati a quel browser su quel dispositivo**. Aprendo la stessa pagina dal telefono trovi un archivio vuoto.
 
+All'avvio la pagina chiede al browser di marcare l'archivio come **persistente**: senza quel permesso i dati sono “best effort” e il browser può buttarli via da solo (Safari dopo ~7 giorni senza visite, Chrome quando il disco va in pressione). Chrome ed Edge lo concedono in automatico ai siti usati spesso o installati, Firefox chiede conferma, e aprendo il file con doppio clic (`file://`) l'API non esiste proprio. Se il permesso manca, la riga di stato del catalogo lo scrive: *archivio non protetto, tieni un Backup*.
+
 Per spostarli usa **Backup** (scarica un JSON con tutto, foto comprese) e **Ripristina** sull'altro dispositivo. Vale anche come copia di sicurezza: `localStorage` e IndexedDB spariscono se cancelli i dati del sito.
 
 ---
@@ -101,25 +149,38 @@ Per spostarli usa **Backup** (scarica un JSON con tutto, foto comprese) e **Ripr
 ```
 index.html            guscio, schede, contenitori
 styles/app.css        tutto il foglio di stile
+manifest.webmanifest  nome, icone, colori dell'app installata
+sw.js                 service worker: guscio in cache, app senza rete
+icons/                icone PNG, generate da tools/make-icons.mjs
 src/
   util.js             quattro funzioni di servizio
   bases.js            basette e frontage predefinito per tipo di truppa
   parser.js           lettura dei file New Recruit / BattleScribe
   terrain.js          tipi di elemento scenico e loro limiti
   scenarios.js        scenari, zone di schieramento, geometria
+  geom.js             geometria pura: sovrapposizioni, distanze, viste
   store.js            IndexedDB, ridimensionamento foto, backup
   bus.js              eventi, per non far importare i moduli fra loro
-  catalog.js          voci di collezione, foto, aggancio dei nomi
+  history.js          annulla e ripeti, su copie dello stato del tavolo
+  view.js             zoom, scorrimento, pizzico, inquadratura
+  imgexport.js        il tavolo come PNG, con i colori risolti
+  share.js            schieramento dentro un link, compresso
+  tactics.js          distanze dal bordo, linea di vista, archi di carica
+  game.js             turni, fasi, perdite, tabellino, registro
+  scenariokit.js      scenari propri e generatore di terreno a specchio
+  catalog.js          voci di collezione, foto, pittura, aggancio dei nomi
   lists.js            liste salvate e collegamento unità → catalogo
-  matchup.js          disponibilità, schieramenti salvati
+  matchup.js          disponibilità, confronto, schieramenti salvati
   deploy.js           stato del tavolo, pannelli, campo di battaglia
-  main.js             avvio e schede
+  main.js             avvio, schede, registrazione del service worker
 test/
-  smoke.mjs           catalogo, aggancio, import, copertura, persistenza
-  boot.mjs            avvia la pagina intera e gira fra le schede
+  smoke.mjs           catalogo, aggancio, import, copertura, pittura
+  boot.mjs            la pagina intera: schede, annulla, zoom, partita, link
+tools/
+  make-icons.mjs      scrive i PNG del manifest senza dipendenze
 ```
 
-`deploy.js` è grosso perché stato, pannelli e disegno del campo sono davvero un blocco solo: spezzarlo produrrebbe moduli che si importano a vicenda senza guadagnare niente.
+`deploy.js` resta il modulo grosso perché stato, pannelli e disegno del campo sono davvero un blocco solo. Quello che se n'è potuto staccare è uscito: la geometria (`geom.js`) perché ora la usano anche gli aiuti tattici e il generatore di terreno; la storia, la vista, la partita e gli scenari propri perché non hanno bisogno di sapere niente del tavolo — ricevono dei callback e basta, così la dipendenza va in una direzione sola e non si formano cicli.
 
 ### Prove
 
@@ -128,7 +189,7 @@ npm install
 npm test
 ```
 
-Girano in jsdom con IndexedDB finto, senza browser.
+Girano in jsdom con IndexedDB finto, senza browser. `boot.mjs` avvia davvero la pagina intera e poi la usa: annulla e ripeti, zoom, distanze misurate dal bordo, righelli, una partita con perdite e unità distrutta, terreno casuale (verificando che sia specchiato e che nessun tesoro finisca sotto i 3″), salvataggio di uno scenario proprio, andata e ritorno del link condiviso e serializzazione del PNG.
 
 ---
 
@@ -136,7 +197,11 @@ Girano in jsdom con IndexedDB finto, senza browser.
 
 - L'aggancio automatico è volutamente prudente: se ha un dubbio non decide e chiede. Meglio una spunta gialla che un conteggio sbagliato in silenzio.
 - Le anteprime per modello si fermano a 60 per riga; oltre compare `+N`.
-- I dati non si sincronizzano fra dispositivi: c'è il backup manuale, non una nuvola.
+- I dati non si sincronizzano fra dispositivi: c'è il backup manuale e il link dello schieramento, non una nuvola. Il link porta le posizioni, non la collezione: catalogo e foto restano dove sono.
+- La modalità partita **non conosce le regole**. Non tira dadi, non calcola combattimenti, non impedisce mosse illegali: tiene il conto. Le decisioni restano ai due giocatori, come al tavolo.
+- Il magnetismo aggancia solo unità con lo **stesso orientamento**: allineare un reggimento a uno girato di 45° resta lavoro a mano.
+- La linea di vista guarda i soli elementi che il tipo dichiara bloccanti (boschi, rovine, monoliti, piramidi) e ignora le regole fini — colline che vedono oltre, unità che fanno da schermo. È un'indicazione, non un arbitro.
+- Il terreno casuale è a specchio per costruzione: è la scelta più difendibile al circolo, ma non riproduce le mappe asimmetriche di uno scenario scritto.
 - Il parser legge quello che New Recruit esporta. Se una lista arriva con basette insolite le stima dal tipo di truppa, e le puoi correggere a mano nell'ispettore.
 
 ## Licenza

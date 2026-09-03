@@ -11,7 +11,7 @@ import { $, esc } from './util.js';
 import { parseAny, parseRoster } from './parser.js';
 import {
   catalogAll, catEntry, matchUnitName, candidatesFor,
-  linkAlias, photoFor, upsertEntry, normalize,
+  linkAlias, photoFor, upsertEntry, normalize, paintedOf,
 } from './catalog.js';
 import { loadDoc, saveDoc } from './store.js';
 import { emit } from './bus.js';
@@ -125,9 +125,21 @@ export function coverage(list){
   }
   const rows = [...need].map(([id, n]) => {
     const e = catEntry(id);
-    return { id, entry: e, need: n, owned: e ? +e.owned || 0 : 0, short: Math.max(0, n - (e ? +e.owned || 0 : 0)) };
+    const owned = e ? +e.owned || 0 : 0;
+    const painted = paintedOf(e);
+    return {
+      id, entry: e, need: n, owned, painted,
+      short: Math.max(0, n - owned),
+      /* quante ne resterebbero da dipingere per giocare questa lista:
+         non piu' di quante ne possiedi, il resto e' roba da comprare */
+      toPaint: Math.max(0, Math.min(n, owned) - painted),
+    };
   });
-  return { rows, unlinked, missing: rows.reduce((s, r) => s + r.short, 0) };
+  return {
+    rows, unlinked,
+    missing: rows.reduce((s, r) => s + r.short, 0),
+    toPaint: rows.reduce((s, r) => s + r.toPaint, 0),
+  };
 }
 
 /* ============================================================
@@ -188,8 +200,10 @@ export function renderLists(){
 
 function listRowHTML(l){
   const c = coverage(l);
-  const key = c.unlinked ? "warn" : c.missing ? "bad" : "ok";
-  const txt = c.unlinked ? `${c.unlinked} da agganciare` : c.missing ? `mancano ${c.missing}` : "completa";
+  const key = c.unlinked ? "warn" : c.missing ? "bad" : c.toPaint ? "warn" : "ok";
+  const txt = c.unlinked ? `${c.unlinked} da agganciare`
+            : c.missing ? `mancano ${c.missing}`
+            : c.toPaint ? `${c.toPaint} da dipingere` : "completa";
   return `
     <div class="row u-row ${l.id === openId ? "sel" : ""}" data-open="${l.id}">
       <span class="nm"><b><span class="txt">${esc(l.name)}</span></b>

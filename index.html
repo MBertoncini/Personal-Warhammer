@@ -9,6 +9,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="./styles/app.css">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<meta name="theme-color" content="#f4f2ec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161613" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
 </head>
 <body>
 
@@ -25,6 +31,7 @@
   </nav>
   <div class="spacer"></div>
   <div class="tools">
+    <button class="btn drawer-only" id="btn-drawer" title="Apri il pannello">☰ Pannello</button>
     <button class="btn" id="btn-export" title="Scarica un backup di catalogo, liste e schieramenti">Backup</button>
     <button class="btn" id="btn-import">Ripristina</button>
     <input type="file" id="file-backup" accept=".json" hidden>
@@ -35,8 +42,8 @@
 <div data-panel="deploy">
 <main>
   <aside>
-    <div>
-      <div class="panel-title">Importa liste</div>
+    <details id="import-box">
+      <summary class="panel-title">Importa liste</summary>
       <div class="drop" id="drop" tabindex="0" role="button">
         <strong>Trascina qui i JSON di New Recruit</strong>
         <small>o clicca per sceglierli — legge anche <span class="mono">.ros</span>. Due file insieme = Esercito A e B; uno alla volta si alternano.</small>
@@ -48,19 +55,19 @@
         <button class="btn tiny" id="btn-clear">Svuota liste</button>
       </div>
       <div id="paste-box" hidden="" style="margin-top:8px;">
-        <textarea id="paste-area" rows="5" style="width:100%;border:1px solid var(--line-strong);border-radius:var(--r);background:var(--panel);padding:6px;font-family:&#39;IBM Plex Mono&#39;,monospace;font-size:11px;" placeholder="Incolla qui il contenuto del file…"></textarea>
+        <textarea id="paste-area" rows="5" placeholder="Incolla qui il contenuto del file…"></textarea>
         <div style="display:flex;gap:6px;margin-top:6px;">
           <button class="btn tiny primary" id="btn-paste-a">→ Esercito A</button>
           <button class="btn tiny" id="btn-paste-b">→ Esercito B</button>
         </div>
       </div>
-    </div>
+    </details>
 
     <div id="armies"></div>
 
     <div>
-      <div class="panel-title">Elemento selezionato</div>
-      <div id="inspector"><p class="empty">Clicca un'unità nella lista o un pezzo sul campo.</p></div>
+      <div class="panel-title">Partita</div>
+      <div id="game"></div>
     </div>
 
     <div>
@@ -68,7 +75,12 @@
       <div class="palette" id="palette"><button class="btn tiny"><span class="pdot" style="background:var(--t-hill);"></span>Collina</button><button class="btn tiny"><span class="pdot" style="background:var(--t-wood);"></span>Bosco</button><button class="btn tiny"><span class="pdot" style="background:var(--t-marsh);"></span>Palude</button><button class="btn tiny"><span class="pdot" style="background:var(--t-ruins);"></span>Rovine</button><button class="btn tiny"><span class="pdot" style="background:var(--t-wall);"></span>Muretto</button><button class="btn tiny"><span class="pdot" style="background:var(--t-mono);border-radius:50%;"></span>Monolite</button><button class="btn tiny"><span class="pdot" style="background:var(--t-ruins);"></span>Piramide</button><button class="btn tiny"><span class="pdot" style="background:var(--t-treasure);border-radius:50%;"></span>Tesoro</button></div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
         <button class="btn tiny" id="btn-terr-reset">Terreno dello scenario</button>
+        <button class="btn tiny" id="btn-terr-random" title="Genera una mappa a specchio che rispetta i 12″ e i 3″ dai tesori">Terreno casuale</button>
         <button class="btn tiny" id="btn-terr-clear">Togli tutto</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+        <button class="btn tiny" id="btn-scen-save" title="Salva tavolo e terreno come scenario tuo">Salva come scenario</button>
+        <button class="btn tiny ghost" id="btn-scen-del">Elimina scenario mio</button>
       </div>
       <div id="terrain-list" style="margin-top:8px;"></div>
       <div id="terrain-warn" style="margin-top:8px;"></div>
@@ -80,20 +92,43 @@
       <summary>Cosa ho letto dai file (diagnostica)</summary>
       <pre id="raw"></pre>
     </details>
+
+    <!-- L'ispettore resta appiccicato in fondo al pannello: prima stava
+         in coda a una colonna lunghissima e per modificare un pezzo
+         appena selezionato bisognava scorrere. -->
+    <div class="insp-dock">
+      <div class="panel-title">Elemento selezionato</div>
+      <div id="inspector"><p class="empty">Clicca un'unità nella lista o un pezzo sul campo.</p></div>
+    </div>
   </aside>
 
   <section class="board-wrap">
     <div class="board-bar">
       <label class="field inline"><span>Scenario</span><select id="scenario"><optgroup label="Battle March"><option value="bm-guado">Il Guado di Sangue — 600 pt</option><option value="bm-monolite">Il Monolite nella Palude — 650 pt</option><option value="bm-strada">La Strada delle Pietre — 750 pt</option><option value="bm-rovine">Le Rovine di Xhotl — 750 pt</option></optgroup><optgroup label="Generici"><option value="open">Battaglia Campale</option><option value="meeting">Scontro di Incontro</option><option value="flank">Attacco sul Fianco</option><option value="pass">Passo di Montagna</option><option value="cross">Fronti Incrociati</option></optgroup></select></label>
+      <div class="bar-tools">
+      <div class="sep"></div>
+      <button class="btn icon" id="btn-undo" title="Annulla (Ctrl+Z)" disabled>↶</button>
+      <button class="btn icon" id="btn-redo" title="Ripeti (Ctrl+Y)" disabled>↷</button>
       <div class="sep"></div>
       <button class="btn" id="btn-auto">Schiera tutto</button>
       <button class="btn" id="btn-recall">Ritira tutto</button>
       <div class="sep"></div>
-      <button class="btn on" id="btn-snap">Snap ¼″</button>
-      <button class="btn" id="btn-labels">Numeri</button>
-      <button class="btn on" id="btn-photos">Foto</button>
-      <button class="btn" id="btn-ranges">Raggi</button>
-      <button class="btn" id="btn-measure">Misura</button>
+      <button class="btn on" id="btn-snap" title="Aggancia al quarto di pollice e ai fianchi delle unità vicine">Snap ¼″</button>
+      <button class="btn" id="btn-labels" title="Numeri sulle unità">Numeri</button>
+      <button class="btn on" id="btn-photos" title="Foto delle miniature sulle basette">Foto</button>
+      <button class="btn" id="btn-ranges" title="Cerchi di movimento e tiro">Raggi</button>
+      <button class="btn" id="btn-arcs" title="Arco frontale e portata di carica">Archi</button>
+      <button class="btn" id="btn-dist" title="Distanze dal bordo e linea di vista verso i nemici">Distanze</button>
+      <button class="btn" id="btn-measure" title="Righello: due clic per lasciare una misura sul tavolo">Misura</button>
+      <button class="btn icon" id="btn-rulers-clear" title="Togli i righelli">⌫</button>
+      <div class="sep"></div>
+      <button class="btn icon" id="btn-zoom-out" title="Riduci (−)">−</button>
+      <span class="mono zoomlevel" id="zoom-level">100%</span>
+      <button class="btn icon" id="btn-zoom-in" title="Ingrandisci (+)">+</button>
+      <button class="btn on" id="btn-fit" title="Tutto il tavolo (0)">Adatta</button>
+      <div class="sep"></div>
+      <button class="btn" id="btn-png" title="Scarica il tavolo come immagine">Immagine</button>
+      <button class="btn" id="btn-share" title="Copia un link che contiene questo schieramento">Link</button>
       <div class="sep"></div>
       <label class="field inline"><span>Tavolo</span>
         <select id="table-size">
@@ -110,8 +145,9 @@
           <option value="12">12″</option><option value="15">15″</option><option value="18">18″</option>
         </select>
       </label>
+      </div>
       <div class="spacer"></div>
-      <span class="mono" id="stat" style="font-size:12px;color:var(--muted);">16/16 schierate</span>
+      <span class="mono stats" id="stat"></span>
     </div>
 
     <div class="board-scroll"><svg id="board" xmlns="http://www.w3.org/2000/svg" viewBox="-46 -46 1311.1999999999998 1006.4" preserveAspectRatio="xMidYMid meet"></svg></div>
@@ -121,6 +157,9 @@
       <div class="spacer"></div>
       <span><span class="kbd">Q</span>/<span class="kbd">E</span> ruota</span>
       <span><span class="kbd">←↑↓→</span> sposta</span>
+      <span><span class="kbd">[</span>/<span class="kbd">]</span> fronte</span>
+      <span><span class="kbd">Ctrl</span>+<span class="kbd">Z</span> annulla</span>
+      <span><span class="kbd">rotella</span> zoom · <span class="kbd">Shift</span>+trascina scorre</span>
       <span><span class="kbd">Canc</span> ritira / elimina</span>
     </div>
   </section>

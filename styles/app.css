@@ -273,3 +273,145 @@ textarea{
   .ls-split{grid-template-columns:1fr;}
   .tabs{margin-left:0;order:3;width:100%;}
 }
+
+/* ==========================================================
+   ANNULLA, INQUADRATURA, PARTITA, PANNELLO APPICCICATO
+   ========================================================== */
+
+/* --- barra del tavolo: e' diventata lunga, quindi respira --- */
+.btn.icon{padding:4px 9px;font-family:"IBM Plex Mono",monospace;line-height:1;min-width:30px;text-align:center;}
+.btn[disabled]{opacity:.38;cursor:default;}
+.btn[disabled]:hover{background:var(--panel);}
+.zoomlevel{font-size:11.5px;color:var(--muted);min-width:42px;text-align:center;}
+
+/* --- riga di stato: ogni avviso e' un pulsante che porta sul posto --- */
+.stats{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px;}
+.statchip{
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted);
+  border:1px solid transparent;background:none;border-radius:99px;padding:1px 8px;
+}
+button.statchip{cursor:pointer;border-color:var(--line);}
+button.statchip:hover{border-color:currentColor;background:var(--panel-2);}
+.statchip.warn{color:var(--warn);border-color:var(--warn);}
+.statchip.bad{color:var(--bad);border-color:var(--bad);}
+.statchip.turn{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);}
+
+/* --- il campo: zoom, scorrimento, maniglia di rotazione --- */
+.board-scroll{overflow:hidden;display:flex;align-items:center;justify-content:center;}
+svg#board{max-height:calc(100vh - 210px);cursor:grab;}
+svg#board:active{cursor:grabbing;}
+.piece{cursor:move;}
+.handle{cursor:crosshair;}
+.handle circle{transition:none;}
+
+/* --- importa liste: dopo il primo import si ripiega a una riga --- */
+#import-box > summary{cursor:pointer;list-style:none;margin-bottom:0;}
+#import-box[open] > summary{margin-bottom:8px;}
+#import-box > summary::-webkit-details-marker{display:none;}
+#import-box > summary::before{content:"▸";margin-right:2px;font-size:10px;color:var(--muted);}
+#import-box[open] > summary::before{content:"▾";}
+
+/* --- ispettore ancorato in fondo al pannello --- */
+.insp-dock{
+  position:sticky;bottom:-16px;margin:auto -16px -16px;padding:10px 16px 16px;
+  background:var(--panel);border-top:1px solid var(--line);
+  box-shadow:0 -10px 18px -16px rgba(0,0,0,.5);
+  max-height:min(56vh,520px);overflow-y:auto;
+}
+@media (max-width:920px){
+  .insp-dock{position:static;margin:0;padding:0;border-top:0;box-shadow:none;max-height:none;}
+}
+
+/* --- unita' fuori combattimento --- */
+.row.dead{opacity:.55;}
+.row.dead .nm b .txt{text-decoration:line-through;}
+.row.fled{border-style:dashed;}
+.mdl.more.lost{color:var(--bad);}
+
+/* --- distanze nell'ispettore --- */
+.readout.near{border-bottom-style:solid;}
+.readout.near.dim{opacity:.6;}
+
+/* --- partita --- */
+.turnbar{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.turnbar-mid{
+  flex:1;display:flex;align-items:center;gap:7px;justify-content:center;
+  border:1px solid var(--line);border-radius:var(--r);background:var(--panel-2);padding:4px 8px;
+}
+.turnbar-mid b{font-size:13px;}
+.turnbar-mid .tname{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.phases{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-bottom:8px;}
+.losses{display:flex;align-items:center;gap:6px;}
+.losses input{width:64px;text-align:center;}
+.losses .mono{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.gamelog{
+  margin-top:8px;max-height:190px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;
+  border-top:1px dotted var(--line);padding-top:6px;
+}
+.logline{display:flex;align-items:baseline;gap:6px;font-size:12px;color:var(--ink);line-height:1.35;}
+.logline .lt{font-size:10.5px;color:var(--muted);flex:none;}
+.logline .swatch{flex:none;align-self:center;}
+
+/* --- pannello a scomparsa sotto i 920px --- */
+.drawer-only{display:none;}
+@media (max-width:920px){
+  .drawer-only{display:inline-block;}
+  main{grid-template-columns:1fr;}
+  aside{
+    position:fixed;z-index:40;inset:0 auto 0 0;width:min(360px,88vw);
+    transform:translateX(-102%);transition:transform .18s ease;
+    box-shadow:var(--shadow);border-right:1px solid var(--line);border-bottom:0;
+    max-height:100vh;overflow-y:auto;
+  }
+  body.drawer-open aside{transform:none;}
+  body.drawer-open::after{
+    content:"";position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:39;
+  }
+  svg#board{max-height:none;}
+  .board-bar{padding:8px 10px;gap:6px;}
+  .board-bar .field.inline span{display:none;}
+}
+@media (max-width:560px){
+  .board-bar .btn{padding:4px 8px;font-size:12px;}
+  .brand .sub{display:none;}
+}
+
+/* --- stato di pittura nel catalogo --- */
+.paintbar{height:5px;max-width:420px;margin:2px 0 4px;border-radius:99px;background:var(--panel-2);border:1px solid var(--line);overflow:hidden;}
+.paintbar span{display:block;height:100%;background:var(--ok);}
+.cat-body .owned .done{color:var(--ok);}
+.cat-body .owned .todo{color:var(--warn);}
+
+/* --- i due eserciti a confronto --- */
+.vs{border:1px solid var(--line);border-radius:var(--r);background:var(--panel-2);padding:10px 12px;margin:4px 0;}
+.vs-head{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px;margin-bottom:6px;}
+.vs-head span{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+.vs-head span:last-child{justify-content:flex-end;}
+.vs-head b{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);flex:none;}
+.vs-table{width:100%;border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-variant-numeric:tabular-nums;}
+.vs-table td{width:34%;padding:2px 0;color:var(--muted);}
+.vs-table td:first-child{text-align:left;} .vs-table td:last-child{text-align:right;}
+.vs-table td.lead{color:var(--ink);font-weight:600;}
+.vs-table th{font-weight:400;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:2px 6px;}
+
+/* --- barra del tavolo: su desktop e' una riga sola che va a capo,
+       su schermo stretto gli strumenti diventano una riga che scorre,
+       cosi' scenario e riga di stato restano sempre in vista --- */
+.bar-tools{display:contents;}
+@media (max-width:920px){
+  .board-bar{flex-wrap:wrap;}
+  .bar-tools{
+    display:flex;gap:8px;align-items:center;flex-wrap:nowrap;
+    order:3;width:100%;overflow-x:auto;overscroll-behavior-x:contain;
+    padding-bottom:4px;scrollbar-width:thin;
+  }
+  .bar-tools > *{flex:none;}
+  .board-bar > .field.inline{order:1;}
+  .board-bar > .spacer{display:none;}
+  .board-bar > .stats{order:2;margin-left:auto;}
+  /* il campo tiene le sue proporzioni: in una colonna stretta e alta
+     non puo' riempire, e centrandolo restavano due fasce vuote grandi
+     come il tavolo. Meglio che la pagina si accorci. */
+  .board-scroll{min-height:0;padding:10px;}
+  main{min-height:0;}
+}

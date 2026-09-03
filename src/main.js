@@ -9,9 +9,28 @@ import { $ } from './util.js';
 import { initCatalog, renderCatalog } from './catalog.js';
 import { initLists, renderLists, healLinks as healListLinks } from './lists.js';
 import { initMatchup, renderMatchup } from './matchup.js';
-import { bootDeploy, renderAll, refreshLinks as refreshBoardLinks } from './deploy.js';
-import { exportAll, importAll } from './store.js';
+import { bootDeploy, renderAll, refreshLinks as refreshBoardLinks, toast } from './deploy.js';
+import { exportAll, importAll, requestPersistence } from './store.js';
 import { on } from './bus.js';
+
+/* ---------- app installabile e utilizzabile senza rete ----------
+   Al circolo la rete non c'è quasi mai. In più un sito installato
+   ottiene da Chrome ed Edge la persistenza dell'archivio senza
+   chiedere niente: è metà del problema dei dati che sparivano. */
+function registerWorker(){
+  if (!("serviceWorker" in navigator)) return;
+  if (location.protocol === "file:") return;      // niente SW su file://
+  navigator.serviceWorker.register("./sw.js").then(reg => {
+    reg.addEventListener("updatefound", () => {
+      const sw = reg.installing;
+      if (!sw) return;
+      sw.addEventListener("statechange", () => {
+        if (sw.state === "installed" && navigator.serviceWorker.controller)
+          toast("C'è una versione nuova: ricarica la pagina quando vuoi.");
+      });
+    });
+  }).catch(() => { /* pubblicato senza sw.js: pazienza, l'app funziona lo stesso */ });
+}
 
 /* ---------- schede ---------- */
 const TABS = {
@@ -68,10 +87,16 @@ $("#file-backup").addEventListener("change", async e => {
 
 /* ---------- avvio ---------- */
 (async function start(){
+  /* prima di scrivere qualsiasi cosa: chiede al browser di non cancellare
+     l'archivio nelle sue pulizie automatiche */
+  await requestPersistence();
   await initCatalog();
   await initLists();
   await initMatchup();
   await healListLinks();   // agganci rimasti indietro da import vecchi
-  await bootDeploy();
-  showTab(localStorage.getItem("tow-tab") || "deploy");
+  const boot = await bootDeploy();
+  /* un link condiviso porta sempre al tavolo, qualunque scheda fosse
+     aperta l'ultima volta */
+  showTab(boot && boot.shared ? "deploy" : (localStorage.getItem("tow-tab") || "deploy"));
+  registerWorker();
 })();

@@ -7,14 +7,17 @@ import path from 'node:path';
 import { JSDOM } from 'jsdom';
 import 'fake-indexeddb/auto';
 
-const root = path.resolve(import.meta.dirname, '..');
+/* import.meta.dirname vuole Node >= 20.11; questa forma va anche prima */
+const here = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
+const root = path.resolve(here, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
 const dom = new JSDOM(html, { pretendToBeVisual: true, url: 'https://example.org/' });
 const { window } = dom;
 
 for (const k of ['window', 'document', 'Image', 'FileReader', 'Blob',
-                 'HTMLElement', 'Node', 'Element', 'CustomEvent', 'getComputedStyle']) {
+                 'HTMLElement', 'Node', 'Element', 'CustomEvent', 'getComputedStyle',
+                 'location', 'history', 'btoa', 'atob', 'XMLSerializer']) {
   Object.defineProperty(globalThis, k, { value: window[k], configurable: true, writable: true });
 }
 Object.defineProperty(globalThis, 'navigator', { value: window.navigator, configurable: true });
@@ -121,6 +124,31 @@ ok('voce sparita sostituita', cat.catEntry(list.units[1].catId)?.name === 'Black
 await lists.linkUnit(list.id, 0, null);
 await lists.healLinks();
 ok('lo sgancio a mano resta', list.units[0].catId === null);
+
+console.log('\npittura');
+/* la domanda vera prima di un torneo non e' "ce le ho" ma "sono dipinte" */
+const paint = (n) => cat.upsertEntry({ id: orcBoy.id, name: 'Orc Boy',
+  faction: 'Orc & Goblin Tribes', baseId: '25x25', baseW: 25, baseH: 25, owned: 35, painted: n });
+await paint(12);
+ok('le dipinte si salvano', cat.paintedOf(cat.catEntry(orcBoy.id)) === 12);
+await paint(99);
+ok('non se ne dipingono piu di quante se ne possiedono',
+   cat.paintedOf(cat.catEntry(orcBoy.id)) === 35);
+await paint(12);
+ok('una voce vecchia senza il campo vale zero', cat.paintedOf({ owned: 10 }) === 0);
+
+await lists.linkUnit(list.id, 0, orcBoy.id);
+const cov2 = lists.coverage(list);
+const orcRow = cov2.rows.find(r => r.id === orcBoy.id);
+/* 25 Orc Boy richiesti, 35 posseduti, 12 dipinti -> 13 da dipingere */
+ok('da dipingere solo quello che serve, non tutta la collezione', orcRow.toPaint === 13);
+ok('il totale da dipingere finisce nella copertura', cov2.toPaint >= orcRow.toPaint);
+
+console.log('\nmatchup');
+const mu = await import('../src/matchup.js');
+await mu.initMatchup();
+ok('il confronto non esplode senza liste scelte', mu.compare().A === null);
+ok('la lista della spesa e vuota senza matchup', mu.todoText() === '');
 
 console.log('\npersistenza');
 await store.saveDoc('prova', { a: 1 });
