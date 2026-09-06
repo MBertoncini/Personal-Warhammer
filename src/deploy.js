@@ -1649,8 +1649,7 @@ function applySnapshot(s){
   state.distances = !!s.distances;
   state.arcs = !!s.arcs;
   state.rulers = Array.isArray(s.rulers) ? s.rulers : [];
-  state.game = s.game && typeof s.game === "object" ? s.game : G.emptyGame();
-  state.game.log = Array.isArray(state.game.log) ? state.game.log : [];
+  state.game = G.ensureGame(s.game);
   state.sel = s.sel && typeof s.sel === "object" ? s.sel : null;
   state.measurePts = [];
   fillScenarioSelect();

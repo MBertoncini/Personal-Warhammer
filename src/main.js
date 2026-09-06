@@ -9,6 +9,7 @@ import { $ } from './util.js';
 import { initCatalog, renderCatalog } from './catalog.js';
 import { initLists, renderLists, healLinks as healListLinks } from './lists.js';
 import { initMatchup, renderMatchup } from './matchup.js';
+import { initReports, renderReports } from './reports.js';
 import { bootDeploy, renderAll, refreshLinks as refreshBoardLinks, toast } from './deploy.js';
 import { exportAll, importAll, requestPersistence } from './store.js';
 import { on } from './bus.js';
@@ -38,6 +39,7 @@ const TABS = {
   catalog: () => renderCatalog(),
   lists:   () => renderLists(),
   matchup: () => renderMatchup(),
+  report:  () => renderReports(),
 };
 
 function showTab(name){
@@ -51,6 +53,10 @@ function showTab(name){
 
 document.querySelectorAll("[data-tab]").forEach(b =>
   b.addEventListener("click", () => showTab(b.dataset.tab)));
+
+/* il pannello della partita, sul tavolo, manda qui chi vuole vedere il
+   diario delle battaglie: cambiare scheda non e' affare suo */
+on("tab:show", name => showTab(name));
 
 /* ---------- il catalogo cambia: prima si ri-aggancia, poi si ridisegna ----------
    Una foto aggiunta adesso, o due voci appena fuse, devono arrivare a liste e
@@ -93,6 +99,7 @@ $("#file-backup").addEventListener("change", async e => {
   await initCatalog();
   await initLists();
   await initMatchup();
+  await initReports();
   await healListLinks();   // agganci rimasti indietro da import vecchi
   const boot = await bootDeploy();
   /* un link condiviso porta sempre al tavolo, qualunque scheda fosse

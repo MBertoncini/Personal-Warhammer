@@ -415,3 +415,25 @@ svg#board:active{cursor:grabbing;}
   .board-scroll{min-height:0;padding:10px;}
   main{min-height:0;}
 }
+
+/* --- diario delle partite: tabelle dei turni e del punteggio ---
+       Le colonne sono sei e una lista di venti unita' non entra mai in
+       un telefono: la tabella scorre dentro il suo riquadro invece di
+       allargare la pagina. */
+.tablewrap{overflow-x:auto;overscroll-behavior-x:contain;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);}
+.grid-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.grid-table th{
+  text-align:left;font-weight:400;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;
+}
+.grid-table td{padding:4px 8px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap;}
+.grid-table tbody tr:last-child td{border-bottom:0;}
+.grid-table td .swatch{display:inline-block;margin-right:6px;}
+.grid-table input[type=number]{width:66px;text-align:right;}
+.grid-table input[type=text]{width:100%;min-width:130px;}
+.grid-table select{min-width:104px;}
+.grid-table tr.gone td{opacity:.5;text-decoration:line-through;}
+.grid-table tr.gone td input,.grid-table tr.gone td select{text-decoration:none;}
+.score-table td:first-child{width:46%;}
+.turn-edit{display:flex;flex-direction:column;gap:6px;padding:6px 0 10px;}
+.turn-edit .gamelog{max-height:120px;}

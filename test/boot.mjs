@@ -1,6 +1,7 @@
 /* Avvia la pagina intera in jsdom e controlla che tutto si regga:
- * le quattro schede, le anteprime, l'annulla, lo zoom, gli aiuti
- * tattici, la modalita' partita, il terreno casuale e il link.
+ * le cinque schede, le anteprime, l'annulla, lo zoom, gli aiuti
+ * tattici, la modalita' partita con il registro dei turni e il battle
+ * report, il terreno casuale e il link.
  * Si lancia con:  node test/boot.mjs
  */
 import fs from 'node:fs';
@@ -59,7 +60,7 @@ ok('la riga chiusa mostra una anteprima e il moltiplicatore',
    firstRow && firstRow.children.length === 2 && /^×\d+$/.test(firstRow.children[1].textContent));
 
 console.log('\nschede');
-for (const t of ['catalog', 'lists', 'matchup', 'deploy']) {
+for (const t of ['catalog', 'lists', 'matchup', 'report', 'deploy']) {
   doc.querySelector(`[data-tab="${t}"]`).dispatchEvent(new window.Event('click'));
   const panel = doc.querySelector(`[data-panel="${t}"]`);
   ok(`scheda ${t} visibile e piena`, !panel.hidden && panel.textContent.trim().length > 20);
@@ -169,6 +170,112 @@ ok('anche la distruzione si annulla',
    state.units.find(u => u.uid === mob.uid).dead === false);
 ok('il registro ha delle righe', state.game.log.length > 0);
 ok('nessun errore in partita', errors.length === 0);
+
+console.log('\nregistro della partita');
+const BL = await import('../src/battlelog.js');
+ok('lo schieramento e la prima fotografia',
+   state.game.turns.length === 1 && state.game.turns[0].kind === 'deploy');
+
+/* sei pollici in avanti e tre modelli persi: il turno deve raccontare
+   tutte e due le cose, e tenerle separate dal totale della partita */
+const scout = state.units.find(u => u.army === 'A' && u.placed && u.models >= 5);
+deploy.act('sposta', () => { scout.x += 25.4 * 6; });
+deploy.act('perdite', () => game.setLost(scout, 3));
+click('#g-close');
+const t1 = state.game.turns[1];
+const rec = t1.units.find(r => r.uid === scout.uid);
+ok('a fine turno resta una fotografia del tavolo', t1.kind === 'turn' && t1.n === 1 && t1.army === 'A');
+ok('il movimento e misurato in pollici', Math.abs(rec.moved - 6) < 0.2);
+ok('le perdite del turno sono separate dal totale', rec.dLost === 3 && rec.lost === 3);
+ok('la posizione e detta anche a parole', /corsia/.test(rec.zone));
+ok('chiudere il turno passa la mano', state.game.army === 'B' && state.game.turn === 1);
+click('#g-close');
+ok('dopo B ricomincia il turno dopo', state.game.turn === 2 && state.game.army === 'A');
+history.undo();
+ok('anche la fotografia si annulla', state.game.turns.length === 2);
+
+const victim = state.units.find(u => u.army === 'B' && !u.dead);
+deploy.act('distrutta', () => game.destroy(victim));
+click('#g-close');
+const preview = BL.buildReport(state, { label: 'Prova', group: '', pts: 0, deploy: '', desc: '' });
+const auto = BL.autoValues(preview);
+ok('l\'unita distrutta vale punti per l\'avversario', auto.kill.A >= (victim.pts || 0) && auto.kill.A > 0);
+ok('il punteggio automatico finisce nelle righe',
+   preview.score.rows.find(r => r.id === 'kill').A === auto.kill.A);
+const vd = BL.verdict(preview);
+ok('il verdetto dice chi ha vinto e di quanto', vd.winner === 'A' && /vittoria|pareggio/i.test(vd.text));
+
+console.log('\nbattle report');
+const reports = await import('../src/reports.js');
+await reports.initReports();
+const rep = await reports.archiveCurrent();
+ok('la partita finisce nell\'archivio', reports.allReports().length === 1);
+ok('il report si porta dietro le due liste', rep.roster.A.length > 0 && rep.roster.B.length > 0);
+ok('e tutte le fotografie', rep.turns.filter(t => t.kind === 'turn').length === 2);
+
+const md = BL.reportMarkdown(rep, { prompt: true });
+ok('il testo spiega alla macchina come si legge', /Come leggere questi dati/.test(md));
+ok('chiede l\'analisi che serve', /cosa è andato storto/i.test(md));
+ok('c\'e un capitolo per ogni mezzo turno',
+   /## Turno 1 — gioca /.test(md) && (md.match(/## Turno /g) || []).length === 2);
+ok('le unita compaiono con nome e perdite', md.includes(scout.name) && /Perdite/.test(md));
+ok('il punteggio ha un totale', /\*\*Totale/.test(md));
+ok('e le tabelle sono Markdown vero', /\| --- \|/.test(md));
+ok('il nome del file e usabile', /^\d{4}-\d\d-\d\d-[a-z0-9-]+\.md$/.test(BL.fileName(rep, 'md')));
+
+doc.querySelector('[data-tab="report"]').dispatchEvent(new window.Event('click'));
+ok('la scheda Partite elenca la partita', doc.querySelectorAll('#reports .ls-side .row').length === 1);
+doc.querySelector('#reports .ls-side .row').dispatchEvent(new window.Event('click'));
+ok('aprendola si vedono i turni', doc.querySelectorAll('#reports [data-turn]').length >= 3);
+ok('e il punteggio e modificabile', doc.querySelectorAll('#reports [data-sr]').length > 0);
+
+/* il pannello deve scrivere davvero dentro il report: un turno aperto,
+   una perdita corretta a mano, e i superstiti si risistemano */
+[...doc.querySelectorAll('#reports [data-turn]')][1].dispatchEvent(new window.Event('click'));
+await settle(80);
+const lossInput = [...doc.querySelectorAll('#reports input[data-tu]')]
+  .find(i => /\|dLost$/.test(i.dataset.tu) && +i.max >= 10);
+lossInput.value = '2';
+lossInput.dispatchEvent(new window.Event('change'));
+await settle(120);
+const editedUid = lossInput.dataset.tu.split('|')[1];
+const edited = reports.allReports()[0].turns[1].units.find(r => String(r.uid) === editedUid);
+ok('una perdita corretta a mano entra nel report',
+   edited.dLost === 2 && edited.alive === edited.models - 2);
+doc.querySelector('#rp-recalc').dispatchEvent(new window.Event('click'));
+await settle(120);
+ok('e il punteggio si ricalcola da capo',
+   reports.allReports()[0].score.rows.find(r => r.id === 'kill').manual === false);
+
+console.log('\npartita scritta a mano');
+const listsMod = await import('../src/lists.js');
+const fakeRoster = {
+  roster: { name: 'Lista di prova', costs: [{ name: 'pts', value: 300 }],
+    forces: [{ name: 'F', catalogueName: 'Lizardmen', selections: [
+      { name: '10 Saurus', type: 'unit', number: 1,
+        categories: [{ name: 'Core', primary: 'true' }],
+        costs: [{ name: 'pts', value: 150 }],
+        selections: [{ name: 'Saurus Warrior', type: 'model', number: 10 }] },
+      { name: '5 Skinks', type: 'unit', number: 1,
+        categories: [{ name: 'Core', primary: 'true' }],
+        costs: [{ name: 'pts', value: 50 }],
+        selections: [{ name: 'Skink', type: 'model', number: 5 }] },
+    ] }] } };
+const l1 = await listsMod.importListText(JSON.stringify(fakeRoster));
+const manual = await reports.newFromLists(l1.id, l1.id, { title: 'Giocata al circolo' });
+ok('la partita a mano parte dalle liste salvate', manual.roster.A.length === 2 && manual.roster.B.length === 2);
+ok('parte gia con schieramento e primo turno',
+   manual.turns[0].kind === 'deploy' && manual.turns[1].n === 1);
+const mrow = manual.turns[1].units[0];
+mrow.dLost = 4;
+BL.recount(manual);
+ok('correggere un turno risistema i superstiti', mrow.alive === mrow.models - 4);
+mrow.dLost = mrow.models;
+BL.recount(manual);
+ok('finiti i modelli l\'unita risulta distrutta', mrow.dead === true && mrow.alive === 0);
+ok('il report scritto a mano si esporta lo stesso',
+   BL.reportMarkdown(manual).includes('Giocata al circolo'));
+ok('nessun errore nel diario', errors.length === 0);
 
 console.log('\nterreno casuale e scenari propri');
 const terrBefore = state.terrain.length;

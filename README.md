@@ -6,6 +6,7 @@ Quattro cose che si tengono per mano, per **Warhammer: The Old World**:
 2. **Liste** — i roster esportati da New Recruit, con ogni unità agganciata a una voce del catalogo.
 3. **Matchup e tavolo** — due liste a confronto, la verifica di cosa hai davvero in vetrina, e il simulatore di schieramento con zone, terreno e controlli di legalità.
 4. **Partita** — turni, fasi, perdite e tabellino, per quando lo schieramento è finito e si comincia a giocare.
+5. **Partite** — il diario delle battaglie: schieramento, movimento e perdite di ogni unità alla fine di ogni turno, punteggio voce per voce, e l'esportazione del battle report in un formato pensato per essere incollato a un'intelligenza artificiale.
 
 Tutto gira nel browser. Nessun server, nessun account, nessun dato che esce dal dispositivo. Si installa come app e funziona senza rete.
 
@@ -84,8 +85,35 @@ Ogni unità nella lista laterale mostra una foto e il moltiplicatore; l'**unità
 - **Perdite** — nell'ispettore dell'unità. Tolti i modelli, il reggimento **perde i ranghi di dietro e sul tavolo si accorcia da solo**, come le miniature vere. Arrivato a zero esce dal campo.
 - **Tabellino** — quanti punti restano in campo e quanti ne sono andati, per parte, calcolati in proporzione ai modelli persi.
 - **Registro** — ogni perdita e ogni annotazione, con turno e fase.
+- **Chiudi il turno** — il pulsante grosso. Fotografa il tavolo com'è in quel momento e passa la mano. La fotografia tiene, per ogni unità, dove sta, di quanto si è mossa dal turno prima, quante perdite ha subito in questo turno e in che stato è. È da queste fotografie che nasce il battle report.
 
-Anche qui vale l'annulla: una perdita segnata sull'unità sbagliata si toglie con `Ctrl+Z`.
+Lo schieramento è la fotografia numero zero, scattata quando premi *Comincia*: finché non hai chiuso il primo turno la puoi rifare (*Rifai la foto*), che serve quando ci si accorge di aver premuto Comincia troppo presto.
+
+Anche qui vale l'annulla: una perdita segnata sull'unità sbagliata — o un turno chiuso per sbaglio — si toglie con `Ctrl+Z`.
+
+### 6. Partite
+
+La scheda **Partite** è il diario. Ci si arriva in due modi.
+
+**Dal tavolo.** Finita la partita (o anche a metà), *Archivia il report*: la partita registrata diventa una voce dell'archivio, con liste, terreno, schieramento, tutte le fotografie di fine turno e il registro.
+
+**A mano**, per una partita giocata altrove: *Nuova partita a mano*, si scelgono due liste salvate e si compila. Ogni turno si porta avanti da solo la situazione di quello prima, quindi si scrive **solo quello che è cambiato**: le perdite del turno, i pollici percorsi, chi è andato in rotta. Correggere un numero al turno 2 risistema superstiti e stato di tutti i turni successivi.
+
+**Punteggio.** Tre righe le calcola l'app guardando l'ultima situazione registrata — unità nemiche distrutte, ridotte a metà o meno, in rotta a fine partita — sommando i punti delle liste. Le altre le sai solo tu, e sono quelle che decidono davvero le partite: generale ucciso, portastendardo, stendardi catturati, obiettivi controllati, quarti di tavolo, bonus di scenario. Si scrivono a mano, e se ne aggiungono di proprie. Scrivendo un numero su una riga calcolata, quella riga smette di essere ricalcolata e resta la tua.
+
+Il verdetto (pareggio, vittoria di misura, netta, schiacciante) è **una convenzione dell'app**, proporzionale ai punti giocati: non è una regola del manuale, è un modo di dire quanto è larga la vittoria senza guardare una differenza secca.
+
+**L'esportazione è il punto della scheda.** *Copia per l'AI* mette negli appunti il report intero in Markdown, preceduto dalla richiesta di analizzarlo: si incolla in chat e si chiede cosa è andato storto. Il testo si spiega da solo — dichiara le unità di misura, l'origine degli assi, da che parte schiera ciascuno, che *mosso* è lo spostamento netto e non il percorso, e che il registro è tenuto a mano da un giocatore mentre gioca, quindi può avere buchi. Poi elenca:
+
+- la scheda della partita, scenario, tavolo e chi ha giocato per primo;
+- le due liste unità per unità, con modelli, punti, basette, movimento, gittata e regole speciali;
+- il terreno, con misure e attraversabilità;
+- lo schieramento iniziale, in coordinate e a parole («metà di B · corsia destra»);
+- l'andamento, cioè quante perdite ha preso ciascuno in quale turno — la tabella da cui si vede subito dove la partita è girata;
+- un capitolo per ogni mezzo turno con la situazione di ogni unità a fine turno;
+- il punteggio voce per voce e le tue note.
+
+Ci sono anche *Copia il Markdown* senza la richiesta davanti, *Scarica .md* e *Scarica .json* — il JSON è il report intero, per rileggerlo con un programma.
 
 ---
 
@@ -167,15 +195,17 @@ src/
   share.js            schieramento dentro un link, compresso
   tactics.js          distanze dal bordo, linea di vista, archi di carica
   game.js             turni, fasi, perdite, tabellino, registro
+  battlelog.js        fotografie di fine turno, punteggio, report in Markdown
   scenariokit.js      scenari propri e generatore di terreno a specchio
   catalog.js          voci di collezione, foto, pittura, aggancio dei nomi
   lists.js            liste salvate e collegamento unità → catalogo
   matchup.js          disponibilità, confronto, schieramenti salvati
+  reports.js          archivio delle partite e scheda Partite
   deploy.js           stato del tavolo, pannelli, campo di battaglia
   main.js             avvio, schede, registrazione del service worker
 test/
   smoke.mjs           catalogo, aggancio, import, copertura, pittura
-  boot.mjs            la pagina intera: schede, annulla, zoom, partita, link
+  boot.mjs            la pagina intera: schede, annulla, zoom, partita, report, link
 tools/
   make-icons.mjs      scrive i PNG del manifest senza dipendenze
 ```
@@ -189,7 +219,7 @@ npm install
 npm test
 ```
 
-Girano in jsdom con IndexedDB finto, senza browser. `boot.mjs` avvia davvero la pagina intera e poi la usa: annulla e ripeti, zoom, distanze misurate dal bordo, righelli, una partita con perdite e unità distrutta, terreno casuale (verificando che sia specchiato e che nessun tesoro finisca sotto i 3″), salvataggio di uno scenario proprio, andata e ritorno del link condiviso e serializzazione del PNG.
+Girano in jsdom con IndexedDB finto, senza browser. `boot.mjs` avvia davvero la pagina intera e poi la usa: annulla e ripeti, zoom, distanze misurate dal bordo, righelli, una partita con perdite e unità distrutta, la chiusura di due turni con il movimento misurato in pollici, l'archiviazione del battle report e il suo testo in Markdown, una partita scritta a mano a partire da una lista, terreno casuale (verificando che sia specchiato e che nessun tesoro finisca sotto i 3″), salvataggio di uno scenario proprio, andata e ritorno del link condiviso e serializzazione del PNG.
 
 ---
 
@@ -199,6 +229,9 @@ Girano in jsdom con IndexedDB finto, senza browser. `boot.mjs` avvia davvero la 
 - Le anteprime per modello si fermano a 60 per riga; oltre compare `+N`.
 - I dati non si sincronizzano fra dispositivi: c'è il backup manuale e il link dello schieramento, non una nuvola. Il link porta le posizioni, non la collezione: catalogo e foto restano dove sono.
 - La modalità partita **non conosce le regole**. Non tira dadi, non calcola combattimenti, non impedisce mosse illegali: tiene il conto. Le decisioni restano ai due giocatori, come al tavolo.
+- Per lo stesso motivo il punteggio è **mezzo automatico**: l'app somma quello che vede sul tavolo (chi è morto, chi è a metà, chi è in rotta) e lascia a te obiettivi, generale, stendardi e quarti. Non conosce le tabelle di nessuno scenario e non pretende di conoscerle.
+- Il *mosso* di un'unità è lo spostamento **netto** fra due fotografie: chi avanza e poi ripiega risulta fermo, e una ruota sul posto risulta zero. Il fronte in gradi c'è, ed è lì che si legge.
+- Il registro dei turni si scrive quando premi *Chiudi il turno*: se te ne dimentichi due, quei due turni nel report non esistono. È un diario, non un arbitro che guarda.
 - Il magnetismo aggancia solo unità con lo **stesso orientamento**: allineare un reggimento a uno girato di 45° resta lavoro a mano.
 - La linea di vista guarda i soli elementi che il tipo dichiara bloccanti (boschi, rovine, monoliti, piramidi) e ignora le regole fini — colline che vedono oltre, unità che fanno da schermo. È un'indicazione, non un arbitro.
 - Il terreno casuale è a specchio per costruzione: è la scelta più difendibile al circolo, ma non riproduce le mappe asimmetriche di uno scenario scritto.
