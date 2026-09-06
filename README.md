@@ -5,7 +5,7 @@ Quattro cose che si tengono per mano, per **Warhammer: The Old World**:
 1. **Catalogo** — la collezione di miniature, una voce per tipo di modello, con quante ne possiedi e una foto.
 2. **Liste** — i roster esportati da New Recruit, con ogni unità agganciata a una voce del catalogo.
 3. **Matchup e tavolo** — due liste a confronto, la verifica di cosa hai davvero in vetrina, e il simulatore di schieramento con zone, terreno e controlli di legalità.
-4. **Partita** — turni, fasi, perdite e tabellino, per quando lo schieramento è finito e si comincia a giocare.
+4. **Partita** — turni, fasi, perdite modello per modello, contatti di basetta e il tavolo in miniatura a ogni turno, per quando lo schieramento è finito e si comincia a giocare.
 5. **Partite** — il diario delle battaglie: schieramento, movimento e perdite di ogni unità alla fine di ogni turno, punteggio voce per voce, e l'esportazione del battle report in un formato pensato per essere incollato a un'intelligenza artificiale.
 
 Tutto gira nel browser. Nessun server, nessun account, nessun dato che esce dal dispositivo. Si installa come app e funziona senza rete.
@@ -65,6 +65,15 @@ Scenari Battle March e generici, zone di schieramento, terreno con i controlli (
 
 **Maniglia di rotazione.** Sul pezzo selezionato compare un pallino davanti al fronte: trascinandolo si ruota (a scatti di 15° per le unità, 5° per il terreno; `Alt` per la rotazione libera). `[` e `]` — o `Shift`+rotella — cambiano il numero di modelli di fronte.
 
+**Formazione.** Ogni unità ha il suo editor grafico: doppio clic sul pezzo, oppure *Editor della formazione* nell'ispettore. Dentro ci sono due mondi.
+
+- **Ordine chiuso**: la griglia di sempre, con le sagome già pronte (linea, due ranghi, blocco, quadrato, colonna), la larghezza di fronte e la spaziatura fra le basi. L'ultimo rango incompleto si allinea a sinistra o si centra.
+- **Formazione sciolta**: la griglia sparisce e ogni base si trascina dove vuoi. I preset (nuvola, schermo, scacchiera, mezzaluna, cuneo, fila) sono il punto di partenza; appena sposti qualcosa la formazione diventa *come l'hai messa* e nessun preset te la tocca più. Le frecce spostano di un millimetro alla volta, `Q` ed `E` ruotano la base selezionata, *Specchia* e *Ruota 90°* girano tutta la schermagliata.
+
+L'ingombro di un'unità non è più una moltiplicazione: è il rettangolo che contiene davvero le basi come stanno. Una schermagliata larga occupa il fronte che occupa, e i controlli di legalità, il magnetismo, le distanze e i contatti lo sanno.
+
+**Personaggi dentro le unità.** Un personaggio — lo dice il roster, e dove non lo dice c'è la spunta nell'ispettore — si unisce a un reggimento dall'editor o dall'ispettore del reggimento. Da quel momento non è più un pezzo suo: prende una casella dentro la formazione (trascina la base con la stella per cambiargliela), si muove col reggimento e nel report risulta dov'è il reggimento. *Sgancia* lo rimette sul tavolo di fianco.
+
 **Aiuti tattici.** *Distanze* misura dal **bordo** verso ogni nemico, come si misura davvero, e segna tratteggiate le linee che un bosco o un monolite interrompono. *Archi* disegna l'arco frontale e la portata di carica (M+7 media, M+12 massima). Chi finisce nell'arco entro la carica è verde.
 
 **Righelli.** *Misura*, due clic, e la misura **resta** sul tavolo; se ne tengono fino a otto. Il tasto `⌫` accanto le toglie tutte.
@@ -82,10 +91,11 @@ Ogni unità nella lista laterale mostra una foto e il moltiplicatore; l'**unità
 *Comincia la partita*, nel pannello di sinistra. Non arbitra niente e non conosce le regole: tiene il conto di quello che al tavolo si dimentica sempre.
 
 - **Turno e fase** — Strategia, Movimento, Tiro, Corpo a corpo, poi passa la mano; finito il giro il turno cresce.
-- **Perdite** — nell'ispettore dell'unità. Tolti i modelli, il reggimento **perde i ranghi di dietro e sul tavolo si accorcia da solo**, come le miniature vere. Arrivato a zero esce dal campo.
+- **Perdite** — in tre posti: l'ispettore dell'unità, la lista *Perdite* del pannello (tutte le unità in fila, meno due clic per segnare un tiro di archi) e l'editor della formazione, dove si clicca **quale** modello è caduto. Tolti i modelli il reggimento **perde i ranghi di dietro e sul tavolo si accorcia da solo**, come le miniature vere; in formazione sciolta sparisce la base che hai segnato e l'ingombro si richiude su quelle rimaste. Arrivato a zero esce dal campo.
+- **Lo schermino** — sopra il tabellino c'è il tavolo in piccolo: quello di adesso, e con le due frecce quello di ogni fine turno già registrato. Serve a vedere quello che si sta raccontando invece di leggerlo in una tabella di coordinate.
 - **Tabellino** — quanti punti restano in campo e quanti ne sono andati, per parte, calcolati in proporzione ai modelli persi.
 - **Registro** — ogni perdita e ogni annotazione, con turno e fase.
-- **Chiudi il turno** — il pulsante grosso. Fotografa il tavolo com'è in quel momento e passa la mano. La fotografia tiene, per ogni unità, dove sta, di quanto si è mossa dal turno prima, quante perdite ha subito in questo turno e in che stato è. È da queste fotografie che nasce il battle report.
+- **Chiudi il turno** — il pulsante grosso. Fotografa il tavolo com'è in quel momento e passa la mano. La fotografia tiene, per ogni unità, dove sta, quanto è grande adesso, come è schierata, di quanto si è mossa dal turno prima, quante perdite ha subito in questo turno, in che stato è e dentro quale elemento di terreno si trova. Tiene anche i **contatti di basetta** del momento — chi tocca chi e da che lato — e la **posizione del terreno**, che durante la partita si sposta. È da queste fotografie che nasce il battle report.
 
 Lo schieramento è la fotografia numero zero, scattata quando premi *Comincia*: finché non hai chiuso il primo turno la puoi rifare (*Rifai la foto*), che serve quando ci si accorge di aver premuto Comincia troppo presto.
 
@@ -106,11 +116,11 @@ Il verdetto (pareggio, vittoria di misura, netta, schiacciante) è **una convenz
 **L'esportazione è il punto della scheda.** *Copia per l'AI* mette negli appunti il report intero in Markdown, preceduto dalla richiesta di analizzarlo: si incolla in chat e si chiede cosa è andato storto. Il testo si spiega da solo — dichiara le unità di misura, l'origine degli assi, da che parte schiera ciascuno, che *mosso* è lo spostamento netto e non il percorso, e che il registro è tenuto a mano da un giocatore mentre gioca, quindi può avere buchi. Poi elenca:
 
 - la scheda della partita, scenario, tavolo e chi ha giocato per primo;
-- le due liste unità per unità, con modelli, punti, basette, movimento, gittata e regole speciali;
-- il terreno, con misure e attraversabilità;
-- lo schieramento iniziale, in coordinate e a parole («metà di B · corsia destra»);
+- le due liste unità per unità, con modelli, punti, basette, formazione, movimento, gittata e regole speciali;
+- il terreno allo schieramento, con misure, orientamento e attraversabilità — e di nuovo, in ogni turno in cui qualcuno lo ha spostato;
+- lo schieramento iniziale, in coordinate e a parole («metà di B · corsia destra»), con l'ingombro di ogni unità e il terreno che sta occupando;
 - l'andamento, cioè quante perdite ha preso ciascuno in quale turno — la tabella da cui si vede subito dove la partita è girata;
-- un capitolo per ogni mezzo turno con la situazione di ogni unità a fine turno;
+- un capitolo per ogni mezzo turno con la situazione di ogni unità a fine turno, i **contatti di basetta** (chi tocca chi, e da che lato: fronte, fianco, retro) e quanti modelli di ciascuna stanno dentro un elemento scenico;
 - il punteggio voce per voce e le tue note.
 
 Ci sono anche *Copia il Markdown* senza la richiesta davanti, *Scarica .md* e *Scarica .json* — il JSON è il report intero, per rileggerlo con un programma.
@@ -194,6 +204,9 @@ src/
   imgexport.js        il tavolo come PNG, con i colori risolti
   share.js            schieramento dentro un link, compresso
   tactics.js          distanze dal bordo, linea di vista, archi di carica
+  formation.js        il posto di ogni modello, personaggi uniti, contatti, terreno occupato
+  formeditor.js       la finestra in cui la formazione si disegna a mano
+  tableshot.js        il tavolo in miniatura, ricostruito da una fotografia di fine turno
   game.js             turni, fasi, perdite, tabellino, registro
   battlelog.js        fotografie di fine turno, punteggio, report in Markdown
   scenariokit.js      scenari propri e generatore di terreno a specchio

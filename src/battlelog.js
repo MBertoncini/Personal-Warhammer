@@ -8,6 +8,12 @@
  * risposta a "cosa e' andato storto", che non si ricostruisce mai a
  * memoria il martedi' dopo.
  *
+ * La fotografia non e' solo «dove»: tiene anche quanto e' grande
+ * l'unita' in quel momento (le perdite la accorciano), come e'
+ * schierata, chi era a contatto di basetta con chi e da che lato, e
+ * quali elementi scenici stava occupando — terreno compreso, che nel
+ * frattempo qualcuno puo' aver spostato.
+ *
  * Qui non c'e' ne' DOM ne' archivio: entrano lo stato del tavolo e le
  * fotografie, escono numeri e testo. L'archivio e i pannelli stanno in
  * reports.js, la partita in corso in game.js.
@@ -22,6 +28,7 @@
 
 import { inch } from './util.js';
 import { TERRAIN } from './terrain.js';
+import * as FM from './formation.js';
 
 const r1 = v => Math.round(v * 10) / 10;
 const pad2 = n => String(n).padStart(2, "0");
@@ -70,6 +77,41 @@ export function zoneOf(xIn, yIn, wIn, hIn){
   return `${half} · ${lane}`;
 }
 
+/* ------------------------------------------------------------------
+   Il tavolo com'e' adesso, letto una volta sola
+   Ogni fotografia deve dire tre cose che prima non diceva: quanto e'
+   grande adesso ciascuna unita' (le perdite la accorciano), chi sta
+   toccando chi, e chi sta dentro quale pezzo di terreno. Sono tutte e
+   tre conti sulla stessa geometria, e farli una volta per unita'
+   invece che tre e' la differenza fra una fotografia istantanea e una
+   che si sente.
+   ------------------------------------------------------------------ */
+function tableCtx(state){
+  const units = state.units || [];
+  const alive = u => Math.max(0, (u.models || 0) - (u.lost || 0));
+  const hostOf = ch => {
+    const id = (ch.join && ch.join.host != null) ? ch.join.host : null;
+    if (id == null) return null;
+    const h = units.find(u => u.uid === id);
+    return (h && !h.dead) ? h : null;
+  };
+  const attachedTo = u => units.filter(c => {
+    const h = c.uid !== u.uid && hostOf(c);
+    return h && h.uid === u.uid;
+  });
+  const info = new Map();
+  for (const u of units){
+    const lay = FM.layout(u, { alive: Math.max(1, alive(u)), attached: attachedTo(u) });
+    info.set(u.uid, {
+      lay, host: hostOf(u), chars: attachedTo(u),
+      box: FM.boxFromLayout(u, lay),
+      cells: FM.worldCells(u, lay),
+    });
+  }
+  const onBoard = units.filter(u => u.placed && !hostOf(u) && !u.dead);
+  return { info, hostOf, attachedTo, alive, onBoard, terrain: state.terrain || [] };
+}
+
 /* l'ultima riga registrata per ogni unita': serve a misurare il
    movimento e a portarsi avanti lo stato nella compilazione a mano */
 export function lastRecords(turns){
@@ -78,20 +120,43 @@ export function lastRecords(turns){
   return map;
 }
 
-export function unitRecord(u, prev, dims){
-  const x = r1(inch(u.x || 0)), y = r1(inch(u.y || 0));
+export function unitRecord(u, prev, dims, ctx = null){
+  const it = ctx ? ctx.info.get(u.uid) : null;
+  const host = it ? it.host : null;
+  /* un personaggio unito a un reggimento non ha una posizione sua:
+     sta dove sta il reggimento, ed e' li' che il report lo cerca */
+  const at = host || u;
+  const x = r1(inch(at.x || 0)), y = r1(inch(at.y || 0));
   const lost = Math.min(u.models || 0, u.lost || 0);
+  const f = FM.ensureFormation(u);
   const rec = {
-    uid: u.uid, army: u.army, name: u.name,
+    uid: u.uid, idx: u.idx, army: u.army, name: u.name,
     models: u.models || 0,
     alive: u.dead ? 0 : aliveOf(u),
     lost,
     dLost: Math.max(0, lost - (prev ? prev.lost || 0 : 0)),
-    dead: !!u.dead, fled: !!u.fled, placed: !!u.placed,
-    x, y, rot: Math.round(u.rot || 0),
+    dead: !!u.dead, fled: !!u.fled,
+    placed: host ? !!host.placed : !!u.placed,
+    x, y, rot: Math.round(at.rot || 0),
+    /* l'ingombro di ADESSO: le perdite accorciano il reggimento, e una
+       fotografia che tiene solo il centro non basta a ridisegnarlo */
+    w: it ? r1(inch(it.lay.w)) : 0,
+    h: it ? r1(inch(it.lay.h)) : 0,
+    form: {
+      mode: f.mode, preset: f.preset,
+      label: FM.presetLabel(f),
+      front: it ? it.lay.front : (u.frontage || 1),
+      gap: r1(f.spacing),
+    },
     moved: 0,
-    zone: u.dead ? "fuori gioco" : u.placed ? zoneOf(x, y, dims.w, dims.h) : "in riserva",
+    zone: u.dead ? "fuori gioco" : (host ? "con " + host.name : u.placed ? zoneOf(x, y, dims.w, dims.h) : "in riserva"),
   };
+  if (host){ rec.withUid = host.uid; rec.withName = host.name; }
+  if (it && it.chars.length) rec.chars = it.chars.map(c => c.name);
+  if (it && !host && u.placed && !u.dead){
+    const on = FM.terrainUnder(it.cells, ctx.terrain);
+    if (on.length) rec.terrain = on;
+  }
   /* Movimento netto fra due fotografie, non il percorso davvero
      camminato: un'unita' che avanza e torna indietro risulta ferma, e
      va detto nella legenda invece che fatto passare per un totale. */
@@ -107,23 +172,38 @@ function dimsOf(state){
 /* la fotografia dello schieramento, prima che si muova qualcosa */
 export function deployRecord(state){
   const dims = dimsOf(state);
+  const ctx = tableCtx(state);
   return {
     kind: "deploy", n: 0, army: "",
     at: Date.now(),
-    units: state.units.map(u => unitRecord(u, null, dims)),
+    units: state.units.map(u => unitRecord(u, null, dims, ctx)),
+    /* il terreno viaggia dentro OGNI fotografia, schieramento
+       compreso: un muretto spostato a meta' partita cambia il senso di
+       tutte le posizioni che vengono dopo, e un report che tiene una
+       mappa sola non se ne accorge */
+    terrain: FM.terrainSnapshot(state.terrain),
+    contacts: contactsNow(ctx),
     events: [], note: "",
   };
+}
+
+/* i contatti di basetta del momento, gia' pronti per il report */
+function contactsNow(ctx){
+  return FM.contactList(ctx.onBoard, u => ctx.info.get(u.uid).box);
 }
 
 /* la fotografia di fine turno: n = numero di turno, army = chi lo ha
    appena giocato */
 export function turnRecord(state, { n, army, events = [], note = "" }){
   const dims = dimsOf(state);
+  const ctx = tableCtx(state);
   const prev = lastRecords(state.game && state.game.turns);
   return {
     kind: "turn", n, army,
     at: Date.now(),
-    units: state.units.map(u => unitRecord(u, prev.get(u.uid), dims)),
+    units: state.units.map(u => unitRecord(u, prev.get(u.uid), dims, ctx)),
+    terrain: FM.terrainSnapshot(state.terrain),
+    contacts: contactsNow(ctx),
     events, note,
   };
 }
@@ -388,6 +468,45 @@ const stateOf = r => r.dead ? "distrutta" : r.fled ? "in rotta"
 /* Un report scritto a mano non ha coordinate: le colonne della
    posizione restano vuote invece di dichiarare che tutti stavano
    nell'angolo 0,0. */
+/* come sta schierata un'unita', in una casella di tabella */
+const formText = u => {
+  const f = u.form || {};
+  if (f.mode === "free") return `sciolta (${(f.label || "libera").toLowerCase()})`;
+  return `${u.frontage} di fronte`;
+};
+
+/* «8 modelli su 12 nel bosco», che e' come lo direbbe un giocatore */
+const terrText = r => (r.terrain && r.terrain.length)
+  ? r.terrain.map(t => `${String(t.label).toLowerCase()} ${t.models}/${t.of}`).join(", ")
+  : "—";
+
+const sizeText = r => (r.w && r.h) ? `${r.w}×${r.h}″` : "—";
+const recForm = r => {
+  const f = r.form;
+  if (!f) return "—";
+  return f.mode === "free" ? `sciolta (${String(f.label || "libera").toLowerCase()})` : `${f.front} di fronte`;
+};
+
+const PASS_TXT = { open:"sì", difficult:"terreno difficile", obstacle:"ostacolo", blocked:"impassabile" };
+const terrainTable = list => tbl(["Elemento", "Centro (x, y)", "Misure", "Fronte", "Attraversabile"],
+  (list || []).map(t => [t.label || t.kind, `${t.x}, ${t.y}`,
+    t.w ? `${t.w}″ × ${t.h || t.w}″` : "—",
+    (t.rot || 0) + "°",
+    (PASS_TXT[t.pass] || "—") + (t.los ? ", blocca la vista" : "")]));
+
+const terrKey = list => JSON.stringify((list || []).map(t => [t.kind, t.x, t.y, t.w, t.h, t.rot]));
+const terrMoved = (now, before) => !!(now && now.length) && terrKey(now) !== terrKey(before);
+
+/* I contatti sono la riga che manca a ogni resoconto scritto a mano:
+   senza, un turno di combattimenti sembra un turno di movimento. */
+function contactsBlock(t, title){
+  const list = (t.contacts || []);
+  if (!list.length) return [];
+  return ["", `**${title}.**`, "",
+    tbl(["Unità", "Lato", "Contro", "Lato", "Fra"],
+      list.map(c => [c.aName, c.aSide, c.bName, c.bSide, c.enemy ? "nemiche" : "alleate"])), ""];
+}
+
 const hasPos = r => r.placed && !r.dead && (r.x || r.y);
 const pos = r => hasPos(r) ? `${r.x}, ${r.y}` : "—";
 const facing = r => hasPos(r) ? r.rot + "°" : "—";
@@ -400,7 +519,9 @@ export const PROMPT = [
   "",
   "Leggilo e dimmi cosa è andato storto: se è un problema di lista, di schieramento, o di",
   "come ho giocato; in quale turno la partita è girata e perché; quali unità non hanno reso",
-  "quello che costavano. Se un dato ti manca chiedimelo, non inventarlo: il registro è",
+  "quello che costavano. Nel resoconto trovi anche, per ogni turno, quali unità erano a",
+  "contatto di basetta e da che lato, e quali stavano dentro un elemento di terreno.",
+  "Se un dato ti manca chiedimelo, non inventarlo: il registro è",
   "tenuto a mano durante la partita e può avere buchi.",
 ].join("\n");
 
@@ -414,6 +535,11 @@ function legend(rep){
     "- «Perdite»: modelli tolti in QUEL turno. «In piedi»: quanti ne restano.",
     "- Ogni turno di gioco compare due volte, una per giocatore: «Turno 2 — gioca B» è la seconda metà del secondo turno.",
     "- Un'unità distrutta compare nel turno in cui muore e poi sparisce dalle tabelle.",
+    "- «Formazione»: *ordine chiuso* è il reggimento a ranghi, con la larghezza di fronte indicata; *sciolta* vuol dire che ogni base ha una posizione sua, come gli schermagliatori. L'ingombro riportato è quello attuale, già accorciato dalle perdite.",
+    "- Un personaggio **unito** a un reggimento non ha posizione propria: sta dentro il reggimento, e nelle tabelle risulta nella casella del reggimento.",
+    "- «Contatti di basetta»: due unità che si toccano. Il lato indicato è quello dell'unità nominata: «fronte», «fianco sinistro», «fianco destro», «retro», guardandola dal suo fronte.",
+    "- «Terreno»: quanti modelli dell'unità stanno dentro un elemento scenico, sul totale di quelli in piedi.",
+    "- Il terreno è ripetuto a ogni turno perché durante la partita si sposta: le posizioni valgono per QUEL turno.",
     "- Il registro è compilato a mano da un giocatore mentre gioca: può avere turni saltati o numeri approssimati.",
   ].join("\n");
 }
@@ -453,9 +579,9 @@ export function reportMarkdown(rep, { prompt = false } = {}){
     out.push("", `### Esercito ${k} — ${ARMY(rep, k)}` +
       (rep.armies[k].info && rep.armies[k].info.catalogue ? ` (${rep.armies[k].info.catalogue})` : ""), "");
     if (!list.length){ out.push("_Nessuna unità registrata._"); continue; }
-    out.push(tbl(["#", "Unità", "Ruolo", "Modelli", "Punti", "US", "Base mm", "Fronte", "M", "Tiro max"],
+    out.push(tbl(["#", "Unità", "Ruolo", "Modelli", "Punti", "US", "Base mm", "Formazione", "M", "Tiro max"],
       list.map(u => [u.idx ?? "", u.name, [u.troop, u.slot].filter(Boolean).join(" / ") || "—",
-        u.models, u.pts, u.us || "—", `${u.baseW}×${u.baseH}`, u.frontage,
+        u.models, u.pts, u.us || "—", `${u.baseW}×${u.baseH}`, formText(u),
         u.move || "—", u.maxRange ? u.maxRange + "″" : "—"])));
     const withRules = list.filter(u => u.rules.length);
     if (withRules.length){
@@ -465,14 +591,14 @@ export function reportMarkdown(rep, { prompt = false } = {}){
   }
   out.push("");
 
-  /* --- terreno --- */
-  if (rep.terrain && rep.terrain.length){
-    out.push("## Terreno", "", tbl(["Elemento", "Centro (x, y)", "Misure", "Attraversabile"],
-      rep.terrain.map(t => [t.label || t.kind, `${t.x}, ${t.y}`,
-        t.w ? `${t.w}″ × ${t.h || t.w}″` : "—",
-        ({ open:"sì", difficult:"terreno difficile", obstacle:"ostacolo", blocked:"impassabile" }[t.pass] || "—") +
-        (t.los ? ", blocca la vista" : "")])), "");
-  }
+  /* --- terreno ---
+     La mappa non e' una sola: gli elementi si spostano in partita.
+     Questa e' quella di riferimento, poi ogni turno dice la sua se e'
+     cambiata. */
+  const depTerr = (rep.turns.find(t => t.kind === "deploy") || {}).terrain;
+  const baseTerr = (depTerr && depTerr.length) ? depTerr : rep.terrain;
+  if (baseTerr && baseTerr.length)
+    out.push("## Terreno allo schieramento", "", terrainTable(baseTerr), "");
 
   /* --- schieramento --- */
   const dep = rep.turns.find(t => t.kind === "deploy");
@@ -481,9 +607,12 @@ export function reportMarkdown(rep, { prompt = false } = {}){
     for (const k of ["A", "B"]){
       const rows = dep.units.filter(r => r.army === k);
       if (!rows.length) continue;
-      out.push(`**Esercito ${k} — ${ARMY(rep, k)}**`, "", tbl(["Unità", "Centro (x, y)", "Fronte", "Zona"],
-        rows.map(r => [r.name, pos(r), facing(r), r.zone || (r.placed ? "—" : "in riserva")])), "");
+      out.push(`**Esercito ${k} — ${ARMY(rep, k)}**`, "",
+        tbl(["Unità", "Centro (x, y)", "Ingombro", "Fronte", "Formazione", "Zona", "Terreno"],
+          rows.map(r => [r.name, pos(r), sizeText(r), facing(r), recForm(r),
+            r.zone || (r.placed ? "—" : "in riserva"), terrText(r)])), "");
     }
+    out.push(...contactsBlock(dep, "Contatti di basetta allo schieramento"));
     if (dep.note) out.push(`Nota sullo schieramento: ${dep.note}`, "");
   }
 
@@ -500,14 +629,22 @@ export function reportMarkdown(rep, { prompt = false } = {}){
 
   /* --- turni --- */
   const goneBefore = new Set();
+  let lastTerr = baseTerr;
   for (const t of rep.turns){
     if (t.kind === "deploy") continue;
     out.push(`## Turno ${t.n}${t.army ? " — gioca " + ARMY(rep, t.army) : ""}`, "");
     const rows = t.units.filter(r => !goneBefore.has(r.uid));
-    out.push(tbl(["Unità", "Es.", "In piedi", "Perdite", "Mosso", "Centro (x, y)", "Fronte", "Zona", "Stato"],
+    out.push(tbl(["Unità", "Es.", "In piedi", "Perdite", "Mosso", "Centro (x, y)", "Ingombro", "Fronte", "Formazione", "Zona", "Terreno", "Stato"],
       rows.map(r => [r.name, r.army, `${r.alive}/${r.models}`, r.dLost || "—",
-        r.moved ? r.moved + "″" : "—", pos(r), facing(r),
-        r.zone || "—", stateOf(r)])));
+        r.moved ? r.moved + "″" : "—", pos(r), sizeText(r), facing(r), recForm(r),
+        r.zone || "—", terrText(r), stateOf(r)])));
+    out.push(...contactsBlock(t, "Contatti di basetta a fine turno"));
+    /* il terreno si ristampa solo se qualcuno lo ha mosso: ripeterlo
+       identico dieci volte allungherebbe il report senza dire niente */
+    if (terrMoved(t.terrain, lastTerr)){
+      out.push("", "Terreno spostato in questo turno:", "", terrainTable(t.terrain));
+      lastTerr = t.terrain;
+    }
     for (const r of t.units) if (r.dead) goneBefore.add(r.uid);
     if (t.events && t.events.length){
       out.push("", "Registro del turno:");

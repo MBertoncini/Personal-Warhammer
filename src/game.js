@@ -9,6 +9,12 @@
  * perde i ranghi di dietro e sul tavolo si accorcia da solo, che e'
  * esattamente quello che succede alle miniature vere.
  *
+ * Le perdite si segnano da tre posti, e il terzo e' quello che conta
+ * quando i modelli non stanno in griglia: la lista di tutte le unita'
+ * qui nel pannello, l'ispettore, e l'editor della formazione, dove si
+ * clicca QUALE modello e' caduto. Sopra a tutto c'e' lo schermino: il
+ * tavolo in piccolo, adesso e a ogni fine turno gia' registrato.
+ *
  * A ogni fine turno si scatta una fotografia: dove sta ogni unita', di
  * quanto si e' mossa, quanti modelli ha perso. Le fotografie stanno
  * dentro lo stato del tavolo — quindi si annullano, si salvano e si
@@ -18,7 +24,11 @@
  */
 
 import * as BL from './battlelog.js';
+import * as FM from './formation.js';
+import { shotFromTurn, shotSVG, shotCaption } from './tableshot.js';
+import { openEditor } from './formeditor.js';
 import { emit } from './bus.js';
+import { inch } from './util.js';
 
 const PHASES = [
   { id:"strategy", label:"Strategia" },
@@ -75,7 +85,8 @@ export function start(){
   g.meta = BL.ensureMeta({ ...g.meta, date: BL.today(), first: "A" });
   g.score = BL.emptyScore();
   g.notes = "";
-  for (const u of S().units){ u.lost = 0; u.dead = false; u.fled = false; }
+  for (const u of S().units){ u.lost = 0; u.dead = false; u.fled = false; u.fallen = []; }
+  shotAt = null;
   logLine("Inizio della partita.");
   /* la prima fotografia e' lo schieramento: e' il termine di paragone
      di ogni movimento che verra' dopo */
@@ -176,6 +187,10 @@ export function setLost(u, n){
   const next = Math.max(0, Math.min(u.models, Math.round(n)));
   if (next === before) return;
   u.lost = next;
+  /* Quali modelli siano caduti conta: in ordine chiuso cadono gli
+     ultimi ranghi, in formazione sciolta quelli che il giocatore ha
+     segnato nell'editor. Qui la lista si riallinea al numero. */
+  FM.syncFallen(u, u.lost);
   if (u.lost >= u.models){ u.dead = true; u.placed = false; }
   else if (u.dead) u.dead = false;
   const d = u.lost - before;
@@ -188,11 +203,13 @@ export function setLost(u, n){
 
 export function destroy(u){
   u.lost = u.models; u.dead = true; u.placed = false;
+  FM.syncFallen(u, u.lost);
   logLine(u.name + " distrutta.", { army: u.army });
 }
 
 export function revive(u){
   u.dead = false; u.lost = 0; u.fled = false;
+  u.fallen = [];
   logLine(u.name + " rimessa in gioco.", { army: u.army });
 }
 
@@ -221,10 +238,129 @@ export function score(){
 }
 
 /* ------------------------------------------------------------------
+   Lo schermino
+   Il pannello dice a parole quello che sul tavolo si vede a colpo
+   d'occhio, e quando si racconta una partita («a quel punto gli sono
+   arrivato sul fianco») quel colpo d'occhio serve. Qui c'e' il tavolo
+   in piccolo, com'era alla fine di ogni turno: si scorre indietro coi
+   due tasti e si confronta con adesso.
+   ------------------------------------------------------------------ */
+
+/* quale fotografia si sta guardando: null = il tavolo adesso */
+let shotAt = null;
+
+const shotRep = () => {
+  const s = S();
+  return {
+    table: { w: Math.round(inch(s.tableW) * 10) / 10, h: Math.round(inch(s.tableH) * 10) / 10 },
+    terrain: [],
+    armies: { A:{ name:s.armies.A.name }, B:{ name:s.armies.B.name } },
+  };
+};
+
+/* la fotografia di adesso non e' registrata: si scatta al volo, cosi'
+   lo schermino segue il tavolo mentre si muove */
+const liveTurn = () => {
+  const g = game();
+  return BL.turnRecord(S(), { n: g.turn, army: g.army });
+};
+
+function screenHTML(){
+  const g = game();
+  const shots = g.turns || [];
+  const total = shots.length;                       // 0 = schieramento incluso
+  const idx = shotAt == null ? total : Math.max(0, Math.min(shotAt, total - 1));
+  const live = shotAt == null;
+  const turn = live ? liveTurn() : shots[idx];
+  if (!turn) return "";
+  const rep = shotRep();
+  const shot = shotFromTurn(rep, turn);
+  const title = live ? `Adesso · turno ${g.turn} di ${g.army}`
+    : (turn.kind === "deploy" ? "Schieramento"
+       : `Turno ${turn.n} · giocato da ${turn.army}`);
+  return `
+    <div class="tvbox">
+      <div class="tvhead">
+        <button class="btn tiny icon" id="g-shot-prev" ${idx <= 0 && !live ? "disabled" : ""} title="Fotografia precedente">‹</button>
+        <span class="mono">${title}</span>
+        <button class="btn tiny icon" id="g-shot-next" ${live ? "disabled" : ""} title="Fotografia successiva">›</button>
+      </div>
+      <div class="tvscreen">${shotSVG(shot, { height: 168 })}</div>
+      <div class="tvcap mono">${shotCaption(shot, turn) || "&nbsp;"}</div>
+    </div>`;
+}
+
+function wireScreen(host){
+  const g = game();
+  const total = (g.turns || []).length;
+  const prev = host.querySelector("#g-shot-prev");
+  const next = host.querySelector("#g-shot-next");
+  if (prev) prev.addEventListener("click", () => {
+    shotAt = shotAt == null ? total - 1 : Math.max(0, shotAt - 1);
+    renderGamePanel(host, { esc: hostEsc });
+  });
+  if (next) next.addEventListener("click", () => {
+    if (shotAt == null) return;
+    shotAt = shotAt + 1 >= total ? null : shotAt + 1;
+    renderGamePanel(host, { esc: hostEsc });
+  });
+}
+let hostEsc = s => String(s);
+
+/* ------------------------------------------------------------------
+   Perdite di tutte le unita' in un posto solo
+   Segnare una perdita voleva dire selezionare l'unita' sul tavolo e
+   scendere nell'ispettore: dieci gesti per un tiro di archi. Qui ci
+   sono tutte, e il tasto in fondo apre la formazione per dire QUALI
+   modelli sono caduti.
+   ------------------------------------------------------------------ */
+function lossesHTML(esc){
+  const s = S();
+  const rows = id => s.units
+    .filter(u => u.army === id && !FM.joinedHost(u))
+    .map(u => {
+      const n = alive(u);
+      return `<div class="lossrow${u.dead ? " dead" : ""}" data-loss="${u.uid}">
+        <span class="nm mono">${esc(shortish(u.name))}</span>
+        <b class="mono${n * 2 <= u.models ? " low" : ""}">${n}/${u.models}</b>
+        <button class="btn tiny" data-lm="${u.uid}" title="Un modello in meno">−</button>
+        <button class="btn tiny" data-lp="${u.uid}" title="Un modello in più">+</button>
+        <button class="btn tiny ghost" data-lpick="${u.uid}" title="Scegli quali modelli sono caduti">⁝</button>
+      </div>`;
+    }).join("");
+  return `
+    <details class="lossbox">
+      <summary class="panel-title">Perdite</summary>
+      <p class="note">I tasti tolgono e rimettono un modello. Il terzo apre la formazione: lì si sceglie <b>quale</b> modello è caduto, e l'unità si accorcia di conseguenza.</p>
+      ${["A", "B"].map(id => `
+        <div class="readout" style="margin-top:6px"><span><span class="swatch" style="background:var(--army${id})"></span>${esc(S().armies[id].name || "Esercito " + id)}</span></div>
+        ${rows(id) || `<p class="empty">Nessuna unità.</p>`}`).join("")}
+    </details>`;
+}
+const shortish = n => { const s = String(n).replace(/\(.*?\)/g, "").trim(); return s.length > 20 ? s.slice(0, 19) + "…" : s; };
+
+function wireLosses(host){
+  const find = id => S().units.find(u => u.uid === +id);
+  host.querySelectorAll("[data-lm]").forEach(b => b.addEventListener("click", () => {
+    const u = find(b.dataset.lm);
+    if (u) ctx.act("perdite", () => setLost(u, (u.lost || 0) + 1));
+  }));
+  host.querySelectorAll("[data-lp]").forEach(b => b.addEventListener("click", () => {
+    const u = find(b.dataset.lp);
+    if (u) ctx.act("perdite", () => setLost(u, (u.lost || 0) - 1));
+  }));
+  host.querySelectorAll("[data-lpick]").forEach(b => b.addEventListener("click", () => {
+    const u = find(b.dataset.lpick);
+    if (u) openEditor(u.uid);
+  }));
+}
+
+/* ------------------------------------------------------------------
    Pannello
    ------------------------------------------------------------------ */
 export function renderGamePanel(host, { esc }){
   if (!host) return;
+  hostEsc = esc;
   const g = game();
   const played = turnsPlayed();
 
@@ -269,6 +405,7 @@ export function renderGamePanel(host, { esc }){
     <div class="phases">
       ${PHASES.map((p, i) => `<button class="btn tiny${i === g.phase ? " on" : ""}" data-phase="${i}">${p.label}</button>`).join("")}
     </div>
+    ${screenHTML()}
     <div class="readout"><span><span class="swatch" style="background:var(--armyA)"></span>${esc(names.A)}</span>
       <b>${sc.A.alivePts} pt in campo · −${sc.A.lostPts}</b></div>
     <div class="readout"><span><span class="swatch" style="background:var(--armyB)"></span>${esc(names.B)}</span>
@@ -284,6 +421,7 @@ export function renderGamePanel(host, { esc }){
       <button class="btn tiny" id="g-archive">Archivia il report</button>
       <button class="btn tiny ghost" id="g-stop" style="color:var(--bad)">Chiudi partita</button>
     </div>
+    ${lossesHTML(esc)}
     <div class="gamelog">
       ${g.log.length ? g.log.slice(0, 40).map(l => `
         <div class="logline"><span class="lt mono">T${l.t}</span>
@@ -292,6 +430,8 @@ export function renderGamePanel(host, { esc }){
         : `<p class="empty">Nessuna annotazione.</p>`}
     </div>`;
 
+  wireScreen(host);
+  wireLosses(host);
   host.querySelector("#g-next").addEventListener("click", () => ctx.act("fase", () => advance(1)));
   host.querySelector("#g-back").addEventListener("click", () => ctx.act("fase", () => advance(-1)));
   host.querySelectorAll("[data-phase]").forEach(b => b.addEventListener("click", () =>

@@ -22,6 +22,10 @@ const UNIT_KEEP = [
   "uid", "army", "name", "models", "baseId", "baseW", "baseH", "frontage",
   "loose", "pts", "us", "troop", "maxRange", "stats", "x", "y", "rot",
   "placed", "lost", "dead",
+  /* la formazione e' meta' dello schieramento: senza, un reggimento a
+     cuneo e una schermagliata sparsa arriverebbero dall'altra parte
+     come due rettangoli uguali. Sono numeri e si comprimono bene. */
+  "formation", "fallen", "join", "character",
 ];
 
 export function trimSnapshot(s){

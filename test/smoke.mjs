@@ -4,11 +4,14 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import 'fake-indexeddb/auto';
 
-/* import.meta.dirname vuole Node >= 20.11; questa forma va anche prima */
-const here = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
+/* import.meta.dirname vuole Node >= 20.11; questa forma va anche prima.
+   fileURLToPath e non pathname: un percorso con uno spazio dentro
+   arriverebbe con %20 e il file non si aprirebbe. */
+const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 

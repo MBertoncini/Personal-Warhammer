@@ -6,11 +6,14 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import 'fake-indexeddb/auto';
 
-/* import.meta.dirname vuole Node >= 20.11; questa forma va anche prima */
-const here = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
+/* import.meta.dirname vuole Node >= 20.11; questa forma va anche prima.
+   fileURLToPath e non pathname: un percorso con uno spazio dentro
+   arriverebbe con %20 e il file non si aprirebbe. */
+const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 const dom = new JSDOM(fs.readFileSync(path.join(root, 'index.html'), 'utf8'),
                       { pretendToBeVisual: true, url: 'https://example.org/' });
@@ -152,6 +155,55 @@ ok('il righello resta sul tavolo', rulerCount() === 1);
 click('#btn-rulers-clear');
 ok('e si toglie tutto insieme', rulerCount() === 0);
 
+console.log('\nformazioni');
+const FM = await import('../src/formation.js');
+const wOf = u => FM.layout(u, { alive: deploy.effModels(u),
+                                attached: FM.attachedTo(state.units, u) }).w;
+
+const skirm = state.units.find(u => u.army === 'A' && u.loose);
+state.sel = { type: 'unit', id: skirm.uid };
+deploy.renderAll();
+click('#i-form');
+ok('l editor della formazione si apre', !!doc.querySelector('#formation-modal #f-canvas'));
+ok('disegna una casella per modello',
+   doc.querySelectorAll('#formation-modal .fcell').length === skirm.models);
+
+const wRanks = wOf(skirm);
+click('#formation-modal #f-mode-f');
+ok('la formazione passa a sciolta', skirm.formation.mode === 'free');
+doc.querySelector('#formation-modal [data-preset="screen"]').dispatchEvent(new window.Event('click'));
+ok('il preset schermo mette tutti su una riga', wOf(skirm) > wRanks * 1.5);
+click('#formation-modal #f-mirror');
+ok('toccarla a mano la promuove a "come l hai messa"',
+   skirm.formation.preset === 'custom' && skirm.formation.slots.length === skirm.models);
+history.undo();
+ok('e anche la formazione si annulla',
+   state.units.find(u => u.uid === skirm.uid).formation.preset === 'screen');
+click('#formation-modal #f-close');
+ok('la finestra si chiude', !doc.querySelector('#formation-modal'));
+
+console.log('\npersonaggi dentro le unita');
+const chief = state.units.find(u => u.army === 'A' && FM.isCharacter(u));
+ok('un modello solo di fanteria e un personaggio', !!chief);
+const regiment = state.units.find(u => u.army === 'A' && u.models >= 10 && !u.loose);
+const wBefore = wOf(regiment);
+deploy.act('unisci', () => FM.joinUnit(chief, regiment));
+deploy.renderAll();
+ok('il personaggio non e piu un pezzo suo sul tavolo', chief.placed === false);
+const layH = FM.layout(regiment, { alive: regiment.models,
+                                   attached: FM.attachedTo(state.units, regiment) });
+ok('prende una casella dentro il reggimento',
+   layH.slots.some(s => s.kind === 'char' && s.uid === chief.uid));
+ok('il reggimento ha una casella in piu', layH.slots.length === regiment.models + 1);
+ok('e sul tavolo si allarga', wOf(regiment) >= wBefore);
+ok('la lista laterale lo dice', /pers\./.test(doc.querySelector('#armies').textContent));
+history.undo();
+ok('sganciarlo lo rimette in campo',
+   state.units.find(u => u.uid === chief.uid).placed === true);
+deploy.act('unisci', () => FM.joinUnit(state.units.find(u => u.uid === chief.uid),
+                                       state.units.find(u => u.uid === regiment.uid)));
+deploy.renderAll();
+
 console.log('\nmodalita partita');
 const game = await import('../src/game.js');
 click('#g-start');
@@ -205,19 +257,85 @@ ok('il punteggio automatico finisce nelle righe',
 const vd = BL.verdict(preview);
 ok('il verdetto dice chi ha vinto e di quanto', vd.winner === 'A' && /vittoria|pareggio/i.test(vd.text));
 
+console.log('\nperdite scelte modello per modello');
+const sk = state.units.find(u => u.uid === skirm.uid);
+const wFull = wOf(sk);
+deploy.act('perdita', () => game.setLost(sk, FM.toggleFallen(sk, 0)));
+ok('segnare un modello lo conta fra le perdite', sk.lost === 1 && sk.fallen[0] === 0);
+ok('e sul tavolo l unita si accorcia', deploy.effModels(sk) === sk.models - 1);
+const layLive = FM.layout(sk, { alive: sk.models - 1 });
+ok('la casella del caduto sparisce', !layLive.slots.some(s2 => s2.i === 0));
+ok('l ingombro si ridisegna sui modelli rimasti', layLive.w !== wFull || layLive.h > 0);
+deploy.act('perdita', () => game.setLost(sk, FM.toggleFallen(sk, 0)));
+ok('e rimetterlo in piedi lo riporta indietro', sk.lost === 0 && sk.fallen.length === 0);
+
+console.log('\ncontatti di basetta e terreno');
+const aa = state.units.find(u => u.army === 'A' && u.placed && !u.dead && !FM.joinedHost(u));
+const bb = state.units.find(u => u.army === 'B' && u.placed && !u.dead && !FM.joinedHost(u));
+const boxOf = u => FM.layout(u, { alive: deploy.effModels(u),
+                                  attached: FM.attachedTo(state.units, u) });
+deploy.act('a contatto', () => {
+  aa.rot = 0; bb.rot = 0;
+  bb.x = aa.x;
+  bb.y = aa.y - boxOf(aa).h / 2 - boxOf(bb).h / 2 - 0.4;   // meno di mezzo millimetro: si toccano
+});
+/* e un pezzo di terreno grande sotto i piedi della prima */
+const piece = [...state.terrain].filter(t => t.kind !== 'treasure')
+  .sort((p1, p2) => (p2.w * p2.h) - (p1.w * p1.h))[0];
+if (piece) deploy.act('nel terreno', () => { piece.x = aa.x; piece.y = aa.y; });
+click('#g-close');
+const tc = state.game.turns[state.game.turns.length - 1];
+const touch = (tc.contacts || []).find(c =>
+  (c.a === aa.uid && c.b === bb.uid) || (c.a === bb.uid && c.b === aa.uid));
+ok('la fotografia registra i contatti di basetta', !!touch);
+ok('e dice da che lato ciascuna e stata presa',
+   !!touch && /fronte|retro|fianco/.test(touch.aSide) && /fronte|retro|fianco/.test(touch.bSide));
+const recA = tc.units.find(r => r.uid === aa.uid);
+ok('ogni unita porta il suo ingombro del momento', recA.w > 0 && recA.h > 0);
+ok('e come e schierata', !!recA.form && typeof recA.form.mode === 'string');
+ok('il terreno sotto l unita e registrato', !piece || (recA.terrain && recA.terrain.length > 0));
+ok('e la posizione del terreno viaggia col turno',
+   Array.isArray(tc.terrain) && tc.terrain.length === state.terrain.length);
+const depShot = state.game.turns[0];
+ok('anche lo schieramento si porta dietro il terreno',
+   Array.isArray(depShot.terrain) && depShot.terrain.length > 0);
+const joined = tc.units.find(r => r.uid === chief.uid);
+ok('il personaggio unito risulta col reggimento',
+   !!joined && joined.withUid === regiment.uid && /con /.test(joined.zone));
+
+console.log('\nlo schermino del tavolo');
+ok('il pannello disegna il tavolo in piccolo', !!doc.querySelector('#game .tvbox svg'));
+ok('e si puo scorrere indietro fra le fotografie', !!doc.querySelector('#game #g-shot-prev'));
+click('#g-shot-prev');
+ok('scorrendo cambia fotografia senza errori',
+   !!doc.querySelector('#game .tvbox svg') && errors.length === 0);
+ok('la lista delle perdite e nel pannello', !!doc.querySelector('#game .lossbox [data-lp]'));
+
 console.log('\nbattle report');
 const reports = await import('../src/reports.js');
 await reports.initReports();
+/* quante fotografie sono state scattate finora: scriverne il numero a
+   mano rendeva la prova fragile, e ogni turno in piu' aggiunto qui
+   sopra la faceva fallire per il motivo sbagliato */
+const shots = state.game.turns.filter(t => t.kind === 'turn').length;
 const rep = await reports.archiveCurrent();
 ok('la partita finisce nell\'archivio', reports.allReports().length === 1);
 ok('il report si porta dietro le due liste', rep.roster.A.length > 0 && rep.roster.B.length > 0);
-ok('e tutte le fotografie', rep.turns.filter(t => t.kind === 'turn').length === 2);
+ok('e tutte le fotografie', shots >= 2 && rep.turns.filter(t => t.kind === 'turn').length === shots);
 
 const md = BL.reportMarkdown(rep, { prompt: true });
 ok('il testo spiega alla macchina come si legge', /Come leggere questi dati/.test(md));
 ok('chiede l\'analisi che serve', /cosa è andato storto/i.test(md));
 ok('c\'e un capitolo per ogni mezzo turno',
-   /## Turno 1 — gioca /.test(md) && (md.match(/## Turno /g) || []).length === 2);
+   /## Turno 1 — gioca /.test(md) && (md.match(/## Turno /g) || []).length === shots);
+ok('le liste dicono come e schierata ogni unita', /\| Formazione \|/.test(md));
+ok('i contatti di basetta sono nel report', /Contatti di basetta/.test(md));
+ok('e il terreno occupato pure', /\| Terreno \|/.test(md));
+ok('il terreno dello schieramento e datato', /## Terreno allo schieramento/.test(md));
+ok('la legenda spiega le voci nuove',
+   /Contatti di basetta/.test(md.slice(0, md.indexOf('## Scheda'))));
+ok('il JSON si porta dietro tutto',
+   /"contacts"/.test(BL.reportJSON(rep)) && /"form"/.test(BL.reportJSON(rep)));
 ok('le unita compaiono con nome e perdite', md.includes(scout.name) && /Perdite/.test(md));
 ok('il punteggio ha un totale', /\*\*Totale/.test(md));
 ok('e le tabelle sono Markdown vero', /\| --- \|/.test(md));
@@ -308,6 +426,10 @@ const back = await share.decodeBoard(code);
 ok('le unita tornano indietro tutte', back.units.length === state.units.length);
 ok('le posizioni sono conservate',
    Math.abs(back.units[0].x - state.units[0].x) < 0.2);
+ok('la formazione viaggia nel link',
+   back.units.some(u => u.formation && u.formation.mode === 'free'));
+ok('e anche i personaggi uniti',
+   back.units.some(u => u.join && u.join.host != null));
 ok('le foto non viaggiano nel link', !/data:image/.test(code));
 
 console.log('\nimmagine del tavolo');

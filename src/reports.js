@@ -26,6 +26,7 @@ import { SCENARIOS } from './scenarios.js';
 import { customScenarioMap } from './scenariokit.js';
 import { state } from './deploy.js';
 import * as BL from './battlelog.js';
+import { shotFromTurn, shotSVG, shotCaption } from './tableshot.js';
 
 const REP_KEY = "reports:all";
 
@@ -354,8 +355,17 @@ function turnHTML(rep, t, i){
   if (!open) return head;
 
   const rows = (t.units || []).filter(r => !goneBefore(rep, i, r.uid));
+  /* Il tavolo com'era: una tabella di coordinate non si legge, un
+     disegno si'. Compare solo per i turni registrati giocando, gli
+     unici che hanno le posizioni. */
+  const shot = shotFromTurn(rep, t);
   return head + `
     <div class="turn-edit">
+      ${shot.units.length ? `<div class="tvbox">
+        <div class="tvscreen">${shotSVG(shot, { height: 240 })}</div>
+        <div class="tvcap mono">${esc(shotCaption(shot, t))}</div>
+      </div>` : ""}
+      ${contactsList(t)}
       <div class="tablewrap"><table class="grid-table">
         <thead><tr><th>Unità</th><th>In piedi</th><th>Perdite</th><th>Mosso ″</th><th>Zona / posizione</th><th>Stato</th></tr></thead>
         <tbody>
@@ -368,7 +378,9 @@ function turnHTML(rep, t, i){
               <td>${t.kind === "deploy" ? "—"
                 : `<input type="number" min="0" step="0.5" value="${r.moved || 0}" data-tu="${i}|${r.uid}|moved">`}</td>
               <td><input type="text" value="${esc(r.zone || "")}" data-tu="${i}|${r.uid}|zone"
-                    placeholder="${r.placed && (r.x || r.y) ? esc(r.x + ", " + r.y) : "dove si trovava"}"></td>
+                    placeholder="${r.placed && (r.x || r.y) ? esc(r.x + ", " + r.y) : "dove si trovava"}">
+                ${r.terrain && r.terrain.length
+                  ? `<span class="mono" style="color:var(--muted)">${esc(r.terrain.map(x => x.label.toLowerCase() + " " + x.models + "/" + x.of).join(", "))}</span>` : ""}</td>
               <td><select data-tu="${i}|${r.uid}|state">
                 ${STATES.map(s => `<option value="${s.id}" ${s.id === stateId(r) ? "selected" : ""}>${s.label}</option>`).join("")}
               </select></td>
@@ -379,6 +391,20 @@ function turnHTML(rep, t, i){
         `<div class="logline"><span>${esc(e)}</span></div>`).join("")}</div>` : ""}
       <textarea rows="2" data-tu="${i}||note" placeholder="Cosa è successo in questo turno">${esc(t.note || "")}</textarea>
     </div>`;
+}
+
+/* Chi toccava chi, e da che lato. E' il dato che un resoconto scritto
+   a mano non ha mai, e senza il quale un turno di combattimenti
+   sembra un turno di movimento. */
+function contactsList(t){
+  const list = (t.contacts || []);
+  if (!list.length) return "";
+  return `<div class="tablewrap"><table class="grid-table">
+    <thead><tr><th>Contatti di basetta</th><th>Lato</th><th>Contro</th><th>Lato</th></tr></thead>
+    <tbody>${list.map(c => `<tr${c.enemy ? "" : ' class="gone"'}>
+      <td>${esc(c.aName)}</td><td>${esc(c.aSide)}</td>
+      <td>${esc(c.bName)}</td><td>${esc(c.bSide)}</td></tr>`).join("")}</tbody>
+  </table></div>`;
 }
 
 /* un'unita' distrutta prima di questo turno non ha piu' niente da dire */
