@@ -437,6 +437,63 @@ ok('compare nel menu a tendina',
    [...doc.querySelectorAll('#scenario option')].some(o => /prova/i.test(o.textContent)));
 await kit.removeCustom(kit.allCustom()[0].id);
 
+console.log('\nbersagli grandi e menu contestuale');
+const svgBoard = doc.querySelector('#board');
+const pads = [...svgBoard.querySelectorAll('.hits [data-uid]')];
+ok('i pezzi piccoli hanno un cuscinetto da toccare', pads.length > 0);
+const padded = pads[0].dataset.uid;
+const nodes = [...svgBoard.querySelectorAll(`[data-uid="${padded}"]`)];
+ok('il cuscinetto sta SOTTO il pezzo vero, così chi mira preciso lo prende lo stesso',
+   nodes.length === 2 && nodes[0].closest('.hits') && !nodes[1].closest('.hits'));
+ok('ed è largo almeno quanto un polpastrello',
+   +nodes[0].getAttribute('width') >= 34 && +nodes[0].getAttribute('height') >= 34);
+
+/* la maniglia: quello che si vede è un segno, quello che si prende è
+   il cerchio invisibile che ci sta attorno */
+state.sel = { type: 'unit', id: state.units.find(u => u.placed).uid };
+deploy.renderAll();
+const handle = [...doc.querySelectorAll('#board .handle circle')];
+ok('la maniglia di rotazione ha un bersaglio più largo del pallino',
+   handle.length === 3 && +handle[0].getAttribute('r') > +handle[1].getAttribute('r') * 2);
+
+/* un pezzo toccato e non spostato non lascia un annulla che non annulla */
+const undoDepth0 = history.depth;
+const pezzo = doc.querySelector('#board .piece[data-uid]');
+const down = (target, opts = {}) => target.dispatchEvent(
+  new window.MouseEvent('pointerdown', { bubbles: true, clientX: 40, clientY: 40, button: 0, ...opts }));
+down(pezzo);
+svgBoard.dispatchEvent(new window.MouseEvent('pointerup', { bubbles: true, clientX: 40, clientY: 40 }));
+ok('toccare un pezzo senza spostarlo non sporca la pila dell annulla', history.depth === undoDepth0);
+
+/* pressione lunga: il menu del pezzo arriva dove sta il dito */
+down(doc.querySelector('#board .piece[data-uid]'));
+await settle(620);
+const ctx = doc.querySelector('.ctxmenu');
+ok('tenendo premuto si apre il menu del pezzo', !!ctx);
+const vociCtx = ctx ? [...ctx.querySelectorAll('[data-ctx]')].map(b => b.textContent) : [];
+ok('con le cose che si fanno sempre',
+   vociCtx.some(v => /formazione/i.test(v)) && vociCtx.some(v => /Ruota/.test(v)) && vociCtx.some(v => /Ritira|Schiera/.test(v)));
+ok('e il menu non lascia in giro un passo di annulla', history.depth === undoDepth0);
+const selUid = state.sel.id;
+const rot0 = state.units.find(u => u.uid === selUid).rot;
+ctx.querySelector('[data-ctx="2"]').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+await settle(40);
+ok('e la voce fa davvero quello che dice',
+   state.units.find(u => u.uid === selUid).rot === (rot0 + 90) % 360);
+ok('poi si chiude da sé', !doc.querySelector('.ctxmenu'));
+
+/* col mouse è il tasto destro */
+const terr = doc.querySelector('#board .piece[data-tid]');
+down(terr, { button: 2 });
+svgBoard.dispatchEvent(new window.Event('contextmenu', { bubbles: true }));
+await settle(40);
+const ctx2 = doc.querySelector('.ctxmenu');
+ok('il tasto destro apre lo stesso menu, con le voci del terreno',
+   !!ctx2 && [...ctx2.querySelectorAll('[data-ctx]')].some(b => /Togli dal tavolo/.test(b.textContent)));
+doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+await settle(40);
+ok('Escape lo chiude', !doc.querySelector('.ctxmenu'));
+
 console.log('\nmenu della barra');
 const menus = [...doc.querySelectorAll('.board-bar details.menu')];
 ok('la barra ha tre menu invece di ventitre pulsanti', menus.length === 3);

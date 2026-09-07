@@ -11,6 +11,7 @@
 > turno precedente (§1.8), aggancio al contatto (§1.9), finestra
 > dell'app al posto dei ventitré dialoghi nativi e scorciatoie nel
 > registro (§2.1), raggruppamento della barra del tavolo (§2.2),
+> bersagli grandi e menu contestuale sul tocco (§2.3),
 > `extras` nei serializzatori (§4) — più **l'ancora di
 > movimento**, che nell'analisi non c'era e che è il vero rimedio a «i
 > cerchi seguono il pezzo e mentre lo muovo non so più da dove sono
@@ -434,7 +435,6 @@ Non è stato fatto, e ha ancora senso:
 
 - **Scheda riassuntiva stampabile dell'esercito** (§3). Tutti i dati ci
   sono già nel parser, si vedono solo una unità alla volta.
-- **Bersagli grandi e menu contestuale sul tocco** (§2.3).
 - **Punti dello scenario contro punti della lista**, **durata della
   partita**, **esportazione del solo registro**, **promemoria del
   backup** (§3).

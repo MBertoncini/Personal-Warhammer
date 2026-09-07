@@ -619,3 +619,48 @@ svg#board:active{cursor:grabbing;}
   .menu-pop{position:fixed;left:8px;right:8px;top:auto;min-width:0;max-height:60vh;overflow:auto;}
   .menu.flip .menu-pop{left:8px;right:8px;}
 }
+
+/* ============================================================
+   BERSAGLI GRANDI E MENU CONTESTUALE
+   Al tavolo si gioca col dito su un tablet, e un polpastrello è largo
+   una decina di millimetri: la maniglia di rotazione era un pallino e
+   un reggimento a tavolo intero è largo tre pixel. Il disegno resta
+   quello, quello che cambia è quanto è grande la zona che risponde.
+   ============================================================ */
+
+/* niente menu del sistema e niente selezione del testo tenendo premuto
+   sul tavolo: la pressione lunga è un gesto dell'app */
+svg#board{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
+svg#board .hits rect{cursor:grab;}
+
+.ctxmenu{
+  position:fixed;z-index:70;min-width:216px;max-width:min(300px,92vw);
+  display:flex;flex-direction:column;gap:4px;padding:8px;
+  background:var(--panel);border:1px solid var(--line-strong);
+  border-radius:var(--r);box-shadow:0 16px 40px rgba(0,0,0,.26);
+}
+.ctxmenu .btn{text-align:left;width:100%;}
+.ctx-head{
+  font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  padding:1px 3px 5px;border-bottom:1px solid var(--line);margin-bottom:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.ctx-sep{height:1px;background:var(--line);margin:2px 0;}
+
+/* Dove si punta col dito e non col mouse i pulsanti crescono. Non è una
+   larghezza di schermo: un tablet grande si tocca lo stesso, e un
+   portatile stretto no. */
+.legend .keys{display:flex;gap:16px;flex-wrap:wrap;align-items:center;}
+.legend .touchhint{color:var(--muted);}
+
+@media (pointer:coarse){
+  .btn{min-height:36px;padding:7px 13px;}
+  .btn.tiny{min-height:31px;padding:5px 10px;}
+  .btn.icon{min-width:38px;}
+  .menu-pop .btn,.ctxmenu .btn{min-height:40px;}
+  .lossrow,.cntrow{gap:6px;padding:4px 0;}
+  select,input[type=text],input[type=number],input[type=search]{min-height:36px;}
+  /* le scorciatoie da tastiera su un tablet non dicono niente; il nome
+     dello scenario resta */
+  .legend .keys{display:none;}
+}

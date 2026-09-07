@@ -208,3 +208,63 @@ export function wireTags(root, u, ns, { onChange, add, remove, ask = askText } =
     add(u, t); done();
   });
 }
+
+/* ============================================================
+   4 · MENU CONTESTUALE
+   Sul tavolo, per ruotare un pezzo o aprirne la formazione bisognava
+   scendere nell'ispettore in fondo al pannello: sul telefono vuol dire
+   aprire il cassetto, scorrere, tornare indietro. Qui le quattro cose
+   che si fanno sempre arrivano dove sta il dito — pressione lunga sul
+   tocco, tasto destro col mouse.
+
+   `items` e' una lista di { label, run, danger } piu' { sep:true }.
+   ============================================================ */
+let openCtx = null;
+
+export function closeMenu(){
+  if (!openCtx) return;
+  const { el, onKey, onDown } = openCtx;
+  openCtx = null;
+  document.removeEventListener("keydown", onKey, true);
+  document.removeEventListener("pointerdown", onDown, true);
+  el.remove();
+}
+
+export function showMenu(clientX, clientY, items, { title = "" } = {}){
+  closeMenu();
+  const el = document.createElement("div");
+  el.className = "ctxmenu";
+  el.setAttribute("role", "menu");
+  el.innerHTML =
+    (title ? `<div class="ctx-head">${esc(title)}</div>` : "") +
+    items.map((it, i) => it.sep
+      ? `<div class="ctx-sep"></div>`
+      : `<button class="btn${it.danger ? " ghost" : ""}" data-ctx="${i}"${
+          it.danger ? ' style="color:var(--bad)"' : ""}>${esc(it.label)}</button>`).join("");
+  document.body.appendChild(el);
+
+  /* il riquadro si mette dove sta il dito, ma dentro lo schermo: aperto
+     sul bordo destro del tavolo finirebbe meta' fuori */
+  const r = el.getBoundingClientRect();
+  const vw = window.innerWidth || 800, vh = window.innerHeight || 600;
+  el.style.left = Math.max(8, Math.min(clientX - 12, vw - r.width - 8)) + "px";
+  el.style.top  = Math.max(8, Math.min(clientY - 12, vh - r.height - 8)) + "px";
+
+  const onKey = e => { if (e.key === "Escape"){ e.preventDefault(); closeMenu(); } };
+  /* si ascolta il pointerdown SUCCESSIVO: quello che ha aperto il menu
+     con la pressione lunga e' ancora premuto, e il suo pointerup non
+     deve richiudere subito quello che ha appena aperto */
+  const onDown = e => { if (!e.target.closest(".ctxmenu")) closeMenu(); };
+  document.addEventListener("keydown", onKey, true);
+  document.addEventListener("pointerdown", onDown, true);
+  openCtx = { el, onKey, onDown };
+
+  el.addEventListener("click", e => {
+    const b = e.target.closest("[data-ctx]");
+    if (!b) return;
+    const it = items[+b.dataset.ctx];
+    closeMenu();
+    if (it && it.run) it.run();
+  });
+  return el;
+}

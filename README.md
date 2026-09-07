@@ -78,7 +78,11 @@ Scenari Battle March e generici, zone di schieramento, terreno con i controlli (
 
 L'app non decide se la carica è legale. Mette il pezzo dove hai già deciso di metterlo, e lo mette dritto.
 
-**Maniglia di rotazione.** Sul pezzo selezionato compare un pallino davanti al fronte: trascinandolo si ruota (a scatti di 15° per le unità, 5° per il terreno; `Alt` per la rotazione libera). `[` e `]` — o `Shift`+rotella — cambiano il numero di modelli di fronte.
+**Maniglia di rotazione.** Sul pezzo selezionato compare un pallino davanti al fronte: trascinandolo si ruota (a scatti di 15° per le unità, 5° per il terreno; `Alt` per la rotazione libera). `[` e `]` — o `Shift`+rotella — cambiano il numero di modelli di fronte. Il pallino resta della **stessa misura sullo schermo** a qualsiasi ingrandimento, e la zona che risponde al dito è più larga del segno che si vede.
+
+**Col dito.** Al circolo si gioca su un tablet, e un polpastrello è largo una decina di millimetri: a tavolo intero un reggimento è tre pixel. Sotto ai pezzi c'è un **cuscinetto invisibile** largo almeno quanto un dito. Sta sotto apposta: chi mira preciso prende sempre il pezzo vero, e il cuscinetto raccoglie solo quello che sarebbe finito nel vuoto.
+
+**Menu del pezzo.** Tieni premuto un pezzo — o premi il tasto destro col mouse — e le cose che si fanno sempre arrivano dove sta il dito, senza scendere nell'ispettore: formazione, rotazione di 90°, ancora del movimento, etichetta, ritira. In partita ci sono anche il modello in meno e la ferita. Sul terreno e sui marcatori le voci cambiano di conseguenza. Dove si punta col dito e non col mouse tutti i pulsanti dell'app crescono da soli.
 
 **Formazione.** Ogni unità ha il suo editor grafico: doppio clic sul pezzo, oppure *Editor della formazione* nell'ispettore. Dentro ci sono due mondi.
 

@@ -19,7 +19,7 @@ import * as G from './game.js';
 import { initScenarioKit, customScenarioMap, saveCustom, removeCustom,
          randomTerrain, allCustom } from './scenariokit.js';
 import { survey, frontArcPoly, movementBands } from './tactics.js';
-import { askText, askConfirm,
+import { askText, askConfirm, askPick, showMenu, closeMenu,
          countersHTML, wireCounters, tagsHTML, wireTags } from './uikit.js';
 import * as EX from './extras.js';
 import * as MV from './movement.js';
@@ -177,6 +177,13 @@ const history = createHistory({
     if (r){ r.disabled = !canRedo; r.title = canRedo ? `Ripeti: ${redoLabel} (Ctrl+Y)` : "Niente da ripetere"; }
   },
 });
+
+/* Da pixel di schermo a unita' del tavolo. Tutto quello che si tocca —
+   la maniglia di rotazione, i bersagli dei pezzi piccoli — va misurato
+   in pixel e non in millimetri: su un tavolo da 96 pollici una basetta
+   da 25 mm e' tre pixel, e un bersaglio proporzionale a lei non si
+   prende con il dito. */
+const px = n => n / (view.scale() || 1);
 
 /* label: quello che si legge nel tooltip di Annulla.
    coalesce: millisecondi entro cui un gesto continuo (scrivere, tenere
@@ -1140,12 +1147,19 @@ function drawBoard(){
     const r = zoneRect(z);
     const zg = g(svg, "g", { class:"piece zone" });
     zg.dataset.zid = z.zid;
+    /* Il riempimento non si prende: una zona copre mezzo tavolo, e se
+       fosse cliccabile per intero non si potrebbe piu' toccare il vuoto
+       dentro la propria zona di schieramento. Si prende dal bordo e
+       dall'etichetta, che e' dove uno la cerca. */
     g(zg, "rect", { x:r.x, y:r.y, width:r.w, height:r.h, fill:col,
-                    opacity: z.kind === "note" ? ".05" : ".09" });
+                    opacity: z.kind === "note" ? ".05" : ".09", "pointer-events":"none" });
     g(zg, "rect", { x:r.x, y:r.y, width:r.w, height:r.h, fill:"none", stroke:col,
                     "stroke-width": selIs("zone", z.zid) ? 3 : 1.8,
                     "stroke-dasharray": z.kind === "blocked" ? "4 6" : (z.kind === "note" ? "12 8" : "none"),
-                    opacity:".8" });
+                    opacity:".8", "pointer-events":"none" });
+    /* il bordo da toccare e' spesso quanto un dito, e invisibile */
+    g(zg, "rect", { x:r.x, y:r.y, width:r.w, height:r.h, fill:"none",
+                    stroke:"transparent", "stroke-width":px(20), "pointer-events":"stroke" });
     const bottom = (r.y + r.h / 2) > H / 2;
     const t = g(zg, "text", { x:r.x + 10, y: bottom ? r.y + r.h - 12 : r.y + 24, fill:col,
                               "font-size":19, opacity:".85", "letter-spacing":"2" });
@@ -1212,6 +1226,27 @@ function drawBoard(){
       g(gg, "rect", { x:-b.w/2 - 5, y:-b.h/2 - 5, width:b.w + 10, height:b.h + 10, fill:"none",
                       stroke:"var(--accent)", "stroke-width":2, "stroke-dasharray":"7 5" });
   }
+
+  /* ---- il piano dei bersagli ----
+     Un pezzo piccolo, a tavolo intero, e' largo tre pixel: prenderlo
+     col dito e' impossibile e col mouse e' una lotteria. Sotto a tutto
+     quello che si vede c'e' un rettangolo invisibile per ogni pezzo,
+     largo almeno quanto un polpastrello. Sta SOTTO apposta: chi mira
+     preciso prende sempre il pezzo vero, e il cuscinetto raccoglie solo
+     quello che sarebbe finito nel vuoto. */
+  const HIT_MIN_PX = 34;
+  const hits = g(svg, "g", { class:"hits", fill:"none", "pointer-events":"all" });
+  const hitPad = (o, key, id) => {
+    const bx = boxOf(o);
+    const w = Math.max(bx.w, px(HIT_MIN_PX)), h = Math.max(bx.h, px(HIT_MIN_PX));
+    if (w <= bx.w && h <= bx.h) return;      // gia' abbastanza grande da sola
+    const el = g(hits, "rect", { x:-w / 2, y:-h / 2, width:w, height:h, class:"piece",
+                                 transform:`translate(${bx.x} ${bx.y}) rotate(${bx.rot || 0})` });
+    el.dataset[key] = id;
+  };
+  for (const t of state.terrain) hitPad(t, "tid", t.tid);
+  for (const m of state.markers) hitPad(m, "mid", m.mid);
+  for (const u of state.units) if (u.placed && !isJoined(u)) hitPad(u, "uid", u.uid);
 
   // marcatori: quelli pieni stanno sotto le unità, le sagome sopra
   drawMarkers(svg, g, false);
@@ -1406,9 +1441,14 @@ function drawBoard(){
     const b = boxOf(selObj), hp = handlePos(selObj), fc = toWorld([0, -b.h/2], b);
     const hg = g(svg, "g", { class:"handle" });
     hg.dataset.handle = "1";
-    g(hg, "line", { x1:fc[0], y1:fc[1], x2:hp[0], y2:hp[1], stroke:"var(--accent)", "stroke-width":1.6, "stroke-dasharray":"4 3" });
-    g(hg, "circle", { cx:hp[0], cy:hp[1], r:11, fill:"var(--panel)", stroke:"var(--accent)", "stroke-width":2.2 });
-    g(hg, "circle", { cx:hp[0], cy:hp[1], r:3.4, fill:"var(--accent)" });
+    const r = px(11);
+    g(hg, "line", { x1:fc[0], y1:fc[1], x2:hp[0], y2:hp[1], stroke:"var(--accent)",
+                    "stroke-width":px(1.6), "stroke-dasharray":`${px(4)} ${px(3)}` });
+    /* il bersaglio e' piu' largo del pallino: quello che si vede e' un
+       segno, quello che si prende col dito e' questo cerchio */
+    g(hg, "circle", { cx:hp[0], cy:hp[1], r:px(26), fill:"none", "pointer-events":"all" });
+    g(hg, "circle", { cx:hp[0], cy:hp[1], r, fill:"var(--panel)", stroke:"var(--accent)", "stroke-width":px(2.2) });
+    g(hg, "circle", { cx:hp[0], cy:hp[1], r:r * .31, fill:"var(--accent)" });
   }
 
   /* il cursore dice in che modalità sei: disegnare una zona e misurare
@@ -1909,11 +1949,13 @@ function snapUnit(u, x, y){
   return { x: ax, y: ay, rot: u.rot };
 }
 
-/* la maniglia di rotazione: un pallino davanti al pezzo selezionato */
-const HANDLE_OUT = 34;
+/* la maniglia di rotazione: un pallino davanti al pezzo selezionato,
+   tenuto a distanza fissa in PIXEL cosi' non finisce dentro il pezzo
+   quando si ingrandisce ne' a mezzo tavolo quando si rimpicciolisce */
+const HANDLE_OUT_PX = 40;
 function handlePos(o){
   const b = boxOf(o);
-  return toWorld([0, -b.h / 2 - HANDLE_OUT], b);
+  return toWorld([0, -b.h / 2 - px(HANDLE_OUT_PX)], b);
 }
 
 svgEl.addEventListener("pointerdown", e => {
@@ -1973,12 +2015,32 @@ svgEl.addEventListener("pointerdown", e => {
     obj = state.terrain.find(x => x.tid === +host.dataset.tid);
     state.sel = { type:"terr", id:obj.tid }; what = TERRAIN[obj.kind].label.toLowerCase();
   }
+  /* Il tasto destro non trascina: seleziona e basta, e il menu lo apre
+     l'evento contextmenu subito dopo. Ci si ricorda QUALE pezzo era,
+     perché con il puntatore catturato quell'evento arriva etichettato
+     sull'SVG e non sul pezzo, e da lì non si risalirebbe. */
+  if (e.button === 2){
+    ctxTarget = obj;
+    renderArmies(); renderInspector(); renderTerrainList(); drawBoard();
+    return;
+  }
+  ctxTarget = null;
+
   history.push("sposta " + what);
   /* Il punto di partenza si dichiara da solo al primo spostamento: chi
      muove un'unità sta cominciando il suo movimento, e non deve premere
      un tasto per dirlo. */
   if (obj.uid !== undefined) MV.ensureAnchor(obj);
   drag = { obj, dx: obj.x - p[0], dy: obj.y - p[1], moved:false };
+  /* tenendo premuto senza muovere si apre il menu del pezzo: e' il
+     tasto destro di chi non ha un tasto destro */
+  cancelPress();
+  const at = { x: e.clientX, y: e.clientY, id: e.pointerId };
+  press = { at, timer: setTimeout(() => {
+    press = null;
+    try { svgEl.releasePointerCapture(at.id); } catch (_) {}
+    openPieceMenu(obj, at.x, at.y, { fromDrag: true });
+  }, PRESS_MS) };
   try { svgEl.setPointerCapture(e.pointerId); } catch (_) {}
   renderArmies(); renderInspector(); renderTerrainList(); drawBoard();
 });
@@ -1998,6 +2060,7 @@ svgEl.addEventListener("pointermove", e => {
     drawBoard();
     return;
   }
+  if (press && Math.hypot(e.clientX - press.at.x, e.clientY - press.at.y) > PRESS_SLOP) cancelPress();
   if (!drag) return;
   const p = toSvg(e);
   let x = snapVal(p[0] + drag.dx), y = snapVal(p[1] + drag.dy);
@@ -2028,8 +2091,20 @@ function endDrag(e){
     });
     return;
   }
-  if (spin){ spin = null; try { svgEl.releasePointerCapture(e.pointerId); } catch (_) {} renderAll(); return; }
+  cancelPress();
+  if (spin){
+    /* la maniglia premuta e lasciata dov'era non e' una rotazione */
+    if (spin.obj.rot === spin.start) history.discard();
+    spin = null;
+    try { svgEl.releasePointerCapture(e.pointerId); } catch (_) {}
+    renderAll();
+    return;
+  }
   if (!drag) return;
+  /* Un pezzo toccato e non spostato ha solo cambiato la selezione: il
+     passo aperto al pointerdown si toglie, sennò per tornare indietro
+     di un movimento vero ne servirebbero due. */
+  if (!drag.moved) history.discard();
   drag = null;
   try { svgEl.releasePointerCapture(e.pointerId); } catch (_) {}
   renderAll();
@@ -2129,12 +2204,143 @@ document.addEventListener("keydown", e => {
   act(label, change, { coalesce: /^(sposta|ruota|fronte)$/.test(label) ? 700 : 0 });
 });
 
+/* ------------------------------------------------------------------
+   Menu contestuale
+   Per ruotare un pezzo o aprirne la formazione bisognava scendere
+   nell'ispettore, che sul telefono vuol dire aprire il cassetto,
+   scorrere e tornare indietro — per un gesto che al tavolo si fa cento
+   volte. Qui le cose che si fanno sempre arrivano dove sta il dito:
+   pressione lunga sul tocco, tasto destro col mouse.
+
+   Le voci sono quelle che valgono per QUEL pezzo, e in partita cambiano:
+   fuori partita non si segnano perdite.
+   ------------------------------------------------------------------ */
+const PRESS_MS = 480;      // quanto dura una "pressione lunga"
+const PRESS_SLOP = 10;     // pixel oltre i quali era un trascinamento
+let press = null;
+
+function cancelPress(){
+  if (!press) return;
+  clearTimeout(press.timer);
+  press = null;
+}
+
+function menuItemsFor(o){
+  const upd = (fn, label) => act(label, fn);
+  if (o.uid !== undefined){
+    const g0 = state.game;
+    const items = [
+      { label:"Editor della formazione…", run: () => openEditor(o.uid) },
+      { label:"↺ Ruota di 90°", run: () => upd(() => { o.rot = (o.rot + 270) % 360; }, "ruota") },
+      { label:"↻ Ruota di 90°", run: () => upd(() => { o.rot = (o.rot + 90) % 360; }, "ruota") },
+    ];
+    if (o.placed) items.push({ label:"⚓ Il movimento riparte da qui", run: () => upd(() => MV.setAnchor(o), "ancora") });
+    items.push({ sep:true });
+    if (g0.on){
+      items.push({ label:"− Un modello", run: () => upd(() => G.setLost(o, (o.lost || 0) + 1), "perdite") });
+      items.push({ label:"♥ Una ferita", run: () => upd(() => G.setWounds(o, EX.woundsOf(o) + 1), "ferite") });
+    }
+    items.push({ label:"Etichetta…", run: async () => {
+      const t = await askText({ title:"Etichetta", label:shortName(o.name) + ": una parola, e l'app non la interpreta.",
+                                placeholder:"disordinata, ha caricato…" });
+      if (t && t.trim()) upd(() => EX.addTag(o, t), "etichetta");
+    } });
+    items.push({ sep:true });
+    items.push({ label: o.placed ? "Ritira dal tavolo" : "Schiera",
+                 run: () => upd(() => { if (o.placed){ o.placed = false; MV.clearAnchor(o); } else place(o); },
+                                o.placed ? "ritira" : "schiera") });
+    return { title: shortName(o.name), items };
+  }
+  if (o.mid !== undefined){
+    return { title: o.label || (o.measure ? "Sagoma" : "Marcatore"), items: [
+      { label:"Scrivi cosa rappresenta…", run: async () => {
+        const t = await askText({ title:"Marcatore", label:"Il testo lo leggi tu: l'app non lo interpreta mai.",
+                                  value:o.label });
+        if (t !== null) upd(() => { o.label = t.trim(); }, "marcatore");
+      } },
+      { label:"↺ Ruota di 15°", run: () => upd(() => { o.rot = ((o.rot || 0) + 345) % 360; }, "ruota") },
+      { label:"↻ Ruota di 15°", run: () => upd(() => { o.rot = ((o.rot || 0) + 15) % 360; }, "ruota") },
+      { label:"Duplica", run: () => upd(() => {
+          const copy = EX.ensureMarker({ ...o, mid: midSeq++ });
+          copy.x += MM; copy.y += MM;
+          state.markers.push(copy);
+          state.sel = { type:"mark", id:copy.mid };
+        }, "duplica marcatore") },
+      { sep:true },
+      { label:"Togli dal tavolo", danger:true,
+        run: () => upd(() => { state.markers = state.markers.filter(x => x !== o); state.sel = null; }, "togli marcatore") },
+    ] };
+  }
+  if (o.zid !== undefined){
+    return { title: o.label || zoneKind(o.kind).label, items: [
+      { label:"Di chi è questa zona…", run: async () => {
+        const k = await askPick({ title:"Zona di schieramento", label:"Le zone disegnate sostituiscono quelle dello scenario.",
+                                  options: ZONE_KINDS.map(x => ({ id:x.id, label:x.label })) });
+        if (k) upd(() => { o.kind = zoneKind(k).id; }, "zona");
+      } },
+      { label:"Tutta la larghezza del tavolo",
+        run: () => upd(() => { o.w = state.tableW; o.x = state.tableW / 2; }, "zona") },
+      { sep:true },
+      { label:"Togli la zona", danger:true,
+        run: () => upd(() => { state.zones = state.zones.filter(x => x !== o); state.sel = null; }, "togli zona") },
+    ] };
+  }
+  const cfg = TERRAIN[o.kind] || {};
+  return { title: cfg.label || "Elemento", items: [
+    { label:"↺ Ruota di 15°", run: () => upd(() => { o.rot = ((o.rot || 0) + 345) % 360; }, "ruota") },
+    { label:"↻ Ruota di 15°", run: () => upd(() => { o.rot = ((o.rot || 0) + 15) % 360; }, "ruota") },
+    { sep:true },
+    { label:"Togli dal tavolo", danger:true,
+      run: () => upd(() => { state.terrain = state.terrain.filter(x => x !== o); state.sel = null; },
+                     "togli " + (cfg.label || "elemento").toLowerCase()) },
+  ] };
+}
+
+/* Il menu si apre AL POSTO del trascinamento: il passo di annulla che
+   il pointerdown aveva gia' aperto va tolto, sennò resta un annulla che
+   non annulla niente. */
+function openPieceMenu(obj, clientX, clientY, { fromDrag = false } = {}){
+  if (fromDrag){
+    if (drag && !drag.moved) history.discard();
+    drag = null;
+  }
+  cancelPress();
+  const { title, items } = menuItemsFor(obj);
+  showMenu(clientX, clientY, items, { title });
+}
+
+/* la stessa cosa col mouse: tasto destro sopra un pezzo. Il pezzo lo
+   ha messo da parte il pointerdown un istante prima. */
+let ctxTarget = null;
+svgEl.addEventListener("contextmenu", e => {
+  const obj = ctxTarget;
+  ctxTarget = null;
+  if (!obj) return;
+  e.preventDefault();
+  openPieceMenu(obj, e.clientX, e.clientY);
+});
+
+function objFromHost(host){
+  if (host.dataset.uid) return state.units.find(x => x.uid === +host.dataset.uid);
+  if (host.dataset.mid) return markerById(host.dataset.mid);
+  if (host.dataset.zid) return zoneById(host.dataset.zid);
+  return state.terrain.find(x => x.tid === +host.dataset.tid);
+}
+const selFor = o => o.uid !== undefined ? { type:"unit", id:o.uid }
+  : o.mid !== undefined ? { type:"mark", id:o.mid }
+  : o.zid !== undefined ? { type:"zone", id:o.zid }
+  : { type:"terr", id:o.tid };
+
 function doUndo(){
+  /* dopo un annulla gli oggetti del tavolo sono altri: un menu aperto
+     starebbe parlando di un pezzo che non esiste piu' */
+  closeMenu();
   const l = history.undo();
   if (l) toast("Annullato: " + l);
   else toast("Non c'è altro da annullare.");
 }
 function doRedo(){
+  closeMenu();
   const l = history.redo();
   if (l) toast("Rifatto: " + l);
 }
