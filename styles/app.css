@@ -415,3 +415,71 @@ svg#board:active{cursor:grabbing;}
   .board-scroll{min-height:0;padding:10px;}
   main{min-height:0;}
 }
+
+/* --- lo scontro simulato ---
+   Sta sopra al tavolo e non dentro il pannello laterale: due colonne di
+   controlli e una colonna di dadi in 300 px non ci stanno, e i dadi
+   vanno visti tutti insieme o non servono a niente. */
+.duel-host{
+  position:fixed; z-index:60; inset:auto 18px 18px auto;
+  /* si ferma sotto la barra del tavolo: coprire i pulsanti
+     mentre si guardano i dadi è il modo di doverlo chiudere ogni volta */
+  width:min(560px, calc(100vw - 36px)); max-height:min(72vh, 700px);
+  overflow-y:auto; overscroll-behavior:contain;
+  background:var(--panel); border:1px solid var(--line-strong);
+  border-radius:var(--r); box-shadow:var(--shadow);
+}
+.duel-card{display:flex;flex-direction:column;gap:10px;padding:12px 14px 14px;}
+.duel-head{
+  display:flex;align-items:center;gap:8px;
+  position:sticky;top:-12px;margin:-12px -14px 0;padding:12px 14px 8px;
+  background:var(--panel);border-bottom:1px solid var(--line);z-index:1;
+}
+.duel-sides{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.duel-side{
+  display:flex;flex-direction:column;gap:6px;min-width:0;
+  border:1px solid var(--line);border-radius:var(--r);padding:8px;background:var(--panel-2);
+}
+.duel-side .army-head{margin:0;}
+.duel-side .army-head b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.duel-side .dim{font-size:11px;color:var(--muted);}
+.duel-side .grid3{gap:5px;}
+.duel-side .field{font-size:10px;}
+.duel-flags{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);}
+.duel-flags label{display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:0;}
+.duel-flags select{flex:1;min-width:0;}
+.duel-forecast{border-left:3px solid var(--accent);padding-left:9px;}
+
+.duel-step{border:1px solid var(--line);border-radius:var(--r);padding:7px 9px;display:flex;flex-direction:column;gap:3px;}
+.dl-head{display:flex;align-items:center;gap:6px;font-size:12.5px;}
+.dl-head span:not(.swatch){color:var(--muted);}
+.dl-head .mono{margin-left:auto;font-size:11px;color:var(--muted);}
+.dl{display:grid;grid-template-columns:96px 1fr auto;gap:8px;align-items:center;font-size:12px;}
+.dl-k{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
+.dl b{font-weight:600;white-space:nowrap;}
+.dl.total{border-top:1px dotted var(--line);padding-top:3px;margin-top:2px;}
+.dl.total b{color:var(--ink);}
+.nodice{color:var(--muted);}
+
+/* Ogni dado si vede: e' la differenza fra un numero da credere sulla
+   parola e un conto che si ricontrolla a occhio. */
+.dice{display:flex;flex-wrap:wrap;gap:2px;}
+.die{
+  font-family:"IBM Plex Mono",monospace;font-style:normal;font-size:10.5px;line-height:16px;
+  width:16px;height:16px;text-align:center;border-radius:3px;
+  border:1px solid var(--line-strong);background:var(--panel-2);color:var(--muted);
+}
+.die.win{background:var(--ok);border-color:var(--ok);color:var(--panel);font-weight:600;}
+.die.more{width:auto;padding:0 4px;border-style:dashed;}
+
+.duel-cr{display:flex;flex-direction:column;gap:4px;}
+.duel-cr .dim{color:var(--muted);font-size:11px;font-weight:400;}
+.oddsbar{display:flex;height:9px;border-radius:99px;overflow:hidden;background:var(--panel-2);margin:2px 0 6px;}
+.oddsbar span{display:block;height:100%;}
+
+.readout.near .duel-go{margin-left:8px;padding:0 6px;line-height:18px;}
+
+@media (max-width:920px){
+  .duel-host{inset:auto 8px 8px 8px;width:auto;max-height:78vh;}
+  .duel-sides{grid-template-columns:1fr;}
+}

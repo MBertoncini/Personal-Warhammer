@@ -36,6 +36,18 @@ function allProfiles(node, out = [], d = 0){
   for (const k of kidsOf(node)) allProfiles(k, out, d + 1);
   return out;
 }
+/* tutte le caratteristiche di un profilo in una mappa nome -> valore,
+   e la ricerca per forma del nome: New Recruit scrive "R" o "Range",
+   "S" o "Strength", "AP" o "Armour Piercing" a seconda del catalogo */
+function readChars(p){
+  const m = {};
+  for (const c of charsOf(p)) m[String(pick(c, "name") || "").trim()] = charVal(c);
+  return m;
+}
+function pickChar(map, re){
+  for (const [k, v] of Object.entries(map)) if (re.test(k)) return v;
+  return "";
+}
 function charFrom(profiles, typeRe, nameRe){
   for (const p of profiles){
     if (typeRe && !typeRe.test(pType(p))) continue;
@@ -113,18 +125,41 @@ function readUnit(node){
     const n = String(pick(p, "name") || "");
     if (n && RULE_KEEP.test(n) && !rules.includes(n)) rules.push(n);
   }
+  /* Le armi non servono piu' solo a scrivere una riga nell'ispettore:
+     con Forza e perforazione il tavolo puo' stimare tiro e mischia. */
   const weapons = [];
   for (const p of profs){
-    if (!/^Weapon$/i.test(pType(p))) continue;
+    if (!/weapon/i.test(pType(p))) continue;
     const n = String(pick(p, "name") || "");
-    let rng = "";
-    for (const c of charsOf(p)) if (/^R$/i.test(String(pick(c, "name") || ""))) rng = charVal(c);
-    if (n && !weapons.some(w => w.name === n)) weapons.push({ name:n, range:rng });
+    if (!n || weapons.some(w => w.name === n)) continue;
+    const m = readChars(p);
+    weapons.push({
+      name: n,
+      range: pickChar(m, /^(r|rng|range)$/i),
+      S:     pickChar(m, /^(s|str|strength)$/i),
+      ap:    pickChar(m, /^(ap|armou?r piercing|armou?r penetration)$/i),
+      rules: pickChar(m, /special|rules/i),
+    });
   }
   const maxRange = weapons.reduce((m, w) => {
     const q = String(w.range).match(/(\d+)/);
     return q ? Math.max(m, +q[1]) : m;
   }, 0);
+
+  /* Salvezza d'armatura: nei profili sta come valore ("Armour Value 3")
+     oppure gia' come punteggio ("4+"). Se non c'e' resta zero e la si
+     mette a mano nell'ispettore, che e' comunque il posto in cui la si
+     corregge quando l'unita' porta lo scudo e il file non lo dice. */
+  let armour = 0;
+  for (const p of profs){
+    if (!/^(Model|Unit)$/i.test(pType(p))) continue;
+    const m = readChars(p);
+    const av = pickChar(m, /^(av|armou?r value)$/i);
+    const sv = pickChar(m, /^(sv|save|armou?r save)$/i);
+    if (av && /\d/.test(av)) armour = Math.max(2, Math.min(6, 7 - +av.match(/\d+/)[0]));
+    else if (sv && /\d/.test(sv)) armour = Math.max(2, Math.min(6, +sv.match(/\d+/)[0]));
+    if (armour) break;
+  }
 
   const cats = catsOf(node).map(c => String(pick(c, "name") || "")).filter(Boolean);
   const primary = catsOf(node).find(c => pick(c, "primary") === true || pick(c, "primary") === "true");
@@ -146,6 +181,7 @@ function readUnit(node){
     pts: Math.round(deepCost(node, /(^|[^a-z])(pts|points|punti)([^a-z]|$)/)),
     us: Math.round(deepCost(node, /unit strength/)),
     troop, unitSize: size, stats, rules, weapons, maxRange, slot, faction,
+    armour, ward: 0,
   };
 }
 

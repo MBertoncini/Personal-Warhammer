@@ -118,6 +118,8 @@
       <button class="btn on" id="btn-photos" title="Foto delle miniature sulle basette">Foto</button>
       <button class="btn" id="btn-ranges" title="Cerchi di movimento e tiro">Raggi</button>
       <button class="btn" id="btn-arcs" title="Arco frontale e portata di carica">Archi</button>
+      <button class="btn" id="btn-move" title="Dove può arrivare davvero: movimento, marcia e carica contando boschi, ostacoli e bordo del tavolo">Movimento</button>
+      <button class="btn" id="btn-shoot" title="Campo di tiro con le ombre degli elementi scenici e il punteggio per colpire">Tiro</button>
       <button class="btn" id="btn-dist" title="Distanze dal bordo e linea di vista verso i nemici">Distanze</button>
       <button class="btn" id="btn-measure" title="Righello: due clic per lasciare una misura sul tavolo">Misura</button>
       <button class="btn icon" id="btn-rulers-clear" title="Togli i righelli">⌫</button>
@@ -189,6 +191,11 @@
     <div id="matchup"></div>
   </div>
 </div>
+
+<!-- Lo scontro simulato: si apre dalla spada accanto a un nemico
+     nell'ispettore, e sta sopra al tavolo perché le due colonne di
+     dadi nel pannello laterale non ci starebbero. -->
+<div class="duel-host" id="duel" hidden></div>
 
 <div class="toast" id="toast"></div>
 

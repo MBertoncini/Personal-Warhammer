@@ -1,6 +1,7 @@
 /* Avvia la pagina intera in jsdom e controlla che tutto si regga:
  * le quattro schede, le anteprime, l'annulla, lo zoom, gli aiuti
- * tattici, la modalita' partita, il terreno casuale e il link.
+ * tattici, il ventaglio di movimento, il campo di tiro, lo scontro
+ * simulato, la modalita' partita, il terreno casuale e il link.
  * Si lancia con:  node test/boot.mjs
  */
 import fs from 'node:fs';
@@ -143,6 +144,84 @@ click('#btn-dist'); click('#btn-arcs');
 deploy.renderAll();
 ok('archi e distanze si disegnano senza errori', errors.length === 0);
 click('#btn-dist'); click('#btn-arcs');
+
+console.log('\nmovimento e tiro');
+click('#btn-move');
+deploy.renderAll();
+ok('il ventaglio di movimento si disegna senza errori', errors.length === 0);
+/* quattro fasce: movimento, marcia, carica e carica massima */
+ok('e mette sul campo un poligono per fascia',
+   doc.querySelectorAll('#board polygon').length >= 4);
+click('#btn-move');
+
+const shooter = state.units.find(u => u.placed && u.maxRange > 0);
+state.sel = { type: 'unit', id: shooter.uid };
+click('#btn-shoot');
+deploy.renderAll();
+const plan = deploy.shootPlanFor(shooter);
+ok('il piano di tiro conosce arma e gittata', !!plan && plan.range > 0);
+ok('e per ogni nemico dice se lo prende',
+   plan.rows.length > 0 && plan.rows.every(r => typeof r.canShoot === 'boolean'));
+ok('la gittata corta e meta di quella lunga',
+   plan.rows.every(r => !r.long || r.dist > plan.range / 2));
+ok('quello che non si vede non si puo tirare',
+   plan.rows.every(r => !(r.blocked && r.canShoot)));
+
+/* un bosco piantato in mezzo deve togliere la vista a qualcuno */
+const victim = plan.rows[0].unit;
+const mid = { tid: 9001, kind: 'wood', x: (shooter.x + victim.x) / 2, y: (shooter.y + victim.y) / 2,
+              w: 10, h: 10, rot: 0 };
+deploy.act('bosco di prova', () => { state.terrain.push(mid); });
+const shaded = deploy.shootPlanFor(shooter).rows.find(r => r.unit.uid === victim.uid);
+ok('il bosco in mezzo interrompe la linea di vista', !!shaded.blocked);
+ok('e il bersaglio smette di essere tirabile', shaded.canShoot === false);
+history.undo();
+click('#btn-shoot');
+ok('nessun errore con movimento e tiro accesi', errors.length === 0);
+
+console.log('\nscontro simulato');
+const duelHost = doc.querySelector('#duel');
+const attacker = state.units.find(u => u.army === 'A' && u.placed && u.models > 4);
+state.sel = { type: 'unit', id: attacker.uid };
+deploy.renderAll();
+const swords = doc.querySelectorAll('#inspector [data-duel]');
+ok('l\'ispettore propone lo scontro contro i nemici vicini', swords.length > 0);
+swords[0].dispatchEvent(new window.Event('click'));
+ok('il pannello dello scontro si apre', duelHost.hidden === false);
+ok('mostra le due schiere e la previsione',
+   duelHost.querySelectorAll('.duel-side').length === 2 && /in media/.test(duelHost.textContent));
+
+/* si tira finche' qualcuno cade: cosi' la prova vede anche il pulsante
+   che riporta le perdite sul tavolo */
+let applyBtn = null;
+for (let i = 0; i < 25 && !applyBtn; i++){
+  duelHost.querySelector('#d-roll').dispatchEvent(new window.Event('click'));
+  applyBtn = duelHost.querySelector('#d-apply');
+}
+ok('tirati i dadi si vedono le facce', duelHost.querySelectorAll('.die').length > 0);
+ok('e il conto di fine assalto', /Risoluzione/.test(duelHost.textContent));
+ok('in venticinque assalti qualcuno cade sempre', !!applyBtn);
+
+const defender = state.units.find(u => u.army === 'B' &&
+  new RegExp(u.name.slice(0, 6)).test(duelHost.textContent));
+const lostBefore = (attacker.lost || 0) + (defender ? defender.lost || 0 : 0);
+applyBtn.dispatchEvent(new window.Event('click'));
+const lostAfter = (attacker.lost || 0) + (defender ? defender.lost || 0 : 0);
+ok('le perdite dello scontro finiscono sulle unita', lostAfter > lostBefore);
+history.undo();
+ok('e anche quelle si annullano',
+   (state.units.find(u => u.uid === attacker.uid).lost || 0) +
+   (defender ? state.units.find(u => u.uid === defender.uid).lost || 0 : 0) === lostBefore);
+
+duelHost.querySelector('#d-odds').dispatchEvent(new window.Event('click'));
+ok('la simulazione riporta le percentuali', /500 assalti simulati/.test(duelHost.textContent));
+
+/* se una delle due sparisce il pannello si chiude invece di mostrare
+   un'unita' che non c'e' piu' */
+deploy.act('rimuovi', () => { state.units = state.units.filter(u => u.uid !== attacker.uid); });
+ok('l\'unita rimossa chiude il pannello', duelHost.hidden === true);
+history.undo();
+ok('nessun errore nello scontro simulato', errors.length === 0);
 
 console.log('\nrighelli');
 const rulerCount = () => state.rulers.length;

@@ -9,6 +9,9 @@ import { saveDoc, loadDoc } from './store.js';
 import { photoForUnit, photoFor, catEntry, matchUnitName } from './catalog.js';
 import { rectPoly, pointInRect, boxCorners, polysOverlap,
          distPointToBox, toWorld } from './geom.js';
+import * as CB from './combat.js';
+import { stat } from './rules.js';
+import { initDuel, openDuel, renderDuel } from './duel.js';
 import { createHistory } from './history.js';
 import { createView, wireViewGestures } from './view.js';
 import { exportPNG } from './imgexport.js';
@@ -16,7 +19,8 @@ import { shareUrl, decodeBoard, readShareCode, copyText } from './share.js';
 import * as G from './game.js';
 import { initScenarioKit, customScenarioMap, saveCustom, removeCustom,
          randomTerrain, allCustom } from './scenariokit.js';
-import { survey, frontArcPoly, movementBands } from './tactics.js';
+import { survey, frontArcPoly, movementBands, reachFan, sightFan,
+         shootingSurvey } from './tactics.js';
 
 /* Gli scenari sono quelli del manuale piu' quelli salvati dall'utente:
    da qui in giu' non c'e' differenza fra i due. */
@@ -44,7 +48,7 @@ const state = {
      usa-e-getta serviva a poco, in partita se ne tengono tre o quattro */
   rulers:[],
   /* aiuti tattici sull'unita' selezionata */
-  distances:false, arcs:false,
+  distances:false, arcs:false, move:false, shoot:false,
   game: G.emptyGame(),
   rawInfo:"",
 };
@@ -401,6 +405,8 @@ function renderInspector(){
       </div>
       ${u.rules.length ? `<div class="tags">${u.rules.map(r => `<span class="tag">${esc(r)}</span>`).join("")}</div>` : ""}
       ${u.weapons.length ? `<p class="note"><b>Armi:</b> ${u.weapons.map(w => esc(w.name) + (w.range && w.range !== "-" ? ` (${esc(w.range)})` : "")).join(" · ")}</p>` : ""}
+      ${defenceHTML(u)}
+      ${shootingHTML(u)}
       ${gameBlockHTML(u)}
       ${nearbyHTML(u)}
       <div class="grid2"><button class="btn" id="i-rot-l">↺ 90°</button><button class="btn" id="i-rot-r">↻ 90°</button></div>
@@ -434,6 +440,13 @@ function renderInspector(){
     u.loose = e.target.checked;
     u.frontage = defaultFrontage(u.troop, u.models, u.loose);
   }));
+  $("#i-armour").addEventListener("change", e => upd(() => { u.armour = +e.target.value || 0; }, "armatura"));
+  $("#i-ward").addEventListener("change", e => upd(() => { u.ward = +e.target.value || 0; }, "salvezza speciale"));
+  for (const b of host.querySelectorAll("[data-duel]"))
+    b.addEventListener("click", () => {
+      const foe = state.units.find(x => x.uid === +b.dataset.duel);
+      if (foe) openDuel(u, foe);
+    });
   $("#i-rot-l").addEventListener("click", () => upd(() => { u.rot = (u.rot + 270) % 360; }, "ruota"));
   $("#i-rot-r").addEventListener("click", () => upd(() => { u.rot = (u.rot + 90) % 360; }, "ruota"));
   $("#i-swap").addEventListener("click", () => upd(() => { u.army = u.army === "A" ? "B" : "A"; if (u.placed) place(u); }, "cambia esercito"));
@@ -474,6 +487,53 @@ function wireGameControls(u, upd){
     upd(() => (u.dead ? G.revive(u) : G.destroy(u)), u.dead ? "rimetti in gioco" : "distrutta"));
 }
 
+/* ---- le due salvezze che i file delle liste non contengono ----
+   L'armatura in Old World viene dall'equipaggiamento e non dal profilo,
+   e la salvezza speciale dagli oggetti: nessuna delle due arriva
+   dall'export. Si scelgono qui una volta e valgono per il tiro e per lo
+   scontro, che senza di loro sovrastimano le perdite di parecchio. */
+const SAVE_OPTS = [0, 2, 3, 4, 5, 6];
+const saveSelect = (id, cur) =>
+  `<select id="${id}">${SAVE_OPTS.map(v =>
+    `<option value="${v}"${v === (cur || 0) ? " selected" : ""}>${v ? v + "+" : "—"}</option>`).join("")}</select>`;
+
+function defenceHTML(u){
+  return `
+    <div class="grid2">
+      <label class="field">Armatura${saveSelect("i-armour", u.armour)}</label>
+      <label class="field">Salv. speciale${saveSelect("i-ward", u.ward)}</label>
+    </div>`;
+}
+
+/* ---- che cosa arriva a tiro ----
+   La domanda non e' "quanto e' lontano" ma "lo prendo?": serve sapere
+   insieme gittata, arco, linea di vista e riparo. Se manca uno dei
+   quattro il colpo non parte, e la riga dice quale. */
+function shootingHTML(u){
+  const plan = shootPlanFor(u);
+  if (!plan) return "";
+  const rows = plan.rows.slice(0, 5);
+  const shots = CB.shooters(u);
+  return `
+    <div>
+      <div class="readout"><span>Tiro${plan.weapon ? " · " + esc(plan.weapon.name) : ""}</span>
+        <b>${plan.range}″ · ${shots} tiri</b></div>
+      ${rows.length ? rows.map(r => {
+        if (!r.canShoot){
+          const why = r.blocked ? `dietro ${esc(r.blockedBy.toLowerCase())}`
+                    : !r.inArc ? "fuori arco frontale" : "fuori gittata";
+          return `<div class="readout near dim"><span>${esc(shortName(r.unit.name))} · ${why}</span>
+                    <b>${r.dist.toFixed(1)}″</b></div>`;
+        }
+        const f = shotOn(u, r, plan);
+        const why = f.mods.list.map(m => `${m.v} ${m.why}`).join(", ");
+        return `<div class="readout near"><span>${esc(shortName(r.unit.name))} · ${r.dist.toFixed(1)}″${why ? ` <span class="dim">(${why})</span>` : ""}</span>
+                  <b style="color:var(--ok)">${f.hitNeed >= 7 ? "mai" : f.hitNeed + "+"} · ${f.kills.toFixed(1)}</b></div>`;
+      }).join("") : `<p class="note">Nessun nemico sul tavolo.</p>`}
+      <p class="note">L'ultima colonna è il punteggio per colpire e i modelli che cadrebbero in media con una raffica.</p>
+    </div>`;
+}
+
 /* ---- chi ho intorno: le tre distanze che si guardano davvero ---- */
 function nearbyHTML(u){
   if (!u.placed) return "";
@@ -487,7 +547,9 @@ function nearbyHTML(u){
         <div class="readout near${r.blocked ? " dim" : ""}">
           <span>${esc(shortName(r.unit.name))}${r.blocked ? ` · dietro ${esc(r.blockedBy.toLowerCase())}` : ""}</span>
           <b${bands && r.dist <= bands.charge && !r.blocked ? ' style="color:var(--ok)"' : ""}>${r.dist.toFixed(1)}″</b>
+          <button class="btn tiny duel-go" data-duel="${r.unit.uid}" title="Simula lo scontro con ${esc(r.unit.name)}">⚔</button>
         </div>`).join("")}
+      <p class="note">La spada apre lo scontro simulato: dadi, ferite e conto di fine assalto.</p>
     </div>`;
 }
 
@@ -837,28 +899,142 @@ function shortName(n){
    solo le viste che mancavano. Distanze misurate dal BORDO, come si
    misura al tavolo, non dal centro come tornava comodo al codice.
    ============================================================ */
-function sightPieces(){
-  return state.terrain.filter(t => TERRAIN[t.kind].los).map(t => {
-    const b = boxOf(t), circle = TERRAIN[t.kind].shape === "circle";
-    const poly = boxCorners(b);
+/* Il terreno visto dagli aiuti tattici: non piu' solo "ferma la vista
+   si/no", perche' adesso serve anche sapere quanto costa attraversarlo
+   e quanto ripara chi ci si mette dietro. Una lista sola per tutti e
+   tre gli usi — movimento, tiro, distanze. */
+function terrainPieces(){
+  return state.terrain.map(t => {
+    const cfg = TERRAIN[t.kind];
+    const b = boxOf(t), circle = cfg.shape === "circle" || cfg.shape === "token";
     return {
-      blocks:true, circle, box:b, poly, label:TERRAIN[t.kind].label,
-      contains: p => circle
-        ? Math.hypot(p[0] - b.x, p[1] - b.y) <= b.w / 2
-        : polysOverlap([[p[0]-1,p[1]-1],[p[0]+1,p[1]-1],[p[0]+1,p[1]+1],[p[0]-1,p[1]+1]], poly),
+      kind:t.kind, label:cfg.label, blocks:!!cfg.los,
+      pass:cfg.pass, cover:cfg.cover || "",
+      circle, box:b, poly:boxCorners(b),
+      contains: p => distPointToBox(p, b, circle) < 0.01,
     };
   });
 }
+const sightPieces = () => terrainPieces().filter(p => p.blocks);
+
+const enemiesOf = u => state.units.filter(o => o.army !== u.army && o.placed && !o.dead);
 
 export function surveyFor(u){
   if (!u || !u.placed) return [];
-  const enemies = state.units.filter(o => o.army !== u.army && o.placed && !o.dead);
-  return survey(u, enemies, { cornersOf: corners, boxOf, sightPieces: sightPieces(), inch });
+  return survey(u, enemiesOf(u), { cornersOf: corners, boxOf, sightPieces: sightPieces(), inch });
+}
+
+/* 8,5 si scrive con la virgola; 8 si scrive 8 e basta */
+const fmtIn = n => (Number.isInteger(n) ? String(n) : n.toFixed(1)).replace(".", ",");
+const flies = u => (u.rules || []).some(r => /\bfly\b|volan|vola\b/i.test(r));
+
+/* Il piano di tiro: l'arma piu' lunga, e per ogni nemico se lo si vede,
+   se e' nell'arco, a che gittata e dietro che riparo. */
+export function shootPlanFor(u){
+  if (!u || !u.placed) return null;
+  const weapon = CB.rangedWeapons(u)[0] || null;
+  const range = weapon ? stat(weapon.range) : (u.maxRange || 0);
+  if (!range) return null;
+  const rows = shootingSurvey(u, enemiesOf(u), {
+    cornersOf: corners, boxOf, pieces: terrainPieces(), range, inch,
+  });
+  return { weapon, range, rows };
+}
+
+/* Quanto costa un colpo su quel bersaglio, modificatori spiegati uno
+   per uno: e' la riga che dice *perche'* serve un 5. */
+export function shotOn(u, row, plan){
+  const mods = CB.shootMods({ long: row.long, cover: row.cover, looseTarget: row.unit.loose });
+  const weapon = plan.weapon || { range: String(plan.range), S: "", ap: "" };
+  return { mods, ...CB.shootForecast(u, row.unit, { weapon, mods: mods.total }) };
 }
 
 function drawTactics(svg, g, u){
   if (!u || !u.placed) return;
   const col = state.armies[u.army].color;
+  const pieces = (state.move || state.shoot) ? terrainPieces() : [];
+
+  /* ---- dove posso arrivare davvero ----
+     Un cerchio dice quanto e' lungo il passo, non dove il passo porta:
+     questi ventagli entrano nei boschi a meta' velocita', si fermano
+     contro la piramide e contro il bordo del tavolo. */
+  if (state.move){
+    const bands = movementBands(u);
+    if (bands){
+      const layer = g(svg, "g", { "pointer-events":"none" });
+      const box = boxOf(u), fly = flies(u), rays = 36;
+      const bounds = { x:0, y:0, w:state.tableW, h:state.tableH };
+      const legend = [];
+      for (const [reach, label, op, dash] of [
+            [bands.chargeMax, `carica max ${fmtIn(bands.chargeMax)}″`, .07, "2 7"],
+            [bands.charge,    `carica ${fmtIn(bands.charge)}″`,        .10, "none"],
+            [bands.march,     `marcia ${fmtIn(bands.march)}″`,         .09, "7 5"],
+            [bands.move,      `movimento ${fmtIn(bands.move)}″`,       .20, "none"]]){
+        const poly = reachFan(box, reach * MM, pieces, { fly, bounds, rays });
+        g(layer, "polygon", { points: poly.map(p => p.join(",")).join(" "),
+                              fill: col, opacity: op, stroke: col, "stroke-width":1.3,
+                              "stroke-dasharray": dash, "stroke-opacity":.5 });
+        legend.push([poly[1 + Math.round(rays / 2)], label]);
+      }
+      for (const [p, label] of legend){
+        const t = g(layer, "text", { x:p[0], y:p[1] - 5, "text-anchor":"middle",
+                                     "font-size":14, fill:col, opacity:.85 });
+        t.textContent = label;
+      }
+      if (fly){
+        const t = g(layer, "text", { x:u.x, y:u.y - boxOf(u).h/2 - 12, "text-anchor":"middle",
+                                     "font-size":13, fill:col, opacity:.7 });
+        t.textContent = "vola: il terreno non la ferma";
+      }
+    }
+  }
+
+  /* ---- fin dove arriva un colpo ----
+     Non un settore di cerchio: i boschi e i monoliti ci ritagliano
+     dentro le loro ombre, ed e' esattamente li' che il nemico si mette. */
+  if (state.shoot){
+    const plan = shootPlanFor(u);
+    if (plan){
+      const layer = g(svg, "g", { "pointer-events":"none" });
+      const box = boxOf(u), blockers = pieces.filter(p => p.blocks);
+      const fan = r => sightFan(box, r * MM, blockers).map(p => p.join(",")).join(" ");
+      g(layer, "polygon", { points: fan(plan.range), fill: col, opacity:.08,
+                            stroke: col, "stroke-width":1.2, "stroke-opacity":.45,
+                            "stroke-dasharray":"6 5" });
+      g(layer, "polygon", { points: fan(plan.range / 2), fill: col, opacity:.08 });
+
+      const tip = toWorld([0, -box.h/2 - plan.range * MM], box);
+      const t = g(layer, "text", { x:tip[0], y:tip[1] + 16, "text-anchor":"middle",
+                                   "font-size":15, fill:col, opacity:.9 });
+      t.textContent = `${plan.weapon ? plan.weapon.name + " · " : ""}${plan.range}″ · corta entro ${fmtIn(plan.range / 2)}″`;
+
+      /* I cartellini vanno sfalsati: quattro reggimenti schierati fianco
+         a fianco hanno il punto di mira quasi alla stessa altezza, e
+         senza sfalsare si coprono a vicenda proprio quando servono. */
+      plan.rows.slice(0, 8).forEach((row, i) => {
+        const good = row.canShoot;
+        const stroke = good ? "var(--ok)" : "var(--muted)";
+        g(layer, "line", { x1:row.from[0], y1:row.from[1], x2:row.aim[0], y2:row.aim[1],
+                           stroke, "stroke-width":1.3, opacity: good ? .65 : .3,
+                           "stroke-dasharray": good ? "none" : "4 6" });
+        const f = shotOn(u, row, plan);
+        const label = good
+          ? `${f.hitNeed >= 7 ? "mai" : f.hitNeed + "+"} · ${f.kills.toFixed(1)} mod.`
+          : row.blocked ? "non lo vedo" : !row.inArc ? "fuori arco" : "fuori gittata";
+        const w = label.length * 7.6 + 12;
+        /* il cartellino risale verso chi tira, cosi' resta dentro il
+           ventaglio invece di finire dietro il bersaglio */
+        const k = 0.86 - (i % 3) * 0.06;
+        const mx = row.from[0] + (row.aim[0] - row.from[0]) * k;
+        const my = row.from[1] + (row.aim[1] - row.from[1]) * k;
+        g(layer, "rect", { x:mx - w/2, y:my - 9, width:w, height:18, rx:4,
+                           fill:"var(--panel)", stroke, "stroke-width":1, opacity:.96 });
+        const lt = g(layer, "text", { x:mx, y:my + 4.5, "text-anchor":"middle", "font-size":12,
+                                      fill: good ? "var(--ink)" : "var(--muted)" });
+        lt.textContent = label;
+      });
+    }
+  }
 
   /* arco frontale e portata di carica: chi ci finisce dentro lo si può
      caricare senza girare, ed è la domanda che ci si fa per prima */
@@ -949,6 +1125,7 @@ function updateStat(sc){
 function renderAll(){
   reindex(); syncImportBox(); renderArmies(); renderInspector(); renderTerrainList();
   G.renderGamePanel($("#game"), { esc });
+  renderDuel();
   drawBoard(); save();
 }
 
@@ -1331,21 +1508,46 @@ $("#btn-clear").addEventListener("click", () => act("svuota le liste", () => {
   $("#raw-wrap").hidden = true;
 }));
 
-/* ---------- lista d'esempio ---------- */
+/* ---------- lista d'esempio ----------
+   Le armi e le armature ci sono davvero: senza di loro il campo di
+   tiro e lo scontro simulato partirebbero vuoti, e il primo giro nel
+   tavolo d'esempio è proprio quello in cui si vuole vedere se
+   funzionano. Sono numeri verosimili, non profili copiati. */
+const WPN = (name, range, S, ap) => ({ name, range, S, ap: ap ? String(ap) : "", rules:"" });
 const DEMO = {
   A:{ name:"Uomini Lucertola — Battle March", units:[
-    ["Saurus Scar-Veteran", 1, 30, 30, 96, "Heavy infantry", 1, {M:"4",WS:"5",BS:"0",S:"5",T:"5",W:"2",I:"3",A:"4",Ld:"8"}, ["Cold Blooded","Furious Charge"], 0],
-    ["Skink Chief", 1, 25, 25, 75, "Regular infantry", 1, {M:"6",WS:"4",BS:"5",S:"4",T:"3",W:"2",I:"6",A:"3",Ld:"6"}, ["Aquatic","Cold Blooded"], 12],
-    ["Saurus Warriors", 12, 30, 30, 194, "Heavy infantry", 12, {M:"4",WS:"3",BS:"0",S:"4",T:"4",W:"1",I:"1",A:"2",Ld:"8"}, ["Close Order","Cold Blooded"], 0],
-    ["Skink Skirmishers", 12, 25, 25, 60, "Regular infantry", 12, {M:"6",WS:"2",BS:"3",S:"3",T:"2",W:"1",I:"4",A:"1",Ld:"5"}, ["Skirmishers","Move Through Cover"], 12],
-    ["Bastiladon", 1, 60, 100, 175, "Monstrous creature", 4, {M:"4",WS:"3",BS:"-",S:"4",T:"5",W:"4",I:"1",A:"3",Ld:"-"}, ["Terror","Large Target","Stubborn"], 24],
+    { name:"Saurus Scar-Veteran", models:1, bw:30, bh:30, pts:96, troop:"Heavy infantry", us:1, armour:3,
+      stats:{M:"4",WS:"5",BS:"0",S:"5",T:"5",W:"2",I:"3",A:"4",Ld:"8"},
+      rules:["Cold Blooded","Furious Charge"], weapons:[WPN("Alabarda","-","+1",1)] },
+    { name:"Skink Chief", models:1, bw:25, bh:25, pts:75, troop:"Regular infantry", us:1, armour:6,
+      stats:{M:"6",WS:"4",BS:"5",S:"4",T:"3",W:"2",I:"6",A:"3",Ld:"6"},
+      rules:["Aquatic","Cold Blooded"], weapons:[WPN("Giavellotto",'12"',"3",0), WPN("Lancia","-","-",0)] },
+    { name:"Saurus Warriors", models:12, bw:30, bh:30, pts:194, troop:"Heavy infantry", us:12, armour:4,
+      stats:{M:"4",WS:"3",BS:"0",S:"4",T:"4",W:"1",I:"1",A:"2",Ld:"8"},
+      rules:["Close Order","Cold Blooded"], weapons:[WPN("Lancia","-","-",0)] },
+    { name:"Skink Skirmishers", models:12, bw:25, bh:25, pts:60, troop:"Regular infantry", us:12, armour:0,
+      stats:{M:"6",WS:"2",BS:"3",S:"3",T:"2",W:"1",I:"4",A:"1",Ld:"5"},
+      rules:["Skirmishers","Move Through Cover"], weapons:[WPN("Giavellotto",'12"',"3",0)] },
+    { name:"Bastiladon", models:1, bw:60, bh:100, pts:175, troop:"Monstrous creature", us:4, armour:3,
+      stats:{M:"4",WS:"3",BS:"3",S:"4",T:"5",W:"4",I:"1",A:"3",Ld:"7"},
+      rules:["Terror","Large Target","Stubborn"], weapons:[WPN("Congegno solare",'24"',"5",2)] },
   ]},
   B:{ name:"Orchi e Goblin — Battle March", units:[
-    ["Orc Big Boss", 1, 25, 25, 85, "Regular infantry", 1, {M:"4",WS:"5",BS:"3",S:"4",T:"5",W:"2",I:"3",A:"3",Ld:"8"}, ["Choppas"], 0],
-    ["Orc Mob", 20, 25, 25, 180, "Regular infantry", 20, {M:"4",WS:"3",BS:"3",S:"3",T:"4",W:"1",I:"2",A:"1",Ld:"7"}, ["Close Order"], 0],
-    ["Goblin Archers", 16, 20, 20, 96, "Regular infantry", 16, {M:"4",WS:"2",BS:"3",S:"3",T:"3",W:"1",I:"2",A:"1",Ld:"6"}, ["Close Order"], 18],
-    ["Orc Boar Boyz", 6, 25, 50, 138, "Heavy cavalry", 12, {M:"7",WS:"3",BS:"3",S:"3",T:"4",W:"1",I:"2",A:"1",Ld:"7"}, ["Impact Hits"], 0],
-    ["Snotling Swarms", 3, 40, 40, 75, "Swarm", 6, {M:"4",WS:"2",BS:"0",S:"2",T:"2",W:"3",I:"2",A:"3",Ld:"4"}, ["Immune To Psychology"], 0],
+    { name:"Orc Big Boss", models:1, bw:25, bh:25, pts:85, troop:"Regular infantry", us:1, armour:4,
+      stats:{M:"4",WS:"5",BS:"3",S:"4",T:"5",W:"2",I:"3",A:"3",Ld:"8"},
+      rules:["Choppas"], weapons:[WPN("Spaccaossa","-","-",1)] },
+    { name:"Orc Mob", models:20, bw:25, bh:25, pts:180, troop:"Regular infantry", us:20, armour:5,
+      stats:{M:"4",WS:"3",BS:"3",S:"3",T:"4",W:"1",I:"2",A:"1",Ld:"7"},
+      rules:["Close Order"], weapons:[WPN("Spaccaossa","-","-",0)] },
+    { name:"Goblin Archers", models:16, bw:20, bh:20, pts:96, troop:"Regular infantry", us:16, armour:6,
+      stats:{M:"4",WS:"2",BS:"3",S:"3",T:"3",W:"1",I:"2",A:"1",Ld:"6"},
+      rules:["Close Order"], weapons:[WPN("Arco corto",'18"',"3",0)] },
+    { name:"Orc Boar Boyz", models:6, bw:25, bh:50, pts:138, troop:"Heavy cavalry", us:12, armour:4,
+      stats:{M:"7",WS:"3",BS:"3",S:"3",T:"4",W:"1",I:"2",A:"1",Ld:"7"},
+      rules:["Impact Hits","Swiftstride"], weapons:[WPN("Lancia","-","-",0)] },
+    { name:"Snotling Swarms", models:3, bw:40, bh:40, pts:75, troop:"Swarm", us:6, armour:0,
+      stats:{M:"4",WS:"2",BS:"0",S:"2",T:"2",W:"3",I:"2",A:"3",Ld:"4"},
+      rules:["Immune To Psychology"], weapons:[] },
   ]},
 };
 $("#btn-demo").addEventListener("click", () => {
@@ -1354,14 +1556,17 @@ $("#btn-demo").addEventListener("click", () => {
   for (const id of ["A", "B"]){
     state.armies[id].name = DEMO[id].name;
     state.armies[id].info = { catalogue:"esempio", forceName:"Battle March", limit:0, total:0 };
-    for (const [name, models, bw, bh, pts, troop, us, stats, rules, maxRange] of DEMO[id].units){
-      const loose = rules.some(r => /skirmish/i.test(r));
-      const known = BASES.find(b => b.w === bw && b.h === bh);
+    for (const d of DEMO[id].units){
+      const loose = d.rules.some(r => /skirmish/i.test(r));
+      const known = BASES.find(b => b.w === d.bw && b.h === d.bh);
+      const maxRange = d.weapons.reduce((m, w) => Math.max(m, stat(w.range)), 0);
       state.units.push({
-        uid: uidSeq++, army:id, name, models, crew:0, catId: matchUnitName(name),
-        baseId: known ? known.id : "custom", baseW:bw, baseH:bh,
-        frontage: defaultFrontage(troop, models, loose), loose,
-        pts, us, troop, unitSize:"", stats, rules, weapons:[], maxRange, slot:"", faction:"",
+        uid: uidSeq++, army:id, name:d.name, models:d.models, crew:0, catId: matchUnitName(d.name),
+        baseId: known ? known.id : "custom", baseW:d.bw, baseH:d.bh,
+        frontage: defaultFrontage(d.troop, d.models, loose), loose,
+        pts:d.pts, us:d.us, troop:d.troop, unitSize:"", stats:d.stats, rules:d.rules,
+        weapons:d.weapons, maxRange, slot:"", faction:"",
+        armour:d.armour, ward:0,
         x:0, y:0, rot: id === "A" ? 0 : 180, placed:false,
         lost:0, dead:false, fled:false,
       });
@@ -1457,6 +1662,7 @@ const TOGGLES = [
   ["#btn-snap", "snap"], ["#btn-labels", "labels"], ["#btn-ranges", "ranges"],
   ["#btn-measure", "measure"], ["#btn-photos", "photos"],
   ["#btn-dist", "distances"], ["#btn-arcs", "arcs"],
+  ["#btn-move", "move"], ["#btn-shoot", "shoot"],
 ];
 for (const [sel, key] of TOGGLES){
   const b = $(sel);
@@ -1618,7 +1824,7 @@ function snapshot(){
     units:state.units, terrain:state.terrain, scenario:state.scenario,
     tableW:state.tableW, tableH:state.tableH, gap:state.gap,
     snap:state.snap, labels:state.labels, ranges:state.ranges, photos:state.photos,
-    distances:state.distances, arcs:state.arcs,
+    distances:state.distances, arcs:state.arcs, move:state.move, shoot:state.shoot,
     rulers:state.rulers, game:state.game, sel:state.sel,
   };
 }
@@ -1648,6 +1854,8 @@ function applySnapshot(s){
   state.photos = s.photos !== false;
   state.distances = !!s.distances;
   state.arcs = !!s.arcs;
+  state.move = !!s.move;
+  state.shoot = !!s.shoot;
   state.rulers = Array.isArray(s.rulers) ? s.rulers : [];
   state.game = s.game && typeof s.game === "object" ? s.game : G.emptyGame();
   state.game.log = Array.isArray(state.game.log) ? state.game.log : [];
@@ -1708,6 +1916,19 @@ async function bootDeploy(){
   await initScenarioKit();
   fillScenarioSelect();
   G.initGame({ getState: () => state, act });
+  initDuel($("#duel"), {
+    unit: uid => state.units.find(u => u.uid === uid) || null,
+    setSave: (u, key, v) => act(key === "armour" ? "armatura" : "salvezza speciale",
+                                () => { u[key] = v; }),
+    applyLosses: pairs => {
+      act("perdite dallo scontro", () => {
+        for (const [u, n] of pairs) if (n > 0) G.setLost(u, (u.lost || 0) + n);
+      });
+      toast(state.game.on
+        ? "Perdite segnate: i reggimenti sul tavolo si sono accorciati."
+        : "Perdite segnate. Si vedono sul tavolo dopo «Comincia la partita».");
+    },
+  });
 
   /* un link condiviso vince sull'ultimo tavolo: se sei arrivato qui da
      un #s=… e' quello che vuoi vedere */

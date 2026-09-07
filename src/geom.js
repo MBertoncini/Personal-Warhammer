@@ -111,6 +111,53 @@ export function segIntersectsCircle(p, q, c, r){
   return pointSegDist(c, p, q) <= r;
 }
 
+/* ------------------------------------------------------------------
+   Raggi: dove si ferma la vista
+   Per disegnare il campo di tiro con le ombre non basta sapere SE un
+   bosco sta in mezzo, serve sapere A CHE DISTANZA. Da qui in giu' `d`
+   e' sempre un versore.
+   ------------------------------------------------------------------ */
+export function rayHitSeg(p, d, a, b){
+  const v1 = [p[0] - a[0], p[1] - a[1]];
+  const v2 = [b[0] - a[0], b[1] - a[1]];
+  const n  = [-d[1], d[0]];
+  const den = v2[0] * n[0] + v2[1] * n[1];
+  if (Math.abs(den) < 1e-9) return Infinity;             // raggio parallelo al lato
+  const t = (v2[0] * v1[1] - v2[1] * v1[0]) / den;       // quanto lontano sul raggio
+  const u = (v1[0] * n[0] + v1[1] * n[1]) / den;         // dove sul lato
+  return (t >= 0 && u >= 0 && u <= 1) ? t : Infinity;
+}
+
+export function rayHitPoly(p, d, poly){
+  let best = Infinity;
+  for (let i = 0; i < poly.length; i++){
+    const t = rayHitSeg(p, d, poly[i], poly[(i + 1) % poly.length]);
+    if (t < best) best = t;
+  }
+  return best;
+}
+
+export function rayHitCircle(p, d, c, r){
+  const ox = p[0] - c[0], oy = p[1] - c[1];
+  const b = ox * d[0] + oy * d[1];
+  const disc = b * b - (ox * ox + oy * oy - r * r);
+  if (disc < 0) return Infinity;
+  const s = Math.sqrt(disc);
+  if (-b - s >= 0) return -b - s;
+  return (-b + s >= 0) ? 0 : Infinity;                   // partenza gia' dentro
+}
+
+/* Quanto e' lontano il bordo del box dal suo centro guardando in una
+   certa direzione. Serve a far partire i ventagli dal PERIMETRO della
+   base e non dal centro: la carica si misura da dove tocca il tavolo. */
+export function boxRadius(b, ang){
+  const a = ang - (b.rot || 0) * Math.PI / 180;
+  const cx = Math.abs(Math.cos(a)), cy = Math.abs(Math.sin(a));
+  const tx = cx < 1e-9 ? Infinity : (b.w / 2) / cx;
+  const ty = cy < 1e-9 ? Infinity : (b.h / 2) / cy;
+  return Math.min(tx, ty);
+}
+
 /* i due punti piu' vicini fra due poligoni: per disegnare la linea
    della misura dove la misura avviene davvero */
 export function closestPoints(A, B){
