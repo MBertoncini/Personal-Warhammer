@@ -14,6 +14,8 @@ import { stat } from './rules.js';
 import { initDuel, openDuel, renderDuel } from './duel.js';
 import { createHistory } from './history.js';
 import { createView, wireViewGestures } from './view.js';
+import * as FM from './formation.js';
+import { initFormEditor, openEditor, refreshEditor } from './formeditor.js';
 import { exportPNG } from './imgexport.js';
 import { shareUrl, decodeBoard, readShareCode, copyText } from './share.js';
 import * as G from './game.js';
@@ -59,17 +61,51 @@ let uidSeq = 1, tidSeq = 1;
 const liveModels = u => Math.max(1, (u.models || 1) - (u.lost || 0));
 const effModels = u => (state.game.on ? liveModels(u) : (u.models || 1));
 
-const unitStep = u => u.loose ? 12.7 : 0;                       // spaziatura schermagliatori
-const unitW = u => Math.min(u.frontage, effModels(u)) * (u.baseW + unitStep(u));
-const ranksOf = u => Math.ceil(effModels(u) / u.frontage);
-const unitD = u => ranksOf(u) * (u.baseH + unitStep(u));
+/* ---- personaggi uniti alle unita' ----
+   Un personaggio agganciato non e' piu' un pezzo suo: sta dentro il
+   reggimento, si muove con lui e occupa una casella della sua
+   formazione. Se il reggimento muore l'aggancio non vale piu' e il
+   personaggio torna a contare da solo. */
+function hostOf(ch){
+  const id = FM.joinedHost(ch);
+  if (id == null) return null;
+  const host = state.units.find(u => u.uid === id);
+  return host && !host.dead ? host : null;
+}
+const isJoined = u => !!hostOf(u);
+const attachedOf = u => state.units.filter(c => {
+  const h = c.uid !== u.uid && hostOf(c);
+  return h && h.uid === u.uid;
+});
+
+/* Il posto di ogni modello lo calcola formation.js, e non e' gratis:
+   qui si tiene il risultato finche' non cambia niente di quello da cui
+   dipende. Senza, trascinare un reggimento rifarebbe la formazione di
+   tutte le unita' del tavolo a ogni pixel. */
+const layCache = new Map();
+function layoutOf(u){
+  const f = FM.ensureFormation(u);
+  const chars = attachedOf(u);
+  const key = [
+    effModels(u), u.models, u.frontage, u.baseW, u.baseH,
+    f.mode, f.preset, f.spacing, f.align, f.rev,
+    (u.fallen || []).join("."),
+    chars.map(c => `${c.uid}:${c.join?.idx ?? ""}:${c.join?.x ?? ""}:${c.join?.y ?? ""}:${c.baseW}x${c.baseH}`).join("|"),
+  ].join("~");
+  const hit = layCache.get(u.uid);
+  if (hit && hit.key === key) return hit.lay;
+  const lay = FM.layout(u, { alive: effModels(u), attached: chars });
+  layCache.set(u.uid, { key, lay });
+  return lay;
+}
+const unitW = u => layoutOf(u).w;
+const unitD = u => layoutOf(u).h;
+const ranksOf = u => layoutOf(u).ranks || 1;
 
 /* -------- geometria -------- */
 function boxOf(o){
   if (o.uid !== undefined) return { x:o.x, y:o.y, w:unitW(o), h:unitD(o), rot:o.rot };
-  const cfg = TERRAIN[o.kind];
-  const w = (o.w ?? cfg.w) * MM, h = (o.h ?? cfg.h) * MM;
-  return { x:o.x, y:o.y, w, h, rot:o.rot || 0 };
+  return FM.terrainBox(o);
 }
 const corners = o => boxCorners(boxOf(o));
 const inRect = pointInRect;
@@ -144,12 +180,15 @@ function zonesFor(army, sc){
 const impassable = () => state.terrain.filter(t => TERRAIN[t.kind].pass === "blocked");
 
 function unitStatus(u, sc){
+  const host = hostOf(u);
+  if (host) return { key:"idle", text:"con " + shortName(host.name) };
   if (!u.placed) return { key:"idle", text:"in riserva" };
   const pts = corners(u);
   if (!pts.every(p => inRect(p, R(0, 0, state.tableW, state.tableH)))) return { key:"bad", text:"fuori tavolo" };
   for (const b of sc.blocked) if (polysOverlap(pts, rectPoly(b))) return { key:"bad", text:"terreno chiuso" };
   for (const t of impassable()) if (polysOverlap(pts, corners(t))) return { key:"bad", text:"su " + TERRAIN[t.kind].label.toLowerCase() };
-  for (const o of state.units) if (o !== u && o.placed && polysOverlap(pts, corners(o))) return { key:"bad", text:"sovrapposta" };
+  for (const o of state.units)
+    if (o !== u && o.placed && !isJoined(o) && polysOverlap(pts, corners(o))) return { key:"bad", text:"sovrapposta" };
   const zs = zonesFor(u.army, sc);
   if (zs.length && !pts.every(p => zs.some(z => inRect(p, z)))) return { key:"warn", text:"fuori zona" };
   return { key:"ok", text:"schierata" };
@@ -290,6 +329,17 @@ function catLabel(u){
   return `${esc(e.name)} \u00b7 ${e.owned} in collezione`;
 }
 
+/* come sta messa l'unita', in tre parole: e' l'informazione che prima
+   era sempre e solo «tot di fronte», e adesso non basta piu' */
+function formLabel(u){
+  const f = FM.ensureFormation(u);
+  const chars = attachedOf(u).length;
+  const base = f.mode === "ranks"
+    ? `${layoutOf(u).front} di fronte`
+    : FM.presetLabel(f).toLowerCase();
+  return base + (chars ? ` · +${chars} pers.` : "");
+}
+
 function unitRow(u, sc){
   const sel = selIs("unit", u.uid);
   const el = document.createElement("div");
@@ -298,13 +348,14 @@ function unitRow(u, sc){
   el.innerHTML = `
     <span class="nm">
       <b><span class="idx" style="background:${state.armies[u.army].color}">${u.idx}</span><span class="txt">${esc(u.name)}</span></b>
-      <span class="mono">${effModels(u)}× ${u.baseW}×${u.baseH} · ${u.frontage} di fronte · ${inch(unitW(u)).toFixed(1)}×${inch(unitD(u)).toFixed(1)}″ · ${u.pts} pt</span>
+      <span class="mono">${effModels(u)}× ${u.baseW}×${u.baseH} · ${formLabel(u)} · ${inch(unitW(u)).toFixed(1)}×${inch(unitD(u)).toFixed(1)}″ · ${u.pts} pt</span>
     </span>
     <span class="chip ${st.key}">${st.text}</span>
     ${miniStrip(u, { full: sel })}`;
   el.addEventListener("click", () => {
     /* cliccare un'unita' gia' selezionata la inquadra: con lo zoom
        acceso e' il modo piu' corto per andarci sopra */
+    if (isJoined(u)) return select({ type:"unit", id:u.uid });
     if (sel && u.placed){ focusUnit(u); return; }
     if (u.placed || u.dead) return select({ type:"unit", id:u.uid });
     act("schiera " + shortName(u.name), () => {
@@ -391,12 +442,11 @@ function renderInspector(){
       ${u.baseId === "custom" ? `<div class="grid2">
         <label class="field">Largh. mm<input type="number" id="i-bw" min="5" value="${u.baseW}"></label>
         <label class="field">Prof. mm<input type="number" id="i-bh" min="5" value="${u.baseH}"></label></div>` : ""}
-      <label class="field inline" style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)">
-        <input type="checkbox" id="i-loose" ${u.loose ? "checked" : ""}> formazione sciolta (schermagliatori)
-      </label>
+      ${formationBlockHTML(u)}
       <div>
         <div class="readout"><span>Ingombro</span><b>${inch(unitW(u)).toFixed(2)}″ × ${inch(unitD(u)).toFixed(2)}″</b></div>
-        <div class="readout"><span>Ranghi</span><b>${ranksOf(u)} × ${u.frontage}</b></div>
+        ${FM.ensureFormation(u).mode === "ranks"
+          ? `<div class="readout"><span>Ranghi</span><b>${ranksOf(u)} × ${layoutOf(u).front}</b></div>` : ""}
         ${u.us ? `<div class="readout"><span>Unit Strength</span><b>${u.us}</b></div>` : ""}
         ${u.crew ? `<div class="readout"><span>Equipaggio</span><b>${u.crew}</b></div>` : ""}
         ${u.stats && u.stats.M && /\d/.test(u.stats.M) ? `<div class="readout"><span>Movimento / carica</span><b>${u.stats.M}″ · ${+u.stats.M + 7}″ medio · ${+u.stats.M + 12}″ max</b></div>` : ""}
@@ -411,7 +461,7 @@ function renderInspector(){
       ${nearbyHTML(u)}
       <div class="grid2"><button class="btn" id="i-rot-l">↺ 90°</button><button class="btn" id="i-rot-r">↻ 90°</button></div>
       <div class="grid2"><button class="btn" id="i-swap">Cambia esercito</button>
-        <button class="btn" id="i-recall">${u.placed ? "Ritira" : "Schiera"}</button></div>
+        <button class="btn" id="i-recall" ${hostOf(u) ? "disabled title=\"Sganciala dal reggimento per schierarla da sola\"" : ""}>${u.placed ? "Ritira" : "Schiera"}</button></div>
       <button class="btn ghost" id="i-del" style="color:var(--bad)">Rimuovi dalla lista</button>
     </div>`;
 
@@ -436,10 +486,6 @@ function renderInspector(){
     $("#i-bw").addEventListener("change", e => upd(() => { u.baseW = Math.max(5, +e.target.value || 25); }));
     $("#i-bh").addEventListener("change", e => upd(() => { u.baseH = Math.max(5, +e.target.value || 25); }));
   }
-  $("#i-loose").addEventListener("change", e => upd(() => {
-    u.loose = e.target.checked;
-    u.frontage = defaultFrontage(u.troop, u.models, u.loose);
-  }));
   $("#i-armour").addEventListener("change", e => upd(() => { u.armour = +e.target.value || 0; }, "armatura"));
   $("#i-ward").addEventListener("change", e => upd(() => { u.ward = +e.target.value || 0; }, "salvezza speciale"));
   for (const b of host.querySelectorAll("[data-duel]"))
@@ -449,12 +495,93 @@ function renderInspector(){
     });
   $("#i-rot-l").addEventListener("click", () => upd(() => { u.rot = (u.rot + 270) % 360; }, "ruota"));
   $("#i-rot-r").addEventListener("click", () => upd(() => { u.rot = (u.rot + 90) % 360; }, "ruota"));
-  $("#i-swap").addEventListener("click", () => upd(() => { u.army = u.army === "A" ? "B" : "A"; if (u.placed) place(u); }, "cambia esercito"));
+  $("#i-swap").addEventListener("click", () => upd(() => {
+    u.army = u.army === "A" ? "B" : "A";
+    /* cambiando bandiera gli agganci non valgono piu': un personaggio
+       non resta dentro un reggimento nemico */
+    if (FM.joinedHost(u)){ FM.leaveUnit(u); u.placed = true; }
+    for (const c of attachedOf(u)){ FM.leaveUnit(c); c.placed = true; c.x = u.x; c.y = u.y; c.rot = u.rot; }
+    if (u.placed) place(u);
+  }, "cambia esercito"));
   $("#i-recall").addEventListener("click", () => upd(() => { if (u.placed) u.placed = false; else place(u); }, u.placed ? "ritira" : "schiera"));
   $("#i-del").addEventListener("click", () => upd(() => {
+    /* chi era unito a lei resta senza reggimento: meglio rimetterlo sul
+       tavolo da solo che lasciarlo appeso a un'unita' che non c'e' piu' */
+    for (const c of attachedOf(u)){ FM.leaveUnit(c); c.placed = true; c.x = u.x; c.y = u.y; c.rot = u.rot; }
     state.units = state.units.filter(x => x !== u); state.sel = null;
   }, "rimuovi unità"));
+  wireFormationControls(u, upd);
   wireGameControls(u, upd);
+}
+
+/* ---- formazione e personaggi ----
+   Nell'ispettore ci sta il riassunto e la porta; il mestiere vero lo fa
+   l'editor grafico, perche' «dove sta il terzo skink» non e' una cosa
+   che si scrive in una casella di testo. */
+function formationBlockHTML(u){
+  const f = FM.ensureFormation(u);
+  const chars = attachedOf(u);
+  const host = hostOf(u);
+  const free = state.units.filter(c =>
+    c.army === u.army && c.uid !== u.uid && !c.dead && FM.isCharacter(c) && !FM.joinedHost(c));
+  return `
+    <div class="photo-box">
+      <div class="readout"><span>Formazione</span>
+        <b>${f.mode === "free" ? "sciolta · " + esc(FM.presetLabel(f).toLowerCase())
+                               : "ordine chiuso · " + layoutOf(u).front + " di fronte"}</b></div>
+      <button class="btn tiny primary" id="i-form" style="width:100%">Editor della formazione…</button>
+      <label class="field inline" style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)">
+        <input type="checkbox" id="i-loose" ${u.loose ? "checked" : ""}> schermagliatori (basi distanziate di ½″)
+      </label>
+      <label class="field inline" style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)">
+        <input type="checkbox" id="i-char" ${FM.isCharacter(u) ? "checked" : ""}> è un personaggio (può unirsi a un reggimento)
+      </label>
+      ${host
+        ? `<div class="readout"><span>Unita a</span><b>${esc(shortName(host.name))}</b></div>
+           <button class="btn tiny" id="i-leave" style="width:100%">Sgancia dal reggimento</button>`
+        : FM.isCharacter(u)
+          ? (free.length || chars.length ? "" : `<p class="note">Personaggio libero: unitelo a un reggimento dall'editor della formazione, o dal reggimento stesso.</p>`)
+          : ""}
+      ${chars.length ? `<div class="readout"><span>Personaggi dentro</span><b>${chars.map(c => esc(shortName(c.name))).join(", ")}</b></div>` : ""}
+      ${!host && !FM.isCharacter(u) && free.length ? `
+        <label class="field">Unisci un personaggio
+          <select id="i-join">
+            <option value="">— nessuno —</option>
+            ${free.map(c => `<option value="${c.uid}">${esc(c.name)}</option>`).join("")}
+          </select></label>` : ""}
+    </div>`;
+}
+
+function wireFormationControls(u, upd){
+  $("#i-form").addEventListener("click", () => openEditor(u.uid));
+  $("#i-loose").addEventListener("change", e => upd(() => {
+    u.loose = e.target.checked;
+    const f = FM.ensureFormation(u);
+    f.spacing = u.loose ? FM.LOOSE_GAP : 0;
+    f.rev = (f.rev || 0) + 1;
+    if (f.mode === "ranks") u.frontage = defaultFrontage(u.troop, u.models, u.loose);
+  }, "formazione"));
+  $("#i-char").addEventListener("change", e => upd(() => {
+    u.character = e.target.checked;
+    /* un personaggio che entra in un reggimento smette di essere un
+       pezzo suo: se lo si declassa, l'aggancio non ha piu' senso */
+    if (!u.character && FM.joinedHost(u)){ FM.leaveUnit(u); u.placed = true; }
+  }, "personaggio"));
+  const leave = $("#i-leave");
+  if (leave) leave.addEventListener("click", () => upd(() => {
+    const host = hostOf(u);
+    FM.leaveUnit(u);
+    if (host){
+      u.placed = true; u.rot = host.rot;
+      u.x = host.x + unitW(host) / 2 + u.baseW;
+      u.y = host.y;
+    }
+  }, "sgancia " + shortName(u.name)));
+  const join = $("#i-join");
+  if (join) join.addEventListener("change", e => {
+    const c = state.units.find(x => x.uid === +e.target.value);
+    if (c) upd(() => FM.joinUnit(c, u), "unisci " + shortName(c.name));
+  });
 }
 
 /* ---- perdite e stato dell'unità, solo a partita aperta ---- */
@@ -469,15 +596,43 @@ function gameBlockHTML(u){
         <button class="btn tiny" id="i-loss-p">+1</button>
         <span class="mono">perdite</span>
       </div>
+      <button class="btn tiny" id="i-loss-pick" style="width:100%">Scegli quali modelli sono caduti…</button>
       <div class="grid2">
         <button class="btn tiny${u.fled ? " on" : ""}" id="i-flee">${u.fled ? "In rotta" : "Segna in rotta"}</button>
         <button class="btn tiny" id="i-dead">${u.dead ? "Rimetti in gioco" : "Distrutta"}</button>
       </div>
+      ${contactsHTML(u)}
     </div>`;
+}
+
+/* ---- chi sta toccando chi ----
+   In partita e' la domanda che viene prima di tutte: questo
+   reggimento e' impegnato, e da che lato lo hanno preso. */
+function contactsHTML(u){
+  if (!u.placed || u.dead) return "";
+  const list = contactsNow().filter(c => c.a === u.uid || c.b === u.uid);
+  if (!list.length) return `<div class="readout"><span>Contatti</span><b>nessuno</b></div>`;
+  return list.map(c => {
+    const mine = c.a === u.uid;
+    const other = mine ? c.bName : c.aName;
+    const side = mine ? c.aSide : c.bSide;
+    return `<div class="readout near"><span>${c.enemy ? "" : "alleata · "}${esc(shortName(other))}</span>
+      <b style="color:var(--${c.enemy ? "bad" : "muted"})">sul ${side}</b></div>`;
+  }).join("");
+}
+
+/* i contatti di basetta di adesso, calcolati una volta per disegno */
+let contactCache = { at: 0, list: [] };
+function contactsNow(){
+  const now = drawSeq;
+  if (contactCache.at === now) return contactCache.list;
+  contactCache = { at: now, list: FM.contactList(state.units.filter(u => !isJoined(u)), boxOf) };
+  return contactCache.list;
 }
 
 function wireGameControls(u, upd){
   if (!state.game.on) return;
+  $("#i-loss-pick").addEventListener("click", () => openEditor(u.uid));
   const set = n => upd(() => G.setLost(u, n), "perdite");
   $("#i-loss").addEventListener("change", e => set(+e.target.value || 0));
   $("#i-loss-m").addEventListener("click", () => set((u.lost || 0) - 1));
@@ -602,6 +757,7 @@ const setHref = (el, v) => {
 };
 
 let photoDefs = null, photoDefsKey = "";
+let drawSeq = 0;
 
 function photoDefsFor(svg){
   const ids = new Map();
@@ -609,7 +765,11 @@ function photoDefsFor(svg){
 
   const key = [];
   for (const u of state.units){
-    if (!u.placed || !u.catId || ids.has(u.catId)) continue;
+    /* anche i personaggi uniti a un reggimento: sul tavolo non sono un
+       pezzo a se', ma la loro base dentro il reggimento vuole la sua
+       faccia come tutte le altre */
+    const onBoard = u.placed || isJoined(u);
+    if (!onBoard || !u.catId || ids.has(u.catId)) continue;
     const p = photoForUnit(u);
     if (!p) continue;
     ids.set(u.catId, "ph-" + u.catId);
@@ -642,6 +802,7 @@ function photoDefsFor(svg){
 
 function drawBoard(){
   reindex();
+  drawSeq++;                      // i contatti di basetta si ricalcolano una volta per disegno
   const svg = svgEl, sc = currentScenario();
   const W = state.tableW, H = state.tableH;
   /* il riquadro visibile lo decide view.js: qui si disegna e basta,
@@ -767,43 +928,57 @@ function drawBoard(){
   const photoIds = photoDefsFor(svg);
   const layer = g(svg, "g", {});
   for (const u of state.units){
-    if (!u.placed) continue;
+    if (!u.placed || isJoined(u)) continue;
     const st = unitStatus(u, sc), col = state.armies[u.army].color;
-    const Wu = unitW(u), Du = unitD(u);
+    const lay = layoutOf(u);
+    const Wu = lay.w, Du = lay.h;
+    /* «sparsa» vuol dire che fra una base e l'altra c'e' aria: o
+       perche' la formazione e' sciolta, o perche' la spaziatura la
+       distanzia. In quel caso il rettangolo dietro serve solo a dire
+       quanto spazio occupa l'unita', e il pezzo vero sono le basi. */
+    const fu = FM.ensureFormation(u);
+    const loose = fu.mode === "free" || fu.spacing > 0.5;
     const gg = g(layer, "g", { transform:`translate(${u.x} ${u.y}) rotate(${u.rot})`, class:"piece" });
     gg.dataset.uid = u.uid;
     g(gg, "rect", { x:-Wu/2, y:-Du/2, width:Wu, height:Du, fill:col,
-                    opacity: selIs("unit", u.uid) ? ".85" : ".7",
+                    opacity: selIs("unit", u.uid) ? (loose ? ".28" : ".85") : (loose ? ".18" : ".7"),
                     stroke: st.key === "bad" ? "var(--bad)" : (st.key === "warn" ? "var(--warn)" : col),
                     "stroke-width": st.key === "ok" ? 1.4 : 3,
-                    "stroke-dasharray": u.loose ? "8 5" : "none" });
-    const stepW = u.baseW + unitStep(u), stepH = u.baseH + unitStep(u);
+                    "stroke-dasharray": loose ? "8 5" : "none" });
 
-    /* una foto per base. Restano dritte anche se il reggimento e'
-       girato: il fronte lo dice gia' la riga bianca sul davanti. */
+    /* Le basi, una per una, dove le mette la formazione. In ordine
+       chiuso e' la griglia di sempre; in formazione sciolta sono
+       sparse, e allora il rettangolo dietro serve solo a dire quanto
+       spazio occupa l'unita' — sono le basi il pezzo vero. */
     const phId = photoIds.get(u.catId);
-    if (phId){
-      const pad = unitStep(u) / 2;
-      const pg = g(gg, "g", { opacity:".93", "pointer-events":"none" });
-      for (let i = 0; i < effModels(u); i++){
-        const cx = -Wu/2 + (i % u.frontage) * stepW + pad + u.baseW / 2;
-        const cy = -Du/2 + Math.floor(i / u.frontage) * stepH + pad + u.baseH / 2;
-        const use = g(pg, "use", { x: cx - u.baseW / 2, y: cy - u.baseH / 2,
-                                   width: u.baseW, height: u.baseH,
-                                   transform:`rotate(${-u.rot} ${cx} ${cy})` });
-        setHref(use, "#" + phId);
+    const cells = g(gg, "g", { "pointer-events":"none" });
+    for (const s of lay.slots){
+      const ph = s.kind === "char" ? photoIds.get(s.catId) : phId;
+      const sg = g(cells, "g", { transform:`translate(${s.x} ${s.y}) rotate(${s.rot || 0})` });
+      if (loose || s.kind === "char")
+        g(sg, "rect", { x:-s.w/2, y:-s.h/2, width:s.w, height:s.h, rx:1.5,
+                        fill: s.kind === "char" ? "var(--accent)" : col, opacity: ph ? ".55" : ".85" });
+      if (ph){
+        /* la foto resta dritta anche col reggimento girato: il fronte
+           lo dice gia' la riga bianca sul davanti */
+        const use = g(sg, "use", { x:-s.w/2, y:-s.h/2, width:s.w, height:s.h,
+                                   transform:`rotate(${-(u.rot + (s.rot || 0))})` });
+        setHref(use, "#" + ph);
       }
+      g(sg, "rect", { x:-s.w/2, y:-s.h/2, width:s.w, height:s.h, fill:"none",
+                      stroke:"var(--paper)", "stroke-width":.8, opacity:".5" });
+      g(sg, "line", { x1:-s.w/2, y1:-s.h/2, x2:s.w/2, y2:-s.h/2,
+                      stroke:"var(--paper)", "stroke-width":1.4, opacity:".7" });
+      if (s.kind === "char")
+        g(sg, "circle", { r:Math.min(s.w, s.h) * .22, fill:"none",
+                          stroke:"var(--paper)", "stroke-width":1.6, opacity:".9" });
     }
-
-    const inner = g(gg, "g", { stroke:"var(--paper)", "stroke-width":.8, opacity:".45" });
-    for (let i = 1; i < u.frontage; i++) g(inner, "line", { x1:-Wu/2 + i*stepW, y1:-Du/2, x2:-Wu/2 + i*stepW, y2:Du/2 });
-    for (let i = 1; i < ranksOf(u); i++) g(inner, "line", { x1:-Wu/2, y1:-Du/2 + i*stepH, x2:Wu/2, y2:-Du/2 + i*stepH });
     g(gg, "line", { x1:-Wu/2, y1:-Du/2, x2:Wu/2, y2:-Du/2, stroke:"var(--paper)", "stroke-width":3.5, opacity:".9" });
 
     /* Il colore dell'esercito va SOPRA le foto: sotto lo coprono, e con
        le foto accese A e B si distinguevano solo dalla posizione. */
     g(gg, "rect", { x:-Wu/2, y:-Du/2, width:Wu, height:Du, fill:"none", stroke:col,
-                    "stroke-width":2.6, "stroke-dasharray": u.loose ? "8 5" : "none",
+                    "stroke-width":2.6, "stroke-dasharray": loose ? "8 5" : "none",
                     "pointer-events":"none" });
     if (st.key !== "ok")
       g(gg, "rect", { x:-Wu/2 - 2.5, y:-Du/2 - 2.5, width:Wu + 5, height:Du + 5, fill:"none",
@@ -817,7 +992,7 @@ function drawBoard(){
   // numeri e cartellino
   const lab = g(svg, "g", { "pointer-events":"none" });
   for (const u of state.units){
-    if (!u.placed) continue;
+    if (!u.placed || isJoined(u)) continue;
     if (state.labels){
       const t = g(lab, "text", { x:u.x, y:u.y + 12, "text-anchor":"middle", "font-size":34, "font-weight":"500",
                                  fill:"var(--paper)", stroke:"rgba(0,0,0,.3)", "stroke-width":"1", "paint-order":"stroke" });
@@ -917,7 +1092,7 @@ function terrainPieces(){
 }
 const sightPieces = () => terrainPieces().filter(p => p.blocks);
 
-const enemiesOf = u => state.units.filter(o => o.army !== u.army && o.placed && !o.dead);
+const enemiesOf = u => state.units.filter(o => o.army !== u.army && o.placed && !o.dead && !isJoined(o));
 
 export function surveyFor(u){
   if (!u || !u.placed) return [];
@@ -1085,7 +1260,7 @@ function drawTactics(svg, g, u){
    ripremendolo si passa al successivo. */
 let statCycle = 0;
 function updateStat(sc){
-  const placed = state.units.filter(u => u.placed);
+  const placed = state.units.filter(u => u.placed && !isJoined(u));
   const bad  = placed.filter(u => unitStatus(u, sc).key === "bad");
   const warn = placed.filter(u => unitStatus(u, sc).key === "warn");
   const terr = [...terrainIssues().keys()];
@@ -1126,7 +1301,7 @@ function renderAll(){
   reindex(); syncImportBox(); renderArmies(); renderInspector(); renderTerrainList();
   G.renderGamePanel($("#game"), { esc });
   renderDuel();
-  drawBoard(); save();
+  drawBoard(); refreshEditor(); save();
 }
 
 /* ============================================================
@@ -1141,6 +1316,9 @@ function defaultRot(army, sc){
   return dy > 0 ? 180 : 0;
 }
 function place(u){
+  /* un personaggio unito a un reggimento non si schiera da solo: sta
+     dove sta il reggimento */
+  if (isJoined(u)) return;
   const sc = currentScenario();
   const zone = (sc.zones[u.army] || [R(0, 0, state.tableW, state.tableH)])[0];
   u.rot = defaultRot(u.army, sc);
@@ -1156,7 +1334,8 @@ function findSpot(u, zone, sc){
     for (let x = zone.x + w/2; x <= zone.x + zone.w - w/2 + 1; x += step){
       const test = { ...u, x, y };
       let clash = false;
-      for (const o of state.units) if (o !== u && o.placed && polysOverlap(corners(test), corners(o))) { clash = true; break; }
+      for (const o of state.units)
+        if (o !== u && o.placed && !isJoined(o) && polysOverlap(corners(test), corners(o))) { clash = true; break; }
       if (!clash) for (const b of sc.blocked) if (polysOverlap(corners(test), rectPoly(b))) { clash = true; break; }
       if (!clash) for (const t of impassable()) if (polysOverlap(corners(test), corners(t))) { clash = true; break; }
       if (!clash) return [x, y];
@@ -1169,7 +1348,7 @@ function autoDeploy(){
   for (const id of ["A", "B"]){
     const zone = (sc.zones[id] || [])[0];
     if (!zone) continue;
-    const list = state.units.filter(u => u.army === id).sort((a, b) => unitW(b) - unitW(a));
+    const list = state.units.filter(u => u.army === id && !isJoined(u)).sort((a, b) => unitW(b) - unitW(a));
     const rot = defaultRot(id, sc), horiz = rot % 180 === 0;
     const alongMax = horiz ? zone.w : zone.h, acrossMax = horiz ? zone.h : zone.w;
     const gap = 0.5 * MM;
@@ -1189,7 +1368,7 @@ function autoDeploy(){
     }
   }
   // seconda passata: chi resta sovrapposto o sul terreno impassabile viene ricollocato
-  for (const u of state.units.filter(x => x.placed)){
+  for (const u of state.units.filter(x => x.placed && !isJoined(x))){
     if (unitStatus(u, sc).key === "ok") continue;
     const zone = (sc.zones[u.army] || [])[0];
     if (!zone) continue;
@@ -1229,7 +1408,7 @@ function magnetise(u, x, y){
   let bestX = null, bestY = null, dX = MAGNET, dY = MAGNET;
 
   for (const o of state.units){
-    if (o === u || !o.placed || o.dead) continue;
+    if (o === u || !o.placed || o.dead || isJoined(o)) continue;
     if ((((o.rot % 360) + 360) % 360) !== rot) continue;     // solo chi guarda dove guardo io
     const [ox, oy] = toLoc(o.x, o.y);
     const oW = unitW(o) / 2, oD = unitD(o) / 2;
@@ -1332,6 +1511,15 @@ function endDrag(e){
   try { svgEl.releasePointerCapture(e.pointerId); } catch (_) {}
   renderAll();
 }
+/* doppio clic su un'unita': la formazione. E' il gesto che ci si
+   aspetta da un pezzo composto da tante basette, e risparmia il giro
+   dall'ispettore. */
+svgEl.addEventListener("dblclick", e => {
+  const host = e.target.closest("[data-uid]");
+  if (!host) return;
+  e.preventDefault();
+  openEditor(+host.dataset.uid);
+});
 svgEl.addEventListener("pointerup", endDrag);
 svgEl.addEventListener("pointercancel", endDrag);
 
@@ -1840,6 +2028,10 @@ function applySnapshot(s){
   state.armies.A.info = s.armies?.A?.info || null;
   state.armies.B.info = s.armies?.B?.info || null;
   state.units = s.units;
+  /* le unita' salvate prima delle formazioni non hanno il campo: si
+     riempie con i valori che riproducono il disegno di allora */
+  for (const u of state.units) FM.ensureFormation(u);
+  layCache.clear();
   healLinks();
   state.terrain = Array.isArray(s.terrain) ? s.terrain : [];
   uidSeq = Math.max(1, ...state.units.map(u => u.uid || 0)) + 1;
@@ -1857,8 +2049,7 @@ function applySnapshot(s){
   state.move = !!s.move;
   state.shoot = !!s.shoot;
   state.rulers = Array.isArray(s.rulers) ? s.rulers : [];
-  state.game = s.game && typeof s.game === "object" ? s.game : G.emptyGame();
-  state.game.log = Array.isArray(state.game.log) ? state.game.log : [];
+  state.game = G.ensureGame(s.game);
   state.sel = s.sel && typeof s.sel === "object" ? s.sel : null;
   state.measurePts = [];
   fillScenarioSelect();
@@ -1928,6 +2119,13 @@ async function bootDeploy(){
         ? "Perdite segnate: i reggimenti sul tavolo si sono accorciati."
         : "Perdite segnate. Si vedono sul tavolo dopo «Comincia la partita».");
     },
+  });
+  initFormEditor({
+    getState: () => state,
+    act, renderAll,
+    aliveOf: effModels,
+    gameOn: () => state.game.on,
+    setLost: (u, n) => G.setLost(u, n),
   });
 
   /* un link condiviso vince sull'ultimo tavolo: se sei arrivato qui da
