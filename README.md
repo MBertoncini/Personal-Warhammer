@@ -65,6 +65,8 @@ Il verdetto elenca ogni voce con `richiesti/posseduti`, segna in rosso lo scoper
 
 Scenari Battle March e generici, zone di schieramento, terreno con i controlli (tesori a più di 3″ da ogni elemento, nessun pezzo oltre i 12″ sul lato lungo), rotazione, snap a ¼″, misurazione.
 
+**La barra.** In vista restano solo i gesti che si fanno mentre giochi: scenario, annulla e ripeti, schiera e ritira, lo snap, lo zoom. Tutto il resto sta in tre menu raggruppati per intenzione — **Aiuti** (ancora di movimento, distanze, archi, raggi di tiro, fantasma, righelli), **Vista** (numeri e foto), **Tavolo** (misure, immagine, link). Il rischio di un menu è nascondere una levetta accesa e dimenticarsela: per questo il pulsante del menu si mette un **pallino** quando dentro c'è qualcosa di acceso.
+
 **Annulla e ripeti.** `Ctrl+Z` e `Ctrl+Y`, o le due frecce nella barra. Vale per tutto: uno spostamento, una rotazione, un *Schiera tutto* premuto per sbaglio sopra dieci minuti di lavoro, una generazione di terreno, una perdita segnata di troppo. Il tooltip dice sempre cosa si sta per annullare.
 
 **Zoom e scorrimento.** Rotella per ingrandire attorno al puntatore, `Shift`+trascinamento (o trascinare il vuoto) per spostarsi, pizzico a due dita su tablet, `+` `−` `0` da tastiera, *Adatta* per tornare al tavolo intero. Su 96″×48″ senza zoom una basetta da 25 mm è tre pixel.

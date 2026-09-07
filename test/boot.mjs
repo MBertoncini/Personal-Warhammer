@@ -437,6 +437,34 @@ ok('compare nel menu a tendina',
    [...doc.querySelectorAll('#scenario option')].some(o => /prova/i.test(o.textContent)));
 await kit.removeCustom(kit.allCustom()[0].id);
 
+console.log('\nmenu della barra');
+const menus = [...doc.querySelectorAll('.board-bar details.menu')];
+ok('la barra ha tre menu invece di ventitre pulsanti', menus.length === 3);
+ok('i gesti che si fanno giocando restano fuori',
+   ['#btn-undo', '#btn-auto', '#btn-snap', '#btn-fit', '#scenario']
+     .every(sel => !doc.querySelector(sel).closest('.menu-pop')));
+ok('le levette tattiche stanno dentro un menu',
+   ['#btn-dist', '#btn-arcs', '#btn-measure', '#btn-ghost', '#btn-moveaid']
+     .every(sel => !!doc.querySelector(sel).closest('.menu-pop')));
+const aiuti = doc.querySelector('[data-menu="aiuti"]');
+ok('il menu si accorge di quello che ha acceso dentro',
+   aiuti.querySelector('summary').classList.contains('has-on'));
+doc.querySelector('#btn-moveaid').dispatchEvent(new window.Event('click'));
+ok('e se lo spegni il pallino se ne va',
+   !aiuti.querySelector('summary').classList.contains('has-on'));
+doc.querySelector('#btn-moveaid').dispatchEvent(new window.Event('click'));
+ok('acceso, torna', aiuti.querySelector('summary').classList.contains('has-on'));
+ok('le levette dichiarano il loro stato anche a chi non vede',
+   doc.querySelector('#btn-moveaid').getAttribute('aria-pressed') === 'true' &&
+   doc.querySelector('#btn-ghost').getAttribute('aria-pressed') === 'false');
+aiuti.open = true;
+doc.querySelector('[data-menu="vista"]').open = true;
+aiuti.dispatchEvent(new window.Event('toggle'));
+doc.querySelector('[data-menu="vista"]').dispatchEvent(new window.Event('toggle'));
+ok('se ne apre uno alla volta', menus.filter(m => m.open).length === 1);
+doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+ok('Escape li chiude tutti', menus.every(m => !m.open));
+
 console.log('\nferite, etichette, contatori');
 const EX = await import('../src/extras.js');
 const MV = await import('../src/movement.js');

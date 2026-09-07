@@ -10,7 +10,8 @@
 > (§1.5), contatori liberi (§1.6), sagome di misura (§1.7), fantasma del
 > turno precedente (§1.8), aggancio al contatto (§1.9), finestra
 > dell'app al posto dei ventitré dialoghi nativi e scorciatoie nel
-> registro (§2.1), `extras` nei serializzatori (§4) — più **l'ancora di
+> registro (§2.1), raggruppamento della barra del tavolo (§2.2),
+> `extras` nei serializzatori (§4) — più **l'ancora di
 > movimento**, che nell'analisi non c'era e che è il vero rimedio a «i
 > cerchi seguono il pezzo e mentre lo muovo non so più da dove sono
 > partito».
@@ -433,10 +434,6 @@ Non è stato fatto, e ha ancora senso:
 
 - **Scheda riassuntiva stampabile dell'esercito** (§3). Tutti i dati ci
   sono già nel parser, si vedono solo una unità alla volta.
-- **Il raggruppamento della barra del tavolo** (§2.2). È peggiorata, non
-  migliorata: adesso i pulsanti sono ventitré. I toggle hanno almeno
-  `aria-pressed`, ma il menu a comparsa per «Vista» e «Aiuti» resta da
-  fare.
 - **Bersagli grandi e menu contestuale sul tocco** (§2.3).
 - **Punti dello scenario contro punti della lista**, **durata della
   partita**, **esportazione del solo registro**, **promemoria del

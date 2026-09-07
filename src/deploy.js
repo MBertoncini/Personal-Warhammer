@@ -162,6 +162,9 @@ const view = createView(svgEl, {
     if (el) el.textContent = Math.round(zoom * 100) + "%";
     const fitBtn = $("#btn-fit");
     if (fitBtn) fitBtn.classList.toggle("on", Math.abs(zoom - 1) < 0.01);
+    /* «Adatta» si accende da qui e non da syncToggle: il pallino del
+       menu deve saperlo lo stesso */
+    syncMenus();
   },
 });
 
@@ -2391,7 +2394,62 @@ function syncToggle(key){
   if (!b) return;
   b.classList.toggle("on", !!state[key]);
   b.setAttribute("aria-pressed", state[key] ? "true" : "false");
+  syncMenus();
 }
+
+/* ------------------------------------------------------------------
+   I menu della barra
+   Ventitre' pulsanti in fila andavano a capo su un portatile ed erano
+   una lotteria su tablet. In vista restano i gesti che si fanno
+   mentre giochi; il resto sta in tre menu raggruppati per intenzione.
+
+   Il rischio di un menu e' nascondere una levetta accesa e non
+   accorgersene piu': per questo il pulsante del menu si mette un
+   pallino quando dentro c'e' qualcosa di acceso.
+   ------------------------------------------------------------------ */
+function barMenus(){
+  return [...document.querySelectorAll(".board-bar details.menu")];
+}
+
+function closeMenus(except){
+  for (const m of barMenus()) if (m !== except) m.open = false;
+}
+
+function syncMenus(){
+  for (const m of barMenus()){
+    const sum = m.querySelector("summary");
+    if (sum) sum.classList.toggle("has-on", !!m.querySelector(".menu-pop .btn.on"));
+  }
+}
+
+(function wireMenus(){
+  const toggleIds = new Set(TOGGLES.map(t => t[0].slice(1)));
+  for (const m of barMenus()){
+    m.addEventListener("toggle", () => {
+      if (!m.open) return;
+      closeMenus(m);
+      /* vicino al bordo destro si apre dall'altra parte, sennò esce
+         dallo schermo proprio sui tavoli larghi */
+      m.classList.remove("flip");
+      const pop = m.querySelector(".menu-pop");
+      if (pop && pop.getBoundingClientRect().right > window.innerWidth - 8)
+        m.classList.add("flip");
+    });
+    const pop = m.querySelector(".menu-pop");
+    if (pop) pop.addEventListener("click", e => {
+      const b = e.target.closest("button");
+      /* le levette restano sotto il dito, così se ne accendono due di
+         fila; un'azione che fa una cosa sola chiude e ti ridà il tavolo */
+      if (b && !toggleIds.has(b.id)) closeMenus(null);
+    });
+  }
+  document.addEventListener("pointerdown", e => {
+    if (e.target.closest(".board-bar details.menu")) return;
+    closeMenus(null);
+  }, true);
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenus(null); });
+  syncMenus();
+})();
 
 /* ---------- marcatori, sagome, zone, ancore ---------- */
 function addMarker(opts, label){

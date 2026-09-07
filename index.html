@@ -121,49 +121,81 @@
   <section class="board-wrap">
     <div class="board-bar">
       <label class="field inline"><span>Scenario</span><select id="scenario"><optgroup label="Battle March"><option value="bm-guado">Il Guado di Sangue — 600 pt</option><option value="bm-monolite">Il Monolite nella Palude — 650 pt</option><option value="bm-strada">La Strada delle Pietre — 750 pt</option><option value="bm-rovine">Le Rovine di Xhotl — 750 pt</option></optgroup><optgroup label="Generici"><option value="open">Battaglia Campale</option><option value="meeting">Scontro di Incontro</option><option value="flank">Attacco sul Fianco</option><option value="pass">Passo di Montagna</option><option value="cross">Fronti Incrociati</option></optgroup></select></label>
+      <!-- La barra aveva ventitre pulsanti in fila: su un portatile
+           andava a capo, su tablet era una lotteria. Adesso in vista
+           restano i cinque gesti che si fanno mentre giochi (annulla,
+           schiera, snap, zoom) e il resto sta in tre menu raggruppati
+           per intenzione, non per ordine di scrittura. Il pallino sul
+           menu dice che dentro c'e qualcosa di acceso, cosi nascondere
+           una levetta non vuol dire dimenticarsela. -->
       <div class="bar-tools">
       <div class="sep"></div>
       <button class="btn icon" id="btn-undo" title="Annulla (Ctrl+Z)" disabled>↶</button>
       <button class="btn icon" id="btn-redo" title="Ripeti (Ctrl+Y)" disabled>↷</button>
       <div class="sep"></div>
-      <button class="btn" id="btn-auto">Schiera tutto</button>
-      <button class="btn" id="btn-recall">Ritira tutto</button>
+      <button class="btn" id="btn-auto" title="Schiera tutte le unità nelle rispettive zone">Schiera</button>
+      <button class="btn" id="btn-recall" title="Ritira tutte le unità dal tavolo">Ritira</button>
       <div class="sep"></div>
-      <button class="btn on" id="btn-snap" title="Aggancia al quarto di pollice e ai fianchi delle unità vicine">Snap ¼″</button>
-      <button class="btn" id="btn-labels" title="Numeri sulle unità">Numeri</button>
-      <button class="btn on" id="btn-photos" title="Foto delle miniature sulle basette">Foto</button>
-      <button class="btn" id="btn-ranges" title="Cerchi di movimento e tiro">Raggi</button>
-      <button class="btn" id="btn-arcs" title="Arco frontale e portata di carica">Archi</button>
-      <button class="btn on" id="btn-moveaid" title="Ancora di movimento: i cerchi restano dove l'unità è partita e la riga dice quanti pollici hai fatto">Movimento</button>
-      <button class="btn icon" id="btn-anchor-all" title="Rimetti l'ancora di tutte le unità dove stanno adesso">⚓</button>
-      <button class="btn" id="btn-ghost" title="Il fantasma dell'ultima fotografia di fine turno">Fantasma</button>
-      <button class="btn" id="btn-dist" title="Distanze dal bordo e linea di vista verso i nemici">Distanze</button>
-      <button class="btn" id="btn-measure" title="Righello: due clic per lasciare una misura sul tavolo">Misura</button>
-      <button class="btn icon" id="btn-rulers-clear" title="Togli i righelli">⌫</button>
+      <button class="btn on" id="btn-snap" title="Aggancia al quarto di pollice, ai fianchi delle unità vicine e a filo della faccia di quelle girate">Snap ¼″</button>
+
+      <details class="menu" data-menu="aiuti">
+        <summary class="btn" title="Aiuti tattici, ancora di movimento e righelli">Aiuti</summary>
+        <div class="menu-pop">
+          <p class="menu-note">Quello che aiuta a decidere prima di muovere. Nessuno di questi arbitra niente.</p>
+          <button class="btn on" id="btn-moveaid" title="I cerchi restano dove l'unità è partita e la riga dice quanti pollici hai fatto">Movimento</button>
+          <button class="btn" id="btn-anchor-all" title="Rimetti l'ancora di tutte le unità dove stanno adesso">⚓ Rimetti le ancore</button>
+          <button class="btn" id="btn-dist" title="Distanze dal bordo e linea di vista verso i nemici">Distanze</button>
+          <button class="btn" id="btn-arcs" title="Arco frontale e portata di carica">Archi</button>
+          <button class="btn" id="btn-ranges" title="Cerchio della gittata di tiro, che segue l'unità perché si misura da adesso">Raggi di tiro</button>
+          <button class="btn" id="btn-ghost" title="Dove stavano le unità nell'ultima fotografia di fine turno">Fantasma</button>
+          <div class="menu-sep"></div>
+          <button class="btn" id="btn-measure" title="Righello: due clic per lasciare una misura sul tavolo">Misura</button>
+          <button class="btn" id="btn-rulers-clear" title="Togli i righelli">⌫ Togli i righelli</button>
+        </div>
+      </details>
+
+      <details class="menu" data-menu="vista">
+        <summary class="btn" title="Cosa si vede sui pezzi">Vista</summary>
+        <div class="menu-pop">
+          <p class="menu-note">Cosa si disegna sopra i pezzi.</p>
+          <button class="btn" id="btn-labels" title="Numeri sulle unità">Numeri sulle unità</button>
+          <button class="btn on" id="btn-photos" title="Foto delle miniature sulle basette">Foto delle miniature</button>
+        </div>
+      </details>
+
+      <details class="menu" data-menu="tavolo">
+        <summary class="btn" title="Misure del tavolo, immagine e link">Tavolo</summary>
+        <div class="menu-pop">
+          <label class="field"><span>Misura del tavolo</span>
+            <select id="table-size">
+              <option value="44x30">44″ × 30″</option>
+              <option value="48x36">48″ × 36″</option>
+              <option value="72x48">72″ × 48″</option>
+              <option value="72x72">72″ × 72″</option>
+              <option value="96x48">96″ × 48″</option>
+            </select>
+          </label>
+          <label class="field"><span>Zone dalla mediana</span>
+            <select id="zone-gap">
+              <option value="6">6″</option><option value="9">9″</option>
+              <option value="12">12″</option><option value="15">15″</option><option value="18">18″</option>
+            </select>
+          </label>
+          <div class="menu-sep"></div>
+          <button class="btn" id="btn-png" title="Scarica il tavolo come immagine">Immagine del tavolo</button>
+          <button class="btn" id="btn-share" title="Copia un link che contiene questo schieramento">Link con lo schieramento</button>
+        </div>
+      </details>
+
       <div class="sep"></div>
-      <button class="btn icon" id="btn-zoom-out" title="Riduci (−)">−</button>
-      <span class="mono zoomlevel" id="zoom-level">100%</span>
-      <button class="btn icon" id="btn-zoom-in" title="Ingrandisci (+)">+</button>
-      <button class="btn on" id="btn-fit" title="Tutto il tavolo (0)">Adatta</button>
-      <div class="sep"></div>
-      <button class="btn" id="btn-png" title="Scarica il tavolo come immagine">Immagine</button>
-      <button class="btn" id="btn-share" title="Copia un link che contiene questo schieramento">Link</button>
-      <div class="sep"></div>
-      <label class="field inline"><span>Tavolo</span>
-        <select id="table-size">
-          <option value="44x30">44″ × 30″</option>
-          <option value="48x36">48″ × 36″</option>
-          <option value="72x48">72″ × 48″</option>
-          <option value="72x72">72″ × 72″</option>
-          <option value="96x48">96″ × 48″</option>
-        </select>
-      </label>
-      <label class="field inline"><span>Dalla mediana</span>
-        <select id="zone-gap">
-          <option value="6">6″</option><option value="9">9″</option>
-          <option value="12">12″</option><option value="15">15″</option><option value="18">18″</option>
-        </select>
-      </label>
+      <!-- lo zoom sta insieme: andando a capo si spezzava fra il meno e
+           il più, e due pulsanti di zoom su due righe non sono zoom -->
+      <div class="zoomgrp">
+        <button class="btn icon" id="btn-zoom-out" title="Riduci (−)">−</button>
+        <span class="mono zoomlevel" id="zoom-level">100%</span>
+        <button class="btn icon" id="btn-zoom-in" title="Ingrandisci (+)">+</button>
+        <button class="btn on" id="btn-fit" title="Tutto il tavolo (0)">Adatta</button>
+      </div>
       </div>
       <div class="spacer"></div>
       <span class="mono stats" id="stat"></span>

@@ -394,18 +394,22 @@ svg#board:active{cursor:grabbing;}
 .vs-table td.lead{color:var(--ink);font-weight:600;}
 .vs-table th{font-weight:400;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:2px 6px;}
 
-/* --- barra del tavolo: su desktop e' una riga sola che va a capo,
-       su schermo stretto gli strumenti diventano una riga che scorre,
-       cosi' scenario e riga di stato restano sempre in vista --- */
+/* --- barra del tavolo -----------------------------------------
+   Su desktop e' una riga sola che va a capo. Su schermo stretto gli
+   strumenti passano sotto, andando a capo anche loro: prima erano una
+   riga che scorreva in orizzontale, e adesso non puo' piu' esserlo —
+   un menu a comparsa dentro un contenitore che scorre verrebbe
+   tagliato al bordo. Con tre menu al posto di venti pulsanti ci sta
+   comunque tutto in due righe. */
 .bar-tools{display:contents;}
 @media (max-width:920px){
   .board-bar{flex-wrap:wrap;}
   .bar-tools{
-    display:flex;gap:8px;align-items:center;flex-wrap:nowrap;
-    order:3;width:100%;overflow-x:auto;overscroll-behavior-x:contain;
-    padding-bottom:4px;scrollbar-width:thin;
+    display:flex;gap:6px;align-items:center;flex-wrap:wrap;
+    order:3;width:100%;
   }
   .bar-tools > *{flex:none;}
+  .bar-tools > .sep{display:none;}
   .board-bar > .field.inline{order:1;}
   .board-bar > .spacer{display:none;}
   .board-bar > .stats{order:2;margin-left:auto;}
@@ -566,3 +570,52 @@ svg#board:active{cursor:grabbing;}
 /* la zona disegnata a mano: sul tavolo il cursore dice che si sta
    disegnando, non trascinando */
 .piece.zone{cursor:move;}
+
+/* ============================================================
+   MENU DELLA BARRA DEL TAVOLO
+   Ventitré pulsanti in fila erano illeggibili. Tre menu raggruppati
+   per intenzione — cosa aiuta a decidere, cosa si vede sui pezzi,
+   com'è fatto il tavolo — e in vista restano solo i gesti che si
+   fanno mentre giochi.
+   ============================================================ */
+.zoomgrp{display:inline-flex;align-items:center;gap:6px;flex:none;}
+/* il nome dello scenario può essere lunghissimo e da solo mandava a capo
+   tutta la barra: si accorcia, e il titolo intero resta sotto il tavolo */
+.board-bar > .field.inline select#scenario{max-width:208px;}
+
+.menu{position:relative;}
+.menu > summary{
+  list-style:none;cursor:pointer;user-select:none;display:inline-block;
+}
+.menu > summary::-webkit-details-marker{display:none;}
+.menu > summary::after{content:"▾";margin-left:6px;font-size:10px;opacity:.65;}
+.menu[open] > summary{background:var(--panel-2);border-color:var(--line-strong);}
+
+/* Il pallino dice che dentro c'è qualcosa di acceso: nascondere una
+   levetta in un menu non deve voler dire dimenticarsela accesa. */
+.menu > summary.has-on::before{
+  content:"";display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--accent);margin-right:7px;vertical-align:middle;
+}
+
+.menu-pop{
+  position:absolute;top:calc(100% + 6px);left:0;z-index:30;
+  min-width:236px;display:flex;flex-direction:column;gap:5px;
+  padding:10px;background:var(--panel);
+  border:1px solid var(--line-strong);border-radius:var(--r);
+  box-shadow:0 14px 34px rgba(0,0,0,.20);
+}
+.menu-pop .btn{text-align:left;width:100%;}
+.menu-pop .field{margin:0;}
+.menu-note{margin:0 0 3px;font-size:11px;line-height:1.4;color:var(--muted);}
+.menu-sep{height:1px;background:var(--line);margin:3px 0;}
+
+/* vicino al bordo destro si apre dall'altra parte, sennò esce dallo schermo */
+.menu.flip .menu-pop{left:auto;right:0;}
+
+@media (max-width:560px){
+  /* su un telefono un menu ancorato al pulsante finisce fuori: meglio
+     una striscia larga quanto la barra */
+  .menu-pop{position:fixed;left:8px;right:8px;top:auto;min-width:0;max-height:60vh;overflow:auto;}
+  .menu.flip .menu-pop{left:8px;right:8px;}
+}
