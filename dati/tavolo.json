@@ -1,0 +1,989 @@
+{
+  "armies": {
+    "A": {
+      "name": "La Strada delle Pietre",
+      "info": {
+        "catalogue": "Lizardmen",
+        "forceName": "Battle March",
+        "limit": 750
+      }
+    },
+    "B": {
+      "name": "La Strada delle Pietre",
+      "info": {
+        "catalogue": "Orc and Goblin Tribes",
+        "forceName": "Battle March",
+        "limit": 750
+      }
+    }
+  },
+  "units": [
+    {
+      "uid": 22,
+      "army": "A",
+      "name": "Saurus Scar-Veteran",
+      "models": 1,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 1,
+      "loose": false,
+      "pts": 96,
+      "us": 1,
+      "troop": "Heavy infantry",
+      "unitSize": "1",
+      "stats": {
+        "M": "4",
+        "WS": "5",
+        "BS": "0",
+        "S": "5",
+        "T": "5",
+        "W": "2",
+        "I": "3",
+        "A": "4",
+        "Ld": "8"
+      },
+      "rules": [],
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Great Weapon",
+          "range": "Combat"
+        }
+      ],
+      "maxRange": 0,
+      "slot": "Characters",
+      "faction": "Lizardmen",
+      "catId": "cmtl5ricw9o8o",
+      "x": 15,
+      "y": 624.5999999999999,
+      "rot": 0,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 1
+    },
+    {
+      "uid": 23,
+      "army": "A",
+      "name": "Skink Chief",
+      "models": 1,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 1,
+      "loose": false,
+      "pts": 75,
+      "us": 1,
+      "troop": "Regular infantry",
+      "unitSize": "1",
+      "stats": {
+        "M": "6",
+        "WS": "4",
+        "BS": "5",
+        "S": "4",
+        "T": "3",
+        "W": "2",
+        "I": "6",
+        "A": "3",
+        "Ld": "6"
+      },
+      "rules": [
+        "Aquatic"
+      ],
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Javelin",
+          "range": "12\""
+        }
+      ],
+      "maxRange": 12,
+      "slot": "Characters",
+      "faction": "Lizardmen",
+      "catId": "cmtl5sccvalla",
+      "x": 44.5,
+      "y": 622.0999999999999,
+      "rot": 0,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 2
+    },
+    {
+      "uid": 24,
+      "army": "A",
+      "name": "Skink Skirmishers",
+      "models": 10,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "loose": true,
+      "pts": 50,
+      "us": 10,
+      "troop": "Regular infantry",
+      "unitSize": "10+",
+      "stats": {
+        "M": "6",
+        "WS": "2",
+        "BS": "3",
+        "S": "3",
+        "T": "2",
+        "W": "1",
+        "I": "4",
+        "A": "1",
+        "Ld": "5"
+      },
+      "rules": [
+        "Move Through Cover",
+        "Skirmishers"
+      ],
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Javelin",
+          "range": "12\""
+        }
+      ],
+      "maxRange": 12,
+      "slot": "Core",
+      "faction": "Lizardmen",
+      "catId": "cmtl5rlxm62jk",
+      "x": 158.25,
+      "y": 647.3,
+      "rot": 0,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 3
+    },
+    {
+      "uid": 25,
+      "army": "A",
+      "name": "Skink Skirmishers",
+      "models": 10,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "loose": true,
+      "pts": 50,
+      "us": 10,
+      "troop": "Regular infantry",
+      "unitSize": "10+",
+      "stats": {
+        "M": "6",
+        "WS": "2",
+        "BS": "3",
+        "S": "3",
+        "T": "2",
+        "W": "1",
+        "I": "4",
+        "A": "1",
+        "Ld": "5"
+      },
+      "rules": [
+        "Move Through Cover",
+        "Skirmishers"
+      ],
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Javelin",
+          "range": "12\""
+        }
+      ],
+      "maxRange": 12,
+      "slot": "Core",
+      "faction": "Lizardmen",
+      "catId": "cmtl5rlxm62jk",
+      "x": 350.25,
+      "y": 647.3,
+      "rot": 0,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 4
+    },
+    {
+      "uid": 26,
+      "army": "A",
+      "name": "Skink Skirmishers",
+      "models": 10,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "loose": true,
+      "pts": 50,
+      "us": 10,
+      "troop": "Regular infantry",
+      "unitSize": "10+",
+      "stats": {
+        "M": "6",
+        "WS": "2",
+        "BS": "3",
+        "S": "3",
+        "T": "2",
+        "W": "1",
+        "I": "4",
+        "A": "1",
+        "Ld": "5"
+      },
+      "rules": [
+        "Move Through Cover",
+        "Skirmishers"
+      ],
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Javelin",
+          "range": "12\""
+        }
+      ],
+      "maxRange": 12,
+      "slot": "Core",
+      "faction": "Lizardmen",
+      "catId": "cmtl5rlxm62jk",
+      "x": 758.25,
+      "y": 647.3,
+      "rot": 0,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 5
+    },
+    {
+      "uid": 27,
+      "army": "A",
+      "name": "Temple Guard",
+      "models": 15,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 5,
+      "loose": false,
+      "pts": 254,
+      "us": 15,
+      "troop": "Heavy infantry",
+      "unitSize": "10+",
+      "stats": {
+        "M": "4",
+        "WS": "4",
+        "BS": "0",
+        "S": "4",
+        "T": "4",
+        "W": "1",
+        "I": "1",
+        "A": "2",
+        "Ld": "8"
+      },
+      "rules": [
+        "Close Order",
+        "Stubborn"
+      ],
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Halberd",
+          "range": "Combat"
+        }
+      ],
+      "maxRange": 0,
+      "slot": "Core",
+      "faction": "Lizardmen",
+      "catId": "cmtl5sesuq5ux",
+      "x": 523,
+      "y": 654.5999999999999,
+      "rot": 0,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 6
+    },
+    {
+      "uid": 28,
+      "army": "A",
+      "name": "Bastiladon",
+      "models": 1,
+      "crew": 3,
+      "baseId": "60x100",
+      "baseW": 60,
+      "baseH": 100,
+      "frontage": 1,
+      "loose": false,
+      "pts": 175,
+      "us": 4,
+      "troop": "Monstrous creature",
+      "unitSize": "1",
+      "stats": {
+        "M": "4",
+        "WS": "3",
+        "BS": "-",
+        "S": "4",
+        "T": "5",
+        "W": "4",
+        "I": "1",
+        "A": "3",
+        "Ld": "-"
+      },
+      "rules": [
+        "Close Order",
+        "Immune To Psychology",
+        "Impact Hits (D3)",
+        "Large Target",
+        "Stomp Attacks (D3+1)",
+        "Stubborn",
+        "Terror"
+      ],
+      "weapons": [
+        {
+          "name": "Thunderous bludgeon",
+          "range": "Combat"
+        },
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Javelin",
+          "range": "12\""
+        }
+      ],
+      "maxRange": 12,
+      "slot": "Special",
+      "faction": "Lizardmen",
+      "catId": "cmtl5sfv2x8hd",
+      "x": 630,
+      "y": 659.5999999999999,
+      "rot": 0,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 7
+    },
+    {
+      "uid": 29,
+      "army": "B",
+      "name": "Black Orc Warboss",
+      "models": 1,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 1,
+      "loose": false,
+      "pts": 141,
+      "us": 1,
+      "troop": "Heavy Infantry",
+      "unitSize": "1",
+      "stats": {
+        "M": "4",
+        "WS": "7",
+        "BS": "3",
+        "S": "5",
+        "T": "5",
+        "W": "3",
+        "I": "6",
+        "A": "4",
+        "Ld": "9"
+      },
+      "rules": [],
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Great Weapon",
+          "range": "Combat"
+        }
+      ],
+      "maxRange": 0,
+      "slot": "Characters",
+      "faction": "Orc and Goblin Tribes",
+      "catId": "cmtl5r6z9q5w2",
+      "x": 15,
+      "y": 15,
+      "rot": 180,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 1
+    },
+    {
+      "uid": 30,
+      "army": "B",
+      "name": "Night Goblin Bigboss",
+      "models": 1,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 1,
+      "loose": false,
+      "pts": 62,
+      "us": 3,
+      "troop": "Regular Infantry",
+      "unitSize": "1",
+      "stats": {
+        "M": "4",
+        "WS": "4",
+        "BS": "3",
+        "S": "4",
+        "T": "4",
+        "W": "2",
+        "I": "4",
+        "A": "3",
+        "Ld": "5"
+      },
+      "rules": [
+        "Fear of Elves",
+        "Impact Hits (D3)"
+      ],
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Great Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Massive Gob",
+          "range": "Combat"
+        }
+      ],
+      "maxRange": 0,
+      "slot": "Characters",
+      "faction": "Orc and Goblin Tribes",
+      "catId": "cmtl5rxae4yxy",
+      "x": 44.5,
+      "y": 12.5,
+      "rot": 180,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 2
+    },
+    {
+      "uid": 31,
+      "army": "B",
+      "name": "Black Orc Mobs",
+      "models": 11,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 5,
+      "loose": false,
+      "pts": 155,
+      "us": 11,
+      "troop": "Heavy Infantry",
+      "unitSize": "5+",
+      "stats": {
+        "M": "4",
+        "WS": "4",
+        "BS": "3",
+        "S": "4",
+        "T": "4",
+        "W": "1",
+        "I": "3",
+        "A": "1",
+        "Ld": "8"
+      },
+      "rules": [
+        "Close Order"
+      ],
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        }
+      ],
+      "maxRange": 0,
+      "slot": "Core",
+      "faction": "Orc and Goblin Tribes",
+      "catId": "cmtl5r88tb6qt",
+      "x": 139,
+      "y": 45,
+      "rot": 180,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 3
+    },
+    {
+      "uid": 32,
+      "army": "B",
+      "name": "Night Goblin Mobs",
+      "models": 20,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "loose": false,
+      "pts": 90,
+      "us": 20,
+      "troop": "Regular Infantry",
+      "unitSize": "10+",
+      "stats": {
+        "M": "4",
+        "WS": "2",
+        "BS": "3",
+        "S": "3",
+        "T": "3",
+        "W": "1",
+        "I": "3",
+        "A": "1",
+        "Ld": "4"
+      },
+      "rules": [
+        "Close Order",
+        "Fear of Elves"
+      ],
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Shortbow",
+          "range": "18\""
+        }
+      ],
+      "maxRange": 18,
+      "slot": "Core",
+      "faction": "Orc and Goblin Tribes",
+      "catId": "cmtl5rzttgftf",
+      "x": 278.5,
+      "y": 50,
+      "rot": 180,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 4
+    },
+    {
+      "uid": 33,
+      "army": "B",
+      "name": "Orc Mobs",
+      "models": 20,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 5,
+      "loose": false,
+      "pts": 130,
+      "us": 20,
+      "troop": "Regular Infantry",
+      "unitSize": "5+",
+      "stats": {
+        "M": "4",
+        "WS": "3",
+        "BS": "3",
+        "S": "3",
+        "T": "4",
+        "W": "1",
+        "I": "3",
+        "A": "1",
+        "Ld": "6"
+      },
+      "rules": [
+        "Close Order"
+      ],
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Additional Hand Weapon",
+          "range": "Combat"
+        }
+      ],
+      "maxRange": 0,
+      "slot": "Core",
+      "faction": "Orc and Goblin Tribes",
+      "catId": "cmtl5r9bak4eg",
+      "x": 419,
+      "y": 60,
+      "rot": 180,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 5
+    },
+    {
+      "uid": 34,
+      "army": "B",
+      "name": "Stone Troll Mobs",
+      "models": 1,
+      "crew": 0,
+      "baseId": "40x40",
+      "baseW": 40,
+      "baseH": 40,
+      "frontage": 1,
+      "loose": false,
+      "pts": 43,
+      "us": 3,
+      "troop": "Monstrous Infantry",
+      "unitSize": "1-9",
+      "stats": {
+        "M": "6",
+        "WS": "3",
+        "BS": "1",
+        "S": "5",
+        "T": "4",
+        "W": "3",
+        "I": "1",
+        "A": "3",
+        "Ld": "7"
+      },
+      "rules": [
+        "Fear",
+        "Close Order"
+      ],
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Troll Vomit",
+          "range": "Combat"
+        }
+      ],
+      "maxRange": 0,
+      "slot": "Special",
+      "faction": "Orc and Goblin Tribes",
+      "catId": "cmtl5s4m08jxj",
+      "x": 516,
+      "y": 20,
+      "rot": 180,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 6
+    },
+    {
+      "uid": 35,
+      "army": "B",
+      "name": "Stone Troll Mobs",
+      "models": 1,
+      "crew": 0,
+      "baseId": "40x40",
+      "baseW": 40,
+      "baseH": 40,
+      "frontage": 1,
+      "loose": false,
+      "pts": 43,
+      "us": 3,
+      "troop": "Monstrous Infantry",
+      "unitSize": "1-9",
+      "stats": {
+        "M": "6",
+        "WS": "3",
+        "BS": "1",
+        "S": "5",
+        "T": "4",
+        "W": "3",
+        "I": "1",
+        "A": "3",
+        "Ld": "7"
+      },
+      "rules": [
+        "Fear",
+        "Close Order"
+      ],
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Troll Vomit",
+          "range": "Combat"
+        }
+      ],
+      "maxRange": 0,
+      "slot": "Special",
+      "faction": "Orc and Goblin Tribes",
+      "catId": "cmtl5s4m08jxj",
+      "x": 556,
+      "y": 20,
+      "rot": 180,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 7
+    },
+    {
+      "uid": 36,
+      "army": "B",
+      "name": "Stone Troll Mobs",
+      "models": 1,
+      "crew": 0,
+      "baseId": "40x40",
+      "baseW": 40,
+      "baseH": 40,
+      "frontage": 1,
+      "loose": false,
+      "pts": 43,
+      "us": 3,
+      "troop": "Monstrous Infantry",
+      "unitSize": "1-9",
+      "stats": {
+        "M": "6",
+        "WS": "3",
+        "BS": "1",
+        "S": "5",
+        "T": "4",
+        "W": "3",
+        "I": "1",
+        "A": "3",
+        "Ld": "7"
+      },
+      "rules": [
+        "Fear",
+        "Close Order"
+      ],
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Troll Vomit",
+          "range": "Combat"
+        }
+      ],
+      "maxRange": 0,
+      "slot": "Special",
+      "faction": "Orc and Goblin Tribes",
+      "catId": "cmtl5s4m08jxj",
+      "x": 596,
+      "y": 20,
+      "rot": 180,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 8
+    },
+    {
+      "uid": 37,
+      "army": "B",
+      "name": "Stone Troll Mobs",
+      "models": 1,
+      "crew": 0,
+      "baseId": "40x40",
+      "baseW": 40,
+      "baseH": 40,
+      "frontage": 1,
+      "loose": false,
+      "pts": 43,
+      "us": 3,
+      "troop": "Monstrous Infantry",
+      "unitSize": "1-9",
+      "stats": {
+        "M": "6",
+        "WS": "3",
+        "BS": "1",
+        "S": "5",
+        "T": "4",
+        "W": "3",
+        "I": "1",
+        "A": "3",
+        "Ld": "7"
+      },
+      "rules": [
+        "Fear",
+        "Close Order"
+      ],
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat"
+        },
+        {
+          "name": "Troll Vomit",
+          "range": "Combat"
+        }
+      ],
+      "maxRange": 0,
+      "slot": "Special",
+      "faction": "Orc and Goblin Tribes",
+      "catId": "cmtl5s4m08jxj",
+      "x": 636,
+      "y": 20,
+      "rot": 180,
+      "placed": false,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 9
+    }
+  ],
+  "terrain": [
+    {
+      "tid": 77,
+      "kind": "marsh",
+      "x": 304.79999999999995,
+      "y": 254,
+      "w": 12,
+      "h": 8,
+      "rot": 0
+    },
+    {
+      "tid": 78,
+      "kind": "treasure",
+      "x": 609.5999999999999,
+      "y": 152.39999999999998,
+      "w": 1.575,
+      "h": 1.575,
+      "rot": 0
+    },
+    {
+      "tid": 79,
+      "kind": "wood",
+      "x": 965.1999999999999,
+      "y": 203.2,
+      "w": 8.5,
+      "h": 5.5,
+      "rot": 0
+    },
+    {
+      "tid": 80,
+      "kind": "hill",
+      "x": 114.3,
+      "y": 457.2,
+      "w": 8,
+      "h": 6,
+      "rot": 0
+    },
+    {
+      "tid": 81,
+      "kind": "pyramid",
+      "x": 609.5999999999999,
+      "y": 457.2,
+      "w": 8,
+      "h": 7,
+      "rot": 0
+    },
+    {
+      "tid": 82,
+      "kind": "hill",
+      "x": 1104.8999999999999,
+      "y": 457.2,
+      "w": 8,
+      "h": 6,
+      "rot": 0
+    },
+    {
+      "tid": 83,
+      "kind": "marsh",
+      "x": 914.4,
+      "y": 660.4,
+      "w": 10.5,
+      "h": 5,
+      "rot": 0
+    },
+    {
+      "tid": 84,
+      "kind": "wood",
+      "x": 228.6,
+      "y": 711.1999999999999,
+      "w": 8.5,
+      "h": 6,
+      "rot": 0
+    },
+    {
+      "tid": 85,
+      "kind": "treasure",
+      "x": 609.5999999999999,
+      "y": 762,
+      "w": 1.575,
+      "h": 1.575,
+      "rot": 0
+    }
+  ],
+  "scenario": "bm-rovine",
+  "tableW": 1219.1999999999998,
+  "tableH": 914.4,
+  "gap": 152.39999999999998,
+  "snap": true,
+  "labels": true,
+  "ranges": false,
+  "photos": true,
+  "distances": false,
+  "arcs": false,
+  "move": false,
+  "shoot": false,
+  "rulers": [],
+  "game": {
+    "on": false,
+    "turn": 1,
+    "army": "A",
+    "phase": 2,
+    "log": [
+      {
+        "t": 1,
+        "army": "A",
+        "phase": "Tiro",
+        "text": "Partita chiusa.",
+        "at": 1788422108274
+      },
+      {
+        "t": 1,
+        "army": "A",
+        "phase": "Strategia",
+        "text": "Inizio della partita.",
+        "at": 1788422075934
+      }
+    ]
+  },
+  "sel": null
+}
