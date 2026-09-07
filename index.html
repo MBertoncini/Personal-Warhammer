@@ -87,6 +87,21 @@
       <div id="terrain-warn" style="margin-top:8px;"></div>
     </div>
 
+    <div>
+      <div class="panel-title">Marcatori e zone</div>
+      <p class="note">Un marcatore è un pezzo del tavolo che non è né unità né terreno: obiettivo, segnalino, promemoria, area di un incantesimo. Il testo lo scrivi tu e l'app non lo legge mai. Le <b>sagome</b> sono marcatori vuoti da appoggiare sopra i modelli. Le <b>zone</b> disegnate a mano sostituiscono quelle calcolate dallo scenario: da lì in poi qualsiasi scenario è rappresentabile.</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn tiny" id="btn-mark-add">+ Marcatore</button>
+        <button class="btn tiny" id="btn-shape-add">+ Sagoma</button>
+        <button class="btn tiny" id="btn-mark-clear">Togli i marcatori</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+        <button class="btn tiny" id="btn-zone-draw" title="Poi trascina sul tavolo per disegnare il rettangolo">Disegna una zona</button>
+        <button class="btn tiny ghost" id="btn-zone-clear">Torna alle zone dello scenario</button>
+      </div>
+      <div id="marker-list" style="margin-top:8px;"></div>
+    </div>
+
     <p class="note">I quattro scenari <b>Battle March</b> riproducono le mappe fornite: nessun elemento supera i 12″ sul lato lungo e i tesori (base tonda 40 mm) stanno oltre 3″ da ogni pezzo di terreno. Se sposti qualcosa, il controllo si aggiorna da solo. Gli altri scenari usano zone generiche regolabili.</p>
 
     <details class="raw" id="raw-wrap" hidden="">
@@ -119,6 +134,9 @@
       <button class="btn on" id="btn-photos" title="Foto delle miniature sulle basette">Foto</button>
       <button class="btn" id="btn-ranges" title="Cerchi di movimento e tiro">Raggi</button>
       <button class="btn" id="btn-arcs" title="Arco frontale e portata di carica">Archi</button>
+      <button class="btn on" id="btn-moveaid" title="Ancora di movimento: i cerchi restano dove l'unità è partita e la riga dice quanti pollici hai fatto">Movimento</button>
+      <button class="btn icon" id="btn-anchor-all" title="Rimetti l'ancora di tutte le unità dove stanno adesso">⚓</button>
+      <button class="btn" id="btn-ghost" title="Il fantasma dell'ultima fotografia di fine turno">Fantasma</button>
       <button class="btn" id="btn-dist" title="Distanze dal bordo e linea di vista verso i nemici">Distanze</button>
       <button class="btn" id="btn-measure" title="Righello: due clic per lasciare una misura sul tavolo">Misura</button>
       <button class="btn icon" id="btn-rulers-clear" title="Togli i righelli">⌫</button>
@@ -151,7 +169,7 @@
       <span class="mono stats" id="stat"></span>
     </div>
 
-    <div class="board-scroll"><svg id="board" xmlns="http://www.w3.org/2000/svg" viewBox="-46 -46 1311.1999999999998 1006.4" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="board-scroll"><svg id="board" role="application" aria-label="Tavolo da gioco: unità, terreno, marcatori e zone" xmlns="http://www.w3.org/2000/svg" viewBox="-46 -46 1311.1999999999998 1006.4" preserveAspectRatio="xMidYMid meet"></svg></div>
 
     <div class="legend">
       <span><b id="sc-name">Le Rovine di Xhotl · 750 pt</b> · <span id="sc-desc">La piramide centrale divide il tavolo in due corsie e i due tesori stanno uno per corsia: nessuno può presidiarli entrambi.</span></span>
@@ -163,6 +181,7 @@
       <span><span class="kbd">Ctrl</span>+<span class="kbd">Z</span> annulla</span>
       <span><span class="kbd">rotella</span> zoom · <span class="kbd">Shift</span>+trascina scorre</span>
       <span><span class="kbd">Canc</span> ritira / elimina</span>
+      <span>trascinando: i cerchi restano sul punto di partenza</span>
     </div>
   </section>
 </main>

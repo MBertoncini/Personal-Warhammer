@@ -18,6 +18,7 @@ import { catEntry, photoFor, paintedOf } from './catalog.js';
 import { allLists, getList } from './lists.js';
 import { loadDoc, saveDoc } from './store.js';
 import { emit } from './bus.js';
+import { askText, askConfirm } from './uikit.js';
 import { snapshot, applySnapshot, loadArmyFromList, renderAll, history } from './deploy.js';
 
 const MU_KEY = "matchup:current";
@@ -266,7 +267,7 @@ export function renderMatchup(){
   });
   const sv = $("#mu-save");
   if (sv) sv.addEventListener("click", async () => {
-    const n = prompt("Nome dello schieramento:", "");
+    const n = await askText({ title:"Salva lo schieramento", label:"Lo ritrovi in fondo a questa scheda.", placeholder:"Come si chiama" });
     if (n === null) return;
     await saveDeployment(n.trim());
     renderMatchup();
@@ -293,6 +294,6 @@ export function renderMatchup(){
     document.querySelector('[data-tab="deploy"]').click();
   }));
   host.querySelectorAll("[data-drop]").forEach(b => b.addEventListener("click", async () => {
-    if (confirm("Elimino questo schieramento?")) { await removeDeployment(b.dataset.drop); renderMatchup(); }
+    if (await askConfirm("Lo schieramento salvato sparisce. Il tavolo di adesso non si tocca.", { title:"Eliminare lo schieramento?" })) { await removeDeployment(b.dataset.drop); renderMatchup(); }
   }));
 }

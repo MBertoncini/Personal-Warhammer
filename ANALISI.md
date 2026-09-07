@@ -1,6 +1,21 @@
-# Analisi: cosa manca e cosa si può migliorare
+# Analisi: cosa mancava e cosa si può ancora migliorare
 
-Lettura del progetto allo stato attuale (`f3dcf8c`), con i test che passano.
+> **Stato.** Quasi tutto quello che segue è stato implementato. Restano
+> aperti solo i punti raccolti in fondo, al §7. Il documento resta com'era
+> scritto perché il ragionamento vale più dell'elenco: è il criterio con
+> cui decidere anche le prossime.
+>
+> Fatti: ferite (§1.1), zone disegnate a mano (§1.2), liste e unità
+> scritte a mano (§1.3), marcatori liberi (§1.4), etichette libere
+> (§1.5), contatori liberi (§1.6), sagome di misura (§1.7), fantasma del
+> turno precedente (§1.8), aggancio al contatto (§1.9), finestra
+> dell'app al posto dei ventitré dialoghi nativi e scorciatoie nel
+> registro (§2.1), `extras` nei serializzatori (§4) — più **l'ancora di
+> movimento**, che nell'analisi non c'era e che è il vero rimedio a «i
+> cerchi seguono il pezzo e mentre lo muovo non so più da dove sono
+> partito».
+
+Lettura del progetto allo stato di partenza (`f3dcf8c`), con i test che passano.
 Scritta dal punto di vista di chi gioca, non di chi legge il codice: la domanda
 non è «questo modulo è pulito», è «al tavolo, cosa mi tocca ancora tenere a
 mente da solo».
@@ -386,16 +401,45 @@ sa solo dove stanno i pezzi e quanti sono, va scritta.
 
 ---
 
-## 6 · Se dovessi fare le cose in ordine
+## 6 · L'ancora di movimento
 
-1. **Ferite** (§1.1) — il buco più grosso, e ci vuole poco.
-2. **`extras` nei serializzatori** (§4) — prima delle altre, sennò ognuna
-   costa tre modifiche.
-3. **Marcatori liberi** (§1.4) — un tipo di dato che ne sostituisce dieci.
-4. **Zone disegnate** (§1.2) — chiude per sempre il capitolo scenari.
-5. **Liste a mano** (§1.3) — senza, l'app non funziona con l'avversario.
-6. **Chip nel registro** (§2.1) — il report vale quanto il registro.
-7. **Fantasma del turno prima** (§1.8) — dati che ci sono già.
-8. **Etichette e contatori liberi** (§1.5, §1.6).
-9. **Contatto magnetico e sagome** (§1.9, §1.7).
-10. Il resto.
+Non era in questa analisi e vale da sola quanto metà dei punti sopra,
+perché risponde alla domanda che si fa a ogni singolo movimento di ogni
+singolo turno.
+
+I cerchi di movimento c'erano, ma erano disegnati **attorno all'unità**:
+appena la trascinavi si portavano dietro il centro, e la risposta a «fin
+dove posso arrivare?» spariva proprio nel momento in cui serviva. Il
+giocatore vedeva un cerchio che lo seguiva e si dimenticava da dove era
+partito.
+
+L'ancora è il punto da cui l'unità ha cominciato a muoversi in questo
+turno. La sagoma di dov'era resta sul tavolo, i quattro cerchi
+(movimento, marcia, carica media, carica massima) si disegnano **lì e
+restano fermi**, e mentre trascini una riga fra i due punti dice quanti
+pollici hai fatto su quanti ne hai, con quanti ne restano. Si mette da
+sola al primo spostamento e si azzera a ogni fine turno.
+
+Le tre soglie derivate (`M×2`, `M+7`, `M+12`) sono una convenzione
+dichiarata, non una regola letta da un manuale, e M si corregge a mano
+nell'ispettore. È il compromesso coerente col §0: l'app disegna un
+cerchio, non decide se il movimento era permesso.
+
+---
+
+## 7 · Cosa resta aperto
+
+Non è stato fatto, e ha ancora senso:
+
+- **Scheda riassuntiva stampabile dell'esercito** (§3). Tutti i dati ci
+  sono già nel parser, si vedono solo una unità alla volta.
+- **Il raggruppamento della barra del tavolo** (§2.2). È peggiorata, non
+  migliorata: adesso i pulsanti sono ventitré. I toggle hanno almeno
+  `aria-pressed`, ma il menu a comparsa per «Vista» e «Aiuti» resta da
+  fare.
+- **Bersagli grandi e menu contestuale sul tocco** (§2.3).
+- **Punti dello scenario contro punti della lista**, **durata della
+  partita**, **esportazione del solo registro**, **promemoria del
+  backup** (§3).
+- L'estrazione di `board.js` da `deploy.js` (§4), che nel frattempo è
+  cresciuto ancora.

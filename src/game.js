@@ -29,6 +29,9 @@ import { shotFromTurn, shotSVG, shotCaption } from './tableshot.js';
 import { openEditor } from './formeditor.js';
 import { emit } from './bus.js';
 import { inch } from './util.js';
+import * as EX from './extras.js';
+import * as MV from './movement.js';
+import { askText, askConfirm, countersHTML, wireCounters } from './uikit.js';
 
 const PHASES = [
   { id:"strategy", label:"Strategia" },
@@ -42,6 +45,9 @@ export const emptyGame = () => ({
   /* il registro della partita: [0] e' lo schieramento, poi una voce per
      turno giocato */
   turns:[], lastCapture:0,
+  /* contatori liberi, uno per esercito: le risorse della magia, le
+     munizioni, i punti comando. L'app non sa cosa contano. */
+  counters:{ A:[], B:[] },
   meta: BL.emptyMeta(), score: BL.emptyScore(), notes:"",
 });
 
@@ -57,6 +63,8 @@ export function ensureGame(g){
   g.score = BL.ensureScore(g.score);
   if (typeof g.notes !== "string") g.notes = "";
   if (typeof g.lastCapture !== "number") g.lastCapture = 0;
+  if (!g.counters || typeof g.counters !== "object") g.counters = { A:[], B:[] };
+  for (const k of ["A", "B"]) if (!Array.isArray(g.counters[k])) g.counters[k] = [];
   return g;
 }
 
@@ -85,7 +93,14 @@ export function start(){
   g.meta = BL.ensureMeta({ ...g.meta, date: BL.today(), first: "A" });
   g.score = BL.emptyScore();
   g.notes = "";
-  for (const u of S().units){ u.lost = 0; u.dead = false; u.fled = false; u.fallen = []; }
+  g.counters = { A:[], B:[] };
+  for (const u of S().units){
+    u.lost = 0; u.dead = false; u.fled = false; u.fallen = [];
+    u.wounds = 0; u.tags = []; u.counters = [];
+  }
+  /* la partita comincia da dove sono i pezzi: ogni movimento del primo
+     turno si misura dallo schieramento */
+  MV.anchorAll(S().units);
   shotAt = null;
   logLine("Inizio della partita.");
   /* la prima fotografia e' lo schieramento: e' il termine di paragone
@@ -132,6 +147,10 @@ export function closeTurn(){
   g.phase = 0;
   if (g.army === "A") g.army = "B";
   else { g.army = "A"; g.turn++; }
+  /* Il turno nuovo riparte da dove sei arrivato: le ancore si rimettono
+     tutte qui. E' quello che rende «mosso 4.7 di 8» una risposta al
+     turno in corso invece che al totale della partita. */
+  MV.anchorAll(S().units);
 }
 
 /* Lo schieramento si aggiusta ancora un momento dopo aver premuto
@@ -141,6 +160,7 @@ export function recaptureDeploy(){
   const g = game();
   g.turns = [BL.deployRecord(S())];
   g.lastCapture = Date.now();
+  MV.anchorAll(S().units);
   logLine("Schieramento fotografato di nuovo.");
 }
 
@@ -201,6 +221,33 @@ export function setLost(u, n){
   if (u.dead) logLine(u.name + " annientata.", { army: u.army });
 }
 
+/* ------------------------------------------------------------------
+   Ferite
+   Il modello tolto non e' l'unica valuta: per un personaggio, un mostro
+   o un carro e' quella sbagliata, e per tre quarti della partita quello
+   che si perde sono ferite. L'app le conta e basta — non sa quando una
+   ferita si perde, non sa quando fa cadere un modello. Il giocatore
+   decide, come al tavolo.
+   ------------------------------------------------------------------ */
+export function setWounds(u, n){
+  const before = EX.woundsOf(u);
+  const next = Math.max(0, Math.round(+n || 0));
+  if (next === before) return;
+  u.wounds = next;
+  const d = next - before;
+  logLine(d > 0
+    ? u.name + ": " + d + (d === 1 ? " ferita" : " ferite") + " (in tutto " + next + ")."
+    : u.name + ": " + (-d) + (-d === 1 ? " ferita rimessa" : " ferite rimesse") + ".",
+    { army: u.army });
+}
+
+/* Il ponte fra le due valute, premuto a mano: le ferite segnate
+   diventano un modello in meno e il contatore riparte. */
+export function woundsToLoss(u, n = 1){
+  setLost(u, (u.lost || 0) + Math.max(1, Math.round(n)));
+  u.wounds = 0;
+}
+
 export function destroy(u){
   u.lost = u.models; u.dead = true; u.placed = false;
   FM.syncFallen(u, u.lost);
@@ -209,7 +256,7 @@ export function destroy(u){
 
 export function revive(u){
   u.dead = false; u.lost = 0; u.fled = false;
-  u.fallen = [];
+  u.fallen = []; u.wounds = 0;
   logLine(u.name + " rimessa in gioco.", { army: u.army });
 }
 
@@ -320,18 +367,20 @@ function lossesHTML(esc){
     .filter(u => u.army === id && !FM.joinedHost(u))
     .map(u => {
       const n = alive(u);
+      const w = EX.woundsOf(u);
       return `<div class="lossrow${u.dead ? " dead" : ""}" data-loss="${u.uid}">
-        <span class="nm mono">${esc(shortish(u.name))}</span>
+        <span class="nm mono">${esc(shortish(u.name))}${w ? ` <span class="wnd">♥${w}</span>` : ""}</span>
         <b class="mono${n * 2 <= u.models ? " low" : ""}">${n}/${u.models}</b>
         <button class="btn tiny" data-lm="${u.uid}" title="Un modello in meno">−</button>
         <button class="btn tiny" data-lp="${u.uid}" title="Un modello in più">+</button>
+        <button class="btn tiny" data-lw="${u.uid}" title="Una ferita in più (non toglie il modello)">♥</button>
         <button class="btn tiny ghost" data-lpick="${u.uid}" title="Scegli quali modelli sono caduti">⁝</button>
       </div>`;
     }).join("");
   return `
     <details class="lossbox">
       <summary class="panel-title">Perdite</summary>
-      <p class="note">I tasti tolgono e rimettono un modello. Il terzo apre la formazione: lì si sceglie <b>quale</b> modello è caduto, e l'unità si accorcia di conseguenza.</p>
+      <p class="note">I tasti tolgono e rimettono un modello. Il <b>cuore</b> segna una ferita senza togliere niente, che è la valuta giusta per personaggi, mostri e carri. L'ultimo apre la formazione: lì si sceglie <b>quale</b> modello è caduto, e l'unità si accorcia di conseguenza.</p>
       ${["A", "B"].map(id => `
         <div class="readout" style="margin-top:6px"><span><span class="swatch" style="background:var(--army${id})"></span>${esc(S().armies[id].name || "Esercito " + id)}</span></div>
         ${rows(id) || `<p class="empty">Nessuna unità.</p>`}`).join("")}
@@ -349,11 +398,50 @@ function wireLosses(host){
     const u = find(b.dataset.lp);
     if (u) ctx.act("perdite", () => setLost(u, (u.lost || 0) - 1));
   }));
+  host.querySelectorAll("[data-lw]").forEach(b => b.addEventListener("click", () => {
+    const u = find(b.dataset.lw);
+    if (u) ctx.act("ferite", () => setWounds(u, EX.woundsOf(u) + 1));
+  }));
   host.querySelectorAll("[data-lpick]").forEach(b => b.addEventListener("click", () => {
     const u = find(b.dataset.lpick);
     if (u) openEditor(u.uid);
   }));
 }
+
+/* ------------------------------------------------------------------
+   Contatori per esercito
+   Le risorse della magia, le munizioni contate, i punti comando: roba
+   che al tavolo si tiene con i dadi girati e si sbaglia. Un contatore
+   e' un nome e un numero, e l'app non sa cosa conta.
+   ------------------------------------------------------------------ */
+function countersPanelHTML(esc){
+  const g = game();
+  const names = { A: S().armies.A.name || "Esercito A", B: S().armies.B.name || "Esercito B" };
+  const vocab = EX.counterVocabulary([{ counters: g.counters.A }, { counters: g.counters.B }]);
+  return `
+    <details class="lossbox">
+      <summary class="panel-title">Contatori</summary>
+      ${["A", "B"].map(id => `
+        <div class="readout" style="margin-top:6px"><span><span class="swatch" style="background:var(--army${id})"></span>${esc(names[id])}</span></div>
+        ${countersHTML({ counters: g.counters[id] }, "army" + id, { title:"", vocab })}`).join("")}
+    </details>`;
+}
+function wireCountersPanel(host){
+  const g = game();
+  for (const id of ["A", "B"])
+    wireCounters(host, { get counters(){ return g.counters[id]; },
+                         set counters(v){ g.counters[id] = v; } },
+                 "army" + id, { onChange: () => ctx.act("contatore", () => {}) });
+}
+
+/* Le scorciatoie del registro. Durante una partita vera nessuno scrive
+   frasi su una tastiera virtuale: con i chip il registro si riempie,
+   senza resta vuoto — e il report vale quanto il registro. */
+export const LOG_CHIPS = [
+  "carica dichiarata", "carica riuscita", "carica fallita", "tiene la posizione",
+  "in rotta", "riorganizzata", "inseguimento", "tiro", "incantesimo passato",
+  "incantesimo fermato", "test superato", "test fallito", "generale", "stendardo",
+];
 
 /* ------------------------------------------------------------------
    Pannello
@@ -379,8 +467,10 @@ export function renderGamePanel(host, { esc }){
           <button class="btn tiny" id="g-open">Apri le partite</button>
         </div>
         <p class="note">Ricominciare una partita cancella queste fotografie: archivia prima.</p>` : "");
-    host.querySelector("#g-start").addEventListener("click", () => {
-      if (played && !confirm("La partita registrata non è archiviata: ricominciando si perde. Procedo?")) return;
+    host.querySelector("#g-start").addEventListener("click", async () => {
+      if (played && !await askConfirm(
+        "La partita registrata non è ancora archiviata: ricominciando si perde.",
+        { title:"Ricominciare?" })) return;
       ctx.act("inizio partita", start);
     });
     const arc = host.querySelector("#g-archive");
@@ -422,6 +512,7 @@ export function renderGamePanel(host, { esc }){
       <button class="btn tiny ghost" id="g-stop" style="color:var(--bad)">Chiudi partita</button>
     </div>
     ${lossesHTML(esc)}
+    ${countersPanelHTML(esc)}
     <div class="gamelog">
       ${g.log.length ? g.log.slice(0, 40).map(l => `
         <div class="logline"><span class="lt mono">T${l.t}</span>
@@ -432,12 +523,16 @@ export function renderGamePanel(host, { esc }){
 
   wireScreen(host);
   wireLosses(host);
+  wireCountersPanel(host);
   host.querySelector("#g-next").addEventListener("click", () => ctx.act("fase", () => advance(1)));
   host.querySelector("#g-back").addEventListener("click", () => ctx.act("fase", () => advance(-1)));
   host.querySelectorAll("[data-phase]").forEach(b => b.addEventListener("click", () =>
     ctx.act("fase", () => { game().phase = +b.dataset.phase; })));
-  host.querySelector("#g-note").addEventListener("click", () => {
-    const t = prompt("Cosa è successo?", "");
+  host.querySelector("#g-note").addEventListener("click", async () => {
+    const t = await askText({
+      title:"Annota", label:"Tocca una scorciatoia, oppure scrivi. Finisce nel registro con turno e fase.",
+      placeholder:"cosa è successo…", chips: LOG_CHIPS,
+    });
     if (t && t.trim()) ctx.act("annotazione", () => logLine(t.trim()));
   });
   host.querySelector("#g-close").addEventListener("click", () => ctx.act("fine turno", closeTurn));
@@ -446,8 +541,9 @@ export function renderGamePanel(host, { esc }){
   const opn = host.querySelector("#g-open");
   if (opn) opn.addEventListener("click", () => emit("tab:show", "report"));
   host.querySelector("#g-archive").addEventListener("click", () => emit("report:archive"));
-  host.querySelector("#g-stop").addEventListener("click", () => {
-    if (confirm("Chiudo la partita? L'ultimo turno viene fotografato e il punteggio ricalcolato."))
+  host.querySelector("#g-stop").addEventListener("click", async () => {
+    if (await askConfirm("L'ultimo turno viene fotografato e il punteggio ricalcolato.",
+                         { title:"Chiudere la partita?" }))
       ctx.act("fine partita", stop);
   });
 }

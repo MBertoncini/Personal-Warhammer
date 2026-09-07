@@ -13,6 +13,7 @@ import { initReports, renderReports } from './reports.js';
 import { bootDeploy, renderAll, refreshLinks as refreshBoardLinks, toast } from './deploy.js';
 import { exportAll, importAll, requestPersistence } from './store.js';
 import { on } from './bus.js';
+import { askConfirm, say } from './uikit.js';
 
 /* ---------- app installabile e utilizzabile senza rete ----------
    Al circolo la rete non c'è quasi mai. In più un sito installato
@@ -84,11 +85,11 @@ $("#file-backup").addEventListener("change", async e => {
   const f = e.target.files[0];
   e.target.value = "";
   if (!f) return;
-  if (!confirm("Unisco il backup a quello che c'\u00e8 gi\u00e0. Procedo?")) return;
+  if (!await askConfirm("Il backup si unisce a quello che c'\u00e8 gi\u00e0: niente viene cancellato.", { title:"Ripristinare?" })) return;
   try {
     await importAll(JSON.parse(await f.text()));
     location.reload();
-  } catch (err) { alert("Backup non valido: " + err.message); }
+  } catch (err) { await say("Backup non valido: " + err.message, { title:"Non riesco a leggerlo" }); }
 });
 
 /* ---------- avvio ---------- */

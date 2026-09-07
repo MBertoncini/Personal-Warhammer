@@ -29,6 +29,8 @@
 import { inch } from './util.js';
 import { TERRAIN } from './terrain.js';
 import * as FM from './formation.js';
+import * as EX from './extras.js';
+import { zoneSnapshot, zoneKind } from './zones.js';
 
 const r1 = v => Math.round(v * 10) / 10;
 const pad2 = n => String(n).padStart(2, "0");
@@ -149,6 +151,16 @@ export function unitRecord(u, prev, dims, ctx = null){
       gap: r1(f.spacing),
     },
     moved: 0,
+    /* Le ferite sono l'altra valuta delle perdite: per un personaggio,
+       un mostro o un carro sono l'unica. Una fotografia che tiene solo
+       i modelli tolti non racconta il turno in cui il drago e' andato
+       giu' da sei ferite a una. */
+    wounds: EX.woundsOf(u),
+    dWounds: Math.max(0, EX.woundsOf(u) - (prev ? prev.wounds || 0 : 0)),
+    /* etichette e contatori liberi: l'app non sa cosa vogliano dire e
+       li riporta cosi' come sono, che e' esattamente il punto */
+    tags: [...(u.tags || [])],
+    counters: (u.counters || []).map(c => ({ name:c.name, value:+c.value || 0 })),
     zone: u.dead ? "fuori gioco" : (host ? "con " + host.name : u.placed ? zoneOf(x, y, dims.w, dims.h) : "in riserva"),
   };
   if (host){ rec.withUid = host.uid; rec.withName = host.name; }
@@ -182,9 +194,19 @@ export function deployRecord(state){
        tutte le posizioni che vengono dopo, e un report che tiene una
        mappa sola non se ne accorge */
     terrain: FM.terrainSnapshot(state.terrain),
+    markers: EX.markerSnapshot(state.markers),
+    zones: zoneSnapshot(state.zones),
+    counters: countersSnapshot(state.game),
     contacts: contactsNow(ctx),
     events: [], note: "",
   };
+}
+
+/* i contatori dei due eserciti in questo momento */
+function countersSnapshot(g){
+  const c = (g && g.counters) || {};
+  const one = list => (list || []).map(x => ({ name:x.name, value:+x.value || 0 }));
+  return { A: one(c.A), B: one(c.B) };
 }
 
 /* i contatti di basetta del momento, gia' pronti per il report */
@@ -203,6 +225,9 @@ export function turnRecord(state, { n, army, events = [], note = "" }){
     at: Date.now(),
     units: state.units.map(u => unitRecord(u, prev.get(u.uid), dims, ctx)),
     terrain: FM.terrainSnapshot(state.terrain),
+    markers: EX.markerSnapshot(state.markers),
+    zones: zoneSnapshot(state.zones),
+    counters: countersSnapshot(state.game),
     contacts: contactsNow(ctx),
     events, note,
   };
@@ -226,6 +251,8 @@ export function blankTurn(rep, { n, army }){
       placed: p ? p.placed !== false : true,
       x: p ? p.x : 0, y: p ? p.y : 0, rot: p ? p.rot : 0,
       moved: 0, zone: p ? p.zone : "",
+      wounds: p ? (p.wounds || 0) : 0, dWounds: 0,
+      tags: p ? [...(p.tags || [])] : [],
     };
   });
   return { kind: "turn", n, army, at: Date.now(), units, events: [], note: "" };
@@ -251,7 +278,7 @@ export function recount(rep){
          gia' state scritte. */
       r.dead = st.dead || !!r.dead || !!(r.models && lost >= r.models);
       r.alive = r.dead ? 0 : Math.max(0, (r.models || 0) - lost);
-      if (r.dead){ r.placed = false; r.fled = false; }
+      if (r.dead){ r.placed = false; r.fled = false; r.wounds = 0; }
       run.set(r.uid, { lost, dead: r.dead });
     }
   }
@@ -393,7 +420,11 @@ const unitCard = u => ({
   models: u.models || 0, pts: u.pts || 0, us: u.us || 0,
   baseW: u.baseW, baseH: u.baseH, frontage: u.frontage,
   loose: !!u.loose, maxRange: u.maxRange || 0,
-  move: u.stats && /^\d+$/.test(String(u.stats.M)) ? +u.stats.M : 0,
+  /* le ferite del profilo servono a chi legge il report per capire se
+     «tre ferite» sono un graffio o quasi la morte */
+  wounds: EX.woundsPerModel(u),
+  move: (u.moveOverride != null && +u.moveOverride > 0) ? +u.moveOverride
+      : (u.stats && /^\d+$/.test(String(u.stats.M)) ? +u.stats.M : 0),
   rules: Array.isArray(u.rules) ? u.rules.slice(0, 10) : [],
   weapons: Array.isArray(u.weapons) ? u.weapons.map(w => w.name).slice(0, 6) : [],
 });
@@ -432,6 +463,8 @@ export function buildReport(state, scenario, { title = "", id = "" } = {}){
         rot: Math.round(t.rot || 0),
       };
     }),
+    markers: EX.markerSnapshot(state.markers),
+    zones: zoneSnapshot(state.zones),
     roster: {
       A: state.units.filter(u => u.army === "A").map(unitCard),
       B: state.units.filter(u => u.army === "B").map(unitCard),
@@ -507,6 +540,25 @@ function contactsBlock(t, title){
       list.map(c => [c.aName, c.aSide, c.bName, c.bSide, c.enemy ? "nemiche" : "alleate"])), ""];
 }
 
+/* «2 (5)»: due ferite in questo turno, cinque in tutto. Senza il
+   progressivo non si capisce se il mostro e' quasi giu' o appena
+   graffiato. */
+const woundText = r => {
+  const d = r.dWounds || 0, tot = r.wounds || 0;
+  if (!d && !tot) return "—";
+  return d ? `${d} (${tot})` : `(${tot})`;
+};
+const tagText = r => (r.tags && r.tags.length) ? r.tags.join(", ") : "—";
+
+/* i contatori dei due eserciti a fine turno, se ce n'e' qualcuno */
+function countersBlock(t){
+  const c = t.counters || {};
+  const rows = [];
+  for (const k of ["A", "B"]) for (const x of c[k] || []) rows.push([k, x.name, x.value]);
+  if (!rows.length) return [];
+  return ["", "**Contatori a fine turno.**", "", tbl(["Esercito", "Contatore", "Valore"], rows), ""];
+}
+
 const hasPos = r => r.placed && !r.dead && (r.x || r.y);
 const pos = r => hasPos(r) ? `${r.x}, ${r.y}` : "—";
 const facing = r => hasPos(r) ? r.rot + "°" : "—";
@@ -533,6 +585,11 @@ function legend(rep){
     "- «Fronte» in gradi: 0° guarda verso il bordo di B, 180° verso il bordo di A.",
     "- «Mosso»: distanza in linea d'aria fra il centro dell'unità a fine turno precedente e a fine di questo turno. È lo **spostamento netto**, non il percorso: chi avanza e torna indietro risulta fermo.",
     "- «Perdite»: modelli tolti in QUEL turno. «In piedi»: quanti ne restano.",
+    "- «Ferite»: ferite segnate sull'unità in QUEL turno, e fra parentesi il totale accumulato. Sono l'altra valuta delle perdite, e per un personaggio, un mostro o un carro sono l'unica: un modello con più ferite incassa colpi senza sparire dal tavolo. Il giocatore decide quando una ferita diventa un modello in meno; l'app non lo deduce.",
+    "- «Etichette»: parole scritte dal giocatore sull'unità (disordinata, ha caricato, sotto incantesimo…). Sono testo libero: l'app non le interpreta e non ne conosce l'elenco. Interpretale nel contesto della partita.",
+    "- «Contatori»: coppie nome/numero tenute dal giocatore per un esercito o per un'unità (dadi della magia, munizioni, cariche di un oggetto). Anche questi sono liberi: l'app conta e basta.",
+    "- «Marcatori»: pezzi appoggiati sul tavolo che non sono né unità né terreno — obiettivi, segnalini, promemoria. L'etichetta è scritta dal giocatore. Quelli marcati come *sagoma* sono strumenti di misura, non oggetti del gioco.",
+    "- «Zone»: se il giocatore le ha disegnate a mano, sostituiscono quelle calcolate dallo scenario. Sono rettangoli con un proprietario dichiarato.",
     "- Ogni turno di gioco compare due volte, una per giocatore: «Turno 2 — gioca B» è la seconda metà del secondo turno.",
     "- Un'unità distrutta compare nel turno in cui muore e poi sparisce dalle tabelle.",
     "- «Formazione»: *ordine chiuso* è il reggimento a ranghi, con la larghezza di fronte indicata; *sciolta* vuol dire che ogni base ha una posizione sua, come gli schermagliatori. L'ingombro riportato è quello attuale, già accorciato dalle perdite.",
@@ -600,6 +657,29 @@ export function reportMarkdown(rep, { prompt = false } = {}){
   if (baseTerr && baseTerr.length)
     out.push("## Terreno allo schieramento", "", terrainTable(baseTerr), "");
 
+  /* --- marcatori e zone disegnate ---
+     Sono i due pezzi di tavolo che l'app non interpreta: qui si
+     riportano cosi' come sono, etichetta compresa, perche' chi legge
+     ne sa piu' dell'app. */
+  const depShot = rep.turns.find(t => t.kind === "deploy") || {};
+  const marks = (depShot.markers && depShot.markers.length) ? depShot.markers : rep.markers;
+  if (marks && marks.length){
+    out.push("## Marcatori sul tavolo", "",
+      "Pezzi che non sono né unità né terreno. L'etichetta l'ha scritta il giocatore: l'app non la interpreta.", "",
+      tbl(["Etichetta", "Forma", "Centro (x, y)", "Misure", "A cosa serve"],
+        marks.map(m => [m.label || "—", m.shape,
+          `${m.x}, ${m.y}`,
+          m.shape === "rect" ? `${m.w}″ × ${m.h}″` : `⌀ ${m.w}″`,
+          m.measure ? "sagoma di misura" : "marcatore di gioco"])), "");
+  }
+  const zs = (depShot.zones && depShot.zones.length) ? depShot.zones : rep.zones;
+  if (zs && zs.length){
+    out.push("## Zone di schieramento disegnate a mano", "",
+      "Quando ci sono, sostituiscono quelle calcolate dallo scenario.", "",
+      tbl(["Zona", "Di chi", "Centro (x, y)", "Misure"],
+        zs.map(z => [z.label || "—", zoneKind(z.kind).label, `${z.x}, ${z.y}`, `${z.w}″ × ${z.h}″`])), "");
+  }
+
   /* --- schieramento --- */
   const dep = rep.turns.find(t => t.kind === "deploy");
   if (dep){
@@ -634,10 +714,12 @@ export function reportMarkdown(rep, { prompt = false } = {}){
     if (t.kind === "deploy") continue;
     out.push(`## Turno ${t.n}${t.army ? " — gioca " + ARMY(rep, t.army) : ""}`, "");
     const rows = t.units.filter(r => !goneBefore.has(r.uid));
-    out.push(tbl(["Unità", "Es.", "In piedi", "Perdite", "Mosso", "Centro (x, y)", "Ingombro", "Fronte", "Formazione", "Zona", "Terreno", "Stato"],
+    out.push(tbl(["Unità", "Es.", "In piedi", "Perdite", "Ferite", "Etichette", "Mosso", "Centro (x, y)", "Ingombro", "Fronte", "Formazione", "Zona", "Terreno", "Stato"],
       rows.map(r => [r.name, r.army, `${r.alive}/${r.models}`, r.dLost || "—",
+        woundText(r), tagText(r),
         r.moved ? r.moved + "″" : "—", pos(r), sizeText(r), facing(r), recForm(r),
         r.zone || "—", terrText(r), stateOf(r)])));
+    out.push(...countersBlock(t));
     out.push(...contactsBlock(t, "Contatti di basetta a fine turno"));
     /* il terreno si ristampa solo se qualcuno lo ha mosso: ripeterlo
        identico dieci volte allungherebbe il report senza dire niente */

@@ -20,6 +20,7 @@
 import { $, esc } from './util.js';
 import { loadDoc, saveDoc } from './store.js';
 import { emit, on } from './bus.js';
+import { askConfirm, say } from './uikit.js';
 import { copyText } from './share.js';
 import { allLists, getList } from './lists.js';
 import { SCENARIOS } from './scenarios.js';
@@ -367,7 +368,7 @@ function turnHTML(rep, t, i){
       </div>` : ""}
       ${contactsList(t)}
       <div class="tablewrap"><table class="grid-table">
-        <thead><tr><th>Unità</th><th>In piedi</th><th>Perdite</th><th>Mosso ″</th><th>Zona / posizione</th><th>Stato</th></tr></thead>
+        <thead><tr><th>Unità</th><th>In piedi</th><th>Perdite</th><th>Ferite</th><th>Mosso ″</th><th>Zona / posizione</th><th>Etichette</th><th>Stato</th></tr></thead>
         <tbody>
           ${rows.map(r => `
             <tr class="${r.dead ? "gone" : ""}">
@@ -375,12 +376,18 @@ function turnHTML(rep, t, i){
               <td class="mono">${r.alive}/${r.models}</td>
               <td>${t.kind === "deploy" ? "—"
                 : `<input type="number" min="0" max="${r.models}" value="${r.dLost || 0}" data-tu="${i}|${r.uid}|dLost">`}</td>
+              <!-- le ferite: per un personaggio, un mostro o un carro
+                   sono l'unica valuta, e un report a mano senza questa
+                   casella non racconta il turno che conta -->
+              <td><input type="number" min="0" value="${r.wounds || 0}" data-tu="${i}|${r.uid}|wounds"></td>
               <td>${t.kind === "deploy" ? "—"
                 : `<input type="number" min="0" step="0.5" value="${r.moved || 0}" data-tu="${i}|${r.uid}|moved">`}</td>
               <td><input type="text" value="${esc(r.zone || "")}" data-tu="${i}|${r.uid}|zone"
                     placeholder="${r.placed && (r.x || r.y) ? esc(r.x + ", " + r.y) : "dove si trovava"}">
                 ${r.terrain && r.terrain.length
                   ? `<span class="mono" style="color:var(--muted)">${esc(r.terrain.map(x => x.label.toLowerCase() + " " + x.models + "/" + x.of).join(", "))}</span>` : ""}</td>
+              <td><input type="text" value="${esc((r.tags || []).join(", "))}" data-tu="${i}|${r.uid}|tags"
+                    placeholder="disordinata, ha caricato…"></td>
               <td><select data-tu="${i}|${r.uid}|state">
                 ${STATES.map(s => `<option value="${s.id}" ${s.id === stateId(r) ? "selected" : ""}>${s.label}</option>`).join("")}
               </select></td>
@@ -449,7 +456,7 @@ function wireTop(host, ls){
   const arc = $("#rp-archive");
   arc.addEventListener("click", async () => {
     try { await archiveCurrent(); renderReports(); }
-    catch (err){ alert(err.message); }
+    catch (err){ await say(err.message, { title:"Non ci riesco" }); }
   });
   $("#rp-new").addEventListener("click", () => {
     const b = $("#rp-new-box"); b.hidden = !b.hidden;
@@ -457,7 +464,7 @@ function wireTop(host, ls){
   const create = $("#rp-create");
   if (create) create.addEventListener("click", async () => {
     const a = $("#rp-la").value, b = $("#rp-lb").value;
-    if (!a && !b) return alert("Scegli almeno una lista.");
+    if (!a && !b) return say("Una partita a mano parte da almeno una lista salvata.", { title:"Scegli una lista" });
     await newFromLists(a, b);
     renderReports();
   });
@@ -474,7 +481,7 @@ function wireDetail(host, rep){
   };
 
   host.querySelector("[data-del]").addEventListener("click", async () => {
-    if (!confirm("Elimino questa partita? Il report non si recupera.")) return;
+    if (!await askConfirm("Il report non si recupera.", { title:"Eliminare la partita?" })) return;
     await removeReport(rep.id);
     renderReports();
   });
@@ -501,7 +508,7 @@ function wireDetail(host, rep){
   }));
   host.querySelectorAll("[data-delturn]").forEach(el => el.addEventListener("click", async e => {
     e.stopPropagation();
-    if (!confirm("Elimino questo turno?")) return;
+    if (!await askConfirm("Il turno sparisce dal registro e i superstiti dei turni dopo si ricalcolano.", { title:"Eliminare il turno?" })) return;
     rep.turns.splice(+el.dataset.delturn, 1);
     BL.recount(rep); BL.applyAuto(rep);
     openTurn = Math.min(openTurn, rep.turns.length - 1);
@@ -520,6 +527,11 @@ function wireDetail(host, rep){
     if (!rec) return;
     if (field === "state") setUnitState(rep, +ti, rec, el.value);
     else if (field === "zone") rec.zone = el.value;
+    else if (field === "tags"){
+      /* parole libere separate da virgola: l'app non ne conosce
+         l'elenco e non deve conoscerlo */
+      rec.tags = el.value.split(",").map(x => x.trim().toLowerCase()).filter(Boolean);
+    }
     else {
       rec[field] = Math.max(0, +el.value || 0);
       if (field === "dLost") BL.recount(rep);
@@ -583,5 +595,5 @@ on("report:archive", async () => {
     await archiveCurrent();
     emit("tab:show", "report");
     renderReports();
-  } catch (err){ alert(err.message); }
+  } catch (err){ await say(err.message, { title:"Non ci riesco" }); }
 });

@@ -153,6 +153,67 @@ await mu.initMatchup();
 ok('il confronto non esplode senza liste scelte', mu.compare().A === null);
 ok('la lista della spesa e vuota senza matchup', mu.todoText() === '');
 
+console.log('\nle cose generiche, senza DOM');
+const EX = await import('../src/extras.js');
+const MV = await import('../src/movement.js');
+const ZN = await import('../src/zones.js');
+
+/* etichette: parole, non un elenco chiuso */
+const u1 = { name: 'Prova', tags: [] };
+EX.addTag(u1, '  Ha  Caricato ');
+ok('l etichetta si normalizza da sola', u1.tags[0] === 'ha caricato');
+ok('toggle toglie quello che c e', EX.toggleTag(u1, 'ha caricato') === false && u1.tags.length === 0);
+
+/* contatori: un nome e un numero, e nient altro */
+const holder = {};
+EX.bumpCounter(holder, 'dadi', 6);
+EX.bumpCounter(holder, 'Dadi', -2);
+ok('il nome del contatore non distingue le maiuscole', holder.counters.length === 1);
+ok('e il conto e giusto', EX.findCounter(holder, 'dadi').value === 4);
+ok('il dizionario dei contatori si costruisce dall uso',
+   EX.counterVocabulary([holder]).includes('dadi'));
+
+/* ferite: l app conta, non deduce */
+const hydra = { models: 1, lost: 0, wounds: 4, stats: { W: '6' } };
+ok('la riserva di ferite si legge dal profilo', EX.woundPool(hydra, 1) === 6);
+ok('e si scrive come la direbbe un giocatore', EX.woundText(hydra, 1) === '4 / 6');
+ok('senza profilo si scrive solo il numero',
+   EX.woundText({ models: 1, lost: 0, wounds: 2, stats: null }, 1) === '2');
+
+/* marcatori: un tipo solo per dieci funzionalita */
+const mk = EX.makeMarker({ mid: 1, x: 0, y: 0, shape: 'circle', w: 5, label: 'obiettivo' });
+ok('un cerchio ha profondita uguale al diametro', mk.h === 5);
+ok('e si nomina col raggio', /raggio 2\.5″/.test(EX.markerSize(mk)));
+ok('un marcatore rotto non fa cadere il tavolo', EX.ensureMarker(null) === null);
+
+/* movimento: le soglie sono una convenzione dichiarata */
+const cav = { stats: { M: '8' }, placed: true, x: 0, y: 0, rot: 0 };
+const b = MV.bandsFor(cav);
+ok('marcia = M x 2', b.march === 16);
+ok('carica media = M + 7', b.charge === 15);
+ok('senza M non si inventa niente', MV.bandsFor({ stats: { M: '*' } }) === null);
+ok('M corretto a mano vince sul profilo', MV.moveOf({ stats: { M: '4' }, moveOverride: 9 }) === 9);
+MV.setAnchor(cav);
+cav.x = 25.4 * 3; cav.rot = 90;
+const moved = MV.movedFrom(cav);
+ok('lo spostamento si misura dall ancora', Math.abs(moved.dist - 3) < 0.001);
+ok('e il giro di fronte si dice a parte', moved.turn === 90);
+MV.clearAnchor(cav);
+ok('senza ancora non c e niente da misurare', MV.movedFrom(cav) === null);
+
+/* zone: quelle disegnate vincono su quelle calcolate */
+const geo = { zones: { A: [{ x: 0, y: 0, w: 10, h: 10 }], B: [] }, aux: [{ army: 'B', rect: {} }], blocked: [] };
+const mine = [ZN.makeZone({ zid: 1, x: 50, y: 50, w: 20, h: 20, kind: 'A' })];
+const out = ZN.applyZones(geo, mine);
+ok('la zona disegnata sostituisce quella dello scenario', out.zones.A[0].x === 40);
+ok('e l arrivo dal fianco dello scenario non vale piu', out.aux.length === 0);
+ok('una zona di tutti e due conta per tutti e due',
+   ZN.applyZones(geo, [ZN.makeZone({ zid: 2, x: 5, y: 5, w: 4, h: 4, kind: 'both' })]).zones.B.length === 1);
+ok('un area vietata si somma invece di sostituire',
+   ZN.applyZones(geo, [ZN.makeZone({ zid: 3, x: 5, y: 5, w: 4, h: 4, kind: 'blocked' })]).zones.A[0].w === 10);
+ok('un rettangolo di misura zero non diventa una zona',
+   ZN.ensureZone({ x: 0, y: 0, w: 0, h: 5 }) === null);
+
 console.log('\npersistenza');
 await store.saveDoc('prova', { a: 1 });
 ok('rilettura da IndexedDB', (await store.loadDoc('prova')).a === 1);

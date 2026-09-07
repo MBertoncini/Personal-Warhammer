@@ -493,3 +493,76 @@ svg#board:active{cursor:grabbing;}
 .lossrow b{font-size:11.5px;color:var(--muted);min-width:44px;text-align:right;}
 .lossrow b.low{color:var(--warn);}
 .lossrow.dead{opacity:.5;}
+
+/* ============================================================
+   LE COSE GENERICHE
+   Finestra dell'app al posto di prompt/confirm, contatori,
+   etichette, ancora di movimento, liste scritte a mano.
+   ============================================================ */
+
+/* --- finestra ---
+   prompt() e confirm() sul telefono coprono lo schermo e in un'app
+   installata hanno l'aria di un errore. Questa ha l'aspetto del resto
+   e, soprattutto, ci stanno le scorciatoie da toccare. */
+.dlg-back{
+  position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.42);padding:16px;
+}
+.dlg{
+  width:min(440px,100%);max-height:86vh;overflow:auto;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:0 18px 48px rgba(0,0,0,.28);
+}
+.dlg.wide{width:min(680px,100%);}
+.dlg-head{padding:11px 14px;border-bottom:1px solid var(--line);font-weight:600;font-size:14px;}
+.dlg-body{padding:12px 14px;display:flex;flex-direction:column;gap:8px;}
+.dlg-body input[type=text],.dlg-body textarea{width:100%;}
+.dlg-body .note{margin:0;}
+.dlg-foot{display:flex;justify-content:flex-end;gap:8px;padding:10px 14px;border-top:1px solid var(--line);}
+
+/* la fila di scorciatoie: durante una partita nessuno scrive frasi su
+   una tastiera virtuale, e un registro vuoto vale un report vuoto */
+.chiprow{display:flex;flex-wrap:wrap;gap:5px;}
+.chiprow.big{gap:7px;}
+.chiprow.big .btn{flex:1 1 44%;justify-content:center;}
+
+/* --- contatori: un nome e un numero --- */
+.cntbox{display:flex;flex-direction:column;gap:4px;margin-top:4px;}
+.cntrow{
+  display:grid;grid-template-columns:1fr auto auto auto auto;gap:4px;align-items:center;
+  padding:2px 0;border-bottom:1px dotted var(--line);
+}
+.cntrow .nm{font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cntrow .val{min-width:34px;text-align:center;font-size:13px;}
+
+/* --- etichette libere --- */
+.tagbox{margin-top:8px;display:flex;flex-direction:column;gap:5px;}
+.tag.on{
+  background:var(--accent);border-color:var(--accent);color:var(--paper);
+  cursor:pointer;font-family:inherit;
+}
+
+/* --- ancora di movimento --- */
+.movebox{display:flex;flex-direction:column;gap:6px;}
+
+/* le ferite, che non sono i modelli tolti */
+.losses.wounds input{width:64px;}
+.lossrow .wnd{color:var(--bad);font-size:10.5px;}
+
+/* --- liste scritte a mano --- */
+.uedit{
+  grid-column:1/-1;display:flex;gap:5px;flex-wrap:wrap;align-items:center;
+  margin-top:5px;padding-top:5px;border-top:1px dotted var(--line);
+}
+.uedit input[type=text]{flex:1 1 140px;min-width:110px;}
+.uedit input[type=number]{width:72px;}
+.uedit select{flex:0 1 190px;}
+.addunit{margin-top:12px;border-top:1px solid var(--line);padding-top:10px;}
+.addrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.addrow input[type=text]{flex:1 1 180px;}
+.addrow input[type=number]{width:78px;}
+.addrow select{flex:0 1 200px;}
+
+/* la zona disegnata a mano: sul tavolo il cursore dice che si sta
+   disegnando, non trascinando */
+.piece.zone{cursor:move;}
