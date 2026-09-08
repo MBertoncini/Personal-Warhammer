@@ -258,5 +258,103 @@
       "stone troll mobs"
     ],
     "notes": ""
+  },
+  {
+    "id": "cmtt5y64js1fw",
+    "name": "Clanrats",
+    "faction": "Skaven",
+    "baseId": "25x25",
+    "baseW": 25,
+    "baseH": 25,
+    "owned": 60,
+    "painted": 0,
+    "aliases": [
+      "clanrats"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "cmtt5yjqto375",
+    "name": "Doomwheel",
+    "faction": "Skaven",
+    "baseId": "50x100",
+    "baseW": 50,
+    "baseH": 100,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "doomwheel"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "cmtt5ynmxl3z4",
+    "name": "Hell Pit Abomination",
+    "faction": "Skaven",
+    "baseId": "60x100",
+    "baseW": 60,
+    "baseH": 100,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "hell pit abomination"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "cmtt5ycogrii3",
+    "name": "Rat Ogres",
+    "faction": "Skaven",
+    "baseId": "50x50",
+    "baseW": 50,
+    "baseH": 50,
+    "owned": 3,
+    "painted": 0,
+    "aliases": [
+      "rat ogres"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "cmtt5xzhi250q",
+    "name": "Warlock Engineer",
+    "faction": "Skaven",
+    "baseId": "25x25",
+    "baseW": 25,
+    "baseH": 25,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "warlock engineer"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "cmtt5ys5u3a4z",
+    "name": "Warp Lightning Cannon",
+    "faction": "Skaven",
+    "baseId": "50x100",
+    "baseW": 50,
+    "baseH": 100,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "warp lightning cannon"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "cmtt5yg1p0hg9",
+    "name": "Warplock Jezzails",
+    "faction": "Skaven",
+    "baseId": "25x50",
+    "baseW": 25,
+    "baseH": 50,
+    "owned": 6,
+    "painted": 0,
+    "aliases": [
+      "warplock jezzails"
+    ],
+    "notes": ""
   }
 ]

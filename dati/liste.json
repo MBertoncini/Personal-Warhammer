@@ -2412,5 +2412,616 @@
         "catId": "cmtl5sfv2x8hd"
       }
     ]
+  },
+  {
+    "id": "lmtt5xutmqp8s",
+    "name": "Tutto",
+    "info": {
+      "catalogue": "Skaven",
+      "forceName": "Open War",
+      "limit": 2000
+    },
+    "points": 1037,
+    "imported": "2026-09-08T21:09:54.634Z",
+    "units": [
+      {
+        "name": "Warlock Engineer",
+        "models": 1,
+        "crew": 0,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 1,
+        "loose": false,
+        "pts": 44,
+        "us": 1,
+        "troop": "Regular infantry (character)",
+        "unitSize": "1",
+        "stats": {
+          "M": "5",
+          "WS": "3",
+          "BS": "3",
+          "S": "3",
+          "T": "3",
+          "W": "2",
+          "I": "4",
+          "A": "2",
+          "Ld": "5"
+        },
+        "rules": [],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          },
+          {
+            "name": "Warplock musket",
+            "range": "24\"",
+            "S": "5",
+            "ap": "-2",
+            "rules": "Magical Attacks, Ponderous"
+          }
+        ],
+        "maxRange": 24,
+        "slot": "Characters",
+        "faction": "Skaven",
+        "armour": 0,
+        "ward": 0,
+        "catId": "cmtt5xzhi250q"
+      },
+      {
+        "name": "Clanrats",
+        "models": 20,
+        "crew": 0,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 5,
+        "loose": false,
+        "pts": 90,
+        "us": 20,
+        "troop": "Regular infantry",
+        "unitSize": "20-40",
+        "stats": {
+          "M": "5",
+          "WS": "3",
+          "BS": "3",
+          "S": "3",
+          "T": "3",
+          "W": "1",
+          "I": "4",
+          "A": "1",
+          "Ld": "4"
+        },
+        "rules": [
+          "Close Order"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "maxRange": 0,
+        "slot": "Core",
+        "faction": "Skaven",
+        "armour": 0,
+        "ward": 0,
+        "catId": "cmtt5y64js1fw"
+      },
+      {
+        "name": "Clanrats",
+        "models": 20,
+        "crew": 0,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 5,
+        "loose": false,
+        "pts": 90,
+        "us": 20,
+        "troop": "Regular infantry",
+        "unitSize": "20-40",
+        "stats": {
+          "M": "5",
+          "WS": "3",
+          "BS": "3",
+          "S": "3",
+          "T": "3",
+          "W": "1",
+          "I": "4",
+          "A": "1",
+          "Ld": "4"
+        },
+        "rules": [
+          "Close Order"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "maxRange": 0,
+        "slot": "Core",
+        "faction": "Skaven",
+        "armour": 0,
+        "ward": 0,
+        "catId": "cmtt5y64js1fw"
+      },
+      {
+        "name": "Clanrats",
+        "models": 20,
+        "crew": 0,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 5,
+        "loose": false,
+        "pts": 90,
+        "us": 20,
+        "troop": "Regular infantry",
+        "unitSize": "20-40",
+        "stats": {
+          "M": "5",
+          "WS": "3",
+          "BS": "3",
+          "S": "3",
+          "T": "3",
+          "W": "1",
+          "I": "4",
+          "A": "1",
+          "Ld": "4"
+        },
+        "rules": [
+          "Close Order"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "maxRange": 0,
+        "slot": "Core",
+        "faction": "Skaven",
+        "armour": 0,
+        "ward": 0,
+        "catId": "cmtt5y64js1fw"
+      },
+      {
+        "name": "Rat Ogres",
+        "models": 3,
+        "crew": 0,
+        "baseId": "50x50",
+        "baseW": 50,
+        "baseH": 50,
+        "frontage": 3,
+        "loose": false,
+        "pts": 144,
+        "us": 9,
+        "troop": "Monstrous infantry",
+        "unitSize": "3+",
+        "stats": {
+          "M": "6",
+          "WS": "4",
+          "BS": "1",
+          "S": "5",
+          "T": "4",
+          "W": "3",
+          "I": "4",
+          "A": "3",
+          "Ld": "5"
+        },
+        "rules": [
+          "Close Order",
+          "Fear"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "maxRange": 0,
+        "slot": "Special",
+        "faction": "Skaven",
+        "armour": 0,
+        "ward": 0,
+        "catId": "cmtt5ycogrii3"
+      },
+      {
+        "name": "Warplock Jezzails",
+        "models": 6,
+        "crew": 0,
+        "baseId": "25x50",
+        "baseW": 25,
+        "baseH": 50,
+        "frontage": 3,
+        "loose": true,
+        "pts": 114,
+        "us": 6,
+        "troop": "Regular infantry",
+        "unitSize": "3+",
+        "stats": {
+          "M": "5",
+          "WS": "3",
+          "BS": "3",
+          "S": "3",
+          "T": "3",
+          "W": "2",
+          "I": "3",
+          "A": "2",
+          "Ld": "5"
+        },
+        "rules": [
+          "Open Order"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          },
+          {
+            "name": "Warplock jezzail",
+            "range": "36\"",
+            "S": "6",
+            "ap": "-3",
+            "rules": "Cumbersome, Magical Attacks, Move or Shoot"
+          }
+        ],
+        "maxRange": 36,
+        "slot": "Special",
+        "faction": "Skaven",
+        "armour": 0,
+        "ward": 0,
+        "catId": "cmtt5yg1p0hg9"
+      },
+      {
+        "name": "Doomwheel",
+        "models": 1,
+        "crew": 2,
+        "baseId": "50x100",
+        "baseW": 50,
+        "baseH": 100,
+        "frontage": 1,
+        "loose": false,
+        "pts": 145,
+        "us": 5,
+        "troop": "Heavy chariot",
+        "unitSize": "1",
+        "stats": {
+          "M": "3D6",
+          "WS": "-",
+          "BS": "-",
+          "S": "5",
+          "T": "5",
+          "W": "4",
+          "I": "-",
+          "A": "-",
+          "Ld": "-"
+        },
+        "rules": [
+          "Close Order",
+          "Immune To Psychology",
+          "Impact Hits (D3+1)",
+          "Large Target",
+          "Stomp Attacks (2)"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "maxRange": 0,
+        "slot": "Rare",
+        "faction": "Skaven",
+        "armour": 0,
+        "ward": 0,
+        "catId": "cmtt5yjqto375"
+      },
+      {
+        "name": "Hell Pit Abomination",
+        "models": 1,
+        "crew": 0,
+        "baseId": "60x100",
+        "baseW": 60,
+        "baseH": 100,
+        "frontage": 1,
+        "loose": false,
+        "pts": 210,
+        "us": 6,
+        "troop": "Behemoth",
+        "unitSize": "1",
+        "stats": {
+          "M": "3D6",
+          "WS": "3",
+          "BS": "1",
+          "S": "6",
+          "T": "5",
+          "W": "6",
+          "I": "4",
+          "A": "D6+1",
+          "Ld": "8"
+        },
+        "rules": [
+          "Close Order",
+          "Immune To Psychology",
+          "Large Target",
+          "Stomp Attacks (D3+1)",
+          "Terror",
+          "Unbreakable"
+        ],
+        "weapons": [
+          {
+            "name": "Warpstone claws",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-1",
+            "rules": "Armour Bane (1), Magical Attacks"
+          }
+        ],
+        "maxRange": 0,
+        "slot": "Rare",
+        "faction": "Skaven",
+        "armour": 0,
+        "ward": 0,
+        "catId": "cmtt5ynmxl3z4"
+      },
+      {
+        "name": "Warp Lightning Cannon",
+        "models": 1,
+        "crew": 1,
+        "baseId": "50x100",
+        "baseW": 50,
+        "baseH": 100,
+        "frontage": 1,
+        "loose": true,
+        "pts": 110,
+        "us": 4,
+        "troop": "War machine",
+        "unitSize": "1",
+        "stats": {
+          "M": "-",
+          "WS": "-",
+          "BS": "-",
+          "S": "-",
+          "T": "6",
+          "W": "4",
+          "I": "-",
+          "A": "-",
+          "Ld": "-"
+        },
+        "rules": [
+          "Skirmishers"
+        ],
+        "weapons": [
+          {
+            "name": "Warp Lightning Cannon",
+            "range": "8D6\"",
+            "S": "*",
+            "ap": "-3",
+            "rules": "Cumbersome, Lightning Strike, Move or Shoot"
+          },
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "maxRange": 8,
+        "slot": "Rare",
+        "faction": "Skaven",
+        "armour": 0,
+        "ward": 0,
+        "catId": "cmtt5ys5u3a4z"
+      }
+    ]
+  },
+  {
+    "id": "lmtt60unqmcep",
+    "name": "Skaven Battle March",
+    "info": {
+      "catalogue": "",
+      "forceName": "scritta a mano",
+      "limit": 0
+    },
+    "points": 769,
+    "byHand": true,
+    "imported": "2026-09-08T21:12:14.390Z",
+    "units": [
+      {
+        "name": "Warplock Jezzails",
+        "models": 3,
+        "crew": 0,
+        "baseId": "25x50",
+        "baseW": 25,
+        "baseH": 50,
+        "frontage": 3,
+        "loose": false,
+        "pts": 56,
+        "us": 0,
+        "troop": "",
+        "unitSize": "",
+        "stats": null,
+        "rules": [],
+        "weapons": [],
+        "maxRange": 0,
+        "slot": "",
+        "faction": "",
+        "catId": "cmtt5yg1p0hg9"
+      },
+      {
+        "name": "Clanrats",
+        "models": 20,
+        "crew": 0,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 5,
+        "loose": false,
+        "pts": 90,
+        "us": 0,
+        "troop": "",
+        "unitSize": "",
+        "stats": null,
+        "rules": [],
+        "weapons": [],
+        "maxRange": 0,
+        "slot": "",
+        "faction": "",
+        "catId": "cmtt5y64js1fw"
+      },
+      {
+        "name": "Clanrats",
+        "models": 20,
+        "crew": 0,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 5,
+        "loose": false,
+        "pts": 90,
+        "us": 0,
+        "troop": "",
+        "unitSize": "",
+        "stats": null,
+        "rules": [],
+        "weapons": [],
+        "maxRange": 0,
+        "slot": "",
+        "faction": "",
+        "catId": "cmtt5y64js1fw"
+      },
+      {
+        "name": "Clanrats",
+        "models": 20,
+        "crew": 0,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 5,
+        "loose": false,
+        "pts": 90,
+        "us": 0,
+        "troop": "",
+        "unitSize": "",
+        "stats": null,
+        "rules": [],
+        "weapons": [],
+        "maxRange": 0,
+        "slot": "",
+        "faction": "",
+        "catId": "cmtt5y64js1fw"
+      },
+      {
+        "name": "Warlock Engineer",
+        "models": 1,
+        "crew": 0,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 1,
+        "loose": false,
+        "pts": 44,
+        "us": 0,
+        "troop": "",
+        "unitSize": "",
+        "stats": null,
+        "rules": [],
+        "weapons": [],
+        "maxRange": 0,
+        "slot": "",
+        "faction": "",
+        "catId": "cmtt5xzhi250q"
+      },
+      {
+        "name": "Rat Ogres",
+        "models": 3,
+        "crew": 0,
+        "baseId": "50x50",
+        "baseW": 50,
+        "baseH": 50,
+        "frontage": 3,
+        "loose": false,
+        "pts": 144,
+        "us": 0,
+        "troop": "",
+        "unitSize": "",
+        "stats": null,
+        "rules": [],
+        "weapons": [],
+        "maxRange": 0,
+        "slot": "",
+        "faction": "",
+        "catId": "cmtt5ycogrii3"
+      },
+      {
+        "name": "Warp Lightning Cannon",
+        "models": 1,
+        "crew": 0,
+        "baseId": "50x100",
+        "baseW": 50,
+        "baseH": 100,
+        "frontage": 1,
+        "loose": false,
+        "pts": 110,
+        "us": 0,
+        "troop": "",
+        "unitSize": "",
+        "stats": null,
+        "rules": [],
+        "weapons": [],
+        "maxRange": 0,
+        "slot": "",
+        "faction": "",
+        "catId": "cmtt5ys5u3a4z"
+      },
+      {
+        "name": "Doomwheel",
+        "models": 1,
+        "crew": 0,
+        "baseId": "50x100",
+        "baseW": 50,
+        "baseH": 100,
+        "frontage": 1,
+        "loose": false,
+        "pts": 145,
+        "us": 0,
+        "troop": "",
+        "unitSize": "",
+        "stats": null,
+        "rules": [],
+        "weapons": [],
+        "maxRange": 0,
+        "slot": "",
+        "faction": "",
+        "catId": "cmtt5yjqto375"
+      }
+    ]
   }
 ]
