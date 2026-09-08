@@ -265,6 +265,23 @@ export const joinedHost = u => (u.join && u.join.host != null) ? u.join.host : n
 export const attachedTo = (units, host) =>
   units.filter(c => joinedHost(c) === host.uid && !c.dead);
 
+/* Chi si puo' infilare dentro un'altra unita'. La categoria del roster
+   non basta: al tavolo dentro un reggimento ci finiscono anche i pezzi
+   che il file non chiama «character» — il boss senza categoria, il
+   portastendardo comprato a parte, la bestia da compagnia. La regola
+   che tiene e' un'altra: un modello solo ci sta, un reggimento no. */
+export const canJoin = u => !u.dead && (isCharacter(u) || (u.models || 1) === 1);
+
+/* Chi lo puo' ospitare: chiunque non sia gia' dentro a qualcun altro.
+   Un pezzo dentro un pezzo dentro un pezzo non e' una cosa che
+   succede al tavolo, e qui non si puo' costruire. */
+export const canHost = u => !u.dead && joinedHost(u) == null;
+
+/* i candidati all'aggancio dentro `host`, in ordine di lista */
+export const joinCandidates = (units, host) =>
+  units.filter(c => c.uid !== host.uid && c.army === host.army &&
+                    canJoin(c) && joinedHost(c) == null);
+
 /* La casella preferita: il centro del primo rango, che e' dove il
    personaggio si mette nove volte su dieci. */
 function defaultSeatIdx(u, n){

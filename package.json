@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "test": "node test/smoke.mjs && node test/battle.mjs && node test/boot.mjs",
+    "test": "node test/smoke.mjs && node test/battle.mjs && node test/sync.mjs && node test/boot.mjs",
     "start": "python3 -m http.server 8080",
     "icons": "node tools/make-icons.mjs"
   },

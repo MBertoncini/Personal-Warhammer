@@ -8,7 +8,7 @@ import { R, T, SCENARIOS, geometry } from './scenarios.js';
 import { saveDoc, loadDoc } from './store.js';
 import { photoForUnit, photoFor, catEntry, matchUnitName } from './catalog.js';
 import { rectPoly, pointInRect, boxCorners, polysOverlap,
-         distPointToBox, toWorld } from './geom.js';
+         distPointToBox, toWorld, toLocal } from './geom.js';
 import * as CB from './combat.js';
 import { stat } from './rules.js';
 import { initDuel, openDuel, renderDuel } from './duel.js';
@@ -421,6 +421,7 @@ function renderInspector(){
       </div>
       <p class="note">${[u.troop, u.slot, u.unitSize ? "dimensione " + u.unitSize : ""].filter(Boolean).map(esc).join(" · ") || "—"}</p>
       <div class="photo-box">
+        ${photoForUnit(u) ? `<img class="insp-photo" src="${photoForUnit(u)}" alt="${esc(u.name)}">` : ""}
         <div class="readout"><span>Catalogo</span><b>${catLabel(u)}</b></div>
         <p class="note">${u.catId
           ? "Le anteprime vengono dalla voce di catalogo. Per cambiare la foto apri la scheda Catalogo."
@@ -522,8 +523,11 @@ function formationBlockHTML(u){
   const f = FM.ensureFormation(u);
   const chars = attachedOf(u);
   const host = hostOf(u);
-  const free = state.units.filter(c =>
-    c.army === u.army && c.uid !== u.uid && !c.dead && FM.isCharacter(c) && !FM.joinedHost(c));
+  /* Dentro un reggimento ci va chi al tavolo ci starebbe: i personaggi
+     e ogni pezzo da un modello solo, categoria del roster o no. Il file
+     della lista non chiama «character» il boss senza slot, e prima
+     quell'unita' non compariva da nessuna parte. */
+  const free = host ? [] : FM.joinCandidates(state.units, u);
   return `
     <div class="photo-box">
       <div class="readout"><span>Formazione</span>
@@ -539,15 +543,15 @@ function formationBlockHTML(u){
       ${host
         ? `<div class="readout"><span>Unita a</span><b>${esc(shortName(host.name))}</b></div>
            <button class="btn tiny" id="i-leave" style="width:100%">Sgancia dal reggimento</button>`
-        : FM.isCharacter(u)
-          ? (free.length || chars.length ? "" : `<p class="note">Personaggio libero: unitelo a un reggimento dall'editor della formazione, o dal reggimento stesso.</p>`)
+        : FM.isCharacter(u) && !chars.length
+          ? `<p class="note">Personaggio libero: puoi unirlo a un reggimento aprendo il reggimento, oppure scegliere qui chi unire a lui.</p>`
           : ""}
       ${chars.length ? `<div class="readout"><span>Personaggi dentro</span><b>${chars.map(c => esc(shortName(c.name))).join(", ")}</b></div>` : ""}
-      ${!host && !FM.isCharacter(u) && free.length ? `
-        <label class="field">Unisci un personaggio
+      ${free.length ? `
+        <label class="field">Unisci un personaggio o un modello singolo
           <select id="i-join">
             <option value="">— nessuno —</option>
-            ${free.map(c => `<option value="${c.uid}">${esc(c.name)}</option>`).join("")}
+            ${free.map(c => `<option value="${c.uid}">${esc(c.name)}${FM.isCharacter(c) ? "" : " · 1 modello"}</option>`).join("")}
           </select></label>` : ""}
     </div>`;
 }
@@ -721,20 +725,22 @@ function renderTerrainInspector(host){
       ${t.kind === "treasure"
         ? `<p class="note">Base tonda da 40 mm. Il cerchio tratteggiato è il minimo di ${TREASURE_CLEAR}″ da ogni elemento scenico, misurato dal centro del segnalino.</p>`
         : `<div class="grid2">
-            <label class="field">${round ? "Diametro ″" : "Larghezza ″"}<input type="number" step="0.5" min="1" max="24" id="t-w" value="${(t.w ?? cfg.w)}"></label>
-            ${round ? "" : `<label class="field">Profondità ″<input type="number" step="0.5" min="1" max="24" id="t-h" value="${(t.h ?? cfg.h)}"></label>`}
-          </div>`}
+            <label class="field">${round ? "Diametro ″" : "Larghezza ″"}<input type="number" step="0.25" min="0.25" max="48" id="t-w" value="${(t.w ?? cfg.w)}"></label>
+            ${round ? "" : `<label class="field">Profondità ″<input type="number" step="0.25" min="0.25" max="48" id="t-h" value="${(t.h ?? cfg.h)}"></label>`}
+          </div>
+          <p class="note">Le stesse misure si tirano sul campo: le maniglie quadrate sul bordo del pezzo selezionato allargano il lato, quella d'angolo tutti e due.</p>`}
       <div class="readout"><span>Posizione</span><b>${inch(t.x).toFixed(1)}″ , ${inch(t.y).toFixed(1)}″</b></div>
       ${iss ? `<div class="warnbox">${iss.key === "bad" ? "Troppo vicino: " : "Oltre il limite Battle March: "}${iss.text}</div>` : ""}
       ${t.kind === "treasure" ? "" : `<div class="grid2"><button class="btn" id="t-rot-l">↺ 15°</button><button class="btn" id="t-rot-r">↻ 15°</button></div>`}
       <button class="btn ghost" id="t-del" style="color:var(--bad)">Togli dal tavolo</button>
     </div>`;
   const upd = (fn, label = "terreno") => act(label, fn);
+  const side = (v, dflt) => Math.max(0.25, Math.min(48, +v || dflt));
   if ($("#t-w")) $("#t-w").addEventListener("change", e => upd(() => {
-    t.w = Math.max(1, +e.target.value || cfg.w);
+    t.w = side(e.target.value, cfg.w);
     if (round) t.h = t.w;
   }));
-  if ($("#t-h")) $("#t-h").addEventListener("change", e => upd(() => { t.h = Math.max(1, +e.target.value || cfg.h); }));
+  if ($("#t-h")) $("#t-h").addEventListener("change", e => upd(() => { t.h = side(e.target.value, cfg.h); }));
   if ($("#t-rot-l")) $("#t-rot-l").addEventListener("click", () => upd(() => { t.rot = ((t.rot || 0) + 345) % 360; }));
   if ($("#t-rot-r")) $("#t-rot-r").addEventListener("click", () => upd(() => { t.rot = ((t.rot || 0) + 15) % 360; }));
   $("#t-del").addEventListener("click", () => upd(() => {
@@ -903,9 +909,22 @@ function drawBoard(){
         g(gg, "line", { x1:b.w/2, y1:-b.h/2, x2:-b.w/2, y2:b.h/2, stroke:"var(--paper)", "stroke-width":1.3, opacity:".35" });
       }
     }
-    if (selIs("terr", t.tid))
+    if (selIs("terr", t.tid)){
       g(gg, "rect", { x:-b.w/2 - 5, y:-b.h/2 - 5, width:b.w + 10, height:b.h + 10, fill:"none",
                       stroke:"var(--accent)", "stroke-width":2, "stroke-dasharray":"7 5" });
+      /* Maniglie per la misura del pezzo. Il bosco di cartone non e'
+         mai quello del manuale: sul tavolo si mette quello che si ha, e
+         il disegno deve dire quanto occupa DAVVERO, se no le distanze
+         e i ripari raccontano un'altra partita. Le maniglie stanno nel
+         sistema del pezzo, cosi' funzionano anche girato. */
+      for (const [hx, hy, mode] of sizeHandles(t, cfg, b)){
+        const hh = g(gg, "g", {});
+        hh.dataset.size = mode;
+        g(hh, "rect", { x:hx - 9, y:hy - 9, width:18, height:18, rx:3,
+                        fill:"var(--panel)", stroke:"var(--accent)", "stroke-width":2.2 });
+        g(hh, "rect", { x:hx - 3.4, y:hy - 3.4, width:6.8, height:6.8, fill:"var(--accent)" });
+      }
+    }
   }
 
   // raggi dell'unità selezionata
@@ -1048,6 +1067,32 @@ function drawBoard(){
   /* ---- maniglia di rotazione sul pezzo selezionato ----
      Ruotare stava solo su Q/E e sui due bottoni dell'ispettore: è un
      gesto che si fa cento volte per schieramento e vuole il mouse. */
+  /* ---- le linee di schieramento si trascinano ----
+     «Dalla mediana» e' un numero nella barra, ma al tavolo la linea la
+     si guarda, non la si calcola: la pillola sul bordo interno di ogni
+     zona la porta avanti e indietro e dice quanti pollici sono. */
+  {
+    const vertical = sc.deploy === "pass";       // qui le zone stanno a destra e a sinistra
+    const zg = g(svg, "g", { class:"zone-grip" });
+    for (const id of ["A", "B"]){
+      const z = (sc.zones[id] || [])[0];
+      if (!z) continue;
+      const col = id === "A" ? "var(--armyA)" : "var(--armyB)";
+      const near = (a, b2, mid) => Math.abs(a - mid) < Math.abs(b2 - mid) ? a : b2;
+      const along = id === "A" ? .82 : .18;      // sfalsate, se no si coprono a vicenda
+      const [hx, hy] = vertical
+        ? [near(z.x, z.x + z.w, W / 2), z.y + z.h * along]
+        : [z.x + z.w * along, near(z.y, z.y + z.h, H / 2)];
+      const grip = g(zg, "g", {});
+      grip.dataset.zone = id;
+      grip.dataset.axis = vertical ? "x" : "y";
+      g(grip, "rect", { x:hx - 46, y:hy - 13, width:92, height:26, rx:13,
+                        fill:"var(--panel)", stroke:col, "stroke-width":2 });
+      const tl = g(grip, "text", { x:hx, y:hy + 6, "text-anchor":"middle", "font-size":16, fill:col });
+      tl.textContent = `${vertical ? "↔" : "↕"} ${fmtIn(inch(state.gap))}″`;
+    }
+  }
+
   const selObj = selectedObject();
   if (selObj && (selObj.uid === undefined || selObj.placed)){
     const b = boxOf(selObj), hp = handlePos(selObj), fc = toWorld([0, -b.h/2], b);
@@ -1382,7 +1427,7 @@ function autoDeploy(){
 /* ============================================================
    9 · INTERAZIONE
    ============================================================ */
-let drag = null, spin = null;
+let drag = null, spin = null, sizing = null, zoneDrag = null;
 const toSvg = evt => view.toBoard(evt);
 const snapVal = v => state.snap ? Math.round(v / (MM / 4)) * (MM / 4) : v;
 
@@ -1443,6 +1488,19 @@ function handlePos(o){
   return toWorld([0, -b.h / 2 - HANDLE_OUT], b);
 }
 
+/* Dove stanno le maniglie della misura, nel sistema del pezzo. Un
+   cerchio ha un raggio solo e quindi una maniglia sola; un rettangolo
+   ne ha tre — larghezza, profondita' e l'angolo che muove le due
+   insieme. Il segnalino del tesoro no: e' una base da 40 mm e resta
+   quella. */
+const SIZE_OUT = 14;
+function sizeHandles(t, cfg, b){
+  if (cfg.shape === "token") return [];
+  const rx = b.w / 2 + SIZE_OUT, ry = b.h / 2 + SIZE_OUT;
+  if (cfg.shape === "circle") return [[rx, 0, "wh"]];
+  return [[rx, 0, "w"], [0, ry, "h"], [rx, ry, "wh"]];
+}
+
 svgEl.addEventListener("pointerdown", e => {
   if (e.button === 1 || e.shiftKey) return;         // quello e' scorrimento, se ne occupa view.js
   const p = toSvg(e);
@@ -1470,6 +1528,29 @@ svgEl.addEventListener("pointerdown", e => {
     return;
   }
 
+  /* maniglia della misura di un elemento scenico: si prende lo scarto
+     fra il punto toccato e il bordo, cosi' il pezzo non fa un salto al
+     primo pixel */
+  const sizeGrip = e.target.closest("[data-size]");
+  if (sizeGrip){
+    const t = selectedTerrain();
+    if (t){
+      const b = FM.terrainBox(t), [lx, ly] = toLocal(p, b);
+      history.push("misura di " + TERRAIN[t.kind].label.toLowerCase());
+      sizing = { obj:t, mode: sizeGrip.dataset.size, dx: lx - b.w / 2, dy: ly - b.h / 2 };
+      try { svgEl.setPointerCapture(e.pointerId); } catch (_) {}
+    }
+    return;
+  }
+
+  const zoneGrip = e.target.closest("[data-zone]");
+  if (zoneGrip){
+    history.push("linee di schieramento");
+    zoneDrag = { axis: zoneGrip.dataset.axis };
+    try { svgEl.setPointerCapture(e.pointerId); } catch (_) {}
+    return;
+  }
+
   const host = e.target.closest("[data-uid],[data-tid]");
   if (!host){
     /* il vuoto non deseleziona subito: prima si prova a scorrere, e se
@@ -1487,6 +1568,30 @@ svgEl.addEventListener("pointerdown", e => {
 });
 
 svgEl.addEventListener("pointermove", e => {
+  if (sizing){
+    const t = sizing.obj, cfg = TERRAIN[t.kind];
+    const [lx, ly] = toLocal(toSvg(e), FM.terrainBox(t));
+    /* dal centro al bordo c'e' meta' lato: la misura e' il doppio */
+    const side = v => {
+      let n = inch(Math.abs(v) * 2);
+      if (state.snap) n = Math.round(n * 4) / 4;
+      return Math.max(cfg.shape === "wall" ? 0.25 : 1, Math.min(48, n));
+    };
+    if (sizing.mode !== "h") t.w = side(lx - sizing.dx);
+    if (sizing.mode !== "w") t.h = side(ly - sizing.dy);
+    if (cfg.shape === "circle") t.h = t.w;
+    drawBoard();
+    return;
+  }
+  if (zoneDrag){
+    const p = toSvg(e);
+    const half = (zoneDrag.axis === "x" ? state.tableW : state.tableH) / 2;
+    let gIn = inch(Math.abs(half - p[zoneDrag.axis === "x" ? 0 : 1]));
+    if (state.snap) gIn = Math.round(gIn * 4) / 4;
+    state.gap = Math.max(0, Math.min(maxGap(), gIn)) * MM;
+    drawBoard();
+    return;
+  }
   if (spin){
     const p = toSvg(e);
     let deg = Math.atan2(p[1] - spin.obj.y, p[0] - spin.obj.x) * 180 / Math.PI + 90;
@@ -1505,7 +1610,10 @@ svgEl.addEventListener("pointermove", e => {
 });
 
 function endDrag(e){
-  if (spin){ spin = null; try { svgEl.releasePointerCapture(e.pointerId); } catch (_) {} renderAll(); return; }
+  const release = () => { try { svgEl.releasePointerCapture(e.pointerId); } catch (_) {} };
+  if (sizing){ sizing = null; release(); renderAll(); return; }
+  if (zoneDrag){ zoneDrag = null; release(); syncTableUI(); renderAll(); return; }
+  if (spin){ spin = null; release(); renderAll(); return; }
   if (!drag) return;
   drag = null;
   try { svgEl.releasePointerCapture(e.pointerId); } catch (_) {}
@@ -1540,7 +1648,7 @@ svgEl.addEventListener("wheel", e => {
 }, { passive:false, capture:true });
 
 const gestures = wireViewGestures(svgEl, view, {
-  onPanEnd: moved => { if (!moved && !drag && !spin) select(null); },
+  onPanEnd: moved => { if (!moved && !drag && !spin && !sizing && !zoneDrag) select(null); },
 });
 
 const selectedUnit = () =>
@@ -1797,8 +1905,7 @@ function setScenario(id, keepTerrain, { render = true } = {}){
   state.gap = def.gap * MM;
   fillScenarioSelect();
   scSel.value = id;
-  $("#table-size").value = `${def.table[0]}x${def.table[1]}`;
-  $("#zone-gap").value = String(def.gap);
+  syncTableUI();
   if (!keepTerrain && def.terrain) loadTerrain(id);
   else if (!keepTerrain && !def.terrain) { /* gli scenari generici lasciano il terreno com'è */ }
   for (const u of state.units) if (u.placed) place(u);
@@ -1806,13 +1913,62 @@ function setScenario(id, keepTerrain, { render = true } = {}){
   if (render) renderAll();
 }
 scSel.addEventListener("change", () => act("scenario", () => setScenario(scSel.value, false, { render:false }), { render:true }));
-$("#table-size").addEventListener("change", e => act("misura del tavolo", () => {
-  const [w, h] = e.target.value.split("x").map(Number);
-  state.tableW = w * MM; state.tableH = h * MM;
+
+/* ---------- misura del tavolo ----------
+   I cinque formati del menu coprono i tornei; il tavolo di casa no.
+   Chi ha 52″ per 40″ perche' e' largo cosi' il tavolo della cucina se
+   li scrive, e da li' in poi zone, righelli e controlli di bordo
+   lavorano su quelle misure come su tutte le altre. */
+const TABLE_MIN = 12, TABLE_MAX = 144;
+const tableSel = $("#table-size"), tableBox = $("#table-custom");
+const tableWIn = $("#table-w"), tableHIn = $("#table-h");
+const gapIn = $("#zone-gap");
+const inRound = v => Math.round(inch(v) * 100) / 100;   // il quarto di pollice ci sta intero
+
+/* la misura scelta si rilegge sempre dallo stato: se e' una di quelle
+   in elenco il menu la mostra, se no il menu dice «su misura» e le due
+   caselle si aprono con i numeri veri */
+function syncTableUI(){
+  const w = inRound(state.tableW), h = inRound(state.tableH);
+  const exact = `${Math.round(w)}x${Math.round(h)}`;
+  const known = Number.isInteger(w) && Number.isInteger(h) &&
+                [...tableSel.options].some(o => o.value === exact);
+  tableSel.value = known ? exact : "custom";
+  tableBox.hidden = known;
+  tableWIn.value = String(w);
+  tableHIn.value = String(h);
+  gapIn.value = String(inRound(state.gap));
+}
+
+/* la profondita' della striscia di schieramento non puo' mangiarsi
+   tutto il tavolo: geometry() tiene comunque due pollici, qui si evita
+   di scrivere numeri che poi non si vedono */
+const maxGap = () => Math.max(0, inch(Math.min(state.tableW, state.tableH)) / 2 - 2);
+
+function setTable(wIn, hIn){
+  const clampSide = v => Math.max(TABLE_MIN, Math.min(TABLE_MAX, Math.round((+v || 0) * 2) / 2));
+  state.tableW = clampSide(wIn) * MM;
+  state.tableH = clampSide(hIn) * MM;
+  state.gap = Math.min(state.gap, maxGap() * MM);
   for (const u of state.units) if (u.placed) place(u);
+  syncTableUI();
   view.fit();
-}));
-$("#zone-gap").addEventListener("change", e => act("zone", () => { state.gap = +e.target.value * MM; }));
+}
+
+tableSel.addEventListener("change", e => {
+  if (e.target.value === "custom"){ tableBox.hidden = false; tableWIn.focus(); return; }
+  const [w, h] = e.target.value.split("x").map(Number);
+  act("misura del tavolo", () => setTable(w, h));
+});
+const onTableInput = () => act("misura del tavolo",
+  () => setTable(tableWIn.value, tableHIn.value), { coalesce: 700 });
+tableWIn.addEventListener("change", onTableInput);
+tableHIn.addEventListener("change", onTableInput);
+
+gapIn.addEventListener("change", e => act("linee di schieramento", () => {
+  state.gap = Math.max(0, Math.min(maxGap(), +e.target.value || 0)) * MM;
+  syncTableUI();
+}, { coalesce: 700 }));
 
 (function fillPalette(){
   const host = $("#palette");
@@ -2054,8 +2210,7 @@ function applySnapshot(s){
   state.measurePts = [];
   fillScenarioSelect();
   scSel.value = state.scenario;
-  $("#table-size").value = `${Math.round(inch(state.tableW))}x${Math.round(inch(state.tableH))}`;
-  $("#zone-gap").value = String(Math.round(inch(state.gap)));
+  syncTableUI();
   for (const [sel, key] of TOGGLES) $(sel).classList.toggle("on", !!state[key]);
   return true;
 }

@@ -8,7 +8,7 @@ Quattro cose che si tengono per mano, per **Warhammer: The Old World**:
 4. **Partita** — turni, fasi, perdite modello per modello, contatti di basetta e il tavolo in miniatura a ogni turno, per quando lo schieramento è finito e si comincia a giocare. Con le statistiche che arrivano dalle liste, il tavolo mostra anche dove si può arrivare, cosa si vede da dove, e come finirebbe un assalto.
 5. **Partite** — il diario delle battaglie: schieramento, movimento e perdite di ogni unità alla fine di ogni turno, punteggio voce per voce, e l'esportazione del battle report in un formato pensato per essere incollato a un'intelligenza artificiale.
 
-Tutto gira nel browser. Nessun server, nessun account, nessun dato che esce dal dispositivo. Si installa come app e funziona senza rete.
+Tutto gira nel browser. Nessun server, nessun account, nessun dato che esce dal dispositivo. Si installa come app e funziona senza rete. Se l'archivio ti serve su più dispositivi — o in due — c'è la **Nuvola**: un pulsante che scrive collezione, foto, liste, partite e scenari dentro un repository GitHub, con un commit, e li riprende dall'altra parte.
 
 ---
 
@@ -65,6 +65,12 @@ Scenari Battle March e generici, zone di schieramento, terreno con i controlli (
 
 **Maniglia di rotazione.** Sul pezzo selezionato compare un pallino davanti al fronte: trascinandolo si ruota (a scatti di 15° per le unità, 5° per il terreno; `Alt` per la rotazione libera). `[` e `]` — o `Shift`+rotella — cambiano il numero di modelli di fronte.
 
+**Misura degli elementi scenici.** Il bosco di cartone non è mai quello del manuale. Sull'elemento selezionato compaiono tre maniglie quadrate: quella di destra allarga, quella in basso approfondisce, quella d'angolo muove tutti e due i lati insieme; un pezzo tondo ne ha una sola, che è il raggio. Le stesse misure si scrivono in pollici nell'ispettore. Il segnalino del tesoro no: la sua base da 40 mm è quella e resta quella.
+
+**Misura del tavolo.** Oltre ai formati in elenco c'è *Su misura*: due caselle per larghezza e profondità, da 12″ a 144″. Il tavolo della cucina è largo com'è largo, e zone, righelli e controlli di bordo lo seguono.
+
+**Linee di schieramento.** *Dalla mediana* è una casella in cui si scrive il numero, ma la linea si può anche prendere e portare: su ogni zona c'è una pillola con i pollici scritti sopra, e trascinandola le due zone si stringono o si allargano insieme. Con lo Snap acceso si ferma al quarto di pollice.
+
 **Formazione.** Ogni unità ha il suo editor grafico: doppio clic sul pezzo, oppure *Editor della formazione* nell'ispettore. Dentro ci sono due mondi.
 
 - **Ordine chiuso**: la griglia di sempre, con le sagome già pronte (linea, due ranghi, blocco, quadrato, colonna), la larghezza di fronte e la spaziatura fra le basi. L'ultimo rango incompleto si allinea a sinistra o si centra.
@@ -72,7 +78,7 @@ Scenari Battle March e generici, zone di schieramento, terreno con i controlli (
 
 L'ingombro di un'unità non è più una moltiplicazione: è il rettangolo che contiene davvero le basi come stanno. Una schermagliata larga occupa il fronte che occupa, e i controlli di legalità, il magnetismo, le distanze e i contatti lo sanno.
 
-**Personaggi dentro le unità.** Un personaggio — lo dice il roster, e dove non lo dice c'è la spunta nell'ispettore — si unisce a un reggimento dall'editor o dall'ispettore del reggimento. Da quel momento non è più un pezzo suo: prende una casella dentro la formazione (trascina la base con la stella per cambiargliela), si muove col reggimento e nel report risulta dov'è il reggimento. *Sgancia* lo rimette sul tavolo di fianco.
+**Personaggi dentro le unità.** Dentro un reggimento ci va quello che al tavolo ci starebbe: i personaggi che il roster dichiara tali, e comunque **ogni unità da un modello solo** — il boss senza slot, il pezzo comprato a parte, la bestia da compagnia — che nell'elenco compare marcata *1 modello*. La spunta nell'ispettore ha l'ultima parola. Si uniscono dall'editor della formazione o dall'ispettore del reggimento. Da quel momento non è più un pezzo suo: prende una casella dentro la formazione (trascina la base con la stella per cambiargliela), si muove col reggimento e nel report risulta dov'è il reggimento. *Sgancia* lo rimette sul tavolo di fianco.
 
 **Aiuti tattici.** *Distanze* misura dal **bordo** verso ogni nemico, come si misura davvero, e segna tratteggiate le linee che un bosco o un monolite interrompono. *Archi* disegna l'arco frontale e la portata di carica (M+7 media, M+12 massima). Chi finisce nell'arco entro la carica è verde.
 
@@ -150,7 +156,7 @@ C'è un manifest e un service worker: Chrome, Edge e Safari propongono **Install
 
 Le icone si rigenerano con `npm run icons` (le disegna [`tools/make-icons.mjs`](tools/make-icons.mjs) scrivendo il PNG a mano, così il progetto resta senza dipendenze anche per quelle).
 
-Quando pubblichi una versione nuova, la prima apertura mostra ancora quella vecchia e avvisa; alla ricarica successiva è aggiornata.
+Quando pubblichi una versione nuova basta **una** ricarica. Il service worker chiede prima alla rete il codice dell'app — `index.html`, i moduli, il foglio di stile — e ricade sulla cache solo quando la rete non c'è, che è il motivo per cui esiste. Prima i moduli venivano serviti dalla cache e aggiornati dietro le quinte: `index.html` era già quello nuovo e i moduli quelli di ieri, così metà app faceva una cosa e metà un'altra e i comandi appena aggiunti non rispondevano. Le icone continuano a venire dalla cache, che non cambiano mai.
 
 ---
 
@@ -192,7 +198,49 @@ Conseguenza da tenere a mente: i dati sono **legati a quel browser su quel dispo
 
 All'avvio la pagina chiede al browser di marcare l'archivio come **persistente**: senza quel permesso i dati sono “best effort” e il browser può buttarli via da solo (Safari dopo ~7 giorni senza visite, Chrome quando il disco va in pressione). Chrome ed Edge lo concedono in automatico ai siti usati spesso o installati, Firefox chiede conferma, e aprendo il file con doppio clic (`file://`) l'API non esiste proprio. Se il permesso manca, la riga di stato del catalogo lo scrive: *archivio non protetto, tieni un Backup*.
 
-Per spostarli usa **Backup** (scarica un JSON con tutto, foto comprese) e **Ripristina** sull'altro dispositivo. Vale anche come copia di sicurezza: `localStorage` e IndexedDB spariscono se cancelli i dati del sito.
+Per spostarli a mano usa **Backup** (scarica un JSON con tutto, foto comprese) e **Ripristina** sull'altro dispositivo. Vale anche come copia di sicurezza: `localStorage` e IndexedDB spariscono se cancelli i dati del sito. Per non doverci pensare ogni volta c'è la **Nuvola**, qui sotto.
+
+---
+
+## L'archivio su GitHub
+
+Il pulsante **Nuvola**, in alto a destra, collega l'archivio a un repository. Da quel momento **Salva su GitHub** fa un commit con tutto quello che è cambiato, e **Scarica** riporta qui quello che ha salvato l'altro. Non c'è un server in mezzo: l'app parla direttamente con l'API di GitHub, e la cronologia del repository diventa la cronologia della collezione — una foto cancellata per sbaglio sta ancora nel commit di ieri.
+
+### Prepararlo
+
+1. Su GitHub crea un repository, meglio **privato**: se è pubblico, chi lo apre vede la collezione. Può essere anche quello dell'app, ma quello è pubblico — con GitHub Pages sul piano gratuito deve esserlo — e l'archivio finirebbe in vetrina insieme al sito. Per le foto di casa conviene un secondo repository, privato, che serve solo a questo.
+2. **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**. Dai accesso a quel solo repository e, sotto *Repository permissions*, metti **Contents: Read and write**. Nient'altro serve.
+3. Nell'app: **Nuvola**, riempi proprietario, repository, ramo, cartella e la tua firma, incolla il token, poi **Prova** per vedere se ci arriva.
+4. **Salva su GitHub**. Sull'altro dispositivo, stessi campi e **Sostituisci con il repository**.
+
+Il token resta in `localStorage`, su quel dispositivo, e non finisce mai nei file salvati. Vale per il dispositivo che lo tiene: chi se lo prende può scrivere in quel repository, quindi su un computer non tuo meglio non lasciarcelo.
+
+### Cosa scrive
+
+```
+dati/
+  catalogo.json       le voci della collezione
+  liste.json          le liste importate
+  matchup.json        il confronto corrente
+  schieramenti.json   gli schieramenti salvati
+  partite.json        il diario delle battaglie
+  scenari.json        gli scenari tuoi
+  tavolo.json         il tavolo com'era l'ultima volta
+  foto/<id>.jpg       una foto per file, immagini vere
+  indice.json         chi ha salvato per ultimo, e quando
+```
+
+I JSON sono indentati apposta: il diff di un commit si legge, si vede quale unità è cambiata. Le foto sono file immagine veri, non base64 dentro un JSON, così si aprono cliccandole e un commit che ne cambia una pesa quella e basta.
+
+Un salvataggio è **un commit solo**, non uno per file, e carica solo i file davvero cambiati: la sha di git la calcola l'app prima di parlare con GitHub, quindi salvare dopo una partita spedisce `partite.json` e nient'altro, non trecento foto identiche. Se non è cambiato niente non fa nemmeno il commit.
+
+### In due
+
+Chi salva per secondo si sente dire che *il repository è andato avanti*: qualcun altro ha committato dopo il suo ultimo scambio. La via pulita è **Scarica** e poi salvare. Volendo si insiste, e allora i file cambiati da te sostituiscono i loro — gli altri restano dove sono, perché il commit si appoggia all'albero remoto.
+
+**Scarica** unisce: quello che esiste solo qui rimane. **Sostituisci con il repository** fa invece dell'archivio locale una copia esatta di quello remoto, che è quello che si vuole su un dispositivo nuovo. Tutti e due ricaricano la pagina quando hanno finito.
+
+**Salva da sola** accende un commit qualche minuto dopo l'ultima modifica, quando c'è rete. Al circolo, senza campo, aspetta e basta; se il token è scaduto lo dice una volta e non insiste.
 
 ---
 
@@ -212,6 +260,8 @@ src/
   scenarios.js        scenari, zone di schieramento, geometria
   geom.js             geometria pura: sovrapposizioni, distanze, viste
   store.js            IndexedDB, ridimensionamento foto, backup
+  sync.js             l'archivio come file di un repository: commit e scaricamento
+  syncui.js           la finestra della Nuvola: campi, pulsanti, salvataggio automatico
   bus.js              eventi, per non far importare i moduli fra loro
   history.js          annulla e ripeti, su copie dello stato del tavolo
   view.js             zoom, scorrimento, pizzico, inquadratura
@@ -236,6 +286,7 @@ src/
 test/
   smoke.mjs           catalogo, aggancio, import, copertura, pittura
   battle.mjs          punteggi, dadi, ventagli e ombre, senza pagina
+  sync.mjs            archivio su GitHub, contro un GitHub finto in memoria
   boot.mjs            la pagina intera: schede, annulla, zoom, partita, report, link
 tools/
   make-icons.mjs      scrive i PNG del manifest senza dipendenze
@@ -250,7 +301,7 @@ npm install
 npm test
 ```
 
-Girano in jsdom con IndexedDB finto, senza browser. `battle.mjs` non ne ha bisogno affatto: prova i conti da solo — i punteggi da fare, che quattromila dadi a 4+ diano circa metà successi, che il passo lungo valga in media mezzo pollice più della carica normale, che il ventaglio si accorci nel bosco e si fermi contro l'impassabile aggirandolo di lato, che dietro un monolite qualche raggio si spenga e di fianco no. `boot.mjs` avvia davvero la pagina intera e poi la usa: annulla e ripeti, zoom, distanze misurate dal bordo, ventaglio di movimento, campo di tiro con un bosco piantato in mezzo per veder sparire la linea di vista, uno scontro tirato finché qualcuno cade e le sue perdite riportate sul tavolo, righelli, una partita con perdite e unità distrutta, la chiusura di due turni con il movimento misurato in pollici, l'archiviazione del battle report e il suo testo in Markdown, una partita scritta a mano a partire da una lista, terreno casuale (verificando che sia specchiato e che nessun tesoro finisca sotto i 3″), salvataggio di uno scenario proprio, andata e ritorno del link condiviso e serializzazione del PNG.
+Girano in jsdom con IndexedDB finto, senza browser. `battle.mjs` non ne ha bisogno affatto: prova i conti da solo — i punteggi da fare, che quattromila dadi a 4+ diano circa metà successi, che il passo lungo valga in media mezzo pollice più della carica normale, che il ventaglio si accorci nel bosco e si fermi contro l'impassabile aggirandolo di lato, che dietro un monolite qualche raggio si spenga e di fianco no. `sync.mjs` monta un GitHub finto in memoria — blob, alberi, commit e un ramo — e ci fa sopra il giro completo: salvataggio, secondo salvataggio che non commette niente perché non è cambiato niente, un file cambiato che ne carica uno solo, una foto cancellata che sparisce anche di là, il conflitto quando il ramo si è mosso, e lo scaricamento su un archivio vuoto con le foto che tornano identiche al bit. Controlla anche che la sha calcolata in casa sia quella vera di git. `boot.mjs` avvia davvero la pagina intera e poi la usa: annulla e ripeti, zoom, distanze misurate dal bordo, ventaglio di movimento, campo di tiro con un bosco piantato in mezzo per veder sparire la linea di vista, uno scontro tirato finché qualcuno cade e le sue perdite riportate sul tavolo, righelli, una partita con perdite e unità distrutta, la chiusura di due turni con il movimento misurato in pollici, l'archiviazione del battle report e il suo testo in Markdown, una partita scritta a mano a partire da una lista, terreno casuale (verificando che sia specchiato e che nessun tesoro finisca sotto i 3″), salvataggio di uno scenario proprio, andata e ritorno del link condiviso, serializzazione del PNG e la finestra della Nuvola con le sue impostazioni.
 
 ---
 
@@ -258,7 +309,8 @@ Girano in jsdom con IndexedDB finto, senza browser. `battle.mjs` non ne ha bisog
 
 - L'aggancio automatico è volutamente prudente: se ha un dubbio non decide e chiede. Meglio una spunta gialla che un conteggio sbagliato in silenzio.
 - Le anteprime per modello si fermano a 60 per riga; oltre compare `+N`.
-- I dati non si sincronizzano fra dispositivi: c'è il backup manuale e il link dello schieramento, non una nuvola. Il link porta le posizioni, non la collezione: catalogo e foto restano dove sono.
+- La sincronia su GitHub la lanci tu (o il salvataggio automatico dopo qualche minuto di calma): non è continua e non fonde due modifiche fatte insieme allo stesso file. Chi salva per secondo sceglie se scaricare prima o passare sopra. Per due fratelli che giocano a turno va bene; per una squadra no.
+- Senza Nuvola i dati restano legati a quel browser: c'è il backup manuale e il link dello schieramento. Il link porta le posizioni, non la collezione: catalogo e foto restano dove sono.
 - La modalità partita **non arbitra**: tiene il conto di turni, fasi e perdite, e non impedisce mosse illegali. Le decisioni restano ai due giocatori, come al tavolo.
 - Per lo stesso motivo il punteggio è **mezzo automatico**: l'app somma quello che vede sul tavolo (chi è morto, chi è a metà, chi è in rotta) e lascia a te obiettivi, generale, stendardi e quarti. Non conosce le tabelle di nessuno scenario e non pretende di conoscerle.
 - Il *mosso* di un'unità è lo spostamento **netto** fra due fotografie: chi avanza e poi ripiega risulta fermo, e una ruota sul posto risulta zero. Il fronte in gradi c'è, ed è lì che si legge.

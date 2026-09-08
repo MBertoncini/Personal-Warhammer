@@ -7,7 +7,7 @@
 <meta name="description" content="Catalogo della collezione, liste New Recruit e simulatore di schieramento per Warhammer: The Old World.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="./styles/app.css">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icons/icon-192.png" sizes="192x192">
@@ -20,7 +20,7 @@
 
 <header class="top">
   <div class="brand">
-    <h1>Schieramento Old World</h1>
+    <h1>Schieramento <span>Old World</span></h1>
     <span class="sub">Collezione, liste e dispiegamento</span>
   </div>
   <nav class="tabs">
@@ -32,122 +32,145 @@
   </nav>
   <div class="spacer"></div>
   <div class="tools">
-    <button class="btn drawer-only" id="btn-drawer" title="Apri il pannello">☰ Pannello</button>
+    <button class="btn drawer-only" id="btn-drawer" title="Apri il pannello">&#9776;<span class="lbl"> Pannello</span></button>
     <button class="btn" id="btn-export" title="Scarica un backup di catalogo, liste e schieramenti">Backup</button>
-    <button class="btn" id="btn-import">Ripristina</button>
+    <button class="btn" id="btn-import" title="Rimetti dentro un backup">Ripristina</button>
     <input type="file" id="file-backup" accept=".json" hidden>
-    <button class="btn" id="btn-theme">Tema</button>
+    <button class="btn" id="btn-sync" title="Collega l'archivio a un repository GitHub">Nuvola</button>
+    <button class="btn icon" id="btn-theme" title="Chiaro o scuro">&#9680;</button>
   </div>
 </header>
 
 <div data-panel="deploy">
 <main>
-  <aside>
-    <details id="import-box">
-      <summary class="panel-title">Importa liste</summary>
-      <div class="drop" id="drop" tabindex="0" role="button">
-        <strong>Trascina qui i JSON di New Recruit</strong>
-        <small>o clicca per sceglierli — legge anche <span class="mono">.ros</span>. Due file insieme = Esercito A e B; uno alla volta si alternano.</small>
-      </div>
-      <input type="file" id="file" accept=".json,.ros,.xml,application/json,text/xml" multiple="" hidden="">
-      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-        <button class="btn tiny" id="btn-paste">Incolla JSON…</button>
-        <button class="btn tiny" id="btn-demo">Carica esempio</button>
-        <button class="btn tiny" id="btn-clear">Svuota liste</button>
-      </div>
-      <div id="paste-box" hidden="" style="margin-top:8px;">
-        <textarea id="paste-area" rows="5" placeholder="Incolla qui il contenuto del file…"></textarea>
-        <div style="display:flex;gap:6px;margin-top:6px;">
-          <button class="btn tiny primary" id="btn-paste-a">→ Esercito A</button>
-          <button class="btn tiny" id="btn-paste-b">→ Esercito B</button>
+  <aside class="side">
+    <nav class="side-nav" id="side-nav">
+      <button class="btn seg on" data-side="armies">Armate</button>
+      <button class="btn seg" data-side="game">Partita</button>
+      <button class="btn seg" data-side="table">Tavolo</button>
+    </nav>
+
+    <div class="side-scroll">
+
+    <section class="side-sec" data-sec="armies">
+      <details id="import-box">
+        <summary class="panel-title">Importa liste</summary>
+        <div class="drop" id="drop" tabindex="0" role="button">
+          <strong>Trascina qui i JSON di New Recruit</strong>
+          <small>o clicca per sceglierli — legge anche <span class="mono">.ros</span>. Due file insieme = Esercito A e B; uno alla volta si alternano.</small>
         </div>
-      </div>
-    </details>
+        <input type="file" id="file" accept=".json,.ros,.xml,application/json,text/xml" multiple="" hidden="">
+        <div class="btn-row">
+          <button class="btn tiny" id="btn-paste">Incolla JSON…</button>
+          <button class="btn tiny" id="btn-demo">Carica esempio</button>
+          <button class="btn tiny ghost" id="btn-clear">Svuota liste</button>
+        </div>
+        <div id="paste-box" hidden="" style="margin-top:8px;">
+          <textarea id="paste-area" rows="5" placeholder="Incolla qui il contenuto del file…"></textarea>
+          <div class="btn-row">
+            <button class="btn tiny primary" id="btn-paste-a">→ Esercito A</button>
+            <button class="btn tiny" id="btn-paste-b">→ Esercito B</button>
+          </div>
+        </div>
+      </details>
 
-    <div id="armies"></div>
+      <div id="armies"></div>
 
-    <div>
+      <details class="raw" id="raw-wrap" hidden="">
+        <summary>Cosa ho letto dai file (diagnostica)</summary>
+        <pre id="raw"></pre>
+      </details>
+    </section>
+
+    <section class="side-sec" data-sec="game" hidden>
       <div class="panel-title">Partita</div>
       <div id="game"></div>
-    </div>
+    </section>
 
-    <div>
+    <section class="side-sec" data-sec="table" hidden>
+      <div class="panel-title">Misure del tavolo</div>
+      <div class="field-row">
+        <label class="field"><span>Formato</span>
+          <select id="table-size">
+            <option value="44x30">44″ × 30″</option>
+            <option value="48x36">48″ × 36″</option>
+            <option value="60x44">60″ × 44″</option>
+            <option value="72x48">72″ × 48″</option>
+            <option value="72x72">72″ × 72″</option>
+            <option value="96x48">96″ × 48″</option>
+            <option value="custom">Su misura…</option>
+          </select>
+        </label>
+        <label class="field"><span>Dalla mediana</span>
+          <input type="number" id="zone-gap" min="0" max="48" step="0.5" value="6"
+                 title="Quanto la linea di schieramento sta indietro dalla mediana. Si può anche trascinare sul campo.">
+        </label>
+      </div>
+      <span class="field sizebox" id="table-custom" hidden>
+        <input type="number" id="table-w" min="12" max="144" step="1" value="44" title="Larghezza del tavolo in pollici">
+        <span class="mono">×</span>
+        <input type="number" id="table-h" min="12" max="144" step="1" value="30" title="Profondità del tavolo in pollici">
+        <span class="mono">″</span>
+      </span>
+
       <div class="panel-title">Terreno</div>
       <div class="palette" id="palette"><button class="btn tiny"><span class="pdot" style="background:var(--t-hill);"></span>Collina</button><button class="btn tiny"><span class="pdot" style="background:var(--t-wood);"></span>Bosco</button><button class="btn tiny"><span class="pdot" style="background:var(--t-marsh);"></span>Palude</button><button class="btn tiny"><span class="pdot" style="background:var(--t-ruins);"></span>Rovine</button><button class="btn tiny"><span class="pdot" style="background:var(--t-wall);"></span>Muretto</button><button class="btn tiny"><span class="pdot" style="background:var(--t-mono);border-radius:50%;"></span>Monolite</button><button class="btn tiny"><span class="pdot" style="background:var(--t-ruins);"></span>Piramide</button><button class="btn tiny"><span class="pdot" style="background:var(--t-treasure);border-radius:50%;"></span>Tesoro</button></div>
-      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+      <div class="btn-row">
         <button class="btn tiny" id="btn-terr-reset">Terreno dello scenario</button>
         <button class="btn tiny" id="btn-terr-random" title="Genera una mappa a specchio che rispetta i 12″ e i 3″ dai tesori">Terreno casuale</button>
-        <button class="btn tiny" id="btn-terr-clear">Togli tutto</button>
+        <button class="btn tiny ghost" id="btn-terr-clear">Togli tutto</button>
       </div>
-      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+      <div class="btn-row">
         <button class="btn tiny" id="btn-scen-save" title="Salva tavolo e terreno come scenario tuo">Salva come scenario</button>
         <button class="btn tiny ghost" id="btn-scen-del">Elimina scenario mio</button>
       </div>
-      <div id="terrain-list" style="margin-top:8px;"></div>
-      <div id="terrain-warn" style="margin-top:8px;"></div>
-    </div>
+      <div id="terrain-list"></div>
+      <div id="terrain-warn"></div>
 
-    <p class="note">I quattro scenari <b>Battle March</b> riproducono le mappe fornite: nessun elemento supera i 12″ sul lato lungo e i tesori (base tonda 40 mm) stanno oltre 3″ da ogni pezzo di terreno. Se sposti qualcosa, il controllo si aggiorna da solo. Gli altri scenari usano zone generiche regolabili.</p>
+      <p class="note">I quattro scenari <b>Battle March</b> riproducono le mappe fornite: nessun elemento supera i 12″ sul lato lungo e i tesori (base tonda 40 mm) stanno oltre 3″ da ogni pezzo di terreno. Se sposti qualcosa, il controllo si aggiorna da solo. Gli altri scenari usano zone generiche regolabili.</p>
+    </section>
 
-    <details class="raw" id="raw-wrap" hidden="">
-      <summary>Cosa ho letto dai file (diagnostica)</summary>
-      <pre id="raw"></pre>
-    </details>
-
-    <!-- L'ispettore resta appiccicato in fondo al pannello: prima stava
-         in coda a una colonna lunghissima e per modificare un pezzo
-         appena selezionato bisognava scorrere. -->
-    <div class="insp-dock">
-      <div class="panel-title">Elemento selezionato</div>
-      <div id="inspector"><p class="empty">Clicca un'unità nella lista o un pezzo sul campo.</p></div>
-    </div>
+    </div><!-- /.side-scroll -->
   </aside>
 
   <section class="board-wrap">
     <div class="board-bar">
-      <label class="field inline"><span>Scenario</span><select id="scenario"><optgroup label="Battle March"><option value="bm-guado">Il Guado di Sangue — 600 pt</option><option value="bm-monolite">Il Monolite nella Palude — 650 pt</option><option value="bm-strada">La Strada delle Pietre — 750 pt</option><option value="bm-rovine">Le Rovine di Xhotl — 750 pt</option></optgroup><optgroup label="Generici"><option value="open">Battaglia Campale</option><option value="meeting">Scontro di Incontro</option><option value="flank">Attacco sul Fianco</option><option value="pass">Passo di Montagna</option><option value="cross">Fronti Incrociati</option></optgroup></select></label>
+      <label class="field inline scenario"><span>Scenario</span><select id="scenario"><optgroup label="Battle March"><option value="bm-guado">Il Guado di Sangue — 600 pt</option><option value="bm-monolite">Il Monolite nella Palude — 650 pt</option><option value="bm-strada">La Strada delle Pietre — 750 pt</option><option value="bm-rovine">Le Rovine di Xhotl — 750 pt</option></optgroup><optgroup label="Generici"><option value="open">Battaglia Campale</option><option value="meeting">Scontro di Incontro</option><option value="flank">Attacco sul Fianco</option><option value="pass">Passo di Montagna</option><option value="cross">Fronti Incrociati</option></optgroup></select></label>
       <div class="bar-tools">
-      <div class="sep"></div>
-      <button class="btn icon" id="btn-undo" title="Annulla (Ctrl+Z)" disabled>↶</button>
-      <button class="btn icon" id="btn-redo" title="Ripeti (Ctrl+Y)" disabled>↷</button>
-      <div class="sep"></div>
-      <button class="btn" id="btn-auto">Schiera tutto</button>
-      <button class="btn" id="btn-recall">Ritira tutto</button>
-      <div class="sep"></div>
-      <button class="btn on" id="btn-snap" title="Aggancia al quarto di pollice e ai fianchi delle unità vicine">Snap ¼″</button>
-      <button class="btn" id="btn-labels" title="Numeri sulle unità">Numeri</button>
-      <button class="btn on" id="btn-photos" title="Foto delle miniature sulle basette">Foto</button>
-      <button class="btn" id="btn-ranges" title="Cerchi di movimento e tiro">Raggi</button>
-      <button class="btn" id="btn-arcs" title="Arco frontale e portata di carica">Archi</button>
-      <button class="btn" id="btn-move" title="Dove può arrivare davvero: movimento, marcia e carica contando boschi, ostacoli e bordo del tavolo">Movimento</button>
-      <button class="btn" id="btn-shoot" title="Campo di tiro con le ombre degli elementi scenici e il punteggio per colpire">Tiro</button>
-      <button class="btn" id="btn-dist" title="Distanze dal bordo e linea di vista verso i nemici">Distanze</button>
-      <button class="btn" id="btn-measure" title="Righello: due clic per lasciare una misura sul tavolo">Misura</button>
-      <button class="btn icon" id="btn-rulers-clear" title="Togli i righelli">⌫</button>
-      <div class="sep"></div>
-      <button class="btn icon" id="btn-zoom-out" title="Riduci (−)">−</button>
-      <span class="mono zoomlevel" id="zoom-level">100%</span>
-      <button class="btn icon" id="btn-zoom-in" title="Ingrandisci (+)">+</button>
-      <button class="btn on" id="btn-fit" title="Tutto il tavolo (0)">Adatta</button>
-      <div class="sep"></div>
-      <button class="btn" id="btn-png" title="Scarica il tavolo come immagine">Immagine</button>
-      <button class="btn" id="btn-share" title="Copia un link che contiene questo schieramento">Link</button>
-      <div class="sep"></div>
-      <label class="field inline"><span>Tavolo</span>
-        <select id="table-size">
-          <option value="44x30">44″ × 30″</option>
-          <option value="48x36">48″ × 36″</option>
-          <option value="72x48">72″ × 48″</option>
-          <option value="72x72">72″ × 72″</option>
-          <option value="96x48">96″ × 48″</option>
-        </select>
-      </label>
-      <label class="field inline"><span>Dalla mediana</span>
-        <select id="zone-gap">
-          <option value="6">6″</option><option value="9">9″</option>
-          <option value="12">12″</option><option value="15">15″</option><option value="18">18″</option>
-        </select>
-      </label>
+        <div class="group">
+          <button class="btn icon" id="btn-undo" title="Annulla (Ctrl+Z)" disabled>↶</button>
+          <button class="btn icon" id="btn-redo" title="Ripeti (Ctrl+Y)" disabled>↷</button>
+        </div>
+        <div class="group">
+          <button class="btn" id="btn-auto">Schiera tutto</button>
+          <button class="btn" id="btn-recall">Ritira tutto</button>
+        </div>
+        <div class="group">
+          <button class="btn on" id="btn-snap" title="Aggancia al quarto di pollice e ai fianchi delle unità vicine">Snap ¼″</button>
+          <button class="btn" id="btn-labels" title="Numeri sulle unità">Numeri</button>
+          <button class="btn on" id="btn-photos" title="Foto delle miniature sulle basette">Foto</button>
+        </div>
+        <div class="group">
+          <button class="btn" id="btn-ranges" title="Cerchi di movimento e tiro">Raggi</button>
+          <button class="btn" id="btn-arcs" title="Arco frontale e portata di carica">Archi</button>
+          <button class="btn" id="btn-move" title="Dove può arrivare davvero: movimento, marcia e carica contando boschi, ostacoli e bordo del tavolo">Movimento</button>
+          <button class="btn" id="btn-shoot" title="Campo di tiro con le ombre degli elementi scenici e il punteggio per colpire">Tiro</button>
+          <button class="btn" id="btn-dist" title="Distanze dal bordo e linea di vista verso i nemici">Distanze</button>
+        </div>
+        <div class="group">
+          <button class="btn" id="btn-measure" title="Righello: due clic per lasciare una misura sul tavolo">Misura</button>
+          <button class="btn icon" id="btn-rulers-clear" title="Togli i righelli">⌫</button>
+        </div>
+        <div class="group zoomgroup">
+          <button class="btn icon" id="btn-zoom-out" title="Riduci (−)">−</button>
+          <span class="mono zoomlevel" id="zoom-level">100%</span>
+          <button class="btn icon" id="btn-zoom-in" title="Ingrandisci (+)">+</button>
+          <button class="btn on" id="btn-fit" title="Tutto il tavolo (0)">Adatta</button>
+        </div>
+        <div class="group">
+          <button class="btn" id="btn-png" title="Scarica il tavolo come immagine">Immagine</button>
+          <button class="btn" id="btn-share" title="Copia un link che contiene questo schieramento">Link</button>
+        </div>
       </div>
       <div class="spacer"></div>
       <span class="mono stats" id="stat"></span>
@@ -156,48 +179,74 @@
     <div class="board-scroll"><svg id="board" xmlns="http://www.w3.org/2000/svg" viewBox="-46 -46 1311.1999999999998 1006.4" preserveAspectRatio="xMidYMid meet"></svg></div>
 
     <div class="legend">
-      <span><b id="sc-name">Le Rovine di Xhotl · 750 pt</b> · <span id="sc-desc">La piramide centrale divide il tavolo in due corsie e i due tesori stanno uno per corsia: nessuno può presidiarli entrambi.</span></span>
+      <span class="sc"><b id="sc-name">Le Rovine di Xhotl · 750 pt</b> <span id="sc-desc">La piramide centrale divide il tavolo in due corsie e i due tesori stanno uno per corsia: nessuno può presidiarli entrambi.</span></span>
       <div class="spacer"></div>
-      <span><span class="kbd">Q</span>/<span class="kbd">E</span> ruota</span>
-      <span><span class="kbd">←↑↓→</span> sposta</span>
-      <span><span class="kbd">[</span>/<span class="kbd">]</span> fronte</span>
-      <span><span class="kbd">doppio clic</span> formazione</span>
-      <span><span class="kbd">Ctrl</span>+<span class="kbd">Z</span> annulla</span>
-      <span><span class="kbd">rotella</span> zoom · <span class="kbd">Shift</span>+trascina scorre</span>
-      <span><span class="kbd">Canc</span> ritira / elimina</span>
+      <details class="keys">
+        <summary>Tasti e gesti</summary>
+        <div class="keys-pop">
+          <span><span class="kbd">Q</span><span class="kbd">E</span> ruota</span>
+          <span><span class="kbd">←↑↓→</span> sposta</span>
+          <span><span class="kbd">[</span><span class="kbd">]</span> fronte</span>
+          <span><span class="kbd">doppio clic</span> formazione</span>
+          <span><span class="kbd">maniglie</span> misura del pezzo</span>
+          <span><span class="kbd">Ctrl</span><span class="kbd">Z</span> annulla</span>
+          <span><span class="kbd">rotella</span> zoom</span>
+          <span><span class="kbd">Shift</span>+trascina scorre</span>
+          <span><span class="kbd">Canc</span> ritira / elimina</span>
+        </div>
+      </details>
     </div>
   </section>
+
+  <!-- L'ispettore ha una colonna sua: prima stava in coda a un pannello
+       lungo il doppio dello schermo e per cambiare un pezzo appena
+       selezionato bisognava scorrere fino in fondo. Sotto i 1180 px
+       torna in fondo al pannello: lo sposta main.js. -->
+  <aside class="insp-col" id="insp-col">
+    <div class="insp-dock">
+      <div class="panel-title">Elemento selezionato</div>
+      <div id="inspector"><p class="empty">Clicca un'unità nella lista o un pezzo sul campo.</p></div>
+    </div>
+  </aside>
 </main>
 </div>
 
 <div data-panel="catalog" hidden>
   <div class="page">
-    <div class="panel-title">Catalogo della collezione</div>
-    <p class="note">Una voce per tipo di modello, con quante ne hai e una foto. È da qui che le liste pescano le immagini.</p>
+    <header class="page-head">
+      <h2>Catalogo della collezione</h2>
+      <p class="note">Una voce per tipo di modello, con quante ne hai e una foto. È da qui che le liste pescano le immagini.</p>
+    </header>
     <div id="catalog"></div>
   </div>
 </div>
 
 <div data-panel="lists" hidden>
   <div class="page">
-    <div class="panel-title">Liste</div>
-    <p class="note">Importa i JSON di New Recruit. Le unità si agganciano da sole al catalogo quando il nome combacia; quando non combacia lo scegli una volta e l'app se lo ricorda.</p>
+    <header class="page-head">
+      <h2>Liste</h2>
+      <p class="note">Importa i JSON di New Recruit. Le unità si agganciano da sole al catalogo quando il nome combacia; quando non combacia lo scegli una volta e l'app se lo ricorda.</p>
+    </header>
     <div id="lists"></div>
   </div>
 </div>
 
 <div data-panel="matchup" hidden>
   <div class="page">
-    <div class="panel-title">Matchup</div>
-    <p class="note">Due liste a confronto e la verifica di cosa hai davvero in vetrina.</p>
+    <header class="page-head">
+      <h2>Matchup</h2>
+      <p class="note">Due liste a confronto e la verifica di cosa hai davvero in vetrina.</p>
+    </header>
     <div id="matchup"></div>
   </div>
 </div>
 
 <div data-panel="report" hidden>
   <div class="page">
-    <div class="panel-title">Partite</div>
-    <p class="note">Il diario delle battaglie: schieramento, movimento e perdite di ogni unità alla fine di ogni turno, e il punteggio voce per voce. Giocando al Tavolo si registra da sé a ogni «Chiudi il turno»; una partita giocata altrove si scrive a mano partendo da due liste salvate. Poi <b>Copia per l'AI</b> mette negli appunti tutto il resoconto, pronto da incollare in chat per farsi dire cosa è andato storto.</p>
+    <header class="page-head">
+      <h2>Partite</h2>
+      <p class="note">Il diario delle battaglie: schieramento, movimento e perdite di ogni unità alla fine di ogni turno, e il punteggio voce per voce. Giocando al Tavolo si registra da sé a ogni «Chiudi il turno»; una partita giocata altrove si scrive a mano partendo da due liste salvate. Poi <b>Copia per l'AI</b> mette negli appunti tutto il resoconto, pronto da incollare in chat per farsi dire cosa è andato storto.</p>
+    </header>
     <div id="reports"></div>
   </div>
 </div>

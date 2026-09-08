@@ -1,294 +1,214 @@
+/* ==========================================================
+   Schieramento Old World — foglio di stile
+
+   Regola prima di tutte: l'app sta dentro la finestra. Il corpo e'
+   alto quanto lo schermo e non scorre mai; scorrono soltanto le
+   colonne che devono farlo (il pannello, l'ispettore, la pagina di
+   una scheda). Prima la pagina cresceva in basso e per arrivare a un
+   comando bisognava correre su e giu' col dito.
+   ========================================================== */
 
 :root{
-  --paper:#f4f2ec; --panel:#fbfaf6; --panel-2:#eeebe2;
-  --ink:#1c1b18; --muted:#75705f; --line:#dbd6c8; --line-strong:#c3bcaa;
-  --accent:#1f5673; --accent-soft:#e2ecf2;
+  --paper:#f2efe7; --panel:#fbfaf6; --panel-2:#eeebe2; --panel-3:#e5e1d5;
+  --ink:#1c1b18; --muted:#6f6a5b; --line:#dcd7c9; --line-strong:#c3bcaa;
+  --accent:#1f5673; --accent-soft:#e2ecf2; --accent-ink:#153f54;
   --field:#ccd0c0; --field-line:#b6bba7; --blocked:#a9a798;
   --armyA:#9c3a2f; --armyB:#2c5c6b;
   --t-hill:#e0b07a; --t-wood:#7f9c6b; --t-marsh:#7fa3bd; --t-ruins:#b0aa9a;
   --t-wall:#5c5347; --t-mono:#c99a94; --t-treasure:#c96a4e;
   --ok:#4a7346; --warn:#a8611c; --bad:#a8332a;
-  --shadow:0 1px 2px rgba(28,27,24,.06), 0 8px 24px rgba(28,27,24,.06);
-  --r:6px; color-scheme:light;
+  --shadow:0 1px 2px rgba(28,27,24,.06), 0 10px 30px rgba(28,27,24,.10);
+  --shadow-sm:0 1px 2px rgba(28,27,24,.07);
+  --r:8px; --r-sm:6px; --r-lg:12px;
+  color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --paper:#161613; --panel:#1e1e1a; --panel-2:#26261f;
-    --ink:#eae6dc; --muted:#a09a8b; --line:#33322b; --line-strong:#4a4840;
-    --accent:#79b4d4; --accent-soft:#1d3440;
+    --paper:#141410; --panel:#1e1e19; --panel-2:#26261f; --panel-3:#2f2f26;
+    --ink:#ece8de; --muted:#a09a8b; --line:#34332c; --line-strong:#4b4940;
+    --accent:#79b4d4; --accent-soft:#1d3440; --accent-ink:#cbe6f4;
     --field:#2b302a; --field-line:#3d4339; --blocked:#3a382f;
     --armyA:#cf7261; --armyB:#6fadbd;
     --t-hill:#a37f52; --t-wood:#5c7a4d; --t-marsh:#527a94; --t-ruins:#6e6a5e;
     --t-wall:#8a8070; --t-mono:#a5736d; --t-treasure:#d78463;
     --ok:#8ab183; --warn:#d69a52; --bad:#dd7a6d;
-    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 30px rgba(0,0,0,.4);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.45);
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --paper:#161613; --panel:#1e1e1a; --panel-2:#26261f;
-  --ink:#eae6dc; --muted:#a09a8b; --line:#33322b; --line-strong:#4a4840;
-  --accent:#79b4d4; --accent-soft:#1d3440;
+  --paper:#141410; --panel:#1e1e19; --panel-2:#26261f; --panel-3:#2f2f26;
+  --ink:#ece8de; --muted:#a09a8b; --line:#34332c; --line-strong:#4b4940;
+  --accent:#79b4d4; --accent-soft:#1d3440; --accent-ink:#cbe6f4;
   --field:#2b302a; --field-line:#3d4339; --blocked:#3a382f;
   --armyA:#cf7261; --armyB:#6fadbd;
   --t-hill:#a37f52; --t-wood:#5c7a4d; --t-marsh:#527a94; --t-ruins:#6e6a5e;
   --t-wall:#8a8070; --t-mono:#a5736d; --t-treasure:#d78463;
   --ok:#8ab183; --warn:#d69a52; --bad:#dd7a6d;
-  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 30px rgba(0,0,0,.4);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.45);
   color-scheme:dark;
 }
 
 *{box-sizing:border-box;}
+/* hidden vince su qualsiasi display: mezza interfaccia si accende e si
+   spegne con l'attributo, e una regola di layout non deve riaprirla */
+[hidden]{display:none !important;}
+html,body{height:100%;}
 body{
   margin:0; background:var(--paper); color:var(--ink);
   font-family:"Archivo","Helvetica Neue",Arial,sans-serif;
-  font-size:14px; line-height:1.45; -webkit-font-smoothing:antialiased;
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  display:flex; flex-direction:column; overflow:hidden;
 }
 h1,h2,h3{margin:0;text-wrap:balance;}
 button,input,select,textarea{font:inherit;color:inherit;}
 .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;}
-
-header.top{
-  display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
-  padding:14px 20px 12px;border-bottom:1px solid var(--line);background:var(--panel);
-}
-.brand{display:flex;align-items:baseline;gap:10px;}
-.brand h1{font-family:"Fraunces",Georgia,serif;font-optical-sizing:auto;font-weight:600;font-size:20px;letter-spacing:-.01em;}
-.brand .sub{color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;}
-.top .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .spacer{flex:1 1 auto;}
 
+/* ogni scheda e' un riquadro alto quanto quello che resta sotto la
+   testata, e si arrangia dentro */
+body > [data-panel]{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+body > [data-panel][hidden]{display:none;}
+
+/* ---------- testata ---------- */
+header.top{
+  flex:none;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:9px 18px;border-bottom:1px solid var(--line);
+  background:linear-gradient(var(--panel),var(--panel-2));
+}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0;}
+.brand h1{
+  font-family:"Fraunces",Georgia,serif;font-optical-sizing:auto;font-weight:600;
+  font-size:19px;letter-spacing:-.015em;white-space:nowrap;
+}
+.brand h1 span{color:var(--accent);}
+.brand .sub{color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
+.top .tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+
+/* ---------- comandi ---------- */
 .btn{
   border:1px solid var(--line-strong);background:var(--panel);
-  padding:5px 11px;border-radius:var(--r);cursor:pointer;font-size:13px;font-weight:500;
-  transition:background .12s ease,border-color .12s ease;
+  padding:5px 11px;border-radius:var(--r-sm);cursor:pointer;font-size:13px;font-weight:500;
+  white-space:nowrap;transition:background .12s ease,border-color .12s ease,color .12s ease;
 }
-.btn:hover{background:var(--panel-2);}
-.btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--panel);}
-.btn.primary:hover{filter:brightness(1.08);}
-.btn.on{background:var(--accent-soft);border-color:var(--accent);}
-.btn.ghost{border-color:transparent;background:transparent;}
-.btn.ghost:hover{border-color:var(--line-strong);}
-.btn.tiny{padding:2px 7px;font-size:12px;}
+.btn:hover{background:var(--panel-2);border-color:var(--muted);}
+.btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{
+  outline:2px solid var(--accent);outline-offset:1px;
+}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn.primary:hover{filter:brightness(1.1);}
+.btn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted);}
+.btn.ghost:hover{border-color:var(--line-strong);color:var(--ink);}
+.btn.tiny{padding:3px 8px;font-size:12px;}
+.btn.icon{padding:4px 9px;font-family:"IBM Plex Mono",monospace;line-height:1.25;min-width:32px;text-align:center;}
+.btn[disabled]{opacity:.35;cursor:default;}
+.btn[disabled]:hover{background:var(--panel);border-color:var(--line-strong);}
+.btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
 
-select,input[type=text],input[type=number]{
+/* pulsanti attaccati: un gruppo si legge come una cosa sola e nella
+   barra del tavolo fa risparmiare una riga intera */
+.group{display:flex;align-items:center;}
+.group > .btn{border-radius:0;margin-left:-1px;}
+.group > .btn:first-child{border-radius:var(--r-sm) 0 0 var(--r-sm);margin-left:0;}
+.group > .btn:last-child{border-radius:0 var(--r-sm) var(--r-sm) 0;}
+.group > .btn:only-child{border-radius:var(--r-sm);}
+.group > .btn:hover,.group > .btn.on{position:relative;z-index:1;}
+
+select,input[type=text],input[type=number],input[type=search]{
   border:1px solid var(--line-strong);background:var(--panel);
-  border-radius:var(--r);padding:4px 7px;font-size:13px;max-width:100%;
+  border-radius:var(--r-sm);padding:5px 8px;font-size:13px;max-width:100%;
 }
-label.field{display:flex;flex-direction:column;gap:3px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);}
+label.field{display:flex;flex-direction:column;gap:3px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
 label.inline{flex-direction:row;align-items:center;gap:6px;}
-
-main{
-  display:grid;grid-template-columns:minmax(310px,350px) minmax(0,1fr);
-  align-items:stretch;min-height:calc(100vh - 56px);
-}
-aside{
-  border-right:1px solid var(--line);background:var(--panel);padding:16px;
-  display:flex;flex-direction:column;gap:18px;
-  max-height:calc(100vh - 56px);overflow-y:auto;
-}
-section.board-wrap{display:flex;flex-direction:column;min-width:0;}
-@media (max-width:920px){
-  main{grid-template-columns:1fr;}
-  aside{max-height:none;border-right:none;border-bottom:1px solid var(--line);order:2;}
-  section.board-wrap{order:1;}
-}
+.field-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;}
+.field-row .field select,.field-row .field input{width:100%;}
+.sizebox{display:flex;flex-direction:row;align-items:center;gap:5px;margin-top:8px;}
+.sizebox input[type=number]{width:74px;}
+#zone-gap{width:86px;text-align:right;}
 
 .panel-title{
-  font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;
   display:flex;align-items:center;gap:8px;margin-bottom:8px;
 }
 .panel-title::after{content:"";flex:1;height:1px;background:var(--line);}
 
-.drop{
-  border:1px dashed var(--line-strong);border-radius:var(--r);padding:14px;text-align:center;
-  color:var(--muted);background:var(--panel-2);cursor:pointer;
-  transition:border-color .12s ease,background .12s ease;
-}
-.drop.hot{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);}
-.drop strong{display:block;color:var(--ink);font-size:13px;margin-bottom:2px;}
-.drop small{font-size:11.5px;line-height:1.4;display:block;}
-
-.army-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-.swatch{width:10px;height:10px;border-radius:2px;flex:none;}
-.army-head input[type=text]{flex:1;min-width:0;font-weight:600;}
-
-.tray{display:flex;flex-direction:column;gap:4px;}
-.row{
-  display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;
-  padding:6px 8px;border:1px solid var(--line);border-radius:var(--r);
-  background:var(--panel-2);cursor:pointer;transition:border-color .12s ease;
-}
-.row:hover{border-color:var(--line-strong);}
-.row.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
-.row .nm{min-width:0;}
-.row .nm b{display:block;font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.row .nm span{display:block;font-size:11.5px;color:var(--muted);}
-.chip{font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:99px;border:1px solid currentColor;white-space:nowrap;}
-.chip.ok{color:var(--ok);} .chip.warn{color:var(--warn);} .chip.bad{color:var(--bad);} .chip.idle{color:var(--muted);}
-.mini{width:26px;height:26px;flex:none;}
-
-/* --- foto delle miniature ------------------------------------ */
-.row.u-row{grid-template-columns:1fr auto;gap:6px 8px;}
-.row.u-row .nm{grid-column:1;}
-.row.u-row .chip{grid-column:2;justify-self:end;}
-.row.u-row .minis{grid-column:1/-1;}
-.row.u-row .nm b{display:flex;align-items:center;gap:6px;}
-.idx{
-  flex:none;display:inline-flex;align-items:center;justify-content:center;
-  width:17px;height:17px;border-radius:4px;color:var(--panel);
-  font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;
-}
-.nm b .txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.minis{display:flex;flex-wrap:wrap;gap:3px;}
-.mdl{
-  width:24px;height:24px;flex:none;border-radius:4px;object-fit:cover;
-  border:1px solid var(--line);background:var(--panel);display:block;
-}
-.mdl.ph{opacity:.85;border-color:transparent;}
-.mdl.more{
-  width:auto;min-width:24px;padding:0 4px;display:flex;align-items:center;justify-content:center;
-  font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--muted);
-}
-.minis.big{gap:5px;}
-.minis.big .slot{
-  position:relative;width:44px;height:44px;padding:0;border:1px solid var(--line);
-  border-radius:var(--r);background:var(--panel-2);cursor:pointer;overflow:hidden;
-}
-.minis.big .slot:hover{border-color:var(--accent);}
-.minis.big .slot img{width:100%;height:100%;object-fit:cover;display:block;}
-.minis.big .slot .n{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);
-}
-.minis.big .slot .x{
-  position:absolute;top:1px;right:1px;width:14px;height:14px;line-height:13px;
-  border-radius:50%;background:var(--ink);color:var(--panel);font-size:10px;text-align:center;
-}
-.photo-box{display:flex;flex-direction:column;gap:8px;padding:8px;border:1px solid var(--line);border-radius:var(--r);}
-.empty{color:var(--muted);font-size:12.5px;padding:6px 2px;margin:0;}
-
-.insp{display:flex;flex-direction:column;gap:10px;}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
-.readout{
-  font-family:"IBM Plex Mono",monospace;font-size:12px;font-variant-numeric:tabular-nums;
-  color:var(--muted);display:flex;justify-content:space-between;gap:10px;
-  padding:3px 0;border-bottom:1px dotted var(--line);
-}
-.readout b{color:var(--ink);font-weight:500;}
-table.stats{width:100%;border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:12px;font-variant-numeric:tabular-nums;}
-table.stats th{font-weight:500;color:var(--muted);font-size:10.5px;letter-spacing:.06em;padding:2px 0;border-bottom:1px solid var(--line);}
-table.stats td{text-align:center;padding:3px 0;}
-.tags{display:flex;flex-wrap:wrap;gap:4px;}
-.tag{font-size:11px;padding:1px 6px;border-radius:3px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);}
-
-.board-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel);}
-.board-bar .sep{width:1px;height:20px;background:var(--line);}
-.board-scroll{flex:1;overflow:auto;padding:18px;min-height:420px;background:var(--paper);}
-svg#board{display:block;margin:0 auto;width:100%;height:auto;max-height:calc(100vh - 250px);touch-action:none;}
-@media (max-width:920px){svg#board{max-height:none;}}
-svg#board text{font-family:"IBM Plex Mono",monospace;}
-.piece{cursor:grab;}
-.legend{padding:10px 16px 18px;border-top:1px solid var(--line);background:var(--panel);display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);align-items:center;}
-.legend b{color:var(--ink);font-weight:500;}
-.kbd{font-family:"IBM Plex Mono",monospace;font-size:11px;border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--panel-2);color:var(--ink);}
-.note{font-size:12px;color:var(--muted);line-height:1.5;margin:0;}
-.warnbox{font-size:12px;line-height:1.5;border-left:3px solid var(--warn);padding:4px 0 4px 9px;color:var(--ink);}
-details.raw{border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;background:var(--panel-2);}
-details.raw summary{cursor:pointer;font-size:12px;color:var(--muted);}
-details.raw pre{max-height:240px;overflow:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.4;margin:8px 0 0;white-space:pre-wrap;word-break:break-word;}
-.palette{display:flex;flex-wrap:wrap;gap:5px;}
-.palette button{display:flex;align-items:center;gap:5px;}
-.pdot{width:9px;height:9px;border-radius:2px;flex:none;}
-.toast{
-  position:fixed;left:50%;bottom:76px;transform:translateX(-50%);
-  background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:99px;
-  font-size:13px;box-shadow:var(--shadow);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s ease;
-  max-width:min(90vw,520px);text-align:center;
-}
-.toast.show{opacity:1;}
-@media (prefers-reduced-motion:reduce){*{transition:none !important;}}
-
 /* ==========================================================
-   SCHEDE E PAGINE NUOVE (catalogo, liste, matchup)
+   TAVOLO — tre colonne: pannello, campo, ispettore
    ========================================================== */
-.tabs{display:flex;gap:4px;margin-left:16px;}
-.btn.tab{font-weight:600;}
-.btn.tab.on{background:var(--accent);color:var(--panel);border-color:var(--accent);}
+main{
+  flex:1 1 auto;min-height:0;overflow:hidden;
+  display:grid;grid-template-columns:minmax(290px,330px) minmax(0,1fr);
+  align-items:stretch;
+}
+body.insp-side main{grid-template-columns:minmax(290px,320px) minmax(0,1fr) minmax(330px,390px);}
 
-.page{max-width:1100px;margin:0 auto;padding:20px 24px 60px;display:flex;flex-direction:column;gap:10px;}
-.page .note{max-width:70ch;}
+aside.side{
+  border-right:1px solid var(--line);background:var(--panel);
+  display:flex;flex-direction:column;min-height:0;overflow:hidden;
+}
+.side-nav{
+  flex:none;display:flex;gap:0;padding:8px 10px;border-bottom:1px solid var(--line);
+  background:var(--panel-2);
+}
+.side-nav .seg{
+  flex:1;border-radius:0;margin-left:-1px;font-size:12.5px;padding:5px 4px;text-align:center;
+  color:var(--muted);
+}
+.side-nav .seg:first-child{border-radius:var(--r-sm) 0 0 var(--r-sm);margin-left:0;}
+.side-nav .seg:last-child{border-radius:0 var(--r-sm) var(--r-sm) 0;}
+.side-nav .seg.on{background:var(--accent);border-color:var(--accent);color:#fff;position:relative;z-index:1;}
+.side-scroll{
+  flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  padding:14px 14px 20px;scrollbar-width:thin;
+}
+.side-sec{display:flex;flex-direction:column;gap:14px;}
+.side-sec[hidden]{display:none;}
 
-.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-.bar input[type=search]{
-  flex:1;min-width:180px;padding:7px 10px;border:1px solid var(--line-strong);
-  border-radius:var(--r);background:var(--panel);color:var(--ink);font-size:13px;
-}
-textarea{
-  width:100%;border:1px solid var(--line-strong);border-radius:var(--r);
-  background:var(--panel);color:var(--ink);padding:6px;
-  font-family:"IBM Plex Mono",monospace;font-size:11px;
-}
+section.board-wrap{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--paper);}
 
-/* --- catalogo --- */
-.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-top:6px;}
-.cat-card{
-  display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;
-  padding:8px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel-2);
+/* --- l'ispettore in colonna sua --- */
+aside.insp-col{
+  border-left:1px solid var(--line);background:var(--panel);
+  display:flex;flex-direction:column;min-height:0;overflow:hidden;
 }
-.cat-photo{
-  width:64px;height:64px;padding:0;border:1px solid var(--line);border-radius:var(--r);
-  background:var(--panel);cursor:pointer;overflow:hidden;display:block;
+body:not(.insp-side) aside.insp-col{display:none;}
+.insp-dock{
+  flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  padding:14px 14px 20px;scrollbar-width:thin;
 }
-.cat-photo:hover{border-color:var(--accent);}
-.cat-photo img{width:100%;height:100%;object-fit:cover;display:block;}
-.cat-photo .ph{font-size:11px;color:var(--muted);line-height:64px;display:block;text-align:center;}
-.cat-body{min-width:0;display:flex;flex-direction:column;gap:1px;}
-.cat-body b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.cat-body .mono{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);}
-.cat-body .owned{font-size:12px;color:var(--ok);font-weight:600;}
-.cat-body .dim{opacity:.65;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-
-.editor{
-  display:flex;flex-direction:column;gap:8px;padding:12px;
-  border:1px solid var(--accent);border-radius:var(--r);background:var(--panel-2);
-}
-.tag button{
-  border:0;background:none;color:inherit;cursor:pointer;padding:0 0 0 4px;font-size:12px;
-}
-
-/* --- liste --- */
-.ls-split{display:grid;grid-template-columns:minmax(220px,320px) 1fr;gap:16px;align-items:start;}
-.ls-side{display:flex;flex-direction:column;gap:4px;}
-.ls-detail{min-width:0;}
-.row select.link{
-  grid-column:1/-1;width:100%;font-size:12px;padding:4px 6px;
-  border:1px solid var(--line);border-radius:var(--r);background:var(--panel);color:var(--ink);
-}
-.nm b img.mdl{width:18px;height:18px;}
-
-@media (max-width:860px){
-  .ls-split{grid-template-columns:1fr;}
-  .tabs{margin-left:0;order:3;width:100%;}
+/* quando torna dentro il pannello resta appiccicato in fondo */
+body:not(.insp-side) .side-scroll > .insp-dock{
+  position:sticky;bottom:-20px;margin:14px -14px -20px;padding:12px 14px 20px;
+  background:var(--panel);border-top:1px solid var(--line);
+  box-shadow:0 -12px 20px -18px rgba(0,0,0,.6);
+  max-height:min(60vh,560px);
 }
 
-/* ==========================================================
-   ANNULLA, INQUADRATURA, PARTITA, PANNELLO APPICCICATO
-   ========================================================== */
+/* ---------- barra del tavolo ---------- */
+.board-bar{
+  flex:none;display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel);
+}
+.board-bar .scenario span{font-size:10.5px;}
+.board-bar .scenario select{font-weight:600;max-width:250px;}
+.bar-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.zoomgroup{border:1px solid var(--line-strong);border-radius:var(--r-sm);background:var(--panel);}
+.zoomgroup > .btn{border-color:transparent;background:transparent;}
+.zoomgroup > .btn.on{background:var(--accent-soft);border-color:var(--accent);}
+.zoomlevel{font-size:11.5px;color:var(--muted);min-width:46px;text-align:center;}
 
-/* --- barra del tavolo: e' diventata lunga, quindi respira --- */
-.btn.icon{padding:4px 9px;font-family:"IBM Plex Mono",monospace;line-height:1;min-width:30px;text-align:center;}
-.btn[disabled]{opacity:.38;cursor:default;}
-.btn[disabled]:hover{background:var(--panel);}
-.zoomlevel{font-size:11.5px;color:var(--muted);min-width:42px;text-align:center;}
-
-/* --- riga di stato: ogni avviso e' un pulsante che porta sul posto --- */
-.stats{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px;}
+/* --- riga di stato: ogni avviso e' un pulsante che porta sul posto ---
+   Sta attaccata a #stat e non a .stats: la tabella del profilo si
+   chiama .stats anche lei, e si ritrovava disegnata come una riga di
+   pulsanti — nove caratteristiche schiacciate in una striscia
+   illeggibile invece che in tabella. */
+#stat{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px;}
 .statchip{
   font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted);
-  border:1px solid transparent;background:none;border-radius:99px;padding:1px 8px;
+  border:1px solid transparent;background:none;border-radius:99px;padding:2px 9px;
 }
 button.statchip{cursor:pointer;border-color:var(--line);}
 button.statchip:hover{border-color:currentColor;background:var(--panel-2);}
@@ -296,30 +216,143 @@ button.statchip:hover{border-color:currentColor;background:var(--panel-2);}
 .statchip.bad{color:var(--bad);border-color:var(--bad);}
 .statchip.turn{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);}
 
-/* --- il campo: zoom, scorrimento, maniglia di rotazione --- */
-.board-scroll{overflow:hidden;display:flex;align-items:center;justify-content:center;}
-svg#board{max-height:calc(100vh - 210px);cursor:grab;}
+/* ---------- il campo ----------
+   Riempie quello che resta fra barra e legenda: niente calc() con
+   l'altezza della testata scritta a mano, che sbagliava di venti pixel
+   ogni volta che la barra andava a capo. */
+.board-scroll{
+  flex:1 1 auto;min-height:0;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;padding:12px;
+}
+svg#board{
+  display:block;width:100%;height:100%;max-height:100%;
+  touch-action:none;cursor:grab;
+}
 svg#board:active{cursor:grabbing;}
+svg#board text{font-family:"IBM Plex Mono",monospace;}
+/* maniglie sul campo: quella tonda ruota, quelle quadrate ridimensionano
+   l'elemento scenico, quella a pillola sposta la linea di schieramento */
+svg#board .handle{cursor:grab;}
+svg#board [data-size]{cursor:nwse-resize;}
+svg#board [data-size="w"]{cursor:ew-resize;}
+svg#board [data-size="h"]{cursor:ns-resize;}
+svg#board [data-zone]{cursor:ns-resize;}
+svg#board [data-zone][data-axis="x"]{cursor:ew-resize;}
 .piece{cursor:move;}
 .handle{cursor:crosshair;}
 .handle circle{transition:none;}
 
-/* --- importa liste: dopo il primo import si ripiega a una riga --- */
+/* ---------- legenda: una riga sola, i tasti sotto un bottone ---------- */
+.legend{
+  flex:none;display:flex;gap:14px;align-items:center;
+  padding:8px 14px;border-top:1px solid var(--line);background:var(--panel);
+  font-size:12.5px;color:var(--muted);
+}
+.legend .sc{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.legend #sc-desc{color:var(--muted);}
+.legend b{color:var(--ink);font-weight:600;}
+.keys{position:relative;flex:none;}
+.keys > summary{
+  cursor:pointer;list-style:none;font-size:12px;color:var(--muted);
+  border:1px solid var(--line-strong);border-radius:99px;padding:2px 11px;white-space:nowrap;
+}
+.keys > summary::-webkit-details-marker{display:none;}
+.keys[open] > summary{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);}
+.keys-pop{
+  position:absolute;right:0;bottom:calc(100% + 8px);z-index:30;
+  display:grid;grid-template-columns:repeat(2,max-content);gap:6px 16px;
+  background:var(--panel);border:1px solid var(--line-strong);border-radius:var(--r);
+  box-shadow:var(--shadow);padding:10px 12px;white-space:nowrap;font-size:12px;
+}
+.kbd{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;border:1px solid var(--line-strong);
+  border-bottom-width:2px;border-radius:4px;padding:0 4px;background:var(--panel-2);color:var(--ink);
+  margin-right:2px;
+}
+
+/* ==========================================================
+   PANNELLO: importazione, armate, righe delle unita'
+   ========================================================== */
+.drop{
+  border:1.5px dashed var(--line-strong);border-radius:var(--r);padding:14px;text-align:center;
+  color:var(--muted);background:var(--panel-2);cursor:pointer;
+  transition:border-color .12s ease,background .12s ease;
+}
+.drop.hot{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);}
+.drop strong{display:block;color:var(--ink);font-size:13.5px;margin-bottom:3px;}
+.drop small{font-size:12px;line-height:1.45;display:block;}
+
 #import-box > summary{cursor:pointer;list-style:none;margin-bottom:0;}
 #import-box[open] > summary{margin-bottom:8px;}
 #import-box > summary::-webkit-details-marker{display:none;}
-#import-box > summary::before{content:"▸";margin-right:2px;font-size:10px;color:var(--muted);}
-#import-box[open] > summary::before{content:"▾";}
+#import-box > summary::before{content:"\25B8";margin-right:2px;font-size:10px;color:var(--muted);}
+#import-box[open] > summary::before{content:"\25BE";}
 
-/* --- ispettore ancorato in fondo al pannello --- */
-.insp-dock{
-  position:sticky;bottom:-16px;margin:auto -16px -16px;padding:10px 16px 16px;
-  background:var(--panel);border-top:1px solid var(--line);
-  box-shadow:0 -10px 18px -16px rgba(0,0,0,.5);
-  max-height:min(56vh,520px);overflow-y:auto;
+.army-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.swatch{width:11px;height:11px;border-radius:3px;flex:none;}
+.army-head input[type=text]{flex:1;min-width:0;font-weight:600;font-size:14px;}
+
+.tray{display:flex;flex-direction:column;gap:5px;}
+.row{
+  display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;
+  padding:7px 9px;border:1px solid var(--line);border-radius:var(--r);
+  background:var(--panel-2);cursor:pointer;
+  transition:border-color .12s ease,background .12s ease,box-shadow .12s ease;
 }
-@media (max-width:920px){
-  .insp-dock{position:static;margin:0;padding:0;border-top:0;box-shadow:none;max-height:none;}
+.row:hover{border-color:var(--line-strong);background:var(--panel-3);}
+.row.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--accent-soft);}
+.row .nm{min-width:0;}
+.row .nm b{display:block;font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.row .nm span{display:block;font-size:11.5px;color:var(--muted);line-height:1.35;}
+.chip{
+  font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:600;
+  padding:2px 7px;border-radius:99px;border:1px solid currentColor;white-space:nowrap;
+}
+.chip.ok{color:var(--ok);} .chip.warn{color:var(--warn);} .chip.bad{color:var(--bad);} .chip.idle{color:var(--muted);}
+.mini{width:28px;height:28px;flex:none;}
+
+/* --- foto delle miniature ------------------------------------
+   Erano quadratini da 24 px: si vedeva che c'era una foto, non cosa
+   ci fosse dentro. Adesso partono da 34 px e sotto il puntatore si
+   ingrandiscono, che e' il modo piu' corto per riconoscere un pezzo. */
+.row.u-row{grid-template-columns:1fr auto;gap:7px 8px;}
+.row.u-row .nm{grid-column:1;}
+.row.u-row .chip{grid-column:2;justify-self:end;}
+.row.u-row .minis{grid-column:1/-1;}
+.row.u-row .nm b{display:flex;align-items:center;gap:7px;}
+.idx{
+  flex:none;display:inline-flex;align-items:center;justify-content:center;
+  width:19px;height:19px;border-radius:5px;color:#fff;
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;
+}
+.nm b .txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.minis{display:flex;flex-wrap:wrap;gap:4px;}
+.mdl{
+  width:34px;height:34px;flex:none;border-radius:6px;object-fit:cover;
+  border:1px solid var(--line-strong);background:var(--panel);display:block;
+  box-shadow:var(--shadow-sm);transition:transform .12s ease,box-shadow .12s ease;
+}
+img.mdl:hover{transform:scale(2.1);box-shadow:var(--shadow);position:relative;z-index:6;}
+.mdl.ph{opacity:.9;border-color:transparent;box-shadow:none;}
+.mdl.more{
+  width:auto;min-width:34px;padding:0 6px;display:flex;align-items:center;justify-content:center;
+  font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);
+  background:var(--panel);box-shadow:none;
+}
+.minis.big{gap:6px;}
+.minis.big .slot{
+  position:relative;width:64px;height:64px;padding:0;border:1px solid var(--line-strong);
+  border-radius:var(--r);background:var(--panel-2);cursor:pointer;overflow:hidden;
+}
+.minis.big .slot:hover{border-color:var(--accent);}
+.minis.big .slot img{width:100%;height:100%;object-fit:cover;display:block;}
+.minis.big .slot .n{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted);
+}
+.minis.big .slot .x{
+  position:absolute;top:2px;right:2px;width:17px;height:17px;line-height:16px;
+  border-radius:50%;background:var(--ink);color:var(--paper);font-size:11px;text-align:center;
 }
 
 /* --- unita' fuori combattimento --- */
@@ -328,106 +361,240 @@ svg#board:active{cursor:grabbing;}
 .row.fled{border-style:dashed;}
 .mdl.more.lost{color:var(--bad);}
 
-/* --- distanze nell'ispettore --- */
+/* ==========================================================
+   ISPETTORE
+   ========================================================== */
+.insp{display:flex;flex-direction:column;gap:11px;}
+/* niente si stringe per far stare tutto: la colonna scorre, i blocchi
+   restano della loro altezza. Senza questa riga la tabella del profilo
+   veniva schiacciata a una riga sola. */
+.insp > *{flex:0 0 auto;}
+.photo-box{
+  display:flex;flex-direction:column;gap:8px;padding:10px;
+  border:1px solid var(--line);border-radius:var(--r);background:var(--panel-2);
+}
+/* la foto del pezzo, grande abbastanza da riconoscerlo */
+.insp-photo{
+  width:100%;max-height:190px;object-fit:cover;border-radius:var(--r-sm);
+  border:1px solid var(--line-strong);display:block;background:var(--panel);
+}
+.empty{color:var(--muted);font-size:13px;padding:6px 2px;margin:0;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.readout{
+  font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-variant-numeric:tabular-nums;
+  color:var(--muted);display:flex;justify-content:space-between;gap:10px;align-items:baseline;
+  padding:4px 0;border-bottom:1px dotted var(--line);
+}
+.readout b{color:var(--ink);font-weight:600;text-align:right;}
 .readout.near{border-bottom-style:solid;}
 .readout.near.dim{opacity:.6;}
+.readout.near .duel-go{margin-left:8px;padding:0 7px;line-height:19px;}
 
-/* --- partita --- */
-.turnbar{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-.turnbar-mid{
-  flex:1;display:flex;align-items:center;gap:7px;justify-content:center;
-  border:1px solid var(--line);border-radius:var(--r);background:var(--panel-2);padding:4px 8px;
+/* il profilo: e' la tabella che si guarda piu' spesso, quindi e' la
+   piu' grande del pannello e non la piu' piccola */
+table.stats{
+  width:100%;border-collapse:collapse;table-layout:fixed;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:14px;font-variant-numeric:tabular-nums;
+  border:1px solid var(--line);border-radius:var(--r);
 }
-.turnbar-mid b{font-size:13px;}
-.turnbar-mid .tname{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.phases{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-bottom:8px;}
-.losses{display:flex;align-items:center;gap:6px;}
-.losses input{width:64px;text-align:center;}
-.losses .mono{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
-.gamelog{
-  margin-top:8px;max-height:190px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;
-  border-top:1px dotted var(--line);padding-top:6px;
+table.stats th{
+  font-weight:600;color:var(--muted);font-size:10.5px;letter-spacing:.08em;
+  padding:4px 0;background:var(--panel-2);border-bottom:1px solid var(--line);
 }
-.logline{display:flex;align-items:baseline;gap:6px;font-size:12px;color:var(--ink);line-height:1.35;}
-.logline .lt{font-size:10.5px;color:var(--muted);flex:none;}
-.logline .swatch{flex:none;align-self:center;}
+table.stats td{text-align:center;padding:6px 0;font-weight:600;}
+.tags{display:flex;flex-wrap:wrap;gap:5px;}
+.tag{font-size:11.5px;padding:2px 7px;border-radius:99px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);}
+.tag button{border:0;background:none;color:inherit;cursor:pointer;padding:0 0 0 4px;font-size:12px;}
 
-/* --- pannello a scomparsa sotto i 920px --- */
-.drawer-only{display:none;}
-@media (max-width:920px){
-  .drawer-only{display:inline-block;}
-  main{grid-template-columns:1fr;}
-  aside{
-    position:fixed;z-index:40;inset:0 auto 0 0;width:min(360px,88vw);
-    transform:translateX(-102%);transition:transform .18s ease;
-    box-shadow:var(--shadow);border-right:1px solid var(--line);border-bottom:0;
-    max-height:100vh;overflow-y:auto;
-  }
-  body.drawer-open aside{transform:none;}
-  body.drawer-open::after{
-    content:"";position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:39;
-  }
-  svg#board{max-height:none;}
-  .board-bar{padding:8px 10px;gap:6px;}
-  .board-bar .field.inline span{display:none;}
+.note{font-size:12.5px;color:var(--muted);line-height:1.5;margin:0;}
+.warnbox{font-size:12.5px;line-height:1.5;border-left:3px solid var(--warn);padding:5px 0 5px 10px;color:var(--ink);background:var(--panel-2);border-radius:0 var(--r-sm) var(--r-sm) 0;}
+details.raw{border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;background:var(--panel-2);}
+details.raw summary{cursor:pointer;font-size:12px;color:var(--muted);}
+details.raw pre{max-height:240px;overflow:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.4;margin:8px 0 0;white-space:pre-wrap;word-break:break-word;}
+
+.palette{display:flex;flex-wrap:wrap;gap:5px;}
+.palette button{display:flex;align-items:center;gap:5px;}
+.pdot{width:10px;height:10px;border-radius:3px;flex:none;}
+
+.toast{
+  position:fixed;left:50%;bottom:76px;transform:translateX(-50%);
+  background:var(--ink);color:var(--paper);padding:9px 18px;border-radius:99px;
+  font-size:13px;box-shadow:var(--shadow);z-index:80;opacity:0;pointer-events:none;transition:opacity .2s ease;
+  max-width:min(90vw,520px);text-align:center;
 }
-@media (max-width:560px){
-  .board-bar .btn{padding:4px 8px;font-size:12px;}
-  .brand .sub{display:none;}
+.toast.show{opacity:1;}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+
+/* ==========================================================
+   SCHEDE E PAGINE (catalogo, liste, matchup, partite)
+   ========================================================== */
+.tabs{display:flex;gap:0;margin-left:8px;}
+.btn.tab{font-weight:600;border-radius:0;margin-left:-1px;}
+.btn.tab:first-child{border-radius:var(--r-sm) 0 0 var(--r-sm);margin-left:0;}
+.btn.tab:last-child{border-radius:0 var(--r-sm) var(--r-sm) 0;}
+.btn.tab.on{background:var(--accent);color:#fff;border-color:var(--accent);position:relative;z-index:1;}
+
+/* la pagina scorre dentro di se': la finestra resta ferma */
+[data-panel] > .page{
+  flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  width:100%;max-width:1180px;margin:0 auto;padding:22px 26px 56px;
+  display:flex;flex-direction:column;gap:12px;
+}
+.page-head{display:flex;flex-direction:column;gap:5px;margin-bottom:2px;}
+.page-head h2{
+  font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:23px;letter-spacing:-.01em;
+}
+.page .note{max-width:78ch;}
+
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.bar input[type=search]{
+  flex:1;min-width:200px;padding:8px 11px;font-size:13.5px;
+}
+textarea{
+  width:100%;border:1px solid var(--line-strong);border-radius:var(--r-sm);
+  background:var(--panel);color:var(--ink);padding:8px;
+  font-family:"IBM Plex Mono",monospace;font-size:12px;
 }
 
-/* --- stato di pittura nel catalogo --- */
-.paintbar{height:5px;max-width:420px;margin:2px 0 4px;border-radius:99px;background:var(--panel-2);border:1px solid var(--line);overflow:hidden;}
+/* --- catalogo ---
+   Schede piu' larghe e foto grandi: e' un catalogo di miniature, la
+   foto e' il contenuto, non una decorazione. */
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;margin-top:6px;}
+.cat-card{
+  display:grid;grid-template-columns:96px 1fr auto;gap:12px;align-items:center;
+  padding:10px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel-2);
+  transition:border-color .12s ease,box-shadow .12s ease;
+}
+.cat-card:hover{border-color:var(--line-strong);box-shadow:var(--shadow-sm);}
+.cat-photo{
+  width:96px;height:96px;padding:0;border:1px solid var(--line-strong);border-radius:var(--r);
+  background:var(--panel);cursor:pointer;overflow:hidden;display:block;
+}
+.cat-photo:hover{border-color:var(--accent);}
+.cat-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+.cat-photo .ph{font-size:11.5px;color:var(--muted);line-height:96px;display:block;text-align:center;}
+.cat-body{min-width:0;display:flex;flex-direction:column;gap:2px;}
+.cat-body b{font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cat-body .mono{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted);}
+.cat-body .owned{font-size:13px;color:var(--ok);font-weight:600;}
+.cat-body .dim{opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.paintbar{height:6px;max-width:420px;margin:3px 0 4px;border-radius:99px;background:var(--panel);border:1px solid var(--line);overflow:hidden;}
 .paintbar span{display:block;height:100%;background:var(--ok);}
 .cat-body .owned .done{color:var(--ok);}
 .cat-body .owned .todo{color:var(--warn);}
 
+.editor{
+  display:flex;flex-direction:column;gap:9px;padding:14px;
+  border:1px solid var(--accent);border-radius:var(--r);background:var(--panel-2);
+  box-shadow:var(--shadow-sm);
+}
+
+/* --- liste --- */
+.ls-split{display:grid;grid-template-columns:minmax(230px,320px) 1fr;gap:18px;align-items:start;}
+.ls-side{display:flex;flex-direction:column;gap:5px;}
+.ls-detail{min-width:0;}
+.row select.link{
+  grid-column:1/-1;width:100%;font-size:12.5px;padding:5px 7px;
+  border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel);color:var(--ink);
+}
+.nm b img.mdl{width:22px;height:22px;box-shadow:none;}
+.nm b img.mdl:hover{transform:scale(3);}
+
 /* --- i due eserciti a confronto --- */
-.vs{border:1px solid var(--line);border-radius:var(--r);background:var(--panel-2);padding:10px 12px;margin:4px 0;}
-.vs-head{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px;margin-bottom:6px;}
+.vs{border:1px solid var(--line);border-radius:var(--r);background:var(--panel-2);padding:12px 14px;margin:4px 0;}
+.vs-head{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;margin-bottom:8px;}
 .vs-head span{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
 .vs-head span:last-child{justify-content:flex-end;}
 .vs-head b{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);flex:none;}
-.vs-table{width:100%;border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-variant-numeric:tabular-nums;}
-.vs-table td{width:34%;padding:2px 0;color:var(--muted);}
+.vs-table{width:100%;border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:13px;font-variant-numeric:tabular-nums;}
+.vs-table td{width:34%;padding:3px 0;color:var(--muted);}
 .vs-table td:first-child{text-align:left;} .vs-table td:last-child{text-align:right;}
 .vs-table td.lead{color:var(--ink);font-weight:600;}
-.vs-table th{font-weight:400;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:2px 6px;}
+.vs-table th{font-weight:400;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:3px 6px;}
 
-/* --- barra del tavolo: su desktop e' una riga sola che va a capo,
-       su schermo stretto gli strumenti diventano una riga che scorre,
-       cosi' scenario e riga di stato restano sempre in vista --- */
-.bar-tools{display:contents;}
-@media (max-width:920px){
-  .board-bar{flex-wrap:wrap;}
-  .bar-tools{
-    display:flex;gap:8px;align-items:center;flex-wrap:nowrap;
-    order:3;width:100%;overflow-x:auto;overscroll-behavior-x:contain;
-    padding-bottom:4px;scrollbar-width:thin;
-  }
-  .bar-tools > *{flex:none;}
-  .board-bar > .field.inline{order:1;}
-  .board-bar > .spacer{display:none;}
-  .board-bar > .stats{order:2;margin-left:auto;}
-  /* il campo tiene le sue proporzioni: in una colonna stretta e alta
-     non puo' riempire, e centrandolo restavano due fasce vuote grandi
-     come il tavolo. Meglio che la pagina si accorci. */
-  .board-scroll{min-height:0;padding:10px;}
-  main{min-height:0;}
+/* ==========================================================
+   PARTITA
+   ========================================================== */
+.turnbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.turnbar-mid{
+  flex:1;display:flex;align-items:center;gap:7px;justify-content:center;
+  border:1px solid var(--line);border-radius:var(--r);background:var(--panel-2);padding:6px 9px;
 }
+.turnbar-mid b{font-size:14px;}
+.turnbar-mid .tname{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.phases{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-bottom:10px;}
+.losses{display:flex;align-items:center;gap:6px;}
+.losses input{width:70px;text-align:center;}
+.losses .mono{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.gamelog{
+  margin-top:8px;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;
+  border-top:1px dotted var(--line);padding-top:8px;
+}
+.logline{display:flex;align-items:baseline;gap:6px;font-size:12.5px;color:var(--ink);line-height:1.4;}
+.logline .lt{font-size:11px;color:var(--muted);flex:none;}
+.logline .swatch{flex:none;align-self:center;}
 
-/* --- lo scontro simulato ---
+/* --- perdite di tutte le unita' in un colpo solo --- */
+.lossbox{margin-top:10px;}
+.lossbox > summary{cursor:pointer;list-style:none;font-size:12.5px;color:var(--muted);}
+.lossbox > summary::-webkit-details-marker{display:none;}
+.lossbox > summary::before{content:"\25B8";margin-right:4px;font-size:10px;color:var(--muted);}
+.lossbox[open] > summary::before{content:"\25BE";}
+.lossrow{
+  display:grid;grid-template-columns:1fr auto auto auto auto;gap:5px;align-items:center;
+  padding:3px 0;border-bottom:1px dotted var(--line);
+}
+.lossrow .nm{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lossrow b{font-size:12px;color:var(--muted);min-width:48px;text-align:right;}
+.lossrow b.low{color:var(--warn);}
+.lossrow.dead{opacity:.5;}
+
+/* --- lo schermino della partita: il tavolo com'era a fine turno --- */
+.tvbox{border:1px solid var(--line);border-radius:var(--r);background:var(--paper);padding:8px;margin-bottom:10px;}
+.tvhead{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px;}
+.tvhead .mono{font-size:11.5px;color:var(--muted);text-align:center;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tvscreen{display:flex;justify-content:center;overflow:hidden;}
+.tvscreen svg.shot{max-width:100%;height:auto;}
+.tvcap{font-size:11.5px;color:var(--muted);text-align:center;margin-top:5px;}
+
+/* --- diario delle partite: tabelle dei turni e del punteggio ---
+       Le colonne sono sei e una lista di venti unita' non entra mai in
+       un telefono: la tabella scorre dentro il suo riquadro invece di
+       allargare la pagina. */
+.tablewrap{overflow-x:auto;overscroll-behavior-x:contain;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);}
+.grid-table{width:100%;border-collapse:collapse;font-size:13px;}
+.grid-table th{
+  text-align:left;font-weight:600;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;
+  background:var(--panel-2);position:sticky;top:0;z-index:1;
+}
+.grid-table td{padding:6px 10px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap;}
+.grid-table tbody tr:hover td{background:var(--panel-2);}
+.grid-table tbody tr:last-child td{border-bottom:0;}
+.grid-table td .swatch{display:inline-block;margin-right:6px;}
+.grid-table input[type=number]{width:72px;text-align:right;}
+.grid-table input[type=text]{width:100%;min-width:140px;}
+.grid-table select{min-width:110px;}
+.grid-table tr.gone td{opacity:.5;text-decoration:line-through;}
+.grid-table tr.gone td input,.grid-table tr.gone td select{text-decoration:none;}
+.score-table td:first-child{width:46%;}
+.turn-edit{display:flex;flex-direction:column;gap:8px;padding:8px 0 12px;}
+.turn-edit .gamelog{max-height:130px;}
+
+/* ==========================================================
+   LO SCONTRO SIMULATO
    Sta sopra al tavolo e non dentro il pannello laterale: due colonne di
    controlli e una colonna di dadi in 300 px non ci stanno, e i dadi
-   vanno visti tutti insieme o non servono a niente. */
+   vanno visti tutti insieme o non servono a niente.
+   ========================================================== */
 .duel-host{
   position:fixed; z-index:60; inset:auto 18px 18px auto;
-  /* si ferma sotto la barra del tavolo: coprire i pulsanti
-     mentre si guardano i dadi è il modo di doverlo chiudere ogni volta */
-  width:min(560px, calc(100vw - 36px)); max-height:min(72vh, 700px);
+  width:min(580px, calc(100vw - 36px)); max-height:min(74vh, 720px);
   overflow-y:auto; overscroll-behavior:contain;
   background:var(--panel); border:1px solid var(--line-strong);
-  border-radius:var(--r); box-shadow:var(--shadow);
+  border-radius:var(--r-lg); box-shadow:var(--shadow);
 }
 .duel-card{display:flex;flex-direction:column;gap:10px;padding:12px 14px 14px;}
 .duel-head{
@@ -438,126 +605,140 @@ svg#board:active{cursor:grabbing;}
 .duel-sides{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .duel-side{
   display:flex;flex-direction:column;gap:6px;min-width:0;
-  border:1px solid var(--line);border-radius:var(--r);padding:8px;background:var(--panel-2);
+  border:1px solid var(--line);border-radius:var(--r);padding:9px;background:var(--panel-2);
 }
 .duel-side .army-head{margin:0;}
-.duel-side .army-head b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.duel-side .dim{font-size:11px;color:var(--muted);}
+.duel-side .army-head b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.duel-side .dim{font-size:11.5px;color:var(--muted);}
 .duel-side .grid3{gap:5px;}
 .duel-side .field{font-size:10px;}
-.duel-flags{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);}
+.duel-flags{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);}
 .duel-flags label{display:flex;align-items:center;gap:5px;text-transform:none;letter-spacing:0;}
 .duel-flags select{flex:1;min-width:0;}
-.duel-forecast{border-left:3px solid var(--accent);padding-left:9px;}
+.duel-forecast{border-left:3px solid var(--accent);padding-left:10px;}
 
-.duel-step{border:1px solid var(--line);border-radius:var(--r);padding:7px 9px;display:flex;flex-direction:column;gap:3px;}
-.dl-head{display:flex;align-items:center;gap:6px;font-size:12.5px;}
+.duel-step{border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;display:flex;flex-direction:column;gap:4px;}
+.dl-head{display:flex;align-items:center;gap:6px;font-size:13px;}
 .dl-head span:not(.swatch){color:var(--muted);}
-.dl-head .mono{margin-left:auto;font-size:11px;color:var(--muted);}
-.dl{display:grid;grid-template-columns:96px 1fr auto;gap:8px;align-items:center;font-size:12px;}
+.dl-head .mono{margin-left:auto;font-size:11.5px;color:var(--muted);}
+.dl{display:grid;grid-template-columns:100px 1fr auto;gap:8px;align-items:center;font-size:12.5px;}
 .dl-k{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
 .dl b{font-weight:600;white-space:nowrap;}
-.dl.total{border-top:1px dotted var(--line);padding-top:3px;margin-top:2px;}
+.dl.total{border-top:1px dotted var(--line);padding-top:4px;margin-top:2px;}
 .dl.total b{color:var(--ink);}
 .nodice{color:var(--muted);}
 
 /* Ogni dado si vede: e' la differenza fra un numero da credere sulla
    parola e un conto che si ricontrolla a occhio. */
-.dice{display:flex;flex-wrap:wrap;gap:2px;}
+.dice{display:flex;flex-wrap:wrap;gap:3px;}
 .die{
-  font-family:"IBM Plex Mono",monospace;font-style:normal;font-size:10.5px;line-height:16px;
-  width:16px;height:16px;text-align:center;border-radius:3px;
+  font-family:"IBM Plex Mono",monospace;font-style:normal;font-size:11px;line-height:18px;
+  width:18px;height:18px;text-align:center;border-radius:4px;
   border:1px solid var(--line-strong);background:var(--panel-2);color:var(--muted);
 }
-.die.win{background:var(--ok);border-color:var(--ok);color:var(--panel);font-weight:600;}
+.die.win{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:600;}
 .die.more{width:auto;padding:0 4px;border-style:dashed;}
 
 .duel-cr{display:flex;flex-direction:column;gap:4px;}
-.duel-cr .dim{color:var(--muted);font-size:11px;font-weight:400;}
-.oddsbar{display:flex;height:9px;border-radius:99px;overflow:hidden;background:var(--panel-2);margin:2px 0 6px;}
+.duel-cr .dim{color:var(--muted);font-size:11.5px;font-weight:400;}
+.oddsbar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--panel-2);margin:2px 0 6px;}
 .oddsbar span{display:block;height:100%;}
 
-.readout.near .duel-go{margin-left:8px;padding:0 6px;line-height:18px;}
-
-@media (max-width:920px){
-  .duel-host{inset:auto 8px 8px 8px;width:auto;max-height:78vh;}
-  .duel-sides{grid-template-columns:1fr;}
-}
-
-/* --- diario delle partite: tabelle dei turni e del punteggio ---
-       Le colonne sono sei e una lista di venti unita' non entra mai in
-       un telefono: la tabella scorre dentro il suo riquadro invece di
-       allargare la pagina. */
-.tablewrap{overflow-x:auto;overscroll-behavior-x:contain;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);}
-.grid-table{width:100%;border-collapse:collapse;font-size:12.5px;}
-.grid-table th{
-  text-align:left;font-weight:400;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;
-  color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;
-}
-.grid-table td{padding:4px 8px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap;}
-.grid-table tbody tr:last-child td{border-bottom:0;}
-.grid-table td .swatch{display:inline-block;margin-right:6px;}
-.grid-table input[type=number]{width:66px;text-align:right;}
-.grid-table input[type=text]{width:100%;min-width:130px;}
-.grid-table select{min-width:104px;}
-.grid-table tr.gone td{opacity:.5;text-decoration:line-through;}
-.grid-table tr.gone td input,.grid-table tr.gone td select{text-decoration:none;}
-.score-table td:first-child{width:46%;}
-.turn-edit{display:flex;flex-direction:column;gap:6px;padding:6px 0 10px;}
-.turn-edit .gamelog{max-height:120px;}
-
-
-/* --- editor della formazione ---
-   Una finestra sopra il tavolo: a sinistra i comandi, a destra le
-   basi da trascinare. Sotto i 760px le due colonne diventano una,
-   perche' su un telefono la colonna dei comandi si mangerebbe tutto
-   il disegno. */
+/* ==========================================================
+   FINESTRE: editor della formazione, archivio su GitHub
+   ========================================================== */
 .modal-back{
-  position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);
+  position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.45);
   display:flex;align-items:center;justify-content:center;padding:16px;
+  backdrop-filter:blur(2px);
 }
 .modal{
-  background:var(--panel);border:1px solid var(--line-strong);border-radius:var(--r);
-  box-shadow:var(--shadow);width:min(920px,100%);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;
+  background:var(--panel);border:1px solid var(--line-strong);border-radius:var(--r-lg);
+  box-shadow:var(--shadow);width:min(960px,100%);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;
 }
-.modal-head{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);}
-.modal-head b{font-size:14px;}
-.modal-head .mono{font-size:11.5px;color:var(--muted);}
-.modal-body{display:grid;grid-template-columns:minmax(230px,300px) 1fr;gap:14px;padding:14px;overflow:auto;}
-.f-side{display:flex;flex-direction:column;gap:8px;min-width:0;}
-.f-side .row{padding:5px 8px;}
+.modal-head{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--panel-2);}
+.modal-head b{font-size:15px;}
+.modal-head .mono{font-size:12px;color:var(--muted);}
+.modal-body{display:grid;grid-template-columns:minmax(240px,310px) 1fr;gap:16px;padding:16px;overflow:auto;}
+.f-side{display:flex;flex-direction:column;gap:9px;min-width:0;}
+.f-side .row{padding:6px 9px;}
 .f-canvas-wrap{
   min-width:0;display:flex;flex-direction:column;gap:8px;align-items:stretch;
   background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:10px;
 }
-#f-canvas{width:100%;height:min(52vh,440px);touch-action:none;display:block;}
+#f-canvas{width:100%;height:min(56vh,480px);touch-action:none;display:block;}
 .fcell{cursor:grab;}
 .fcell.gone{cursor:pointer;}
+
+.sync-modal{width:min(640px,100%);}
+.sync-body{grid-template-columns:1fr;gap:11px;align-content:start;}
+.sync-body .bar{gap:6px;}
+.sync-body .readout a{color:inherit;text-decoration:underline;text-underline-offset:2px;}
+#s-log{min-height:1.2em;word-break:break-word;color:var(--ink);}
+
+/* ==========================================================
+   SCHERMI STRETTI
+   ========================================================== */
+.drawer-only{display:none;}
+
+@media (max-width:1180px){
+  /* l'ispettore torna in fondo al pannello: lo sposta main.js */
+  body.insp-side main{grid-template-columns:minmax(290px,330px) minmax(0,1fr);}
+}
+
+@media (max-width:1000px){
+  .board-bar .scenario select{max-width:190px;}
+  .btn{padding:5px 9px;font-size:12.5px;}
+}
+
+@media (max-width:920px){
+  header.top{padding:8px 12px;gap:10px;}
+  .brand .sub{display:none;}
+  .tabs{margin-left:0;order:3;width:100%;}
+  .top .tools .lbl{display:none;}
+  .drawer-only{display:inline-block;}
+
+  main{grid-template-columns:1fr;}
+  body.insp-side main{grid-template-columns:1fr;}
+  aside.side{
+    position:fixed;z-index:50;inset:0 auto 0 0;width:min(370px,88vw);
+    transform:translateX(-102%);transition:transform .18s ease;
+    box-shadow:var(--shadow);border-right:1px solid var(--line);
+  }
+  body.drawer-open aside.side{transform:none;}
+  body.drawer-open::after{content:"";position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:49;}
+
+  .board-bar{padding:7px 10px;gap:6px;}
+  .board-bar > .field.inline span{display:none;}
+  /* gli strumenti diventano una riga sola che scorre in orizzontale:
+     scenario e riga di stato restano sempre in vista */
+  .bar-tools{
+    order:3;width:100%;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;
+    padding-bottom:3px;scrollbar-width:thin;
+  }
+  .bar-tools > *{flex:none;}
+  .board-bar > .spacer{display:none;}
+  .board-bar > #stat{order:2;margin-left:auto;}
+  .board-scroll{padding:8px;}
+  .keys-pop{grid-template-columns:1fr;max-height:50vh;overflow:auto;}
+  [data-panel] > .page{padding:16px 14px 40px;}
+  .ls-split{grid-template-columns:1fr;}
+}
+
 @media (max-width:760px){
   .modal-body{grid-template-columns:1fr;}
-  #f-canvas{height:36vh;}
+  #f-canvas{height:38vh;}
+  .duel-host{inset:auto 8px 8px 8px;width:auto;max-height:78vh;}
+  .duel-sides{grid-template-columns:1fr;}
+  .cat-grid{grid-template-columns:1fr;}
 }
 
-/* --- lo schermino della partita ---
-   Il tavolo in piccolo, com'era alla fine di ogni turno. */
-.tvbox{border:1px solid var(--line);border-radius:var(--r);background:var(--paper);padding:6px;margin-bottom:8px;}
-.tvhead{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px;}
-.tvhead .mono{font-size:11px;color:var(--muted);text-align:center;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.tvscreen{display:flex;justify-content:center;overflow:hidden;}
-.tvscreen svg.shot{max-width:100%;height:auto;}
-.tvcap{font-size:11px;color:var(--muted);text-align:center;margin-top:4px;}
-
-/* --- perdite di tutte le unita' in un colpo solo --- */
-.lossbox{margin-top:10px;}
-.lossbox > summary{cursor:pointer;list-style:none;}
-.lossbox > summary::-webkit-details-marker{display:none;}
-.lossbox > summary::before{content:"b8";margin-right:4px;font-size:10px;color:var(--muted);}
-.lossbox[open] > summary::before{content:"be";}
-.lossrow{
-  display:grid;grid-template-columns:1fr auto auto auto auto;gap:4px;align-items:center;
-  padding:2px 0;border-bottom:1px dotted var(--line);
+@media (max-width:560px){
+  header.top{padding:7px 10px;gap:8px;}
+  .brand h1{font-size:16px;}
+  .top .tools .btn,.tabs .btn{padding:4px 8px;font-size:12px;}
+  .board-bar .btn{padding:4px 8px;font-size:12px;}
+  /* la descrizione dello scenario si ferma a due righe: sotto c'e' il
+     tavolo, e mangiarselo per leggere tre righe non conviene */
+  .legend .sc{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 }
-.lossrow .nm{font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.lossrow b{font-size:11.5px;color:var(--muted);min-width:44px;text-align:right;}
-.lossrow b.low{color:var(--warn);}
-.lossrow.dead{opacity:.5;}

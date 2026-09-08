@@ -9,6 +9,8 @@
  * riscrive ogni volta i megabyte delle immagini.
  */
 
+import { emit } from './bus.js';
+
 const DB_NAME = "tow-old-world";
 const DB_VER  = 1;
 const STORE   = "kv";
@@ -47,14 +49,18 @@ export function loadDoc(key, fallback = null){
 }
 
 export function saveDoc(key, value){
-  return tx("readwrite", s => s.put(value, key)).catch(err => {
-    console.warn("salvataggio fallito", key, err);
-    throw err;
-  });
+  return tx("readwrite", s => s.put(value, key))
+    .then(() => { emit("store:changed", key); })
+    .catch(err => {
+      console.warn("salvataggio fallito", key, err);
+      throw err;
+    });
 }
 
 export function deleteDoc(key){
-  return tx("readwrite", s => s.delete(key)).catch(() => {});
+  return tx("readwrite", s => s.delete(key))
+    .then(() => { emit("store:changed", key); })
+    .catch(() => {});
 }
 
 export function listKeys(prefix = ""){

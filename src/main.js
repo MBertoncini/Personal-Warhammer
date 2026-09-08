@@ -12,6 +12,7 @@ import { initMatchup, renderMatchup } from './matchup.js';
 import { initReports, renderReports } from './reports.js';
 import { bootDeploy, renderAll, refreshLinks as refreshBoardLinks, toast } from './deploy.js';
 import { exportAll, importAll, requestPersistence } from './store.js';
+import { initSync } from './syncui.js';
 import { on } from './bus.js';
 
 /* ---------- app installabile e utilizzabile senza rete ----------
@@ -53,6 +54,43 @@ function showTab(name){
 
 document.querySelectorAll("[data-tab]").forEach(b =>
   b.addEventListener("click", () => showTab(b.dataset.tab)));
+
+/* ---------- il pannello del tavolo, a sezioni ----------
+   Armate, Partita e Terreno stavano incolonnate una sotto l'altra: la
+   colonna era alta il doppio dello schermo e per cambiare uno scenario
+   bisognava scorrere oltre venti unità. Adesso se ne vede una per volta
+   e il pannello non scorre quasi mai. */
+function showSide(name){
+  for (const b of document.querySelectorAll("[data-side]"))
+    b.classList.toggle("on", b.dataset.side === name);
+  for (const s of document.querySelectorAll("[data-sec]"))
+    s.hidden = s.dataset.sec !== name;
+  localStorage.setItem("tow-side", name);
+}
+document.querySelectorAll("[data-side]").forEach(b =>
+  b.addEventListener("click", () => showSide(b.dataset.side)));
+showSide(localStorage.getItem("tow-side") || "armies");
+
+/* ---------- dove sta l'ispettore ----------
+   Su uno schermo largo ha una colonna sua, alta quanto la finestra:
+   il profilo, le distanze e i comandi si vedono tutti insieme senza
+   scorrere. Su uno schermo stretto la colonna non ci sta e torna
+   appiccicato in fondo al pannello, com'era prima. */
+const inspDock = document.querySelector(".insp-dock");
+const inspCol  = document.getElementById("insp-col");
+const sideScroll = document.querySelector(".side-scroll");
+const wideEnough = window.matchMedia
+  ? window.matchMedia("(min-width: 1181px)")
+  : { matches: true };
+function placeInspector(){
+  const wide = wideEnough.matches;
+  document.body.classList.toggle("insp-side", wide);
+  const host = wide ? inspCol : sideScroll;
+  if (inspDock && host && inspDock.parentNode !== host) host.appendChild(inspDock);
+}
+if (wideEnough.addEventListener) wideEnough.addEventListener("change", placeInspector);
+else if (wideEnough.addListener) wideEnough.addListener(placeInspector);
+placeInspector();
 
 /* il pannello della partita, sul tavolo, manda qui chi vuole vedere il
    diario delle battaglie: cambiare scheda non e' affare suo */
@@ -105,5 +143,6 @@ $("#file-backup").addEventListener("change", async e => {
   /* un link condiviso porta sempre al tavolo, qualunque scheda fosse
      aperta l'ultima volta */
   showTab(boot && boot.shared ? "deploy" : (localStorage.getItem("tow-tab") || "deploy"));
+  initSync();
   registerWorker();
 })();

@@ -226,8 +226,9 @@ function render(){
     host.addEventListener("pointerdown", e => { if (e.target === host) closeEditor(); });
   }
 
-  const candidates = S().units.filter(c =>
-    c.army === u.army && c.uid !== u.uid && !c.dead && F.isCharacter(c) && !F.joinedHost(c));
+  /* dentro un reggimento ci va chi al tavolo ci starebbe: i personaggi
+     e, categoria del roster o no, qualunque pezzo da un modello solo */
+  const candidates = F.joinCandidates(S().units, u);
 
   host.innerHTML = `
   <div class="modal" role="dialog" aria-label="Formazione di ${esc(u.name)}">
@@ -282,12 +283,12 @@ function render(){
             <button class="btn tiny ghost" data-leave="${c.uid}">Sgancia</button>
           </div>`).join("") : `<p class="empty">Nessun personaggio unito.</p>`}
         ${candidates.length ? `
-          <label class="field" style="margin-top:6px">Unisci un personaggio
+          <label class="field" style="margin-top:6px">Unisci un personaggio o un modello singolo
             <select id="f-join">
               <option value="">— scegli —</option>
-              ${candidates.map(c => `<option value="${c.uid}">${esc(c.name)}</option>`).join("")}
+              ${candidates.map(c => `<option value="${c.uid}">${esc(c.name)}${F.isCharacter(c) ? "" : " · 1 modello"}</option>`).join("")}
             </select></label>`
-          : `<p class="note">Nessun altro personaggio libero in questo esercito.</p>`}
+          : `<p class="note">Nessun pezzo libero da unire in questo esercito: dentro un reggimento ci vanno i personaggi e le unità da un modello solo.</p>`}
         ${chars.length ? `<p class="note">La base con la stella è il personaggio: trascinala per cambiargli posto nella formazione.</p>` : ""}
 
         ${onGame ? `
@@ -326,6 +327,11 @@ function wire(host, u, f){
   q("#f-mode-r").addEventListener("click", () => edit("ordine chiuso", () => {
     f.mode = "ranks";
     if (!F.RANK_PRESETS.some(p => p.id === f.preset)) f.preset = "block";
+    /* ordine chiuso vuol dire basi che si toccano: la spaziatura della
+       formazione sciolta va tolta, se no si torna ai ranghi e i modelli
+       restano larghi come prima e sembra che il comando non abbia fatto
+       niente. Gli schermagliatori tengono il loro mezzo pollice. */
+    f.spacing = u.loose ? F.LOOSE_GAP : 0;
     bump();
   }));
   q("#f-mode-f").addEventListener("click", () => edit("formazione sciolta", () => {

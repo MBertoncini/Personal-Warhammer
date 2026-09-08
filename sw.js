@@ -11,7 +11,7 @@
  * di rete. Qui dentro c'e' solo il guscio dell'app.
  */
 
-const VERSION = "v6";
+const VERSION = "v9";
 const SHELL = "shell-" + VERSION;
 const RUNTIME = "runtime-" + VERSION;
 
@@ -26,6 +26,7 @@ const FILES = [
   "./src/rules.js", "./src/combat.js", "./src/duel.js",
   "./src/battlelog.js", "./src/reports.js",
   "./src/formation.js", "./src/formeditor.js", "./src/tableshot.js",
+  "./src/sync.js", "./src/syncui.js",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png",
 ];
 
@@ -76,9 +77,31 @@ self.addEventListener("fetch", e => {
   }
 
   const sameOrigin = url.origin === self.location.origin;
+  /* il codice dell'app: index.html lo serve la rete, e questi devono
+     seguirlo. Le immagini no, quelle non cambiano mai. */
+  const isCode = /\.(js|mjs|css|webmanifest)$/.test(url.pathname);
 
-  /* I moduli e il foglio di stile: cache subito, rete dietro le quinte
-     per aggiornarli alla prossima apertura. */
+  /* I moduli e il foglio di stile: PRIMA la rete, la cache dietro.
+     Al contrario si prendeva sempre la copia vecchia e quella nuova
+     arrivava solo al ricaricamento dopo: index.html era gia' quello
+     nuovo e i moduli quelli di ieri, cosi' meta' app faceva una cosa e
+     meta' un'altra e i comandi appena aggiunti non rispondevano. Senza
+     rete si ricade sulla cache, che e' il motivo per cui il service
+     worker esiste. */
+  if (sameOrigin && isCode){
+    e.respondWith((async () => {
+      try {
+        const fresh = await fetch(req);
+        if (fresh && fresh.ok) (await caches.open(SHELL)).put(req, fresh.clone());
+        return fresh;
+      } catch (_){
+        return (await caches.match(req)) || Response.error();
+      }
+    })());
+    return;
+  }
+
+  /* icone e immagini: dalla cache, e la rete dietro le quinte */
   if (sameOrigin){
     e.respondWith((async () => {
       const hit = await caches.match(req);

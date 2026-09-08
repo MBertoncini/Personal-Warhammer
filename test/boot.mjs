@@ -50,6 +50,11 @@ const ok = (label, cond) => {
 };
 const doc = window.document;
 const click = sel => doc.querySelector(sel).dispatchEvent(new window.Event('click'));
+const setField = (sel, v) => {
+  const el = doc.querySelector(sel);
+  el.value = String(v);
+  el.dispatchEvent(new window.Event('change', { bubbles: true }));
+};
 const settle = (ms = 60) => new Promise(r => setTimeout(r, ms));
 
 console.log('avvio');
@@ -258,6 +263,10 @@ ok('toccarla a mano la promuove a "come l hai messa"',
 history.undo();
 ok('e anche la formazione si annulla',
    state.units.find(u => u.uid === skirm.uid).formation.preset === 'screen');
+click('#formation-modal #f-mode-r');
+ok('tornando in ordine chiuso le basi si riattaccano',
+   ((f) => f.mode === 'ranks' && f.spacing === FM.LOOSE_GAP)(state.units.find(u => u.uid === skirm.uid).formation));
+click('#formation-modal #f-mode-f');
 click('#formation-modal #f-close');
 ok('la finestra si chiude', !doc.querySelector('#formation-modal'));
 
@@ -281,6 +290,57 @@ ok('sganciarlo lo rimette in campo',
    state.units.find(u => u.uid === chief.uid).placed === true);
 deploy.act('unisci', () => FM.joinUnit(state.units.find(u => u.uid === chief.uid),
                                        state.units.find(u => u.uid === regiment.uid)));
+deploy.renderAll();
+
+/* Il file della lista non chiama «character» tutto quello che al tavolo
+   entra in un reggimento: il boss senza slot, il pezzo comprato a
+   parte. La regola che tiene e' quanti modelli sono. */
+const lone = state.units.find(u => u.army === 'A' && (u.models || 1) === 1 &&
+                                   !FM.isCharacter(u) && !FM.joinedHost(u));
+const bigA = state.units.find(u => u.army === 'A' && u.models > 1 && !FM.joinedHost(u));
+ok('c e un pezzo da un modello solo che il roster non chiama personaggio', !!lone && !!bigA);
+if (lone && bigA){
+  ok('si puo unire lo stesso a un reggimento',
+     FM.joinCandidates(state.units, bigA).some(c => c.uid === lone.uid));
+  state.sel = { type: 'unit', id: bigA.uid };
+  deploy.renderAll();
+  ok('e l ispettore lo propone',
+     [...doc.querySelectorAll('#i-join option')].some(o => +o.value === lone.uid));
+}
+
+console.log('\nmisure del tavolo, zone e terreno');
+setField('#table-size', 'custom');
+setField('#table-w', 52);
+setField('#table-h', 38);
+ok('il tavolo si fa su misura',
+   Math.round(state.tableW / 25.4) === 52 && Math.round(state.tableH / 25.4) === 38);
+ok('le caselle restano aperte e il menu dice «su misura»',
+   doc.querySelector('#table-custom').hidden === false &&
+   doc.querySelector('#table-size').value === 'custom');
+setField('#zone-gap', 10);
+ok('la linea di schieramento si sposta', Math.abs(state.gap / 25.4 - 10) < 0.01);
+ok('e sul campo c e una maniglia per esercito',
+   doc.querySelectorAll('#board [data-zone]').length === 2);
+setField('#table-size', '48x36');
+ok('e si torna a una misura da elenco',
+   Math.round(state.tableW / 25.4) === 48 && doc.querySelector('#table-custom').hidden === true);
+
+const scenic = state.terrain.find(t => t.kind !== "treasure");
+state.sel = { type: 'terr', id: scenic.tid };
+deploy.renderAll();
+ok('un elemento scenico ha tre maniglie di misura',
+   doc.querySelectorAll('#board [data-size]').length === 3);
+setField('#t-w', 14.5);
+ok('e la misura si scrive anche a mano', scenic.w === 14.5);
+const token = state.terrain.find(t => t.kind === 'treasure');
+if (token){
+  state.sel = { type: 'terr', id: token.tid };
+  deploy.renderAll();
+  ok('il segnalino del tesoro no: la sua base e quella',
+     doc.querySelectorAll('#board [data-size]').length === 0);
+}
+history.undo();
+state.sel = null;
 deploy.renderAll();
 
 console.log('\nmodalita partita');
@@ -516,6 +576,40 @@ const { inlineSvg } = await import('../src/imgexport.js');
 const svgText = inlineSvg(doc.querySelector('#board'));
 ok('l\'SVG serializzato non contiene piu var(--...)', !/var\(--/.test(svgText));
 ok('ha una dimensione esplicita', /width="\d+"/.test(svgText));
+
+console.log('\nfinestra dell\'archivio su GitHub');
+/* nessuna chiamata vera: il finto ramo basta a far vedere alla
+   finestra che il repository e raggiungibile */
+const chiamate = [];
+globalThis.fetch = async url => {
+  chiamate.push(String(url));
+  return { ok: true, status: 200, json: async () => ({ object: { sha: 'a'.repeat(40) } }) };
+};
+click('#btn-sync');
+await settle(60);
+ok('la finestra si apre', !!doc.querySelector('#sync-modal'));
+ok('i pulsanti partono spenti finche manca il token',
+   doc.querySelector('#s-push').disabled === true);
+
+const scrivi = (sel, v) => {
+  const el = doc.querySelector(sel);
+  el.value = v;
+  el.dispatchEvent(new window.Event('change'));
+};
+scrivi('#s-owner', 'tizio');
+scrivi('#s-repo', 'archivio');
+scrivi('#s-token', 'finto');
+await settle(60);
+const cfgSalvata = JSON.parse(window.localStorage.getItem('tow-sync'));
+ok('le impostazioni restano scritte',
+   cfgSalvata.owner === 'tizio' && cfgSalvata.repo === 'archivio' && cfgSalvata.branch === 'main');
+ok('adesso si puo salvare', doc.querySelector('#s-push').disabled === false);
+ok('ha chiesto a GitHub dove sta il ramo',
+   chiamate.some(u => /api\.github\.com\/repos\/tizio\/archivio\/git\/ref\/heads\/main/.test(u)));
+click('#s-close');
+ok('e si chiude', !doc.querySelector('#sync-modal'));
+ok('nessun errore attorno alla sincronia', errors.length === 0);
+window.localStorage.removeItem('tow-sync');
 
 if (errors.length) console.log('\nerrori:\n  ' + errors.join('\n  '));
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
