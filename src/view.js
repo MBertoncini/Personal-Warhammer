@@ -53,6 +53,29 @@ export function createView(svg, { getBase, onChange = () => {} }){
     return [(evt.clientX - ox) / k + v.x, (evt.clientY - oy) / k + v.y];
   }
 
+  /* Quanti pixel di schermo vale un'unita' del tavolo. Serve a chi
+     disegna cose che devono restare grandi UGUALE mentre lo zoom
+     cambia: la maniglia di rotazione e i bersagli da toccare. Una
+     basetta da 25 mm su 96 pollici e' tre pixel, e un pallino
+     proporzionale a lei non si prende con il dito. */
+  function scale(){
+    const ctm = svg.getScreenCTM && svg.getScreenCTM();
+    if (ctm){
+      const k = Math.hypot(ctm.a, ctm.b);
+      if (k > 0 && isFinite(k)) return k;
+    }
+    const r = svg.getBoundingClientRect ? svg.getBoundingClientRect() : null;
+    if (r && r.width && r.height){
+      const v = box();
+      const k = Math.min(r.width / v.w, r.height / v.h);
+      if (k > 0 && isFinite(k)) return k;
+    }
+    /* fuori dal documento (e in jsdom) non c'e' uno schermo su cui
+       misurare: si risponde 1 invece di zero, cosi' chi divide non
+       finisce all'infinito */
+    return 1;
+  }
+
   /* ingrandisce tenendo fermo il punto sotto il puntatore: e' la
      differenza fra uno zoom che si guida e uno che scappa via */
   function zoomAt(factor, anchor){
@@ -84,7 +107,7 @@ export function createView(svg, { getBase, onChange = () => {} }){
   }
 
   return {
-    apply, toBoard, zoomAt, zoomBy, panByBoard, fit, focus,
+    apply, toBoard, zoomAt, zoomBy, panByBoard, fit, focus, scale,
     get zoom(){ return z; },
     set zoom(v){ z = clampZ(v); apply(); },
     get center(){ return [cx, cy]; },

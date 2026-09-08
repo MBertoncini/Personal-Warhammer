@@ -18,6 +18,7 @@ import { $, esc } from './util.js';
 import { BASES, baseById } from './bases.js';
 import { loadDoc, saveDoc, deleteDoc, pickImage, shrinkImage, usage, isPersisted } from './store.js';
 import { emit } from './bus.js';
+import { askConfirm, askPick, say } from './uikit.js';
 
 const CAT_KEY = "catalog:entries";
 
@@ -272,7 +273,7 @@ export async function setPhoto(id){
   const f = await pickImage();
   if (!f) return;
   try { await setPhotoData(id, await shrinkImage(f)); }
-  catch (_) { alert("Non riesco a leggere questa immagine."); }
+  catch (_) { await say("Non riesco a leggere questa immagine.", { title:"Foto non valida" }); }
 }
 
 export async function clearPhoto(id){
@@ -326,10 +327,11 @@ export function renderCatalog(){
   if (mergeBtn) mergeBtn.addEventListener("click", async () => {
     const detail = dups.map(g =>
       `\u2022 ${g.length}\u00d7 ${g[0].name} \u2192 ${g.reduce((n, e) => n + (+e.owned || 0), 0)} in collezione`).join("\n");
-    if (!confirm(
+    if (!await askConfirm(
       `Unisco i doppioni sommando le quantit\u00e0 e tenendo la foto dove c'\u00e8:\n\n` +
       detail +
-      `\n\nLe liste e il tavolo si riagganciano da soli.`)) return;
+      `\n\nLe liste e il tavolo si riagganciano da soli.`,
+      { title:"Unire i doppioni?" })) return;
     await mergeDuplicates();
     renderCatalog();
   });
@@ -396,7 +398,7 @@ function wireEditor(){
   $("#ed-save").addEventListener("click", async () => {
     const b = baseById($("#ed-base").value) || { w: 25, h: 25 };
     const name = $("#ed-name").value.trim();
-    if (!name) return alert("Serve un nome.");
+    if (!name) return say("Una voce di catalogo senza nome non si ritrova più.", { title:"Serve un nome" });
     const faction = $("#ed-faction").value;
 
     /* una seconda voce con lo stesso nome spezza la collezione in due:
@@ -404,9 +406,18 @@ function wireEditor(){
     let merge = false;
     if (!editing.id){
       const twin = findKind(name, faction);
-      if (twin) merge = confirm(
-        `"${twin.name}" c'\u00e8 gi\u00e0 (${twin.owned} in collezione).\n\n` +
-        `OK = sommo le quantit\u00e0 a quella voce.\nAnnulla = creo comunque una voce separata.`);
+      if (twin){
+        const pick = await askPick({
+          title: "Questa voce c'\u00e8 gi\u00e0",
+          label: `"${twin.name}" \u00e8 gi\u00e0 in catalogo con ${twin.owned} in collezione.`,
+          options: [
+            { id:"merge", label:"Sommo le quantit\u00e0 a quella voce" },
+            { id:"new",   label:"Creo comunque una voce separata" },
+          ],
+        });
+        if (pick === null) return;
+        merge = pick === "merge";
+      }
     }
 
     await upsertEntry({
@@ -422,7 +433,7 @@ function wireEditor(){
   });
   const del = $("#ed-del");
   if (del) del.addEventListener("click", async () => {
-    if (!confirm("Elimino questa voce dal catalogo?")) return;
+    if (!await askConfirm("Le liste che la usavano restano, ma tornano da agganciare.", { title:"Eliminare la voce?" })) return;
     await removeEntry(editing.id);
     editing = null;
     renderCatalog();

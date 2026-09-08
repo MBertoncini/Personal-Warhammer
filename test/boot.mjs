@@ -57,6 +57,23 @@ const setField = (sel, v) => {
 };
 const settle = (ms = 60) => new Promise(r => setTimeout(r, ms));
 
+/* prompt() e confirm() non ci sono piu': l'app apre una sua finestra.
+   Qui si risponde come risponderebbe una persona — si scrive nel campo
+   e si preme il tasto. */
+const dialogOpen = () => !!doc.querySelector('.dlg-back');
+async function answer(value = null){
+  await settle(30);
+  const back = doc.querySelector('.dlg-back');
+  if (!back) return false;
+  if (value !== null){
+    const inp = back.querySelector('[data-dlg-value]');
+    if (inp) inp.value = value;
+  }
+  back.querySelector('[data-dlg="ok"]').dispatchEvent(new window.Event('click'));
+  await settle(30);
+  return true;
+}
+
 console.log('avvio');
 ok('nessun errore in console', errors.length === 0);
 ok('la lista d\'esempio e caricata', doc.querySelectorAll('#armies .row').length > 0);
@@ -551,11 +568,247 @@ ok('anche il terreno casuale si annulla', state.terrain.length === terrBefore);
 
 const kit = await import('../src/scenariokit.js');
 click('#btn-scen-save');
+ok('il nome dello scenario lo chiede una finestra dell\'app, non prompt()', await new Promise(async r => { await settle(30); r(dialogOpen()); }));
+await answer('Scenario di prova');
 await settle(120);
 ok('lo scenario finisce fra i miei', kit.allCustom().length === 1);
 ok('compare nel menu a tendina',
    [...doc.querySelectorAll('#scenario option')].some(o => /prova/i.test(o.textContent)));
 await kit.removeCustom(kit.allCustom()[0].id);
+
+console.log('\nbersagli grandi e menu contestuale');
+const svgBoard = doc.querySelector('#board');
+const pads = [...svgBoard.querySelectorAll('.hits [data-uid]')];
+ok('i pezzi piccoli hanno un cuscinetto da toccare', pads.length > 0);
+const padded = pads[0].dataset.uid;
+const nodes = [...svgBoard.querySelectorAll(`[data-uid="${padded}"]`)];
+ok('il cuscinetto sta SOTTO il pezzo vero, così chi mira preciso lo prende lo stesso',
+   nodes.length === 2 && nodes[0].closest('.hits') && !nodes[1].closest('.hits'));
+ok('ed è largo almeno quanto un polpastrello',
+   +nodes[0].getAttribute('width') >= 34 && +nodes[0].getAttribute('height') >= 34);
+
+/* la maniglia: quello che si vede è un segno, quello che si prende è
+   il cerchio invisibile che ci sta attorno */
+state.sel = { type: 'unit', id: state.units.find(u => u.placed).uid };
+deploy.renderAll();
+const handle = [...doc.querySelectorAll('#board .handle circle')];
+ok('la maniglia di rotazione ha un bersaglio più largo del pallino',
+   handle.length === 3 && +handle[0].getAttribute('r') > +handle[1].getAttribute('r') * 2);
+
+/* un pezzo toccato e non spostato non lascia un annulla che non annulla */
+const undoDepth0 = history.depth;
+const pezzo = doc.querySelector('#board .piece[data-uid]');
+const down = (target, opts = {}) => target.dispatchEvent(
+  new window.MouseEvent('pointerdown', { bubbles: true, clientX: 40, clientY: 40, button: 0, ...opts }));
+down(pezzo);
+svgBoard.dispatchEvent(new window.MouseEvent('pointerup', { bubbles: true, clientX: 40, clientY: 40 }));
+ok('toccare un pezzo senza spostarlo non sporca la pila dell annulla', history.depth === undoDepth0);
+
+/* pressione lunga: il menu del pezzo arriva dove sta il dito */
+down(doc.querySelector('#board .piece[data-uid]'));
+await settle(620);
+const ctx = doc.querySelector('.ctxmenu');
+ok('tenendo premuto si apre il menu del pezzo', !!ctx);
+const vociCtx = ctx ? [...ctx.querySelectorAll('[data-ctx]')].map(b => b.textContent) : [];
+ok('con le cose che si fanno sempre',
+   vociCtx.some(v => /formazione/i.test(v)) && vociCtx.some(v => /Ruota/.test(v)) && vociCtx.some(v => /Ritira|Schiera/.test(v)));
+ok('e il menu non lascia in giro un passo di annulla', history.depth === undoDepth0);
+const selUid = state.sel.id;
+const rot0 = state.units.find(u => u.uid === selUid).rot;
+ctx.querySelector('[data-ctx="2"]').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+await settle(40);
+ok('e la voce fa davvero quello che dice',
+   state.units.find(u => u.uid === selUid).rot === (rot0 + 90) % 360);
+ok('poi si chiude da sé', !doc.querySelector('.ctxmenu'));
+
+/* col mouse è il tasto destro */
+const terr = doc.querySelector('#board .piece[data-tid]');
+down(terr, { button: 2 });
+svgBoard.dispatchEvent(new window.Event('contextmenu', { bubbles: true }));
+await settle(40);
+const ctx2 = doc.querySelector('.ctxmenu');
+ok('il tasto destro apre lo stesso menu, con le voci del terreno',
+   !!ctx2 && [...ctx2.querySelectorAll('[data-ctx]')].some(b => /Togli dal tavolo/.test(b.textContent)));
+doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+await settle(40);
+ok('Escape lo chiude', !doc.querySelector('.ctxmenu'));
+
+console.log('\nmenu della barra');
+const menus = [...doc.querySelectorAll('.board-bar details.menu')];
+ok('la barra ha tre menu invece di ventitre pulsanti', menus.length === 3);
+ok('i gesti che si fanno giocando restano fuori',
+   ['#btn-undo', '#btn-auto', '#btn-snap', '#btn-fit', '#scenario']
+     .every(sel => !doc.querySelector(sel).closest('.menu-pop')));
+ok('le levette tattiche stanno dentro un menu',
+   ['#btn-dist', '#btn-arcs', '#btn-measure', '#btn-ghost', '#btn-moveaid']
+     .every(sel => !!doc.querySelector(sel).closest('.menu-pop')));
+const aiuti = doc.querySelector('[data-menu="aiuti"]');
+ok('il menu si accorge di quello che ha acceso dentro',
+   aiuti.querySelector('summary').classList.contains('has-on'));
+doc.querySelector('#btn-moveaid').dispatchEvent(new window.Event('click'));
+ok('e se lo spegni il pallino se ne va',
+   !aiuti.querySelector('summary').classList.contains('has-on'));
+doc.querySelector('#btn-moveaid').dispatchEvent(new window.Event('click'));
+ok('acceso, torna', aiuti.querySelector('summary').classList.contains('has-on'));
+ok('le levette dichiarano il loro stato anche a chi non vede',
+   doc.querySelector('#btn-moveaid').getAttribute('aria-pressed') === 'true' &&
+   doc.querySelector('#btn-ghost').getAttribute('aria-pressed') === 'false');
+aiuti.open = true;
+doc.querySelector('[data-menu="vista"]').open = true;
+aiuti.dispatchEvent(new window.Event('toggle'));
+doc.querySelector('[data-menu="vista"]').dispatchEvent(new window.Event('toggle'));
+ok('se ne apre uno alla volta', menus.filter(m => m.open).length === 1);
+doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+ok('Escape li chiude tutti', menus.every(m => !m.open));
+
+console.log('\nferite, etichette, contatori');
+const EX = await import('../src/extras.js');
+const MV = await import('../src/movement.js');
+const mob2 = state.units.find(u => u.placed && !u.dead && u.models > 3);
+const lost0 = mob2.lost || 0;
+deploy.act('ferite', () => game.setWounds(mob2, 3));
+ok('le ferite si contano senza togliere un modello',
+   EX.woundsOf(mob2) === 3 && (mob2.lost || 0) === lost0);
+ok('le ferite finiscono nel registro', /ferite/.test(game.game().log[0].text));
+deploy.act('ferite in perdita', () => game.woundsToLoss(mob2));
+ok('diventano un modello in meno solo quando lo dice il giocatore',
+   EX.woundsOf(mob2) === 0 && (mob2.lost || 0) === lost0 + 1);
+
+deploy.act('etichetta', () => EX.addTag(mob2, '  Disordinata  '));
+ok('le etichette sono parole libere, normalizzate', mob2.tags[0] === 'disordinata');
+deploy.act('etichetta', () => EX.addTag(mob2, 'disordinata'));
+ok('e non si duplicano', mob2.tags.length === 1);
+ok('il dizionario dei suggerimenti cresce da solo',
+   EX.tagVocabulary(state.units).includes('disordinata'));
+deploy.renderAll();
+ok('si vedono sul tavolo sotto l unita',
+   /disordinata/.test(doc.querySelector('#board').textContent));
+
+deploy.act('contatore', () => EX.bumpCounter(mob2, 'munizioni', 4));
+deploy.act('contatore', () => EX.bumpCounter(mob2, 'munizioni', -1));
+ok('un contatore e un nome e un numero',
+   EX.findCounter(mob2, 'MUNIZIONI').value === 3);
+game.game().counters.A.push({ name: 'dadi', value: 6 });
+deploy.renderAll();
+ok('i contatori dell esercito stanno nel pannello partita',
+   /dadi/.test(doc.querySelector('#game').textContent));
+
+console.log('\nancora di movimento');
+const mover = state.units.find(u => u.placed && !u.dead);
+mover.moveOverride = 8;
+deploy.act('ancora', () => MV.setAnchor(mover));
+const anch = { x: mover.x, y: mover.y };
+deploy.act('sposta', () => { mover.x += 25.4 * 4; });
+const mv = MV.movedFrom(mover);
+ok('il movimento si misura dall ancora, non da dove sei adesso',
+   Math.abs(mv.dist - 4) < 0.01);
+ok('la banda dice che sei ancora dentro il movimento',
+   MV.bandOf(mover, mv.dist).key === 'move');
+ok('e sopra la marcia diventa carica', MV.bandOf(mover, 17).key === 'chargeMax');
+ok('oltre tutto, e oltre', MV.bandOf(mover, 40).key === 'over');
+state.sel = { type: 'unit', id: mover.uid };
+deploy.renderAll();
+const rings = [...doc.querySelectorAll('#board circle')].filter(c =>
+  Math.abs(+c.getAttribute('cx') - anch.x) < 0.01 &&
+  Math.abs(+c.getAttribute('cy') - anch.y) < 0.01 && +c.getAttribute('r') > 10);
+ok('i cerchi restano fermi sull ancora invece di seguire il pezzo', rings.length >= 4);
+ok('e la riga dice quanti pollici hai fatto',
+   /4\.0″ di 8″/.test(doc.querySelector('#board').textContent));
+const before = game.game().turns.length;
+deploy.act('fine turno', game.closeTurn);
+ok('chiudere il turno rimette le ancore dove sei arrivato',
+   game.game().turns.length === before + 1 &&
+   Math.abs(MV.anchorOf(mover).x - mover.x) < 0.01);
+
+console.log('\nmarcatori e sagome');
+const mk0 = state.markers.length;
+click('#btn-mark-add');
+ok('un marcatore e un pezzo che non e ne unita ne terreno', state.markers.length === mk0 + 1);
+const mark = state.markers[state.markers.length - 1];
+deploy.act('scrivi', () => { mark.label = 'obiettivo centrale'; });
+click('#btn-shape-add');
+const shape = state.markers[state.markers.length - 1];
+ok('una sagoma di misura e lo stesso oggetto, vuoto', shape.measure === true);
+deploy.act('sposta la sagoma', () => { shape.x = mover.x; shape.y = mover.y; shape.w = 12; shape.h = 12; });
+const under = deploy.modelsUnder(shape);
+ok('l app sa quanti modelli stanno sotto la sagoma, non cosa significhi',
+   under.length > 0 && under[0].n > 0);
+deploy.renderAll();
+ok('i marcatori compaiono nel pannello',
+   /obiettivo centrale/.test(doc.querySelector('#marker-list').textContent));
+ok('e sul tavolo', /obiettivo centrale/.test(doc.querySelector('#board').textContent));
+state.sel = { type: 'mark', id: mark.mid };
+deploy.renderAll();
+ok('l ispettore del marcatore si apre e non chiede cosa rappresenti',
+   /Marcatore libero/.test(doc.querySelector('#inspector').textContent));
+state.sel = { type: 'mark', id: shape.mid };
+deploy.renderAll();
+ok('quello della sagoma dice quanti modelli ci stanno sotto',
+   /Sotto la sagoma/.test(doc.querySelector('#inspector').textContent));
+
+console.log('\nzone disegnate a mano');
+const aUnit = state.units.find(u => u.army === 'A' && u.placed && !u.dead);
+deploy.act('zona', () => {
+  state.zones.push({ zid: 901, kind: 'A', label: 'la mia zona',
+                     x: state.tableW / 2, y: state.tableH * 0.15,
+                     w: state.tableW * 0.6, h: state.tableH * 0.2 });
+});
+ok('la zona disegnata sostituisce quella calcolata dallo scenario',
+   /fuori zona/.test(doc.querySelector('#armies').textContent));
+ok('e compare nell elenco', /la mia zona/.test(doc.querySelector('#marker-list').textContent));
+click('#btn-zone-clear');
+await settle(30);
+ok('togliendola si torna alle zone dello scenario',
+   state.zones.length === 0 &&
+   !/la mia zona/.test(doc.querySelector('#marker-list').textContent));
+deploy.act('zona', () => {
+  state.zones.push({ zid: 902, kind: 'A', label: 'zona di prova',
+                     x: state.tableW / 2, y: state.tableH * 0.8,
+                     w: state.tableW, h: state.tableH * 0.35 });
+});
+
+state.sel = { type: 'zone', id: 902 };
+deploy.renderAll();
+ok('e la zona ha il suo ispettore',
+   /A chi serve/.test(doc.querySelector('#inspector').textContent));
+state.sel = { type: 'unit', id: mob2.uid };
+deploy.renderAll();
+const insp = doc.querySelector('#inspector').textContent;
+ok('l ispettore dell unita ha etichette, contatori e ancora',
+   /Etichette/.test(insp) && /Contatori/.test(insp) && /Movimento/.test(insp));
+
+console.log('\naggancio al contatto');
+const placedNow = state.units.filter(u => u.placed);
+const [atk, tgt] = placedNow;
+const parked = placedNow.slice(2).map(u => { u.placed = false; return u; });
+tgt.rot = 0; tgt.x = 500; tgt.y = 500;
+atk.rot = 47;
+const depth = u => FM.layout(u, { alive: deploy.effModels(u), attached: [] }).h;
+const flushY = 500 - (depth(tgt) / 2 + depth(atk) / 2);
+const snapped = deploy.snapUnit(atk, 500, flushY - 9);
+ok('il caricante si appoggia a filo sulla faccia che ha scelto',
+   Math.abs(snapped.y - flushY) < 0.01 && Math.abs(snapped.x - 500) < 0.01);
+ok('e ci arriva dritto, non storto come lo hai trascinato', snapped.rot === 180);
+const farAway = deploy.snapUnit(atk, 500, flushY - 300);
+ok('lontano non aggancia niente e non gira il pezzo', farAway.rot === 47);
+for (const u of parked) u.placed = true;
+
+console.log('\nunita scritte a mano');
+const handList = await listsMod.createList('Lista a mano');
+await listsMod.addUnit(handList.id, { name: 'Orc Boyz', models: 20, pts: 140, baseId: '25x25' });
+ok('una lista si scrive senza nessun file', listsMod.getList(handList.id).units.length === 1);
+ok('i punti si sommano da soli', listsMod.getList(handList.id).points === 140);
+await listsMod.updateUnit(handList.id, 0, { models: 25 });
+ok('e ogni campo si corregge dopo', listsMod.getList(handList.id).units[0].models === 25);
+const copy = await listsMod.duplicateList(handList.id);
+ok('duplicare una lista da una variante da ritoccare',
+   copy.units.length === 1 && copy.id !== handList.id);
+const unitsBefore = state.units.length;
+doc.querySelector('[data-addunit="B"]').dispatchEvent(new window.Event('click'));
+await answer('Reggimento a mano');
+ok('e un unita si aggiunge al tavolo senza passare da un roster',
+   state.units.length === unitsBefore + 1 &&
+   state.units[state.units.length - 1].name === 'Reggimento a mano');
 
 console.log('\nlink condiviso');
 const share = await import('../src/share.js');
@@ -570,6 +823,23 @@ ok('la formazione viaggia nel link',
 ok('e anche i personaggi uniti',
    back.units.some(u => u.join && u.join.host != null));
 ok('le foto non viaggiano nel link', !/data:image/.test(code));
+ok('i marcatori viaggiano nel link',
+   (back.markers || []).some(m => m.label === 'obiettivo centrale'));
+ok('e anche le zone disegnate a mano',
+   (back.zones || []).some(z => z.label === 'zona di prova'));
+ok('etichette e ferite non si perdono per strada',
+   back.units.some(u => (u.tags || []).includes('disordinata')));
+
+console.log('\nil report racconta anche le cose generiche');
+const rep2 = BL.buildReport(state, { label: 'Prova', group: '', pts: 0, deploy: '', desc: '' },
+                            { title: 'Prova generica' });
+const md2 = BL.reportMarkdown(rep2);
+ok('le ferite hanno una colonna loro', /\| Ferite \|/.test(md2));
+ok('e le etichette pure', /\| Etichette \|/.test(md2));
+ok('i marcatori hanno un capitolo', /## Marcatori sul tavolo/.test(md2));
+ok('e le zone disegnate anche', /## Zone di schieramento disegnate a mano/.test(md2));
+ok('la legenda spiega che sono testo libero del giocatore',
+   /l'app non le interpreta/.test(md2));
 
 console.log('\nimmagine del tavolo');
 const { inlineSvg } = await import('../src/imgexport.js');

@@ -59,6 +59,17 @@ export function createHistory({ capture, restore, onChange = () => {}, limit = 8
     return step.label;
   }
 
+  /* Un gesto cominciato e non fatto: il passo si e' aperto al
+     pointerdown, ma il dito si e' alzato senza spostare niente. Senza
+     questo resta nella pila un annulla che non annulla nulla, e per
+     tornare a prima ne servono due. */
+  function discard(){
+    if (muted || !undoStack.length) return false;
+    undoStack.pop();
+    lastKey = ""; changed();
+    return true;
+  }
+
   /* per le operazioni che ricostruiscono il mondo da zero (caricare un
      backup, aprire uno schieramento salvato): la storia di prima non
      c'entra piu' niente con quello che si vede */
@@ -68,7 +79,7 @@ export function createHistory({ capture, restore, onChange = () => {}, limit = 8
   function silent(fn){ muted++; try { return fn(); } finally { muted--; } }
 
   return {
-    push, undo, redo, reset, silent,
+    push, undo, redo, reset, silent, discard,
     get canUndo(){ return undoStack.length > 0; },
     get canRedo(){ return redoStack.length > 0; },
     get depth(){ return undoStack.length; },

@@ -11,7 +11,7 @@
  * di rete. Qui dentro c'e' solo il guscio dell'app.
  */
 
-const VERSION = "v9";
+const VERSION = "v10";
 const SHELL = "shell-" + VERSION;
 const RUNTIME = "runtime-" + VERSION;
 
@@ -27,6 +27,7 @@ const FILES = [
   "./src/battlelog.js", "./src/reports.js",
   "./src/formation.js", "./src/formeditor.js", "./src/tableshot.js",
   "./src/sync.js", "./src/syncui.js",
+  "./src/extras.js", "./src/movement.js", "./src/zones.js", "./src/uikit.js",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png",
 ];
 

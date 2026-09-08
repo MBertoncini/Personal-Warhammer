@@ -194,10 +194,6 @@ body:not(.insp-side) .side-scroll > .insp-dock{
 }
 .board-bar .scenario span{font-size:10.5px;}
 .board-bar .scenario select{font-weight:600;max-width:250px;}
-.bar-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-.zoomgroup{border:1px solid var(--line-strong);border-radius:var(--r-sm);background:var(--panel);}
-.zoomgroup > .btn{border-color:transparent;background:transparent;}
-.zoomgroup > .btn.on{background:var(--accent-soft);border-color:var(--accent);}
 .zoomlevel{font-size:11.5px;color:var(--muted);min-width:46px;text-align:center;}
 
 /* --- riga di stato: ogni avviso e' un pulsante che porta sul posto ---
@@ -514,6 +510,32 @@ textarea{
 .vs-table td.lead{color:var(--ink);font-weight:600;}
 .vs-table th{font-weight:400;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:3px 6px;}
 
+/* --- barra del tavolo -----------------------------------------
+   Su desktop e' una riga sola che va a capo. Su schermo stretto gli
+   strumenti passano sotto, andando a capo anche loro: prima erano una
+   riga che scorreva in orizzontale, e adesso non puo' piu' esserlo —
+   un menu a comparsa dentro un contenitore che scorre verrebbe
+   tagliato al bordo. Con tre menu al posto di venti pulsanti ci sta
+   comunque tutto in due righe. */
+.bar-tools{display:contents;}
+@media (max-width:920px){
+  .board-bar{flex-wrap:wrap;}
+  .bar-tools{
+    display:flex;gap:6px;align-items:center;flex-wrap:wrap;
+    order:3;width:100%;
+  }
+  .bar-tools > *{flex:none;}
+  .bar-tools > .sep{display:none;}
+  .board-bar > .field.inline{order:1;}
+  .board-bar > .spacer{display:none;}
+  .board-bar > .stats{order:2;margin-left:auto;}
+  /* il campo tiene le sue proporzioni: in una colonna stretta e alta
+     non puo' riempire, e centrandolo restavano due fasce vuote grandi
+     come il tavolo. Meglio che la pagina si accorci. */
+  .board-scroll{min-height:0;padding:10px;}
+  main{min-height:0;}
+}
+
 /* ==========================================================
    PARTITA
    ========================================================== */
@@ -710,16 +732,6 @@ textarea{
 
   .board-bar{padding:7px 10px;gap:6px;}
   .board-bar > .field.inline span{display:none;}
-  /* gli strumenti diventano una riga sola che scorre in orizzontale:
-     scenario e riga di stato restano sempre in vista */
-  .bar-tools{
-    order:3;width:100%;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;
-    padding-bottom:3px;scrollbar-width:thin;
-  }
-  .bar-tools > *{flex:none;}
-  .board-bar > .spacer{display:none;}
-  .board-bar > #stat{order:2;margin-left:auto;}
-  .board-scroll{padding:8px;}
   .keys-pop{grid-template-columns:1fr;max-height:50vh;overflow:auto;}
   [data-panel] > .page{padding:16px 14px 40px;}
   .ls-split{grid-template-columns:1fr;}
@@ -741,4 +753,174 @@ textarea{
   /* la descrizione dello scenario si ferma a due righe: sotto c'e' il
      tavolo, e mangiarselo per leggere tre righe non conviene */
   .legend .sc{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+}
+.lossrow .nm{font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lossrow b{font-size:11.5px;color:var(--muted);min-width:44px;text-align:right;}
+.lossrow b.low{color:var(--warn);}
+.lossrow.dead{opacity:.5;}
+
+/* ============================================================
+   LE COSE GENERICHE
+   Finestra dell'app al posto di prompt/confirm, contatori,
+   etichette, ancora di movimento, liste scritte a mano.
+   ============================================================ */
+
+/* --- finestra ---
+   prompt() e confirm() sul telefono coprono lo schermo e in un'app
+   installata hanno l'aria di un errore. Questa ha l'aspetto del resto
+   e, soprattutto, ci stanno le scorciatoie da toccare. */
+.dlg-back{
+  position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.42);padding:16px;
+}
+.dlg{
+  width:min(440px,100%);max-height:86vh;overflow:auto;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:0 18px 48px rgba(0,0,0,.28);
+}
+.dlg.wide{width:min(680px,100%);}
+.dlg-head{padding:11px 14px;border-bottom:1px solid var(--line);font-weight:600;font-size:14px;}
+.dlg-body{padding:12px 14px;display:flex;flex-direction:column;gap:8px;}
+.dlg-body input[type=text],.dlg-body textarea{width:100%;}
+.dlg-body .note{margin:0;}
+.dlg-foot{display:flex;justify-content:flex-end;gap:8px;padding:10px 14px;border-top:1px solid var(--line);}
+
+/* la fila di scorciatoie: durante una partita nessuno scrive frasi su
+   una tastiera virtuale, e un registro vuoto vale un report vuoto */
+.chiprow{display:flex;flex-wrap:wrap;gap:5px;}
+.chiprow.big{gap:7px;}
+.chiprow.big .btn{flex:1 1 44%;justify-content:center;}
+
+/* --- contatori: un nome e un numero --- */
+.cntbox{display:flex;flex-direction:column;gap:4px;margin-top:4px;}
+.cntrow{
+  display:grid;grid-template-columns:1fr auto auto auto auto;gap:4px;align-items:center;
+  padding:2px 0;border-bottom:1px dotted var(--line);
+}
+.cntrow .nm{font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cntrow .val{min-width:34px;text-align:center;font-size:13px;}
+
+/* --- etichette libere --- */
+.tagbox{margin-top:8px;display:flex;flex-direction:column;gap:5px;}
+.tag.on{
+  background:var(--accent);border-color:var(--accent);color:var(--paper);
+  cursor:pointer;font-family:inherit;
+}
+
+/* --- ancora di movimento --- */
+.movebox{display:flex;flex-direction:column;gap:6px;}
+
+/* le ferite, che non sono i modelli tolti */
+.losses.wounds input{width:64px;}
+.lossrow .wnd{color:var(--bad);font-size:10.5px;}
+
+/* --- liste scritte a mano --- */
+.uedit{
+  grid-column:1/-1;display:flex;gap:5px;flex-wrap:wrap;align-items:center;
+  margin-top:5px;padding-top:5px;border-top:1px dotted var(--line);
+}
+.uedit input[type=text]{flex:1 1 140px;min-width:110px;}
+.uedit input[type=number]{width:72px;}
+.uedit select{flex:0 1 190px;}
+.addunit{margin-top:12px;border-top:1px solid var(--line);padding-top:10px;}
+.addrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.addrow input[type=text]{flex:1 1 180px;}
+.addrow input[type=number]{width:78px;}
+.addrow select{flex:0 1 200px;}
+
+/* la zona disegnata a mano: sul tavolo il cursore dice che si sta
+   disegnando, non trascinando */
+.piece.zone{cursor:move;}
+
+/* ============================================================
+   MENU DELLA BARRA DEL TAVOLO
+   Ventitré pulsanti in fila erano illeggibili. Tre menu raggruppati
+   per intenzione — cosa aiuta a decidere, cosa si vede sui pezzi,
+   com'è fatto il tavolo — e in vista restano solo i gesti che si
+   fanno mentre giochi.
+   ============================================================ */
+.zoomgrp{display:inline-flex;align-items:center;gap:6px;flex:none;}
+/* il nome dello scenario può essere lunghissimo e da solo mandava a capo
+   tutta la barra: si accorcia, e il titolo intero resta sotto il tavolo */
+.board-bar > .field.inline select#scenario{max-width:208px;}
+
+.menu{position:relative;}
+.menu > summary{
+  list-style:none;cursor:pointer;user-select:none;display:inline-block;
+}
+.menu > summary::-webkit-details-marker{display:none;}
+.menu > summary::after{content:"▾";margin-left:6px;font-size:10px;opacity:.65;}
+.menu[open] > summary{background:var(--panel-2);border-color:var(--line-strong);}
+
+/* Il pallino dice che dentro c'è qualcosa di acceso: nascondere una
+   levetta in un menu non deve voler dire dimenticarsela accesa. */
+.menu > summary.has-on::before{
+  content:"";display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--accent);margin-right:7px;vertical-align:middle;
+}
+
+.menu-pop{
+  position:absolute;top:calc(100% + 6px);left:0;z-index:30;
+  min-width:236px;display:flex;flex-direction:column;gap:5px;
+  padding:10px;background:var(--panel);
+  border:1px solid var(--line-strong);border-radius:var(--r);
+  box-shadow:0 14px 34px rgba(0,0,0,.20);
+}
+.menu-pop .btn{text-align:left;width:100%;}
+.menu-pop .field{margin:0;}
+.menu-note{margin:0 0 3px;font-size:11px;line-height:1.4;color:var(--muted);}
+.menu-sep{height:1px;background:var(--line);margin:3px 0;}
+
+/* vicino al bordo destro si apre dall'altra parte, sennò esce dallo schermo */
+.menu.flip .menu-pop{left:auto;right:0;}
+
+@media (max-width:560px){
+  /* su un telefono un menu ancorato al pulsante finisce fuori: meglio
+     una striscia larga quanto la barra */
+  .menu-pop{position:fixed;left:8px;right:8px;top:auto;min-width:0;max-height:60vh;overflow:auto;}
+  .menu.flip .menu-pop{left:8px;right:8px;}
+}
+
+/* ============================================================
+   BERSAGLI GRANDI E MENU CONTESTUALE
+   Al tavolo si gioca col dito su un tablet, e un polpastrello è largo
+   una decina di millimetri: la maniglia di rotazione era un pallino e
+   un reggimento a tavolo intero è largo tre pixel. Il disegno resta
+   quello, quello che cambia è quanto è grande la zona che risponde.
+   ============================================================ */
+
+/* niente menu del sistema e niente selezione del testo tenendo premuto
+   sul tavolo: la pressione lunga è un gesto dell'app */
+svg#board{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
+svg#board .hits rect{cursor:grab;}
+
+.ctxmenu{
+  position:fixed;z-index:70;min-width:216px;max-width:min(300px,92vw);
+  display:flex;flex-direction:column;gap:4px;padding:8px;
+  background:var(--panel);border:1px solid var(--line-strong);
+  border-radius:var(--r);box-shadow:0 16px 40px rgba(0,0,0,.26);
+}
+.ctxmenu .btn{text-align:left;width:100%;}
+.ctx-head{
+  font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  padding:1px 3px 5px;border-bottom:1px solid var(--line);margin-bottom:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.ctx-sep{height:1px;background:var(--line);margin:2px 0;}
+
+/* Dove si punta col dito e non col mouse i pulsanti crescono. Non è una
+   larghezza di schermo: un tablet grande si tocca lo stesso, e un
+   portatile stretto no. */
+.legend .touchhint{color:var(--muted);}
+
+@media (pointer:coarse){
+  .btn{min-height:36px;padding:7px 13px;}
+  .btn.tiny{min-height:31px;padding:5px 10px;}
+  .btn.icon{min-width:38px;}
+  .menu-pop .btn,.ctxmenu .btn{min-height:40px;}
+  .lossrow,.cntrow{gap:6px;padding:4px 0;}
+  select,input[type=text],input[type=number],input[type=search]{min-height:36px;}
+  /* le scorciatoie da tastiera su un tablet non dicono niente; il nome
+     dello scenario resta */
+  .legend .keys{display:none;}
 }

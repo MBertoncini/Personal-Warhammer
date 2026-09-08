@@ -2,6 +2,10 @@
 
 Quattro cose che si tengono per mano, per **Warhammer: The Old World**:
 
+**Il principio che tiene insieme tutto.** L'app sa **geometria, quantità e memoria**. Non sa mai **legalità**. Non tira dadi, non risolve combattimenti, non sa se una carica è legale e non conosce la composizione di nessuna lista: quelle sono le cose che il manuale può cambiare, e su cui l'app comincerebbe a discutere coi giocatori. Sa dove stanno i pezzi, quanti sono e com'erano tre turni fa.
+
+Ne discende tutto il resto, a partire dalla regola che le funzionalità **generiche** valgono più di quelle specifiche: un marcatore con testo libero copre obiettivi, segnalini magici, aree di incantesimo e «qui è morto il generale»; un marcatore *obiettivo* copre una cosa sola e domani ne serve un altro.
+
 1. **Catalogo** — la collezione di miniature, una voce per tipo di modello, con quante ne possiedi e una foto.
 2. **Liste** — i roster esportati da New Recruit, con ogni unità agganciata a una voce del catalogo.
 3. **Matchup e tavolo** — due liste a confronto, la verifica di cosa hai davvero in vetrina, e il simulatore di schieramento con zone, terreno e controlli di legalità.
@@ -32,9 +36,13 @@ Perché per tipo e non per singola miniatura: i tuoi 24 Orc Boyz sono un mob da 
 
 Il campo **dipinte** serve alla domanda che ci si fa davvero prima di un torneo, che non è "ce le ho?" ma "sono finite?". In cima al catalogo c'è la percentuale sull'intera collezione; nel matchup diventa *quante ne restano da dipingere per giocare proprio questa lista* — contando solo quelle che possiedi già, perché quelle che non hai sono un problema diverso e stanno nella riga dello scoperto.
 
-### 2. Importa le liste
+### 2. Le liste: importate o scritte
 
 Scheda **Liste** → *Importa da New Recruit*. Accetta i `.json` e i `.ros`.
+
+Oppure *Nuova lista a mano*, che non è un ripiego: al circolo l'avversario arriva con la lista **stampata**, o scritta a mano, o sul telefono in un formato che non è il tuo, e in quel momento un'app che sa leggere solo i file non serve a niente. Bastano nome, modelli, punti e basetta; profilo, regole e armi sono facoltativi dappertutto e senza di loro l'app disegna e conta lo stesso. Ogni riga di ogni lista — anche di una importata — si corregge lì sul posto, e *Duplica* fa la variante da ritoccare senza toccare l'originale.
+
+Lo stesso vale sul tavolo: *+ Unità a mano* sotto ciascun esercito mette un reggimento in campo senza passare da nessun file.
 
 Ogni unità viene agganciata al catalogo da sola quando il nome combacia: `11 Black Orc Mob` trova `Black Orc` da sé, perché l'aggancio ignora il numero iniziale, le parole di servizio (`mob`, `unit`, `regiment`) e le desinenze plurali.
 
@@ -57,13 +65,24 @@ Il verdetto elenca ogni voce con `richiesti/posseduti`, segna in rosso lo scoper
 
 Scenari Battle March e generici, zone di schieramento, terreno con i controlli (tesori a più di 3″ da ogni elemento, nessun pezzo oltre i 12″ sul lato lungo), rotazione, snap a ¼″, misurazione.
 
+**La barra.** In vista restano solo i gesti che si fanno mentre giochi: scenario, annulla e ripeti, schiera e ritira, lo snap, lo zoom. Tutto il resto sta in tre menu raggruppati per intenzione — **Aiuti** (ancora di movimento, distanze, archi, raggi di tiro, fantasma, righelli), **Vista** (numeri e foto), **Tavolo** (misure, immagine, link). Il rischio di un menu è nascondere una levetta accesa e dimenticarsela: per questo il pulsante del menu si mette un **pallino** quando dentro c'è qualcosa di acceso.
+
 **Annulla e ripeti.** `Ctrl+Z` e `Ctrl+Y`, o le due frecce nella barra. Vale per tutto: uno spostamento, una rotazione, un *Schiera tutto* premuto per sbaglio sopra dieci minuti di lavoro, una generazione di terreno, una perdita segnata di troppo. Il tooltip dice sempre cosa si sta per annullare.
 
 **Zoom e scorrimento.** Rotella per ingrandire attorno al puntatore, `Shift`+trascinamento (o trascinare il vuoto) per spostarsi, pizzico a due dita su tablet, `+` `−` `0` da tastiera, *Adatta* per tornare al tavolo intero. Su 96″×48″ senza zoom una basetta da 25 mm è tre pixel.
 
-**Magnetismo.** Con lo Snap acceso il pezzo trascinato non si aggancia solo alla griglia da ¼″: se si avvicina al fianco o alla linea di un'altra unità **con lo stesso orientamento**, ci si allinea da solo. È il gesto che al tavolo si fa cento volte e a mano non viene mai preciso.
+**Magnetismo.** Con lo Snap acceso il pezzo trascinato non si aggancia solo alla griglia da ¼″. Ci sono due agganci e non si contendono lo stesso gesto:
 
-**Maniglia di rotazione.** Sul pezzo selezionato compare un pallino davanti al fronte: trascinandolo si ruota (a scatti di 15° per le unità, 5° per il terreno; `Alt` per la rotazione libera). `[` e `]` — o `Shift`+rotella — cambiano il numero di modelli di fronte.
+- **In linea**, fra unità con lo **stesso orientamento**: il fianco contro il fianco, i fronti allineati, le seconde linee dritte dietro le prime.
+- **Al contatto**, contro un'unità girata diversamente: trascini il caricante vicino alla faccia che ha scelto e ci si appoggia **a filo**, ruotando da sé per metterglisi parallelo. Scorre lungo la faccia finché vuoi, così il centraggio resta tuo.
+
+L'app non decide se la carica è legale. Mette il pezzo dove hai già deciso di metterlo, e lo mette dritto.
+
+**Maniglia di rotazione.** Sul pezzo selezionato compare un pallino davanti al fronte: trascinandolo si ruota (a scatti di 15° per le unità, 5° per il terreno; `Alt` per la rotazione libera). `[` e `]` — o `Shift`+rotella — cambiano il numero di modelli di fronte. Il pallino resta della **stessa misura sullo schermo** a qualsiasi ingrandimento, e la zona che risponde al dito è più larga del segno che si vede.
+
+**Col dito.** Al circolo si gioca su un tablet, e un polpastrello è largo una decina di millimetri: a tavolo intero un reggimento è tre pixel. Sotto ai pezzi c'è un **cuscinetto invisibile** largo almeno quanto un dito. Sta sotto apposta: chi mira preciso prende sempre il pezzo vero, e il cuscinetto raccoglie solo quello che sarebbe finito nel vuoto.
+
+**Menu del pezzo.** Tieni premuto un pezzo — o premi il tasto destro col mouse — e le cose che si fanno sempre arrivano dove sta il dito, senza scendere nell'ispettore: formazione, rotazione di 90°, ancora del movimento, etichetta, ritira. In partita ci sono anche il modello in meno e la ferita. Sul terreno e sui marcatori le voci cambiano di conseguenza. Dove si punta col dito e non col mouse tutti i pulsanti dell'app crescono da soli.
 
 **Misura degli elementi scenici.** Il bosco di cartone non è mai quello del manuale. Sull'elemento selezionato compaiono tre maniglie quadrate: quella di destra allarga, quella in basso approfondisce, quella d'angolo muove tutti e due i lati insieme; un pezzo tondo ne ha una sola, che è il raggio. Le stesse misure si scrivono in pollici nell'ispettore. Il segnalino del tesoro no: la sua base da 40 mm è quella e resta quella.
 
@@ -80,7 +99,25 @@ L'ingombro di un'unità non è più una moltiplicazione: è il rettangolo che co
 
 **Personaggi dentro le unità.** Dentro un reggimento ci va quello che al tavolo ci starebbe: i personaggi che il roster dichiara tali, e comunque **ogni unità da un modello solo** — il boss senza slot, il pezzo comprato a parte, la bestia da compagnia — che nell'elenco compare marcata *1 modello*. La spunta nell'ispettore ha l'ultima parola. Si uniscono dall'editor della formazione o dall'ispettore del reggimento. Da quel momento non è più un pezzo suo: prende una casella dentro la formazione (trascina la base con la stella per cambiargliela), si muove col reggimento e nel report risulta dov'è il reggimento. *Sgancia* lo rimette sul tavolo di fianco.
 
-**Aiuti tattici.** *Distanze* misura dal **bordo** verso ogni nemico, come si misura davvero, e segna tratteggiate le linee che un bosco o un monolite interrompono. *Archi* disegna l'arco frontale e la portata di carica (M+7 media, M+12 massima). Chi finisce nell'arco entro la carica è verde.
+**Di quanto mi sto muovendo.** È la domanda del turno, e prima l'app rispondeva male: i cerchi del movimento erano disegnati attorno all'unità, quindi la seguivano, e la risposta spariva proprio mentre la trascinavi.
+
+Adesso c'è l'**ancora**. Il punto da cui l'unità è partita in questo turno resta segnato sul tavolo con la sagoma di dov'era, e i quattro cerchi — *movimento*, *marcia*, *carica media*, *carica massima* — stanno **fermi lì**, non addosso al pezzo. Mentre trascini, una riga fra il punto di partenza e adesso dice **quanti pollici hai fatto**, su quanti ne hai: `4.2″ di 8″ · restano 3.8″`. Il numero è verde dentro il movimento, ambra dentro la marcia o la carica, rosso oltre tutto — un semaforo, non un arbitro: l'unità si muove lo stesso e nessuno ti ferma.
+
+L'ancora si mette da sola al primo spostamento, e si azzera a ogni *Chiudi il turno*: il turno nuovo riparte da dove sei arrivato. *Riparti da qui* nell'ispettore e il tasto ⚓ nel menu *Aiuti* la rimettono a mano, una o tutte. La levetta **Ancora di movimento**, nel menu *Aiuti*, la spegne.
+
+Le tre soglie sono la convenzione dell'app, dichiarata e basta: marcia `M×2`, carica media `M+7`, carica massima `M+12`. Il valore di **M** si legge dal profilo e si corregge a mano nell'ispettore quando il roster sbaglia, o quando una regola lo cambia: l'app non sa perché è cambiato, sa disegnare il cerchio giusto.
+
+**Il fantasma.** La levetta *Fantasma* disegna sotto le unità dov'erano nell'ultima fotografia di fine turno. È l'unico modo di **vedere** una ruota sul posto, che il «mosso» netto per costruzione racconta come zero.
+
+**Aiuti tattici.** *Distanze* misura dal **bordo** verso ogni nemico, come si misura davvero, e segna tratteggiate le linee che un bosco o un monolite interrompono. *Archi* disegna l'arco frontale e la portata di carica. *Raggi* mostra la gittata di tiro, e quella sì che segue l'unità: si misura da dove sei adesso.
+
+**Righelli e sagome.** *Misura*, due clic, e la misura **resta** sul tavolo; se ne tengono fino a otto. Il tasto `⌫` accanto le toglie tutte.
+
+*+ Sagoma* aggiunge l'altra metà di quello che c'è fisicamente su un tavolo: un cerchio, o un rettangolo, da appoggiare **sopra** i modelli. Il raggio lo scegli tu, la sagoma resta dove la metti e si trascina come tutto il resto. Selezionandola, l'ispettore dice **quanti modelli ci stanno sotto**, unità per unità. Cosa significhi poi lo sanno i giocatori: l'app conta e basta.
+
+**Marcatori.** *+ Marcatore* mette sul tavolo un pezzo che non è né unità né terreno, con **testo libero** e un colore. È il jolly, ed è fatto apposta per coprire quello che non abbiamo previsto: obiettivi che non siano il tesoro Battle March, segnalini magici, l'area di un incantesimo che resta in gioco, il punto da cui arrivano i rinforzi, il quarto di tavolo conteso, «qui è caduto il portastendardo». L'etichetta la leggi tu; l'app non la interpreta mai, la disegna, la salva, la mette nel link e la scrive nel report.
+
+**Zone disegnate a mano.** Gli scenari conoscono cinque disposizioni, e per la sesta non c'era niente da fare. *Disegna una zona*, poi trascini il rettangolo sul tavolo e dici di chi è: dell'Esercito A, di B, di tutti e due, area vietata, o solo un promemoria. Quando ce n'è almeno una, **sostituiscono** quelle calcolate dallo scenario, e i controlli di legalità (dentro o fuori zona) guardano le tue. *Salva come scenario* se le porta dietro, insieme al terreno e ai marcatori: da lì in poi qualsiasi scenario — di un libro, di un torneo, inventato al circolo — è rappresentabile senza che l'app ne sappia niente.
 
 **Movimento.** Le statistiche che arrivano dalle liste New Recruit non servono solo a riempire l'ispettore. *Movimento* disegna quattro ventagli — passo, marcia, carica media, carica massima — e li disegna **dove il passo porta davvero**: un cerchio dice che hai 4″, un ventaglio dice che quei 4″ nel bosco diventano 2 e contro la piramide diventano zero. Il terreno difficile costa il doppio, l'impassabile ferma, il bordo del tavolo ferma, e chi vola passa sopra a tutto. Il passo lungo (*Swiftstride*, cavalleria veloce) porta la carica media da M+7 a M+8,5: mezzo pollice, cioè la differenza fra arrivare e non arrivare.
 
@@ -96,7 +133,6 @@ I dadi si vedono tutti apposta. Un simulatore che scrive «4 ferite» chiede di 
 
 **Armatura e salvezza speciale.** Sono le due cose che i file delle liste non contengono, perché in Old World vengono dall'equipaggiamento e dagli oggetti, non dal profilo. Si scelgono una volta nell'ispettore e valgono per il tiro e per lo scontro; senza, le stime sovrastimano le perdite di parecchio. Quando l'export le dichiara — valore d'armatura o punteggio già pronto — il parser le legge da sé.
 
-**Righelli.** *Misura*, due clic, e la misura **resta** sul tavolo; se ne tengono fino a otto. Il tasto `⌫` accanto le toglie tutte.
 
 **Terreno casuale.** Genera una mappa **a specchio** — quello che mette in una metà lo ripete ruotato di mezzo giro nell'altra — rispettando da sola i vincoli che l'app già controlla. *Salva come scenario* mette tavolo, zone e terreno fra i **Miei scenari**, accanto a quelli del manuale.
 
@@ -112,9 +148,12 @@ Ogni unità nella lista laterale mostra una foto e il moltiplicatore; l'**unità
 
 - **Turno e fase** — Strategia, Movimento, Tiro, Corpo a corpo, poi passa la mano; finito il giro il turno cresce.
 - **Perdite** — in tre posti: l'ispettore dell'unità, la lista *Perdite* del pannello (tutte le unità in fila, meno due clic per segnare un tiro di archi) e l'editor della formazione, dove si clicca **quale** modello è caduto. Tolti i modelli il reggimento **perde i ranghi di dietro e sul tavolo si accorcia da solo**, come le miniature vere; in formazione sciolta sparisce la base che hai segnato e l'ingombro si richiude su quelle rimaste. Arrivato a zero esce dal campo.
+- **Ferite** — il modello tolto non è l'unica valuta, e per un personaggio, un mostro o un carro è quella sbagliata: sono modelli singoli che incassano colpi senza sparire dal tavolo, e per tre quarti della partita quello che si perde sono **ferite**. Il tasto ♥ ne segna una senza togliere niente; il numero si vede sull'unità sul tavolo, accanto al nome nella lista Perdite, e finisce nel report turno per turno. Quando una ferita diventa davvero un modello in meno lo dici tu, con un tasto: l'app non lo deduce, perché per dedurlo dovrebbe conoscere delle regole.
+- **Etichette** — parole libere appiccicate a un'unità: *disordinata*, *ha caricato*, *sotto incantesimo*, quello che ti serve. Gli stati che l'app conosce sono tre e sono cablati; quelli che al tavolo ci si dimentica sono altri e cambiano da un'edizione all'altra, quindi qui sono testo. Compaiono sotto l'unità sul tavolo, e il dizionario dei suggerimenti cresce da solo con quello che scrivi: non c'è nessun elenco da mantenere.
+- **Contatori** — un nome e un numero, per esercito nel pannello e per unità nell'ispettore. Le risorse della magia, le munizioni contate, i punti comando, le cariche di un oggetto: roba che al tavolo si tiene con i dadi girati e si sbaglia. L'app non sa cosa conta: sa contare.
 - **Lo schermino** — sopra il tabellino c'è il tavolo in piccolo: quello di adesso, e con le due frecce quello di ogni fine turno già registrato. Serve a vedere quello che si sta raccontando invece di leggerlo in una tabella di coordinate.
 - **Tabellino** — quanti punti restano in campo e quanti ne sono andati, per parte, calcolati in proporzione ai modelli persi.
-- **Registro** — ogni perdita e ogni annotazione, con turno e fase.
+- **Registro** — ogni perdita e ogni annotazione, con turno e fase. *Annota* apre una finestra con le **scorciatoie** già pronte — carica riuscita, carica fallita, in rotta, rally, incantesimo fermato, generale, stendardo — perché durante una partita vera nessuno scrive frasi su una tastiera virtuale, e un registro vuoto vale un report vuoto. Chi vuole scrivere a mano scrive lo stesso.
 - **Chiudi il turno** — il pulsante grosso. Fotografa il tavolo com'è in quel momento e passa la mano. La fotografia tiene, per ogni unità, dove sta, quanto è grande adesso, come è schierata, di quanto si è mossa dal turno prima, quante perdite ha subito in questo turno, in che stato è e dentro quale elemento di terreno si trova. Tiene anche i **contatti di basetta** del momento — chi tocca chi e da che lato — e la **posizione del terreno**, che durante la partita si sposta. È da queste fotografie che nasce il battle report.
 
 Lo schieramento è la fotografia numero zero, scattata quando premi *Comincia*: finché non hai chiuso il primo turno la puoi rifare (*Rifai la foto*), che serve quando ci si accorge di aver premuto Comincia troppo presto.
@@ -140,7 +179,8 @@ Il verdetto (pareggio, vittoria di misura, netta, schiacciante) è **una convenz
 - il terreno allo schieramento, con misure, orientamento e attraversabilità — e di nuovo, in ogni turno in cui qualcuno lo ha spostato;
 - lo schieramento iniziale, in coordinate e a parole («metà di B · corsia destra»), con l'ingombro di ogni unità e il terreno che sta occupando;
 - l'andamento, cioè quante perdite ha preso ciascuno in quale turno — la tabella da cui si vede subito dove la partita è girata;
-- un capitolo per ogni mezzo turno con la situazione di ogni unità a fine turno, i **contatti di basetta** (chi tocca chi, e da che lato: fronte, fianco, retro) e quanti modelli di ciascuna stanno dentro un elemento scenico;
+- i **marcatori** e le **zone disegnate a mano**, con le etichette che ci hai scritto e la dichiarazione esplicita che l'app non le interpreta;
+- un capitolo per ogni mezzo turno con la situazione di ogni unità a fine turno, le **ferite** segnate in quel turno e in tutto, le **etichette** attive, i **contatori** dei due eserciti, i **contatti di basetta** (chi tocca chi, e da che lato: fronte, fianco, retro) e quanti modelli di ciascuna stanno dentro un elemento scenico;
 - il punteggio voce per voce e le tue note.
 
 Ci sono anche *Copia il Markdown* senza la richiesta davanti, *Scarica .md* e *Scarica .json* — il JSON è il report intero, per rileggerlo con un programma.
@@ -254,6 +294,10 @@ sw.js                 service worker: guscio in cache, app senza rete
 icons/                icone PNG, generate da tools/make-icons.mjs
 src/
   util.js             quattro funzioni di servizio
+  uikit.js            finestre, contatori, etichette: i mattoni condivisi
+  extras.js           marcatori, etichette, contatori, ferite — le primitive generiche
+  movement.js         l'ancora di movimento e le soglie
+  zones.js            zone di schieramento disegnate a mano
   bases.js            basette e frontage predefinito per tipo di truppa
   parser.js           lettura dei file New Recruit / BattleScribe
   terrain.js          tipi di elemento scenico e loro limiti
@@ -292,6 +336,8 @@ tools/
   make-icons.mjs      scrive i PNG del manifest senza dipendenze
 ```
 
+Le quattro primitive generiche stanno in moduli loro perché non sanno niente del tavolo e non devono saperlo: `extras.js` non ha DOM, `movement.js` non ha stato, `zones.js` risponde a una domanda sola. `uikit.js` c'è perché tre pannelli diversi avevano bisogno delle stesse quattro cose — una finestra, i contatori, le etichette, una fila di scorciatoie — e perché `prompt()` e `confirm()` non si usano più da nessuna parte: sul telefono coprono lo schermo, in un'app installata hanno l'aria di un errore, e proprio dove servono davvero (annotare mentre giochi) erano il gesto sbagliato.
+
 `deploy.js` resta il modulo grosso perché stato, pannelli e disegno del campo sono davvero un blocco solo. Quello che se n'è potuto staccare è uscito: la geometria (`geom.js`) perché ora la usano anche gli aiuti tattici e il generatore di terreno; la storia, la vista, la partita e gli scenari propri perché non hanno bisogno di sapere niente del tavolo — ricevono dei callback e basta, così la dipendenza va in una direzione sola e non si formano cicli.
 
 ### Prove
@@ -303,6 +349,8 @@ npm test
 
 Girano in jsdom con IndexedDB finto, senza browser. `battle.mjs` non ne ha bisogno affatto: prova i conti da solo — i punteggi da fare, che quattromila dadi a 4+ diano circa metà successi, che il passo lungo valga in media mezzo pollice più della carica normale, che il ventaglio si accorci nel bosco e si fermi contro l'impassabile aggirandolo di lato, che dietro un monolite qualche raggio si spenga e di fianco no. `sync.mjs` monta un GitHub finto in memoria — blob, alberi, commit e un ramo — e ci fa sopra il giro completo: salvataggio, secondo salvataggio che non commette niente perché non è cambiato niente, un file cambiato che ne carica uno solo, una foto cancellata che sparisce anche di là, il conflitto quando il ramo si è mosso, e lo scaricamento su un archivio vuoto con le foto che tornano identiche al bit. Controlla anche che la sha calcolata in casa sia quella vera di git. `boot.mjs` avvia davvero la pagina intera e poi la usa: annulla e ripeti, zoom, distanze misurate dal bordo, ventaglio di movimento, campo di tiro con un bosco piantato in mezzo per veder sparire la linea di vista, uno scontro tirato finché qualcuno cade e le sue perdite riportate sul tavolo, righelli, una partita con perdite e unità distrutta, la chiusura di due turni con il movimento misurato in pollici, l'archiviazione del battle report e il suo testo in Markdown, una partita scritta a mano a partire da una lista, terreno casuale (verificando che sia specchiato e che nessun tesoro finisca sotto i 3″), salvataggio di uno scenario proprio, andata e ritorno del link condiviso, serializzazione del PNG e la finestra della Nuvola con le sue impostazioni.
 
+Prova anche le cose nuove dove si vedono davvero: che i cerchi del movimento restino **fermi sull'ancora** invece di seguire il pezzo e che la riga scriva `4.0″ di 8″`; che una ferita non tolga un modello finché non lo dici tu; che il caricante si appoggi a filo e arrivi dritto anche se lo trascinavi storto; che una zona disegnata a mano faccia risultare *fuori zona* un'unità che lo scenario considerava a posto; che marcatori, zone, etichette e ferite sopravvivano al link condiviso e finiscano nel report. `smoke.mjs` prova a parte i moduli senza DOM, dove le regole di conversione si leggono in una riga.
+
 ---
 
 ## Limiti noti
@@ -313,13 +361,16 @@ Girano in jsdom con IndexedDB finto, senza browser. `battle.mjs` non ne ha bisog
 - Senza Nuvola i dati restano legati a quel browser: c'è il backup manuale e il link dello schieramento. Il link porta le posizioni, non la collezione: catalogo e foto restano dove sono.
 - La modalità partita **non arbitra**: tiene il conto di turni, fasi e perdite, e non impedisce mosse illegali. Le decisioni restano ai due giocatori, come al tavolo.
 - Per lo stesso motivo il punteggio è **mezzo automatico**: l'app somma quello che vede sul tavolo (chi è morto, chi è a metà, chi è in rotta) e lascia a te obiettivi, generale, stendardi e quarti. Non conosce le tabelle di nessuno scenario e non pretende di conoscerle.
-- Il *mosso* di un'unità è lo spostamento **netto** fra due fotografie: chi avanza e poi ripiega risulta fermo, e una ruota sul posto risulta zero. Il fronte in gradi c'è, ed è lì che si legge.
+- Il *mosso* di un'unità è lo spostamento **netto** fra due fotografie: chi avanza e poi ripiega risulta fermo, e una ruota sul posto risulta zero. Il fronte in gradi c'è, ed è lì che si legge — e il *Fantasma* fa vedere il resto.
+- Le soglie di movimento (marcia `M×2`, carica `M+7` e `M+12`) sono **una convenzione dell'app**, non una regola letta da nessun manuale: sono disegnate perché servono a stimare, e M si corregge a mano quando serve.
+- Le ferite e le etichette l'app le **conta e le scrive**, non le interpreta: nessuna ferita fa cadere un modello da sola, nessuna etichetta cambia il comportamento di niente.
 - Il registro dei turni si scrive quando premi *Chiudi il turno*: se te ne dimentichi due, quei due turni nel report non esistono. È un diario, non un arbitro che guarda.
 - Lo **scontro simulato** è una stima, non un arbitro. Conosce quello che sta nel profilo e i numeri che imposti a mano; non sa niente di magia, oggetti, regole d'esercito, terrore, colpi mortali. Quanti modelli si toccano e quanti colpi porta l'urto della carica sono l'ordine di grandezza giusto, non la misura esatta: si correggono nel pannello, ed è per questo che il campo *Attacchi* è modificabile.
 - Il **campo di tiro** guarda dal centro del fronte, non da ogni singola miniatura. Le coperture le decide il tipo di elemento scenico — bosco leggera, rovine e muretti pesante — non il pezzo vero che hai in mano.
 - Il **ventaglio di movimento** non fa ruotare l'unità: mostra dove arriva andando avanti nel proprio arco frontale, che è il caso normale. Una riorganizzazione o un giro sul posto restano da immaginare.
 - Il magnetismo aggancia solo unità con lo **stesso orientamento**: allineare un reggimento a uno girato di 45° resta lavoro a mano.
 - La linea di vista guarda i soli elementi che il tipo dichiara bloccanti (boschi, rovine, monoliti, piramidi) e ignora le regole fini — colline che vedono oltre, unità che fanno da schermo. È un'indicazione, non un arbitro. Vale per le distanze, per il campo di tiro e per la stima delle perdite.
+- L'aggancio al contatto appoggia il caricante **al centro della faccia** e poi lo lascia scorrere: dice dove finisce il pezzo, non se la carica era permessa.
 - Il terreno casuale è a specchio per costruzione: è la scelta più difendibile al circolo, ma non riproduce le mappe asimmetriche di uno scenario scritto.
 - Il parser legge quello che New Recruit esporta. Se una lista arriva con basette insolite le stima dal tipo di truppa, e le puoi correggere a mano nell'ispettore.
 

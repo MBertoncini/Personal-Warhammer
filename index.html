@@ -127,7 +127,22 @@
       <div id="terrain-list"></div>
       <div id="terrain-warn"></div>
 
-      <p class="note">I quattro scenari <b>Battle March</b> riproducono le mappe fornite: nessun elemento supera i 12″ sul lato lungo e i tesori (base tonda 40 mm) stanno oltre 3″ da ogni pezzo di terreno. Se sposti qualcosa, il controllo si aggiorna da solo. Gli altri scenari usano zone generiche regolabili.</p>
+    <div>
+      <div class="panel-title">Marcatori e zone</div>
+      <p class="note">Un marcatore è un pezzo del tavolo che non è né unità né terreno: obiettivo, segnalino, promemoria, area di un incantesimo. Il testo lo scrivi tu e l'app non lo legge mai. Le <b>sagome</b> sono marcatori vuoti da appoggiare sopra i modelli. Le <b>zone</b> disegnate a mano sostituiscono quelle calcolate dallo scenario: da lì in poi qualsiasi scenario è rappresentabile.</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn tiny" id="btn-mark-add">+ Marcatore</button>
+        <button class="btn tiny" id="btn-shape-add">+ Sagoma</button>
+        <button class="btn tiny" id="btn-mark-clear">Togli i marcatori</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+        <button class="btn tiny" id="btn-zone-draw" title="Poi trascina sul tavolo per disegnare il rettangolo">Disegna una zona</button>
+        <button class="btn tiny ghost" id="btn-zone-clear">Torna alle zone dello scenario</button>
+      </div>
+      <div id="marker-list" style="margin-top:8px;"></div>
+    </div>
+
+    <p class="note">I quattro scenari <b>Battle March</b> riproducono le mappe fornite: nessun elemento supera i 12″ sul lato lungo e i tesori (base tonda 40 mm) stanno oltre 3″ da ogni pezzo di terreno. Se sposti qualcosa, il controllo si aggiorna da solo. Gli altri scenari usano zone generiche regolabili.</p>
     </section>
 
     </div><!-- /.side-scroll -->
@@ -136,47 +151,74 @@
   <section class="board-wrap">
     <div class="board-bar">
       <label class="field inline scenario"><span>Scenario</span><select id="scenario"><optgroup label="Battle March"><option value="bm-guado">Il Guado di Sangue — 600 pt</option><option value="bm-monolite">Il Monolite nella Palude — 650 pt</option><option value="bm-strada">La Strada delle Pietre — 750 pt</option><option value="bm-rovine">Le Rovine di Xhotl — 750 pt</option></optgroup><optgroup label="Generici"><option value="open">Battaglia Campale</option><option value="meeting">Scontro di Incontro</option><option value="flank">Attacco sul Fianco</option><option value="pass">Passo di Montagna</option><option value="cross">Fronti Incrociati</option></optgroup></select></label>
+      <!-- La barra aveva ventitre pulsanti in fila: su un portatile
+           andava a capo, su tablet era una lotteria. Adesso in vista
+           restano i cinque gesti che si fanno mentre giochi (annulla,
+           schiera, snap, zoom) e il resto sta in tre menu raggruppati
+           per intenzione, non per ordine di scrittura. Il pallino sul
+           menu dice che dentro c'e qualcosa di acceso, cosi nascondere
+           una levetta non vuol dire dimenticarsela. -->
       <div class="bar-tools">
-        <div class="group">
-          <button class="btn icon" id="btn-undo" title="Annulla (Ctrl+Z)" disabled>↶</button>
-          <button class="btn icon" id="btn-redo" title="Ripeti (Ctrl+Y)" disabled>↷</button>
-        </div>
-        <div class="group">
-          <button class="btn" id="btn-auto">Schiera tutto</button>
-          <button class="btn" id="btn-recall">Ritira tutto</button>
-        </div>
-        <div class="group">
-          <button class="btn on" id="btn-snap" title="Aggancia al quarto di pollice e ai fianchi delle unità vicine">Snap ¼″</button>
-          <button class="btn" id="btn-labels" title="Numeri sulle unità">Numeri</button>
-          <button class="btn on" id="btn-photos" title="Foto delle miniature sulle basette">Foto</button>
-        </div>
-        <div class="group">
-          <button class="btn" id="btn-ranges" title="Cerchi di movimento e tiro">Raggi</button>
-          <button class="btn" id="btn-arcs" title="Arco frontale e portata di carica">Archi</button>
+      <div class="sep"></div>
+      <button class="btn icon" id="btn-undo" title="Annulla (Ctrl+Z)" disabled>↶</button>
+      <button class="btn icon" id="btn-redo" title="Ripeti (Ctrl+Y)" disabled>↷</button>
+      <div class="sep"></div>
+      <button class="btn" id="btn-auto" title="Schiera tutte le unità nelle rispettive zone">Schiera</button>
+      <button class="btn" id="btn-recall" title="Ritira tutte le unità dal tavolo">Ritira</button>
+      <div class="sep"></div>
+      <button class="btn on" id="btn-snap" title="Aggancia al quarto di pollice, ai fianchi delle unità vicine e a filo della faccia di quelle girate">Snap ¼″</button>
+
+      <details class="menu" data-menu="aiuti">
+        <summary class="btn" title="Aiuti tattici, ancora di movimento e righelli">Aiuti</summary>
+        <div class="menu-pop">
+          <p class="menu-note">Quello che aiuta a decidere prima di muovere. Nessuno di questi arbitra niente.</p>
           <button class="btn" id="btn-move" title="Dove può arrivare davvero: movimento, marcia e carica contando boschi, ostacoli e bordo del tavolo">Movimento</button>
           <button class="btn" id="btn-shoot" title="Campo di tiro con le ombre degli elementi scenici e il punteggio per colpire">Tiro</button>
+          <button class="btn on" id="btn-moveaid" title="I cerchi restano dove l'unità è partita e la riga dice quanti pollici hai fatto">Ancora di movimento</button>
+          <button class="btn" id="btn-anchor-all" title="Rimetti l'ancora di tutte le unità dove stanno adesso">⚓ Rimetti le ancore</button>
           <button class="btn" id="btn-dist" title="Distanze dal bordo e linea di vista verso i nemici">Distanze</button>
-        </div>
-        <div class="group">
+          <button class="btn" id="btn-arcs" title="Arco frontale e portata di carica">Archi</button>
+          <button class="btn" id="btn-ranges" title="Cerchio della gittata di tiro, che segue l'unità perché si misura da adesso">Raggi di tiro</button>
+          <button class="btn" id="btn-ghost" title="Dove stavano le unità nell'ultima fotografia di fine turno">Fantasma</button>
+          <div class="menu-sep"></div>
           <button class="btn" id="btn-measure" title="Righello: due clic per lasciare una misura sul tavolo">Misura</button>
-          <button class="btn icon" id="btn-rulers-clear" title="Togli i righelli">⌫</button>
+          <button class="btn" id="btn-rulers-clear" title="Togli i righelli">⌫ Togli i righelli</button>
         </div>
-        <div class="group zoomgroup">
-          <button class="btn icon" id="btn-zoom-out" title="Riduci (−)">−</button>
-          <span class="mono zoomlevel" id="zoom-level">100%</span>
-          <button class="btn icon" id="btn-zoom-in" title="Ingrandisci (+)">+</button>
-          <button class="btn on" id="btn-fit" title="Tutto il tavolo (0)">Adatta</button>
+      </details>
+
+      <details class="menu" data-menu="vista">
+        <summary class="btn" title="Cosa si vede sui pezzi">Vista</summary>
+        <div class="menu-pop">
+          <p class="menu-note">Cosa si disegna sopra i pezzi.</p>
+          <button class="btn" id="btn-labels" title="Numeri sulle unità">Numeri sulle unità</button>
+          <button class="btn on" id="btn-photos" title="Foto delle miniature sulle basette">Foto delle miniature</button>
         </div>
-        <div class="group">
-          <button class="btn" id="btn-png" title="Scarica il tavolo come immagine">Immagine</button>
-          <button class="btn" id="btn-share" title="Copia un link che contiene questo schieramento">Link</button>
+      </details>
+
+      <details class="menu" data-menu="tavolo">
+        <summary class="btn" title="Immagine del tavolo e link con lo schieramento">Tavolo</summary>
+        <div class="menu-pop">
+          <p class="menu-note">Le misure del tavolo e la linea di schieramento stanno nel pannello, sotto <b>Tavolo</b>: cambiarle non e' un gesto che si fa mentre giochi.</p>
+          <button class="btn" id="btn-png" title="Scarica il tavolo come immagine">Immagine del tavolo</button>
+          <button class="btn" id="btn-share" title="Copia un link che contiene questo schieramento">Link con lo schieramento</button>
         </div>
+      </details>
+
+      <div class="sep"></div>
+      <!-- lo zoom sta insieme: andando a capo si spezzava fra il meno e
+           il più, e due pulsanti di zoom su due righe non sono zoom -->
+      <div class="zoomgrp">
+        <button class="btn icon" id="btn-zoom-out" title="Riduci (−)">−</button>
+        <span class="mono zoomlevel" id="zoom-level">100%</span>
+        <button class="btn icon" id="btn-zoom-in" title="Ingrandisci (+)">+</button>
+        <button class="btn on" id="btn-fit" title="Tutto il tavolo (0)">Adatta</button>
+      </div>
       </div>
       <div class="spacer"></div>
       <span class="mono stats" id="stat"></span>
     </div>
 
-    <div class="board-scroll"><svg id="board" xmlns="http://www.w3.org/2000/svg" viewBox="-46 -46 1311.1999999999998 1006.4" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="board-scroll"><svg id="board" role="application" aria-label="Tavolo da gioco: unità, terreno, marcatori e zone" xmlns="http://www.w3.org/2000/svg" viewBox="-46 -46 1311.1999999999998 1006.4" preserveAspectRatio="xMidYMid meet"></svg></div>
 
     <div class="legend">
       <span class="sc"><b id="sc-name">Le Rovine di Xhotl · 750 pt</b> <span id="sc-desc">La piramide centrale divide il tavolo in due corsie e i due tesori stanno uno per corsia: nessuno può presidiarli entrambi.</span></span>
@@ -195,6 +237,7 @@
           <span><span class="kbd">Canc</span> ritira / elimina</span>
         </div>
       </details>
+      <span class="touchhint">Tieni premuto un pezzo per il menu · trascinando, i cerchi restano sul punto di partenza</span>
     </div>
   </section>
 

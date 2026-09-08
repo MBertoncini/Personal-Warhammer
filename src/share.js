@@ -26,6 +26,14 @@ const UNIT_KEEP = [
      cuneo e una schermagliata sparsa arriverebbero dall'altra parte
      come due rettangoli uguali. Sono numeri e si comprimono bene. */
   "formation", "fallen", "join", "character",
+  /* le cose generiche: ferite, etichette, contatori, l'ancora di
+     movimento e il movimento corretto a mano. Sono poche decine di
+     byte e senza di loro il link racconta un tavolo piu' povero di
+     quello che si e' condiviso. */
+  "wounds", "tags", "counters", "anchor", "moveOverride",
+  /* il secchio libero: chi aggiunge una funzionalita' generica ci
+     mette dentro il suo campo e non deve toccare tre serializzatori */
+  "extras",
 ];
 
 export function trimSnapshot(s){
@@ -34,6 +42,20 @@ export function trimSnapshot(s){
     armies: { A: { name: s.armies?.A?.name || "" }, B: { name: s.armies?.B?.name || "" } },
     scenario: s.scenario, tableW: s.tableW, tableH: s.tableH, gap: s.gap,
     labels: s.labels !== false, photos: s.photos !== false,
+    moveAid: s.moveAid !== false, ghost: !!s.ghost,
+    /* marcatori e zone disegnate viaggiano nel link: senza, chi lo apre
+       vede un tavolo con gli obiettivi spariti e le zone sbagliate */
+    markers: (s.markers || []).map(m => ({
+      mid: m.mid, shape: m.shape, label: m.label || "", color: m.color, measure: !!m.measure,
+      x: Math.round(m.x * 10) / 10, y: Math.round(m.y * 10) / 10,
+      w: m.w, h: m.h, rot: m.rot || 0,
+    })),
+    zones: (s.zones || []).map(z => ({
+      zid: z.zid, kind: z.kind, label: z.label || "",
+      x: Math.round(z.x * 10) / 10, y: Math.round(z.y * 10) / 10,
+      w: Math.round(z.w * 10) / 10, h: Math.round(z.h * 10) / 10,
+    })),
+    extras: s.extras || null,
     terrain: (s.terrain || []).map(t => ({
       tid: t.tid, kind: t.kind,
       x: Math.round(t.x * 10) / 10, y: Math.round(t.y * 10) / 10,
