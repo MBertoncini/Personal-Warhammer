@@ -1,0 +1,39 @@
+[
+  {
+    "id": "sxmttrgusdc7c",
+    "label": "Poligono di tiro",
+    "table": [
+      48,
+      36
+    ],
+    "gap": 12,
+    "deploy": "pitched battle",
+    "desc": "Terreno salvato dal tavolo il 09/09/2026.",
+    "terrain": [
+      {
+        "kind": "treasure",
+        "x": 11.75,
+        "y": 24,
+        "w": 1.575,
+        "h": 1.575,
+        "rot": 0
+      },
+      {
+        "kind": "treasure",
+        "x": 36,
+        "y": 12.25,
+        "w": 1.575,
+        "h": 1.575,
+        "rot": 0
+      },
+      {
+        "kind": "hill",
+        "x": 36,
+        "y": 29,
+        "w": 11.75,
+        "h": 5.5,
+        "rot": 0
+      }
+    ]
+  }
+]

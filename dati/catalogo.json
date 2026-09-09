@@ -19,9 +19,24 @@
     "baseId": "30x60",
     "baseW": 30,
     "baseH": 60,
-    "owned": 5,
+    "owned": 8,
     "aliases": [
       "cold one riders"
+    ],
+    "notes": "",
+    "painted": 0
+  },
+  {
+    "id": "cmttwt5q1icif",
+    "name": "Saurus Oldblood",
+    "faction": "Lizardmen",
+    "baseId": "30x30",
+    "baseW": 30,
+    "baseH": 30,
+    "owned": 2,
+    "painted": 0,
+    "aliases": [
+      "saurus oldblood"
     ],
     "notes": ""
   },
@@ -91,17 +106,32 @@
     "notes": ""
   },
   {
+    "id": "cmttwtdohr5ms",
+    "name": "Slann Mage-Priests",
+    "faction": "Lizardmen",
+    "baseId": "50x50",
+    "baseW": 50,
+    "baseH": 50,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "slann mage priests"
+    ],
+    "notes": ""
+  },
+  {
     "id": "cmtl5sesuq5ux",
     "name": "Temple Guard",
     "faction": "Lizardmen",
     "baseId": "30x30",
     "baseW": 30,
     "baseH": 30,
-    "owned": 15,
+    "owned": 25,
     "aliases": [
       "temple guard"
     ],
-    "notes": ""
+    "notes": "",
+    "painted": 0
   },
   {
     "id": "cmtl5ro8mphs3",
@@ -113,6 +143,62 @@
     "owned": 5,
     "aliases": [
       "terradon riders"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "cmtl5rzttgftf",
+    "name": "Night Goblin Mobs",
+    "faction": "Orc & Goblin Tribes",
+    "baseId": "25x25",
+    "baseW": 25,
+    "baseH": 25,
+    "owned": 20,
+    "aliases": [
+      "night goblin mobs"
+    ],
+    "notes": "",
+    "painted": 0
+  },
+  {
+    "id": "cmtl5s189osz2",
+    "name": "Night Goblin Squig Herds",
+    "faction": "Orc & Goblin Tribes",
+    "baseId": "25x25",
+    "baseW": 25,
+    "baseH": 25,
+    "owned": 21,
+    "aliases": [
+      "night goblin squig herds"
+    ],
+    "notes": "",
+    "painted": 0
+  },
+  {
+    "id": "cmtl5r9bak4eg",
+    "name": "Orc Mobs",
+    "faction": "Orc & Goblin Tribes",
+    "baseId": "30x30",
+    "baseW": 30,
+    "baseH": 30,
+    "owned": 25,
+    "aliases": [
+      "orc mobs"
+    ],
+    "notes": "",
+    "painted": 0
+  },
+  {
+    "id": "cmttwumnm8axg",
+    "name": "Black Orc Bigboss",
+    "faction": "Orc and Goblin Tribes",
+    "baseId": "30x30",
+    "baseW": 30,
+    "baseH": 30,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "black orc bigboss"
     ],
     "notes": ""
   },
@@ -143,6 +229,34 @@
     "notes": ""
   },
   {
+    "id": "cmttwv5axt1qd",
+    "name": "Giants",
+    "faction": "Orc and Goblin Tribes",
+    "baseId": "50x50",
+    "baseW": 50,
+    "baseH": 50,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "giants"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "cmttwupi8cano",
+    "name": "Goblin Oddnob",
+    "faction": "Orc and Goblin Tribes",
+    "baseId": "25x25",
+    "baseW": 25,
+    "baseH": 25,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "goblin oddnob"
+    ],
+    "notes": ""
+  },
+  {
     "id": "cmtl5rxae4yxy",
     "name": "Night Goblin Bigboss",
     "faction": "Orc and Goblin Tribes",
@@ -152,19 +266,6 @@
     "owned": 1,
     "aliases": [
       "night goblin bigboss"
-    ],
-    "notes": ""
-  },
-  {
-    "id": "cmtl5rzttgftf",
-    "name": "Night Goblin Mobs",
-    "faction": "Orc and Goblin Tribes",
-    "baseId": "25x25",
-    "baseW": 25,
-    "baseH": 25,
-    "owned": 20,
-    "aliases": [
-      "night goblin mobs"
     ],
     "notes": ""
   },
@@ -182,19 +283,6 @@
     "notes": ""
   },
   {
-    "id": "cmtl5s189osz2",
-    "name": "Night Goblin Squig Herds",
-    "faction": "Orc and Goblin Tribes",
-    "baseId": "25x25",
-    "baseW": 25,
-    "baseH": 25,
-    "owned": 33,
-    "aliases": [
-      "night goblin squig herds"
-    ],
-    "notes": ""
-  },
-  {
     "id": "cmtl5s66okaez",
     "name": "Night Goblin Squig Hopper Mobs",
     "faction": "Orc and Goblin Tribes",
@@ -208,17 +296,32 @@
     "notes": ""
   },
   {
+    "id": "cmttwuk7yjr59",
+    "name": "Ogdruz Swampdigga",
+    "faction": "Orc and Goblin Tribes",
+    "baseId": "30x30",
+    "baseW": 30,
+    "baseH": 30,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "ogdruz swampdigga"
+    ],
+    "notes": ""
+  },
+  {
     "id": "cmtl5rae3opun",
     "name": "Orc Boar Boy Mobs",
     "faction": "Orc and Goblin Tribes",
     "baseId": "30x60",
     "baseW": 30,
     "baseH": 60,
-    "owned": 5,
+    "owned": 15,
     "aliases": [
       "orc boar boy mobs"
     ],
-    "notes": ""
+    "notes": "",
+    "painted": 0
   },
   {
     "id": "cmtl5rcrcmk1x",
@@ -234,15 +337,30 @@
     "notes": ""
   },
   {
-    "id": "cmtl5r9bak4eg",
-    "name": "Orc Mobs",
+    "id": "cmttwus284n2g",
+    "name": "Orc Warboss",
     "faction": "Orc and Goblin Tribes",
     "baseId": "30x30",
     "baseW": 30,
     "baseH": 30,
-    "owned": 20,
+    "owned": 1,
+    "painted": 0,
     "aliases": [
-      "orc mobs"
+      "orc warboss"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "cmttwutvnut37",
+    "name": "Orc Weirdnob",
+    "faction": "Orc and Goblin Tribes",
+    "baseId": "30x30",
+    "baseW": 30,
+    "baseH": 30,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "orc weirdnob"
     ],
     "notes": ""
   },
