@@ -42,6 +42,8 @@ Scheda **Liste** → *Importa da New Recruit*. Accetta i `.json` e i `.ros`.
 
 Oppure *Nuova lista a mano*, che non è un ripiego: al circolo l'avversario arriva con la lista **stampata**, o scritta a mano, o sul telefono in un formato che non è il tuo, e in quel momento un'app che sa leggere solo i file non serve a niente. Bastano nome, modelli, punti e basetta; profilo, regole e armi sono facoltativi dappertutto e senza di loro l'app disegna e conta lo stesso. Ogni riga di ogni lista — anche di una importata — si corregge lì sul posto, e *Duplica* fa la variante da ritoccare senza toccare l'originale.
 
+Mentre scrivi il nome, il catalogo si propone da solo: bastano due o tre lettere e sotto il campo compaiono le voci che hai in collezione, con la foto, la fazione e quante ne possiedi. Sceglierne una scrive il nome per intero, porta con sé la basetta di quel tipo e lascia l'unità già agganciata — che è il modo più corto per non ritrovarsi dopo con metà lista *da agganciare* per via di un nome battuto storto. Vale anche sul nome di un'unità già in lista: correggerlo dalla tendina la riaggancia. Con le frecce si scorre, con Invio si sceglie, e se il nome che ti serve non è in collezione continui a scrivere e la tendina sparisce.
+
 Lo stesso vale sul tavolo: *+ Unità a mano* sotto ciascun esercito mette un reggimento in campo senza passare da nessun file.
 
 Ogni unità viene agganciata al catalogo da sola quando il nome combacia: `11 Black Orc Mob` trova `Black Orc` da sé, perché l'aggancio ignora il numero iniziale, le parole di servizio (`mob`, `unit`, `regiment`) e le desinenze plurali.
@@ -295,6 +297,7 @@ icons/                icone PNG, generate da tools/make-icons.mjs
 src/
   util.js             quattro funzioni di servizio
   uikit.js            finestre, contatori, etichette: i mattoni condivisi
+  suggest.js          la tendina del catalogo sotto un campo nome
   extras.js           marcatori, etichette, contatori, ferite — le primitive generiche
   movement.js         l'ancora di movimento e le soglie
   zones.js            zone di schieramento disegnate a mano

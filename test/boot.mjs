@@ -803,6 +803,28 @@ ok('e ogni campo si corregge dopo', listsMod.getList(handList.id).units[0].model
 const copy = await listsMod.duplicateList(handList.id);
 ok('duplicare una lista da una variante da ritoccare',
    copy.units.length === 1 && copy.id !== handList.id);
+
+/* il catalogo si propone da solo mentre si scrive il nome: e' l'unico
+   momento in cui l'aggancio costa zero */
+click('[data-tab="lists"]');
+listsMod.renderLists();
+const addName = doc.querySelector('#ls-add-name');
+addName.value = 'sau';
+addName.dispatchEvent(new window.Event('input', { bubbles: true }));
+const sug = doc.querySelector('.suggest');
+ok('scrivendo mezzo nome il catalogo si propone',
+   !!sug && /Saurus Warriors/.test(sug.textContent));
+sug.querySelector('.sug').dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true }));
+ok('scegliendo si scrive il nome per intero', addName.value === 'Saurus Warriors');
+ok('e viene dietro la basetta che quel tipo ha in collezione',
+   doc.querySelector('#ls-add-base').value === '30x30');
+ok('la tendina si chiude appena scelto', !doc.querySelector('.suggest'));
+click('#ls-add-unit');
+await settle(60);
+const written = listsMod.getList(copy.id) || listsMod.getList(handList.id);
+const added = written.units[written.units.length - 1];
+ok('l unita entra in lista gia agganciata al catalogo',
+   added.name === 'Saurus Warriors' && cat.catEntry(added.catId)?.name === 'Saurus Warriors');
 const unitsBefore = state.units.length;
 doc.querySelector('[data-addunit="B"]').dispatchEvent(new window.Event('click'));
 await answer('Reggimento a mano');

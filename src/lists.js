@@ -24,6 +24,7 @@ import {
   linkAlias, photoFor, upsertEntry, normalize, paintedOf,
 } from './catalog.js';
 import { loadDoc, saveDoc } from './store.js';
+import { attachSuggest, closeSuggest } from './suggest.js';
 import { emit } from './bus.js';
 
 const LIST_KEY = "lists:all";
@@ -338,6 +339,42 @@ export function renderLists(){
     else await linkUnit(id, +i, sel.value || null);
     renderLists();
   }));
+
+  wireSuggest(host);
+}
+
+/* ---- il catalogo che si propone da solo ----
+   Un nome battuto a mano che non combacia con nessuna voce diventa
+   subito un'unita' «da agganciare», cioe' lavoro da rifare dopo. Se
+   invece la voce si sceglie mentre si scrive, il nome e' quello giusto
+   e l'aggancio e' gia' fatto. */
+function wireSuggest(host){
+  closeSuggest();   // il render ha appena buttato via i campi di prima
+
+  /* riga «Aggiungi un'unita'»: il nome, e con lui la basetta che quel
+     tipo ha in collezione, che e' il campo che nessuno ricontrolla */
+  attachSuggest($("#ls-add-name"), e => {
+    $("#ls-add-name").value = e.name;
+    const base = $("#ls-add-base");
+    if (base && e.baseId && [...base.options].some(o => o.value === e.baseId)) base.value = e.baseId;
+    $("#ls-add-models").focus();
+    $("#ls-add-models").select();
+  });
+
+  /* nomi delle unita' gia' in lista: correggere il nome qui vale anche
+     come aggancio, che e' il motivo per cui di solito lo si corregge */
+  host.querySelectorAll('[data-uf$="|name"]').forEach(inp => {
+    const [id, i] = inp.dataset.uf.split("|");
+    attachSuggest(inp, async e => {
+      /* prima il campo, poi l'archivio: l'invio che sceglie dalla tendina
+         fa partire subito dopo anche il «change» del campo, e quello
+         riscriverebbe il nome monco che c'era scritto a meta' */
+      inp.value = e.name;
+      await updateUnit(id, +i, { name: e.name });
+      await linkUnit(id, +i, e.id);
+      renderLists();
+    });
+  });
 }
 
 function listRowHTML(l){
@@ -406,6 +443,7 @@ function detailHTML(l){
     <div class="addunit">
       <div class="panel-title">Aggiungi un'unità</div>
       <p class="note">Bastano nome, modelli, punti e basetta. Profilo, regole e armi sono facoltativi dappertutto: senza, l'app disegna e conta lo stesso.</p>
+      <p class="note">Mentre scrivi il nome, il catalogo propone le voci che hai in collezione: sceglierne una porta con sé la basetta giusta e l'aggancio già fatto.</p>
       <div class="addrow">
         <input type="text" id="ls-add-name" placeholder="Nome dell'unità">
         <input type="number" id="ls-add-models" min="1" max="200" value="10" title="Modelli">

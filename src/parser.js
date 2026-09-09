@@ -101,7 +101,80 @@ function parseBaseSize(txt){
   return { w: Math.min(w, h), h: Math.max(w, h) };   // larghezza = lato corto
 }
 
-const RULE_KEEP = /skirmish|schermagl|fly|vola|fast cavalry|cavalleria veloce|scout|vanguard|ambush|terror|fear|large target|stubborn|unbreakable|immune to psychology|move through cover|aquatic|swiftstride|first charge|impact hits|stomp|drilled|open order|close order|loose formation/i;
+/* ------------------------------------------------------------------
+   Armatura, salvezza speciale, rigenerazione
+   Nei cataloghi di New Recruit questi tre numeri non stanno quasi mai
+   dove uno se li aspetta. L'armatura e' scritta a parole dentro un
+   profilo "Armour" ("Armour Value 5+"), lo scudo non ha un valore suo
+   ma promette di migliorare quello che c'e', e la pelle dura di un
+   mostro e' una regola speciale col numero fra parentesi. Chi cercava
+   solo una caratteristica "AV" sul modello trovava zero su tutta la
+   lista, e a zero il combattimento fa conti sbagliati.
+
+   La convenzione qui e' la stessa del resto dell'app: il numero e' il
+   punteggio da fare col dado, e zero vuol dire che quella salvezza non
+   c'e'.
+   ------------------------------------------------------------------ */
+const NO_SAVE = 7;
+const clampSave = n => (n >= NO_SAVE ? 0 : Math.max(2, Math.min(6, n)));
+
+/* Le descrizioni degli incantesimi promettono salvezze che durano un
+   turno: sono effetti, non profilo, e non vanno lette come se l'unita'
+   le avesse sempre. */
+const isLasting = p => !/^Spell$/i.test(pType(p));
+
+function readArmour(profs, ruleText){
+  /* 1 · i cataloghi che scrivono il valore come caratteristica */
+  for (const p of profs){
+    if (!/^(Model|Unit)$/i.test(pType(p))) continue;
+    const m = readChars(p);
+    const av = pickChar(m, /^(av|armou?r value)$/i);
+    const sv = pickChar(m, /^(sv|save|armou?r save)$/i);
+    if (av && /\d/.test(av)) return clampSave(7 - +av.match(/\d+/)[0]);
+    if (sv && /\d/.test(sv)) return clampSave(+sv.match(/\d+/)[0]);
+  }
+
+  /* 2 · i profili armatura, dove il valore sta dentro la descrizione.
+     La ricerca e' ancorata a tutta la descrizione perche' quella dello
+     scudo cita un esempio ("un modello con armatura leggera ha valore
+     6+") e presa a meta' frase direbbe il numero sbagliato. */
+  let value = NO_SAVE, bonus = 0;
+  for (const p of profs){
+    if (!/^Armour$/i.test(pType(p))) continue;
+    const name = String(pick(p, "name") || "");
+    const desc = Object.values(readChars(p)).join(" ").trim();
+    const exact = desc.match(/^armou?r value\s*(\d)\s*\+?\.?$/i);
+    if (exact) value = Math.min(value, +exact[1]);
+    else if (/shield|scudo/i.test(name)) bonus += 1;
+    else {
+      const by = desc.match(/improves? (?:its )?armou?r value by\s*(\d)/i);
+      if (by) bonus += +by[1];
+    }
+  }
+
+  /* 3 · la pelle naturale, che e' una regola e non un pezzo di equipaggiamento */
+  for (const name of Object.keys(ruleText)){
+    const m = /^armou?red hide\s*\((\d)/i.exec(name.trim());
+    if (m) bonus += +m[1];
+  }
+
+  return clampSave(value - bonus);
+}
+
+/* Salvezza speciale e rigenerazione si trovano solo a parole, e quasi
+   sempre dentro il testo di una regola: "5+ ward save", "Regeneration
+   (5+)". Si guarda ovunque tranne che negli incantesimi. */
+function readSpecialSave(profs, re){
+  for (const p of profs){
+    if (!isLasting(p)) continue;
+    const hay = String(pick(p, "name") || "") + " " + Object.values(readChars(p)).join(" ");
+    const m = hay.match(re);
+    if (m) return clampSave(+(m[1] || m[2]));
+  }
+  return 0;
+}
+const WARD_RE  = /(?:(\d)\s*\+\s*ward save|ward save (?:of )?(?:a )?(\d)\s*\+)/i;
+const REGEN_RE = /regenerat\w*\s*\(?\s*(\d)\s*\+/i;
 
 function readUnit(node){
   const profs = allProfiles(node);
@@ -119,11 +192,35 @@ function readUnit(node){
     if (statNames.every(k => k in map)) { stats = map; break; }
   }
 
+  /* Le regole si tengono tutte. Prima ne passava una manciata scelta da
+     un elenco scritto a mano, e tutte le altre sparivano al momento
+     dell'importazione: uno Scar-Veteran arrivava sul tavolo senza
+     nessuna delle sue sette regole, e quello che non e' stato letto non
+     si puo' ne' applicare ne' segnalare come non applicato. Del testo
+     si tiene una copia perche' e' li' che stanno i numeri: quanto
+     migliora l'armatura, di quanto sale la perforazione, da che punto
+     in su un dado conta. */
   const rules = [];
+  const ruleText = {};
   for (const p of profs){
     if (!/Special Rule/i.test(pType(p))) continue;
+    const n = String(pick(p, "name") || "").trim();
+    if (!n) continue;
+    if (!rules.includes(n)) rules.push(n);
+    const desc = pickChar(readChars(p), /description|descrizione|effect/i);
+    if (desc && !ruleText[n]) ruleText[n] = desc;
+  }
+
+  /* Stendardo e musico cambiano il conto di fine assalto e stanno nel
+     file come profili di comando: leggerli qui evita di doverli
+     spuntare a mano ogni volta nel pannello del duello. */
+  const command = { standard:false, musician:false, champion:false };
+  for (const p of profs){
+    if (!/^Command$/i.test(pType(p))) continue;
     const n = String(pick(p, "name") || "");
-    if (n && RULE_KEEP.test(n) && !rules.includes(n)) rules.push(n);
+    if (/standard|stendardo|banner/i.test(n)) command.standard = true;
+    if (/music|musico/i.test(n)) command.musician = true;
+    if (/champion|campione/i.test(n)) command.champion = true;
   }
   /* Le armi non servono piu' solo a scrivere una riga nell'ispettore:
      con Forza e perforazione il tavolo puo' stimare tiro e mischia. */
@@ -146,20 +243,11 @@ function readUnit(node){
     return q ? Math.max(m, +q[1]) : m;
   }, 0);
 
-  /* Salvezza d'armatura: nei profili sta come valore ("Armour Value 3")
-     oppure gia' come punteggio ("4+"). Se non c'e' resta zero e la si
-     mette a mano nell'ispettore, che e' comunque il posto in cui la si
-     corregge quando l'unita' porta lo scudo e il file non lo dice. */
-  let armour = 0;
-  for (const p of profs){
-    if (!/^(Model|Unit)$/i.test(pType(p))) continue;
-    const m = readChars(p);
-    const av = pickChar(m, /^(av|armou?r value)$/i);
-    const sv = pickChar(m, /^(sv|save|armou?r save)$/i);
-    if (av && /\d/.test(av)) armour = Math.max(2, Math.min(6, 7 - +av.match(/\d+/)[0]));
-    else if (sv && /\d/.test(sv)) armour = Math.max(2, Math.min(6, +sv.match(/\d+/)[0]));
-    if (armour) break;
-  }
+  /* Le tre salvezze. Restano correggibili a mano nell'ispettore: il
+     file non sa dell'oggetto magico comprato all'ultimo momento. */
+  const armour = readArmour(profs, ruleText);
+  const ward   = readSpecialSave(profs, WARD_RE);
+  const regen  = readSpecialSave(profs, REGEN_RE);
 
   const cats = catsOf(node).map(c => String(pick(c, "name") || "")).filter(Boolean);
   const primary = catsOf(node).find(c => pick(c, "primary") === true || pick(c, "primary") === "true");
@@ -180,8 +268,8 @@ function readUnit(node){
     loose,
     pts: Math.round(deepCost(node, /(^|[^a-z])(pts|points|punti)([^a-z]|$)/)),
     us: Math.round(deepCost(node, /unit strength/)),
-    troop, unitSize: size, stats, rules, weapons, maxRange, slot, faction,
-    armour, ward: 0,
+    troop, unitSize: size, stats, rules, ruleText, command, weapons, maxRange, slot, faction,
+    armour, ward, regen,
   };
 }
 

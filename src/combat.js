@@ -16,8 +16,9 @@
  * da sola quando un pezzo le manca.
  */
 
-import { hitMelee, woundOn, saveOn, pool, chance, rankBonus,
+import { hitMelee, woundOn, saveOn, pool, roll, chance, rankBonus,
          leadershipTest, stat, weaponStrength, weaponAP, IMPOSSIBLE } from './rules.js';
+import { readRules, splitWeaponRules, emptyFlags } from './rulebook.js';
 
 /* ============================================================
    1 · DALL'UNITA' DEL TAVOLO ALLA SCHIERA CHE COMBATTE
@@ -37,12 +38,31 @@ export function rangedWeapons(u){
     .sort((a, b) => stat(b.range) - stat(a.range));
 }
 
-const has = (u, re) => (u.rules || []).some(r => re.test(r));
+/* Quante ferite d'urto porta una carica. Il numero sta scritto nel nome
+   della regola — "Impact Hits (D3)", "(2)" — e prima veniva ignorato:
+   si contava una ferita per modello della prima fila, che per un carro
+   e' generoso e per un mostro solo e' assurdo. Quando fra parentesi non
+   c'e' niente si torna al vecchio ordine di grandezza. */
+function impactHits(side, front){
+  const a = side.flags && side.flags.impact;
+  if (!a) return 0;
+  if (a.flat) return a.flat;
+  if (a.die) return roll(a.times || 1).reduce((s, d) => s + 1 + Math.floor((d - 1) * a.die / 6), 0);
+  return front;
+}
 
-/* Quante ferite d'urto porta una carica: il regolamento le lega al tipo
-   di truppa, qui si sta prudenti e se ne conta una per modello della
-   prima fila, che e' l'ordine di grandezza giusto. */
-const impactHits = (side, front) => has(side, /impact hits|stomp/i) ? front : 0;
+/* Il sei naturale: quello che accende meta' delle regole speciali. Un 6
+   passa sempre, quindi contarli fra i dadi usciti basta e non serve
+   sapere quale punteggio servisse. */
+const sixes = p => (p.dice || []).filter(v => v === 6).length;
+
+/* due tiri separati raccontati come uno solo, per il pannello */
+function mergePools(a, b){
+  if (!b) return a;
+  if (!a) return b;
+  return { dice: [...(a.dice || []), ...(b.dice || [])],
+           hits: a.hits + b.hits, need: a.need, of: a.of + b.of };
+}
 
 /* La schiera: quello che serve a tirare, e niente altro. `over` sono le
    correzioni fatte a mano nel pannello, che vincono sempre sul profilo
@@ -50,7 +70,11 @@ const impactHits = (side, front) => has(side, /impact hits|stomp/i) ? front : 0;
 export function combatant(u, over = {}){
   /* chiamata due volte non ricomincia da capo: una schiera gia' fatta
      torna se stessa con le correzioni sopra */
-  if (u && u.ref) return Object.assign({ ...u }, over);
+  if (u && u.ref){
+    const back = Object.assign({ ...u }, over);
+    back.flags = back.flags || emptyFlags();
+    return back;
+  }
   const st = u.stats || {};
   const melee = meleeWeapon(u);
   const alive = Math.max(0, (u.models || 1) - (u.lost || 0));
@@ -64,23 +88,46 @@ export function combatant(u, over = {}){
        anche lei, altrimenti a fine assalto un reggimento dimezzato
        continuerebbe a contare come "siamo di piu'" */
     usPer: (u.us || u.models || 1) / Math.max(1, u.models || 1),
-    armour: u.armour || 0, ward: u.ward || 0,
+    armour: u.armour || 0, ward: u.ward || 0, regen: u.regen || 0,
     ap: melee ? weaponAP(melee) : 0,
     weapon: melee ? melee.name : "",
     loose: !!u.loose, rules: u.rules || [],
-    standard: false, charged: false, flank: "", spill: 0,
+    standard: !!(u.command && u.command.standard),
+    musician: !!(u.command && u.command.musician),
+    charged: false, flank: "", spill: 0,
   };
   if (melee) c.s = weaponStrength(melee, c.s);
+
+  /* Le regole: quelle dell'unita' e quelle dell'arma che sta davvero
+     impugnando. Le seconde stavano nel file da sempre, lette e mai
+     usate — ed e' li' che vive meta' di quello che decide un assalto. */
+  const read = readRules(u.rules || [], splitWeaponRules(melee && melee.rules), melee ? melee.name : "");
+  c.flags = read.flags;
+  c.rulesRead = { applied: read.applied, elsewhere: read.elsewhere, unknown: read.unknown };
+
+  /* le lame di ossidiana valgono sull'arma a una mano, non sull'alabarda */
+  if (c.flags.handWeaponAP && melee && /hand weapon|arma a una mano/i.test(melee.name))
+    c.ap = Math.max(c.ap, c.flags.handWeaponAP);
+
   return Object.assign(c, over);
 }
+
+/* Gli attacchi che questo modello porta adesso: la caratteristica del
+   profilo piu' quello che la carica furiosa aggiunge. */
+const attacksOf = c => (c.a || 1) + (c.charged && c.flags && c.flags.furiousCharge ? 1 : 0);
 
 /* Quanti si toccano davvero: la prima fila e' larga quanto la piu'
    stretta delle due, e una fila dietro appoggia con un colpo a testa.
    E' l'ordine di grandezza del tavolo, e nel pannello si corregge. */
 export function contact(att, def){
   const front = Math.max(1, Math.min(att.frontage, def.frontage, att.models));
-  const support = Math.min(front, Math.max(0, att.models - att.frontage));
-  return { front, support, attacks: front * att.a + support };
+  /* Le file d'appoggio: una, oppure due con la lancia che permette di
+     combattere in una fila in piu'. Ognuna appoggia con un colpo a
+     testa, non con tutti i suoi attacchi. */
+  const ranks = att.flags && att.flags.extraRank ? 2 : 1;
+  const behind = Math.max(0, att.models - att.frontage);
+  const support = Math.min(front * ranks, behind);
+  return { front, support, ranks, attacks: front * attacksOf(att) + support };
 }
 
 /* ============================================================
@@ -93,21 +140,48 @@ export function strike(att, def, { attacks, auto = false, strength, ap, label = 
   const S = strength ?? att.s;
   const AP = ap ?? att.ap;
 
+  const f = att.flags || emptyFlags();
+  const notes = [];
+
   const hitNeed = auto ? 0 : hitMelee(att.ws, def.ws);
   const hit = auto ? { dice: [], hits: n, need: 0, of: n } : pool(n, hitNeed);
 
+  /* Veleno: il 6 naturale per colpire non ferisce da solo, da' due punti
+     al tiro per ferire. Quei colpi si tirano a parte, con il loro
+     punteggio, e poi i due tiri si raccontano come uno. */
   const woundNeed = woundOn(S, def.t);
-  const wound = pool(hit.hits, woundNeed);
+  const venom = f.poisoned ? Math.min(sixes(hit), hit.hits) : 0;
+  const venomNeed = Math.max(2, woundNeed - 2);
+  const plain = pool(hit.hits - venom, woundNeed);
+  const spiked = venom ? pool(venom, venomNeed) : null;
+  const wound = mergePools(plain, spiked);
+  if (venom) notes.push(venom + (venom === 1 ? " colpo avvelenato feriva" : " colpi avvelenati ferivano")
+                        + " a " + venomNeed + "+ invece che a " + woundNeed + "+");
 
+  /* Perfora-armature e colpo mortale guardano lo stesso dado, il 6
+     naturale per ferire: il primo migliora la perforazione, il secondo
+     salta del tutto l'armatura. */
+  const crit = (f.armourBane || f.killingBlow) ? sixes(plain) + (spiked ? sixes(spiked) : 0) : 0;
+  const critHits = Math.min(crit, wound.hits);
   const saveNeed = saveOn(def.armour, AP);
-  const save = pool(wound.hits, saveNeed);
+  const critNeed = f.killingBlow ? IMPOSSIBLE : saveOn(def.armour, AP + f.armourBane);
+  const savePlain = pool(wound.hits - critHits, saveNeed);
+  const saveCrit = critHits ? pool(critHits, critNeed) : null;
+  const save = mergePools(savePlain, saveCrit);
+  if (critHits) notes.push(critHits + (critHits === 1 ? " sei naturale" : " sei naturali")
+    + (f.killingBlow ? ": nessuna armatura" : ": armatura a " + (critNeed >= IMPOSSIBLE ? "niente" : critNeed + "+")));
   const through = wound.hits - save.hits;
 
+  /* Salvezza speciale e poi rigenerazione: due reti distinte, e la
+     seconda non la buca nessuna perforazione. */
   const wardNeed = saveOn(def.ward, 0);
   const ward = pool(through, wardNeed);
+  const left = through - ward.hits;
+  const regenNeed = saveOn(def.regen, 0);
+  const regen = pool(left, regenNeed);
 
-  return { label, attacks: n, strength: S, ap: AP,
-           hit, wound, save, ward, wounds: through - ward.hits };
+  return { label, attacks: n, strength: S, ap: AP, notes,
+           hit, wound, save, ward, regen, wounds: left - regen.hits };
 }
 
 /* le ferite diventano modelli tolti; quelle che non bastano a
@@ -144,16 +218,20 @@ export function meleeRound(A, B){
     if (n) blow(att, def, tag, { attacks: n, auto: true, label: "urto della carica" });
   }
 
-  /* poi si mena, in ordine di Iniziativa; a parita' si mena insieme e le
-     perdite non tolgono attacchi a nessuno dei due */
-  if (a.i === b.i){
+  /* poi si mena, in ordine di Iniziativa — salvo chi ha un'arma che
+     decide l'ordine da sola. L'arma pesante che colpisce per ultima era
+     scritta nel file e non veniva letta: chi la impugnava si teneva la
+     Forza in piu' senza pagarne il prezzo. */
+  const speed = c => c.flags.strikeFirst ? 99 : c.flags.strikeLast ? -99 : c.i;
+  const sa = speed(a), sb = speed(b);
+  if (sa === sb){
     const ra = strike(a, b, { label: "colpi" }), rb = strike(b, a, { label: "colpi" });
     const ka = applyWounds(b, ra.wounds), kb = applyWounds(a, rb.wounds);
     done.A += ra.wounds; done.B += rb.wounds;
     steps.push({ side: "A", name: a.name, ...ra, kills: ka, together: true });
     steps.push({ side: "B", name: b.name, ...rb, kills: kb, together: true });
   } else {
-    const first  = a.i > b.i ? ["A", a, b] : ["B", b, a];
+    const first  = sa > sb ? ["A", a, b] : ["B", b, a];
     const second = first[0] === "A" ? ["B", b, a] : ["A", a, b];
     blow(first[1],  first[2],  first[0],  { label: "colpi" });
     blow(second[1], second[2], second[0], { label: "colpi" });
@@ -161,10 +239,16 @@ export function meleeRound(A, B){
 
   const cr = resolution(a, b, done);
   const wiped = a.models <= 0 ? "A" : b.models <= 0 ? "B" : "";
+  /* Il test di rotta. Chi non si rompe non lo fa; chi e' testardo lo fa
+     al Comando pieno, senza lo scarto del combattimento addosso. */
   let test = null;
   if (!wiped && cr.loser){
     const side = cr.loser === "A" ? a : b;
-    test = { side: cr.loser, ...leadershipTest(side.ld, cr.diff) };
+    if (side.flags.unbreakable)
+      test = { side: cr.loser, dice: [], total: 0, target: side.ld, passed: true, insane: false, unbreakable: true };
+    else
+      test = { side: cr.loser, stubborn: !!side.flags.stubborn,
+               ...leadershipTest(side.ld, side.flags.stubborn ? 0 : cr.diff) };
   }
   return { a, b, steps, cr, test, wiped, done,
            killsA: A.models - a.models, killsB: B.models - b.models };
@@ -183,8 +267,15 @@ export function resolution(a, b, done){
   };
   const A = score(a, b, done.A), B = score(b, a, done.B);
   const diff = Math.abs(A.total - B.total);
-  const loser = A.total === B.total ? "" : (A.total > B.total ? "B" : "A");
-  return { A, B, diff, loser, winner: loser ? (loser === "A" ? "B" : "A") : "" };
+  let loser = A.total === B.total ? "" : (A.total > B.total ? "B" : "A");
+  /* Il musico non aggiunge un punto: rompe la parita'. Sta nel file
+     come profilo di comando e finora non lo guardava nessuno. */
+  let tie = "";
+  if (!loser && a.musician !== b.musician){
+    tie = a.musician ? "A" : "B";
+    loser = a.musician ? "B" : "A";
+  }
+  return { A, B, diff, loser, tie, winner: loser ? (loser === "A" ? "B" : "A") : "" };
 }
 
 /* ============================================================
@@ -213,10 +304,21 @@ export function odds(A, B, n = 500){
 /* la stessa cosa senza tirare: quante ferite ci si aspetta in media */
 export function meleeForecast(att, def, attacks){
   const n = attacks ?? att.forcedAttacks ?? contact(att, def).attacks;
-  const h = hitMelee(att.ws, def.ws), w = woundOn(att.s, def.t);
-  const sv = saveOn(def.armour, att.ap), wd = saveOn(def.ward, 0);
-  const wounds = n * chance(h) * chance(w) * (1 - chance(sv)) * (1 - chance(wd));
-  return { attacks: n, hitNeed: h, woundNeed: w, saveNeed: sv, wardNeed: wd,
+  const f = att.flags || emptyFlags();
+  const h = hitMelee(att.ws, def.ws);
+  const w = woundOn(att.s, def.t);
+  /* col veleno un colpo su sei ferisce con due punti di sconto: la
+     media si fa sui due casi, non su uno */
+  const wChance = f.poisoned && h < IMPOSSIBLE
+    ? (5 / 6) * chance(w) + (1 / 6) * chance(Math.max(2, w - 2))
+    : chance(w);
+  const sv = saveOn(def.armour, att.ap);
+  const svChance = f.killingBlow ? (5 / 6) * chance(sv)
+    : f.armourBane ? (5 / 6) * chance(sv) + (1 / 6) * chance(saveOn(def.armour, att.ap + f.armourBane))
+    : chance(sv);
+  const wd = saveOn(def.ward, 0), rg = saveOn(def.regen, 0);
+  const wounds = n * chance(h) * wChance * (1 - svChance) * (1 - chance(wd)) * (1 - chance(rg));
+  return { attacks: n, hitNeed: h, woundNeed: w, saveNeed: sv, wardNeed: wd, regenNeed: rg,
            wounds, kills: wounds / def.w };
 }
 
@@ -253,21 +355,38 @@ export function shootForecast(shooter, target, { weapon, mods = 0, shots } = {})
   const S = weaponStrength(weapon, stat((shooter.stats || {}).S));
   const AP = weaponAP(weapon);
   const t = combatant(target);
-  const wNeed = woundOn(S, t.t), sNeed = saveOn(t.armour, AP), kNeed = saveOn(t.ward, 0);
-  const wounds = n * chance(need) * chance(wNeed) * (1 - chance(sNeed)) * (1 - chance(kNeed));
-  return { shots: n, hitNeed: need, strength: S, ap: AP,
-           woundNeed: wNeed, saveNeed: sNeed, wardNeed: kNeed,
+  /* Il veleno vale anche a distanza, e il tiratore lo porta con se' o
+     con l'arma: le due liste di regole si leggono insieme. */
+  const f = readRules(shooter.rules || [], splitWeaponRules(weapon && weapon.rules), weapon ? weapon.name : "").flags;
+  const wNeed = woundOn(S, t.t), sNeed = saveOn(t.armour, AP);
+  const kNeed = saveOn(t.ward, 0), rNeed = saveOn(t.regen, 0);
+  const wChance = f.poisoned && need < IMPOSSIBLE
+    ? (5 / 6) * chance(wNeed) + (1 / 6) * chance(Math.max(2, wNeed - 2))
+    : chance(wNeed);
+  const wounds = n * chance(need) * wChance * (1 - chance(sNeed)) * (1 - chance(kNeed)) * (1 - chance(rNeed));
+  return { shots: n, hitNeed: need, strength: S, ap: AP, poisoned: f.poisoned,
+           woundNeed: wNeed, saveNeed: sNeed, wardNeed: kNeed, regenNeed: rNeed,
            wounds, kills: wounds / t.w, targetW: t.w };
 }
 
 /* e la stessa raffica tirata sul serio */
 export function shootRoll(shooter, target, opts){
   const f = shootForecast(shooter, target, opts);
+  const notes = [];
   const hit = pool(f.shots, f.hitNeed);
-  const wound = pool(hit.hits, f.woundNeed);
+
+  const venom = f.poisoned ? Math.min(sixes(hit), hit.hits) : 0;
+  const venomNeed = Math.max(2, f.woundNeed - 2);
+  const plain = pool(hit.hits - venom, f.woundNeed);
+  const wound = mergePools(plain, venom ? pool(venom, venomNeed) : null);
+  if (venom) notes.push(venom + (venom === 1 ? " colpo avvelenato feriva" : " colpi avvelenati ferivano")
+                        + " a " + venomNeed + "+ invece che a " + f.woundNeed + "+");
+
   const save = pool(wound.hits, f.saveNeed);
   const through = wound.hits - save.hits;
   const ward = pool(through, f.wardNeed);
-  const wounds = through - ward.hits;
-  return { ...f, hit, wound, save, ward, wounds, kills: Math.floor(wounds / f.targetW) };
+  const left = through - ward.hits;
+  const regen = pool(left, f.regenNeed);
+  const wounds = left - regen.hits;
+  return { ...f, notes, hit, wound, save, ward, regen, wounds, kills: Math.floor(wounds / f.targetW) };
 }

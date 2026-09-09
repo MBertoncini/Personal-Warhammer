@@ -26,8 +26,10 @@ function sideOpts(u, foe){
   const c = C.combatant(u), f = C.combatant(foe);
   return {
     attacks: C.contact(c, f).attacks,
-    armour: u.armour || 0, ward: u.ward || 0,
-    standard: false, charged: false, flank: "",
+    armour: u.armour || 0, ward: u.ward || 0, regen: u.regen || 0,
+    /* lo stendardo adesso arriva dal file quando c'e': era una casella
+       da spuntare a mano ogni volta, e il dato stava li' dall'inizio */
+    standard: c.standard, charged: false, flank: "",
   };
 }
 
@@ -43,7 +45,7 @@ export function closeDuel(){ cur = null; render(); }
 /* dall'unita' + opzioni alla schiera che combatte */
 function sideOf(u, o){
   return C.combatant(u, {
-    armour: o.armour, ward: o.ward, forcedAttacks: o.attacks,
+    armour: o.armour, ward: o.ward, regen: o.regen, forcedAttacks: o.attacks,
     standard: o.standard, charged: o.charged, flank: o.flank,
   });
 }
@@ -94,6 +96,8 @@ function stepHTML(s, names, tint){
       ${line(`ferisce ${need(s.wound.need)}`, s.wound, plural(s.wound.hits, "ferita", "ferite"))}
       ${s.save.of && s.save.need < IMPOSSIBLE ? line(`armatura ${need(s.save.need)}`, s.save, plural(s.save.hits, "parata", "parate")) : ""}
       ${s.ward.of && s.ward.need < IMPOSSIBLE ? line(`speciale ${need(s.ward.need)}`, s.ward, plural(s.ward.hits, "parata", "parate")) : ""}
+      ${s.regen && s.regen.of && s.regen.need < IMPOSSIBLE ? line(`rigenera ${need(s.regen.need)}`, s.regen, plural(s.regen.hits, "ferita rimarginata", "ferite rimarginate")) : ""}
+      ${(s.notes || []).length ? `<p class="note">${s.notes.map(esc).join(" · ")}</p>` : ""}
       <div class="dl total"><span class="dl-k">passano</span><span></span>
         <b>${plural(s.wounds, "ferita", "ferite")} · ${plural(s.kills, "modello a terra", "modelli a terra")}</b></div>
     </div>`;
@@ -102,11 +106,69 @@ function stepHTML(s, names, tint){
 function testHTML(r, names){
   const t = r.test, side = r.cr.loser;
   const ld = side === "A" ? r.a.ld : r.b.ld;
+  if (t.unbreakable)
+    return `<p class="note"><b>${esc(names[side])}</b> perde di ${r.cr.diff}, ma è
+      <b>Unbreakable</b>: non tira nemmeno.</p>`;
   const colour = t.passed ? "ok" : "bad";
   const verdict = t.passed ? (t.insane ? "tiene i nervi, doppio uno" : "tiene i nervi") : "va in rotta";
+  /* Il testardo tira al Comando pieno: scrivere lo scarto e poi non
+     sottrarlo sembrerebbe un errore di conto, quindi la riga cambia. */
+  const conto = t.stubborn
+    ? `<b>Stubborn</b>: Comando ${ld} pieno, senza lo scarto di ${r.cr.diff}`
+    : `Comando ${ld} − ${r.cr.diff} = ${t.target}`;
   return `<p class="note"><b>${esc(names[side])}</b> perde di ${r.cr.diff}:
-    Comando ${ld} − ${r.cr.diff} = ${t.target}, 2D6 = ${t.dice.join(" + ")} = <b>${t.total}</b> →
+    ${conto}, 2D6 = ${t.dice.join(" + ")} = <b>${t.total}</b> →
     <b style="color:var(--${colour})">${verdict}</b>.</p>`;
+}
+
+/* Chi mena per primo. Non e' sempre l'Iniziativa: un'arma che colpisce
+   per ultima scavalca il profilo, e vale la pena dirlo perche' e' la
+   ragione per cui a volte il piu' svelto dei due parte dopo. */
+function orderLine(a, b, names){
+  const rank = c => c.flags.strikeFirst ? 2 : c.flags.strikeLast ? 0 : 1;
+  const ra = rank(a), rb = rank(b);
+  if (ra !== rb){
+    const why = [];
+    if (a.flags.strikeFirst) why.push(`${esc(names.A)} colpisce per primo`);
+    if (b.flags.strikeFirst) why.push(`${esc(names.B)} colpisce per primo`);
+    if (a.flags.strikeLast)  why.push(`${esc(names.A)} colpisce per ultimo`);
+    if (b.flags.strikeLast)  why.push(`${esc(names.B)} colpisce per ultimo`);
+    return `${esc(names[ra > rb ? "A" : "B"])} mena per primo: ${why.join(", ")}, e l'arma scavalca l'Iniziativa.`;
+  }
+  if (a.i === b.i) return "Stessa Iniziativa: si menano insieme.";
+  return `${esc(names[a.i > b.i ? "A" : "B"])} mena per primo (I ${Math.max(a.i, b.i)} contro ${Math.min(a.i, b.i)}).`;
+}
+
+/* ------------------------------------------------------------------
+   Le regole lette dalla lista, e quali sono entrate nel conto.
+   E' la riga che dice quanto vale il risultato: un assalto che applica
+   tre regole su sette e lo dice si sa come leggerlo, uno che ne applica
+   tre in silenzio sembra completo e non lo e'.
+   ------------------------------------------------------------------ */
+function rulesHTML(a, b, names, tint){
+  const block = (c, tag) => {
+    const r = c.rulesRead;
+    if (!r || (!r.applied.length && !r.elsewhere.length && !r.unknown.length)) return "";
+    const tag2 = (t, cls, title) => `<span class="tag ${cls}" title="${esc(title)}">${esc(t)}</span>`;
+    return `
+      <div class="readout"><span><span class="swatch" style="background:${tint[tag]}"></span>${esc(names[tag])}</span>
+        <b class="mono dim">${r.applied.length} su ${r.applied.length + r.elsewhere.length + r.unknown.length}</b></div>
+      <div class="tags">
+        ${r.applied.map(x => tag2(x.name + (x.caveat ? " *" : ""), "rule-on", x.what + (x.caveat ? " — " + x.caveat : ""))).join("")}
+        ${r.elsewhere.map(x => tag2(x.name, "rule-off", "non entra in questo conto: " + x.why)).join("")}
+        ${r.unknown.map(x => tag2(x.name + " ?", "rule-unk", "l'app non conosce questa regola: applicatela voi")).join("")}
+      </div>`;
+  };
+  const body = block(a, "A") + block(b, "B");
+  if (!body) return "";
+  return `
+    <details class="duel-rules">
+      <summary class="panel-title">Regole lette dalla lista</summary>
+      <p class="note">In pieno quelle che hanno spostato un dado, in grigio quelle che si giocano
+      altrove, con il punto interrogativo quelle che l'app non conosce. Passa sopra un'etichetta
+      per sapere perché.</p>
+      ${body}
+    </details>`;
 }
 
 function crHTML(r, names, tint){
@@ -159,10 +221,11 @@ function controls(tag, u){
         <b>${esc(u.name)}</b></div>
       <div class="mono dim">${["WS","S","T","W","I","A","Ld"].map(k => k + " " + (c[k.toLowerCase()] || "–")).join(" · ")}</div>
       <div class="mono dim">${c.models} in piedi · ${c.frontage} di fronte${c.weapon ? " · " + esc(c.weapon) : ""}</div>
-      <div class="grid3">
+      <div class="grid2">
         <label class="field">Attacchi<input type="number" min="0" max="400" id="d-att-${tag}" value="${o.attacks}"></label>
         <label class="field">Armatura<select id="d-arm-${tag}">${SAVE_OPTS.map(([v, l]) => `<option value="${v}"${v === o.armour ? " selected" : ""}>${l}</option>`).join("")}</select></label>
         <label class="field">Speciale<select id="d-wrd-${tag}">${SAVE_OPTS.map(([v, l]) => `<option value="${v}"${v === o.ward ? " selected" : ""}>${l}</option>`).join("")}</select></label>
+        <label class="field">Rigenera<select id="d-rgn-${tag}">${SAVE_OPTS.map(([v, l]) => `<option value="${v}"${v === o.regen ? " selected" : ""}>${l}</option>`).join("")}</select></label>
       </div>
       <div class="duel-flags">
         <label><input type="checkbox" id="d-std-${tag}"${o.standard ? " checked" : ""}> stendardo</label>
@@ -210,8 +273,7 @@ function render(){
         <p class="note">
           ${esc(names.A)} colpisce ${need(fa.hitNeed)}, ferisce ${need(fa.woundNeed)}${fa.saveNeed < IMPOSSIBLE ? `, armatura ${need(fa.saveNeed)}` : ""}.
           ${esc(names.B)} colpisce ${need(fb.hitNeed)}, ferisce ${need(fb.woundNeed)}${fb.saveNeed < IMPOSSIBLE ? `, armatura ${need(fb.saveNeed)}` : ""}.
-          ${a.i === b.i ? "Stessa Iniziativa: si menano insieme." :
-            `${esc(names[a.i > b.i ? "A" : "B"])} mena per primo (I ${Math.max(a.i, b.i)} contro ${Math.min(a.i, b.i)}).`}
+          ${orderLine(a, b, names)}
         </p>
       </div>
 
@@ -225,8 +287,10 @@ function render(){
         ? `<button class="btn" id="d-apply">Segna le perdite sul tavolo (−${cur.roll.killsA} / −${cur.roll.killsB})</button>` : ""}
       ${cur.odds ? oddsHTML(cur.odds, names, tint) : ""}
 
-      <p class="note">Stima, non arbitro: legge i profili della lista e i numeri che imposti qui,
-      e non sa niente di magia, oggetti e regole d'esercito. Al tavolo decidete voi.</p>
+      ${rulesHTML(a, b, names, tint)}
+
+      <p class="note">Stima, non arbitro: legge i profili della lista, le regole che riconosce e i
+      numeri che imposti qui. Quello che non ha applicato sta scritto qui sopra. Al tavolo decidete voi.</p>
     </div>`;
 
   /* ---- fili ---- */
@@ -243,6 +307,7 @@ function render(){
     set(`#d-att-${tag}`, el => { o.attacks = Math.max(0, +el.value || 0); });
     set(`#d-arm-${tag}`, el => { o.armour = +el.value || 0; ctx.setSave(u, "armour", o.armour); });
     set(`#d-wrd-${tag}`, el => { o.ward   = +el.value || 0; ctx.setSave(u, "ward", o.ward); });
+    set(`#d-rgn-${tag}`, el => { o.regen  = +el.value || 0; ctx.setSave(u, "regen", o.regen); });
     set(`#d-std-${tag}`, el => { o.standard = el.checked; });
     set(`#d-chg-${tag}`, el => { o.charged  = el.checked; });
     set(`#d-flk-${tag}`, el => { o.flank    = el.value; });

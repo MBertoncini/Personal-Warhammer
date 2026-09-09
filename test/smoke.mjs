@@ -57,6 +57,16 @@ ok('"25 Orc Mob" -> Orc Boy o niente (non Black Orc)',
 ok('"Bastiladon" non si aggancia a caso', cat.matchUnitName('Bastiladon') === null);
 ok('candidati proposti per "Orc Mob"', cat.candidatesFor('Orc Mob').length > 0);
 
+console.log('\nsuggerimenti mentre si scrive');
+const names = t => cat.suggestFor(t).map(r => r.entry.name);
+ok('"bla" a meta propone gia Black Orc', names('bla')[0] === 'Black Orc');
+ok('"orc" propone tutte e due le voci', names('orc').length === 2);
+ok('"black o" tiene solo Black Orc',
+   names('black o').length === 1 && names('black o')[0] === 'Black Orc');
+ok('una parola che non c e esclude la voce', names('black elf').length === 0);
+ok('a campo vuoto non si propone niente', cat.suggestFor('').length === 0);
+ok('"11 Black Orc Mob" arriva lo stesso a Black Orc', names('11 Black Orc Mob')[0] === 'Black Orc');
+
 console.log('\nalias imparato');
 const orcBoy = cat.catalogAll().find(e => e.name === 'Orc Boy');
 await cat.linkAlias(orcBoy.id, '25 Orc Mob');

@@ -609,6 +609,7 @@ function renderInspector(){
   }
   $("#i-armour").addEventListener("change", e => upd(() => { u.armour = +e.target.value || 0; }, "armatura"));
   $("#i-ward").addEventListener("change", e => upd(() => { u.ward = +e.target.value || 0; }, "salvezza speciale"));
+  $("#i-regen").addEventListener("change", e => upd(() => { u.regen = +e.target.value || 0; }, "rigenerazione"));
   for (const b of host.querySelectorAll("[data-duel]"))
     b.addEventListener("click", () => {
       const foe = state.units.find(x => x.uid === +b.dataset.duel);
@@ -874,10 +875,14 @@ const saveSelect = (id, cur) =>
     `<option value="${v}"${v === (cur || 0) ? " selected" : ""}>${v ? v + "+" : "—"}</option>`).join("")}</select>`;
 
 function defenceHTML(u){
+  /* Tre reti distinte, nell'ordine in cui si tirano: l'armatura la
+     buca la perforazione, le altre due no. La rigenerazione arriva dal
+     file quando c'e' scritta, e si corregge qui come le altre. */
   return `
-    <div class="grid2">
+    <div class="grid3">
       <label class="field">Armatura${saveSelect("i-armour", u.armour)}</label>
       <label class="field">Salv. speciale${saveSelect("i-ward", u.ward)}</label>
+      <label class="field">Rigenera${saveSelect("i-regen", u.regen)}</label>
     </div>`;
 }
 
@@ -3340,7 +3345,7 @@ async function bootDeploy(){
   G.initGame({ getState: () => state, act });
   initDuel($("#duel"), {
     unit: uid => state.units.find(u => u.uid === uid) || null,
-    setSave: (u, key, v) => act(key === "armour" ? "armatura" : "salvezza speciale",
+    setSave: (u, key, v) => act({ armour:"armatura", ward:"salvezza speciale", regen:"rigenerazione" }[key] || "salvezza",
                                 () => { u[key] = v; }),
     applyLosses: pairs => {
       act("perdite dallo scontro", () => {

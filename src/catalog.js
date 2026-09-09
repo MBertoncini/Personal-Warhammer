@@ -146,6 +146,63 @@ export function candidatesFor(name, n = 5){
     .slice(0, n);
 }
 
+/* ------------------------------------------------------------
+   Suggerimenti mentre si scrive.
+
+   candidatesFor confronta parole intere, e va bene per un nome gia'
+   scritto per intero da New Recruit. Chi batte a mano il nome di
+   un'unita' invece scrive «bla» e si aspetta «Black Orc»: qui una
+   parola scritta a meta' vale come inizio di parola, e una voce esce
+   dalla lista appena una delle parole scritte non si trova da nessuna
+   parte (nel nome o negli alias gia' imparati).
+   ------------------------------------------------------------ */
+const partHit = (q, w) =>
+  w === q ? 1 : w.startsWith(q) ? .85 : (q.length >= 3 && w.includes(q) ? .5 : 0);
+
+function partialScore(qw, words){
+  if (!qw.length || !words.length) return 0;
+  let sum = 0;
+  for (const q of qw){
+    let best = 0;
+    for (const w of words) best = Math.max(best, partHit(q, w));
+    if (!best) return 0;
+    sum += best;
+  }
+  /* a parita' di parole azzeccate viene prima la voce che non ne ha
+     altre in piu': con «orc» scritto, «Orc Boy» prima di «Orc Great
+     Shaman on Wyvern». E prima ancora la voce che comincia con quello
+     che si sta scrivendo, perche' un nome lo si batte dall'inizio:
+     «orc» da' «Orc Boy» prima di «Black Orc». */
+  const brevity = .75 + .25 * Math.min(1, qw.length / words.length);
+  const head = partHit(qw[0], words[0]) ? 1.06 : 1;
+  return Math.min(1, (sum / qw.length) * brevity * head);
+}
+
+export function suggestFor(text, n = 6){
+  const qw = tokens(text);
+  if (!qw.length) return [];
+
+  /* un tipo, un suggerimento: due doppioni in fila sono due righe che
+     dicono la stessa cosa e nessuna delle due e' quella giusta */
+  const byKind = new Map();
+  for (const entry of entries){
+    const s = Math.max(
+      partialScore(qw, tokens(entry.name)),
+      ...(entry.aliases || []).map(a => partialScore(qw, tokens(a)) * .95),
+    );
+    if (!s) continue;
+    const k = kindOf(entry);
+    const g = byKind.get(k);
+    if (g){ g.list.push(entry); g.score = Math.max(g.score, s); }
+    else byKind.set(k, { score: s, list: [entry] });
+  }
+
+  return [...byKind.values()]
+    .map(g => ({ entry: bestOf(g.list), score: g.score }))
+    .sort((a, b) => b.score - a.score || a.entry.name.localeCompare(b.entry.name))
+    .slice(0, n);
+}
+
 /* collega un nome a una voce e ricordalo per sempre */
 export async function linkAlias(entryId, rawName){
   const e = catEntry(entryId);

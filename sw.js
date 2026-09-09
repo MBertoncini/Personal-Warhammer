@@ -11,7 +11,7 @@
  * di rete. Qui dentro c'e' solo il guscio dell'app.
  */
 
-const VERSION = "v10";
+const VERSION = "v12";
 const SHELL = "shell-" + VERSION;
 const RUNTIME = "runtime-" + VERSION;
 
@@ -23,11 +23,12 @@ const FILES = [
   "./src/catalog.js", "./src/lists.js", "./src/matchup.js", "./src/deploy.js",
   "./src/geom.js", "./src/history.js", "./src/view.js", "./src/imgexport.js",
   "./src/share.js", "./src/tactics.js", "./src/game.js", "./src/scenariokit.js",
-  "./src/rules.js", "./src/combat.js", "./src/duel.js",
+  "./src/rules.js", "./src/rulebook.js", "./src/combat.js", "./src/duel.js",
   "./src/battlelog.js", "./src/reports.js",
   "./src/formation.js", "./src/formeditor.js", "./src/tableshot.js",
   "./src/sync.js", "./src/syncui.js",
   "./src/extras.js", "./src/movement.js", "./src/zones.js", "./src/uikit.js",
+  "./src/suggest.js",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png",
 ];
 

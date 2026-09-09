@@ -227,5 +227,70 @@ ok('il passo lungo vale mezzo pollice di carica in piu', fast.charge === 15.5 &&
 ok('senza M sul profilo non si inventa niente',
    movementBands({ stats: { M: '-' }, rules: [] }) === null);
 
+/* ================================================================= */
+console.log('\nregole speciali lette dalla lista');
+ok('la Forza "S+1" e quella di chi impugna piu uno', weaponStrength({ S: 'S+1' }, 4) === 5);
+ok('la Forza "S" e quella di chi impugna', weaponStrength({ S: 'S' }, 4) === 4);
+ok('la Forza "S+2" non diventa 2', weaponStrength({ S: 'S+2' }, 5) === 7);
+
+const armed = unit('Guardia', { M:'4',WS:'4',BS:'0',S:'4',T:'4',W:'1',I:'4',A:'1',Ld:'8' }, 10, 5, {
+  armour: 4,
+  rules: ['Furious Charge', 'Stubborn'],
+  weapons: [{ name:'Great Weapon', S:'S+2', ap:'-2', rules:'Armour Bane (1), Strike Last' }],
+});
+const g = C.combatant(armed);
+ok('l arma pesante porta la Forza a 6', g.s === 6);
+ok('la perforazione dell arma arriva nella schiera', g.ap === 2);
+ok('colpisce per ultimo lo dice la regola dell arma', g.flags.strikeLast === true);
+ok('perfora-armature legge il numero fra parentesi', g.flags.armourBane === 1);
+ok('la carica furiosa e stata letta', g.flags.furiousCharge === true);
+ok('le regole applicate finiscono in elenco', g.rulesRead.applied.length === 4);
+ok('e nessuna resta sconosciuta', g.rulesRead.unknown.length === 0);
+
+const plain = C.combatant(unit('Fanti', { M:'4',WS:'3',BS:'0',S:'3',T:'3',W:'1',I:'3',A:'1',Ld:'7' }, 10, 5));
+ok('senza carica gli attacchi sono quelli del profilo', C.contact(g, plain).attacks === 5 * 1 + 5);
+g.charged = true;
+ok('in carica la carica furiosa ne aggiunge uno per modello', C.contact(g, plain).attacks === 5 * 2 + 5);
+g.charged = false;
+
+/* l'arma che colpisce per ultima scavalca l'Iniziativa, che qui e' la piu alta */
+const late = C.meleeRound(g, plain);
+ok('chi colpisce per ultimo mena dopo anche con Iniziativa migliore', late.steps[0].side === 'B');
+
+/* il vincolo fra parentesi: il veleno vale solo sui giavellotti, e in
+   mischia questo skink impugna l'arma a una mano */
+const skink = C.combatant(unit('Skink', { M:'6',WS:'2',BS:'3',S:'3',T:'2',W:'1',I:'4',A:'1',Ld:'5' }, 10, 5, {
+  rules: ['Poisoned Attacks (javelins only)'],
+  weapons: [{ name:'Hand Weapon', S:'S', ap:'-' }],
+}));
+ok('il veleno dei giavellotti non avvelena l arma a una mano', skink.flags.poisoned === false);
+ok('e viene detto, non taciuto', skink.rulesRead.elsewhere.some(x => /Poisoned/.test(x.name)));
+
+/* rigenerazione: l'ultima rete, dopo la salvezza speciale */
+const troll = C.combatant(unit('Troll', { M:'6',WS:'3',BS:'1',S:'5',T:'4',W:'3',I:'1',A:'3',Ld:'4' }, 3, 3, { regen: 4 }));
+const blow = C.strike(g, troll, { attacks: 40 });
+ok('la rigenerazione tira sulle ferite passate dalla speciale',
+   blow.regen.of === blow.wound.hits - blow.save.hits);
+ok('e le ferite finali tolgono quelle rimarginate',
+   blow.wounds === blow.wound.hits - blow.save.hits - blow.regen.hits);
+
+/* Il testardo tira al Comando pieno, senza lo scarto addosso. Perche' i
+   test siano quelli di chi PERDE, il testardo qui e' la parte debole:
+   dodici scarsi contro dieci guardie con l'arma pesante. */
+const weak = unit('Leva testarda', { M:'4',WS:'2',BS:'0',S:'3',T:'3',W:'1',I:'2',A:'1',Ld:'8' }, 12, 4,
+                  { armour: 4, rules: ['Stubborn'] });
+const targets = [], plainTargets = [];
+for (let i = 0; i < 120; i++){
+  const rr = C.meleeRound(C.combatant(weak), C.combatant(armed));
+  if (rr.test && rr.test.side === 'A') targets.push({ t: rr.test.target, d: rr.cr.diff });
+  const r2 = C.meleeRound(C.combatant({ ...weak, rules: [] }), C.combatant(armed));
+  if (r2.test && r2.test.side === 'A') plainTargets.push({ t: r2.test.target, d: r2.cr.diff });
+}
+ok('il testardo perde e tira lo stesso, al Comando pieno',
+   targets.length > 0 && targets.every(x => x.t === 8));
+ok('senza Stubborn lo scarto del combattimento si sottrae',
+   plainTargets.length > 0 && plainTargets.every(x => x.t === Math.max(2, 8 - x.d)) &&
+   plainTargets.some(x => x.d > 0));
+
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

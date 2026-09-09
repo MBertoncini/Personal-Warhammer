@@ -128,6 +128,12 @@ export function stat(v){
 export function weaponStrength(w, userS){
   const raw = String(w && w.S != null ? w.S : "").trim();
   if (!raw || /^-$/.test(raw) || /user/i.test(raw)) return userS;
+  /* "S", "S+1", "S+2": la S sta per la Forza di chi impugna, ed e' la
+     forma che usano i cataloghi di New Recruit. Letta come numero dava
+     Forza 1 a una lancia da cavalleria e Forza 2 a un'arma pesante:
+     tutto il resto del conto veniva dietro sbagliato. */
+  const rel = /^s\s*([+-]\s*\d+)?$/i.exec(raw);
+  if (rel) return Math.max(0, userS + (rel[1] ? stat(rel[1]) : 0));
   if (/^[+-]/.test(raw)) return Math.max(0, userS + stat(raw));
   const n = stat(raw);
   return n || userS;
