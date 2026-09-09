@@ -55,14 +55,25 @@ ok('la cavalleria mostruosa si ferma a uno',
    riconosce, si riconosce qui e non a partita cominciata. */
 const lists = JSON.parse(fs.readFileSync(new URL('../dati/liste.json', import.meta.url), 'utf8'));
 const withTroop = lists.flatMap(l => (l.units || []).filter(u => u.troop));
-ok('nessuna delle sessantatre unita salvate ha un tipo sconosciuto',
+ok('nessuna unita salvata ha un tipo di truppa sconosciuto',
    withTroop.every(u => !troopType(u.troop).unknown));
-/* dove il file dichiara la Forza d'Unita', la tabella deve dire lo
-   stesso — salvo i casi in cui il file sa qualcosa in piu' (un Bigboss
-   su uno squig gigante, la Doomwheel), e sono quattro contati */
+
+/* Dove il file dichiara la Forza d'Unita' e la tabella dice un'altra
+   cosa, e' sempre il file a dire di piu': sa della cavalcatura (un
+   Oldblood su un Carnosauro, un Bigboss su uno squig gigante) e del
+   personaggio unito al reggimento, che alza il totale senza alzare il
+   numero di modelli. La tabella conosce solo il tipo di truppa nudo.
+
+   La prova e' che il file non sia mai piu' BASSO: quella sarebbe una
+   riga della tabella sbagliata. Contare i casi noti sarebbe piu'
+   preciso e durerebbe fino alla prossima partita archiviata, perche'
+   `dati/liste.json` lo riscrive la Nuvola ogni volta che si sincronizza. */
 const disagree = withTroop.filter(u => u.us && u.models &&
   Math.abs(u.us / u.models - troopType(u.troop).us) > 0.001);
-ok('e la tabella concorda con il file salvo i quattro casi noti', disagree.length === 4);
+ok('dove il file e la tabella non concordano, e sempre il file a dire di piu',
+   disagree.every(u => u.us / u.models > troopType(u.troop).us));
+ok('e i casi sono quelli con una cavalcatura o un personaggio unito',
+   disagree.length > 0 && disagree.length < withTroop.length / 4);
 
 /* ================================================================= */
 console.log('\nil ritiro (p. 93)');
@@ -239,9 +250,11 @@ ok('gli Skaven pure', A.find('Skaven').id === 'skaven');
 ok('e gli Uomini Lucertola pure', A.find('Lizardmen').id === 'uomini-lucertola');
 ok('un esercito che non c e non si inventa', A.find('Bretonnia') === null);
 
-const matched = lists.filter(l => l.info && l.info.catalogue).map(l => A.forList(l));
+const named = lists.filter(l => l.info && l.info.catalogue);
 ok('tutte le liste salvate con un catalogo trovano il loro esercito',
-   matched.length === 9 && matched.every(Boolean));
+   named.length > 0 && named.every(l => !!A.forList(l)));
+ok('e quelle senza catalogo non ne inventano uno',
+   lists.filter(l => !(l.info && l.info.catalogue)).every(l => A.forList(l) === null));
 
 const og = A.find('Orc and Goblin Tribes');
 const cov = coverage(og);
