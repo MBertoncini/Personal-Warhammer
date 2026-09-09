@@ -153,7 +153,7 @@
     "baseId": "25x25",
     "baseW": 25,
     "baseH": 25,
-    "owned": 20,
+    "owned": 30,
     "aliases": [
       "night goblin mobs"
     ],
@@ -170,6 +170,20 @@
     "owned": 21,
     "aliases": [
       "night goblin squig herds"
+    ],
+    "notes": "",
+    "painted": 0
+  },
+  {
+    "id": "cmtl5rae3opun",
+    "name": "Orc Boar Boy Mobs",
+    "faction": "Orc & Goblin Tribes",
+    "baseId": "30x60",
+    "baseW": 30,
+    "baseH": 60,
+    "owned": 10,
+    "aliases": [
+      "orc boar boy mobs"
     ],
     "notes": "",
     "painted": 0
@@ -308,20 +322,6 @@
       "ogdruz swampdigga"
     ],
     "notes": ""
-  },
-  {
-    "id": "cmtl5rae3opun",
-    "name": "Orc Boar Boy Mobs",
-    "faction": "Orc and Goblin Tribes",
-    "baseId": "30x60",
-    "baseW": 30,
-    "baseH": 60,
-    "owned": 15,
-    "aliases": [
-      "orc boar boy mobs"
-    ],
-    "notes": "",
-    "painted": 0
   },
   {
     "id": "cmtl5rcrcmk1x",

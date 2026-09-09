@@ -3496,7 +3496,7 @@
       },
       {
         "name": "Saurus Warriors",
-        "models": 15,
+        "models": 11,
         "crew": 0,
         "baseId": "30x30",
         "baseW": 30,
@@ -4042,7 +4042,7 @@
       "forceName": "Open War",
       "limit": 2000
     },
-    "points": 1893,
+    "points": 1793,
     "imported": "2026-09-09T09:43:07.464Z",
     "units": [
       {
@@ -4370,7 +4370,7 @@
       },
       {
         "name": "Night Goblin Mobs",
-        "models": 23,
+        "models": 20,
         "crew": 1,
         "baseId": "25x25",
         "baseW": 25,
@@ -4638,75 +4638,6 @@
           }
         ],
         "maxRange": 0,
-        "slot": "Core",
-        "faction": "Orc and Goblin Tribes",
-        "armour": 6,
-        "ward": 0,
-        "regen": 0,
-        "catId": "cmtl5r9bak4eg"
-      },
-      {
-        "name": "Orc Mobs",
-        "models": 20,
-        "crew": 0,
-        "baseId": "30x30",
-        "baseW": 30,
-        "baseH": 30,
-        "frontage": 5,
-        "loose": false,
-        "pts": 100,
-        "us": 20,
-        "troop": "Regular Infantry",
-        "unitSize": "5+",
-        "stats": {
-          "M": "4",
-          "WS": "3",
-          "BS": "3",
-          "S": "3",
-          "T": "4",
-          "W": "1",
-          "I": "3",
-          "A": "1",
-          "Ld": "6"
-        },
-        "rules": [
-          "Choppas",
-          "Ignore Goblin Panic",
-          "Impetuous",
-          "Warband",
-          "Close Order",
-          "Furious Charge"
-        ],
-        "ruleText": {
-          "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
-          "Ignore Goblin Panic": "This unit does not have to make a Panic test when a friendly Goblin unit is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly Goblin unit.\n\n Note that, for the purposes of this rule, a Goblin unit is considered to be any unit that is made up entirely of Goblins of any kind, mounted or otherwise. This includes any war machine or chariot that is crewed entirely by Goblins. Should a Goblin unit be joined by an Orc character, it is no longer considered to be a Goblin unit.",
-          "Impetuous": "If during the Declare Charges & Charge Reactions sub-phase of its turn, a unit that includes one or more Impetuous models is able to declare a charge, it must make a Leadership test. If this test is failed, the unit must declare a charge. If this test is passed, the unit may act as normal.",
-          "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
-          "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
-          "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic."
-        },
-        "command": {
-          "standard": false,
-          "musician": false,
-          "champion": false
-        },
-        "weapons": [
-          {
-            "name": "Hand Weapon",
-            "range": "Combat",
-            "S": "S",
-            "ap": "-",
-            "rules": "-"
-          },
-          {
-            "name": "Warbow",
-            "range": "24\"",
-            "S": "S",
-            "ap": "-",
-            "rules": "Volley Fire"
-          }
-        ],
-        "maxRange": 24,
         "slot": "Core",
         "faction": "Orc and Goblin Tribes",
         "armour": 6,
