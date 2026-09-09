@@ -386,6 +386,9 @@ img.mdl:hover{transform:scale(2.1);box-shadow:var(--shadow);position:relative;z-
 .readout.near{border-bottom-style:solid;}
 .readout.near.dim{opacity:.6;}
 .readout.near .duel-go{margin-left:8px;padding:0 7px;line-height:19px;}
+/* la bandierina della carica sta accanto alla spada dello scontro e si
+   comporta allo stesso modo: un gesto solo, in fondo alla riga */
+.readout.near .charge-go{margin-left:8px;padding:0 7px;line-height:19px;}
 
 /* il profilo: e' la tabella che si guarda piu' spesso, quindi e' la
    piu' grande del pannello e non la piu' piccola */

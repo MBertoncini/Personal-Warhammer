@@ -11,7 +11,7 @@
  * di rete. Qui dentro c'e' solo il guscio dell'app.
  */
 
-const VERSION = "v16";
+const VERSION = "v17";
 const SHELL = "shell-" + VERSION;
 const RUNTIME = "runtime-" + VERSION;
 
@@ -32,7 +32,7 @@ const FILES = [
   "./src/suggest.js",
   "./src/troops.js", "./src/effects.js", "./src/battlemarch.js",
   "./src/armies.js", "./src/prep.js",
-  "./src/phases.js", "./src/engine.js",
+  "./src/phases.js", "./src/engine.js", "./src/charge.js",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png",
 ];
 

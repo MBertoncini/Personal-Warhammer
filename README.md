@@ -129,6 +129,10 @@ Le tre soglie sono la convenzione dell'app, dichiarata e basta: marcia `M×2`, c
 
 **Tiro.** *Tiro* prende l'arma più lunga del profilo e disegna il **campo di fuoco con le ombre**: un raggio ogni pochi gradi, e dove incontra un bosco o un monolite il raggio finisce lì. Quello che resta chiaro è il cono che si copre davvero; le rientranze sono i posti in cui il nemico si mette per non farsi vedere. La fascia interna è la gittata corta, oltre la metà si tira con il −1. Su ogni nemico compare il **punteggio per colpire** e quanti modelli cadrebbero in media, e chi non si può bersagliare dice perché: *non lo vedo*, *fuori arco*, *fuori gittata*. L'ispettore ripete le stesse righe scrivendo i modificatori uno per uno — lunga gittata, copertura leggera o pesante, bersaglio in formazione sciolta — così si vede *perché* serve un 5.
 
+**La carica, giocata.** Sotto il tiro, nell'ispettore, c'è la riga della carica: per ogni nemico quanto è lontano, cosa serve tirare e **quante volte su cento arriva** — la probabilità è contata sulle facce dei dadi, non stimata. Chi non si può caricare dice perché: *non è nell'arco frontale*, *la vista è tagliata dal bosco*, *sono quattordici pollici e la carica arriva al massimo a sedici*. Accanto c'è la bandierina, e la bandierina gioca la carica per intero, nell'ordine del manuale: si dichiara, il bersaglio sceglie la reazione — tenere, tirare e tenere, fuggire, con il *tira e tieni* spento quando il caricante è già più vicino del proprio Movimento — si tira dal vassoio con i dadi che quella carica vuole (tre scartando il minore col passo lungo, uno in più scartando il maggiore nel terreno difficile), e chi arriva **si mette a filo da solo** sulla faccia da cui è venuto. Se la carica resta corta, l'unità avanza di quello che i dadi hanno detto e si scosta da sola per non finire entro un pollice da un nemico. Ogni passo è una riga di registro e ogni passo si annulla da solo.
+
+**Le quattro mosse all'indietro.** Quando c'è un nemico vicino compaiono quattro pulsanti: *cede 2″*, *ripiega*, *fugge*, *insegue*. Sono la stessa geometria vista quattro volte — lontano dal nemico con la Forza d'Unità più alta, in diagonale quando i più grossi sono due — e l'app la misura invece di farla stimare a occhio. Il cedimento non chiede nemmeno i dadi: sono due pollici fissi. Chi fugge gira le spalle, chi cede terreno e chi ripiega restano girati verso il nemico.
+
 **Scontro simulato.** Accanto a ogni nemico vicino, nell'ispettore, c'è una spada. Apre un pannello con le due schiere a confronto: profili, quanti modelli si toccano, armatura e salvezza speciale, stendardo, chi ha caricato, se si colpisce di fronte, di fianco o di retro.
 
 - *Tira i dadi* fa **un assalto** e mostra **ogni faccia uscita**: per colpire, per ferire, per salvare. Si mena in ordine di Iniziativa — chi è più svelto toglie modelli prima che gli altri rispondano — e chi carica con l'urto lo porta prima di tutto. Poi il conto di fine assalto (ferite, ranghi, stendardo, chi è in più, il fianco) e il test di Comando di chi ha perso.
@@ -352,6 +356,7 @@ src/
   battlelog.js        fotografie di fine turno, punteggio, report in Markdown
   phases.js           le sedici caselle del turno: cosa ci si aspetta in ognuna
   engine.js           il motore: azioni, dadi chiesti, regole in ascolto, registro
+  charge.js           la carica: dichiararla, allinearla, e le mosse all'indietro
   scenariokit.js      scenari propri e generatore di terreno a specchio
   catalog.js          voci di collezione, foto, pittura, aggancio dei nomi
   lists.js            liste salvate e collegamento unità → catalogo
@@ -365,6 +370,7 @@ test/
   battle.mjs          punteggi, dadi, ventagli e ombre, senza pagina
   regole.mjs          tipi di truppa, ritiri, archi, effetti, terreno, file d'esercito
   motore.mjs          le sedici caselle, le azioni, i dadi chiesti, il registro
+  movimento.mjs       carica: arco, vista, distanza, reazioni, allineamento, fuga
   sync.mjs            archivio su GitHub, contro un GitHub finto in memoria
   boot.mjs            la pagina intera: schede, annulla, zoom, partita, report, link
 tools/
@@ -388,6 +394,8 @@ Girano in jsdom con IndexedDB finto, senza browser. `battle.mjs` non ne ha bisog
 
 Sui dadi le prove sono due, e separate. In `battle.mjs`, senza pagina: che ogni faccia grezza diventi il valore giusto sui quattro dadi, che i due Colpito! stiano su facce opposte come sul dado vero, che il Colpito fermi l'oggetto e la freccia lo sposti dei pollici tirati, che il Mancato Colpo blocchi tutto, e che quarantottomila D6 diano sei mucchi che si somigliano. In `boot.mjs`, sulla pagina vera: che otto D6 siano otto cubi da sei facce, che **ogni cubo si fermi girato in modo da mostrare proprio la faccia uscita**, che i dadi accesi siano quelli che hanno passato il punteggio, e che **mentre i dadi rotolano il risultato non sia ancora scritto**.
 
+`movimento.mjs` prova la carica dove la carica è scritta, senza tavolo: che un tiro di sette riesca ventuno volte su trentasei contando le facce; che quello che sta dietro non si carichi e che un bosco in mezzo tolga la vista anche alla dichiarazione; che il *tira e tieni* si spenga sotto il Movimento del caricante; che il passo lungo tenga i due dadi migliori e il terreno difficile i due peggiori; che il caricante si fermi a filo sulla faccia **da cui è venuto** e non su quella più vicina; che chi scappa vada via dal nemico più grosso, e in diagonale quando i più grossi sono due.
+
 Prova anche le cose nuove dove si vedono davvero: che i cerchi del movimento restino **fermi sull'ancora** invece di seguire il pezzo e che la riga scriva `4.0″ di 8″`; che una ferita non tolga un modello finché non lo dici tu; che il caricante si appoggi a filo e arrivi dritto anche se lo trascinavi storto; che una zona disegnata a mano faccia risultare *fuori zona* un'unità che lo scenario considerava a posto; che marcatori, zone, etichette e ferite sopravvivano al link condiviso e finiscano nel report. `smoke.mjs` prova a parte i moduli senza DOM, dove le regole di conversione si leggono in una riga.
 
 ---
@@ -408,6 +416,7 @@ Prova anche le cose nuove dove si vedono davvero: che i cerchi del movimento res
 - Lo **scontro simulato** è una stima, non un arbitro. Conosce quello che sta nel profilo e i numeri che imposti a mano; non sa niente di magia, oggetti, regole d'esercito, terrore, colpi mortali. Quanti modelli si toccano e quanti colpi porta l'urto della carica sono l'ordine di grandezza giusto, non la misura esatta: si correggono nel pannello, ed è per questo che il campo *Attacchi* è modificabile.
 - Il **campo di tiro** guarda dal centro del fronte, non da ogni singola miniatura. Le coperture le decide il tipo di elemento scenico — bosco leggera, rovine e muretti pesante — non il pezzo vero che hai in mano.
 - Il **ventaglio di movimento** non fa ruotare l'unità: mostra dove arriva andando avanti nel proprio arco frontale, che è il caso normale. Una riorganizzazione o un giro sul posto restano da immaginare.
+- La **carica** calcola il costo della ruota ma non lo scala da un budget di movimento, e il *tira e tieni* apre la reazione senza tirare la raffica: quella si tira dal pannello del tiro. Il ripiegamento in ordine dice da sé che i suoi dadi vanno confrontati con il libro.
 - Il magnetismo aggancia solo unità con lo **stesso orientamento**: allineare un reggimento a uno girato di 45° resta lavoro a mano.
 - La linea di vista guarda i soli elementi che il tipo dichiara bloccanti (boschi, rovine, monoliti, piramidi) e ignora le regole fini — colline che vedono oltre, unità che fanno da schermo. È un'indicazione, non un arbitro. Vale per le distanze, per il campo di tiro e per la stima delle perdite.
 - L'aggancio al contatto appoggia il caricante **al centro della faccia** e poi lo lascia scorrere: dice dove finisce il pezzo, non se la carica era permessa.

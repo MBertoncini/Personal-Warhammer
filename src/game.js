@@ -36,6 +36,7 @@ import { openDiceBox } from './dicebox.js';
 import { readOut } from './dice.js';
 import * as PH from './phases.js';
 import { createEngine, ACTIONS } from './engine.js';
+import * as CH from './charge.js';
 import * as EF from './effects.js';
 
 /* Le quattro fasi restano, perche' il pannello le raggruppa e il
@@ -595,7 +596,7 @@ function askDice(ask, title){
       openDiceBox({
         kind: q.kind || "d6", n: q.n || 1, target: q.need || 0,
         title: title + " · " + q.why,
-        foot: q.keep ? "Se ne tengono " + q.keep + ", scartando il minore." : "",
+        foot: q.keep ? "Se ne tengono " + q.keep + ", " + DROP_TEXT[q.drop || "lowest"] + "." : "",
         onResult: r => { out[q.id] = fromTray(r, q); nextOne(); },
       });
     };
@@ -610,9 +611,13 @@ function askDice(ask, title){
    butta lo decide la regola, non il dado. */
 function fromTray(r, q = {}){
   const dice = (r && r.dice || []).map(d => (d && d.value != null ? d.value : d));
+  /* Quale dado si butta lo sa `charge.js`, che e' il posto in cui la
+     regola sta scritta: il passo lungo butta il minore, il terreno
+     difficile il maggiore, e tutti e due insieme buttano tutti e due.
+     Farlo qui una seconda volta vorrebbe dire due regole che possono
+     divergere. */
   let kept = dice;
-  if (q.keep && dice.length > q.keep)
-    kept = [...dice].sort((a, b) => q.drop === "highest" ? a - b : b - a).slice(0, q.keep);
+  if (q.keep && dice.length > q.keep) kept = CH.keepDice(dice, q);
   /* Quanti ne passano si porta indietro solo se un punteggio da fare
      c'era davvero. Senza, il vassoio torna comunque `hits: 0` — non ha
      torto, zero dadi hanno passato un punteggio che non esisteva — e il
@@ -621,6 +626,20 @@ function fromTray(r, q = {}){
   const out = { dice, kept, total: kept.reduce((s, v) => s + v, 0) };
   if (q.need > 0 && r && r.hits != null) out.hits = r.hits;
   return out;
+}
+
+const DROP_TEXT = {
+  lowest:  "scartando il minore",
+  highest: "scartando il maggiore",
+  both:    "scartando il maggiore e il minore",
+};
+
+/* La porta del vassoio per chi sta fuori. Il tavolo ha la geometria e
+   il motore ha il registro; quello che mancava era il modo di far
+   rotolare i cubi da li'. Torna gli stessi tiri che il motore si
+   aspetta, gia' letti. */
+export function askRolls(ask, title = ""){
+  return askDice(ask, title || `Turno ${game().turn} · ${stepNow().full}`);
 }
 
 /* Le scorciatoie del registro. Durante una partita vera nessuno scrive

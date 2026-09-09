@@ -285,24 +285,29 @@ che rende ogni numero spiegabile.
 
 Qui il progetto parte molto avanti. Quello che manca è preciso:
 
-1. **Archi di fronte, fianco e retro** come settori calcolati dalla
-   basetta (servono a: dichiarazione di carica, bonus di risultato,
-   attacchi di fianco). Oggi il lato del contatto si sa; l'arco no.
-2. **Allineamento della carica**: portare il caricante a contatto e
-   ruotarlo a filo del bersaglio, con le eccezioni (ostacolo difeso,
-   terreno impassabile → *carica disordinata*, p. 270).
-3. **La ruota** (*wheel*) e il pivot: costano movimento e decidono se
-   una carica è possibile.
-4. **Il massimo di carica** e la carica impossibile: il manuale vieta di
-   dichiarare una carica che non può riuscire (p. 119). L'app ha già i
-   ventagli: è il pezzo più vicino a essere pronto.
-5. **La regola del pollice**: nessuna unità termina il movimento entro
-   1″ da un nemico (p. 118). Serve come vincolo di piazzamento e come
-   «scostamento minimo» automatico dopo fuga e cedimento.
-6. **Fuga, cedimento (*Give Ground*, 2″ indietro), ripiegamento e
-   inseguimento**: sono movimenti geometrici con regole precise —
-   direttamente lontano dal nemico con Forza d'Unità più alta, in
-   diagonale se i nemici sono due (pp. 154-155).
+1. ~~**Archi di fronte, fianco e retro** come settori calcolati dalla
+   basetta~~ — fatto nella Tappa 0 (`formation.js`), e da lì li legge
+   la dichiarazione di carica.
+2. ~~**Allineamento della carica**: portare il caricante a contatto e
+   ruotarlo a filo del bersaglio~~ — fatto (`charge.js`, `alignTo`): la
+   faccia non è la più vicina, è quella che *guarda* il caricante, che
+   è cosa diversa su un bersaglio lungo. Resta l'eccezione
+   dell'ostacolo difeso; la *carica disordinata* (p. 270) c'è.
+3. ~~**La ruota** (*wheel*) e il pivot~~ — il costo c'è
+   (`wheelCost`: lo spigolo esterno percorre un arco di raggio pari al
+   fronte), e l'allineamento dice di quanti gradi si gira. Quello che
+   manca è scalarlo da un budget di movimento.
+4. ~~**Il massimo di carica** e la carica impossibile~~ (p. 119) —
+   fatto, e con la probabilità esatta accanto: «serve un 8, sono
+   quattordici volte su trentasei», che è l'informazione per cui uno
+   apre l'app invece del manuale.
+5. ~~**La regola del pollice**~~ (p. 118) — fatta come vincolo
+   (`tooClose`) e come scostamento minimo automatico (`nudgeClear`)
+   dopo la carica corta, la fuga e il cedimento.
+6. ~~**Fuga, cedimento (*Give Ground*, 2″ indietro), ripiegamento e
+   inseguimento**~~ — fatti (pp. 154-155): una direzione lontano dal
+   nemico con la Forza d'Unità più alta, in diagonale quando i più
+   grossi sono due, e i pollici che il vassoio ha tirato.
 7. **Sagome**: cerchio da 3″ e da 5″, goccia da 8″ (p. 95), con la
    regola «sotto del tutto = colpito, sotto in parte = 4+». La
    deviazione c'è già nel vassoio: manca il pezzo che la applica sul
@@ -318,7 +323,11 @@ Qui il progetto parte molto avanti. Quello che manca è preciso:
 
 Il punto 8 è il più sottovalutato: quasi tutte le regole di terreno sono
 già rappresentabili con quello che l'app disegna, manca solo il campo
-che dice **che tipo di terreno è**.
+che dice **che tipo di terreno è**. Il campo c'è dalla Tappa 0, e dalla
+Tappa 2 la carica lo legge: il pezzo attraversato dice se rallenta, se
+fa tenere il dado peggiore, se chiede il test di terreno pericoloso e
+se fa arrivare in disordine. Restano il punto 7 (le sagome, che sono
+della Tappa 4) e le due eccezioni dell'ostacolo difeso.
 
 ---
 
@@ -337,16 +346,22 @@ Per ogni fase: cosa l'app può fare da sola, e cosa resta ai giocatori.
   meglio di chiunque.
 
 ### Movimento
-- Dichiarazione delle cariche con **controllo di visibilità, arco e
+- ~~Dichiarazione delle cariche con **controllo di visibilità, arco e
   distanza massima**, e la regola che obbliga a dichiarare la carica
-  anche contro le unità che si finirebbe per toccare.
-- **Reazioni**: tenere, tirare e tenere, fuggire (p. 120), con il
+  anche contro le unità che si finirebbe per toccare.~~ Fatto nella
+  Tappa 2; il vicino che si finisce per toccare è una riga di registro,
+  non un divieto.
+- ~~**Reazioni**: tenere, tirare e tenere, fuggire (p. 120), con il
   controllo che il *tira e tieni* non sia possibile sotto la distanza
-  pari al Movimento del caricante.
-- Tiro di carica: 2D6 (3D6 scartando il minore col passo lungo, già
-  fatto), tenendo il **peggiore** attraverso il terreno difficile.
+  pari al Movimento del caricante.~~ Fatto. La raffica del *tira e
+  tieni* si tira ancora dal pannello del tiro.
+- ~~Tiro di carica: 2D6 (3D6 scartando il minore col passo lungo, già
+  fatto), tenendo il **peggiore** attraverso il terreno difficile.~~
+  Fatto, con il numero di dadi del terreno difficile dichiarato da
+  verificare.
 - Mosse obbligate, poi le restanti, con il conto di quanti pollici sono
   stati fatti — l'ancora di movimento c'è già e fa esattamente questo.
+  Le obbligate vere (frenesia, stupidità) arrivano con la Tappa 5.
 
 ### Tiro
 - Chi può tirare: non ha caricato, non ha marciato, non è in mischia,
@@ -697,12 +712,59 @@ lista di azioni più i dadi fissati, si rigioca identica e si controlla
 com'è finita. Sta in fondo a `test/motore.mjs`, ed è la forma che il
 §10 chiedeva.
 
-**Tappa 2 — Movimento e carica per davvero.**
-Dichiarazione con controllo di visibilità, arco e distanza massima;
-reazioni alla carica; allineamento e ruota; regola del pollice; carica
-disordinata; terreno che rallenta e che fa tenere il dado peggiore;
-fuga, cedimento, ripiegamento, inseguimento.
+**Tappa 2 — Movimento e carica per davvero. — fatta**
+~~Dichiarazione con controllo di visibilità, arco e distanza massima~~;
+~~reazioni alla carica~~; ~~allineamento e ruota~~; ~~regola del
+pollice~~; ~~carica disordinata~~; ~~terreno che rallenta e che fa
+tenere il dado peggiore~~; ~~fuga, cedimento, ripiegamento,
+inseguimento~~. Stanno tutte in `charge.js`, che di tavolo non sa
+niente: entrano scatole e poligoni, escono numeri e posizioni.
+
+Come si vede al tavolo. Nell'ispettore, sotto il tiro, c'è la riga
+della carica: per ogni nemico quanto è lontano, cosa serve tirare, **e
+quante volte su cento arriva** — la probabilità è enumerata sulle
+facce, non stimata. Accanto c'è la bandierina, e la bandierina gioca la
+carica per intero nell'ordine del manuale: si dichiara (p. 119), il
+bersaglio sceglie la reazione (p. 120), si tira dal vassoio con i dadi
+che quella carica vuole, e chi arriva si mette a filo da solo. Ogni
+passo è un'azione del motore, quindi ognuno si annulla da solo e ognuno
+finisce nel registro con la sua casella.
+
+Le cose che questa tappa ha reso spiegabili, e prima non lo erano:
+
+- **La faccia da cui si arriva.** L'allineamento non sceglie la faccia
+  più vicina ma quella che *guarda* il caricante: su un bersaglio lungo
+  sono due facce diverse, e sbagliare qui vuol dire far arrivare di
+  fianco una carica frontale — cioè regalare un bonus di combattimento
+  che non c'era.
+- **Il dado peggiore.** Il passo lungo aggiunge un dado e butta il
+  minore; il terreno difficile fa tenere il peggiore. Il piano dice
+  *cosa* si tiene ma non con quanti dadi: `charge.js` aggiunge un dado
+  e scarta il maggiore — la lettura simmetrica al passo lungo — e lo
+  dichiara con `daVerificare`, così chi ha il libro aperto corregge una
+  riga sola. Il vassoio e il motore leggono la stessa regola dallo
+  stesso posto: `keepDice` è scritta una volta.
+- **Chi altro si finisce per toccare.** Una carica larga arriva a
+  sfiorare il vicino del bersaglio, e il manuale vuole che anche quella
+  carica sia dichiarata (p. 119). È l'errore più comune del movimento,
+  e adesso il registro lo scrive da sé.
+- **La direzione di chi scappa.** Fuga, cedimento, ripiegamento e
+  inseguimento sono la stessa geometria: lontano dal nemico con la
+  Forza d'Unità più alta, in diagonale quando i più grossi sono due
+  (pp. 154-155). Nell'ispettore sono quattro pulsanti, e il cedimento
+  non chiede nemmeno i dadi perché è di due pollici fissi.
+
+Quello che resta fuori, detto per non lasciarlo scoprire a una partita:
+il costo della ruota si calcola ma non si scala da un budget di
+movimento; il *tira e tieni* si può scegliere ma la raffica va tirata a
+mano dal pannello del tiro; le mosse obbligate della frenesia e della
+stupidità sono della Tappa 5; e il ripiegamento in ordine dichiara che
+i suoi dadi vanno confrontati con il libro.
+
 *Fatto quando*: si gioca un turno di movimento senza aprire il manuale.
+**Lo fa** per le cariche e per i movimenti all'indietro. Il resto del
+movimento è ancora il dito sul pezzo, con i ventagli che dicono fin
+dove — ed è il gesto giusto: al tavolo si aggiusta con le mani.
 
 **Tappa 3 — Il corpo a corpo del manuale.**
 Bonus di Iniziativa della carica, risultato del combattimento completo,

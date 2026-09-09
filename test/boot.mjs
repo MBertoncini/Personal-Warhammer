@@ -984,6 +984,73 @@ const farAway = deploy.snapUnit(atk, 500, flushY - 300);
 ok('lontano non aggancia niente e non gira il pezzo', farAway.rot === 47);
 for (const u of parked) u.placed = true;
 
+console.log('\nla carica dal pannello (Tappa 2)');
+/* Due nemici veri, uno davanti all altro: e la situazione in cui al
+   tavolo si tira fuori il metro e si apre il manuale. */
+{
+  const rossoId = state.units.find(u => u.army === 'A' && u.placed).uid;
+  const bluId   = state.units.find(u => u.army === 'B' && u.placed).uid;
+  const by = id => state.units.find(u => u.uid === id);
+  const parcheggiate = state.units.filter(u => u.placed && u.uid !== rossoId && u.uid !== bluId)
+                                  .map(u => { u.placed = false; return u.uid; });
+  const rosso = by(rossoId), blu = by(bluId);
+  rosso.x = 500; rosso.y = 900; rosso.rot = 0;          // il fronte guarda in alto
+  blu.x = 500;   blu.y = 900 - 5 * 25.4; blu.rot = 180;
+  rosso.moveOverride = 6;
+  state.sel = { type: 'unit', id: rossoId };
+  deploy.renderAll();
+
+  const plan = deploy.chargePlanFor(rosso);
+  ok('il piano di carica sa fin dove si arriva', !!plan && plan.max === plan.move + 12);
+  const row = plan.rows.find(r => r.unit.uid === bluId);
+  ok('e per ogni nemico dice se la carica si dichiara', !!row && typeof row.can === 'boolean');
+  ok('quello che sta davanti si puo caricare', row.can === true && row.inArc === true);
+  ok('con il punteggio da fare e la probabilita',
+     row.need >= 0 && row.chance > 0 && row.chance <= 1);
+  ok('la bandierina compare nell ispettore',
+     doc.querySelectorAll('#inspector [data-charge]').length > 0);
+
+  /* l allineamento porta a contatto: e la parte che al tavolo si fa
+     con le dita e che l app deve saper proporre */
+  const before = { x: rosso.x, y: rosso.y };
+  ok('e la carica arriva gia allineata sulla faccia da cui viene',
+     row.align && row.align.side === 'fronte' && row.align.wheel === 0);
+  ok('senza aver mosso niente: il piano guarda, non tocca',
+     rosso.x === before.x && rosso.y === before.y);
+
+  /* girato di spalle non si carica piu */
+  rosso.rot = 180;
+  const dietro = deploy.chargePlanFor(rosso).rows.find(r => r.unit.uid === bluId);
+  ok('chi ha il nemico dietro non lo carica', dietro.can === false && !dietro.inArc);
+  rosso.rot = 0;
+
+  /* il cedimento: due pollici indietro, senza dadi e senza girarsi.
+     E la mossa che il test di rotta a tre esiti della Tappa 3 chiedera',
+     e qui si prova che la direzione la decide il nemico. */
+  const primaY = rosso.y;
+  deploy.renderAll();
+  const cede = doc.querySelector('#inspector [data-back="give"]');
+  ok('le mosse all indietro compaiono con un nemico vicino', !!cede);
+  cede.dispatchEvent(new window.Event('click'));
+  await settle(30);
+  ok('cede terreno di due pollici lontano dal nemico',
+     Math.abs((by(rossoId).y - primaY) / 25.4 - 2) < 0.05);
+  ok('senza girarsi: resta di fronte a chi lo ha spinto', by(rossoId).rot === 0);
+  ok('e il registro racconta cosa e successo',
+     /cede terreno di 2/.test(JSON.stringify(state.game.log.slice(0, 3))));
+  history.undo();
+
+  /* un bosco in mezzo toglie la vista anche alla carica */
+  const bosco = { tid: 9101, kind: 'wood', x: 500, y: 900 - 2.5 * 25.4, w: 8, h: 1, rot: 0 };
+  deploy.act('bosco di prova', () => { state.terrain.push(bosco); });
+  const cieco = deploy.chargePlanFor(by(rossoId)).rows.find(r => r.unit.uid === bluId);
+  ok('un bosco in mezzo ferma anche la dichiarazione di carica', cieco.can === false && cieco.blocked);
+  history.undo();
+
+  by(rossoId).moveOverride = null;
+  for (const id of parcheggiate) by(id).placed = true;
+}
+
 console.log('\nunita scritte a mano');
 const handList = await listsMod.createList('Lista a mano');
 await listsMod.addUnit(handList.id, { name: 'Orc Boyz', models: 20, pts: 140, baseId: '25x25' });

@@ -123,10 +123,14 @@ export const ACTIONS = {
                     moments:["onChargeReaction"],
                     line: a => nm(a.unit) + " reagisce: " + (REACTIONS[a.kind] || nm(a.kind)) },
 
+  /* Quanti dadi e quale si butta non li decide il motore: li decide
+     la carica (`charge.js`), che sa del passo lungo e del terreno
+     difficile. Qui arrivano gia' contati, e senza niente detto si
+     torna ai due dadi di sempre. */
   chargeMove:     { label:"mossa di carica",
                     moments:["onChargeMove", "onMove"],
-                    needs: a => [d6("carica", a.swift ? 3 : 2, "tiro di carica",
-                                    { keep:2, drop:"lowest" })],
+                    needs: a => [d6("carica", a.dice || (a.swift ? 3 : 2), "tiro di carica",
+                                    { keep:2, drop: a.drop || "lowest" })],
                     line: (a, r) => nm(a.unit) + " carica: " + readRolls(r) + on(a.target, "verso") },
 
   compulsoryMove: { label:"mossa obbligata",

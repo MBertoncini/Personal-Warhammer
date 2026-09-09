@@ -3,7 +3,7 @@
 import { MM, $, SVGNS, esc, inch } from './util.js';
 import { BASES, baseById, defaultFrontage } from './bases.js';
 import { parseRoster, parseAny } from './parser.js';
-import { TERRAIN, TREASURE_CLEAR, BM_MAX_SIDE } from './terrain.js';
+import { TERRAIN, TREASURE_CLEAR, BM_MAX_SIDE, catOf } from './terrain.js';
 import { R, T, SCENARIOS, geometry } from './scenarios.js';
 import { saveDoc, loadDoc } from './store.js';
 import { photoForUnit, photoFor, catEntry, matchUnitName } from './catalog.js';
@@ -25,6 +25,7 @@ import { initScenarioKit, customScenarioMap, saveCustom, removeCustom,
          randomTerrain, allCustom } from './scenariokit.js';
 import { survey, frontArcPoly, movementBands, reachFan, sightFan,
          shootingSurvey } from './tactics.js';
+import * as CH from './charge.js';
 import { askText, askConfirm, askPick, showMenu, closeMenu,
          countersHTML, wireCounters, tagsHTML, wireTags } from './uikit.js';
 import * as EX from './extras.js';
@@ -609,6 +610,7 @@ function renderInspector(){
       ${u.weapons.length ? `<p class="note"><b>Armi:</b> ${u.weapons.map(w => esc(w.name) + (w.range && w.range !== "-" ? ` (${esc(w.range)})` : "")).join(" · ")}</p>` : ""}
       ${defenceHTML(u)}
       ${shootingHTML(u)}
+      ${chargeHTML(u)}
       ${gameBlockHTML(u)}
       ${nearbyHTML(u)}
       <div class="grid2"><button class="btn" id="i-rot-l">↺ 90°</button><button class="btn" id="i-rot-r">↻ 90°</button></div>
@@ -646,6 +648,13 @@ function renderInspector(){
       const foe = state.units.find(x => x.uid === +b.dataset.duel);
       if (foe) openDuel(u, foe);
     });
+  /* La bandierina gioca la carica per intero: dichiarazione, reazione,
+     tiro e contatto. Ogni passo e' un'azione del motore e si annulla
+     da solo. */
+  for (const b of host.querySelectorAll("[data-charge]"))
+    b.addEventListener("click", () => runCharge(u, b.dataset.charge));
+  for (const b of host.querySelectorAll("[data-back]"))
+    b.addEventListener("click", () => runBackward(u, b.dataset.back));
   $("#i-rot-l").addEventListener("click", () => upd(() => { u.rot = (u.rot + 270) % 360; }, "ruota"));
   $("#i-rot-r").addEventListener("click", () => upd(() => { u.rot = (u.rot + 90) % 360; }, "ruota"));
   $("#i-swap").addEventListener("click", () => upd(() => {
@@ -1802,6 +1811,12 @@ function terrainPieces(){
     return {
       kind:t.kind, label:cfg.label, blocks:!!cfg.los,
       pass:cfg.pass, cover:cfg.cover || "",
+      /* La categoria del §8 del piano: e' quella che dice se rallenta,
+         se fa tenere il dado peggiore, se chiede il test di terreno
+         pericoloso e se toglie i ranghi. `pass` non basta piu' — non
+         distingue un bosco da una palude — e la carica ha bisogno di
+         saperlo. */
+      cat: catOf(t),
       circle, box:b, poly:boxCorners(b),
       contains: p => distPointToBox(p, b, circle) < 0.01,
     };
@@ -1839,6 +1854,275 @@ export function shotOn(u, row, plan){
   const mods = CB.shootMods({ long: row.long, cover: row.cover, looseTarget: row.unit.loose });
   const weapon = plan.weapon || { range: String(plan.range), S: "", ap: "" };
   return { mods, ...CB.shootForecast(u, row.unit, { weapon, mods: mods.total }) };
+}
+
+/* ============================================================
+   7c · LA CARICA (Tappa 2)
+   La geometria della carica sta in `charge.js` e non sa niente del
+   tavolo: qui si tiene insieme quello che le serve — la scatola di
+   chi carica, quelle dei nemici, i pezzi di terreno con la loro
+   categoria — e si riporta indietro quello che ne esce.
+
+   Il pannello risponde a una domanda sola, quella che al tavolo si fa
+   con il metro in mano e la testa nel manuale: **questa carica si puo'
+   dichiarare, e con che probabilita' arriva?**
+   ============================================================ */
+const usOf = u => unitStrength(u.troop, u.us, u.models, effModels(u));
+const engagedNow = u => contactsNow().some(c => (c.a === u.uid || c.b === u.uid) && c.enemy);
+
+/* Il caricante e i bersagli nella forma che `charge.js` vuole: nome,
+   scatola, poligono. L'unita' vera viaggia dentro `unit`, cosi' chi
+   riceve la riga puo' tornare al pezzo sul tavolo. */
+const asPiece = u => ({ name:u.name, box: boxOf(u), poly: corners(u), unit:u, us: usOf(u) });
+
+export function chargePlanFor(u){
+  if (!u || !u.placed || u.dead || isJoined(u)) return null;
+  const mb = movementBands(u);
+  const move = MV.moveOf(u) || (mb ? mb.move : 0);
+  if (!move) return null;                       // senza M non si dichiara niente
+  const charger = { ...asPiece(u), move, swift: !!(mb && mb.swift), fly: flies(u) };
+  const foes = enemiesOf(u).map(asPiece);
+  const rows = CH.chargeSurvey(charger, foes, { pieces: terrainPieces() });
+  return {
+    charger, move, swift: charger.swift,
+    max: move + CH.MAX_CHARGE_ROLL,
+    rows: rows.map(r => ({
+      ...r,
+      unit: r.unit.unit,
+      reactions: CH.reactions({
+        dist: r.dist, chargerMove: move,
+        shots: CB.rangedWeapons(r.unit.unit).length ? CB.shooters(r.unit.unit) : 0,
+        engaged: engagedNow(r.unit.unit), fleeing: !!r.unit.unit.fled,
+      }),
+    })),
+  };
+}
+
+/* ---- il pannello ----
+   Una riga per nemico: quanto e' lontano, cosa serve tirare, quante
+   volte su cento arriva, e cosa c'e' in mezzo. Il pulsante gioca la
+   carica per intero — dichiarazione, reazione, dadi, spostamento — e
+   ogni pezzo finisce nel registro con la sua casella. */
+function chargeHTML(u){
+  const plan = chargePlanFor(u);
+  if (!plan) return "";
+  const rows = plan.rows.slice(0, 5);
+  return `
+    <div>
+      <div class="readout"><span>Carica${plan.swift ? " · passo lungo" : ""}</span>
+        <b>fino a ${fmtIn(plan.max)}″</b></div>
+      ${rows.length ? rows.map(r => {
+        const t = r.terrain || {};
+        const note = [
+          t.worstDie ? "dado peggiore" : "",
+          t.danger ? "terreno pericoloso" : "",
+          t.disorder ? "carica disordinata" : "",
+        ].filter(Boolean).join(", ");
+        if (!r.can) return `<div class="readout near dim"><span>${esc(shortName(r.target))} · ${esc(r.reasons[0] ? r.reasons[0].text : "")}</span>
+                              <b>${r.dist.toFixed(1)}″</b></div>`;
+        return `<div class="readout near">
+            <span>${esc(shortName(r.target))} · ${r.dist.toFixed(1)}″${
+              note ? ` <span class="dim">(${esc(note)})</span>` : ""}</span>
+            <b style="color:var(--ok)">${r.need ? r.need + "″ · " + Math.round(r.chance * 100) + "%" : "arriva"}</b>
+            <button class="btn tiny charge-go" data-charge="${r.unit.uid}"
+                    title="Dichiara la carica su ${esc(r.unit.name)}, tira e portala a contatto">⚑</button>
+          </div>`;
+      }).join("") : `<p class="note">Nessun nemico sul tavolo.</p>`}
+      ${u.charged ? `<div class="readout"><span>Ha caricato</span><b>${esc(u.charged.target)} · ${u.charged.arc}${
+        u.disordered ? " · in disordine" : ""}</b></div>` : ""}
+      <p class="note">La bandierina gioca la carica: dichiarazione, reazione, tiro e contatto, tutto nel registro.</p>
+      ${backwardHTML(u)}
+    </div>`;
+}
+
+/* ---- le quattro mosse all'indietro (pp. 154-155) ----
+   Fuga, cedimento, ripiegamento e inseguimento sono la stessa
+   geometria vista quattro volte: una direzione lontano dal nemico piu'
+   grosso — in diagonale quando i nemici grossi sono due — e dei
+   pollici da fare. Compaiono quando c'e' un nemico da cui allontanarsi,
+   perche' senza di lui la direzione non esiste. */
+const BACK_KINDS = [
+  { id:"give",     label:"Cede 2″" },
+  { id:"fallBack", label:"Ripiega" },
+  { id:"flee",     label:"Fugge" },
+  { id:"pursue",   label:"Insegue" },
+];
+function backwardHTML(u){
+  /* Solo a partita aperta: durante lo schieramento non c'e' niente da
+     cui ritirarsi, e quattro pulsanti in piu' sono quattro pulsanti in
+     piu' da leggere. */
+  if (!state.game.on || !u.placed || u.dead) return "";
+  const foes = nearFoes(u);
+  if (!foes.length) return "";
+  return `
+    <div class="chiprow">
+      ${BACK_KINDS.map(k => `<button class="btn tiny" data-back="${k.id}"
+          title="Lontano da ${esc(foes[0].name)}, come alle pp. 154-155">${k.label}</button>`).join("")}
+    </div>`;
+}
+
+/* I nemici da cui ci si allontana: quelli a contatto se ce ne sono,
+   altrimenti il piu' vicino. Il manuale lega la direzione alla Forza
+   d'Unita', e quella la sa gia' la tabella dei tipi di truppa. */
+function nearFoes(u){
+  const touching = contactsNow()
+    .filter(c => (c.a === u.uid || c.b === u.uid) && c.enemy)
+    .map(c => state.units.find(x => x.uid === (c.a === u.uid ? c.b : c.a)))
+    .filter(Boolean);
+  if (touching.length) return touching.map(asPiece);
+  const near = surveyFor(u)[0];
+  return near ? [asPiece(near.unit)] : [];
+}
+
+const BACK_ACT = { flee:"flee", pursue:"pursue", give:"compulsoryMove", fallBack:"compulsoryMove" };
+
+async function runBackward(u, kind){
+  const foes = nearFoes(u);
+  if (!foes.length) return toast("Serve un nemico vicino: la direzione si misura da lui.");
+  const spec = CH.BACKWARD[kind];
+  const action = { type: BACK_ACT[kind], unit:u, army:u.army, why: spec.label.toLowerCase() };
+
+  /* Il cedimento e' di due pollici fissi e non chiede niente; gli
+     altri tre passano dal vassoio. Le richieste che il motore conosce
+     gia' — la fuga, l'inseguimento — se le fa dare da lui, cosi' gli
+     identificatori dei tiri restano quelli del registro. */
+  let rolls = null, roll = 0;
+  if (kind !== "give"){
+    const known = G.engine().asks(action);
+    const ask = known.length ? known
+      : [{ id:"ripiegamento", kind:"d6", n:2, why:"quanto si ripiega" }];
+    rolls = await G.askRolls(ask, `${spec.label} di ${u.name}`);
+    if (!rolls) return;
+    roll = Object.values(rolls)[0].total || 0;
+  }
+
+  const mv = kind === "pursue"
+    ? CH.pursuitMove(boxOf(u), foes[0], { roll })
+    : CH.backwardMove(kind, boxOf(u), foes, { roll });
+  if (!mv) return;
+
+  act(spec.label.toLowerCase(), () => {
+    G.dispatch({ ...action, text: `${u.name} ${mv.text}` }, rolls);
+    MV.ensureAnchor(u);
+    u.x = mv.to.x; u.y = mv.to.y; u.rot = mv.to.rot;
+    u.moved = { kind, inches: mv.inches };
+    if (kind === "flee") u.fled = true;
+    if (kind === "pursue" || kind === "fallBack") u.fled = false;
+    if (mv.daVerificare && mv.nota) G.logLine(u.name + ": " + mv.nota, { army: u.army });
+    const fix = CH.nudgeClear({ x:u.x, y:u.y, rot:u.rot }, boxOf(u), enemiesOf(u).map(asPiece));
+    if (kind !== "pursue" && fix.moved > 0){
+      u.x = fix.x; u.y = fix.y;
+      G.logLine(u.name + ": scostata di " + fix.moved.toFixed(1) + "″ per il pollice di p. 118.",
+                { army: u.army });
+    }
+  });
+}
+
+/* ---- giocarla ----
+   Quattro gesti nell'ordine del manuale, e ognuno e' un'azione del
+   motore: si dichiara (p. 119), il bersaglio reagisce (p. 120), si
+   tira, e chi arriva si mette a filo. Ogni passo e' annullabile da
+   solo, perche' ogni passo passa da `act`. */
+async function runCharge(u, uid){
+  const plan = chargePlanFor(u);
+  const row = plan && plan.rows.find(r => r.unit.uid === +uid);
+  if (!row) return;
+  const t = row.unit;
+
+  /* 1 · la dichiarazione. La quinta delle sedici caselle e' il posto
+     in cui vive: se siamo altrove ci si va, e il registro lo scrive. */
+  act("dichiarazione di carica", () => {
+    if (state.game.on) G.goStep(4);
+    G.dispatch({ type:"declareCharge", unit:u, target:t, army:u.army,
+                 text: `${u.name} dichiara la carica su ${t.name} — ${row.why}` });
+  });
+  if (!row.can) toast("Dichiarata lo stesso: l'app propone, non impedisce.");
+
+  /* 2 · la reazione, che e' del bersaglio e non di chi carica */
+  const opts = row.reactions.map(r => ({ id:r.id, label: r.can ? r.label : r.label + " ✕" }));
+  const kind = await askPick({
+    title: `Reazione di ${t.name}`,
+    label: row.reactions.filter(r => !r.can && r.why).map(r => r.label + ": " + r.why).join(" · "),
+    options: opts,
+  });
+  if (!kind) return;
+  act("reazione alla carica", () => G.dispatch({ type:"chargeReaction", unit:t, kind, army:t.army }));
+  if (kind === "flee") return runFlee(t, u);
+
+  /* 3 · il tiro. Quanti dadi e quale si butta lo ha gia' deciso
+     `charge.js` guardando il passo lungo e il terreno attraversato. */
+  const spec = row.dice;
+  const action = { type:"chargeMove", unit:u, target:t, army:u.army,
+                   swift:spec.swift, dice:spec.n, drop:spec.drop };
+  const rolls = await G.askRolls(G.engine().asks(action), `Carica di ${u.name}`);
+  if (!rolls || !rolls.carica) return;
+  const out = CH.chargeOutcome({ dice: rolls.carica.dice, spec, move: row.move, dist: row.dist });
+
+  act("mossa di carica", () => {
+    if (state.game.on) G.goStep(5);
+    G.dispatch({ ...action,
+      text: `${u.name} carica ${t.name}: ${out.kept.join(" + ")} = ${out.total}` +
+            ` → ${out.reach}″ su ${row.dist.toFixed(1)}″ — ` +
+            (out.made ? "a contatto" : `corta di ${out.short}″`) }, rolls);
+    MV.ensureAnchor(u);
+    if (out.made) landCharge(u, t, row, out);
+    else shortCharge(u, t, out);
+  });
+}
+
+/* Chi arriva si mette a filo della faccia da cui e' venuto, e da li'
+   discendono tre cose che il resto della partita usera': da che arco
+   e' arrivato (il bonus di fine combattimento), quanti pollici ha
+   percorso (il bonus di Iniziativa della carica, p. 146) e se e'
+   arrivato in disordine (p. 270). */
+function landCharge(u, t, row, out){
+  const al = row.align || CH.alignTo(boxOf(u), boxOf(t));
+  if (al){ u.x = al.x; u.y = al.y; u.rot = al.rot; }
+  const dis = CH.disorderedCharge(CH.crossed([u.x, u.y], [t.x, t.y], terrainPieces()));
+  u.charged = { target: t.name, uid: t.uid, inches: out.reach, arc: al ? al.arc : "fronte" };
+  u.moved = { kind:"charge", inches: out.reach };
+  u.disordered = dis.disordered;
+  if (dis.disordered) G.logLine(u.name + ": " + dis.text, { army: u.army });
+  /* La carica larga tocca anche il vicino del bersaglio, e il manuale
+     vuole che quella carica sia dichiarata: e' l'errore piu' comune
+     del movimento, e l'app se ne accorge da sola. */
+  const also = CH.alsoInTheWay(corners(u), enemiesOf(u).map(asPiece), { name: t.name });
+  if (also.length)
+    G.logLine("Arrivando tocca anche " + also.map(a => a.name).join(", ") +
+              ": va dichiarata anche quella carica (p. 119).", { army: u.army });
+}
+
+/* La carica corta non torna indietro: si avanza di quello che i dadi
+   hanno detto, e ci si ferma a un pollice buono da chiunque, che e' la
+   regola di p. 118. */
+function shortCharge(u, t, out){
+  const from = boxOf(u);
+  const dx = t.x - u.x, dy = t.y - u.y, len = Math.hypot(dx, dy) || 1;
+  const step = out.reach * MM;
+  const at = { x: u.x + dx / len * step, y: u.y + dy / len * step, rot: u.rot };
+  const fix = CH.nudgeClear(at, from, enemiesOf(u).map(asPiece));
+  u.x = fix.x; u.y = fix.y;
+  u.moved = { kind:"failedCharge", inches: out.reach };
+  if (fix.moved > 0)
+    G.logLine(u.name + ": scostata di " + fix.moved.toFixed(1) + "″ per il pollice di p. 118.", { army: u.army });
+}
+
+/* La fuga come reazione: due dadi, si va via dal piu' grosso e si
+   gira le spalle. La direzione e' quella di pp. 154-155, ed e' la
+   stessa che useranno il cedimento e il ripiegamento. */
+async function runFlee(t, from){
+  const rolls = await G.askRolls([{ id:"fuga", kind:"d6", n:2, why:"quanto si fugge" }],
+                                 `Fuga di ${t.name}`);
+  if (!rolls || !rolls.fuga) return;
+  const mv = CH.backwardMove("flee", boxOf(t), [asPiece(from)], { roll: rolls.fuga.total });
+  act("fuga", () => {
+    G.dispatch({ type:"flee", unit:t, army:t.army,
+                 text: `${t.name} ${mv.text}` }, rolls);
+    MV.ensureAnchor(t);
+    t.x = mv.to.x; t.y = mv.to.y; t.rot = mv.to.rot;
+    t.fled = true;
+    t.moved = { kind:"flee", inches: mv.inches };
+  });
 }
 
 function drawTactics(svg, g, u){
