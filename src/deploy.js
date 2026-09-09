@@ -88,17 +88,9 @@ const effModels = u => (state.game.on ? liveModels(u) : (u.models || 1));
    reggimento, si muove con lui e occupa una casella della sua
    formazione. Se il reggimento muore l'aggancio non vale piu' e il
    personaggio torna a contare da solo. */
-function hostOf(ch){
-  const id = FM.joinedHost(ch);
-  if (id == null) return null;
-  const host = state.units.find(u => u.uid === id);
-  return host && !host.dead ? host : null;
-}
+const hostOf = ch => FM.hostUnit(state.units, ch);
 const isJoined = u => !!hostOf(u);
-const attachedOf = u => state.units.filter(c => {
-  const h = c.uid !== u.uid && hostOf(c);
-  return h && h.uid === u.uid;
-});
+const attachedOf = u => FM.attachedTo(state.units, u);
 
 /* Il posto di ogni modello lo calcola formation.js, e non e' gratis:
    qui si tiene il risultato finche' non cambia niente di quello da cui
@@ -653,7 +645,24 @@ function formationBlockHTML(u){
      e ogni pezzo da un modello solo, categoria del roster o no. Il file
      della lista non chiama «character» il boss senza slot, e prima
      quell'unita' non compariva da nessuna parte. */
-  const free = host ? [] : FM.joinCandidates(state.units, u);
+  const free  = host ? [] : FM.joinCandidates(state.units, u);
+  const hosts = host ? [] : FM.hostCandidates(state.units, u);
+  /* Due tendine e non una: prima l'aggancio si faceva solo aprendo il
+     reggimento, e chi partiva dal personaggio non trovava niente. */
+  const pick = (id, label, list, empty) => list.length
+    ? `<label class="field">${label}
+        <select id="${id}">
+          <option value="">— nessuno —</option>
+          ${list.map(c => `<option value="${c.uid}">${esc(c.name)}${
+            FM.isCharacter(c) ? "" : (c.models || 1) === 1 ? " · 1 modello" : ` · ${c.models} mod.`}</option>`).join("")}
+        </select></label>`
+    : `<p class="note">${empty}</p>`;
+  /* La tendina vuota spariva e basta: adesso dice chi ha lasciato
+     fuori e perche', che e' la domanda che si fa chi non trova il suo
+     personaggio nell'elenco. */
+  const why = list => list.length
+    ? " Restano fuori: " + list.map(r => `${esc(shortName(r.name))} (${esc(r.why)})`).join(", ") + "."
+    : "";
   return `
     <div class="photo-box">
       <div class="readout"><span>Formazione</span>
@@ -666,19 +675,17 @@ function formationBlockHTML(u){
       <label class="field inline" style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)">
         <input type="checkbox" id="i-char" ${FM.isCharacter(u) ? "checked" : ""}> è un personaggio (può unirsi a un reggimento)
       </label>
-      ${host
-        ? `<div class="readout"><span>Unita a</span><b>${esc(shortName(host.name))}</b></div>
-           <button class="btn tiny" id="i-leave" style="width:100%">Sgancia dal reggimento</button>`
-        : FM.isCharacter(u) && !chars.length
-          ? `<p class="note">Personaggio libero: puoi unirlo a un reggimento aprendo il reggimento, oppure scegliere qui chi unire a lui.</p>`
-          : ""}
+      ${host ? `
+        <div class="readout"><span>Unita a</span><b>${esc(shortName(host.name))}</b></div>
+        <button class="btn tiny" id="i-leave" style="width:100%">Sgancia dal reggimento</button>` : ""}
       ${chars.length ? `<div class="readout"><span>Personaggi dentro</span><b>${chars.map(c => esc(shortName(c.name))).join(", ")}</b></div>` : ""}
-      ${free.length ? `
-        <label class="field">Unisci un personaggio o un modello singolo
-          <select id="i-join">
-            <option value="">— nessuno —</option>
-            ${free.map(c => `<option value="${c.uid}">${esc(c.name)}${FM.isCharacter(c) ? "" : " · 1 modello"}</option>`).join("")}
-          </select></label>` : ""}
+      ${host ? "" : FM.canJoin(u) ? (chars.length
+        ? `<p class="note">Sgancia ${chars.map(c => esc(shortName(c.name))).join(", ")} e poi potrai unire questa a un reggimento: dentro un reggimento non ci va un pezzo che ne contiene un altro.</p>`
+        : pick("i-host", "Unisci questa a un reggimento", hosts,
+               "Nessun reggimento disponibile in questo esercito." + why(FM.hostRefusals(state.units, u)))) : ""}
+      ${host || (!free.length && FM.canJoin(u) && !chars.length) ? ""
+        : pick("i-join", "Unisci un personaggio o un modello singolo", free,
+               "Nessun pezzo libero da unire: dentro un reggimento ci vanno i personaggi e le unità da un modello solo." + why(FM.joinRefusals(state.units, u)))}
     </div>`;
 }
 
@@ -711,6 +718,11 @@ function wireFormationControls(u, upd){
   if (join) join.addEventListener("change", e => {
     const c = state.units.find(x => x.uid === +e.target.value);
     if (c) upd(() => FM.joinUnit(c, u), "unisci " + shortName(c.name));
+  });
+  const into = $("#i-host");
+  if (into) into.addEventListener("change", e => {
+    const h = state.units.find(x => x.uid === +e.target.value);
+    if (h) upd(() => FM.joinUnit(u, h), "unisci " + shortName(u.name));
   });
 }
 

@@ -29,6 +29,10 @@ for (const k of ['window', 'document', 'Image', 'FileReader', 'Blob', 'URL',
 }
 Object.defineProperty(globalThis, 'navigator', { value: window.navigator, configurable: true });
 globalThis.localStorage = window.localStorage;
+/* i dadi rotolano per un secondo buono: nella prova si vogliono i
+   numeri, non lo spettacolo. La rotolata vera ha una prova sua, in
+   fondo, che si aspetta il tempo che ci vuole. */
+window.localStorage.setItem('tow-dice-anim', '0');
 globalThis.alert = () => {};
 globalThis.confirm = () => true;
 globalThis.prompt = () => 'Scenario di prova';
@@ -222,6 +226,9 @@ ok('mostra le due schiere e la previsione',
 let applyBtn = null;
 for (let i = 0; i < 25 && !applyBtn; i++){
   duelHost.querySelector('#d-roll').dispatchEvent(new window.Event('click'));
+  /* il tiro passa dal vassoio prima di scrivere il conto: senza
+     l'attesa si leggerebbe il pannello di prima */
+  await settle(20);
   applyBtn = duelHost.querySelector('#d-apply');
 }
 ok('tirati i dadi si vedono le facce', duelHost.querySelectorAll('.die').length > 0);
@@ -248,6 +255,77 @@ deploy.act('rimuovi', () => { state.units = state.units.filter(u => u.uid !== at
 ok('l\'unita rimossa chiude il pannello', duelHost.hidden === true);
 history.undo();
 ok('nessun errore nello scontro simulato', errors.length === 0);
+
+console.log('\nil vassoio dei dadi');
+const tray = () => doc.querySelector('#dicebox');
+const pickKind = k => tray().querySelector(`[data-kind="${k}"]`).dispatchEvent(new window.Event('click'));
+const rollDice = async (ms = 40) => {
+  tray().querySelector('#dx-roll').dispatchEvent(new window.Event('click'));
+  await settle(ms);
+};
+click('#btn-dice');
+ok('il vassoio si apre dalla barra del tavolo', !!tray() && tray().hidden === false);
+ok('e propone i quattro dadi del manuale',
+   tray().querySelectorAll('[data-kind]').length === 4);
+
+pickKind('d6');
+setField('#dx-n', 5);
+setField('#dx-target', 4);
+await rollDice();
+const cubes = [...tray().querySelectorAll('.d3d')];
+ok('cinque D6 sono cinque cubi', cubes.length === 5);
+ok('e ogni cubo ha sei facce', cubes.every(c => c.querySelectorAll('.f').length === 6));
+/* il controllo che tiene in piedi tutto: il cubo si ferma girato in
+   modo da mostrare proprio la faccia uscita, non un'altra */
+const LANDING = { 1:'rotateX(0.0deg) rotateY(0.0deg)', 2:'rotateX(0.0deg) rotateY(-90.0deg)',
+                  3:'rotateX(-90.0deg) rotateY(0.0deg)', 4:'rotateX(90.0deg) rotateY(0.0deg)',
+                  5:'rotateX(0.0deg) rotateY(90.0deg)', 6:'rotateX(0.0deg) rotateY(180.0deg)' };
+ok('e si ferma sulla faccia che e uscita davvero',
+   cubes.every(c => c.style.transform.includes(LANDING[c.dataset.face])));
+ok('i dadi passati si accendono, e sono quelli giusti',
+   tray().querySelectorAll('.d3d.win').length ===
+   cubes.filter(c => +c.dataset.face >= 4).length);
+ok('la riga di lettura dice le facce e il conto',
+   /^5D6: .* — \d su 5 a 4\+$/.test(tray().querySelector('.dl-out').textContent));
+
+pickKind('d3');
+setField('#dx-n', 3);
+await rollDice();
+ok('il D3 mostra tre facce sole',
+   [...tray().querySelectorAll('.d3d .f1 .num')].every(n => +n.textContent >= 1 && +n.textContent <= 3));
+ok('e si legge come D3', /^3D3:/.test(tray().querySelector('.dl-out').textContent));
+
+pickKind('artillery');
+setField('#dx-n', 1);
+await rollDice();
+ok('il dado di artiglieria porta i numeri pari e il Mancato Colpo',
+   /Artiglieria: (2|4|6|8|10|Mancato Colpo)/.test(tray().textContent));
+
+pickKind('scatter');
+await rollDice();
+ok('la deviazione tira due dadi diversi, direzione e distanza',
+   tray().querySelectorAll('.dice-group').length === 2);
+ok('e la lettura dice dove e di quanto',
+   /Deviazione: (Colpito!|\d+″ verso)/.test(tray().querySelector('.dl-out').textContent));
+
+/* con la rotolata accesa il risultato non si scrive prima: i cubi
+   girano e la riga arriva dopo. E' l'unica ragione per cui girano. */
+const anim = tray().querySelector('#dx-anim');
+anim.checked = true;
+anim.dispatchEvent(new window.Event('change', { bubbles: true }));
+pickKind('d6');
+setField('#dx-n', 4);
+await rollDice(60);
+ok('mentre i dadi rotolano il risultato non c e ancora',
+   tray().querySelector('#dx-out').textContent.trim() === '');
+await settle(1300);
+ok('e quando si fermano compare', /4D6:/.test(tray().querySelector('#dx-out').textContent));
+anim.checked = false;
+anim.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+tray().querySelector('#dx-close').dispatchEvent(new window.Event('click'));
+ok('il vassoio si chiude', tray().hidden === true);
+ok('nessun errore attorno ai dadi', errors.length === 0);
 
 console.log('\nrighelli');
 const rulerCount = () => state.rulers.length;
@@ -325,6 +403,76 @@ if (lone && bigA){
      [...doc.querySelectorAll('#i-join option')].some(o => +o.value === lone.uid));
 }
 
+
+/* La strada opposta: prima l'aggancio si faceva solo aprendo il
+   reggimento, e chi partiva dal personaggio non trovava nessuna
+   tendina. */
+const solo = state.units.find(u => u.army === 'B' && FM.canJoin(u) && !FM.hostUnit(state.units, u));
+const bigB = state.units.find(u => u.army === 'B' && u.models > 1 && !FM.hostUnit(state.units, u));
+ok('c e un personaggio libero nell altro esercito', !!solo && !!bigB);
+if (solo && bigB){
+  ok('la scheda del personaggio elenca i reggimenti che lo possono ospitare',
+     FM.hostCandidates(state.units, solo).some(h => h.uid === bigB.uid));
+  state.sel = { type: 'unit', id: solo.uid };
+  deploy.renderAll();
+  const into = doc.querySelector('#i-host');
+  ok('e la tendina c e davvero', !!into &&
+     [...into.options].some(o => +o.value === bigB.uid));
+  setField('#i-host', String(bigB.uid));
+  ok('sceglierlo lo unisce al reggimento',
+     FM.hostUnit(state.units, solo)?.uid === bigB.uid);
+  history.undo();
+  deploy.renderAll();
+  ok('e si torna indietro',
+     FM.hostUnit(state.units, state.units.find(u => u.uid === solo.uid)) == null);
+}
+
+/* Un pezzo dentro un pezzo dentro un pezzo non succede al tavolo: un
+   personaggio che ne ospita gia' un altro non si infila da nessuna
+   parte, e nessun reggimento se lo prende. */
+const singles = state.units.filter(u => u.army === 'A' && (u.models || 1) === 1 &&
+                                        !FM.hostUnit(state.units, u) && !FM.hostsAnyone(state.units, u));
+const bigB2 = state.units.find(u => u.army === 'A' && u.models > 1 && !FM.hostUnit(state.units, u));
+ok('ci sono due pezzi singoli e un reggimento a cui offrirli',
+   singles.length >= 2 && !!bigB2);
+if (singles.length >= 2 && bigB2){
+  const [nester, guest] = singles;
+  deploy.act('unisci', () => FM.joinUnit(guest, nester));
+  ok('chi ospita non compare fra i candidati di un reggimento',
+     !FM.joinCandidates(state.units, bigB2).some(c => c.uid === nester.uid));
+  ok('e non gli si offre nessun reggimento da cui farsi ospitare',
+     FM.hostCandidates(state.units, nester).length === 0);
+  state.sel = { type: 'unit', id: nester.uid };
+  deploy.renderAll();
+  ok('l ispettore spiega che prima va sganciato',
+     !doc.querySelector('#i-host') && /Sgancia .* e poi/.test(doc.querySelector('#inspector').textContent));
+  ok('e il reggimento dice chi ha lasciato fuori e perche',
+     FM.joinRefusals(state.units, bigB2).some(r => r.uid === nester.uid && /ospita/.test(r.why)));
+  deploy.act('sgancia', () => FM.leaveUnit(state.units.find(u => u.uid === guest.uid)));
+}
+
+/* Un aggancio appeso a un'unita' morta non vale piu': l'ispettore lo
+   dava per libero e la tendina no, e il pezzo spariva da tutte e due. */
+const ghostHost = state.units.find(u => u.army === 'B' && u.models > 1 && !FM.hostUnit(state.units, u));
+const ghost = state.units.find(u => u.army === 'B' && u.uid !== ghostHost.uid && FM.canJoin(u) &&
+                                    !FM.hostUnit(state.units, u) && !FM.hostsAnyone(state.units, u));
+if (ghost && ghostHost){
+  deploy.act('unisci', () => FM.joinUnit(ghost, ghostHost));
+  ghostHost.dead = true;
+  ok('se il reggimento muore il personaggio torna libero',
+     FM.hostUnit(state.units, ghost) == null);
+  const third = state.units.find(u => u.army === 'B' && u.models > 1 && !u.dead &&
+                                      u.uid !== ghostHost.uid && !FM.hostUnit(state.units, u));
+  ok('e riappare fra i candidati di un reggimento vivo',
+     !!third && FM.joinCandidates(state.units, third).some(c => c.uid === ghost.uid));
+  ghostHost.dead = false;
+  deploy.act('sgancia', () => FM.leaveUnit(ghost));
+}
+
+/* La tendina vuota diceva soltanto niente. */
+ok('i rifiuti hanno un motivo scritto',
+   FM.joinRefusals(state.units, regiment).every(r => typeof r.why === 'string' && r.why.length > 0));
+
 console.log('\nmisure del tavolo, zone e terreno');
 setField('#table-size', 'custom');
 setField('#table-w', 52);
@@ -383,6 +531,15 @@ console.log('\nregistro della partita');
 const BL = await import('../src/battlelog.js');
 ok('lo schieramento e la prima fotografia',
    state.game.turns.length === 1 && state.game.turns[0].kind === 'deploy');
+
+/* i dadi tirati dal pannello non restano nel vassoio: quello che esce
+   finisce nel registro con turno e fase, come un'annotazione */
+click('#g-dice');
+doc.querySelector('#dicebox #dx-roll').dispatchEvent(new window.Event('click'));
+await settle(40);
+ok('i dadi tirati in partita finiscono nel registro',
+   /D\d:/.test(state.game.log[0].text) && state.game.log[0].t === state.game.turn);
+doc.querySelector('#dicebox #dx-close').dispatchEvent(new window.Event('click'));
 
 /* sei pollici in avanti e tre modelli persi: il turno deve raccontare
    tutte e due le cose, e tenerle separate dal totale della partita */

@@ -13,6 +13,7 @@
 import { esc } from './util.js';
 import * as C from './combat.js';
 import { IMPOSSIBLE } from './rules.js';
+import { showDiceGroups } from './dicebox.js';
 
 let host = null, ctx = null, cur = null;
 
@@ -72,6 +73,43 @@ function diceHTML(dice, target){
     shown.map(v => `<i class="die${target && v >= target && v > 1 ? " win" : ""}">${v}</i>`).join("") +
     (dice.length > shown.length ? `<i class="die more">+${dice.length - shown.length}</i>` : "") +
     `</span>`;
+}
+
+/* ------------------------------------------------------------------
+   Gli stessi dadi, ma nel vassoio in tre dimensioni.
+   L'assalto tira decine di dadi in cinque o sei mucchi (colpire,
+   ferire, armatura, salvezza, rigenerazione) e poi il test di rotta.
+   Qui quei mucchi diventano le righe del vassoio: sono gli stessi
+   numeri del conto — nessuno viene ritirato — e si vedono cadere prima
+   di leggere il risultato, che e' l'unico momento in cui guardare i
+   dadi conta qualcosa.
+   ------------------------------------------------------------------ */
+const asDice = (pool, need) => (pool.dice || []).map(v =>
+  ({ raw: v, value: v, win: !!(need && v >= need && v > 1) }));
+
+function roundGroups(r, names){
+  const out = [];
+  const add = (label, p) => {
+    /* i tiri impossibili (armatura che non c'e', salvezza che non
+       esiste) nel pannello non compaiono: nemmeno qui, o il vassoio si
+       riempirebbe di dadi che non possono fare niente */
+    if (!p || !(p.dice || []).length || p.need >= IMPOSSIBLE) return;
+    out.push({ kind:"d6", label, dice: asDice(p, p.need),
+               tail: `${p.hits} su ${p.of}` });
+  };
+  for (const s of r.steps){
+    const who = names[s.side];
+    add(`${who} · colpisce ${need(s.hit.need)}`, s.hit);
+    add(`${who} · ferisce ${need(s.wound.need)}`, s.wound);
+    add(`${who} · armatura ${need(s.save.need)}`, s.save);
+    add(`${who} · speciale ${need(s.ward.need)}`, s.ward);
+    add(`${who} · rigenera ${need(s.regen.need)}`, s.regen);
+  }
+  if (r.test && (r.test.dice || []).length)
+    out.push({ kind:"d6", label:`${names[r.cr.loser]} · test di rotta`,
+               dice: asDice(r.test, 0),
+               tail: `${r.test.total} contro ${r.test.target}` });
+  return out;
 }
 
 /* I due lati si colorano con il colore del loro esercito sul tavolo,
@@ -313,9 +351,16 @@ function render(){
     set(`#d-flk-${tag}`, el => { o.flank    = el.value; });
   }
 
-  q("#d-roll").addEventListener("click", () => {
+  q("#d-roll").addEventListener("click", async () => {
     const [x, y] = bothSides();
-    cur.roll = C.meleeRound(x, y); cur.odds = null; render();
+    const r = C.meleeRound(x, y);
+    cur.roll = r; cur.odds = null;
+    /* prima si vedono cadere, poi si legge il conto: al contrario il
+       risultato sarebbe gia' li' e i dadi diventerebbero un fregio */
+    await showDiceGroups(roundGroups(r, names), {
+      title: "Assalto", foot: "Gli stessi dadi del conto qui sotto: nessuno viene ritirato.",
+    });
+    render();
   });
   q("#d-odds").addEventListener("click", () => {
     const [x, y] = bothSides();

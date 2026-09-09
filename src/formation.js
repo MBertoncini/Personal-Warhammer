@@ -262,25 +262,86 @@ export function isCharacter(u){
 }
 
 export const joinedHost = u => (u.join && u.join.host != null) ? u.join.host : null;
+
+/* Il reggimento in cui il pezzo sta davvero, non l'id scritto sopra.
+   Un'unita' eliminata non ospita piu' nessuno, e un id rimasto appeso a
+   un'unita' cancellata non vale niente: in tutti e due i casi il
+   personaggio e' di nuovo un pezzo suo, e chiunque lo guardi deve
+   vederlo cosi'. Prima l'ispettore lo dava per libero e la tendina
+   degli agganci no, e il pezzo spariva da tutte e due le liste. */
+export function hostUnit(units, ch){
+  const id = joinedHost(ch);
+  if (id == null) return null;
+  const h = (units || []).find(u => u.uid === id);
+  return h && !h.dead ? h : null;
+}
+
 export const attachedTo = (units, host) =>
-  units.filter(c => joinedHost(c) === host.uid && !c.dead);
+  units.filter(c => c.uid !== host.uid && !c.dead && hostUnit(units, c)?.uid === host.uid);
+
+/* ospita gia' qualcuno? */
+export const hostsAnyone = (units, u) =>
+  (units || []).some(c => c.uid !== u.uid && !c.dead && hostUnit(units, c)?.uid === u.uid);
 
 /* Chi si puo' infilare dentro un'altra unita'. La categoria del roster
    non basta: al tavolo dentro un reggimento ci finiscono anche i pezzi
    che il file non chiama «character» — il boss senza categoria, il
    portastendardo comprato a parte, la bestia da compagnia. La regola
-   che tiene e' un'altra: un modello solo ci sta, un reggimento no. */
+   che tiene e' un'altra: un modello solo ci sta, un reggimento no.
+   Questa guarda la forma del pezzo; chi ci sta gia' dentro o chi ci
+   tiene dentro qualcun altro lo filtrano i candidati. */
 export const canJoin = u => !u.dead && (isCharacter(u) || (u.models || 1) === 1);
 
 /* Chi lo puo' ospitare: chiunque non sia gia' dentro a qualcun altro.
    Un pezzo dentro un pezzo dentro un pezzo non e' una cosa che
    succede al tavolo, e qui non si puo' costruire. */
-export const canHost = u => !u.dead && joinedHost(u) == null;
+export const canHost = (units, u) => !u.dead && hostUnit(units, u) == null;
 
 /* i candidati all'aggancio dentro `host`, in ordine di lista */
 export const joinCandidates = (units, host) =>
   units.filter(c => c.uid !== host.uid && c.army === host.army &&
-                    canJoin(c) && joinedHost(c) == null);
+                    canJoin(c) && hostUnit(units, c) == null && !hostsAnyone(units, c));
+
+/* la strada opposta: i reggimenti in cui `ch` si puo' infilare. Serve
+   alla scheda del personaggio, dove prima c'era solo una riga di testo
+   che rimandava altrove. */
+export const hostCandidates = (units, ch) =>
+  (canJoin(ch) && !hostsAnyone(units, ch))
+    ? units.filter(h => h.uid !== ch.uid && h.army === ch.army && canHost(units, h))
+    : [];
+
+/* Perche' un pezzo che ti aspettavi non c'e'. La tendina spariva senza
+   dire niente e sembrava che la funzione non ci fosse: qui escono i
+   quasi-candidati con il motivo, e l'ispettore lo scrive. */
+export function joinRefusals(units, host){
+  const out = [];
+  for (const c of units || []){
+    if (c.uid === host.uid || c.army !== host.army) continue;
+    if (!(isCharacter(c) || (c.models || 1) === 1)) continue;   // un reggimento non ci sta, e si sa
+    if (c.dead){ out.push({ uid:c.uid, name:c.name, why:"è eliminata" }); continue; }
+    const h = hostUnit(units, c);
+    if (h){
+      if (h.uid !== host.uid)                                   // chi e' gia' dentro QUESTO non manca
+        out.push({ uid:c.uid, name:c.name, why:`è già dentro ${h.name}` });
+      continue;
+    }
+    if (hostsAnyone(units, c)) out.push({ uid:c.uid, name:c.name, why:"ospita già un personaggio" });
+  }
+  return out;
+}
+
+/* lo stesso, guardando dalla parte del personaggio */
+export function hostRefusals(units, ch){
+  const out = [];
+  if (!canJoin(ch)) return out;
+  for (const c of units || []){
+    if (c.uid === ch.uid || c.army !== ch.army) continue;
+    if (c.dead){ out.push({ uid:c.uid, name:c.name, why:"è eliminata" }); continue; }
+    const h = hostUnit(units, c);
+    if (h) out.push({ uid:c.uid, name:c.name, why:`è già dentro ${h.name}` });
+  }
+  return out;
+}
 
 /* La casella preferita: il centro del primo rango, che e' dove il
    personaggio si mette nove volte su dieci. */

@@ -32,6 +32,8 @@ import { inch } from './util.js';
 import * as EX from './extras.js';
 import * as MV from './movement.js';
 import { askText, askConfirm, countersHTML, wireCounters } from './uikit.js';
+import { openDiceBox } from './dicebox.js';
+import { readOut } from './dice.js';
 
 const PHASES = [
   { id:"strategy", label:"Strategia" },
@@ -364,7 +366,7 @@ let hostEsc = s => String(s);
 function lossesHTML(esc){
   const s = S();
   const rows = id => s.units
-    .filter(u => u.army === id && !FM.joinedHost(u))
+    .filter(u => u.army === id && !FM.hostUnit(s.units, u))
     .map(u => {
       const n = alive(u);
       const w = EX.woundsOf(u);
@@ -504,13 +506,14 @@ export function renderGamePanel(host, { esc }){
       title="Fotografa il tavolo com'è adesso e passa la mano">Chiudi il turno di ${esc(names[g.army])}</button>
     <div class="readout"><span>Registrate</span><b>${played ? played + (played === 1 ? " fotografia" : " fotografie") : "solo lo schieramento"}</b></div>
     <div class="grid2" style="margin-top:6px">
+      <button class="btn tiny" id="g-dice" title="Il vassoio: D6, D3, artiglieria e deviazione. Quello che esce finisce nel registro con turno e fase.">⚀ Tira i dadi</button>
       <button class="btn tiny" id="g-note">Annota…</button>
-      <button class="btn tiny" id="g-${played ? "open" : "redeploy"}">${played ? "Apri le partite" : "Rifai la foto"}</button>
     </div>
     <div class="grid2" style="margin-top:6px">
+      <button class="btn tiny" id="g-${played ? "open" : "redeploy"}">${played ? "Apri le partite" : "Rifai la foto"}</button>
       <button class="btn tiny" id="g-archive">Archivia il report</button>
-      <button class="btn tiny ghost" id="g-stop" style="color:var(--bad)">Chiudi partita</button>
     </div>
+    <button class="btn tiny ghost" id="g-stop" style="width:100%;margin-top:6px;color:var(--bad)">Chiudi partita</button>
     ${lossesHTML(esc)}
     ${countersPanelHTML(esc)}
     <div class="gamelog">
@@ -528,6 +531,14 @@ export function renderGamePanel(host, { esc }){
   host.querySelector("#g-back").addEventListener("click", () => ctx.act("fase", () => advance(-1)));
   host.querySelectorAll("[data-phase]").forEach(b => b.addEventListener("click", () =>
     ctx.act("fase", () => { game().phase = +b.dataset.phase; })));
+  /* I dadi tirati in partita non sono un gesto a parte: quello che esce
+     va nel registro con turno e fase, come un'annotazione scritta a
+     mano — e a fine partita il report dice anche cosa e' stato tirato. */
+  host.querySelector("#g-dice").addEventListener("click", () => openDiceBox({
+    title: `Dadi · turno ${g.turn} · ${PHASES[g.phase].label}`,
+    foot: "Quello che esce viene annotato nel registro.",
+    onResult: r => ctx.act("dadi", () => logLine(readOut(r))),
+  }));
   host.querySelector("#g-note").addEventListener("click", async () => {
     const t = await askText({
       title:"Annota", label:"Tocca una scorciatoia, oppure scrivi. Finisce nel registro con turno e fase.",

@@ -229,6 +229,9 @@ function render(){
   /* dentro un reggimento ci va chi al tavolo ci starebbe: i personaggi
      e, categoria del roster o no, qualunque pezzo da un modello solo */
   const candidates = F.joinCandidates(S().units, u);
+  /* se la tendina resta vuota conviene dire perche': senza, sembra che
+     l'aggancio non esista */
+  const refused = candidates.length ? [] : F.joinRefusals(S().units, u);
 
   host.innerHTML = `
   <div class="modal" role="dialog" aria-label="Formazione di ${esc(u.name)}">
@@ -288,7 +291,8 @@ function render(){
               <option value="">— scegli —</option>
               ${candidates.map(c => `<option value="${c.uid}">${esc(c.name)}${F.isCharacter(c) ? "" : " · 1 modello"}</option>`).join("")}
             </select></label>`
-          : `<p class="note">Nessun pezzo libero da unire in questo esercito: dentro un reggimento ci vanno i personaggi e le unità da un modello solo.</p>`}
+          : `<p class="note">Nessun pezzo libero da unire in questo esercito: dentro un reggimento ci vanno i personaggi e le unità da un modello solo.${
+              refused.length ? " Restano fuori: " + refused.map(r => `${esc(r.name)} (${esc(r.why)})`).join(", ") + "." : ""}</p>`}
         ${chars.length ? `<p class="note">La base con la stella è il personaggio: trascinala per cambiargli posto nella formazione.</p>` : ""}
 
         ${onGame ? `

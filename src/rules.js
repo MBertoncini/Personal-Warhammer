@@ -13,9 +13,14 @@
 
 /* ============================================================
    1 · DADI
+   Le facce arrivano da dice.js, che le pesca dal generatore del
+   browser invece che da Math.random: e' lo stesso caso che tira nel
+   vassoio in tre dimensioni, e un simulatore che tira quattrocento
+   dadi a partita merita un generatore su cui si possano fare le
+   statistiche.
    ============================================================ */
-export const d6 = () => 1 + Math.floor(Math.random() * 6);
-export const roll = n => Array.from({ length: Math.max(0, n | 0) }, d6);
+export { d6, d3, roll } from './dice.js';
+import { roll } from './dice.js';
 
 /* Il tiro della carica: due dadi, tre scartando il peggiore per chi ha
    il passo lungo. Le medie non sono 7 e 7: la seconda vale mezzo pollice

@@ -2,7 +2,7 @@
 
 Quattro cose che si tengono per mano, per **Warhammer: The Old World**:
 
-**Il principio che tiene insieme tutto.** L'app sa **geometria, quantità e memoria**. Non sa mai **legalità**. Non tira dadi, non risolve combattimenti, non sa se una carica è legale e non conosce la composizione di nessuna lista: quelle sono le cose che il manuale può cambiare, e su cui l'app comincerebbe a discutere coi giocatori. Sa dove stanno i pezzi, quanti sono e com'erano tre turni fa.
+**Il principio che tiene insieme tutto.** L'app sa **geometria, quantità e memoria**. Non sa mai **legalità**. I dadi li tira — con il generatore vero del browser, e mostrando ogni faccia uscita — ma non sa se una carica è legale, non decide chi ha ragione e non conosce la composizione di nessuna lista: quelle sono le cose che il manuale può cambiare, e su cui l'app comincerebbe a discutere coi giocatori. Sa dove stanno i pezzi, quanti sono e com'erano tre turni fa.
 
 Ne discende tutto il resto, a partire dalla regola che le funzionalità **generiche** valgono più di quelle specifiche: un marcatore con testo libero copre obiettivi, segnalini magici, aree di incantesimo e «qui è morto il generale»; un marcatore *obiettivo* copre una cosa sola e domani ne serve un altro.
 
@@ -99,7 +99,7 @@ L'app non decide se la carica è legale. Mette il pezzo dove hai già deciso di 
 
 L'ingombro di un'unità non è più una moltiplicazione: è il rettangolo che contiene davvero le basi come stanno. Una schermagliata larga occupa il fronte che occupa, e i controlli di legalità, il magnetismo, le distanze e i contatti lo sanno.
 
-**Personaggi dentro le unità.** Dentro un reggimento ci va quello che al tavolo ci starebbe: i personaggi che il roster dichiara tali, e comunque **ogni unità da un modello solo** — il boss senza slot, il pezzo comprato a parte, la bestia da compagnia — che nell'elenco compare marcata *1 modello*. La spunta nell'ispettore ha l'ultima parola. Si uniscono dall'editor della formazione o dall'ispettore del reggimento. Da quel momento non è più un pezzo suo: prende una casella dentro la formazione (trascina la base con la stella per cambiargliela), si muove col reggimento e nel report risulta dov'è il reggimento. *Sgancia* lo rimette sul tavolo di fianco.
+**Personaggi dentro le unità.** Dentro un reggimento ci va quello che al tavolo ci starebbe: i personaggi che il roster dichiara tali, e comunque **ogni unità da un modello solo** — il boss senza slot, il pezzo comprato a parte, la bestia da compagnia — che nell'elenco compare marcata *1 modello*. La spunta nell'ispettore ha l'ultima parola. Si uniscono da tutte e due le parti: sulla scheda del reggimento la tendina *Unisci un personaggio o un modello singolo*, su quella del personaggio la tendina *Unisci questa a un reggimento*, e la stessa cosa dall'editor della formazione. Un pezzo che ne ospita già un altro non si infila da nessuna parte: prima si sgancia chi ha dentro. Quando una tendina resta vuota l'ispettore scrive chi ha lasciato fuori e perché, invece di sparire. Da quel momento non è più un pezzo suo: prende una casella dentro la formazione (trascina la base con la stella per cambiargliela), si muove col reggimento e nel report risulta dov'è il reggimento. *Sgancia* lo rimette sul tavolo di fianco.
 
 **Di quanto mi sto muovendo.** È la domanda del turno, e prima l'app rispondeva male: i cerchi del movimento erano disegnati attorno all'unità, quindi la seguivano, e la risposta spariva proprio mentre la trascinavi.
 
@@ -133,6 +133,21 @@ Le tre soglie sono la convenzione dell'app, dichiarata e basta: marcia `M×2`, c
 
 I dadi si vedono tutti apposta. Un simulatore che scrive «4 ferite» chiede di essere creduto sulla parola; uno che mostra le facce lo si ricontrolla a occhio, e quando dice una cosa strana si capisce subito se è stata sfortuna o un numero sbagliato nel profilo.
 
+**Il vassoio dei dadi.** *Dadi*, nella barra del tavolo — e *Tira i dadi* nel pannello Partita — apre un vassoio in cui i cubi **rotolano davvero**: sei facce, prospettiva, e la faccia uscita che si ferma verso di te. Ci sono i quattro dadi che il manuale nomina:
+
+| Dado | Facce | A cosa serve |
+|---|---|---|
+| **D6** | 1-6, a pallini | tutto il resto. Con un punteggio da fare (`4+`) i dadi passati si accendono e in fondo c'è il conto |
+| **D3** | 1, 2, 3 | il D6 dimezzato per eccesso del manuale, mostrato già letto |
+| **Artiglieria** | 2, 4, 6, 8, 10, Mancato Colpo | macchine da guerra: il Mancato Colpo esce in rosso e ti manda alla tabella dell'arma |
+| **Deviazione** | quattro frecce e due Colpito! | direzione. Insieme si tira la distanza — D6, 2D6, D3 o artiglieria — e la riga finale dice **quanti pollici e verso dove**, in gradi |
+
+Due cose non sono dettagli. La prima: **il risultato esce prima dell'animazione**, dal generatore crittografico del browser (`crypto.getRandomValues`, senza lo sbilanciamento del resto della divisione), e i cubi si girano per farlo vedere. Un dado fisico simulato che si ferma dove capita sarebbe un generatore scritto per sbaglio, con una distribuzione che nessuno ha mai controllato. La seconda: **finché i dadi girano il risultato non è scritto**. Compare quando si fermano — altrimenti girerebbero per niente.
+
+La rotolata si spegne con la spunta *rotola*: al terzo turno si tira dieci volte al minuto e un secondo per tirata sono dieci secondi di attesa. Spenta, i dadi compaiono già fermi sulla faccia giusta, e i numeri sono gli stessi. Chi ha chiesto al sistema operativo meno animazioni la trova spenta senza doverlo dire.
+
+Anche *Tira i dadi* dello scontro simulato passa di qui: i dadi dell'assalto — colpire, ferire, armatura, salvezza, il test di rotta — rotolano riga per riga **prima** che il pannello scriva il conto. Sono gli stessi dadi del conto: nessuno viene ritirato.
+
 **Armatura e salvezza speciale.** Sono le due cose che i file delle liste non contengono, perché in Old World vengono dall'equipaggiamento e dagli oggetti, non dal profilo. Si scelgono una volta nell'ispettore e valgono per il tiro e per lo scontro; senza, le stime sovrastimano le perdite di parecchio. Quando l'export le dichiara — valore d'armatura o punteggio già pronto — il parser le legge da sé.
 
 
@@ -153,6 +168,7 @@ Ogni unità nella lista laterale mostra una foto e il moltiplicatore; l'**unità
 - **Ferite** — il modello tolto non è l'unica valuta, e per un personaggio, un mostro o un carro è quella sbagliata: sono modelli singoli che incassano colpi senza sparire dal tavolo, e per tre quarti della partita quello che si perde sono **ferite**. Il tasto ♥ ne segna una senza togliere niente; il numero si vede sull'unità sul tavolo, accanto al nome nella lista Perdite, e finisce nel report turno per turno. Quando una ferita diventa davvero un modello in meno lo dici tu, con un tasto: l'app non lo deduce, perché per dedurlo dovrebbe conoscere delle regole.
 - **Etichette** — parole libere appiccicate a un'unità: *disordinata*, *ha caricato*, *sotto incantesimo*, quello che ti serve. Gli stati che l'app conosce sono tre e sono cablati; quelli che al tavolo ci si dimentica sono altri e cambiano da un'edizione all'altra, quindi qui sono testo. Compaiono sotto l'unità sul tavolo, e il dizionario dei suggerimenti cresce da solo con quello che scrivi: non c'è nessun elenco da mantenere.
 - **Contatori** — un nome e un numero, per esercito nel pannello e per unità nell'ispettore. Le risorse della magia, le munizioni contate, i punti comando, le cariche di un oggetto: roba che al tavolo si tiene con i dadi girati e si sbaglia. L'app non sa cosa conta: sa contare.
+- **Dadi** — *Tira i dadi* apre il vassoio senza uscire dalla partita, e quello che esce **finisce nel registro** con turno e fase, come un'annotazione scritta a mano. A fine partita il report racconta anche cosa è stato tirato.
 - **Lo schermino** — sopra il tabellino c'è il tavolo in piccolo: quello di adesso, e con le due frecce quello di ogni fine turno già registrato. Serve a vedere quello che si sta raccontando invece di leggerlo in una tabella di coordinate.
 - **Tabellino** — quanti punti restano in campo e quanti ne sono andati, per parte, calcolati in proporzione ai modelli persi.
 - **Registro** — ogni perdita e ogni annotazione, con turno e fase. *Annota* apre una finestra con le **scorciatoie** già pronte — carica riuscita, carica fallita, in rotta, rally, incantesimo fermato, generale, stendardo — perché durante una partita vera nessuno scrive frasi su una tastiera virtuale, e un registro vuoto vale un report vuoto. Chi vuole scrivere a mano scrive lo stesso.
@@ -315,6 +331,8 @@ src/
   imgexport.js        il tavolo come PNG, con i colori risolti
   share.js            schieramento dentro un link, compresso
   tactics.js          distanze, linea di vista, ventagli di movimento e tiro
+  dice.js             il caso: D6, D3, artiglieria, deviazione, dal generatore del browser
+  dicebox.js          il vassoio in tre dimensioni: cubi che rotolano e si fermano sulla faccia uscita
   rules.js            i conti con i dadi: punteggi da fare, ranghi, nervi
   combat.js           lo scontro simulato e la raffica, senza interfaccia
   duel.js             il pannello dello scontro: dadi in chiaro e perdite
@@ -352,6 +370,8 @@ npm test
 
 Girano in jsdom con IndexedDB finto, senza browser. `battle.mjs` non ne ha bisogno affatto: prova i conti da solo — i punteggi da fare, che quattromila dadi a 4+ diano circa metà successi, che il passo lungo valga in media mezzo pollice più della carica normale, che il ventaglio si accorci nel bosco e si fermi contro l'impassabile aggirandolo di lato, che dietro un monolite qualche raggio si spenga e di fianco no. `sync.mjs` monta un GitHub finto in memoria — blob, alberi, commit e un ramo — e ci fa sopra il giro completo: salvataggio, secondo salvataggio che non commette niente perché non è cambiato niente, un file cambiato che ne carica uno solo, una foto cancellata che sparisce anche di là, il conflitto quando il ramo si è mosso, e lo scaricamento su un archivio vuoto con le foto che tornano identiche al bit. Controlla anche che la sha calcolata in casa sia quella vera di git. `boot.mjs` avvia davvero la pagina intera e poi la usa: annulla e ripeti, zoom, distanze misurate dal bordo, ventaglio di movimento, campo di tiro con un bosco piantato in mezzo per veder sparire la linea di vista, uno scontro tirato finché qualcuno cade e le sue perdite riportate sul tavolo, righelli, una partita con perdite e unità distrutta, la chiusura di due turni con il movimento misurato in pollici, l'archiviazione del battle report e il suo testo in Markdown, una partita scritta a mano a partire da una lista, terreno casuale (verificando che sia specchiato e che nessun tesoro finisca sotto i 3″), salvataggio di uno scenario proprio, andata e ritorno del link condiviso, serializzazione del PNG e la finestra della Nuvola con le sue impostazioni.
 
+Sui dadi le prove sono due, e separate. In `battle.mjs`, senza pagina: che ogni faccia grezza diventi il valore giusto sui quattro dadi, che i due Colpito! stiano su facce opposte come sul dado vero, che il Colpito fermi l'oggetto e la freccia lo sposti dei pollici tirati, che il Mancato Colpo blocchi tutto, e che quarantottomila D6 diano sei mucchi che si somigliano. In `boot.mjs`, sulla pagina vera: che otto D6 siano otto cubi da sei facce, che **ogni cubo si fermi girato in modo da mostrare proprio la faccia uscita**, che i dadi accesi siano quelli che hanno passato il punteggio, e che **mentre i dadi rotolano il risultato non sia ancora scritto**.
+
 Prova anche le cose nuove dove si vedono davvero: che i cerchi del movimento restino **fermi sull'ancora** invece di seguire il pezzo e che la riga scriva `4.0″ di 8″`; che una ferita non tolga un modello finché non lo dici tu; che il caricante si appoggi a filo e arrivi dritto anche se lo trascinavi storto; che una zona disegnata a mano faccia risultare *fuori zona* un'unità che lo scenario considerava a posto; che marcatori, zone, etichette e ferite sopravvivano al link condiviso e finiscano nel report. `smoke.mjs` prova a parte i moduli senza DOM, dove le regole di conversione si leggono in una riga.
 
 ---
@@ -363,6 +383,7 @@ Prova anche le cose nuove dove si vedono davvero: che i cerchi del movimento res
 - La sincronia su GitHub la lanci tu (o il salvataggio automatico dopo qualche minuto di calma): non è continua e non fonde due modifiche fatte insieme allo stesso file. Chi salva per secondo sceglie se scaricare prima o passare sopra. Per due fratelli che giocano a turno va bene; per una squadra no.
 - Senza Nuvola i dati restano legati a quel browser: c'è il backup manuale e il link dello schieramento. Il link porta le posizioni, non la collezione: catalogo e foto restano dove sono.
 - La modalità partita **non arbitra**: tiene il conto di turni, fasi e perdite, e non impedisce mosse illegali. Le decisioni restano ai due giocatori, come al tavolo.
+- Il vassoio dei dadi **non sa cosa stai tirando**: quanti dadi, che dado e che punteggio serve lo dici tu, e i modificatori li fai in testa come al tavolo. Tira, mostra e scrive quello che è uscito — il resto è ancora una decisione dei giocatori.
 - Per lo stesso motivo il punteggio è **mezzo automatico**: l'app somma quello che vede sul tavolo (chi è morto, chi è a metà, chi è in rotta) e lascia a te obiettivi, generale, stendardi e quarti. Non conosce le tabelle di nessuno scenario e non pretende di conoscerle.
 - Il *mosso* di un'unità è lo spostamento **netto** fra due fotografie: chi avanza e poi ripiega risulta fermo, e una ruota sul posto risulta zero. Il fronte in gradi c'è, ed è lì che si legge — e il *Fantasma* fa vedere il resto.
 - Le soglie di movimento (marcia `M×2`, carica `M+7` e `M+12`) sono **una convenzione dell'app**, non una regola letta da nessun manuale: sono disegnate perché servono a stimare, e M si corregge a mano quando serve.

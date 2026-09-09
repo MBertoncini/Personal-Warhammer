@@ -6,6 +6,7 @@ import { hitMelee, hitShoot, woundOn, saveOn, chance, pool, rankBonus,
          leadershipTest, chargeRoll, stat, weaponStrength, weaponAP,
          IMPOSSIBLE } from '../src/rules.js';
 import * as C from '../src/combat.js';
+import * as D from '../src/dice.js';
 import { reachFan, sightFan, coverOn, stepCost, movementBands } from '../src/tactics.js';
 
 let fails = 0;
@@ -108,9 +109,15 @@ ok('le perdite non superano i modelli in campo',
 ok('il conto di fine assalto somma le sue voci',
    r.cr.A.total === r.cr.A.wounds + r.cr.A.rank + r.cr.A.std + r.cr.A.out + r.cr.A.flank);
 /* i ranghi si contano a fine assalto, sui modelli rimasti: venti in
-   file da cinque partono a +3 e scendono man mano che si accorciano */
+   file da cinque partono a +3 e scendono man mano che si accorciano.
+   Il numero esatto dipende da come sono andati i dadi, quindi si
+   controlla che sia quello giusto PER QUEI morti: scritto come
+   intervallo fisso, un assalto fortunato faceva fallire la prova una
+   volta ogni venti. */
+const rimasti = 20 - r.killsB;
 ok('gli Orchi contano i ranghi e sono in piu',
-   r.cr.B.rank >= 2 && r.cr.B.rank <= 3 && r.cr.B.out === 1);
+   r.cr.B.rank === Math.max(0, Math.min(3, Math.floor(rimasti / 5) - 1)) &&
+   r.cr.B.rank >= 1 && r.cr.B.out === 1);
 ok('e i Saurus, in file da sei e meno numerosi, no',
    r.cr.A.rank <= 1 && r.cr.A.out === 0);
 ok('chi perde tira per i nervi, chi pareggia no',
@@ -291,6 +298,83 @@ ok('il testardo perde e tira lo stesso, al Comando pieno',
 ok('senza Stubborn lo scarto del combattimento si sottrae',
    plainTargets.length > 0 && plainTargets.every(x => x.t === Math.max(2, 8 - x.d)) &&
    plainTargets.some(x => x.d > 0));
+
+/* ================================================================= */
+console.log('\ni dadi veri');
+
+/* Le facce dei quattro dadi, una per una: con la sorgente guidata si
+   controlla la traduzione (faccia grezza -> valore) senza sperare
+   nella fortuna. */
+const seq = list => { let i = 0; return () => list[i++ % list.length]; };
+
+D.setSource(seq([0, 1, 2, 3, 4, 5]));   // facce grezze 1..6 in fila
+const six = D.rollDice({ kind:'d6', n:6 });
+ok('il D6 mostra le sei facce', six.dice.map(d => d.value).join('') === '123456');
+ok('e le somma', six.total === 21);
+
+D.setSource(seq([0, 1, 2, 3, 4, 5]));
+const three = D.rollDice({ kind:'d3', n:6 });
+ok('il D3 e un cubo segnato 1,2,3,1,2,3', three.dice.map(d => d.value).join('') === '123123');
+
+D.setSource(seq([0, 1, 2, 3, 4, 5]));
+const arty = D.rollDice({ kind:'artillery', n:6 });
+ok('il dado di artiglieria porta 2,4,6,8,10 e il Mancato Colpo',
+   arty.dice.map(d => d.misfire ? 'X' : d.value).join(',') === '2,4,6,8,10,X');
+ok('e il Mancato Colpo viene contato', arty.misfires === 1);
+
+ok('il dado di deviazione ha quattro frecce e due Colpito',
+   D.SCATTER_FACES.filter(f => f === 'hit').length === 2);
+ok('e i due Colpito stanno su facce opposte, come sul dado vero',
+   D.SCATTER_FACES[0] === 'hit' && D.SCATTER_FACES[5] === 'hit');
+/* la faccia grezza 2 e' una freccia, e ogni freccia porta con se' il
+   grado in cui il dado si e' fermato */
+D.setSource(seq([1, 137]));
+const arrow = D.rollDice({ kind:'scatter', n:1 }).dice[0];
+ok('la freccia porta la sua direzione', !arrow.hit && arrow.deg === 137);
+
+/* Il punteggio da fare: l'1 non passa mai, nemmeno quando basterebbe. */
+D.setSource(seq([0, 3, 5]));
+const need2 = D.rollDice({ kind:'d6', n:3, target:2 });
+ok('a 2+ passano il 4 e il 6, non l\'1', need2.hits === 2);
+
+/* La deviazione: il Colpito ferma l'oggetto, la freccia lo sposta. */
+D.setSource(() => 0);                    // sempre la prima faccia: Colpito!
+const stay = D.scatter({ distance:'d6' });
+ok('col Colpito l\'oggetto resta dov\'e', stay.hit && stay.inches === 0);
+D.setSource(seq([1, 90, 2]));            // freccia, 90 gradi, poi la faccia 3
+const moved = D.scatter({ distance:'d6' });
+ok('con la freccia si sposta dei pollici tirati', !moved.hit && moved.inches === 3);
+ok('e verso destra sono novanta gradi', moved.deg === 90 && moved.compass === 'destra');
+ok('e la direzione e un grado, non uno di otto', moved.deg >= 0 && moved.deg < 360);
+D.setSource(null);
+
+/* Il 2D6 di distanza sono due cubi, non un numero da sette: il vassoio
+   deve poterli far rotolare tutti e due. */
+const pair = D.scatter({ distance:'2d6' });
+ok('la distanza 2D6 tiene i due dadi separati', pair.dist.dice.length === 2 &&
+   pair.dist.value === pair.dist.dice[0].value + pair.dist.dice[1].value);
+
+/* Il Mancato Colpo sulla distanza vince su tutto. */
+D.setSource(seq([1, 0, 5]));             // freccia, direzione, poi Mancato Colpo
+const jam = D.scatter({ distance:'artillery' });
+ok('il Mancato Colpo blocca la deviazione', jam.misfire && jam.inches === 0);
+D.setSource(null);
+
+/* Il generatore. Non si prova che sia casuale — non si puo' — ma che
+   non abbia il pollice sulla bilancia: quarantottomila dadi devono
+   dare sei mucchi che si somigliano, e ottomila e' la media. */
+const tally = [0, 0, 0, 0, 0, 0, 0];
+for (let i = 0; i < 48000; i++) tally[D.d6()]++;
+ok('le sei facce escono tutte piu o meno lo stesso',
+   tally.slice(1).every(n => near(n, 8000, 480)));
+ok('e nessuna faccia manca', tally.slice(1).every(n => n > 0));
+ok('il generatore del browser c\'e', D.trueRandom());
+
+/* La riga che finisce nel registro dice quello che si e' visto. */
+D.setSource(seq([3, 3, 3]));
+ok('la lettura mette le facce, non solo il totale',
+   D.readOut(D.rollDice({ kind:'d6', n:3 })) === '3D6: 4 + 4 + 4 = 12');
+D.setSource(null);
 
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

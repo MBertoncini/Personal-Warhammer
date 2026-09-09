@@ -13,6 +13,7 @@ import { initReports, renderReports } from './reports.js';
 import { bootDeploy, renderAll, refreshLinks as refreshBoardLinks, toast } from './deploy.js';
 import { exportAll, importAll, requestPersistence } from './store.js';
 import { initSync } from './syncui.js';
+import { openDiceBox } from './dicebox.js';
 import { on } from './bus.js';
 import { askConfirm, say } from './uikit.js';
 
@@ -106,6 +107,14 @@ on("catalog:changed", async () => {
   renderAll(); renderLists(); renderMatchup();
 });
 on("lists:changed",   () => { renderMatchup(); });
+
+/* ---------- il vassoio dei dadi ----------
+   Sta nella barra del tavolo perche' serve in ogni momento della
+   partita, non solo dentro uno scontro: un test di comando, la
+   deviazione di un lanciapietre, un D3 di ferite d'urto. In partita
+   c'e' anche il gemello nel pannello, che scrive il risultato nel
+   registro; questo tira e basta. */
+$("#btn-dice").addEventListener("click", () => openDiceBox({ title:"Dadi" }));
 
 /* ---------- backup ---------- */
 $("#btn-export").addEventListener("click", async () => {

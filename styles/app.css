@@ -661,6 +661,94 @@ textarea{
 .die.win{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:600;}
 .die.more{width:auto;padding:0 4px;border-style:dashed;}
 
+/* ==========================================================
+   IL VASSOIO DEI DADI
+   Cubi veri, in prospettiva, che si fermano sulla faccia decisa
+   prima da dice.js. L'animazione non tira niente: fa vedere. Sta in
+   basso a sinistra perche' lo scontro simulato sta in basso a destra
+   e i due si guardano insieme.
+   ========================================================== */
+.dicebox{
+  position:fixed; z-index:78; inset:auto auto 18px 18px;
+  width:min(420px, calc(100vw - 36px)); max-height:min(72vh, 660px);
+  overflow-y:auto; overscroll-behavior:contain;
+  background:var(--panel); border:1px solid var(--line-strong);
+  border-radius:var(--r-lg); box-shadow:var(--shadow);
+}
+.dice-card{display:flex;flex-direction:column;gap:10px;padding:12px 14px 14px;}
+.dice-head{display:flex;align-items:center;gap:8px;}
+.dice-ctl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.dice-kinds{display:flex;gap:4px;flex-wrap:wrap;}
+.dice-count{display:flex;align-items:center;gap:4px;}
+.dice-count input{width:54px;text-align:center;}
+.dice-ctl #dx-roll{margin-left:auto;}
+
+.dice-tray{
+  display:flex;flex-direction:column;gap:12px;
+  padding:16px 12px 14px;border-radius:var(--r);min-height:96px;
+  border:1px solid var(--line);
+  background:radial-gradient(120% 90% at 50% 0%, var(--panel-2), var(--panel));
+}
+.dice-group{display:flex;flex-direction:column;}
+.dg-head{display:flex;align-items:baseline;gap:8px;font-size:12px;}
+.dg-head b{margin-left:auto;white-space:nowrap;}
+/* il margine sopra non e' estetica: un cubo girato sporge dal suo
+   riquadro di una mezza faccia e, senz'aria, si mangia l'etichetta */
+/* la prospettiva sta qui e non piu' in alto: si applica solo ai figli
+   diretti, e i figli diretti sono i cubi */
+.dice3d{
+  display:flex;flex-wrap:wrap;gap:11px;align-items:center;padding:12px 2px 6px;
+  perspective:600px;perspective-origin:50% 30%;
+}
+
+/* il cubo: sei facce, le opposte sommano a sette come su un dado vero */
+.d3d{
+  --dz:44px; --h:22px;
+  position:relative;width:var(--dz);height:var(--dz);
+  transform-style:preserve-3d;
+}
+.d3d .f{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  border-radius:8px;border:1px solid var(--line-strong);
+  background:linear-gradient(155deg,var(--panel),var(--panel-2));
+  color:var(--ink);font-size:15px;font-weight:600;line-height:1;
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,.05), 0 1px 3px rgba(0,0,0,.12);
+}
+.d3d .f1{transform:translateZ(var(--h));}
+.d3d .f2{transform:rotateY(90deg) translateZ(var(--h));}
+.d3d .f3{transform:rotateX(90deg) translateZ(var(--h));}
+.d3d .f4{transform:rotateX(-90deg) translateZ(var(--h));}
+.d3d .f5{transform:rotateY(-90deg) translateZ(var(--h));}
+.d3d .f6{transform:rotateY(180deg) translateZ(var(--h));}
+.d3d.win .f{border-color:var(--ok);box-shadow:inset 0 0 0 2px var(--ok);}
+.d3d.mis .f{border-color:var(--bad);color:var(--bad);}
+.d3d-more{color:var(--muted);font-size:12px;align-self:center;}
+
+.d3d .pips{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);width:74%;height:74%;}
+.d3d .pip{width:7px;height:7px;border-radius:50%;background:var(--ink);align-self:center;justify-self:center;}
+.d3d .p1{grid-area:1/1;} .d3d .p2{grid-area:1/2;} .d3d .p3{grid-area:1/3;}
+.d3d .p4{grid-area:2/1;} .d3d .p5{grid-area:2/2;} .d3d .p6{grid-area:2/3;}
+.d3d .p7{grid-area:3/1;} .d3d .p8{grid-area:3/2;} .d3d .p9{grid-area:3/3;}
+.d3d .num{font-family:"IBM Plex Mono",monospace;font-size:15px;}
+.d3d .mis{color:var(--bad);font-size:17px;}
+.d3d .arrow{font-size:17px;color:var(--accent);}
+.d3d .hit{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:9px;letter-spacing:.04em;color:var(--ok);}
+.d3d .hit .tiny{font-size:7px;font-style:normal;}
+
+.dice-anim{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);white-space:nowrap;}
+.dice-anim input{margin:0;}
+.dice-out{display:flex;flex-direction:column;gap:3px;}
+.dice-out:empty,.dg-tail:empty{display:none;}
+.dl-out{font-family:"IBM Plex Mono",monospace;font-size:12.5px;}
+.dice-arrow{display:flex;justify-content:center;}
+.dice-arrow i{font-style:normal;font-size:30px;line-height:1;color:var(--accent);}
+
+@media (max-width:760px){
+  /* in alto: in basso ci sta lo scontro simulato, e sul telefono i due
+     pannelli uno sopra l'altro nascondono proprio il risultato */
+  .dicebox{inset:8px 8px auto 8px;width:auto;max-height:62vh;}
+}
+
 .duel-cr{display:flex;flex-direction:column;gap:4px;}
 .duel-cr .dim{color:var(--muted);font-size:11.5px;font-weight:400;}
 .oddsbar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--panel-2);margin:2px 0 6px;}
