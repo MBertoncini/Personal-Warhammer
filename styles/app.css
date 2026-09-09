@@ -400,6 +400,48 @@ table.stats th{
   padding:4px 0;background:var(--panel-2);border-bottom:1px solid var(--line);
 }
 table.stats td{text-align:center;padding:6px 0;font-weight:600;}
+
+/* La cella spostata da un effetto non deve somigliare alle altre: se un
+   +1 si mimetizza fra i numeri di base, la traccia non serve a niente.
+   Il perche' sta nel `title` della cella e per esteso nella riga sotto,
+   perche' sul telefono il passaggio del mouse non esiste. */
+table.stats td.stat-mod{
+  color:var(--accent);
+  box-shadow:inset 0 -2px 0 var(--accent);
+  cursor:help;
+}
+.note.stat-why{margin-top:5px;color:var(--accent);}
+
+/* Cavaliere e cavalcatura: due righe, con la prima colonna che dice di
+   chi e' il profilo. La cavalcatura sta piu' in sordina — il numero che
+   si guarda quasi sempre e' quello di sopra. */
+table.stats th.who{
+  text-align:left;padding-left:7px;width:6.6em;
+  text-transform:none;letter-spacing:0;font-size:10px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+table.stats tr.mount-row td,
+table.stats tr.mount-row th.who{color:var(--muted);font-weight:500;}
+table.stats tr.mount-row{border-top:1px solid var(--line);}
+
+/* La scheda di preparazione della lista: sta chiusa quando non c'e'
+   piu' niente da decidere, e aperta quando c'e'. Le righe per unita'
+   compaiono solo dove c'e' davvero una scelta — un reggimento con una
+   sola arma da mischia non ha niente da dire. */
+details.prep{
+  margin:12px 0;padding:10px 12px;
+  border:1px solid var(--line);border-radius:var(--r);background:var(--panel-2);
+}
+details.prep > summary{cursor:pointer;list-style:none;}
+details.prep > summary::-webkit-details-marker{display:none;}
+details.prep .chip{float:right;}
+.prep-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;}
+.row.prep-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:5px 0;}
+.row.prep-row .nm{min-width:11em;}
+.row.prep-row select,.row.prep-row input{flex:1 1 10em;min-width:8em;}
+.prep-open{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:12px;}
+.prep-open li{margin:2px 0;}
+@media (max-width:640px){ .prep-grid{grid-template-columns:1fr;} }
 .tags{display:flex;flex-wrap:wrap;gap:5px;}
 .tag{font-size:11.5px;padding:2px 7px;border-radius:99px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);}
 .tag button{border:0;background:none;color:inherit;cursor:pointer;padding:0 0 0 4px;font-size:12px;}

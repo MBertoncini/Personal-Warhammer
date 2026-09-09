@@ -1,0 +1,5 @@
+{
+  "formato": "tow-eserciti/1",
+  "nota": "L'elenco dei file d'esercito. Sta qui perche' una cartella, servita da HTTP, non si puo' sfogliare: aggiungere un esercito vuol dire aggiungere il suo file e il suo nome in questa riga, e nient'altro.",
+  "file": ["orchi-goblin.json", "skaven.json", "uomini-lucertola.json"]
+}

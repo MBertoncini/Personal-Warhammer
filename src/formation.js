@@ -482,6 +482,88 @@ export function sideOf(pt, box){
   return lx < 0 ? "fianco sinistro" : "fianco destro";
 }
 
+/* ============================================================
+   7 bis · ARCHI DI VISUALE
+   `sideOf` risponde alla domanda «da che lato mi ha toccato»: e' un
+   punto contro un rettangolo, e serve a raccontare un contatto gia'
+   avvenuto. L'arco e' la domanda di prima: «quel nemico sta davanti a
+   me, di fianco o dietro», e vale su tutta la sagoma del nemico, non
+   su un punto.
+ 
+   I settori sono quelli del manuale: le diagonali della basetta
+   prolungate all'infinito dal centro tagliano il tavolo in quattro
+   spicchi. La prova e' la stessa che `sideOf` fa gia' — la coordinata
+   locale divisa per la mezza misura del lato — e questo non e' un
+   caso: e' la stessa geometria guardata dai due capi. Tenerle vicine
+   e' l'unico modo perche' non divergano.
+ 
+   Serve a tre cose che il piano mette nella stessa tappa: dichiarare
+   una carica (si carica solo quello che si ha nell'arco frontale),
+   contare il bonus di fianco e di retro a fine assalto, e sapere se
+   il caricante e' arrivato da dietro.
+   ============================================================ */
+
+/* fronte / fianco / retro, senza distinguere destra e sinistra: e' la
+   forma che serve alle regole, mentre `sideOf` tiene i due fianchi
+   separati perche' al racconto di un contatto servono */
+export const arcOfSide = side => side === "fronte" || side === "retro" ? side : "fianco";
+export const arcOf = (pt, box) => arcOfSide(sideOf(pt, box));
+
+/* Un poligono intero contro gli archi di una basetta. Torna gli archi
+   che tocca — di solito uno, due quando sta a cavallo di una diagonale
+   — e quello dominante, cioe' quello che prende piu' angoli. La
+   dichiarazione di carica guarda `has`, il bonus di fine combattimento
+   guarda `arc`. */
+export function arcOfPoly(poly, box){
+  const tally = { fronte:0, fianco:0, retro:0 };
+  for (const p of poly) tally[arcOf(p, box)]++;
+  /* il centro pesa doppio: un nemico largo che sfiora una diagonale con
+     un angolo solo non e' «di fianco», sta ancora davanti */
+  const c = arcOf(centroid(poly), box);
+  tally[c] += poly.length;
+  const has = Object.keys(tally).filter(k => tally[k] > 0);
+  const arc = Object.keys(tally).reduce((a, b) => tally[b] > tally[a] ? b : a, "fronte");
+  return { arc, has, tally, centre: c };
+}
+const centroid = poly => {
+  const n = Math.max(1, poly.length);
+  return [poly.reduce((s, p) => s + p[0], 0) / n, poly.reduce((s, p) => s + p[1], 0) / n];
+};
+
+/* L'arco fra due unita' gia' schierate: `boxOf` e' lo stesso che usa
+   `contactList`. Torna dove sta B per A e dove sta A per B, perche'
+   servono tutte e due — chi carica deve avere il bersaglio davanti,
+   chi lo subisce prende il bonus dal lato da cui e' arrivato. */
+export function arcBetween(a, b, boxOf){
+  const ba = boxOf(a), bb = boxOf(b);
+  return {
+    bInA: arcOfPoly(boxCorners(bb), ba),
+    aInB: arcOfPoly(boxCorners(ba), bb),
+  };
+}
+
+/* Gli spicchi da disegnare sul tavolo: quattro triangoli che partono
+   dagli angoli della basetta e si allontanano di `len`. Servono al
+   ventaglio dell'arco frontale nel pannello di movimento, che oggi
+   disegna la portata ma non il limite di visuale. */
+export function arcSectors(box, len = 60){
+  const c = boxCorners(box);          // orario dal fronte-sinistro
+  const [x, y] = [box.x, box.y];
+  const far = ([px, py]) => {
+    const dx = px - x, dy = py - y, d = Math.hypot(dx, dy) || 1;
+    return [x + dx / d * len, y + dy / d * len];
+  };
+  const wedge = (i, j) => [[x, y], far(c[i]), far(c[j])];
+  /* boxCorners torna gli angoli in ordine: 0 fronte-sinistro,
+     1 fronte-destro, 2 retro-destro, 3 retro-sinistro */
+  return {
+    fronte:          wedge(0, 1),
+    "fianco destro": wedge(1, 2),
+    retro:           wedge(2, 3),
+    "fianco sinistro": wedge(3, 0),
+  };
+}
+
 /* units: quelle sul tavolo; boxOf: come si ricava il rettangolo di
    ognuna (lo sa deploy.js, che tiene le formazioni aggiornate) */
 export function contactList(units, boxOf){

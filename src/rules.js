@@ -124,18 +124,71 @@ export const chance = need => need >= IMPOSSIBLE ? 0 : need <= 1 ? 1 : (7 - need
 /* ============================================================
    3 · TIRARE UN PUGNO DI DADI
    ============================================================ */
+/* Un dado passa quando fa il punteggio, e l'1 non passa mai —
+   nemmeno quando servirebbe 1. */
+const passes = (v, need) => v >= need && v > 1;
+
 /* n dadi contro un punteggio: torna i dadi usciti e quanti sono
-   passati. L'1 non passa mai, nemmeno quando servirebbe 1. Con
-   AUTOHIT non si tira: passano tutti e l'elenco dei dadi resta vuoto,
-   che e' il modo onesto di dire «qui non c'era niente da tirare». */
-export function pool(n, need){
-  if (need <= AUTOHIT) return { dice: [], hits: Math.max(0, n), need, of: Math.max(0, n) };
-  const dice = roll(n);
-  const hits = need >= IMPOSSIBLE ? 0 : dice.filter(v => v >= need && v > 1).length;
-  return { dice, hits, need, of: dice.length };
+   passati. Con AUTOHIT non si tira: passano tutti e l'elenco dei dadi
+   resta vuoto, che e' il modo onesto di dire «qui non c'era niente da
+   tirare».
+
+   `again` e' il ritiro (p. 93). Un dado ritirato tiene il risultato
+   nuovo anche se e' peggiore, e non si ritira una seconda volta: la
+   regola vale per tutti i ritiri che esistono, dalla Choppa degli
+   Orchi al Waaagh!, dall'Abilita' Balistica 6 e oltre a un terzo degli
+   oggetti magici di ogni army book. Vale la pena averla in un posto
+   solo. Le forme che si usano davvero:
+
+     "ones"    ritira gli 1 naturali        — Choppa, Waaagh!, Odio
+     "misses"  ritira tutto quello che ha mancato
+     una funzione (faccia, passato) => bool, per i casi strani.
+
+   Quello che torna dice anche cosa e' stato ritirato: `first` sono le
+   facce del primo tiro, `dice` quelle che valgono, `rerolled` quante
+   ne sono state rifatte. Senza, il pannello mostrerebbe dadi che non
+   sono quelli che si sono visti cadere. */
+function rerollTest(again){
+  if (!again) return null;
+  if (typeof again === "function") return again;
+  if (/^ones?$/i.test(again))   return v => v === 1;
+  if (/^miss(es)?$/i.test(again)) return (v, ok) => !ok;
+  if (/^all$/i.test(again))     return () => true;
+  return null;
 }
-/* quanti ne passerebbero in media */
-export const expected = (n, need) => n * chance(need);
+
+export function pool(n, need, again = null){
+  if (need <= AUTOHIT) return { dice: [], hits: Math.max(0, n), need, of: Math.max(0, n), first: [], rerolled: 0 };
+  const first = roll(n);
+  const dead = need >= IMPOSSIBLE;
+  const test = rerollTest(again);
+  let dice = first, rerolled = 0;
+  if (test){
+    dice = first.slice();
+    const idx = [];
+    for (let i = 0; i < dice.length; i++)
+      if (test(dice[i], !dead && passes(dice[i], need))) idx.push(i);
+    if (idx.length){
+      const fresh = roll(idx.length);
+      idx.forEach((k, j) => { dice[k] = fresh[j]; });
+      rerolled = idx.length;
+    }
+  }
+  const hits = dead ? 0 : dice.filter(v => passes(v, need)).length;
+  return { dice, hits, need, of: dice.length, first, rerolled };
+}
+
+/* quanti ne passerebbero in media. Con il ritiro degli 1 si aggiunge
+   un sesto dei dadi ritirato daccapo; con il ritiro dei falliti, tutta
+   la parte fallita. Serve alle stime, che non tirano. */
+export function expected(n, need, again = null){
+  const p = chance(need);
+  if (!again || need <= AUTOHIT || need >= IMPOSSIBLE) return n * p;
+  if (/^ones?$/i.test(again))     return n * (p + p / 6);
+  if (/^miss(es)?$/i.test(again)) return n * (p + (1 - p) * p);
+  if (/^all$/i.test(again))       return n * p;
+  return n * p;
+}
 
 /* ============================================================
    4 · RISOLUZIONE DEL COMBATTIMENTO
@@ -156,8 +209,14 @@ export function leadershipTest(ld, penalty = 0){
   return { dice, total, target, passed: total <= target || total === 2, insane: total === 2 };
 }
 
-/* Quanto si fugge, e quanto insegue chi ha vinto */
-export const fleeRoll = () => { const r = chargeRoll(false); return { dice: r.dice, total: r.total }; };
+/* Quanto si fugge, e quanto insegue chi ha vinto. Il modificatore c'e'
+   perche' esiste chi corre meglio: la Fuga Precipitosa degli Skaven
+   da' +1, e senza questo argomento la regola non si poteva nemmeno
+   scrivere. Non si scende sotto 2, che e' il minimo di due dadi. */
+export const fleeRoll = (mod = 0) => {
+  const r = chargeRoll(false);
+  return { dice: r.dice, mod: +mod || 0, total: Math.max(2, r.total + (+mod || 0)) };
+};
 
 /* ============================================================
    5 · LETTURA DEI PROFILI

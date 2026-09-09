@@ -50,6 +50,10 @@ Ogni unità viene agganciata al catalogo da sola quando il nome combacia: `11 Bl
 
 Quando non combacia, l'unità appare con la spunta gialla *da agganciare* e un menu con i candidati più probabili. **Lo scegli una volta**: la scelta viene salvata come alias sulla voce di catalogo e da lì in poi quel nome si aggancia da solo, in ogni lista futura. Se la voce non esiste ancora, `+ crea voce` la genera già compilata.
 
+In fondo a ogni lista c'è la **scheda di preparazione**: le cinque cose che il file di New Recruit non dice mai e che servono dal primo turno. Chi è il generale e chi porta lo stendardo da battaglia; quali incantesimi sono usciti (si tirano prima dello schieramento e il file scrive solo il dominio); quale arma impugna chi ne ha due; cosa c'è scritto sugli oggetti magici. Si compila una volta, resta salvata con la lista e viaggia nel backup e nella Nuvola con tutto il resto. Il generale l'app lo propone da sé, dal Comando più alto fra i personaggi, e la domanda che non ha ancora risposta resta scritta con il motivo per cui viene fatta — un elenco di buchi non serve, uno che dice *perché* quel buco conta sì.
+
+Nella stessa scheda compaiono le **regole d'esercito**. Stanno in `dati/eserciti/`, un file per esercito, fuori dal codice: aggiungerne uno vuol dire aggiungere un file e il suo nome nell'indice, mai toccare un modulo, ed è l'unica difesa contro il prossimo army book. Il pannello dice quante ne applica e — soprattutto — **quali no**, con il motivo: le Masse Brulicanti degli Skaven dipendono da chi hai vicino in questo momento e non si possono fissare in un file, il Valore Verminoso è una posizione di modello dentro l'unità. Sono cose che restano in mano tua, e vederle scritte vale più di un numero di copertura.
+
 ### 3. Matchup
 
 Scheda **Matchup**: scegli le due liste e dichiara chi porta le miniature.
@@ -318,8 +322,9 @@ src/
   movement.js         l'ancora di movimento e le soglie
   zones.js            zone di schieramento disegnate a mano
   bases.js            basette e frontage predefinito per tipo di truppa
+  troops.js           i tredici tipi di truppa: modelli per fila, ranghi, Forza d'Unità
   parser.js           lettura dei file New Recruit / BattleScribe
-  terrain.js          tipi di elemento scenico e loro limiti
+  terrain.js          tipi di elemento scenico, categoria e naturalità
   scenarios.js        scenari, zone di schieramento, geometria
   geom.js             geometria pura: sovrapposizioni, distanze, viste
   store.js            IndexedDB, ridimensionamento foto, backup
@@ -333,7 +338,10 @@ src/
   tactics.js          distanze, linea di vista, ventagli di movimento e tiro
   dice.js             il caso: D6, D3, artiglieria, deviazione, dal generatore del browser
   dicebox.js          il vassoio in tre dimensioni: cubi che rotolano e si fermano sulla faccia uscita
-  rules.js            i conti con i dadi: punteggi da fare, ranghi, nervi
+  rules.js            i conti con i dadi: punteggi da fare, ritiri, ranghi, nervi
+  effects.js          le caratteristiche con i modificatori attivi e da dove vengono
+  armies.js           il vocabolario dei file d'esercito, che stanno in dati/eserciti/
+  battlemarch.js      le due tabelle a D6 di Battle March e il controllo degli obiettivi
   combat.js           lo scontro simulato e la raffica, senza interfaccia
   duel.js             il pannello dello scontro: dadi in chiaro e perdite
   formation.js        il posto di ogni modello, personaggi uniti, contatti, terreno occupato
@@ -344,6 +352,7 @@ src/
   scenariokit.js      scenari propri e generatore di terreno a specchio
   catalog.js          voci di collezione, foto, pittura, aggancio dei nomi
   lists.js            liste salvate e collegamento unità → catalogo
+  prep.js             la scheda di preparazione: quello che il file di New Recruit non dice
   matchup.js          disponibilità, confronto, schieramenti salvati
   reports.js          archivio delle partite e scheda Partite
   deploy.js           stato del tavolo, pannelli, campo di battaglia
@@ -351,10 +360,13 @@ src/
 test/
   smoke.mjs           catalogo, aggancio, import, copertura, pittura
   battle.mjs          punteggi, dadi, ventagli e ombre, senza pagina
+  regole.mjs          tipi di truppa, ritiri, archi, effetti, terreno, file d'esercito
   sync.mjs            archivio su GitHub, contro un GitHub finto in memoria
   boot.mjs            la pagina intera: schede, annulla, zoom, partita, report, link
 tools/
   make-icons.mjs      scrive i PNG del manifest senza dipendenze
+dati/
+  eserciti/           un file per esercito: regole, oggetti, domini
 ```
 
 Le quattro primitive generiche stanno in moduli loro perché non sanno niente del tavolo e non devono saperlo: `extras.js` non ha DOM, `movement.js` non ha stato, `zones.js` risponde a una domanda sola. `uikit.js` c'è perché tre pannelli diversi avevano bisogno delle stesse quattro cose — una finestra, i contatori, le etichette, una fila di scorciatoie — e perché `prompt()` e `confirm()` non si usano più da nessuna parte: sul telefono coprono lo schermo, in un'app installata hanno l'aria di un errore, e proprio dove servono davvero (annotare mentre giochi) erano il gesto sbagliato.
@@ -396,6 +408,9 @@ Prova anche le cose nuove dove si vedono davvero: che i cerchi del movimento res
 - La linea di vista guarda i soli elementi che il tipo dichiara bloccanti (boschi, rovine, monoliti, piramidi) e ignora le regole fini — colline che vedono oltre, unità che fanno da schermo. È un'indicazione, non un arbitro. Vale per le distanze, per il campo di tiro e per la stima delle perdite.
 - L'aggancio al contatto appoggia il caricante **al centro della faccia** e poi lo lascia scorrere: dice dove finisce il pezzo, non se la carica era permessa.
 - Il terreno casuale è a specchio per costruzione: è la scelta più difendibile al circolo, ma non riproduce le mappe asimmetriche di uno scenario scritto.
+- La tabella dei **tipi di truppa** (p. 105) ha tredici righe e la colonna della Forza d'Unità è confrontata con le dieci liste salvate: sei tipi su tredici hanno un esempio vero che la conferma. Le celle senza esempio l'app le usa lo stesso e le dichiara — nell'ispettore compare *cella da verificare*. Quando il file della lista dichiara la Forza d'Unità vince il file, sempre.
+- Le due tabelle a D6 di **Battle March** — Terreno Selvaggio e Caso della Guerra — tirano e dicono cos'è uscito, ma l'abbinamento fra la faccia del dado e l'esito **non è confrontato con il libro**: i sei esiti stanno nell'ordine in cui il piano li elenca, e l'app lo scrive ogni volta che tira. Con il libro aperto si corregge cambiando una riga di `battlemarch.js`.
+- Il **profilo diviso** cavaliere/cavalcatura si legge dalle liste importate da adesso in poi: quelle già salvate sono state lette quando il parser teneva solo il primo profilo, e vanno reimportate per avere la riga della cavalcatura.
 - Il parser legge quello che New Recruit esporta. Se una lista arriva con basette insolite le stima dal tipo di truppa, e le puoi correggere a mano nell'ispettore.
 
 ## Licenza

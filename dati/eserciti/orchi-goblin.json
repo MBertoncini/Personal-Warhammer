@@ -1,0 +1,117 @@
+{
+  "id": "orchi-goblin",
+  "name": "Orchi e Goblin",
+  "matches": ["Orc and Goblin Tribes", "Orc & Goblin Tribes", "Orcs and Goblins"],
+  "book": { "title": "Ravening Hordes", "list": 11, "rules": 45 },
+  "nota": "Le dieci regole d'esercito stanno alle pp. 45-46. Il testo esteso sta nel libro: qui c'e' solo quello che serve al motore per applicarle, e le regole che il vocabolario non copre lo dicono.",
+  "rules": [
+    {
+      "id": "warpaint",
+      "name": "Warpaint",
+      "page": 45,
+      "when": "always",
+      "what": "salvezza speciale 6+, ma niente armatura",
+      "set": { "ward": 6 },
+      "clear": ["armour"]
+    },
+    {
+      "id": "bigUns",
+      "name": "Big 'Uns",
+      "page": 45,
+      "when": "melee",
+      "what": "+1 Forza in mischia e Perfora-Armature (1)",
+      "mods": { "S": 1 },
+      "ap": 1
+    },
+    {
+      "id": "choppas",
+      "name": "Choppas",
+      "page": 45,
+      "when": "charge",
+      "what": "in carica ritira gli 1 naturali per ferire e migliora la perforazione di 1",
+      "reroll": { "toWound": "ones" },
+      "ap": 1
+    },
+    {
+      "id": "tuskerCharge",
+      "name": "Carica delle Zanne",
+      "page": 45,
+      "when": "charge",
+      "what": "in carica il cinghiale mena a Forza +1 e perforazione 1; il cavaliere no",
+      "who": "mount",
+      "mods": { "S": 1 },
+      "ap": 1
+    },
+    {
+      "id": "waaagh",
+      "name": "Waaagh!",
+      "page": 46,
+      "when": "command",
+      "once": true,
+      "what": "una volta per partita, con un test di Comando: ritiro degli 1 per colpire e +1 al risultato del combattimento",
+      "reroll": { "toHit": "ones" },
+      "flags": { "combatResult": 1 },
+      "until": "turn"
+    },
+    {
+      "id": "fearOfElves",
+      "name": "Fear of Elves",
+      "page": 46,
+      "when": "psych",
+      "what": "gli Elfi fanno Paura",
+      "flags": { "fearsElves": true }
+    },
+    {
+      "id": "ignoreGoblinPanic",
+      "name": "Ignora il Panico dei Goblin",
+      "page": 46,
+      "when": "psych",
+      "what": "non fa test di Panico per quello che succede ai Goblin",
+      "flags": { "ignorePanicFrom": "goblin" }
+    },
+    {
+      "id": "ignorePanic",
+      "name": "Ignora il Panico",
+      "page": 46,
+      "when": "psych",
+      "what": "non fa test di Panico causati da altre unita'",
+      "flags": { "ignorePanicFromFriends": true }
+    },
+    {
+      "id": "daBoyz",
+      "name": "Da Boyz",
+      "page": 46,
+      "when": "list",
+      "what": "un Boss di Orchi Neri per ogni reggimento di Orchi Neri",
+      "manuale": "vincolo di composizione della lista: si controlla nella scheda di preparazione, non al tavolo"
+    },
+    {
+      "id": "curbTheImpetuous",
+      "name": "Frena l'Impetuosita'",
+      "page": 46,
+      "when": "psych",
+      "what": "la psicologia cambia secondo chi si ha vicino",
+      "manuale": "dipende da quali unita' amiche stanno entro una certa distanza: serve il sistema di Panico della Tappa 5",
+      "perche": "e' una condizione sul tavolo, non un modificatore fisso"
+    }
+  ],
+  "lores": [
+    {
+      "id": "gork",
+      "name": "Gork",
+      "page": 47,
+      "innesto": true,
+      "nota": "due incantesimi che si innestano sui domini del manuale base: un mago puo' scartare un incantesimo generato a caso e prendere al suo posto la firma del dominio oppure uno di questi",
+      "spells": []
+    },
+    {
+      "id": "mork",
+      "name": "Mork",
+      "page": 47,
+      "innesto": true,
+      "nota": "come Gork: due incantesimi in innesto, non un dominio a se'",
+      "spells": []
+    }
+  ],
+  "items": []
+}

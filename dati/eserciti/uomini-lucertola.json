@@ -1,0 +1,10 @@
+{
+  "id": "uomini-lucertola",
+  "name": "Uomini Lucertola",
+  "matches": ["Lizardmen", "Legends: Lizardmen"],
+  "book": { "title": "Legends: Lizardmen" },
+  "nota": "Il file c'e' e il formato regge: quello che manca sono le regole d'esercito, che stanno nel libro e vanno trascritte una per una. Un file vuoto e' un file onesto — l'app dice «di questo esercito conosco zero regole proprie» invece di far finta che non ne abbia. Le regole che le liste salvate portano davvero — Cold Blooded, Aquatic, Predatory Fighter — sono regole universali e passano dal registro di rulebook.js, non da qui.",
+  "rules": [],
+  "items": [],
+  "lores": []
+}

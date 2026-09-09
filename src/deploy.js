@@ -11,6 +11,8 @@ import { rectPoly, pointInRect, boxCorners, polysOverlap,
          distPointToBox, toWorld, toLocal } from './geom.js';
 import * as CB from './combat.js';
 import { stat } from './rules.js';
+import * as EF from './effects.js';
+import { troopType, unitStrength } from './troops.js';
 import { initDuel, openDuel, renderDuel } from './duel.js';
 import { createHistory } from './history.js';
 import { createView, wireViewGestures } from './view.js';
@@ -512,6 +514,44 @@ function renderMarkerList(){
     select({ type:"zone", id:+el.dataset.zgo })));
 }
 
+/* Il profilo, e da dove viene ogni numero.
+   Prima l'ispettore mostrava la riga del file e basta: nove numeri
+   senza storia. Adesso passa da `statOf`, che applica gli effetti
+   attivi e sa dire chi ha messo quel +1 e fino a quando — e la cella
+   che e' stata spostata si vede, invece di somigliare a tutte le
+   altre. E' il «fatto quando» della Tappa 0 del piano.
+
+   Quando c'e' la cavalcatura ci sono due righe, perche' il Movimento
+   e' della bestia e la Forza e' di chi ci sta sopra, e meta' delle
+   regole d'esercito parla a una sola delle due. */
+function statsBlockHTML(u){
+  if (!u.stats) return "";
+  const keys = EF.CHARS;
+  const cell = k => {
+    const s = EF.statOf(u, k);
+    const why = s.mods.map(m => (m.set != null ? "= " + m.set : (m.delta > 0 ? "+" : "") + m.delta) +
+                                " " + m.from).join(", ");
+    return `<td class="${s.changed ? "stat-mod" : ""}"${why ? ` title="${esc(s.base + " base, " + why)}"` : ""}>${s.value || "-"}</td>`;
+  };
+  const changed = keys.filter(k => EF.statOf(u, k).changed);
+  const mount = EF.hasMount(u) ? u.mount : null;
+  const troop = troopType(u.troop);
+  const alive = Math.max(0, (u.models || 1) - (u.lost || 0));
+
+  /* la larghezza della prima colonna va dichiarata nella riga di
+     intestazione: con `table-layout:fixed` sono i primi td a decidere,
+     e una `width` messa piu' sotto non la guarda nessuno */
+  return `<table class="stats"><thead><tr>${mount ? `<th class="who"></th>` : ""}${keys.map(k => `<th>${k}</th>`).join("")}</tr></thead>
+    <tbody>
+      <tr>${mount ? `<th class="who">cavaliere</th>` : ""}${keys.map(cell).join("")}</tr>
+      ${mount ? `<tr class="mount-row"><th class="who">${esc(mount.name || "cavalcatura")}</th>${
+        keys.map(k => `<td>${EF.statOf(u, k, { who:"mount" }).value || "-"}</td>`).join("")}</tr>` : ""}
+    </tbody></table>
+    ${changed.length ? `<p class="note stat-why">${changed.map(k => esc(EF.explain(u, k))).join(" · ")}</p>` : ""}
+    <p class="note">${esc(troop.unknown ? "tipo di truppa non riconosciuto" : troop.label)} · Forza d'Unità ${
+      unitStrength(u.troop, u.us, u.models, alive)}${troop.unknown ? "" : troop.daVerificare ? " (tabella p. 105, cella da verificare)" : ""}</p>`;
+}
+
 function renderInspector(){
   const host = $("#inspector");
   if (!state.sel){ host.innerHTML = `<p class="empty">Clicca un'unità nella lista o un pezzo sul campo.</p>`; return; }
@@ -537,8 +577,7 @@ function renderInspector(){
           ? "Le anteprime vengono dalla voce di catalogo. Per cambiare la foto apri la scheda Catalogo."
           : "Nessun aggancio: apri la scheda Liste per collegare questa unit\u00e0 a una voce del catalogo."}</p>
       </div>
-      ${u.stats ? `<table class="stats"><thead><tr>${["M","WS","BS","S","T","W","I","A","Ld"].map(k => `<th>${k}</th>`).join("")}</tr></thead>
-        <tbody><tr>${["M","WS","BS","S","T","W","I","A","Ld"].map(k => `<td>${esc(u.stats[k] ?? "-")}</td>`).join("")}</tr></tbody></table>` : ""}
+      ${statsBlockHTML(u)}
       <div class="grid3">
         <label class="field">Modelli<input type="number" id="i-models" min="1" max="200" value="${u.models}"></label>
         <label class="field">Fronte<input type="number" id="i-front" min="1" max="40" value="${u.frontage}"></label>

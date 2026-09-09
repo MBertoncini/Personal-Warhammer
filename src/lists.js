@@ -26,6 +26,8 @@ import {
 import { loadDoc, saveDoc } from './store.js';
 import { attachSuggest, closeSuggest } from './suggest.js';
 import { emit } from './bus.js';
+import * as PREP from './prep.js';
+import { loadArmies, armiesNow, coverage as armyCoverage } from './armies.js';
 
 const LIST_KEY = "lists:all";
 
@@ -34,6 +36,9 @@ let openId = null;
 
 export async function initLists(){
   lists = await loadDoc(LIST_KEY, []) || [];
+  /* i file d'esercito: se non arrivano non succede niente, la scheda
+     lo dice e il resto funziona */
+  await loadArmies();
 }
 
 const persist = () => saveDoc(LIST_KEY, lists).then(() => emit("lists:changed"));
@@ -314,6 +319,25 @@ export function renderLists(){
     await updateUnit(id, +i, { [field]: el.type === "number" ? +el.value : el.value });
     renderLists();
   }));
+  /* La scheda di preparazione. Un campo solo per volta, e si salva
+     appena si esce dal campo: chi la compila lo fa mentre monta il
+     tavolo, e un pulsante «salva» in fondo si dimentica. */
+  host.querySelectorAll("[data-prep]").forEach(el => el.addEventListener("change", async () => {
+    const [id, field] = el.dataset.prep.split("|");
+    const l = getList(id);
+    if (!l) return;
+    const v = el.value.trim();
+    if (field === "general" || field === "bsb") PREP.setPrep(l, { [field]: v === "" ? null : +v });
+    else if (field === "note") PREP.setPrep(l, { note: v });
+    else {
+      const kind = field[0], i = +field.slice(1);
+      PREP.setUnitPrep(l, i, { w:"weapon", s:"spells", i:"items" }[kind]
+        ? { [{ w:"weapon", s:"spells", i:"items" }[kind]]: v } : {});
+    }
+    await persist();
+    renderLists();
+  }));
+
   host.querySelectorAll("[data-urm]").forEach(b => b.addEventListener("click", async () => {
     const [id, i] = b.dataset.urm.split("|");
     await removeUnit(id, +i);
@@ -391,6 +415,90 @@ function listRowHTML(l){
     </div>`;
 }
 
+/* ============================================================
+   3 bis · LA SCHEDA DI PREPARAZIONE
+   Le cinque cose che il file di New Recruit non dice mai e che servono
+   dal primo turno: chi comanda, chi porta lo stendardo, quali
+   incantesimi sono usciti, quale arma impugna chi ne ha due, cosa c'e'
+   scritto sugli oggetti magici. Si compila una volta e resta salvata
+   con la lista, quindi entra nel backup e nella sincronia senza che
+   nessun altro modulo debba saperlo.
+
+   Il pannello mostra prima le domande aperte e poi le risposte gia'
+   date: uno che mostra solo i buchi sembra pieno di buchi anche quando
+   e' quasi finito.
+   ============================================================ */
+/* Le regole d'esercito della lista: quante l'app ne applica e quali no.
+   Il numero da solo non serve — «tre su cinque» non dice quali due
+   restano in mano tua — quindi le due che restano si leggono per nome
+   e con il perche'. */
+function armyHTML(l){
+  const A = armiesNow();
+  if (!A) return "";
+  const army = A.forList(l);
+  if (!army) return `<p class="note">Regole d'esercito: nessun file per «${esc((l.info || {}).catalogue || "?")}». Si aggiunge un file in <code>dati/eserciti/</code> senza toccare il codice.</p>`;
+  const c = armyCoverage(army);
+  if (!c.total) return `<p class="note">${esc(army.name)}: il file c'è, le regole no. ${esc(army.nota || "")}</p>`;
+  return `
+    <div class="prep-army">
+      <p class="note"><b>${esc(army.name)}</b> · ${c.total} regole d'esercito${
+        army.book && army.book.title ? " (" + esc(army.book.title) + ")" : ""}:
+        ${c.applied.length} applicate, ${c.manual.length} in mano tua.</p>
+      ${c.manual.length ? `<ul class="prep-open">${c.manual.map(m =>
+        `<li><b>${esc(m.name)}</b>${m.page ? ` (p. ${m.page})` : ""} — ${esc(m.why)}</li>`).join("")}</ul>` : ""}
+    </div>`;
+}
+
+function prepHTML(l){
+  const p = PREP.prepOf(l);
+  const open = PREP.questions(l);
+  const done = PREP.answered(l);
+  const chars = PREP.characters(l);
+  const pick = (field, sel, empty) => `
+    <select data-prep="${l.id}|${field}">
+      <option value="">${empty}</option>
+      ${chars.map(c => `<option value="${c.i}" ${String(sel) === String(c.i) ? "selected" : ""}>${esc(c.u.name)}</option>`).join("")}
+    </select>`;
+
+  const perUnit = (l.units || []).map((u, i) => {
+    const mine = (p.units || {})[i] || {};
+    const arms = (u.weapons || []).filter(w => !/\d/.test(String(w.range || "")));
+    const wizard = (u.rules || []).some(r => /wizard|lore of|mago|level \d/i.test(String(r)));
+    if (arms.length < 2 && !wizard && !PREP.isCharacter(u)) return "";
+    return `
+      <div class="row prep-row">
+        <span class="nm"><b>${esc(u.name)}</b></span>
+        ${arms.length > 1 ? `<select data-prep="${l.id}|w${i}" title="Arma impugnata">
+          <option value="">— quale arma impugna —</option>
+          ${arms.map(w => `<option value="${esc(w.name)}" ${mine.weapon === w.name ? "selected" : ""}>${esc(w.name)}</option>`).join("")}
+        </select>` : ""}
+        ${wizard ? `<input type="text" data-prep="${l.id}|s${i}" placeholder="incantesimi generati (p. 106)" value="${esc(mine.spells || "")}">` : ""}
+        ${PREP.isCharacter(u) ? `<input type="text" data-prep="${l.id}|i${i}" placeholder="oggetti magici" value="${esc(mine.items || "")}">` : ""}
+      </div>`;
+  }).join("");
+
+  return `
+    <details class="prep" ${open.length ? "open" : ""}>
+      <summary class="panel-title">Scheda di preparazione
+        <span class="chip ${open.length ? "warn" : "ok"}">${open.length ? open.length + " da decidere" : "a posto"}</span>
+      </summary>
+      <p class="note">Quello che il file di New Recruit non dice mai. Si compila una volta e resta con la lista.</p>
+      <div class="prep-grid">
+        <label class="field">Generale${pick("general", p.general, "— chi comanda —")}</label>
+        <label class="field">Stendardo da battaglia${pick("bsb", p.bsb, "— nessuno —")}</label>
+      </div>
+      ${perUnit}
+      ${armyHTML(l)}
+      <label class="field">Nota per questa lista
+        <input type="text" data-prep="${l.id}|note" value="${esc(p.note || "")}" placeholder="regole d'esercito, accordi presi, quello che serve ricordare">
+      </label>
+      ${open.length ? `<ul class="prep-open">${open.map(q =>
+        `<li><b>${esc(q.what)}</b> — ${esc(q.why)}</li>`).join("")}</ul>` : ""}
+      ${done.length ? `<p class="note">Già deciso: ${done.map(d =>
+        esc(d.what + " " + d.value)).join(" · ")}</p>` : ""}
+    </details>`;
+}
+
 function detailHTML(l){
   if (!l) return `<p class="empty">Lista non trovata.</p>`;
   const cat = catalogAll();
@@ -440,6 +548,7 @@ function detailHTML(l){
         </div>`;
       }).join("")}
     </div>
+    ${prepHTML(l)}
     <div class="addunit">
       <div class="panel-title">Aggiungi un'unità</div>
       <p class="note">Bastano nome, modelli, punti e basetta. Profilo, regole e armi sono facoltativi dappertutto: senza, l'app disegna e conta lo stesso.</p>

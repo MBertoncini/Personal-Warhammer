@@ -1,0 +1,92 @@
+{
+  "id": "skaven",
+  "name": "Skaven",
+  "matches": ["Skaven", "Skaven Legacy Army List"],
+  "book": { "title": "Skaven — Legacy Army List", "rules": 23, "items": 20 },
+  "nota": "Cinque regole d'esercito a p. 23. Due si appoggiano a codice che esiste gia' — il pool a parte del veleno in combat.js e il modificatore di fuga in rules.js — e sono quelle che il vocabolario copre meglio.",
+  "rules": [
+    {
+      "id": "poisonedWind",
+      "name": "Vento Velenoso",
+      "page": 23,
+      "when": "always",
+      "what": "il 6 per ferire riesce sempre, anche contro una Resistenza fuori portata, e non concede armatura; la salvezza speciale e la rigenerazione restano",
+      "flags": { "autoWoundOnSix": true, "ignoreArmourOnSix": true }
+    },
+    {
+      "id": "scurryAway",
+      "name": "Fuga Precipitosa",
+      "page": 23,
+      "when": "flee",
+      "what": "+1 al tiro di fuga",
+      "flags": { "fleeBonus": 1 }
+    },
+    {
+      "id": "teemingMasses",
+      "name": "Masse Brulicanti",
+      "page": 23,
+      "when": "always",
+      "what": "entro 3 pollici da un'unita' amica il Comando sale del bonus di ranghi di quell'unita', fino a 10",
+      "manuale": "dipende da chi si ha vicino adesso: il numero si calcola sul tavolo, non si fissa nel file",
+      "perche": "e' una misura di distanza piu' il bonus di ranghi di un'altra unita': serve il motore delle fasi"
+    },
+    {
+      "id": "verminousValour",
+      "name": "Valore Verminoso",
+      "page": 23,
+      "when": "melee",
+      "what": "il personaggio si ritira nelle file di dietro e smette di menare e di essere menato",
+      "manuale": "e' una posizione di modello dentro l'unita': si sposta nell'editor di formazione",
+      "perche": "non e' un modificatore, e' dove sta il modello"
+    },
+    {
+      "id": "warpstoneWeapons",
+      "name": "Armi di Warpstone",
+      "page": 23,
+      "when": "melee",
+      "what": "l'arma a una mano diventa magica e perfora di 1",
+      "ap": 1,
+      "flags": { "magicalAttacks": true, "handWeaponOnly": true }
+    }
+  ],
+  "items": [
+    {
+      "id": "brassOrb",
+      "name": "Sfera di Ottone",
+      "page": 20,
+      "once": true,
+      "what": "una volta per partita",
+      "manuale": "l'effetto sta nel libro; qui c'e' solo l'uso singolo, che e' la parte che il motore deve ricordare fra un turno e l'altro"
+    },
+    {
+      "id": "skalm",
+      "name": "Skalm",
+      "page": 20,
+      "once": true,
+      "manuale": "una volta per partita"
+    },
+    {
+      "id": "skavenbrew",
+      "name": "Skavenbrew",
+      "page": 20,
+      "once": true,
+      "manuale": "una volta per partita"
+    },
+    {
+      "id": "warpstoneTokens",
+      "name": "Gettoni di warpstone",
+      "page": 20,
+      "once": true,
+      "manuale": "si consumano: quanti ne restano e' stato di partita"
+    }
+  ],
+  "lores": [
+    {
+      "id": "hornedRat",
+      "name": "Il Ratto Cornuto",
+      "innesto": true,
+      "nota": "dominio proprio della lista Skaven",
+      "spells": []
+    }
+  ]
+}

@@ -22,10 +22,22 @@ const num = (s, dflt = 1) => {
   const m = /\(\s*(\d+)/.exec(String(s));
   return m ? +m[1] : dflt;
 };
-/* il dado fra parentesi: "Impact Hits (D3)" -> {die:3}, "(2)" -> {flat:2} */
+/* Il dado fra parentesi: "(D3)" -> un D3, "(2D6)" -> due, "(D3+1)" ->
+   un D3 e uno fisso, "(2)" -> due secchi.
+
+   Il "+1" mancava, e non era un caso di scuola: fra le dieci liste
+   salvate ci sono "Impact Hits (D3+1)", "Impact Hits (D6+1)" e "Stomp
+   Attacks (D3+1)", e tutte e tre cascavano fuori da questa lettura
+   finendo nel ripiego «una ferita per modello di fronte» — che per un
+   carro e' generoso e per un mostro solo e' assurdo, cioe' esattamente
+   l'errore che il ripiego doveva evitare. */
 function amount(s){
-  const m = /\(\s*(?:(\d+)\s*)?d(\d+)\s*\)/i.exec(String(s));
-  if (m) return { die: +m[2], times: m[1] ? +m[1] : 1 };
+  const m = /\(\s*(?:(\d+)\s*)?d(\d+)\s*(?:([+-])\s*(\d+)\s*)?\)/i.exec(String(s));
+  if (m) return {
+    die: +m[2],
+    times: m[1] ? +m[1] : 1,
+    plus: m[3] ? (m[3] === "-" ? -(+m[4]) : +m[4]) : 0,
+  };
   const n = /\(\s*(\d+)\s*\)/.exec(String(s));
   return n ? { flat: +n[1] } : null;
 }

@@ -596,25 +596,49 @@ Ogni tappa è **giocabile**: alla fine di ognuna la partita si fa,
 appoggiandosi al manuale per il resto. Nessuna tappa richiede di
 riscrivere la precedente.
 
-**Tappa 0 — Le correzioni e le fondamenta dei dati.**
-~~Tabella per colpire~~ e ~~tabella per ferire~~ (fatte, §2); categoria
-*e naturalità* su ogni pezzo di terreno; tabella dei tipi di truppa
-dentro `bases.js`/`formation.js`; archi di fronte, fianco e retro;
-`stat(unit, X)` con gli effetti e la traccia dei modificatori; scheda di
-preparazione della lista. Più le tre cose che i libri nuovi hanno
-spostato in cima (§8.4): il **ritiro** come primitiva di `rules.js`, il
-**profilo diviso** cavaliere/cavalcatura, e il formato del file
-d'esercito provato su tre eserciti diversi invece che immaginato su
-zero.
+**Tappa 0 — Le correzioni e le fondamenta dei dati. — fatta**
+~~Tabella per colpire~~ e ~~tabella per ferire~~ (§2); ~~categoria *e
+naturalità* su ogni pezzo di terreno~~ (`terrain.js`, sette categorie e
+il campo `natural`, tutti e due scavalcabili sul singolo pezzo);
+~~tabella dei tipi di truppa~~ (`troops.js`, tredici righe); ~~archi di
+fronte, fianco e retro~~ (`formation.js`, e valgono su tutta la sagoma
+del nemico, non su un punto); ~~`stat(unit, X)` con gli effetti e la
+traccia dei modificatori~~ (`effects.js`); ~~scheda di preparazione
+della lista~~ (`prep.js`, dentro il pannello Liste). Più le tre cose che
+i libri nuovi avevano spostato in cima (§8.4): ~~il **ritiro** come
+primitiva di `rules.js`~~ (`pool(n, need, "ones" | "misses" | "all")`,
+con la regola che un dado non si ritira due volte), ~~il **profilo
+diviso** cavaliere/cavalcatura~~ (il parser tiene tutti i profili di
+modello, non più solo il primo), ~~e il formato del file d'esercito
+provato su tre eserciti diversi~~ (`armies.js` e `dati/eserciti/`).
 *Fatto quando*: l'ispettore mostra per ogni caratteristica il valore
-base, i modificatori attivi e da dove vengono.
+base, i modificatori attivi e da dove vengono. **Lo fa**: la cella
+spostata è sottolineata e porta il perché nel titolo, e sotto la
+tabella c'è la riga per esteso — «Forza 4 (3 base, +1 Vento di Ghur
+(p. 321))». Con la cavalcatura le righe sono due.
 
-**Tappa 0 bis — Le due tabelle di Battle March.**
-Terreno Selvaggio e Caso della Guerra (§8.1). Non dipendono da niente e
-si usano ogni partita: un D6 tirato dal vassoio, il risultato scritto
-sul pezzo di terreno o sul turno, e la nota nel diario. Si può fare in
-un pomeriggio e si usa la sera stessa, che è la ragione per cui sta
-qui e non in coda con gli scenari.
+Quello che questa tappa ha trovato per strada, e non era in programma:
+- **Le ferite d'urto con il più.** `Impact Hits (D3+1)`, `(D6+1)` e
+  `Stomp Attacks (D3+1)` non venivano lette — la parentesi si fermava
+  al dado — e finivano nel ripiego «una ferita per modello di fronte»,
+  che è proprio l'errore che il ripiego doveva evitare. Sono tre unità
+  fra le dieci liste salvate.
+- **La Forza d'Unità data per scontata.** Dove il file non la dichiara
+  — tutte le liste Skaven — si contava 1 per modello, e un Rat Ogre
+  valeva come un chiavicaro. Adesso il ripiego è la tabella p. 105.
+- **I ranghi senza tetto.** Il massimo di tre valeva per tutti; adesso
+  viene dal tipo di truppa, e un colosso non prende ranghi.
+
+**Tappa 0 bis — Le due tabelle di Battle March. — il motore c'è**
+Terreno Selvaggio e Caso della Guerra (§8.1) stanno in
+`battlemarch.js`, con il controllo degli obiettivi di p. 25 che era
+lì accanto e costava poco. Le due tabelle tirano, dicono cos'è uscito
+e dichiarano una cosa: il piano elenca i sei esiti di ognuna ma non
+dice quale faccia porta a quale, e quello sta nel libro. Gli esiti
+stanno nell'ordine in cui il piano li elenca, ogni tabella lo dichiara
+con `ordineDaVerificare`, e chi ha il libro aperto corregge l'ordine
+cambiando una riga. Resta da attaccarle al tavolo: il tiro sul pezzo di
+terreno e la riga nel diario.
 *Fatto quando*: si finisce una partita e il diario racconta cosa c'era
 in quel bosco e cosa è andato storto al terzo turno.
 

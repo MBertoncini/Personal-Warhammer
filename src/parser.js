@@ -183,14 +183,28 @@ function readUnit(node){
   const size  = charFrom(profs, /^Unit$/i, /^Unit Size$/i);
   const baseTxt = charFrom(profs, /^Base$/i, /^Base Size$/i) || charFrom(profs, null, /^Base Size$/i);
 
+  /* I profili di modello sono piu' d'uno piu' spesso di quanto sembri:
+     il cavaliere e la cavalcatura, il carro e le bestie che lo tirano,
+     il campione accanto alla truppa. Prima se ne teneva il primo e gli
+     altri sparivano — e meta' delle regole d'esercito dice «questo vale
+     per la cavalcatura, non per chi ci sta sopra», quindi senza il
+     secondo profilo quelle regole non si possono nemmeno scrivere.
+
+     Adesso si tengono tutti in `profiles`; `stats` resta il primo,
+     perche' e' quello che l'app usava e che continua a usare, e
+     `mount` e' il secondo — ma solo dove una cavalcatura ci puo'
+     stare davvero. Un campione di fanteria non e' una cavalcatura, e
+     tirarne fuori il Movimento sarebbe peggio che non averlo. */
   const statNames = ["M","WS","BS","S","T","W","I","A","Ld"];
-  let stats = null;
+  const profiles = [];
   for (const p of profs){
     if (!/^Model$/i.test(pType(p))) continue;
     const map = {};
     for (const c of charsOf(p)) map[String(pick(c, "name") || "")] = charVal(c);
-    if (statNames.every(k => k in map)) { stats = map; break; }
+    if (statNames.every(k => k in map))
+      profiles.push({ name: String(pick(p, "name") || "").trim(), stats: map });
   }
+  const stats = profiles.length ? profiles[0].stats : null;
 
   /* Le regole si tengono tutte. Prima ne passava una manciata scelta da
      un elenco scritto a mano, e tutte le altre sparivano al momento
@@ -261,6 +275,19 @@ function readUnit(node){
   const bs = parseBaseSize(baseTxt || "") || baseById(guessBase(troop || name));
   const known = BASES.find(b => b.w === bs.w && b.h === bs.h);
 
+  /* Quale dei profili in piu' e' la cavalcatura. Il secondo non basta:
+     un reggimento di cavalleria puo' portarsi dietro anche il profilo
+     del campione, e prendere quello vorrebbe dire dare al Boar Boy il
+     Movimento del suo Boss. Quindi prima si cerca per nome una bestia
+     che si cavalca, e solo se non c'e' — e i profili sono esattamente
+     due, e il tipo di truppa dice che una cavalcatura ci sta — si
+     prende il secondo. Nel dubbio non si decide: i profili restano
+     tutti in `profiles`, e un campo vuoto e' meglio di uno sbagliato. */
+  const MOUNTLIKE = /boar|wolf|horse|steed|cold one|terradon|ripperdactyl|carnosaur|stegadon|bastiladon|squig|spider|dragon|griffon|pegasus|manticore|wyvern|cavalcatura|destriero|lupo|cinghiale/i;
+  const canRide = /cavalry|cavalleria|mounted|chariot|carro/i.test(troop || "");
+  const named = profiles.slice(1).find(p => MOUNTLIKE.test(p.name));
+  const mount = named || (canRide && profiles.length === 2 ? profiles[1] : null);
+
   return {
     name, models, crew,
     baseId: known ? known.id : "custom", baseW: bs.w, baseH: bs.h,
@@ -268,7 +295,7 @@ function readUnit(node){
     loose,
     pts: Math.round(deepCost(node, /(^|[^a-z])(pts|points|punti)([^a-z]|$)/)),
     us: Math.round(deepCost(node, /unit strength/)),
-    troop, unitSize: size, stats, rules, ruleText, command, weapons, maxRange, slot, faction,
+    troop, unitSize: size, stats, profiles, mount, rules, ruleText, command, weapons, maxRange, slot, faction,
     armour, ward, regen,
   };
 }

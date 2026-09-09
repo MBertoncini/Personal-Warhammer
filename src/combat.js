@@ -19,6 +19,7 @@
 import { hitMelee, woundOn, saveOn, pool, roll, chance, rankBonus,
          leadershipTest, stat, weaponStrength, weaponAP, IMPOSSIBLE } from './rules.js';
 import { readRules, splitWeaponRules, emptyFlags } from './rulebook.js';
+import { troopType, usPerModel } from './troops.js';
 
 /* ============================================================
    1 · DALL'UNITA' DEL TAVOLO ALLA SCHIERA CHE COMBATTE
@@ -47,7 +48,8 @@ function impactHits(side, front){
   const a = side.flags && side.flags.impact;
   if (!a) return 0;
   if (a.flat) return a.flat;
-  if (a.die) return roll(a.times || 1).reduce((s, d) => s + 1 + Math.floor((d - 1) * a.die / 6), 0);
+  if (a.die) return roll(a.times || 1).reduce((s, d) => s + 1 + Math.floor((d - 1) * a.die / 6), 0)
+                    + (a.plus || 0);
   return front;
 }
 
@@ -86,8 +88,16 @@ export function combatant(u, over = {}){
     models: Math.max(1, alive), frontage: Math.max(1, u.frontage || 1),
     /* la forza d'unita' per modello: quando cadono i modelli deve calare
        anche lei, altrimenti a fine assalto un reggimento dimezzato
-       continuerebbe a contare come "siamo di piu'" */
-    usPer: (u.us || u.models || 1) / Math.max(1, u.models || 1),
+       continuerebbe a contare come "siamo di piu'".
+
+       Quando il file la dichiara vince il file, sempre: tiene conto
+       della cavalcatura e degli oggetti, la tabella no. Quando non la
+       dichiara — succede in tutte le liste Skaven salvate — prima si
+       dava per scontato 1 per modello, e un Rat Ogre contava come un
+       chiavicaro. Adesso il ripiego e' la tabella dei tipi di truppa
+       (p. 105), che per la fanteria mostruosa dice 3. */
+    usPer: usPerModel(u.troop, u.us, u.models),
+    troop: troopType(u.troop),
     armour: u.armour || 0, ward: u.ward || 0, regen: u.regen || 0,
     ap: melee ? weaponAP(melee) : 0,
     weapon: melee ? melee.name : "",
@@ -259,7 +269,11 @@ export function meleeRound(A, B){
 export function resolution(a, b, done){
   const us = c => c.usPer * c.models;
   const score = (me, foe, wounds) => {
-    const rank  = rankBonus(me.models, me.frontage);
+    /* i ranghi che contano sono al massimo quelli che il tipo di truppa
+       concede: tre per la fanteria, meno per chi e' grosso, nessuno per
+       un mostro solo (p. 105) */
+    const cap   = me.troop ? me.troop.maxRank : 3;
+    const rank  = rankBonus(me.models, me.frontage, cap);
     const std   = me.standard ? 1 : 0;
     const out   = us(me) > us(foe) ? 1 : 0;
     const flank = me.flank === "rear" ? 2 : me.flank === "flank" ? 1 : 0;
