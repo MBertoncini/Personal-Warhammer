@@ -4,7 +4,7 @@
  */
 import { hitMelee, hitShoot, woundOn, saveOn, chance, pool, rankBonus,
          leadershipTest, chargeRoll, stat, weaponStrength, weaponAP,
-         IMPOSSIBLE } from '../src/rules.js';
+         IMPOSSIBLE, AUTOHIT } from '../src/rules.js';
 import * as C from '../src/combat.js';
 import * as D from '../src/dice.js';
 import { reachFan, sightFan, coverOn, stepCost, movementBands } from '../src/tactics.js';
@@ -20,16 +20,27 @@ const near = (a, b, tol) => Math.abs(a - b) <= tol;
 console.log('punteggi da fare');
 ok('pari abilita si va a 4', hitMelee(3, 3) === 4);
 ok('piu abile si va a 3', hitMelee(4, 3) === 3);
-ok('contro il doppio si va a 5', hitMelee(2, 4) === 5);
+ok('piu del doppio si va a 2', hitMelee(3, 1) === 2);
+ok('il doppio esatto resta a 3', hitMelee(4, 2) === 3);
+/* le due celle che la vecchia formula sbagliava: contro chi e' molto
+   piu' abile la tabella nuova non punisce quanto la regola classica */
+ok('AC 2 contro AC 4 colpisce a 4', hitMelee(2, 4) === 4);
+ok('AC 3 contro AC 6 colpisce a 4', hitMelee(3, 6) === 4);
+ok('meno della meta va a 5', hitMelee(2, 5) === 5);
+ok('sopra il dieci si legge l ultima riga', hitMelee(12, 4) === hitMelee(10, 4));
 ok('senza abilita non si colpisce', hitMelee(0, 3) === IMPOSSIBLE);
+ok('chi non sa difendersi e colpito senza tirare', hitMelee(4, 0) === AUTOHIT);
+ok('e quei colpi passano tutti senza dadi',
+   pool(10, hitMelee(4, 0)).hits === 10 && pool(10, hitMelee(4, 0)).dice.length === 0);
 
 ok('Forza pari a Resistenza ferisce a 4', woundOn(4, 4) === 4);
 ok('un punto di Forza in piu ferisce a 3', woundOn(5, 4) === 3);
 ok('due punti in piu feriscono a 2', woundOn(6, 4) === 2);
 ok('e tre non fanno meglio di 2', woundOn(7, 4) === 2);
+ok('un punto di Resistenza in piu porta a 5', woundOn(4, 5) === 5);
 ok('due punti di Resistenza in piu portano a 6', woundOn(3, 5) === 6);
-ok('tre restano a 6', woundOn(3, 6) === 6);
-ok('quattro non passano piu', woundOn(3, 7) === IMPOSSIBLE);
+ok('e si resta a 6 fino a cinque punti di scarto', woundOn(3, 8) === 6);
+ok('sei punti non passano piu', woundOn(3, 9) === IMPOSSIBLE);
 
 ok('la perforazione peggiora la salvezza', saveOn(4, 1) === 5);
 ok('oltre il 6 non salva piu niente', saveOn(6, 1) === IMPOSSIBLE);

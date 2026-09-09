@@ -6,9 +6,13 @@
  * usciti, perche' un simulatore che dice solo "4 ferite" non si sa se
  * crederlo, mentre uno che mostra i dadi lo si controlla a occhio.
  *
- * Le relazioni sono quelle classiche del sistema, scritte come conti
- * (uno scarto fra due caratteristiche, un numero da eguagliare o
- * superare) e non copiate da nessuna tabella stampata.
+ * Dove la relazione e' davvero un conto — lo scarto fra Forza e
+ * Resistenza, l'armatura che peggiora con la perforazione — sta scritta
+ * come conto. Dove il manuale stampa una tabella che nessuna formula
+ * riproduce, sta la tabella: e' il caso del tiro per colpire in
+ * mischia, che in The Old World e' una griglia 10 × 10 (Core Rulebook
+ * 2023, p. 149 e Quick Reference p. 348) e non piu' la vecchia regola
+ * «pari a 4, piu' abile a 3, contro il doppio a 5».
  */
 
 /* ============================================================
@@ -43,14 +47,46 @@ export const CHARGE = {
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 export const IMPOSSIBLE = 7;
 
-/* Corpo a corpo: pari abilita' si va a 4, chi e' piu' abile va a 3,
-   chi ha davanti il doppio della propria abilita' va a 5. */
+/* Corpo a corpo: la tabella del manuale, riga = Abilita' Combattimento
+   di chi mena, colonna = quella di chi para (p. 149).
+
+   Non e' la vecchia regola a tre valori: qui il 2+ esiste, e serve
+   essere piu' del doppio dell'avversario per averlo. La griglia
+   scritta per esteso e' quella stampata, e si controlla riga per riga
+   con il manuale aperto; la forma che le sta sotto e' semplice, e
+   vale la pena saperla per leggerla a colpo d'occhio:
+
+     piu' del doppio dell'avversario ...... 2+
+     piu' abile, ma non il doppio ......... 3+
+     pari abilita', o meno abile ma non
+       meno della meta' dell'avversario ... 4+
+     meno della meta' dell'avversario ..... 5+
+
+   Chi ha AC 0 non sa difendersi e viene colpito senza tirare (p. 98):
+   torna AUTOHIT, che non e' un punteggio da fare ma il segnale che il
+   dado non si tira proprio. */
+export const AUTOHIT = 0;
+
+const HIT_MELEE = [
+  /*  AC avversario  1   2   3   4   5   6   7   8   9  10 */
+  /*  1 */          [ 4,  4,  5,  5,  5,  5,  5,  5,  5,  5 ],
+  /*  2 */          [ 3,  4,  4,  4,  5,  5,  5,  5,  5,  5 ],
+  /*  3 */          [ 2,  3,  4,  4,  4,  4,  5,  5,  5,  5 ],
+  /*  4 */          [ 2,  3,  3,  4,  4,  4,  4,  4,  5,  5 ],
+  /*  5 */          [ 2,  2,  3,  3,  4,  4,  4,  4,  4,  4 ],
+  /*  6 */          [ 2,  2,  3,  3,  3,  4,  4,  4,  4,  4 ],
+  /*  7 */          [ 2,  2,  2,  3,  3,  3,  4,  4,  4,  4 ],
+  /*  8 */          [ 2,  2,  2,  3,  3,  3,  3,  4,  4,  4 ],
+  /*  9 */          [ 2,  2,  2,  2,  3,  3,  3,  3,  4,  4 ],
+  /* 10 */          [ 2,  2,  2,  2,  3,  3,  3,  3,  3,  4 ],
+];
+
 export function hitMelee(wsA, wsD){
   if (!wsA) return IMPOSSIBLE;
-  if (!wsD) return 4;
-  if (wsD >= wsA * 2) return 5;
-  if (wsA > wsD) return 3;
-  return 4;
+  if (!wsD) return AUTOHIT;
+  /* sopra il 10 il manuale non stampa piu' niente: si legge l'ultima
+     riga o l'ultima colonna, che e' quello che si fa al tavolo */
+  return HIT_MELEE[clamp(wsA, 1, 10) - 1][clamp(wsD, 1, 10) - 1];
 }
 
 /* Tiro: il punteggio base scende con l'abilita' balistica, poi i
@@ -61,15 +97,17 @@ export function hitShoot(bs, mod = 0){
   return clamp(Math.max(2, 7 - bs) - mod, 2, 6);
 }
 
-/* Ferire: quattro piu' lo scarto fra Resistenza e Forza. Due punti di
-   Forza in piu' non fanno meglio del 2, quattro di Resistenza in piu'
-   e non si passa affatto. */
+/* Ferire: qui la tabella (p. 150) e' davvero un conto, perche' dipende
+   solo dallo scarto fra Resistenza e Forza. Due punti di Forza in piu'
+   non fanno meglio del 2; dal secondo punto di Resistenza in piu' si
+   resta al 6, e ci si resta a lungo — una Forza 3 ferisce ancora una
+   Resistenza 8 — finche' lo scarto arriva a sei e non si passa piu'. */
 export function woundOn(s, t){
   if (!s || !t) return IMPOSSIBLE;
-  const d = t - s;                       // da -1 (Forza un punto sopra) a +3
+  const d = t - s;                       // da -1 (Forza un punto sopra) a +5
   if (d <= -2) return 2;
-  if (d >= 4) return IMPOSSIBLE;
-  return [3, 4, 5, 6, 6][d + 1];
+  if (d >= 6) return IMPOSSIBLE;
+  return [3, 4, 5, 6, 6, 6, 6][d + 1];
 }
 
 /* Armatura: il valore peggiora di quanto perfora l'arma. Sopra il 6
@@ -87,8 +125,11 @@ export const chance = need => need >= IMPOSSIBLE ? 0 : need <= 1 ? 1 : (7 - need
    3 · TIRARE UN PUGNO DI DADI
    ============================================================ */
 /* n dadi contro un punteggio: torna i dadi usciti e quanti sono
-   passati. L'1 non passa mai, nemmeno quando servirebbe 1. */
+   passati. L'1 non passa mai, nemmeno quando servirebbe 1. Con
+   AUTOHIT non si tira: passano tutti e l'elenco dei dadi resta vuoto,
+   che e' il modo onesto di dire «qui non c'era niente da tirare». */
 export function pool(n, need){
+  if (need <= AUTOHIT) return { dice: [], hits: Math.max(0, n), need, of: Math.max(0, n) };
   const dice = roll(n);
   const hits = need >= IMPOSSIBLE ? 0 : dice.filter(v => v >= need && v > 1).length;
   return { dice, hits, need, of: dice.length };

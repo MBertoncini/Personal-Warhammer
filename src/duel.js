@@ -12,7 +12,7 @@
 
 import { esc } from './util.js';
 import * as C from './combat.js';
-import { IMPOSSIBLE } from './rules.js';
+import { IMPOSSIBLE, AUTOHIT } from './rules.js';
 import { showDiceGroups } from './dicebox.js';
 
 let host = null, ctx = null, cur = null;
@@ -60,7 +60,9 @@ function bothSides(){
    DISEGNO
    ============================================================ */
 const SAVE_OPTS = [[0, "—"], [2, "2+"], [3, "3+"], [4, "4+"], [5, "5+"], [6, "6+"]];
-const need = n => n >= IMPOSSIBLE ? "mai" : n + "+";
+/* "sempre" e' il punteggio di chi non deve tirare: chi ha davanti
+   un'Abilita' Combattimento 0 colpisce e basta (p. 98). */
+const need = n => n >= IMPOSSIBLE ? "mai" : n <= AUTOHIT ? "sempre" : n + "+";
 /* "1 ferite" si legge male: il pannello lo si guarda cento volte per
    partita ed e' il genere di sciatteria che si nota tutte e cento. */
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
