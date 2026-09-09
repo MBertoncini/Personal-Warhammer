@@ -642,14 +642,60 @@ terreno e la riga nel diario.
 *Fatto quando*: si finisce una partita e il diario racconta cosa c'era
 in quel bosco e cosa è andato storto al terzo turno.
 
-**Tappa 1 — Il motore delle fasi.**
-Le sedici sotto-fasi, le azioni come oggetti, la coda degli effetti, le
-richieste di dado che passano dal vassoio, il registro che si scrive da
-solo. Nessuna regola nuova: solo l'ossatura, con quello che già esiste
-attaccato sopra.
+**Tappa 1 — Il motore delle fasi. — fatta**
+~~Le sedici sotto-fasi~~ (`phases.js`: la tabella con la pagina del
+manuale, cosa ci si aspetta in ognuna, e i due modi di camminarci
+sopra); ~~le azioni come oggetti~~ e ~~la coda degli effetti~~ e ~~le
+richieste di dado che passano dal vassoio~~ e ~~il registro che si
+scrive da solo~~ (`engine.js`). Nessuna regola nuova, come previsto:
+quello che c'era è attaccato sopra.
+
+Come si vede al tavolo. Sotto i quattro pulsanti delle fasi c'è adesso
+la striscia delle quattro caselle di quella fase, e sotto ancora la
+riga che dice cosa ci si aspetta qui e a che pagina sta. Le frecce ‹ ›
+camminano di casella in casella — sedici passi fanno un turno — mentre
+i quattro pulsanti saltano all'inizio della fase, che è il gesto di chi
+gioca in fretta. Sotto la riga ci sono le azioni che questa casella si
+aspetta: si premono invece di scriverle, e la riga di registro se la
+scrive il motore. Dove serve un bersaglio c'è la tendina.
+
+Le quattro cose dell'ossatura, e cosa cambia ognuna:
+
+- **Le azioni sono oggetti.** `{ type:"declareCharge", unit, target }`.
+  Il motore le controlla contro la casella, chiede i dadi, chiama le
+  regole in ascolto, scrive la riga. Fuori casella l'azione passa lo
+  stesso con la nota del perché era fuori posto: è il §1, e vale
+  soprattutto qui.
+- **Il motore non tira: chiede.** Esce `{ need:"2D6", why:"tiro di
+  carica" }`, il vassoio si apre già impostato con il turno e la casella
+  nel titolo, il risultato rientra. Il vassoio tiene la sua lettura —
+  sa dire un Mancato Colpo meglio di qualunque frase generica — e il
+  motore ci mette il turno, la casella e la traccia.
+- **Le regole sono ascoltatori.** Diciassette momenti, e ognuno riceve
+  un contesto che può cambiare lasciando detto cosa ha cambiato. Una
+  regola che sbaglia finisce nella traccia segnata come errore e non
+  ferma la partita; una che non tocca niente non sporca la traccia.
+- **Il registro si scrive da solo.** Ogni riga porta turno, esercito,
+  casella e i dadi che sono usciti, e l'annulla la porta via con
+  l'azione — verificato sull'app vera, non solo nelle prove.
+
+Il primo ascoltatore vero è già attaccato: gli effetti a tempo del §3.3
+scadono rientrando nella prima delle sedici caselle, che è dove il
+manuale mette il controllo. Prima non c'era nessun posto in cui
+attaccarlo, ed è la ragione per cui a metà partita nessuno ricordava
+più i modificatori.
+
 *Fatto quando*: una partita intera si gioca passando di sotto-fase in
-sotto-fase, e il registro racconta tutto senza che nessuno scriva niente
-a mano.
+sotto-fase, e il registro racconta tutto senza che nessuno scriva
+niente a mano. **Lo fa**, per le azioni che le sedici caselle nominano.
+Quello che resta a mano è il gesto sul tavolo: il motore scrive che la
+carica è stata dichiarata e quanto ha tirato, ma il pezzo lo sposti tu.
+È la Tappa 2.
+
+Una prova nuova che prima non si poteva scrivere: una partita è una
+lista di azioni più i dadi fissati, si rigioca identica e si controlla
+com'è finita. Sta in fondo a `test/motore.mjs`, ed è la forma che il
+§10 chiedeva.
 
 **Tappa 2 — Movimento e carica per davvero.**
 Dichiarazione con controllo di visibilità, arco e distanza massima;

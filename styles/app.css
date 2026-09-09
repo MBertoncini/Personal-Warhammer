@@ -588,7 +588,26 @@ textarea{
 }
 .turnbar-mid b{font-size:14px;}
 .turnbar-mid .tname{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.phases{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-bottom:10px;}
+.phases{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-bottom:5px;}
+
+/* Le quattro caselle della fase in cui siamo. Stanno su una riga sola e
+   più in sordina delle fasi: la fase è dove sei, la casella è cosa stai
+   facendo, e la seconda cambia quattro volte più spesso della prima. */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px;}
+.steps .btn{
+  font-size:10px;padding:3px 2px;line-height:1.15;min-height:30px;
+  white-space:normal;overflow:hidden;
+}
+.note.stepwhat{margin:0 0 10px;font-size:11.5px;}
+.note.stepwhat .mono{color:var(--muted);opacity:.75;}
+
+/* Quello che questa casella si aspetta: si preme invece di scriverlo.
+   Sono chip, non pulsanti importanti — il gesto grosso resta «chiudi
+   il turno», questi riempiono il registro mentre giochi. */
+.stepacts{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 10px;}
+.stepacts .btn{font-size:11px;padding:2px 8px;}
+.field.steptarget{margin:0 0 10px;}
+.field.steptarget select{font-size:12px;}
 .losses{display:flex;align-items:center;gap:6px;}
 .losses input{width:70px;text-align:center;}
 .losses .mono{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}

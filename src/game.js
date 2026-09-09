@@ -34,16 +34,18 @@ import * as MV from './movement.js';
 import { askText, askConfirm, countersHTML, wireCounters } from './uikit.js';
 import { openDiceBox } from './dicebox.js';
 import { readOut } from './dice.js';
+import * as PH from './phases.js';
+import { createEngine, ACTIONS } from './engine.js';
+import * as EF from './effects.js';
 
-const PHASES = [
-  { id:"strategy", label:"Strategia" },
-  { id:"movement", label:"Movimento" },
-  { id:"shooting", label:"Tiro" },
-  { id:"combat",   label:"Corpo a corpo" },
-];
+/* Le quattro fasi restano, perche' il pannello le raggruppa e il
+   registro le nomina; sotto ognuna ci sono adesso le quattro caselle
+   del manuale, e sono quelle a decidere cosa ci si aspetta adesso.
+   La tabella sta in `phases.js`, accanto al manuale e lontano da qui. */
+const PHASES = PH.PHASES;
 
 export const emptyGame = () => ({
-  on:false, turn:1, army:"A", phase:0, log:[],
+  on:false, turn:1, army:"A", phase:0, step:0, log:[],
   /* il registro della partita: [0] e' lo schieramento, poi una voce per
      turno giocato */
   turns:[], lastCapture:0,
@@ -65,6 +67,13 @@ export function ensureGame(g){
   g.score = BL.ensureScore(g.score);
   if (typeof g.notes !== "string") g.notes = "";
   if (typeof g.lastCapture !== "number") g.lastCapture = 0;
+  /* Le partite cominciate quando le fasi erano quattro non hanno la
+     casella: si entra all'inizio della fase in cui erano rimaste, che
+     e' l'unico posto onesto in cui metterle. Da qui in poi la casella
+     e' quella che comanda e la fase si legge da lei. */
+  if (typeof g.step !== "number") g.step = Math.max(0, Math.min(3, g.phase || 0)) * 4;
+  g.step = ((g.step % PH.STEP_COUNT) + PH.STEP_COUNT) % PH.STEP_COUNT;
+  g.phase = Math.floor(g.step / 4);
   if (!g.counters || typeof g.counters !== "object") g.counters = { A:[], B:[] };
   for (const k of ["A", "B"]) if (!Array.isArray(g.counters[k])) g.counters[k] = [];
   return g;
@@ -77,20 +86,101 @@ export function initGame(c){ ctx = c; }
 const S = () => ctx.getState();
 export const game = () => { const s = S(); return (s.game ||= emptyGame()); };
 export const phases = () => PHASES;
-export const phaseLabel = () => PHASES[game().phase].label;
+export const stepNow = () => PH.stepAt(game().step || 0);
+export const phaseLabel = () => stepNow().phaseLabel;
+/* La riga che il pannello e il righello mostrano: la fase da sola non
+   basta piu' a dire dove siamo. */
+export const stepLabel = () => stepNow().full;
+
+/* Andare a una casella qualsiasi. Il motore la registra, perche' due
+   dei momenti in cui vivranno gli effetti a tempo sono proprio
+   l'uscita e l'entrata da una casella. */
+export function goStep(i){
+  const g = game();
+  const to = ((i % PH.STEP_COUNT) + PH.STEP_COUNT) % PH.STEP_COUNT;
+  engine().goTo(to);
+  g.step = to;
+  g.phase = Math.floor(to / 4);
+}
 
 /* quanti modelli restano in piedi */
 export const alive = u => Math.max(0, (u.models || 0) - (u.lost || 0));
 
-export function logLine(text, { army = null } = {}){
+/* ------------------------------------------------------------------
+   Il motore
+   Una sola istanza per sessione. Non tiene stato di partita — quello
+   sta tutto in `g`, dove `history.js` lo copia — ma sa dove siamo,
+   controlla le azioni contro la casella, chiede i dadi e scrive la
+   riga. Il registro resta nella forma di prima perche' il report e il
+   pannello ci si appoggiano da sempre: quello che cambia e' che
+   adesso quella riga la scrive il motore invece di chi chiama.
+   ------------------------------------------------------------------ */
+let ENG = null;
+export function engine(){
+  if (!ENG){ ENG = build(); wireCoreRules(ENG); }
+  return ENG;
+}
+function build(){
+  return createEngine({
+    getNow: () => { const g = game(); return { turn:g.turn, side:g.army, step:g.step || 0 }; },
+    setNow: n => { const g = game(); if (n.step != null){ g.step = n.step; g.phase = Math.floor(n.step / 4); } },
+    getState: () => S(),
+    write: entry => push(entry),
+  });
+}
+
+/* Il momento in cui gli effetti a tempo se ne vanno. E' la coda degli
+   effetti del §4.2 del piano, e sta attaccata alla prima delle sedici
+   caselle perche' e' li' che il manuale la mette: si entra nel turno e
+   la prima cosa che si guarda e' cosa e' scaduto. Prima di questa
+   casella non esisteva nessun posto in cui metterla, ed e' la ragione
+   per cui a meta' partita nessuno ricordava piu' i modificatori. */
+function wireCoreRules(E){
+  E.on("onStepEnter", "scadenze", ctx => {
+    if (ctx.to !== 0) return;
+    const g = game();
+    const when = { turn:g.turn, side:g.army, round:g.turn, phaseIndex:g.step };
+    const gone = [];
+    for (const u of S().units)
+      for (const e of EF.sweepExpired(u, when))
+        gone.push(u.name + ": " + (e.from || e.id));
+    if (gone.length) E.dispatch({ type:"expire", gone });
+  }, "effetti a tempo");
+}
+
+/* La riga nel registro. `phase` resta la fase — il report la stampa
+   da sempre — e accanto c'e' `step`, che dice in quale delle sedici
+   caselle e' successo. Le partite vecchie non ce l'hanno e non se ne
+   accorge nessuno. */
+function push({ text, army, note, step, stepLabel: sl, type }){
   const g = game();
-  g.log.unshift({ t: g.turn, army: army || g.army, phase: PHASES[g.phase].label, text, at: Date.now() });
+  g.log.unshift({
+    t: g.turn, army: army || g.army,
+    phase: PH.stepAt(step ?? g.step ?? 0).phaseLabel,
+    step: sl || PH.stepAt(step ?? g.step ?? 0).full,
+    type: type || "note",
+    text: note ? text + " [" + note + "]" : text,
+    at: Date.now(),
+  });
   if (g.log.length > 300) g.log.length = 300;
 }
 
+export function logLine(text, { army = null } = {}){
+  engine().dispatch({ type:"note", text, army });
+}
+
+/* La porta del motore per chi sta fuori: `deploy.js`, il pannello dei
+   dadi, e un giorno il duello. Torna quello che il motore torna —
+   compreso `waiting` con l'elenco dei dadi che servono. */
+export function dispatch(action, rolls = null){
+  return engine().dispatch(action, rolls);
+}
+export const checkAction = a => engine().check(a);
+
 export function start(){
   const g = game();
-  g.on = true; g.turn = 1; g.army = "A"; g.phase = 0; g.log = [];
+  g.on = true; g.turn = 1; g.army = "A"; g.phase = 0; g.step = 0; g.log = [];
+  engine().clear();
   g.turns = []; g.lastCapture = 0;
   g.meta = BL.ensureMeta({ ...g.meta, date: BL.today(), first: "A" });
   g.score = BL.emptyScore();
@@ -146,7 +236,7 @@ export function captureTurn({ closing = false } = {}){
 export function closeTurn(){
   const g = game();
   captureTurn();
-  g.phase = 0;
+  g.step = 0; g.phase = 0;
   if (g.army === "A") g.army = "B";
   else { g.army = "A"; g.turn++; }
   /* Il turno nuovo riparte da dove sei arrivato: le ancore si rimettono
@@ -183,22 +273,23 @@ export function reportView(){
   };
 }
 
-/* avanti di una fase; finite le quattro, passa la mano; tornato ad A,
-   il turno cresce di uno */
+/* Avanti di una casella. Sono sedici, non quattro: finite le sedici si
+   passa la mano, e tornati ad A il turno cresce di uno. Il pulsante
+   grosso resta quello che salta di fase in fase, perche' quello e' il
+   gesto di chi sta giocando in fretta; questo e' per chi vuole che il
+   registro dica in quale casella e' successo cosa. */
 export function advance(dir = 1){
   const g = game();
-  let n = g.phase + dir;
-  if (n >= PHASES.length){
-    n = 0;
+  const { index, wrapped } = PH.step(g.step || 0, dir);
+  if (wrapped > 0){
     if (g.army === "A") g.army = "B";
     else { g.army = "A"; g.turn++; }
-  } else if (n < 0){
-    n = PHASES.length - 1;
+  } else if (wrapped < 0){
     if (g.army === "B") g.army = "A";
     else { g.army = "B"; g.turn = Math.max(1, g.turn - 1); }
   }
-  g.phase = n;
-  if (dir > 0 && n === 0) logLine("Turno " + g.turn + " — tocca all'esercito " + g.army + ".", { army: g.army });
+  goStep(index);
+  if (wrapped > 0) logLine("Turno " + g.turn + " — tocca all'esercito " + g.army + ".", { army: g.army });
 }
 
 /* ------------------------------------------------------------------
@@ -216,10 +307,15 @@ export function setLost(u, n){
   if (u.lost >= u.models){ u.dead = true; u.placed = false; }
   else if (u.dead) u.dead = false;
   const d = u.lost - before;
-  logLine(d > 0
-    ? u.name + ": " + d + (d === 1 ? " perdita" : " perdite") + " (restano " + alive(u) + ")."
-    : u.name + ": " + (-d) + (-d === 1 ? " modello rimesso" : " modelli rimessi") + " in piedi.",
-    { army: u.army });
+  /* Non piu' una nota generica: e' un'azione di tipo `loss`, e la
+     differenza si vede quando il report chiede «cosa e' successo in
+     questa casella» invece di «cosa hai scritto». Il testo resta
+     quello di prima perche' sa una cosa che il motore non sa —
+     quanti ne restano in piedi. */
+  dispatch({ type:"loss", unit:u, n: Math.abs(d), army: u.army,
+    text: d > 0
+      ? u.name + ": " + d + (d === 1 ? " perdita" : " perdite") + " (restano " + alive(u) + ")."
+      : u.name + ": " + (-d) + (-d === 1 ? " modello rimesso" : " modelli rimessi") + " in piedi." });
   if (u.dead) logLine(u.name + " annientata.", { army: u.army });
 }
 
@@ -237,10 +333,10 @@ export function setWounds(u, n){
   if (next === before) return;
   u.wounds = next;
   const d = next - before;
-  logLine(d > 0
-    ? u.name + ": " + d + (d === 1 ? " ferita" : " ferite") + " (in tutto " + next + ")."
-    : u.name + ": " + (-d) + (-d === 1 ? " ferita rimessa" : " ferite rimesse") + ".",
-    { army: u.army });
+  dispatch({ type:"wound", unit:u, n: Math.abs(d), army: u.army,
+    text: d > 0
+      ? u.name + ": " + d + (d === 1 ? " ferita" : " ferite") + " (in tutto " + next + ")."
+      : u.name + ": " + (-d) + (-d === 1 ? " ferita rimessa" : " ferite rimesse") + "." });
 }
 
 /* Il ponte fra le due valute, premuto a mano: le ferite segnate
@@ -436,6 +532,97 @@ function wireCountersPanel(host){
                  "army" + id, { onChange: () => ctx.act("contatore", () => {}) });
 }
 
+/* ------------------------------------------------------------------
+   Le azioni della casella in cui siamo
+   E' la parte che rende vera la promessa della Tappa 1: il registro si
+   scrive da solo. Invece di battere una frase su una tastiera virtuale
+   si preme quello che questa casella si aspetta — «dichiara la carica»,
+   «test di rotta», «raduno» — e il motore fa il resto: chiede i dadi al
+   vassoio, chiama le regole in ascolto, scrive la riga con turno e
+   casella.
+
+   Restano fuori `note` e `roll`, che hanno gia' il loro pulsante, e le
+   perdite, che hanno il loro pannello.
+   ------------------------------------------------------------------ */
+const STEP_SKIP = ["note", "roll", "loss", "wound", "expire"];
+
+/* Le azioni che parlano di due unita'. Per queste compare la tendina
+   del bersaglio: senza, il registro scriverebbe «dichiara una carica»
+   e a fine partita non si saprebbe piu' contro chi. */
+const NEEDS_TARGET = ["declareCharge", "declareShot", "fight"];
+
+/* Chi e' selezionato sul tavolo: quasi ogni azione parla di un'unita',
+   e chiederla con una finestra sarebbe un clic in piu' per una cosa
+   che sul tavolo e' gia' evidente. Senza selezione l'azione si scrive
+   lo stesso, senza nome — e' un promemoria, non un modulo da compilare. */
+function selectedUnit(){
+  const s = S();
+  const sel = s && s.sel;
+  if (!sel || sel.type !== "unit") return null;
+  return s.units.find(u => u.uid === sel.id) || null;
+}
+
+/* I bersagli possibili: le unita' in campo e non ancora annientate,
+   il nemico per primo perche' e' quello che si cerca nove volte su
+   dieci. Non e' un controllo di legalita' — l'app non sa se quella
+   carica si puo' dichiarare — e' solo il nome da scrivere. */
+function targetOptions(){
+  const s = S();
+  const me = selectedUnit();
+  const list = s.units.filter(u => u.placed && !u.dead && (!me || u.uid !== me.uid));
+  const foe = u => me && u.army !== me.army;
+  return list
+    .sort((a, b) => (foe(b) ? 1 : 0) - (foe(a) ? 1 : 0) || a.name.localeCompare(b.name))
+    .map(u => `<option value="${u.uid}">${hostEsc(u.name)}${foe(u) ? "" : " (amica)"}</option>`)
+    .join("");
+}
+function pickedTarget(){
+  const el = document.getElementById("g-target");
+  if (!el || !el.value) return null;
+  return S().units.find(u => u.uid === +el.value) || null;
+}
+
+/* Dal «mi servono due D6» del motore al vassoio, e ritorno. Il motore
+   non tira: chiede, e questo e' il pezzo che porta la richiesta dove i
+   cubi rotolano davvero. */
+function askDice(ask, title){
+  return new Promise(resolve => {
+    const out = {};
+    let i = 0;
+    const nextOne = () => {
+      if (i >= ask.length) return resolve(out);
+      const q = ask[i++];
+      openDiceBox({
+        kind: q.kind || "d6", n: q.n || 1, target: q.need || 0,
+        title: title + " · " + q.why,
+        foot: q.keep ? "Se ne tengono " + q.keep + ", scartando il minore." : "",
+        onResult: r => { out[q.id] = fromTray(r, q); nextOne(); },
+      });
+    };
+    nextOne();
+  });
+}
+
+/* Il vassoio parla la sua lingua — facce come oggetti, il suo totale —
+   e il motore la sua. La traduzione sta qui, in un posto solo, ed e'
+   anche il punto in cui si applica il «tieni i due migliori» del passo
+   lungo: il vassoio tira tre cubi e li mostra tutti e tre, e quale si
+   butta lo decide la regola, non il dado. */
+function fromTray(r, q = {}){
+  const dice = (r && r.dice || []).map(d => (d && d.value != null ? d.value : d));
+  let kept = dice;
+  if (q.keep && dice.length > q.keep)
+    kept = [...dice].sort((a, b) => q.drop === "highest" ? a - b : b - a).slice(0, q.keep);
+  /* Quanti ne passano si porta indietro solo se un punteggio da fare
+     c'era davvero. Senza, il vassoio torna comunque `hits: 0` — non ha
+     torto, zero dadi hanno passato un punteggio che non esisteva — e il
+     registro finiva per scrivere «carica: 5 + 2 — 0 passano» al posto
+     di «5 + 2 = 7». */
+  const out = { dice, kept, total: kept.reduce((s, v) => s + v, 0) };
+  if (q.need > 0 && r && r.hits != null) out.hits = r.hits;
+  return out;
+}
+
 /* Le scorciatoie del registro. Durante una partita vera nessuno scrive
    frasi su una tastiera virtuale: con i chip il registro si riempie,
    senza resta vuoto — e il report vale quanto il registro. */
@@ -483,6 +670,7 @@ export function renderGamePanel(host, { esc }){
   }
 
   const sc = score();
+  const here = stepNow();
   const names = { A: S().armies.A.name || "Esercito A", B: S().armies.B.name || "Esercito B" };
   host.innerHTML = `
     <div class="turnbar">
@@ -497,6 +685,25 @@ export function renderGamePanel(host, { esc }){
     <div class="phases">
       ${PHASES.map((p, i) => `<button class="btn tiny${i === g.phase ? " on" : ""}" data-phase="${i}">${p.label}</button>`).join("")}
     </div>
+    <div class="steps">
+      ${PHASES[g.phase].steps.map((st, i) => {
+        const idx = g.phase * 4 + i;
+        return `<button class="btn tiny${idx === g.step ? " on" : ""}" data-step="${idx}"
+                        title="${esc(st.what)}">${esc(st.label)}</button>`;
+      }).join("")}
+    </div>
+    <p class="note stepwhat">${esc(here.what)} <span class="mono">(p. ${here.page})</span></p>
+    <div class="stepacts">
+      ${here.does.filter(t => !STEP_SKIP.includes(t)).map(t =>
+        `<button class="btn tiny ghost" data-act="${t}">${esc(ACTIONS[t] ? ACTIONS[t].label : t)}</button>`).join("")}
+    </div>
+    ${here.does.some(t => NEEDS_TARGET.includes(t)) ? `
+      <label class="field steptarget">Bersaglio
+        <select id="g-target">
+          <option value="">— nessuno —</option>
+          ${targetOptions()}
+        </select>
+      </label>` : ""}
     ${screenHTML()}
     <div class="readout"><span><span class="swatch" style="background:var(--armyA)"></span>${esc(names.A)}</span>
       <b>${sc.A.alivePts} pt in campo · −${sc.A.lostPts}</b></div>
@@ -527,17 +734,43 @@ export function renderGamePanel(host, { esc }){
   wireScreen(host);
   wireLosses(host);
   wireCountersPanel(host);
-  host.querySelector("#g-next").addEventListener("click", () => ctx.act("fase", () => advance(1)));
-  host.querySelector("#g-back").addEventListener("click", () => ctx.act("fase", () => advance(-1)));
+  /* Le frecce camminano di casella in casella — sedici passi fanno un
+     turno — mentre i quattro pulsanti delle fasi saltano all'inizio
+     della fase, che e' il gesto di chi gioca in fretta. */
+  host.querySelector("#g-next").addEventListener("click", () => ctx.act("casella", () => advance(1)));
+  host.querySelector("#g-back").addEventListener("click", () => ctx.act("casella", () => advance(-1)));
   host.querySelectorAll("[data-phase]").forEach(b => b.addEventListener("click", () =>
-    ctx.act("fase", () => { game().phase = +b.dataset.phase; })));
+    ctx.act("fase", () => goStep(+b.dataset.phase * 4))));
+  host.querySelectorAll("[data-step]").forEach(b => b.addEventListener("click", () =>
+    ctx.act("casella", () => goStep(+b.dataset.step))));
+
+  /* Il gesto della Tappa 1: si preme quello che questa casella si
+     aspetta, e la riga di registro se la scrive il motore. Se servono
+     dadi passa dal vassoio, e quello che rientra e' quello che si e'
+     visto rotolare. */
+  host.querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", async () => {
+    const type = b.dataset.act;
+    const u = selectedUnit();
+    const t = NEEDS_TARGET.includes(type) ? pickedTarget() : null;
+    const action = { type, unit: u || undefined, target: t || undefined,
+                     a: u || undefined, b: t || undefined,
+                     army: u ? u.army : game().army };
+    /* Prima si chiede COSA serve, senza eseguire niente: se l'azione
+       partisse qui, la riga sarebbe gia' scritta quando `act` fotografa
+       lo stato, e l'annulla non la porterebbe piu' via. */
+    const need = engine().asks(action);
+    const label = ACTIONS[type] ? ACTIONS[type].label : type;
+    if (!need.length) return ctx.act(label, () => dispatch(action));
+    const rolls = await askDice(need, `Turno ${game().turn} · ${stepNow().full}`);
+    ctx.act(label, () => dispatch(action, rolls));
+  }));
   /* I dadi tirati in partita non sono un gesto a parte: quello che esce
      va nel registro con turno e fase, come un'annotazione scritta a
      mano — e a fine partita il report dice anche cosa e' stato tirato. */
   host.querySelector("#g-dice").addEventListener("click", () => openDiceBox({
-    title: `Dadi · turno ${g.turn} · ${PHASES[g.phase].label}`,
-    foot: "Quello che esce viene annotato nel registro.",
-    onResult: r => ctx.act("dadi", () => logLine(readOut(r))),
+    title: `Dadi · turno ${g.turn} · ${here.full}`,
+    foot: "Quello che esce viene annotato nel registro, con la casella in cui è successo.",
+    onResult: r => ctx.act("dadi", () => engine().dispatch({ type:"roll", text: readOut(r) })),
   }));
   host.querySelector("#g-note").addEventListener("click", async () => {
     const t = await askText({

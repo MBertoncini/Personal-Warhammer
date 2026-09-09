@@ -517,8 +517,42 @@ const depth0 = mob.placed ? deploy.effModels(mob) : mob.models;
 deploy.act('perdite', () => game.setLost(mob, 5));
 ok('i modelli in piedi calano', deploy.effModels(mob) === depth0 - 5);
 ok('il tabellino conta i punti persi', game.score()[mob.army].lostPts > 0);
+/* Le frecce camminano di casella in casella: sedici ne fanno un turno,
+   quattro una fase. Il primo passo resta dentro la Strategia. */
 click('#g-next');
-ok('la fase avanza', state.game.phase === 1);
+ok('la casella avanza', state.game.step === 1);
+ok('e la fase resta quella finche le sue quattro non sono finite', state.game.phase === 0);
+click('#g-next'); click('#g-next'); click('#g-next');
+ok('quattro passi cambiano fase', state.game.step === 4 && state.game.phase === 1);
+const panel = () => doc.querySelector('#game');
+const hit = sel => panel().querySelector(sel).dispatchEvent(new window.Event('click'));
+ok('e il pannello dice in quale casella siamo',
+   /Movimento/.test(panel().textContent) && /Dichiarazione cariche/.test(panel().textContent));
+hit('[data-phase="3"]');
+ok('i quattro pulsanti saltano all inizio della fase',
+   state.game.step === 12 && state.game.phase === 3);
+hit('[data-step="14"]');
+ok('e la striscia sotto va alla casella esatta', state.game.step === 14);
+ok('la casella dice cosa ci si aspetta qui',
+   /rotta/i.test(panel().querySelector('.stepwhat').textContent));
+hit('[data-phase="1"]');
+
+/* Gli effetti a tempo se ne vanno quando si rientra nella prima delle
+   sedici caselle, che e' dove il manuale mette il controllo. Prima
+   della Tappa 1 non c'era nessun posto in cui attaccarlo. */
+{
+  const eff = await import('../src/effects.js');
+  const vittima = state.units.find(u => !u.dead);
+  eff.addEffect(vittima, { id:'prova', from:'incantesimo di prova', mods:{ S:+1 }, until:{ turn: state.game.turn } });
+  ok('l effetto vale finche non scade', eff.val(vittima, 'S') > 0);
+  state.game.turn += 1;
+  hit('[data-phase="0"]');
+  ok('rientrando nell inizio turno l effetto scaduto se ne va',
+     eff.effectsOf(state.units.find(u => u.uid === vittima.uid)).length === 0);
+  ok('e il registro dice quale', state.game.log.some(l => /incantesimo di prova/.test(l.text)));
+  state.game.turn -= 1;
+}
+hit('[data-phase="1"]');
 deploy.act('distrutta', () => game.destroy(mob));
 ok('l\'unita distrutta lascia il campo', mob.dead === true && mob.placed === false);
 history.undo();
