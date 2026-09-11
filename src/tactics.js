@@ -9,6 +9,7 @@
  * Nessuno stato: entrano box e poligoni, escono numeri e poligoni.
  */
 
+import { CHARGE } from './rules.js';
 import { toWorld, polyDistance, closestPoints,
          segIntersectsPoly, segIntersectsCircle,
          rayHitPoly, rayHitCircle, boxRadius } from './geom.js';
@@ -71,13 +72,20 @@ export function survey(unit, targets, { cornersOf, boxOf, sightPieces = [], inch
 
 /* movimento, marcia, carica media, carica massima: i quattro numeri che
    si guardano sempre. Senza M sul profilo non si inventa niente.
-   Chi ha il passo lungo tira tre dadi e scarta il peggiore: mezzo
-   pollice in piu' di media, e mezzo pollice e' una carica che arriva. */
+   La carica non e' M + 7: e' M piu' il MAGGIORE di due D6 (p. 121),
+   quindi M + 4,5 in media e M + 6 al massimo. Chi ha il passo lungo
+   aggiunge +D6 al tiro e 3 pollici alla portata massima (p. 178). */
 export function movementBands(unit){
   const m = unit.stats && /^\d+$/.test(String(unit.stats.M)) ? +unit.stats.M : 0;
   if (!m) return null;
-  const swift = (unit.rules || []).some(r => /swiftstride|fast cavalry|cavalleria veloce/i.test(r));
-  return { move: m, march: m * 2, charge: m + (swift ? 8.5 : 7), chargeMax: m + 12, swift };
+  const swift = (unit.rules || []).some(r => /swiftstride|fast cavalry|cavalleria veloce|passo lungo/i.test(r));
+  const band = swift ? CHARGE.swift : CHARGE.normal;
+  return {
+    move: m, march: m * 2,
+    charge: Math.round((m + band.avg) * 10) / 10,
+    chargeMax: m + band.max,
+    swift,
+  };
 }
 
 /* ============================================================

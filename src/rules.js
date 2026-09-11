@@ -26,17 +26,52 @@
 export { d6, d3, roll } from './dice.js';
 import { roll } from './dice.js';
 
-/* Il tiro della carica: due dadi, tre scartando il peggiore per chi ha
-   il passo lungo. Le medie non sono 7 e 7: la seconda vale mezzo pollice
-   in piu', e mezzo pollice al tavolo e' una carica che arriva. */
-export function chargeRoll(swift = false){
-  const dice = roll(swift ? 3 : 2);
-  const kept = [...dice].sort((a, b) => b - a).slice(0, 2);
-  return { dice, kept, total: kept[0] + kept[1] };
+/* Il tiro della carica, ed e' la terza tabella che l'app aveva presa
+   dal Warhammer di prima. In *The Old World* (p. 121) la carica non e'
+   la somma di due dadi: si tirano due D6, si SCARTA il minore, e il
+   dado che resta — uno solo, da 1 a 6 — si somma al Movimento. La
+   portata massima di carica e' quindi M + 6, non M + 12, e la media e'
+   M + 4,47, non M + 7.
+   Lo scarto e' enorme e va in tutte e due le direzioni: l'app
+   prometteva cariche da dodici pollici che il manuale non concede, e
+   scriveva «carica media M + 7» sotto un'unita' che in media arriva a
+   due pollici e mezzo di meno.
+
+   Il passo lungo (Swiftstride, p. 178) non tira tre dadi tenendone
+   due: aggiunge +D6 al risultato del tiro di carica — e dello stesso
+   tiro di fuga e di inseguimento — e alza di 3″ la portata massima.
+
+   Il terreno rovescia la regola invece di cambiarla (p. 128): chi
+   attraversa terreno difficile o pericoloso, o scavalca un ostacolo
+   basso, scarta il dado MIGLIORE e tiene il peggiore, e per giunta ha
+   −1 al Movimento. */
+export function chargeResult(dice, { swift = false, worst = false } = {}){
+  const pair = [dice[0] || 0, dice[1] || 0];
+  const kept = worst ? Math.min(...pair) : Math.max(...pair);
+  const dropped = worst ? Math.max(...pair) : Math.min(...pair);
+  const bonus = swift && dice[2] ? dice[2] : 0;
+  return {
+    dice: [...dice], kept: bonus ? [kept, bonus] : [kept], dropped,
+    total: kept + bonus, swift, worst,
+    why: (worst ? "tengo il peggiore (terreno)" : "tengo il migliore") +
+         (bonus ? " · +" + bonus + " passo lungo" : ""),
+  };
 }
+
+/* Quanti dadi chiedere e come leggerli: due sempre, piu' uno per il
+   passo lungo. E' la forma che il motore passa al vassoio. */
+export const chargeDice = (swift = false) => (swift ? 3 : 2);
+
+export function chargeRoll(swift = false, worst = false){
+  return chargeResult(roll(chargeDice(swift)), { swift, worst });
+}
+
+/* Le medie, per chi disegna i cerchi. Il massimo e' quello che serve
+   a dire se una carica si puo' dichiarare (p. 119): oltre M + max non
+   si dichiara nemmeno. */
 export const CHARGE = {
-  normal: { avg: 7,   max: 12 },
-  swift:  { avg: 8.5, max: 12 },   // 3D6 scartando il minore: 8,458…
+  normal: { avg: 4.47, max: 6 },   // media del maggiore di 2D6: 161/36
+  swift:  { avg: 7.97, max: 9 },   // piu' un D6, e +3″ di portata massima
 };
 
 /* ============================================================
@@ -209,13 +244,22 @@ export function leadershipTest(ld, penalty = 0){
   return { dice, total, target, passed: total <= target || total === 2, insane: total === 2 };
 }
 
-/* Quanto si fugge, e quanto insegue chi ha vinto. Il modificatore c'e'
-   perche' esiste chi corre meglio: la Fuga Precipitosa degli Skaven
-   da' +1, e senza questo argomento la regola non si poteva nemmeno
-   scrivere. Non si scende sotto 2, che e' il minimo di due dadi. */
+/* Quanto si fugge, e quanto insegue chi ha vinto: 2D6 pieni, sommati
+   (pp. 132 e 156). Non e' il tiro di carica — quello tiene un dado
+   solo — e appoggiarlo li' era un errore che si vedeva solo quando la
+   carica e' stata corretta: due dadi di fuga diventavano il maggiore
+   dei due, cioe' meta' della distanza.
+
+   Il modificatore c'e' perche' esiste chi corre meglio: la Fuga
+   Precipitosa degli Skaven da' +1, e senza questo argomento la regola
+   non si poteva nemmeno scrivere. Chi ha il passo lungo aggiunge un
+   D6 intero, e per quello c'e' `fleeDistance` in `moves.js`, che sa
+   anche leggere il ripiegamento in ordine. Non si scende sotto 2, che
+   e' il minimo di due dadi. */
 export const fleeRoll = (mod = 0) => {
-  const r = chargeRoll(false);
-  return { dice: r.dice, mod: +mod || 0, total: Math.max(2, r.total + (+mod || 0)) };
+  const dice = roll(2);
+  const m = +mod || 0;
+  return { dice, mod: m, total: Math.max(2, dice[0] + dice[1] + m) };
 };
 
 /* ============================================================

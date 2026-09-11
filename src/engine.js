@@ -130,7 +130,10 @@ export const ACTIONS = {
   chargeMove:     { label:"mossa di carica",
                     moments:["onChargeMove", "onMove"],
                     needs: a => [d6("carica", a.dice || (a.swift ? 3 : 2), "tiro di carica",
-                                    { keep:2, drop: a.drop || "lowest" })],
+                                    { keep: a.keep || (a.swift ? 2 : 1),
+                                      drop: a.drop || "lowest",
+                                      swift: !!a.swift, worst: !!a.worst,
+                                      foot: a.foot || "" })],
                     line: (a, r) => nm(a.unit) + " carica: " + readRolls(r) + on(a.target, "verso") },
 
   compulsoryMove: { label:"mossa obbligata",

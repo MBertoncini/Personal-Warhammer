@@ -55,55 +55,68 @@ const nameOf = o => (o && (o.name || (o.unit && o.unit.name))) || "";
    file che vengono da fuori.
    ============================================================ */
 export const ONE_INCH = MM;          // p. 118: nessuno finisce entro 1" da un nemico
-export const MAX_CHARGE_ROLL = 12;   // due dadi al massimo fanno 12
-export const GIVE_GROUND = 2;        // p. 154: il cedimento e' di due pollici
+/* Il tiro di carica non e' la somma di due dadi: se ne tirano due, si
+   scarta il minore, e il dado che resta — uno solo, da 1 a 6 — si
+   somma al Movimento (p. 121). La portata massima e' quindi M + 6.
+   Il passo lungo (p. 178) aggiunge un D6 al risultato e 3 pollici alla
+   portata massima. Vedi il §2 del piano: l'app sommava i due dadi, che
+   e' la regola del Warhammer di prima, e prometteva a una fanteria da
+   4 una carica da sedici pollici dove il manuale ne concede dieci. */
+export const MAX_CHARGE_ROLL = 6;    // il maggiore di due D6
+export const SWIFT_BONUS = 3;        // p. 178: quanto alza la portata massima
+export const GIVE_GROUND = 2;        // p. 134: il cedimento e' di due pollici
 
-/* Le tre mosse all'indietro, con la pagina e — dove il piano non lo
-   dice — la dichiarazione che il numero va confrontato con il libro.
-   E' la regola del §1: mai un numero senza dire da dove viene. */
+/* Le tre mosse all'indietro, con la pagina. Il ripiegamento in ordine
+   non e' piu' da verificare: il manuale lo scrive in chiaro a p. 134 —
+   due D6 scartando il minore, e chi ripiega si raduna da solo a fine
+   movimento. Chi ha il passo lungo aggiunge un D6 anche qui. */
 export const BACKWARD = {
-  flee:     { id:"flee",     label:"Fuga",             dice:"2D6", page:154 },
-  give:     { id:"give",     label:"Cede terreno",     fixed:GIVE_GROUND, page:154 },
-  fallBack: { id:"fallBack", label:"Ripiega in ordine", dice:"2D6", page:154,
-              daVerificare:true,
-              nota:"quanti dadi fa il ripiegamento va confrontato con il libro (p. 154)" },
-  pursue:   { id:"pursue",   label:"Inseguimento",     dice:"2D6", page:155 },
+  flee:     { id:"flee",     label:"Fuga",              dice:"2D6", page:132 },
+  give:     { id:"give",     label:"Cede terreno",      fixed:GIVE_GROUND, page:134 },
+  fallBack: { id:"fallBack", label:"Ripiega in ordine", dice:"2D6, si tiene il maggiore", page:134,
+              keepBest:true,
+              nota:"ripiegando in ordine si tiene il dado maggiore, e l'unita' si raduna da sola a fine movimento (p. 134)" },
+  pursue:   { id:"pursue",   label:"Inseguimento",      dice:"2D6", page:156 },
 };
 
 /* ============================================================
    1 · FIN DOVE ARRIVA UNA CARICA
-   Il massimo e' Movimento piu' dodici, e vale anche per il passo
-   lungo: tre dadi scartando il minore non fanno mai piu' di dodici,
-   fanno solo dodici piu' spesso. La differenza sta nella media — mezzo
-   pollice — e mezzo pollice al tavolo e' una carica che arriva.
+   Media e massimo, e sono due numeri diversi da quelli che l'app
+   scriveva fino alla correzione del §2. La media del maggiore di due
+   D6 e' 161/36, cioe' 4,47; quella del minore — il caso del terreno
+   difficile — e' 91/36, cioe' 2,53.
    ============================================================ */
-export function chargeBands(move, swift = false){
-  const m = +move || 0;
-  return { move:m, avg: r1(m + (swift ? 8.46 : 7)), max: m + MAX_CHARGE_ROLL, swift:!!swift };
+export function chargeBands(move, swift = false, worst = false){
+  const m = Math.max(1, (+move || 0) - (worst ? 1 : 0));
+  const avg = worst ? 91 / 36 : 161 / 36;
+  return {
+    move: m, base: +move || 0, worst: !!worst, swift: !!swift,
+    avg: r1(m + avg + (swift ? 3.5 : 0)),
+    max: m + MAX_CHARGE_ROLL + (swift ? SWIFT_BONUS : 0),
+  };
 }
 
 /* La probabilita' esatta di coprire `need` pollici con il tiro di
    carica: si enumerano le facce, non si stima. Serve a scrivere «ti
    serve un 8: sono due volte su cinque», che e' l'informazione per cui
-   uno apre l'app invece del manuale. */
-export function chargeChance(need, swift = false){
+   uno apre l'app invece del manuale.
+
+   `need` sono i pollici che il TIRO deve fare, cioe' la distanza meno
+   il Movimento. Il conto e' sul maggiore di due D6 — sul minore quando
+   si passa nel difficile — piu' il dado del passo lungo. */
+export function chargeChance(need, swift = false, worst = false){
   if (need <= 0) return 1;
-  if (need > MAX_CHARGE_ROLL) return 0;
-  const n = swift ? 3 : 2;
+  const cap = MAX_CHARGE_ROLL + (swift ? 6 : 0);
+  if (need > cap) return 0;
   let good = 0, all = 0;
-  const walk = (left, dice) => {
-    if (!left){
-      all++;
-      const kept = [...dice].sort((a, b) => b - a).slice(0, 2);
-      if (kept[0] + kept[1] >= need) good++;
-      return;
+  for (let a = 1; a <= 6; a++)
+    for (let b = 1; b <= 6; b++){
+      const kept = worst ? Math.min(a, b) : Math.max(a, b);
+      if (!swift){ all++; if (kept >= need) good++; continue; }
+      for (let c = 1; c <= 6; c++){ all++; if (kept + c >= need) good++; }
     }
-    for (let f = 1; f <= 6; f++) walk(left - 1, [...dice, f]);
-  };
-  walk(n, []);
   return good / all;
 }
-
 /* ============================================================
    2 · LA DICHIARAZIONE (p. 119)
    Tre controlli e un divieto. I tre controlli sono arco frontale,
@@ -116,13 +129,17 @@ export function chargeChance(need, swift = false){
    «non puoi» e «guarda che sono quattordici pollici» e' tutta la
    differenza fra un arbitro e un aiuto.
    ============================================================ */
-export function declareCharge({ charger, target, pieces = [] } = {}){
+export function declareCharge({ charger, target, pieces = [], worst = false } = {}){
   if (!charger || !target || !charger.box || !target.box) return null;
   const bA = charger.box, pA = cornersOf(charger);
   const bB = target.box, pB = cornersOf(target);
 
   const dist = inch(polyDistance(pA, pB));
-  const bands = chargeBands(charger.move, charger.swift);
+  /* il terreno entra qui e non dopo: toglie un pollice al Movimento e
+     rovescia il dado, quindi cambia sia la portata massima — che e' il
+     numero con cui si decide se la carica si puo' dichiarare — sia la
+     probabilita' che arrivi */
+  const bands = chargeBands(charger.move, charger.swift, worst);
   const arc = arcOfPoly(pB, bA);
   const inArc = arc.has.includes("fronte");
 
@@ -134,7 +151,7 @@ export function declareCharge({ charger, target, pieces = [] } = {}){
   const blocker = charger.fly ? null : sightBlocked(eye, aim, pieces.filter(p => p.blocks));
 
   const need = Math.max(0, r1(dist - bands.move));
-  const chance = need > MAX_CHARGE_ROLL ? 0 : chargeChance(need, charger.swift);
+  const chance = chargeChance(need, charger.swift, worst);
   const impossible = dist > bands.max + 0.01;
 
   const reasons = [];
@@ -147,7 +164,8 @@ export function declareCharge({ charger, target, pieces = [] } = {}){
     charger: nameOf(charger), target: nameOf(target),
     dist: r1(dist), arc: arc.arc, inArc,
     blocked: !!blocker, blockedBy: blocker ? blocker.label : "",
-    move: bands.move, max: bands.max, avg: bands.avg, swift: bands.swift,
+    move: bands.move, base: bands.base, max: bands.max, avg: bands.avg, swift: bands.swift,
+    worst: !!worst, penalty: worst ? 1 : 0,
     need, chance: r2(chance), impossible,
     can: inArc && !blocker && !impossible,
     reasons,
@@ -201,50 +219,68 @@ export function reactions({ dist = 0, chargerMove = 0, shots = 0,
 
 /* ============================================================
    4 · IL TIRO DI CARICA E IL TERRENO
-   Il passo lungo aggiunge un dado e butta il minore. Il terreno
-   difficile fa tenere il *peggiore*: il piano lo dice cosi' e non dice
-   con quanti dadi, e questo file non lo inventa — aggiunge un dado e
-   scarta il maggiore, che e' la lettura simmetrica al passo lungo, e
-   lo dichiara con `daVerificare` perche' chi ha il libro aperto lo
-   corregga cambiando una riga.
+   Due dadi, si tiene il MAGGIORE (p. 121). Il terreno difficile
+   rovescia la regola invece di cambiarla: stessi due dadi, si tiene il
+   peggiore, e in piu' c'e' −1 al Movimento (p. 128). Il passo lungo
+   aggiunge un D6 intero al risultato (p. 178) — un dado che si somma,
+   non un dado da scartare, e nel vassoio i due gesti non si devono
+   confondere: per questo il terzo cubo non entra nella scelta.
    ============================================================ */
 export function chargeDice({ swift = false, worst = false } = {}){
-  const n = 2 + (swift ? 1 : 0) + (worst ? 1 : 0);
-  const spec = {
-    n, keep: 2,
-    drop: worst && !swift ? "highest" : swift && !worst ? "lowest" : worst && swift ? "both" : null,
+  return {
+    n: 2 + (swift ? 1 : 0),
+    keep: swift ? 2 : 1,
+    drop: worst ? "highest" : "lowest",
     swift: !!swift, worst: !!worst,
-    daVerificare: !!worst,
-    why: worst && swift ? "passo lungo nel terreno difficile: si butta il migliore e il peggiore"
-       : worst ? "terreno difficile: si tiene il dado peggiore (p. 270)"
-       : swift ? "passo lungo: tre dadi, si butta il minore"
-       : "due dadi",
+    why: worst && swift ? "nel terreno difficile si tiene il peggiore, piu' il D6 del passo lungo"
+       : worst ? "terreno difficile: dei due dadi si tiene il peggiore (p. 128)"
+       : swift ? "due dadi, si tiene il maggiore, piu' il D6 del passo lungo (p. 178)"
+       : "due dadi, si tiene il maggiore (p. 121)",
+    foot: worst
+      ? "Dei primi due si tiene il peggiore" + (swift ? ", e il terzo si somma." : ".")
+      : swift ? "Dei primi due si tiene il maggiore, e il terzo si somma."
+              : "Se ne tiene uno, scartando il minore.",
   };
-  return spec;
 }
 
-/* Quali facce restano, dato quello che e' uscito. Il motore chiede i
-   dadi al vassoio e passa di qui per sapere quali contano: cosi' la
-   regola del dado peggiore si scrive una volta sola. */
-export function keepDice(dice, spec){
-  const s = [...(dice || [])].sort((a, b) => a - b);
-  if (s.length <= 2) return s;
-  if (spec.drop === "highest") return s.slice(0, 2);
-  if (spec.drop === "both")    return s.slice(1, -1).slice(0, 2);
-  return s.slice(-2);
+/* Quali facce contano, dato quello che e' uscito. I primi due cubi
+   sono il tiro di carica e uno dei due si butta; il terzo, quando c'e',
+   e' il dado del passo lungo e si somma sempre. Il motore e il vassoio
+   passano tutti e due di qui, cosi' la regola sta scritta in un posto
+   solo e non puo' divergere. */
+export function keepDice(dice, spec = {}){
+  const d = (dice || []).map(v => +v || 0);
+  if (d.length < 2) return d;
+  const pair = [d[0], d[1]];
+  const kept = [spec.worst ? Math.min(...pair) : Math.max(...pair)];
+  if (spec.swift && d.length > 2) kept.push(d[2]);
+  return kept;
 }
+
+/* Il dado buttato via, che il registro deve far vedere: un tiro che
+   dice «5» senza dire che l'altro era un 2 non si controlla a occhio. */
+export const droppedDie = (dice, spec = {}) => {
+  const d = (dice || []).map(v => +v || 0);
+  if (d.length < 2) return null;
+  return spec.worst ? Math.max(d[0], d[1]) : Math.min(d[0], d[1]);
+};
 
 export function chargeOutcome({ dice = [], spec = null, move = 0, dist = 0 } = {}){
-  const kept = keepDice(dice, spec || chargeDice({}));
-  const total = kept.reduce((s, v) => s + v, 0);
-  const reach = (+move || 0) + total;
+  const s = spec || chargeDice({});
+  const kept = keepDice(dice, s);
+  const total = kept.reduce((a, v) => a + v, 0);
+  /* il terreno difficile toglie un pollice al Movimento, e non scende
+     mai sotto uno (p. 128) */
+  const m = Math.max(1, (+move || 0) - (s.worst ? 1 : 0));
+  const reach = m + total;
   return {
-    dice: [...dice], kept, total, reach: r1(reach),
+    dice: [...dice], kept, dropped: droppedDie(dice, s), total,
+    move: m, penalty: s.worst ? 1 : 0,
+    reach: r1(reach),
     made: reach + 0.01 >= dist,
     short: r1(Math.max(0, dist - reach)),
   };
 }
-
 /* ============================================================
    5 · IL TERRENO ATTRAVERSATO
    Il percorso di una carica e' un segmento, e quello che conta e' che
@@ -284,20 +320,57 @@ export function terrainEffect(list = []){
   return out;
 }
 
-/* La carica disordinata (p. 270): chi arriva attraverso il difficile,
-   scavalcando un ostacolo o girando attorno all'impassabile combatte
-   senza i ranghi. Non e' un divieto — la carica si fa lo stesso — e'
-   una riga che il registro deve portarsi dietro fino al risultato del
-   combattimento, dove pesa. */
-export function disorderedCharge(list = []){
-  const eff = terrainEffect(list);
+/* La carica DISORDINATA e il disordine da TERRENO sono due regole
+   diverse che stanno sulla stessa pagina (p. 128), e confonderle costa
+   il bonus sbagliato al momento sbagliato.
+
+   *Carica disordinata*: il caricante arriva a contatto ma non riesce
+   ad allinearsi perche' qualcosa e' in mezzo, e allora e' il bersaglio
+   ad allinearsi a lui. Costa il **bonus di Iniziativa** della carica
+   (p. 146). Non c'entra niente con l'aver attraversato un bosco.
+
+   *Disordinata per il terreno* (`Disrupted`): l'unita' finisce il
+   movimento con un quarto o piu' dei modelli nel terreno difficile, o
+   a cavallo di un ostacolo basso. Costa il **bonus dei ranghi**
+   (p. 101). Attraversare il bosco senza fermarcisi dentro non la
+   provoca: quello che conta e' dove si finisce. */
+export function disorderedCharge({ aligned = true, madeThemAlign = false, blockedBy = [] } = {}){
+  const why = [];
+  if (!aligned)      why.push("non riesce ad allinearsi" +
+                              (blockedBy.length ? ": " + blockedBy.join(", ") + " in mezzo" : ""));
+  if (madeThemAlign) why.push("e' il bersaglio a doversi allineare a lei");
   return {
-    disordered: eff.disorder,
-    why: eff.why,
-    text: eff.disorder ? "carica disordinata: " + eff.why.join(", ") + " (p. 270)" : "",
+    disordered: why.length > 0, why,
+    text: why.length ? "carica disordinata: " + why.join(", ") +
+                       " — niente bonus di Iniziativa (pp. 128 e 146)" : "",
   };
 }
 
+/* Quanti modelli finiscono nel terreno che toglie i ranghi. `points`
+   sono i centri delle basette quando chi chiama li sa; se non li sa si
+   passa il rettangolo e il conto si dichiara stimato, perche' un conto
+   stimato spacciato per esatto e' peggio di nessun conto. */
+export function disruptedInTerrain(points = [], pieces = [], { exact = true } = {}){
+  if (!points.length) return { disrupted:false, share:0, where:[], exact, why:"" };
+  const where = [];
+  let inside = 0;
+  for (const pt of points){
+    let hit = null;
+    for (const p of pieces){
+      if (!p || typeof p.contains !== "function" || !p.contains(pt)) continue;
+      if (p.cat && p.cat.disorder){ hit = p; break; }
+    }
+    if (hit){ inside++; const n = hit.label || hit.kind; if (!where.includes(n)) where.push(n); }
+  }
+  const share = inside / points.length;
+  return {
+    disrupted: share >= 0.25, share: Math.round(share * 100), where, exact,
+    why: share >= 0.25
+      ? Math.round(share * 100) + "% dei modelli in " + where.join(", ") +
+        ": niente bonus dei ranghi (p. 128)" + (exact ? "" : " — conteggio stimato sul rettangolo")
+      : "",
+  };
+}
 /* ============================================================
    6 · L'ALLINEAMENTO E LA RUOTA
    Il caricante non si ferma dove capita: arriva a contatto e si mette
@@ -516,12 +589,15 @@ export function pursuitMove(box, fled, { roll = 0 } = {}){
 export function chargeSurvey(charger, targets = [], { pieces = [] } = {}){
   const rows = [];
   for (const t of targets){
-    const d = declareCharge({ charger, target: t, pieces });
+    /* Prima il terreno, poi la dichiarazione. L'ordine conta: un bosco
+       sul percorso toglie un pollice al Movimento e alza di uno il
+       punteggio che serve, quindi puo' rendere impossibile una carica
+       che in aperto si poteva dichiarare. Calcolarlo dopo vorrebbe
+       dire scrivere «si puo'» e poi tirare con altri numeri. */
+    const path = crossed([charger.box.x, charger.box.y], [t.box.x, t.box.y], pieces);
+    const eff = terrainEffect(path);
+    const d = declareCharge({ charger, target: t, pieces, worst: eff.worstDie });
     if (!d) continue;
-    const eye = frontCenter(charger.box);
-    const aim = closestPoints([eye], cornersOf(t)).b;
-    const list = crossed(eye, aim, pieces);
-    const eff = terrainEffect(list);
     rows.push({
       ...d, unit: t,
       terrain: eff,
@@ -531,3 +607,89 @@ export function chargeSurvey(charger, targets = [], { pieces = [] } = {}){
   }
   return rows.sort((a, b) => (b.can - a.can) || (a.dist - b.dist));
 }
+
+/* ============================================================
+   10 · QUELLO CHE STA INTORNO ALLA CARICA
+   Quattro regole che il manuale mette in pagine diverse ma che al
+   tavolo si guardano nello stesso momento: chi puo' caricare, quanto
+   si muove chi non carica, cosa costa una manovra, e il test che serve
+   per marciare quando il nemico e' vicino.
+   ============================================================ */
+
+/* Chi puo' caricare (p. 119). Il manuale distingue fra «non puo'
+   dichiarare» e «puo' dichiarare ma non puo' muovere»: la colonna di
+   marcia sta nel secondo gruppo (p. 101), ed e' la distinzione che al
+   tavolo si sbaglia sempre. */
+export function canCharge({ engaged = false, fleeing = false,
+                            rallied = false, column = false } = {}){
+  const stop = [], slow = [];
+  if (engaged) stop.push("è già in combattimento (p. 119)");
+  if (fleeing) stop.push("sta fuggendo (p. 119)");
+  if (rallied) stop.push("si è radunata in questo turno (p. 119)");
+  if (column)  slow.push("in colonna di marcia si dichiara ma non si muove (p. 101)");
+  return {
+    can: !stop.length,
+    canMove: !stop.length && !slow.length,
+    why: [...stop, ...slow],
+  };
+}
+
+/* Marciare a meno di otto pollici da un nemico non in fuga chiede un
+   test di Comando, e chi lo fallisce conta comunque come se avesse
+   marciato — cioe' non tira (p. 123). E' la riga che fa perdere piu'
+   turni di tiro di qualunque altra. Chi vola ne e' esente (p. 170). */
+export const MARCH_WATCH = 8;
+
+export function marchCheck(poly, enemies = [], { fly = false } = {}){
+  const near = [];
+  for (const e of enemies){
+    if (!e || e.fleeing) continue;
+    if (inch(polyDistance(poly, cornersOf(e))) <= MARCH_WATCH) near.push(nameOf(e));
+  }
+  return {
+    needsTest: !fly && near.length > 0, near, exempt: !!fly,
+    why: fly ? "vola: marcia senza test (p. 170)"
+       : near.length ? "nemico entro " + MARCH_WATCH + "″ (" + near.join(", ") +
+                       "): test di Comando prima di marciare (p. 123)"
+       : "nessun nemico entro " + MARCH_WATCH + "″: marcia libera (p. 123)",
+  };
+}
+
+/* Quanti pollici fa chi non carica (pp. 123, 125, 135). I quattro casi
+   stanno su tre pagine diverse; qui stanno in fila, che e' come si
+   guardano al tavolo. */
+export function moveAllowance(move, { kind = "move", slow = false, column = false } = {}){
+  const base = +move || 0;
+  if (!base) return { inches:0, base:0, why:["senza Movimento sul profilo non si conta niente"] };
+  const why = [];
+  let m = base;
+  if (slow){ m = Math.max(1, m - 1); why.push("−1 terreno difficile (p. 135)"); }
+  let out = m;
+  if (kind === "march"){
+    out = column ? m * 3 : m * 2;
+    why.push(column ? "colonna di marcia: ×3 (p. 101)" : "marcia: ×2 (p. 123)");
+  } else if (kind === "back"){ out = m / 2; why.push("all'indietro: metà (p. 125)"); }
+  else if (kind === "side"){ out = m / 2; why.push("di lato: metà (p. 125)"); }
+  return { inches: r1(out), base, why };
+}
+
+/* Le sei manovre con quello che costano (pp. 124-125). Una sola per
+   movimento, e nessun modello puo' fare piu' del doppio del proprio
+   Movimento. Sono dati e non codice: servono a scriverlo accanto al
+   pezzo, non a impedire niente. */
+export const MANOEUVRES = [
+  { id:"wheel",   label:"ruota",            cost:"quanto cammina il modello esterno",     page:124 },
+  { id:"turn90",  label:"giro di 90°",      cost:"un quarto del Movimento",               page:124 },
+  { id:"turn180", label:"giro di 180°",     cost:"metà del Movimento",                    page:124 },
+  { id:"back",    label:"indietro",         cost:"metà del Movimento",                    page:125 },
+  { id:"side",    label:"di lato",          cost:"metà del Movimento",                    page:125 },
+  { id:"redress", label:"riordina le file", cost:"metà del Movimento, fino a 5 modelli",  page:125 },
+  { id:"reform",  label:"riorganizzazione", cost:"tutto il movimento",                    page:125 },
+];
+
+/* Il test di Pericolo di chi ha attraversato un nemico fuggendo: un
+   dado per modello, 4+ e passa, 1-3 e perde una ferita (p. 133). */
+export const perilAsk = n => ({
+  id:"pericolo", kind:"d6", n: Math.max(1, n | 0), need: 4,
+  why:"test di Pericolo, uno per modello che ha attraversato (p. 133)",
+});

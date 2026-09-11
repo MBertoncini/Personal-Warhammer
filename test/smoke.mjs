@@ -200,7 +200,8 @@ ok('un marcatore rotto non fa cadere il tavolo', EX.ensureMarker(null) === null)
 const cav = { stats: { M: '8' }, placed: true, x: 0, y: 0, rot: 0 };
 const b = MV.bandsFor(cav);
 ok('marcia = M x 2', b.march === 16);
-ok('carica media = M + 7', b.charge === 15);
+ok('carica media = M piu il maggiore di 2D6', b.charge === 12.5);
+ok('carica massima = M + 6', b.chargeMax === 14);
 ok('senza M non si inventa niente', MV.bandsFor({ stats: { M: '*' } }) === null);
 ok('M corretto a mano vince sul profilo', MV.moveOf({ stats: { M: '4' }, moveOverride: 9 }) === 9);
 MV.setAnchor(cav);

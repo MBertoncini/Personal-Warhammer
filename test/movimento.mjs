@@ -34,21 +34,34 @@ const WOOD = { label:"Bosco", slow:true, worstDie:true, danger:false, disorder:t
 const MARSH = { label:"Palude", slow:true, worstDie:true, danger:true, disorder:true, cover:"", los:false };
 
 /* ================================================================= */
-console.log('fin dove arriva una carica (p. 119)');
+console.log('fin dove arriva una carica (pp. 119 e 121)');
 {
+  /* Due D6 e si tiene il MAGGIORE: uno solo, da 1 a 6. Non la somma —
+     era la regola del Warhammer di prima, ed e' la correzione del §2
+     del piano. */
   const b = CH.chargeBands(4);
-  ok('il massimo e Movimento piu dodici', b.max === 16);
-  ok('la media di due dadi e sette', b.avg === 11);
-  ok('il passo lungo non arriva piu lontano, ci arriva piu spesso',
-     CH.chargeBands(4, true).max === 16 && CH.chargeBands(4, true).avg > b.avg);
+  ok('il massimo e Movimento piu sei, non piu dodici', b.max === 10);
+  ok('e la media e Movimento piu quattro e mezzo', b.avg === 8.5);
+  ok('il passo lungo alza il massimo di tre pollici (p. 178)',
+     CH.chargeBands(4, true).max === 13);
+  ok('e alza anche la media di un dado intero',
+     near(CH.chargeBands(4, true).avg - b.avg, 3.5, 0.05));
+  ok('nel terreno difficile il Movimento cala di uno',
+     CH.chargeBands(4, false, true).max === 9);
+  ok('e la media si rovescia, perche si tiene il peggiore',
+     CH.chargeBands(4, false, true).avg < b.avg - 1);
 
-  ok('un tiro di sette riesce ventuno volte su trentasei',
-     near(CH.chargeChance(7), 21 / 36, 0.001));
-  ok('il dodici una volta su trentasei', near(CH.chargeChance(12), 1 / 36, 0.001));
+  ok('un tiro di sei riesce undici volte su trentasei',
+     near(CH.chargeChance(6), 11 / 36, 0.001));
+  ok('un tiro di due riesce trentacinque volte su trentasei',
+     near(CH.chargeChance(2), 35 / 36, 0.001));
   ok('quello che si copre camminando riesce sempre', CH.chargeChance(0) === 1);
-  ok('e oltre il dodici non riesce mai', CH.chargeChance(13) === 0);
-  ok('il passo lungo rende ogni punteggio piu facile',
-     CH.chargeChance(9, true) > CH.chargeChance(9));
+  ok('e oltre il sei non riesce mai, senza passo lungo', CH.chargeChance(7) === 0);
+  ok('col passo lungo il sette si fa', CH.chargeChance(7, true) > 0);
+  ok('e il passo lungo rende ogni punteggio piu facile',
+     CH.chargeChance(5, true) > CH.chargeChance(5));
+  ok('tenendo il peggiore ogni punteggio diventa piu difficile',
+     CH.chargeChance(5, false, true) < CH.chargeChance(5));
 }
 
 /* ================================================================= */
@@ -65,7 +78,8 @@ console.log('\nla dichiarazione: arco, vista, distanza');
   ok('la vista e libera', !d.blocked);
   ok('e la carica si puo dichiarare', d.can === true);
   ok('e detto quanto serve tirare', d.need === 2);
-  ok('con quante probabilita', near(d.chance, 1, .001));
+  ok('con quante probabilita: un 2 lo fanno trentacinque dadi su trentasei',
+     near(d.chance, 35 / 36, .01));
 
   /* dietro le spalle */
   const back = CH.declareCharge({ charger: orc, target: unit('Skink', 0, 8, 5 * MM, 2 * MM) });
@@ -76,7 +90,7 @@ console.log('\nla dichiarazione: arco, vista, distanza');
      puo riuscire */
   const far = CH.declareCharge({ charger: orc, target: unit('Skink', 0, -30, 5 * MM, 2 * MM) });
   ok('una carica che non puo riuscire non si dichiara', far.impossible && !far.can);
-  ok('e la riga dice di quanto si sfora', /massimo a 16″/.test(far.why));
+  ok('e la riga dice fin dove arriva davvero', /massimo a 10″/.test(far.why));
 
   /* un bosco in mezzo */
   const wood = piece('Bosco', 0, -4, 6, 3, { ...WOOD, los:true });
@@ -108,31 +122,44 @@ console.log('\nle reazioni alla carica (p. 120)');
 }
 
 /* ================================================================= */
-console.log('\nil tiro di carica e il terreno');
+console.log('\nil tiro di carica e il terreno (pp. 121, 128, 178)');
 {
   const plain = CH.chargeDice({});
-  ok('normale sono due dadi', plain.n === 2 && plain.drop === null);
-  const swift = CH.chargeDice({ swift:true });
-  ok('il passo lungo ne tira tre e butta il minore', swift.n === 3 && swift.drop === 'lowest');
-  const worst = CH.chargeDice({ worst:true });
-  ok('il difficile ne tira tre e butta il maggiore', worst.n === 3 && worst.drop === 'highest');
-  ok('e lo dichiara da verificare, perche il piano non dice con quanti dadi',
-     worst.daVerificare === true && !swift.daVerificare);
+  ok('sono due dadi e se ne tiene uno', plain.n === 2 && plain.keep === 1);
+  ok('e quello che si butta e il minore', plain.drop === 'lowest');
+  ok('si tiene il maggiore', CH.keepDice([2, 5], plain).join() === '5');
+  ok('a pari si tiene quello', CH.keepDice([3, 3], plain).join() === '3');
+  ok('e il dado buttato resta scritto, se no non si controlla a occhio',
+     CH.droppedDie([2, 5], plain) === 2);
 
-  ok('il passo lungo tiene i due migliori', CH.keepDice([2, 4, 5], swift).join() === '4,5');
-  ok('il difficile tiene i due peggiori', CH.keepDice([2, 4, 5], worst).join() === '2,4');
-  ok('tutti e due tengono quelli di mezzo',
-     CH.keepDice([1, 3, 4, 6], CH.chargeDice({ swift:true, worst:true })).join() === '3,4');
+  const worst = CH.chargeDice({ worst:true });
+  ok('nel terreno difficile si butta il maggiore', worst.drop === 'highest');
+  ok('e restano sempre due dadi, non tre', worst.n === 2);
+  ok('tenendo il peggiore', CH.keepDice([2, 5], worst).join() === '2');
+
+  const swift = CH.chargeDice({ swift:true });
+  ok('il passo lungo tira un dado in piu', swift.n === 3);
+  ok('ma il terzo non entra nella scelta: si somma',
+     CH.keepDice([2, 5, 4], swift).join() === '5,4');
+  ok('anche quando si tiene il peggiore',
+     CH.keepDice([2, 5, 4], CH.chargeDice({ swift:true, worst:true })).join() === '2,4');
+  ok('e il vassoio lo spiega invece di dire una frase generica',
+     /si somma/.test(swift.foot) && /peggiore/.test(worst.foot));
 
   const made = CH.chargeOutcome({ dice:[4, 5], spec:plain, move:4, dist:9 });
-  ok('quattro di Movimento e nove di dadi fanno tredici', made.reach === 13);
+  ok('quattro di Movimento e un cinque fanno nove', made.reach === 9);
   ok('e la carica arriva', made.made === true && made.short === 0);
   const missed = CH.chargeOutcome({ dice:[1, 2], spec:plain, move:4, dist:12 });
-  ok('un tiro corto resta corto', missed.made === false && missed.short === 5);
+  ok('un tiro corto resta corto', missed.made === false && missed.short === 6);
+  const slow = CH.chargeOutcome({ dice:[2, 5], spec:worst, move:4, dist:9 });
+  ok('nel difficile si tiene il due e il Movimento cala di uno',
+     slow.reach === 5 && slow.penalty === 1);
+  ok('e il Movimento non scende mai sotto uno',
+     CH.chargeOutcome({ dice:[1, 1], spec:worst, move:1, dist:9 }).move === 1);
 }
 
 /* ================================================================= */
-console.log('\nil terreno attraversato (p. 270)');
+console.log('\nil terreno attraversato, e le due regole che non vanno confuse (p. 128)');
 {
   const wood = piece('Bosco', 0, -4, 6, 3, WOOD);
   const list = CH.crossed([0, 0], [0, -8 * MM], [wood]);
@@ -140,13 +167,37 @@ console.log('\nil terreno attraversato (p. 270)');
   const eff = CH.terrainEffect(list);
   ok('rallenta, fa tenere il peggiore e toglie i ranghi',
      eff.slow && eff.worstDie && eff.disorder && !eff.danger);
-  const dis = CH.disorderedCharge(list);
-  ok('e la carica e disordinata', dis.disordered === true);
-  ok('con la pagina scritta accanto', /p\. 270/.test(dis.text));
 
   const clear = CH.crossed([0, 0], [8 * MM, 0], [wood]);
   ok('quello che sta da un altra parte non conta', clear.length === 0);
-  ok('e senza terreno non c e disordine', CH.disorderedCharge(clear).disordered === false);
+
+  /* Le due regole stanno sulla stessa pagina e costano bonus diversi.
+     La carica disordinata la fa il non riuscire ad allinearsi, non
+     l'aver attraversato un bosco: confonderle vuol dire togliere il
+     bonus sbagliato a fine assalto. */
+  const dis = CH.disorderedCharge({ aligned:false, blockedBy:['Monolite'] });
+  ok('chi non riesce ad allinearsi carica disordinato', dis.disordered === true);
+  ok('e perde il bonus di Iniziativa, non i ranghi', /Iniziativa/.test(dis.text));
+  ok('con dentro cosa era in mezzo', /Monolite/.test(dis.text));
+  ok('chi si allinea non e disordinato',
+     CH.disorderedCharge({ aligned:true }).disordered === false);
+  ok('nemmeno se ha attraversato mezzo bosco per arrivarci',
+     CH.disorderedCharge({ aligned:true }).disordered === false);
+  ok('anche far allineare il nemico conta',
+     CH.disorderedCharge({ aligned:true, madeThemAlign:true }).disordered === true);
+
+  /* I ranghi li toglie dove si FINISCE, e si contano sui modelli. */
+  const dentro = [[0, -4 * MM], [MM, -4 * MM], [-MM, -4 * MM], [0, -3 * MM]];
+  const fuori  = [[0, 0], [MM, 0], [-MM, 0], [0, MM]];
+  ok('un quarto dei modelli nel bosco toglie i ranghi',
+     CH.disruptedInTerrain(dentro, [wood]).disrupted === true);
+  ok('e dice quanti e dove', /Bosco/.test(CH.disruptedInTerrain(dentro, [wood]).why));
+  ok('finire in aperto non li toglie',
+     CH.disruptedInTerrain(fuori, [wood]).disrupted === false);
+  ok('e sotto un quarto nemmeno',
+     CH.disruptedInTerrain([...fuori, ...fuori, ...fuori, [0, -4 * MM]], [wood]).disrupted === false);
+  ok('un conteggio stimato lo dichiara',
+     /stimato/.test(CH.disruptedInTerrain(dentro, [wood], { exact:false }).why));
 }
 
 /* ================================================================= */
@@ -212,7 +263,7 @@ console.log('\nchi altro si finisce per toccare');
 }
 
 /* ================================================================= */
-console.log('\nfuga, cedimento, ripiegamento (pp. 154-155)');
+console.log('\nfuga, cedimento, ripiegamento (pp. 132-134 e 156)');
 {
   const me = { x:0, y:0, w:5 * MM, h:2 * MM, rot:0 };
   const grosso = unit('Kroxigor', 0, -6, 5 * MM, 2 * MM, 180, { us:9 });
@@ -238,13 +289,55 @@ console.log('\nfuga, cedimento, ripiegamento (pp. 154-155)');
   ok('finendo otto pollici piu in la', near((fuga.to.y - me.y) / MM, 8, .01));
 
   const rip = CH.backwardMove('fallBack', me, [grosso], { roll:6 });
-  ok('il ripiegamento dichiara che i suoi dadi vanno confrontati col libro',
-     rip.daVerificare === true && /p\. 154/.test(rip.nota));
+  ok('il ripiegamento in ordine tiene il dado maggiore, e il libro lo scrive',
+     /maggiore/.test(CH.BACKWARD.fallBack.dice) && /134/.test(rip.nota));
+  ok('e dice che l unita si raduna da sola', /si raduna/.test(rip.nota));
   ok('e resta girato verso il nemico', rip.to.rot === 0);
 
   const ins = CH.pursuitMove(me, grosso, { roll:7 });
   ok('l inseguimento va verso, non lontano', near((ins.to.y - me.y) / MM, -7, .01));
   ok('e non fa mai meno di due pollici', CH.pursuitMove(me, grosso, { roll:0 }).inches === 2);
+}
+
+/* ================================================================= */
+console.log('\nquello che sta intorno alla carica (pp. 101, 119, 123, 125, 133)');
+{
+  ok('un reggimento fermo puo caricare', CH.canCharge({}).can === true);
+  ok('chi sta fuggendo no', CH.canCharge({ fleeing:true }).can === false);
+  ok('chi e in mischia no', CH.canCharge({ engaged:true }).can === false);
+  ok('chi si e appena radunato no', CH.canCharge({ rallied:true }).can === false);
+  ok('e la riga dice sempre perche',
+     CH.canCharge({ rallied:true }).why.join(' ').includes('radunata'));
+  ok('la colonna di marcia dichiara ma non muove',
+     CH.canCharge({ column:true }).can === true &&
+     CH.canCharge({ column:true }).canMove === false);
+
+  const me = boxCorners({ x:0, y:0, w:5 * MM, h:2 * MM, rot:0 });
+  const vicino = unit('Skink', 0, -6, 5 * MM, 2 * MM, 180);
+  const lontano = unit('Skink', 0, -20, 5 * MM, 2 * MM, 180);
+  ok('entro otto pollici marciare chiede il test',
+     CH.marchCheck(me, [vicino]).needsTest === true);
+  ok('e la riga nomina chi si sta guardando',
+     /Skink/.test(CH.marchCheck(me, [vicino]).why));
+  ok('piu in la si marcia libero', CH.marchCheck(me, [lontano]).needsTest === false);
+  ok('chi sta fuggendo non si guarda',
+     CH.marchCheck(me, [{ ...vicino, fleeing:true }]).needsTest === false);
+  ok('e chi vola non tira il test (p. 170)',
+     CH.marchCheck(me, [vicino], { fly:true }).needsTest === false);
+
+  ok('la marcia raddoppia il Movimento', CH.moveAllowance(4, { kind:'march' }).inches === 8);
+  ok('in colonna lo triplica',
+     CH.moveAllowance(4, { kind:'march', column:true }).inches === 12);
+  ok('indietro e di lato si va a meta', CH.moveAllowance(4, { kind:'back' }).inches === 2);
+  ok('il terreno difficile toglie un pollice',
+     CH.moveAllowance(4, { slow:true }).inches === 3);
+  ok('e lo dichiara', /terreno difficile/.test(CH.moveAllowance(4, { slow:true }).why.join(' ')));
+  ok('senza Movimento sul profilo non si inventa niente', CH.moveAllowance(0).inches === 0);
+
+  ok('le manovre stanno scritte con la pagina accanto',
+     CH.MANOEUVRES.length === 7 && CH.MANOEUVRES.every(m => m.page > 0 && m.cost));
+  ok('il test di Pericolo si passa a 4+, uno per modello',
+     CH.perilAsk(8).need === 4 && CH.perilAsk(8).n === 8);
 }
 
 /* ================================================================= */

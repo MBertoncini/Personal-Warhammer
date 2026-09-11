@@ -65,9 +65,13 @@ ok('un punteggio impossibile non passa mai', pool(500, IMPOSSIBLE).hits === 0);
 
 let normal = 0, swift = 0;
 for (let i = 0; i < 4000; i++){ normal += chargeRoll(false).total; swift += chargeRoll(true).total; }
-ok('la carica normale fa in media 7', near(normal / 4000, 7, 0.2));
-ok('il passo lungo fa in media 8,5', near(swift / 4000, 8.46, 0.2));
-ok('e non supera comunque i 12', chargeRoll(true).total <= 12);
+ok('la carica normale fa in media 4,5 e non 7', near(normal / 4000, 161 / 36, 0.2));
+ok('il passo lungo aggiunge un D6, e fa circa 8', near(swift / 4000, 161 / 36 + 3.5, 0.2));
+ok('un tiro senza passo lungo non passa mai il sei',
+   Array.from({ length: 200 }, () => chargeRoll(false).total).every(v => v <= 6));
+ok('e nel terreno si tiene il peggiore',
+   Array.from({ length: 200 }, () => chargeRoll(false, true))
+     .every(r => r.total === Math.min(r.dice[0], r.dice[1])));
 
 console.log('\nranghi e nervi');
 ok('venti in file da cinque danno +3', rankBonus(20, 5) === 3);
@@ -239,9 +243,9 @@ ok('chi ci sta dentro non si ripara da se',
 console.log('\nquanto e lungo il passo');
 const bands = movementBands({ stats: { M: '4' }, rules: [] });
 ok('movimento, marcia, carica e carica massima',
-   bands.move === 4 && bands.march === 8 && bands.charge === 11 && bands.chargeMax === 16);
+   bands.move === 4 && bands.march === 8 && bands.charge === 8.5 && bands.chargeMax === 10);
 const fast = movementBands({ stats: { M: '7' }, rules: ['Swiftstride'] });
-ok('il passo lungo vale mezzo pollice di carica in piu', fast.charge === 15.5 && fast.swift === true);
+ok('il passo lungo vale un dado in piu di carica', fast.charge === 15 && fast.chargeMax === 16 && fast.swift === true);
 ok('senza M sul profilo non si inventa niente',
    movementBands({ stats: { M: '-' }, rules: [] }) === null);
 

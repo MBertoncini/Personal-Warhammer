@@ -895,7 +895,8 @@ ok('il movimento si misura dall ancora, non da dove sei adesso',
    Math.abs(mv.dist - 4) < 0.01);
 ok('la banda dice che sei ancora dentro il movimento',
    MV.bandOf(mover, mv.dist).key === 'move');
-ok('e sopra la marcia diventa carica', MV.bandOf(mover, 17).key === 'chargeMax');
+ok('oltre il movimento si entra nella carica', MV.bandOf(mover, 13).key === 'chargeMax');
+ok('e la marcia adesso e piu lunga della carica massima', MV.bandOf(mover, 15).key === 'march');
 ok('oltre tutto, e oltre', MV.bandOf(mover, 40).key === 'over');
 state.sel = { type: 'unit', id: mover.uid };
 deploy.renderAll();
@@ -1001,7 +1002,8 @@ console.log('\nla carica dal pannello (Tappa 2)');
   deploy.renderAll();
 
   const plan = deploy.chargePlanFor(rosso);
-  ok('il piano di carica sa fin dove si arriva', !!plan && plan.max === plan.move + 12);
+  ok('il piano di carica sa fin dove si arriva davvero: M piu sei (p. 121)',
+     !!plan && plan.max === plan.move + 6);
   const row = plan.rows.find(r => r.unit.uid === bluId);
   ok('e per ogni nemico dice se la carica si dichiara', !!row && typeof row.can === 'boolean');
   ok('quello che sta davanti si puo caricare', row.can === true && row.inArc === true);

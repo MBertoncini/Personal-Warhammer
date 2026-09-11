@@ -1883,9 +1883,18 @@ export function chargePlanFor(u){
   const charger = { ...asPiece(u), move, swift: !!(mb && mb.swift), fly: flies(u) };
   const foes = enemiesOf(u).map(asPiece);
   const rows = CH.chargeSurvey(charger, foes, { pieces: terrainPieces() });
+  /* Prima ancora della geometria c'e' lo stato: chi e' in mischia, chi
+     sta fuggendo e chi si e' appena radunato non dichiara nessuna
+     carica, per quanto bene stia messo sul tavolo (p. 119). */
+  const pre = CH.canCharge({
+    engaged: engagedNow(u), fleeing: !!u.fled,
+    rallied: !!u.rallied, column: u.formation === "column",
+  });
   return {
-    charger, move, swift: charger.swift,
-    max: move + CH.MAX_CHARGE_ROLL,
+    charger, move, swift: charger.swift, pre,
+    march: CH.marchCheck(corners(u), foes.map(f => ({ ...f, fleeing: !!f.unit.fled })),
+                         { fly: flies(u) }),
+    max: CH.chargeBands(move, charger.swift).max,
     rows: rows.map(r => ({
       ...r,
       unit: r.unit.unit,
@@ -1911,6 +1920,7 @@ function chargeHTML(u){
     <div>
       <div class="readout"><span>Carica${plan.swift ? " · passo lungo" : ""}</span>
         <b>fino a ${fmtIn(plan.max)}″</b></div>
+      ${plan.pre.can ? "" : `<p class="note">${esc(u.name)}: ${esc(plan.pre.why.join("; "))}</p>`}
       ${rows.length ? rows.map(r => {
         const t = r.terrain || {};
         const note = [
@@ -1930,12 +1940,14 @@ function chargeHTML(u){
       }).join("") : `<p class="note">Nessun nemico sul tavolo.</p>`}
       ${u.charged ? `<div class="readout"><span>Ha caricato</span><b>${esc(u.charged.target)} · ${u.charged.arc}${
         u.disordered ? " · in disordine" : ""}</b></div>` : ""}
-      <p class="note">La bandierina gioca la carica: dichiarazione, reazione, tiro e contatto, tutto nel registro.</p>
+      <p class="note">La bandierina gioca la carica: dichiarazione, reazione, tiro e contatto, tutto nel registro.
+      Il numero grosso è quanto serve tirare e quante volte su cento esce: due D6 di cui si tiene il maggiore (p. 121).</p>
+      <p class="note">${esc(plan.march.why)}</p>
       ${backwardHTML(u)}
     </div>`;
 }
 
-/* ---- le quattro mosse all'indietro (pp. 154-155) ----
+/* ---- le quattro mosse all'indietro (pp. 132-134 e 156) ----
    Fuga, cedimento, ripiegamento e inseguimento sono la stessa
    geometria vista quattro volte: una direzione lontano dal nemico piu'
    grosso — in diagonale quando i nemici grossi sono due — e dei
@@ -1957,7 +1969,7 @@ function backwardHTML(u){
   return `
     <div class="chiprow">
       ${BACK_KINDS.map(k => `<button class="btn tiny" data-back="${k.id}"
-          title="Lontano da ${esc(foes[0].name)}, come alle pp. 154-155">${k.label}</button>`).join("")}
+          title="Lontano da ${esc(foes[0].name)}, come alle pp. 132-134 e 156">${k.label}</button>`).join("")}
     </div>`;
 }
 
@@ -1989,7 +2001,15 @@ async function runBackward(u, kind){
   let rolls = null, roll = 0;
   if (kind !== "give"){
     const known = G.engine().asks(action);
-    const ask = known.length ? known
+    /* Il ripiegamento in ordine non e' una fuga piena: due dadi e si
+       tiene il maggiore (p. 134). Il motore non conosce questa mossa,
+       quindi la richiesta se la scrive qui — con la regola dentro,
+       cosi' il vassoio la spiega mentre i cubi rotolano. */
+    const ask = kind === "fallBack"
+      ? [{ id:"ripiegamento", kind:"d6", n:2, why:"quanto si ripiega",
+           keep:1, drop:"lowest",
+           foot:"Dei due si tiene il maggiore (p. 134)." }]
+      : known.length ? known
       : [{ id:"ripiegamento", kind:"d6", n:2, why:"quanto si ripiega" }];
     rolls = await G.askRolls(ask, `${spec.label} di ${u.name}`);
     if (!rolls) return;
@@ -2008,7 +2028,7 @@ async function runBackward(u, kind){
     u.moved = { kind, inches: mv.inches };
     if (kind === "flee") u.fled = true;
     if (kind === "pursue" || kind === "fallBack") u.fled = false;
-    if (mv.daVerificare && mv.nota) G.logLine(u.name + ": " + mv.nota, { army: u.army });
+    if (mv.nota) G.logLine(u.name + ": " + mv.nota, { army: u.army });
     const fix = CH.nudgeClear({ x:u.x, y:u.y, rot:u.rot }, boxOf(u), enemiesOf(u).map(asPiece));
     if (kind !== "pursue" && fix.moved > 0){
       u.x = fix.x; u.y = fix.y;
@@ -2053,10 +2073,16 @@ async function runCharge(u, uid){
      `charge.js` guardando il passo lungo e il terreno attraversato. */
   const spec = row.dice;
   const action = { type:"chargeMove", unit:u, target:t, army:u.army,
-                   swift:spec.swift, dice:spec.n, drop:spec.drop };
+                   swift:spec.swift, worst:spec.worst, dice:spec.n,
+                   keep:spec.keep, drop:spec.drop, foot:spec.foot };
   const rolls = await G.askRolls(G.engine().asks(action), `Carica di ${u.name}`);
   if (!rolls || !rolls.carica) return;
-  const out = CH.chargeOutcome({ dice: rolls.carica.dice, spec, move: row.move, dist: row.dist });
+  /* il Movimento che passa qui e' quello di profilo: il pollice che il
+     terreno difficile toglie lo scala chargeOutcome, e scalarlo due
+     volte vorrebbe dire una carica corta di un pollice a ogni bosco */
+  const out = CH.chargeOutcome({ dice: rolls.carica.dice, spec,
+                                 move: row.base != null ? row.base : row.move,
+                                 dist: row.dist });
 
   act("mossa di carica", () => {
     if (state.game.on) G.goStep(5);
@@ -2071,18 +2097,34 @@ async function runCharge(u, uid){
 }
 
 /* Chi arriva si mette a filo della faccia da cui e' venuto, e da li'
-   discendono tre cose che il resto della partita usera': da che arco
-   e' arrivato (il bonus di fine combattimento), quanti pollici ha
-   percorso (il bonus di Iniziativa della carica, p. 146) e se e'
-   arrivato in disordine (p. 270). */
+   discendono quattro cose che il resto della partita usera': da che
+   arco e' arrivato (il bonus di fine combattimento), quanti pollici ha
+   percorso (il bonus di Iniziativa della carica, p. 146), se e'
+   arrivato in disordine perche' non e' riuscito ad allinearsi, e se ha
+   finito la corsa dentro il terreno che toglie i ranghi. Le ultime due
+   stanno sulla stessa pagina del manuale (p. 128) ma sono regole
+   diverse e costano bonus diversi: tenerle separate e' l'unico modo
+   perche' il risultato del combattimento torni. */
 function landCharge(u, t, row, out){
   const al = row.align || CH.alignTo(boxOf(u), boxOf(t));
   if (al){ u.x = al.x; u.y = al.y; u.rot = al.rot; }
-  const dis = CH.disorderedCharge(CH.crossed([u.x, u.y], [t.x, t.y], terrainPieces()));
   u.charged = { target: t.name, uid: t.uid, inches: out.reach, arc: al ? al.arc : "fronte" };
   u.moved = { kind:"charge", inches: out.reach };
+
+  /* riesce a mettersi a filo, o c'e' qualcosa in mezzo? */
+  const blockedBy = alignBlockers(u, t);
+  const dis = CH.disorderedCharge({ aligned: !blockedBy.length, blockedBy });
   u.disordered = dis.disordered;
   if (dis.disordered) G.logLine(u.name + ": " + dis.text, { army: u.army });
+
+  /* i ranghi si contano sui modelli, non sul rettangolo: le basette
+     l'app sa dove stanno, e un quarto di modelli nel bosco e' un conto
+     esatto invece che una stima */
+  const cells = FM.worldCells(u, layoutOf(u)).map(c => [c.wx, c.wy]);
+  const dsr = CH.disruptedInTerrain(cells, terrainPieces());
+  u.disrupted = dsr.disrupted;
+  if (dsr.disrupted) G.logLine(u.name + ": " + dsr.why, { army: u.army });
+
   /* La carica larga tocca anche il vicino del bersaglio, e il manuale
      vuole che quella carica sia dichiarata: e' l'errore piu' comune
      del movimento, e l'app se ne accorge da sola. */
@@ -2092,6 +2134,20 @@ function landCharge(u, t, row, out){
               ": va dichiarata anche quella carica (p. 119).", { army: u.army });
 }
 
+/* Cosa impedisce al caricante di mettersi a filo: un altro reggimento
+   addosso al punto d'arrivo, o un pezzo che non si attraversa. Il
+   bersaglio no: quello lo si sta toccando apposta. */
+function alignBlockers(u, t){
+  const poly = corners(u);
+  const out = [];
+  for (const o of state.units){
+    if (o === u || o === t || !o.placed || o.dead || isJoined(o)) continue;
+    if (polysOverlap(poly, corners(o))) out.push(o.name);
+  }
+  for (const p of terrainPieces())
+    if (p.cat && p.cat.id === "impassable" && polysOverlap(poly, p.poly)) out.push(p.label);
+  return out;
+}
 /* La carica corta non torna indietro: si avanza di quello che i dadi
    hanno detto, e ci si ferma a un pollice buono da chiunque, che e' la
    regola di p. 118. */

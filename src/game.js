@@ -596,7 +596,10 @@ function askDice(ask, title){
       openDiceBox({
         kind: q.kind || "d6", n: q.n || 1, target: q.need || 0,
         title: title + " · " + q.why,
-        foot: q.keep ? "Se ne tengono " + q.keep + ", " + DROP_TEXT[q.drop || "lowest"] + "." : "",
+        /* La spiegazione sotto i cubi la scrive la regola quando ce
+           l'ha — il tiro di carica ha tre modi diversi di leggersi — e
+           solo in mancanza si ripiega sulla frase generica. */
+        foot: q.foot || (q.keep ? "Se ne tengono " + q.keep + ", " + DROP_TEXT[q.drop || "lowest"] + "." : ""),
         onResult: r => { out[q.id] = fromTray(r, q); nextOne(); },
       });
     };

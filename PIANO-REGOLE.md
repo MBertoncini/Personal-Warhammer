@@ -78,12 +78,16 @@ cui l'app si impunta su una carica legale è l'ultimo in cui la si usa.
 
 ---
 
-## 2 · La correzione che viene prima di tutto — fatta
+## 2 · Le correzioni che vengono prima di tutto — fatte
 
-Leggendo il manuale per questo piano erano saltate fuori due cose che
+Leggendo il manuale per questo piano sono saltate fuori tre cose che
 non sono funzioni mancanti ma **numeri sbagliati**. Sono corrette in
 `rules.js`, ed erano il vero punto di partenza: ogni cosa che questo
-piano propone di costruire sarebbe stata costruita su quei due numeri.
+piano propone di costruire sarebbe stata costruita su quei tre numeri.
+Le prime due si sono viste subito; la terza è emersa solo quando la
+Tappa 2 era già scritta, ed è la ragione per cui ogni tappa adesso
+comincia rileggendo le pagine che le servono invece di fidarsi di
+quello che il piano riassume.
 
 **Il tiro per colpire in mischia.** L'app usava la regola classica di
 Warhammer Fantasy: pari abilità 4+, più abile 3+, contro il doppio 5+.
@@ -123,8 +127,60 @@ vieta solo dal sesto. Una Forza 3 ferisce ancora una Resistenza 8; per
 l'app non la scalfiva. È l'errore che pesa di più quando la fanteria di
 linea si trova davanti un mostro, cioè quasi ogni partita.
 
-Le prove di `test/battle.mjs` coprono adesso tutte e due le tabelle agli
-estremi, comprese le quattro celle qui sopra.
+**Il tiro di carica.** È la terza, ed è saltata fuori aprendo il
+manuale alla pagina della carica *dopo* aver scritto la Tappa 2 — cioè
+nel modo peggiore, perché la Tappa 2 ci si era già costruita sopra.
+L'app tirava **2D6 e ne sommava i due dadi**: è la regola del Warhammer
+di prima. In *The Old World* (p. 121) si tirano due D6, si **scarta il
+minore**, e il dado che resta — uno solo, da 1 a 6 — si somma al
+Movimento.
+
+| | Prima | Adesso |
+|---|---|---|
+| carica media di un M 4 | 11″ | 8,5″ |
+| carica massima di un M 4 | 16″ | 10″ |
+| carica massima di un M 8 | 20″ | 14″ |
+
+Sei pollici di differenza sulla portata massima di una fanteria: è la
+distanza a cui si decide se una linea di battaglia è al sicuro o no, e
+l'app la sbagliava a ogni turno di ogni partita. Peggio, la sbagliava
+mentre scriveva accanto al numero **quante volte su cento la carica
+arriva** — una probabilità esatta, enumerata sulle facce, calcolata su
+una regola che non esiste. Il §1 chiede che ogni numero sia
+tracciabile; la tracciabilità non salva da una tabella sbagliata, e
+questo è il quarto errore dello stesso tipo trovato in quattro tappe.
+
+Il passo lungo (Swiftstride, p. 178) è cambiato con lei: non è «tre
+dadi tenendo i due migliori», è **+D6 sul risultato** del tiro di
+carica, di fuga e di inseguimento, e +3″ sulla portata massima. Nel
+vassoio il terzo cubo resta fuori dalla scelta, perché non è un dado da
+scartare ma un dado da sommare, e i due gesti non si devono confondere.
+
+Il terreno non cambia la regola: la rovescia (p. 128). Chi attraversa
+terreno difficile o pericoloso, o scavalca un ostacolo basso, scarta il
+dado **migliore** e tiene il peggiore — gli stessi due dadi, non tre —
+e ha −1 al Movimento. Con questo cade anche il `daVerificare` che
+`charge.js` si era scritto addosso non sapendo con quanti dadi si
+tirasse: adesso si sa.
+
+E una quarta cosa, invisibile finché c'era la terza: `fleeRoll` — quanto
+si fugge e quanto si insegue — era scritto appoggiandosi al tiro di
+carica. Finché la carica era una somma di due dadi funzionava per caso;
+corretta la carica, la fuga sarebbe diventata **il maggiore dei due
+dadi invece della loro somma**, cioè metà distanza, e nessuna prova se
+ne sarebbe accorta. Adesso il tiro di fuga è due D6 sommati e sta per
+conto suo (p. 132), e il ripiegamento in ordine ne scarta uno (p. 134).
+
+Un effetto di lato che non era previsto: con la carica a M + 6 la
+**marcia** è diventata il movimento più lungo per quasi tutti, e le
+quattro soglie del semaforo — scritte in fila fissa quando la carica
+arrivava a M + 12 — rispondevano «carica massima» a un pezzo che stava
+semplicemente marciando. Adesso si ordinano per lunghezza.
+
+Le prove di `test/battle.mjs` coprono tutte e tre le tabelle agli
+estremi, comprese le quattro celle qui sopra; quelle della carica
+stanno anche in `test/movimento.mjs`, che le guarda dal lato del
+tavolo.
 
 ---
 
@@ -292,7 +348,8 @@ Qui il progetto parte molto avanti. Quello che manca è preciso:
    ruotarlo a filo del bersaglio~~ — fatto (`charge.js`, `alignTo`): la
    faccia non è la più vicina, è quella che *guarda* il caricante, che
    è cosa diversa su un bersaglio lungo. Resta l'eccezione
-   dell'ostacolo difeso; la *carica disordinata* (p. 270) c'è.
+   dell'ostacolo difeso; la *carica disordinata* (p. 128) c'è, ed è
+   tenuta distinta dal disordine da terreno, che è un'altra regola.
 3. ~~**La ruota** (*wheel*) e il pivot~~ — il costo c'è
    (`wheelCost`: lo spigolo esterno percorre un arco di raggio pari al
    fronte), e l'allineamento dice di quanti gradi si gira. Quello che
@@ -305,7 +362,7 @@ Qui il progetto parte molto avanti. Quello che manca è preciso:
    (`tooClose`) e come scostamento minimo automatico (`nudgeClear`)
    dopo la carica corta, la fuga e il cedimento.
 6. ~~**Fuga, cedimento (*Give Ground*, 2″ indietro), ripiegamento e
-   inseguimento**~~ — fatti (pp. 154-155): una direzione lontano dal
+   inseguimento**~~ — fatti (pp. 132-134 e 156): una direzione lontano dal
    nemico con la Forza d'Unità più alta, in diagonale quando i più
    grossi sono due, e i pollici che il vassoio ha tirato.
 7. **Sagome**: cerchio da 3″ e da 5″, goccia da 8″ (p. 95), con la
@@ -355,13 +412,16 @@ Per ogni fase: cosa l'app può fare da sola, e cosa resta ai giocatori.
   controllo che il *tira e tieni* non sia possibile sotto la distanza
   pari al Movimento del caricante.~~ Fatto. La raffica del *tira e
   tieni* si tira ancora dal pannello del tiro.
-- ~~Tiro di carica: 2D6 (3D6 scartando il minore col passo lungo, già
-  fatto), tenendo il **peggiore** attraverso il terreno difficile.~~
-  Fatto, con il numero di dadi del terreno difficile dichiarato da
-  verificare.
-- Mosse obbligate, poi le restanti, con il conto di quanti pollici sono
-  stati fatti — l'ancora di movimento c'è già e fa esattamente questo.
-  Le obbligate vere (frenesia, stupidità) arrivano con la Tappa 5.
+- ~~Tiro di carica~~. Fatto, e con il manuale in mano invece che con il
+  riassunto: due D6 di cui si tiene il **maggiore** (p. 121), il
+  **peggiore degli stessi due** attraverso il terreno difficile
+  (p. 128), più un D6 per il passo lungo (p. 178). Questa riga del
+  piano diceva «2D6» e sottintendeva la somma: vedi il §2.
+- ~~Mosse restanti, con il conto di quanti pollici sono stati fatti~~ —
+  l'ancora di movimento faceva già esattamente questo — e ~~il test del
+  «nemico in vista» prima di marciare~~ (p. 123), che è la riga che fa
+  perdere più turni di tiro di qualunque altra. Le obbligate vere
+  (frenesia, stupidità) arrivano con la Tappa 5.
 
 ### Tiro
 - Chi può tirare: non ha caricato, non ha marciato, non è in mischia,
@@ -703,9 +763,9 @@ più i modificatori.
 *Fatto quando*: una partita intera si gioca passando di sotto-fase in
 sotto-fase, e il registro racconta tutto senza che nessuno scriva
 niente a mano. **Lo fa**, per le azioni che le sedici caselle nominano.
-Quello che resta a mano è il gesto sul tavolo: il motore scrive che la
-carica è stata dichiarata e quanto ha tirato, ma il pezzo lo sposti tu.
-È la Tappa 2.
+Quello che restava a mano era il gesto sul tavolo: il motore scriveva
+che la carica era stata dichiarata e quanto aveva tirato, ma il pezzo lo
+spostavi tu. Adesso lo sposta lui: è la Tappa 2, qui sotto.
 
 Una prova nuova che prima non si poteva scrivere: una partita è una
 lista di azioni più i dadi fissati, si rigioca identica e si controlla
@@ -717,8 +777,10 @@ com'è finita. Sta in fondo a `test/motore.mjs`, ed è la forma che il
 ~~reazioni alla carica~~; ~~allineamento e ruota~~; ~~regola del
 pollice~~; ~~carica disordinata~~; ~~terreno che rallenta e che fa
 tenere il dado peggiore~~; ~~fuga, cedimento, ripiegamento,
-inseguimento~~. Stanno tutte in `charge.js`, che di tavolo non sa
-niente: entrano scatole e poligoni, escono numeri e posizioni.
+inseguimento~~, più ~~chi può caricare~~, ~~quanto si muove chi non
+carica~~ e ~~il test del «nemico in vista»~~ (p. 123). Stanno tutte in
+`charge.js`, che di tavolo non sa niente: entrano scatole e poligoni,
+escono numeri e posizioni.
 
 Come si vede al tavolo. Nell'ispettore, sotto il tiro, c'è la riga
 della carica: per ogni nemico quanto è lontano, cosa serve tirare, **e
@@ -732,18 +794,32 @@ finisce nel registro con la sua casella.
 
 Le cose che questa tappa ha reso spiegabili, e prima non lo erano:
 
+- **Le due regole che stavano una sopra l'altra.** La *carica
+  disordinata* e il *disordine da terreno* stanno sulla stessa pagina
+  (p. 128) e costano bonus diversi, e il modulo le aveva fuse in una.
+  La prima la fa il non riuscire ad allinearsi perché qualcosa è in
+  mezzo, e costa il bonus di Iniziativa; la seconda la fa il finire il
+  movimento con un quarto dei modelli nel terreno difficile, e costa il
+  bonus dei ranghi. Attraversare un bosco per arrivare a contatto non
+  provoca nessuna delle due. Adesso sono due funzioni, e i modelli nel
+  bosco si contano sulle basette vere invece che sul rettangolo.
 - **La faccia da cui si arriva.** L'allineamento non sceglie la faccia
   più vicina ma quella che *guarda* il caricante: su un bersaglio lungo
   sono due facce diverse, e sbagliare qui vuol dire far arrivare di
   fianco una carica frontale — cioè regalare un bonus di combattimento
   che non c'era.
-- **Il dado peggiore.** Il passo lungo aggiunge un dado e butta il
-  minore; il terreno difficile fa tenere il peggiore. Il piano dice
-  *cosa* si tiene ma non con quanti dadi: `charge.js` aggiunge un dado
-  e scarta il maggiore — la lettura simmetrica al passo lungo — e lo
-  dichiara con `daVerificare`, così chi ha il libro aperto corregge una
-  riga sola. Il vassoio e il motore leggono la stessa regola dallo
-  stesso posto: `keepDice` è scritta una volta.
+- **Il dado che si tiene, e quale.** Qui la tappa si è dovuta
+  correggere da sola. `charge.js` era nato leggendo il piano invece
+  del manuale, e il piano riassumeva *cosa* si tiene senza dire con
+  quanti dadi: il modulo aveva indovinato «un dado in più, scarta il
+  maggiore» e lo aveva dichiarato `daVerificare`. Verificato: il
+  manuale (p. 121) tira **due dadi e ne tiene uno**, il maggiore; nel
+  terreno difficile tiene il peggiore **degli stessi due** (p. 128), e
+  il passo lungo non tira un terzo dado da scartare ma **somma un D6**
+  (p. 178). Il `daVerificare` è caduto, e con lui la carica da sedici
+  pollici che non esiste — vedi il §2. Il vassoio e il motore leggono
+  la stessa regola dallo stesso posto: `keepDice` è scritta una volta,
+  e correggerla è stato correggere tutto.
 - **Chi altro si finisce per toccare.** Una carica larga arriva a
   sfiorare il vicino del bersaglio, e il manuale vuole che anche quella
   carica sia dichiarata (p. 119). È l'errore più comune del movimento,
@@ -751,15 +827,20 @@ Le cose che questa tappa ha reso spiegabili, e prima non lo erano:
 - **La direzione di chi scappa.** Fuga, cedimento, ripiegamento e
   inseguimento sono la stessa geometria: lontano dal nemico con la
   Forza d'Unità più alta, in diagonale quando i più grossi sono due
-  (pp. 154-155). Nell'ispettore sono quattro pulsanti, e il cedimento
-  non chiede nemmeno i dadi perché è di due pollici fissi.
+  (pp. 132-134 e 156 — il piano citava pp. 154-155, che sono le pagine
+  del test di rotta, non quelle del movimento). Nell'ispettore sono
+  quattro pulsanti, e il cedimento non chiede nemmeno i dadi perché è
+  di due pollici fissi. Il ripiegamento in ordine non è più da
+  verificare: due D6 tenendo il maggiore, e l'unità si raduna da sola
+  a fine movimento (p. 134).
 
 Quello che resta fuori, detto per non lasciarlo scoprire a una partita:
 il costo della ruota si calcola ma non si scala da un budget di
 movimento; il *tira e tieni* si può scegliere ma la raffica va tirata a
 mano dal pannello del tiro; le mosse obbligate della frenesia e della
-stupidità sono della Tappa 5; e il ripiegamento in ordine dichiara che
-i suoi dadi vanno confrontati con il libro.
+stupidità sono della Tappa 5; e il test di terreno pericoloso e quello
+di Pericolo di chi attraversa un nemico fuggendo sono scritti
+(`perilAsk`) ma non hanno ancora chi li preme.
 
 *Fatto quando*: si gioca un turno di movimento senza aprire il manuale.
 **Lo fa** per le cariche e per i movimenti all'indietro. Il resto del
