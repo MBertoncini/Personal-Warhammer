@@ -371,13 +371,21 @@ console.log('\nferite d\'urto con il piu');
 ok('il D3 secco si legge', readRules(['Impact Hits (D3)']).flags.impact.die === 3);
 ok('e il D3 con il piu uno pure',
    readRules(['Impact Hits (D3+1)']).flags.impact.plus === 1);
-ok('anche sul calpestamento', readRules(['Stomp Attacks (D3+1)']).flags.impact.plus === 1);
+ok('anche sul calpestamento', readRules(['Stomp Attacks (D3+1)']).flags.stomp.plus === 1);
 ok('e il numero secco resta secco', readRules(['Impact Hits (2)']).flags.impact.flat === 2);
 ok('due dadi si leggono come due', readRules(['Impact Hits (2D6)']).flags.impact.times === 2);
+/* Urto e calpestamento erano lo stesso flag, e sono due regole che si
+   risolvono in due momenti opposti: l'urto prima di tutto, il pestone
+   dopo tutti gli altri attacchi. Un mostro che ha tutte e due ne
+   perdeva una per strada. */
+const both = readRules(['Impact Hits (D6+1)', 'Stomp Attacks (D3)']).flags;
+ok('urto e pestone sono due regole diverse',
+   both.impact.die === 6 && both.impact.plus === 1 && both.stomp.die === 3);
 /* le tre unita' delle liste salvate che prima cascavano nel ripiego */
 const impacts = withTroop.flatMap(u => (u.rules || []).filter(r => /impact hits|stomp/i.test(r)));
 ok('nessuna delle regole d urto delle liste salvate finisce piu nel ripiego',
-   impacts.every(r => { const a = readRules([r]).flags.impact; return a && !a.perFront; }));
+   impacts.every(r => { const f = readRules([r]).flags; const a = f.impact || f.stomp;
+                        return a && !a.perFront; }));
 
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

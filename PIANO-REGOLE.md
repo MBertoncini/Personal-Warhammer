@@ -182,6 +182,20 @@ estremi, comprese le quattro celle qui sopra; quelle della carica
 stanno anche in `test/movimento.mjs`, che le guarda dal lato del
 tavolo.
 
+**E ce n'era una quinta**, trovata nella Tappa 3 e non in `rules.js`:
+il **bonus di superiorità numerica** nel risultato del combattimento.
+Non sta nell'elenco del §6, che è stato scritto con il manuale
+aperto; e la Forza d'Unità salta fuori altrove, nel testo di
+*Stubborn*, dove serve a dire che chi ha vinto con più del doppio
+toglie all'altro il ripiegamento in ordine. Adesso è spenta dietro
+una costante di `melee.js`. Il conto tenuto per esteso — cinque
+numeri ereditati dal Warhammer di prima in cinque tappe — è la
+ragione per cui ogni tappa comincia rileggendo le pagine che le
+servono. E dalla Tappa 3 c'è un posto in più dove leggerle: il testo
+per esteso di settanta regole speciali sta dentro le liste salvate,
+messo lì da New Recruit, e ha corretto da solo quattro regole che
+l'app dichiarava con sicurezza.
+
 ---
 
 ## 3 · I dati: da un file New Recruit a un'unità giocabile
@@ -443,20 +457,23 @@ Per ogni fase: cosa l'app può fare da sola, e cosa resta ai giocatori.
 - Chi combatte: fila che combatte, contatto di basetta, attacchi di
   appoggio (pp. 145-146). L'app conosce già i contatti modello per
   modello: è il posto in cui è più avanti del manuale medio.
-- Ordine di Iniziativa **con il bonus della carica** (+1 per pollice
+- ~~Ordine di Iniziativa **con il bonus della carica** (+1 per pollice
   intero percorso, fino a +3 di fronte e +4 di fianco o di retro,
-  p. 146). Oggi il bonus non c'è: è una modifica piccola con effetti
-  grandi.
-- Risultato del combattimento: ferite, ranghi (uno per fila piena, con
+  p. 146).~~ Fatto nella Tappa 3, e con lui l'urto e la carica furiosa
+  che vogliono tre pollici di corsa, e i pestoni che arrivano ultimi.
+- ~~Risultato del combattimento: ferite, ranghi (uno per fila piena, con
   il minimo per fila e il massimo dal tipo di truppa, p. 105),
   stendardo, stendardo da battaglia, fianco +1, retro +2, terreno più
-  alto +1, *overkill* nelle sfide. Oggi ne mancano tre.
-- **Test di rotta a tre esiti** (p. 154): il manuale non ha più «passa o
-  fugge». Si confronta il tiro naturale e il tiro modificato con il
-  Comando, e ne escono *cede terreno*, *ripiega in ordine*, *rotta*.
-  Questo è un cambio di regola vero rispetto a quello che `combat.js`
-  fa adesso, e va fatto presto perché cambia la fine di ogni assalto.
-- Inseguimento, sfondamento, unità travolta.
+  alto +1, *overkill* nelle sfide.~~ Fatto. Ne mancavano tre, e ce
+  n'era una di troppo: la superiorità numerica, che questo elenco non
+  nomina perché nel manuale non c'è.
+- ~~**Test di rotta a tre esiti** (p. 154)~~: fatto, ed è stato il
+  cambio di regola vero. Si confronta il tiro naturale e il tiro
+  modificato con il Comando, e ne escono *cede terreno*, *ripiega in
+  ordine*, *rotta* — le tre mosse all'indietro che la Tappa 2 sapeva
+  già fare.
+- ~~Inseguimento, sfondamento, unità travolta.~~ Fatto; resta fuori il
+  test di trattenuta di chi preferirebbe non inseguire.
 
 ### Psicologia
 Panico (pp. 160-161) con le sue quattro cause ricorrenti — perdite oltre
@@ -508,6 +525,14 @@ Perché il piano sia onesto sui tempi, conviene contare i dati:
 Le regole speciali e gli incantesimi sono i due mucchi grossi, e sono
 anche i due che **si possono fare a fette**: dieci regole per volta,
 scelte per frequenza; un dominio per volta, scelto da chi gioca in casa.
+
+E il primo dei due è meno grosso di quanto questa tabella dica. La
+Tappa 3 ha scoperto che il **testo per esteso** di una settantina di
+quelle regole è già dentro `dati/liste.json`: i file di New Recruit se
+lo portano dietro, il parser lo legge da mesi e nessuno lo guardava.
+Non si tratta più di trascrivere ottanta regole dal libro, ma di
+decidere quali far agganciare al motore — le altre l'app le mostra già
+com'erano scritte, e chi gioca le applica a mano sapendo cosa dicono.
 
 Quello che **non** sta nel manuale base — regole d'esercito e oggetti
 magici degli army book — deve stare fuori dal codice fin dal primo
@@ -847,11 +872,106 @@ di Pericolo di chi attraversa un nemico fuggendo sono scritti
 movimento è ancora il dito sul pezzo, con i ventagli che dicono fin
 dove — ed è il gesto giusto: al tavolo si aggiusta con le mani.
 
-**Tappa 3 — Il corpo a corpo del manuale.**
-Bonus di Iniziativa della carica, risultato del combattimento completo,
-test di rotta a tre esiti, inseguimento e sfondamento, sfide.
+**Tappa 3 — Il corpo a corpo del manuale. — fatta**
+~~Bonus di Iniziativa della carica~~, ~~risultato del combattimento
+completo~~, ~~test di rotta a tre esiti~~, ~~inseguimento e
+sfondamento~~, ~~sfide~~. Stanno in `melee.js`, che di tavolo non sa
+niente come `charge.js`: entrano numeri di profilo e facce gia'
+uscite, escono punteggi ed esiti con la traccia di come sono venuti.
+
+Come si vede al tavolo. Il pannello dello scontro ha un pulsante in
+piu': **Porta l'esito sul tavolo**. Fa i quattro gesti nell'ordine del
+manuale e ognuno e' un'azione del motore, quindi ognuno si annulla da
+solo e finisce nel registro con la sua casella: le perdite, il
+risultato, il test di rotta, la mossa che l'esito impone, e poi il
+tiro d'inseguimento — di sfondamento, se davanti non e' rimasto
+nessuno. Chi insegue almeno quanto l'altro ha fuggito lo travolge.
+
+**Il test di rotta a tre esiti** e' il cambio di regola vero, ed e'
+quello che il §6 chiedeva di fare presto perche' cambia la fine di
+ogni assalto. Si guardano due numeri invece di uno — il tiro naturale
+e lo stesso tiro con lo scarto del combattimento addosso — e ne escono
+*cede terreno*, *ripiega in ordine*, *rotta*, che sono esattamente le
+tre mosse all'indietro che la Tappa 2 sapeva gia' fare e che finora si
+premevano a mano indovinando quale toccasse. Una conseguenza che al
+tavolo sorprende: la rotta dipende dal tiro **naturale**, quindi non
+dallo scarto. Perdere di otto invece che di due non fa scappare di
+piu': fa ripiegare invece di cedere terreno.
+
+Quello che questa tappa ha trovato per strada, e non era in programma.
+Il primo ritrovamento spiega gli altri.
+
+- **Il manuale era in casa da sempre.** I file di New Recruit portano
+  il **testo per esteso** di ogni regola speciale; il parser lo legge
+  da mesi, lo tiene su `u.ruleText`, e non lo guardava nessuno. Sono
+  settanta regole del Core Rulebook scritte per intero dentro
+  `dati/liste.json`. Da questa tappa ogni etichetta del pannello lo
+  mostra nel titolo: una regola che l'app non applica smette di essere
+  un nome e diventa un nome piu' le sue tre righe di manuale, che al
+  tavolo bastano per applicarla a mano. Ed e' con quel testo che sono
+  stati corretti i quattro errori qui sotto.
+- **Stubborn e Unbreakable erano tutte e due dell'edizione di prima.**
+  L'app diceva «il testardo tira al Comando pieno» e «l'incrollabile
+  non tira». Il testo dice altro: *Stubborn* e' una scelta che si fa
+  **prima** dei dadi e **una volta per partita** — si salta il test e
+  si ripiega in ordine; *Unbreakable* non tira e **cede terreno**, non
+  resta fermo. Sono due regole del test a tre esiti, e nel test a due
+  esiti non si potevano nemmeno scrivere.
+- **La superiorita' numerica non e' una voce del risultato.** Era il
+  quinto numero preso dal Warhammer di prima dopo il tiro per
+  colpire, la tabella per ferire, il tiro di carica e il tiro di
+  fuga. Nell'elenco del §6 — scritto leggendo il manuale — non
+  compare; e la Forza d'Unita' salta fuori altrove, nel testo di
+  *Stubborn*, dove serve a dire che chi ha vinto con piu' del doppio
+  toglie il ripiegamento in ordine. La voce resta nel codice, spenta,
+  dietro una costante sola.
+- **L'urto e il pestone erano lo stesso flag.** `Impact Hits` e
+  `Stomp Attacks` finivano nello stesso campo, e un mostro che aveva
+  tutte e due ne perdeva una — la seconda lettura sovrascriveva la
+  prima. Sono due regole che si risolvono ai due capi opposti
+  dell'assalto: l'urto prima di tutto, il pestone «dopo tutti gli
+  altri attacchi, compresi quelli a Iniziativa 1». Il pestone
+  arrivava all'inizio, cioe' pestava modelli che sarebbero caduti
+  comunque.
+- **I tre pollici, e la Forza sbagliata.** L'urto e la carica furiosa
+  li fa chi ha caricato muovendo **3″ o piu'**: l'app li dava a
+  chiunque avesse caricato, anche a chi era arrivato a contatto con
+  mezzo pollice. E l'urto usa la Forza **non modificata** del
+  modello: un cavaliere piantava l'urto con la Forza della lancia,
+  due punti di troppo.
+- **L'Odio non e' psicologia.** Stava fra le regole «che si giocano
+  altrove — e' un test di psicologia». Non e' un test: e' il ritiro
+  dei colpi mancati nel primo assalto, che `pool` sapeva gia' fare
+  dalla Tappa 0. Era una riga che l'app diceva con sicurezza e che
+  era falsa.
+
+E due cose che la Tappa 2 aveva riconosciuto senza poterle far pagare
+a nessuno, perche' il posto in cui costano e' il conto di fine
+assalto: la **carica disordinata** adesso toglie davvero il bonus di
+Iniziativa, e il **disordine da terreno** toglie davvero i ranghi
+(p. 128). Erano scritte sull'unita' dalla tappa scorsa e non le
+leggeva nessuno. Lo stesso vale per la carica stessa: `u.charged` — con
+i pollici e la faccia da cui e' arrivata — c'era dalla Tappa 2, e il
+pannello continuava a chiedere a mano «ha caricato?» a una domanda a
+cui il tavolo aveva gia' risposto.
+
+Quello che resta fuori, detto per non lasciarlo scoprire a una
+partita: lo **stendardo da battaglia** da' il suo +1 ma non fa ancora
+ritirare i test di rotta degli amici nel raggio di comando; il
+**terreno piu' alto** e' una tendina da rispondere a mano, perche' il
+tavolo non ha le quote; della **sfida** l'app conta l'overkill e tiene
+la riga nel registro, ma chi puo' raccoglierla e cosa costa rifiutarla
+restano a chi gioca; il **test di trattenuta** prima di inseguire non
+c'e'; e la riga della Forza d'Unita' piu' che doppia e' dedotta dal
+testo di *Stubborn*, non letta sulla pagina del test — porta
+`daVerificare` e si spegne da una costante.
+
 *Fatto quando*: lo scontro simulato smette di essere una stima e
-diventa la risoluzione vera, con la traccia di ogni numero.
+diventa la risoluzione vera, con la traccia di ogni numero. **Lo fa**:
+si tira l'assalto, si legge da dove viene ogni punto del risultato, si
+preme un pulsante e sul tavolo si muovono i pezzi giusti. Le prove
+stanno in `test/mischia.mjs`, che guarda l'assalto dal lato dei numeri
+come `test/movimento.mjs` guarda la carica dal lato del tavolo.
 
 **Tappa 4 — Tiro e macchine da guerra.**
 Conteggio dei tiratori modello per modello, modificatori automatici,

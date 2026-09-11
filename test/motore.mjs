@@ -193,7 +193,8 @@ console.log('\nil registro si scrive da solo');
   at(3);  E.dispatch({ type:'rally', unit:{ name:'Night Goblins' } }, { raduno:{ dice:[2,3], total:5 } });
   at(4);  E.dispatch({ type:'declareCharge', unit:{ name:'Orc Mobs' }, target:{ name:'Skink' } });
   at(5);  E.dispatch({ type:'chargeMove', unit:{ name:'Orc Mobs' } }, { carica:{ dice:[6,5], kept:[6,5], total:11 } });
-  at(14); E.dispatch({ type:'breakTest', unit:{ name:'Skink' } }, { rotta:{ dice:[6,6], total:12 } });
+  at(14); E.dispatch({ type:'breakTest', unit:{ name:'Skink' }, outcome:'rout' },
+                     { rotta:{ dice:[6,6], total:12 } });
 
   ok('cinque azioni fanno cinque righe', E.count === 5);
   const story = E.story();
@@ -203,7 +204,10 @@ console.log('\nil registro si scrive da solo');
      story.every(l => /^T1 A · [^·]+ · /.test(l)));
   ok('la carica dice quanto ha tirato',
      /Orc Mobs carica: 6 \+ 5 = 11/.test(story[3]));
-  ok('il test di rotta pure', /Skink tiene i nervi: 6 \+ 6 = 12/.test(story[4]));
+  /* Il test di rotta ha tre esiti (p. 154) e la riga lo deve dire:
+     «ha fallito» non basta a sapere dov'e' finito il reggimento. */
+  ok('il test di rotta porta i dadi e l esito',
+     /Skink: 6 \+ 6 = 12 — va in rotta/.test(story[4]));
 
   E.clear();
   ok('e il registro si azzera quando comincia una partita nuova', E.count === 0);

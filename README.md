@@ -143,9 +143,11 @@ Fino a poco fa l'app tirava 2D6 e li **sommava**, che è la regola del Warhammer
 
 **Le quattro mosse all'indietro.** Quando c'è un nemico vicino compaiono quattro pulsanti: *cede 2″*, *ripiega*, *fugge*, *insegue*. Sono la stessa geometria vista quattro volte — lontano dal nemico con la Forza d'Unità più alta, in diagonale quando i più grossi sono due — e l'app la misura invece di farla stimare a occhio. Il cedimento non chiede nemmeno i dadi: sono due pollici fissi. Chi fugge gira le spalle, chi cede terreno e chi ripiega restano girati verso il nemico.
 
-**Scontro simulato.** Accanto a ogni nemico vicino, nell'ispettore, c'è una spada. Apre un pannello con le due schiere a confronto: profili, quanti modelli si toccano, armatura e salvezza speciale, stendardo, chi ha caricato, se si colpisce di fronte, di fianco o di retro.
+**Scontro simulato.** Accanto a ogni nemico vicino, nell'ispettore, c'è una spada. Apre un pannello con le due schiere a confronto: profili, quanti modelli si toccano, armatura e salvezza speciale, stendardo e stendardo da battaglia, terreno più alto, sfida. Chi ha caricato e da che faccia è arrivato non si spuntano più a mano: li scrive la carica quando va a segno, e con loro i pollici percorsi.
 
-- *Tira i dadi* fa **un assalto** e mostra **ogni faccia uscita**: per colpire, per ferire, per salvare. Si mena in ordine di Iniziativa — chi è più svelto toglie modelli prima che gli altri rispondano — e chi carica con l'urto lo porta prima di tutto. Poi il conto di fine assalto (ferite, ranghi, stendardo, chi è in più, il fianco) e il test di Comando di chi ha perso.
+- *Tira i dadi* fa **un assalto** e mostra **ogni faccia uscita**: per colpire, per ferire, per salvare. Si mena in ordine di Iniziativa, e dentro l'Iniziativa c'è il **bonus della carica**: un punto per ogni pollice intero percorso, fino a +3 arrivando di fronte e +4 di fianco o di retro. È la riga che ribalta l'ordine in mezza partita, perché una cavalleria che ha corso sette pollici mena prima di chiunque. L'urto della carica arriva prima di tutto e vuole i suoi tre pollici di corsa; i pestoni arrivano per ultimi, dopo ogni altro attacco. Poi il conto di fine assalto — ferite, ranghi, stendardo, stendardo da battaglia, fianco, retro, terreno più alto, overkill nelle sfide — e il test di rotta.
+- **Il test di rotta ha tre esiti, non due** (p. 154). Si guardano due numeri: il tiro naturale e lo stesso tiro con lo scarto del combattimento addosso. Passano tutti e due e l'unità *cede terreno* di due pollici; passa solo il naturale e *ripiega in ordine*; non passa nemmeno quello ed è *rotta*. Perdere di otto invece che di due non fa scappare di più — la rotta dipende dal tiro naturale — fa ripiegare invece di cedere terreno. Accanto all'esito ci sono le tre probabilità esatte, che sono anche il numero con cui si decide se giocarsi lo *Stubborn*.
+- *Porta l'esito sul tavolo* fa i quattro gesti nell'ordine del manuale: segna le perdite, scrive il risultato e il test nel registro con turno e casella, **sposta chi ha perso** di quanto dice l'esito, e poi chiede il tiro d'inseguimento — o di sfondamento, se davanti non è rimasto nessuno. Chi insegue almeno quanto l'altro ha fuggito lo travolge. Ogni passo è un'azione del motore: si annulla da solo.
 - *Simula 500 assalti* rifà lo stesso conto cinquecento volte e riporta le percentuali. È la risposta alla domanda vera, che non è «com'è andata» ma «conviene?»: un assalto solo non dice niente, cinquecento dicono se caricare è una buona idea.
 - *Segna le perdite sul tavolo* riporta i modelli caduti sulle due unità, e con la partita aperta i reggimenti **si accorciano da soli**. Vale l'annulla anche per questo.
 
@@ -367,6 +369,7 @@ src/
   phases.js           le sedici caselle del turno: cosa ci si aspetta in ognuna
   engine.js           il motore: azioni, dadi chiesti, regole in ascolto, registro
   charge.js           la carica: dichiararla, allinearla, e le mosse all'indietro
+  melee.js            la mischia: Iniziativa della carica, risultato, test di rotta, inseguimento
   scenariokit.js      scenari propri e generatore di terreno a specchio
   catalog.js          voci di collezione, foto, pittura, aggancio dei nomi
   lists.js            liste salvate e collegamento unità → catalogo
@@ -381,6 +384,7 @@ test/
   regole.mjs          tipi di truppa, ritiri, archi, effetti, terreno, file d'esercito
   motore.mjs          le sedici caselle, le azioni, i dadi chiesti, il registro
   movimento.mjs       carica: arco, vista, distanza, reazioni, allineamento, fuga
+  mischia.mjs         bonus della carica, risultato, i tre esiti del test di rotta, overkill
   sync.mjs            archivio su GitHub, contro un GitHub finto in memoria
   boot.mjs            la pagina intera: schede, annulla, zoom, partita, report, link
 tools/
@@ -423,7 +427,7 @@ Prova anche le cose nuove dove si vedono davvero: che i cerchi del movimento res
 - Le soglie di movimento vengono dal manuale (marcia `M×2`, carica `M` più il maggiore di due D6), ma restano **una stima disegnata**: il ventaglio non sa dove ti conviene ruotare, e M si corregge a mano quando il roster sbaglia o quando una regola lo cambia.
 - Le ferite e le etichette l'app le **conta e le scrive**, non le interpreta: nessuna ferita fa cadere un modello da sola, nessuna etichetta cambia il comportamento di niente.
 - Il registro dei turni si scrive quando premi *Chiudi il turno*: se te ne dimentichi due, quei due turni nel report non esistono. È un diario, non un arbitro che guarda.
-- Lo **scontro simulato** è una stima, non un arbitro. Conosce quello che sta nel profilo e i numeri che imposti a mano; non sa niente di magia, oggetti, regole d'esercito, terrore, colpi mortali. Quanti modelli si toccano e quanti colpi porta l'urto della carica sono l'ordine di grandezza giusto, non la misura esatta: si correggono nel pannello, ed è per questo che il campo *Attacchi* è modificabile.
+- Lo **scontro simulato** è una stima, non un arbitro. Conosce quello che sta nel profilo e i numeri che imposti a mano; non sa niente di magia, oggetti, regole d'esercito, terrore. Le regole speciali che non applica non spariscono: restano in elenco, e dove la lista porta con sé il testo del manuale l'etichetta lo mostra per intero, così quella regola la applicate voi. Quanti modelli si toccano e quanti colpi porta l'urto della carica sono l'ordine di grandezza giusto, non la misura esatta: si correggono nel pannello, ed è per questo che il campo *Attacchi* è modificabile.
 - Il **campo di tiro** guarda dal centro del fronte, non da ogni singola miniatura. Le coperture le decide il tipo di elemento scenico — bosco leggera, rovine e muretti pesante — non il pezzo vero che hai in mano.
 - Il **ventaglio di movimento** non fa ruotare l'unità: mostra dove arriva andando avanti nel proprio arco frontale, che è il caso normale. Una riorganizzazione o un giro sul posto restano da immaginare.
 - La **carica** calcola il costo della ruota ma non lo scala da un budget di movimento, e il *tira e tieni* apre la reazione senza tirare la raffica: quella si tira dal pannello del tiro. Il ripiegamento in ordine dice da sé che i suoi dadi vanno confrontati con il libro.

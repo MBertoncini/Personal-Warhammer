@@ -16,10 +16,11 @@
  * da sola quando un pezzo le manca.
  */
 
-import { hitMelee, woundOn, saveOn, pool, roll, chance, rankBonus,
-         leadershipTest, stat, weaponStrength, weaponAP, IMPOSSIBLE } from './rules.js';
+import { hitMelee, woundOn, saveOn, pool, roll, chance, expected,
+         stat, weaponStrength, weaponAP, IMPOSSIBLE } from './rules.js';
 import { readRules, splitWeaponRules, emptyFlags } from './rulebook.js';
 import { troopType, usPerModel } from './troops.js';
+import * as ML from './melee.js';
 
 /* ============================================================
    1 · DALL'UNITA' DEL TAVOLO ALLA SCHIERA CHE COMBATTE
@@ -39,19 +40,31 @@ export function rangedWeapons(u){
     .sort((a, b) => stat(b.range) - stat(a.range));
 }
 
-/* Quante ferite d'urto porta una carica. Il numero sta scritto nel nome
-   della regola — "Impact Hits (D3)", "(2)" — e prima veniva ignorato:
-   si contava una ferita per modello della prima fila, che per un carro
-   e' generoso e per un mostro solo e' assurdo. Quando fra parentesi non
-   c'e' niente si torna al vecchio ordine di grandezza. */
-function impactHits(side, front){
-  const a = side.flags && side.flags.impact;
+/* Quanti colpi automatici porta una regola che li conta fra parentesi.
+   Il numero sta scritto nel nome — "Impact Hits (D3)", "(2)",
+   "Stomp Attacks (D3+1)" — e prima veniva ignorato: si contava una
+   ferita per modello della prima fila, che per un carro e' generoso e
+   per un mostro solo e' assurdo. Quando fra parentesi non c'e' niente
+   si torna al vecchio ordine di grandezza. */
+function autoHits(a, front){
   if (!a) return 0;
   if (a.flat) return a.flat;
   if (a.die) return roll(a.times || 1).reduce((s, d) => s + 1 + Math.floor((d - 1) * a.die / 6), 0)
                     + (a.plus || 0);
   return front;
 }
+
+/* I tre pollici che accendono la carica.
+   Il testo di *Impact Hits* e di *Furious Charge* — per esteso dentro
+   le liste salvate, e mai letto da nessuno — mette la stessa
+   condizione: valgono per un modello che ha caricato muovendo **3″ o
+   piu'**. L'app le dava a chiunque avesse caricato, anche a chi era
+   arrivato a contatto con mezzo pollice.
+
+   Quanti pollici siano lo sa il tavolo dalla Tappa 2, che li scrive
+   sull'unita' quando la carica arriva (`u.charged.inches`). */
+export const CHARGE_IMPETUS = 3;
+const ranIn = c => !!c.charged && (c.chargeInches || 0) >= CHARGE_IMPETUS;
 
 /* Il sei naturale: quello che accende meta' delle regole speciali. Un 6
    passa sempre, quindi contarli fra i dadi usciti basta e non serve
@@ -80,6 +93,11 @@ export function combatant(u, over = {}){
   const st = u.stats || {};
   const melee = meleeWeapon(u);
   const alive = Math.max(0, (u.models || 1) - (u.lost || 0));
+  /* Quanti pollici ha percorso caricando e da che faccia e' arrivato:
+     la Tappa 2 lo scrive qui quando la carica va a segno, e fino alla
+     Tappa 3 non lo leggeva nessuno — il pannello ripeteva a mano la
+     domanda «ha caricato?» a cui il tavolo aveva gia' risposto. */
+  const ch = u.charged && typeof u.charged === "object" ? u.charged : null;
   const c = {
     ref: u, name: u.name, army: u.army,
     ws: stat(st.WS), bs: stat(st.BS), s: stat(st.S), t: stat(st.T),
@@ -104,14 +122,28 @@ export function combatant(u, over = {}){
     loose: !!u.loose, rules: u.rules || [],
     standard: !!(u.command && u.command.standard),
     musician: !!(u.command && u.command.musician),
-    charged: false, flank: "", spill: 0,
+    /* Quello che la carica si e' lasciata dietro, e che adesso pesa in
+       tre punti diversi: l'ordine in cui si mena, il bonus di fianco
+       del risultato, e i ranghi che il terreno toglie (pp. 128 e 146). */
+    charged: !!ch, chargeInches: ch ? (ch.inches || 0) : 0,
+    chargeArc: ch ? (ch.arc || "fronte") : "fronte",
+    flank: ch ? ML.arcToFlank(ch.arc) : "",
+    disordered: !!u.disordered, disrupted: !!u.disrupted,
+    highGround: !!u.highGround, overkill: 0,
+    spill: 0,
   };
+  /* La Forza dell'arma vale per i colpi che si tirano. Le ferite d'urto
+     e i pestoni usano la Forza NON modificata del modello — lo dice il
+     testo delle due regole — e per averla bisogna tenersela da parte
+     prima che la lancia la alzi di due punti. */
+  c.baseS = c.s;
   if (melee) c.s = weaponStrength(melee, c.s);
 
   /* Le regole: quelle dell'unita' e quelle dell'arma che sta davvero
      impugnando. Le seconde stavano nel file da sempre, lette e mai
      usate — ed e' li' che vive meta' di quello che decide un assalto. */
-  const read = readRules(u.rules || [], splitWeaponRules(melee && melee.rules), melee ? melee.name : "");
+  const read = readRules(u.rules || [], splitWeaponRules(melee && melee.rules),
+                         melee ? melee.name : "", u.ruleText || null);
   c.flags = read.flags;
   c.rulesRead = { applied: read.applied, elsewhere: read.elsewhere, unknown: read.unknown };
 
@@ -123,8 +155,9 @@ export function combatant(u, over = {}){
 }
 
 /* Gli attacchi che questo modello porta adesso: la caratteristica del
-   profilo piu' quello che la carica furiosa aggiunge. */
-const attacksOf = c => (c.a || 1) + (c.charged && c.flags && c.flags.furiousCharge ? 1 : 0);
+   profilo piu' quello che la carica furiosa aggiunge — e la carica
+   furiosa vuole i suoi tre pollici di corsa, come l'urto. */
+const attacksOf = c => (c.a || 1) + (ranIn(c) && c.flags && c.flags.furiousCharge ? 1 : 0);
 
 /* Quanti si toccano davvero: la prima fila e' larga quanto la piu'
    stretta delle due, e una fila dietro appoggia con un colpo a testa.
@@ -143,7 +176,7 @@ export function contact(att, def){
 /* ============================================================
    2 · UN COLPO
    ============================================================ */
-export function strike(att, def, { attacks, auto = false, strength, ap, label = "" } = {}){
+export function strike(att, def, { attacks, auto = false, strength, ap, label = "", round = 1 } = {}){
   /* `forcedAttacks` e' il numero corretto a mano nel pannello: chi
      guarda il tavolo vede quanti si toccano meglio di qualsiasi conto */
   const n = Math.max(0, attacks ?? att.forcedAttacks ?? contact(att, def).attacks);
@@ -154,7 +187,16 @@ export function strike(att, def, { attacks, auto = false, strength, ap, label = 
   const notes = [];
 
   const hitNeed = auto ? 0 : hitMelee(att.ws, def.ws);
-  const hit = auto ? { dice: [], hits: n, need: 0, of: n } : pool(n, hitNeed);
+  /* L'Odio ritira i colpi mancati, e solo nel primo assalto. Era
+     elencato fra le regole «che si giocano altrove — e' un test di
+     psicologia»: nel manuale di questa edizione non e' un test, e' un
+     ritiro, e il testo che le liste salvate portano con se' lo dice in
+     tre righe. Il ritiro vero lo fa `pool`, che sa gia' che un dado
+     non si ritira due volte (p. 93). */
+  const hateful = !auto && f.hatred && round === 1;
+  const hit = auto ? { dice: [], hits: n, need: 0, of: n } : pool(n, hitNeed, hateful ? "misses" : null);
+  if (hit.rerolled) notes.push("Odio: " + hit.rerolled +
+    (hit.rerolled === 1 ? " colpo mancato ritirato" : " colpi mancati ritirati"));
 
   /* Veleno: il 6 naturale per colpire non ferisce da solo, da' due punti
      al tiro per ferire. Quei colpi si tirano a parte, con il loro
@@ -206,90 +248,115 @@ export function applyWounds(side, wounds){
 
 /* ============================================================
    3 · UN ASSALTO INTERO
+   L'ordine e' quello del manuale, e la Tappa 3 ne ha cambiati due
+   pezzi: in cima l'urto della carica vuole i suoi tre pollici, in
+   fondo i pestoni arrivano dopo tutti gli altri attacchi — prima
+   stavano insieme all'urto, cioe' pestavano modelli che dopo
+   sarebbero caduti comunque.
    ============================================================ */
 const clone = c => ({ ...c, spill: 0 });
+const usOf = c => (c.usPer || 1) * (c.models || 0);
 
-export function meleeRound(A, B){
+export function meleeRound(A, B, { round = 1, challenge = false } = {}){
   const a = clone(A), b = clone(B);
   const steps = [];
   const done = { A: 0, B: 0 };          // ferite inflitte da ciascuno
 
   const blow = (att, def, tag, opts) => {
     if (def.models <= 0 || att.models <= 0) return;
-    const r = strike(att, def, opts);
+    const r = strike(att, def, { round, ...opts });
     const kills = applyWounds(def, r.wounds);
     done[tag] += r.wounds;
     steps.push({ side: tag, name: att.name, ...r, kills });
   };
+  const pair = [[a, b, "A"], [b, a, "B"]];
 
-  /* prima l'urto della carica, che arriva addosso senza tirare per colpire */
-  for (const [att, def, tag] of [[a, b, "A"], [b, a, "B"]]){
-    const n = att.charged ? impactHits(att, contact(att, def).front) : 0;
-    if (n) blow(att, def, tag, { attacks: n, auto: true, label: "urto della carica" });
+  /* prima l'urto della carica, che arriva addosso senza tirare per
+     colpire, e solo da chi ha corso almeno tre pollici */
+  for (const [att, def, tag] of pair){
+    if (!ranIn(att)) continue;
+    const n = autoHits(att.flags && att.flags.impact, contact(att, def).front);
+    if (n) blow(att, def, tag, { attacks: n, auto: true, strength: att.baseS,
+                                 label: "urto della carica" });
   }
 
-  /* poi si mena, in ordine di Iniziativa — salvo chi ha un'arma che
-     decide l'ordine da sola. L'arma pesante che colpisce per ultima era
-     scritta nel file e non veniva letta: chi la impugnava si teneva la
-     Forza in piu' senza pagarne il prezzo. */
-  const speed = c => c.flags.strikeFirst ? 99 : c.flags.strikeLast ? -99 : c.i;
-  const sa = speed(a), sb = speed(b);
-  if (sa === sb){
-    const ra = strike(a, b, { label: "colpi" }), rb = strike(b, a, { label: "colpi" });
+  /* poi si mena, in ordine di Iniziativa — con dentro il bonus della
+     carica (p. 146), che e' la novita' della Tappa 3 — salvo chi ha
+     un'arma che decide l'ordine da sola. */
+  const order = ML.strikeOrder(a, b);
+  if (order.together){
+    const ra = strike(a, b, { label: "colpi", round }), rb = strike(b, a, { label: "colpi", round });
     const ka = applyWounds(b, ra.wounds), kb = applyWounds(a, rb.wounds);
     done.A += ra.wounds; done.B += rb.wounds;
     steps.push({ side: "A", name: a.name, ...ra, kills: ka, together: true });
     steps.push({ side: "B", name: b.name, ...rb, kills: kb, together: true });
   } else {
-    const first  = sa > sb ? ["A", a, b] : ["B", b, a];
-    const second = first[0] === "A" ? ["B", b, a] : ["A", a, b];
-    blow(first[1],  first[2],  first[0],  { label: "colpi" });
-    blow(second[1], second[2], second[0], { label: "colpi" });
+    const first  = order.first === "A" ? [a, b, "A"] : [b, a, "B"];
+    const second = order.first === "A" ? [b, a, "B"] : [a, b, "A"];
+    blow(first[0],  first[1],  first[2],  { label: "colpi" });
+    blow(second[0], second[1], second[2], { label: "colpi" });
+  }
+
+  /* e per ultimi i pestoni: «dopo tutti gli altri attacchi, compresi
+     quelli a Iniziativa 1», dice il testo della regola. Non vogliono la
+     carica — basta essere a contatto — e usano anche loro la Forza non
+     modificata del modello. */
+  for (const [att, def, tag] of pair){
+    const n = autoHits(att.flags && att.flags.stomp, 1);
+    if (n) blow(att, def, tag, { attacks: n, auto: true, strength: att.baseS,
+                                 label: "pestoni" });
+  }
+
+  /* L'overkill di una sfida: le ferite in piu' di quelle che
+     sarebbero bastate non si perdono, contano nel risultato. Si
+     misurano sulle ferite che l'avversario aveva PRIMA, non su quelle
+     che gli restano. */
+  if (challenge){
+    a.overkill = ML.overkill(done.A, (B.models || 0) * (B.w || 1)).counted;
+    b.overkill = ML.overkill(done.B, (A.models || 0) * (A.w || 1)).counted;
   }
 
   const cr = resolution(a, b, done);
   const wiped = a.models <= 0 ? "A" : b.models <= 0 ? "B" : "";
-  /* Il test di rotta. Chi non si rompe non lo fa; chi e' testardo lo fa
-     al Comando pieno, senza lo scarto del combattimento addosso. */
-  let test = null;
-  if (!wiped && cr.loser){
-    const side = cr.loser === "A" ? a : b;
-    if (side.flags.unbreakable)
-      test = { side: cr.loser, dice: [], total: 0, target: side.ld, passed: true, insane: false, unbreakable: true };
-    else
-      test = { side: cr.loser, stubborn: !!side.flags.stubborn,
-               ...leadershipTest(side.ld, side.flags.stubborn ? 0 : cr.diff) };
-  }
-  return { a, b, steps, cr, test, wiped, done,
+  const test = wiped || !cr.loser ? null
+    : breakFor(cr.loser === "A" ? a : b, cr.loser === "A" ? b : a, cr.diff, cr.loser);
+  return { a, b, steps, cr, test, wiped, done, order, round, challenge,
            killsA: A.models - a.models, killsB: B.models - b.models };
 }
 
-/* Il conto di fine assalto. Le voci sono quelle che al tavolo si contano
-   sulle dita: ferite, ranghi, stendardo, chi e' in piu', il fianco. */
+/* Il test di rotta di chi ha perso. Tre esiti invece di due (p. 154), e
+   due regole speciali che lo saltano in due modi diversi.
+
+   Lo Stubborn e' una scelta e non un tiro: si dichiara *prima* dei
+   dadi e una volta sola per partita. Un assalto simulato non sa a che
+   punto della partita siamo, quindi qui la condotta e' scritta in
+   chiaro, in una riga sola: lo si dichiara quando andarsene e' piu'
+   probabile che cedere terreno, cioe' quando il ripiegamento sicuro
+   vale piu' della scommessa. Al tavolo la scelta resta di chi gioca,
+   con le tre probabilita' sotto gli occhi.
+
+   Da notare, perche' non e' ovvio: la rotta dipende dal tiro naturale
+   e quindi NON dallo scarto del combattimento. Perdere di otto invece
+   che di due non fa scappare di piu': fa ripiegare invece di cedere
+   terreno. E' tutto il senso dei tre esiti. */
+function breakFor(side, winner, diff, tag){
+  const f = side.flags || {};
+  const crushed = ML.crushingUS(usOf(winner), usOf(side));
+  const chances = ML.breakChances(side.ld, diff, { crushed });
+  const base = { side: tag, chances, crushed };
+  if (f.unbreakable)
+    return { ...base, ...ML.breakOutcome({ ld: side.ld, diff, unbreakable: true }) };
+  if (f.stubborn && !side.stubbornUsed && chances.rout > chances.give)
+    return { ...base, ...ML.breakOutcome({ ld: side.ld, diff, stubbornNow: true }) };
+  return { ...base, ...ML.breakOutcome({ ld: side.ld, diff, dice: roll(2), crushed }) };
+}
+
+/* Il conto di fine assalto. Le voci sono quelle che al tavolo si
+   contano sulle dita, e da questa tappa stanno in `melee.js` insieme
+   al resto del combattimento: qui resta la traduzione da schiera a
+   scheda, che e' l'unica cosa che sa di `combat.js`. */
 export function resolution(a, b, done){
-  const us = c => c.usPer * c.models;
-  const score = (me, foe, wounds) => {
-    /* i ranghi che contano sono al massimo quelli che il tipo di truppa
-       concede: tre per la fanteria, meno per chi e' grosso, nessuno per
-       un mostro solo (p. 105) */
-    const cap   = me.troop ? me.troop.maxRank : 3;
-    const rank  = rankBonus(me.models, me.frontage, cap);
-    const std   = me.standard ? 1 : 0;
-    const out   = us(me) > us(foe) ? 1 : 0;
-    const flank = me.flank === "rear" ? 2 : me.flank === "flank" ? 1 : 0;
-    return { wounds, rank, std, out, flank, total: wounds + rank + std + out + flank };
-  };
-  const A = score(a, b, done.A), B = score(b, a, done.B);
-  const diff = Math.abs(A.total - B.total);
-  let loser = A.total === B.total ? "" : (A.total > B.total ? "B" : "A");
-  /* Il musico non aggiunge un punto: rompe la parita'. Sta nel file
-     come profilo di comando e finora non lo guardava nessuno. */
-  let tie = "";
-  if (!loser && a.musician !== b.musician){
-    tie = a.musician ? "A" : "B";
-    loser = a.musician ? "B" : "A";
-  }
-  return { A, B, diff, loser, tie, winner: loser ? (loser === "A" ? "B" : "A") : "" };
+  return ML.combatResult(ML.scoreCardOf(a, done.A), ML.scoreCardOf(b, done.B));
 }
 
 /* ============================================================
@@ -298,15 +365,21 @@ export function resolution(a, b, done){
    Ripetuto molte volte diventa la risposta alla domanda vera, che e'
    "conviene?".
    ============================================================ */
-export function odds(A, B, n = 500){
-  const out = { n, winA: 0, winB: 0, draw: 0, breakA: 0, breakB: 0,
+export function odds(A, B, n = 500, opts = {}){
+  const out = { n, winA: 0, winB: 0, draw: 0,
+                /* i tre esiti del test di rotta, contati a parte: «ha
+                   perso» e «se n'e' andata» sono due domande diverse, e
+                   fra le due c'e' adesso tutto lo spazio del cedere
+                   terreno e del ripiegare in ordine */
+                giveA: 0, giveB: 0, fallA: 0, fallB: 0, routA: 0, routB: 0,
                 killsA: 0, killsB: 0, wipeA: 0, wipeB: 0 };
+  const key = { give: "give", fallBack: "fall", rout: "rout" };
   for (let k = 0; k < n; k++){
-    const r = meleeRound(A, B);
+    const r = meleeRound(A, B, opts);
     if (r.cr.winner === "A") out.winA++;
     else if (r.cr.winner === "B") out.winB++;
     else out.draw++;
-    if (r.test && !r.test.passed) out["break" + r.test.side]++;
+    if (r.test) out[key[r.test.outcome] + r.test.side]++;
     out.killsA += r.killsA; out.killsB += r.killsB;
     if (r.wiped === "A") out.wipeA++;
     if (r.wiped === "B") out.wipeB++;
@@ -320,6 +393,10 @@ export function meleeForecast(att, def, attacks){
   const n = attacks ?? att.forcedAttacks ?? contact(att, def).attacks;
   const f = att.flags || emptyFlags();
   const h = hitMelee(att.ws, def.ws);
+  /* Con l'Odio i colpi mancati si ritirano, e la media dei colpi
+     andati a segno sale: il conto lo sa gia' fare `expected`, che la
+     stessa regola la applica ai dadi veri. */
+  const hChance = f.hatred ? expected(1, h, "misses") : chance(h);
   const w = woundOn(att.s, def.t);
   /* col veleno un colpo su sei ferisce con due punti di sconto: la
      media si fa sui due casi, non su uno */
@@ -331,9 +408,9 @@ export function meleeForecast(att, def, attacks){
     : f.armourBane ? (5 / 6) * chance(sv) + (1 / 6) * chance(saveOn(def.armour, att.ap + f.armourBane))
     : chance(sv);
   const wd = saveOn(def.ward, 0), rg = saveOn(def.regen, 0);
-  const wounds = n * chance(h) * wChance * (1 - svChance) * (1 - chance(wd)) * (1 - chance(rg));
+  const wounds = n * hChance * wChance * (1 - svChance) * (1 - chance(wd)) * (1 - chance(rg));
   return { attacks: n, hitNeed: h, woundNeed: w, saveNeed: sv, wardNeed: wd, regenNeed: rg,
-           wounds, kills: wounds / def.w };
+           hatred: !!f.hatred, wounds, kills: wounds / def.w };
 }
 
 /* ============================================================

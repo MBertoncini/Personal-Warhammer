@@ -80,9 +80,13 @@ export const PHASES = [
     { id:"result", label:"Risultato del combattimento",
       what:"ferite, ranghi, stendardo, fianco, retro, terreno piu' alto",
       does:["note","roll","combatResult"] },
+    /* Le tre mosse dei tre esiti succedono qui, non in «Mosse
+       obbligate»: chi cede terreno e chi ripiega in ordine si sposta
+       dentro il corpo a corpo, e senza questa riga ogni arretramento
+       si portava dietro la nota «questo di solito si fa altrove». */
     { id:"breakTest", label:"Test di rotta",
       what:"cede terreno, ripiega in ordine, oppure rotta",
-      does:["note","roll","breakTest","flee"] },
+      does:["note","roll","breakTest","flee","compulsoryMove"] },
     { id:"pursuit", label:"Inseguimento",
       what:"inseguimento, sfondamento, unita' travolta",
       does:["note","roll","pursue","overrun"] },

@@ -66,9 +66,33 @@ export const RULEBOOK = [
     what:"l'arma a una mano perfora di 1",
     on: f => { f.handWeaponAP = Math.max(f.handWeaponAP, 1); } },
 
-  { id:"impact", re:/^(impact hits|stomp|thunderstomp)/i,
+  /* Ferite d'urto e pestoni erano la stessa riga, e sono due regole
+     diverse che si risolvono in due momenti opposti dell'assalto. Il
+     testo che le liste salvate portano con se' lo dice in chiaro:
+     l'urto lo fa «un modello che ha caricato muovendo 3″ o piu'» e si
+     risolve *prima* delle sfide; il pestone lo fa chiunque sia a
+     contatto di basetta e si fa *per ultimo, dopo tutti gli altri
+     attacchi, compresi quelli a Iniziativa 1».
+
+     Fuse in un flag solo, un mostro che ha tutte e due ne perdeva una
+     — la seconda lettura sovrascriveva la prima — e i pestoni
+     arrivavano all'inizio invece che alla fine, cioe' colpivano
+     modelli che a quel punto erano gia' a terra. */
+  { id:"impact", re:/^impact hits/i,
     what:"ferite d'urto alla carica, senza tirare per colpire",
     on: (f, name) => { f.impact = amount(name) || { perFront: 1 }; } },
+
+  { id:"stomp", re:/^(stomp|thunderstomp)/i,
+    what:"pestoni alla fine di tutto, senza tirare per colpire",
+    on: (f, name) => { f.stomp = amount(name) || { flat: 1 }; } },
+
+  { id:"hatred", re:/^hatred/i,
+    what:"ritira i colpi mancati nel primo assalto",
+    on: f => { f.hatred = true; } },
+
+  { id:"battleStandard", re:/^battle standard/i,
+    what:"+1 al risultato del combattimento, e si somma allo stendardo",
+    on: f => { f.battleStandard = true; } },
 
   { id:"extraRank", re:/^fight in (an )?extra rank/i,
     what:"combatte una fila in piu'",
@@ -82,12 +106,23 @@ export const RULEBOOK = [
     what:"mena per primo qualunque sia l'Iniziativa",
     on: f => { f.strikeFirst = true; } },
 
+  /* Queste due dicevano tutte e due una cosa che nel manuale non c'e'
+     piu', e la dicevano con la sicurezza di una riga di codice. Il
+     testo vero sta nelle liste salvate, e sono due regole del test di
+     rotta a tre esiti:
+
+       Stubborn — «la prima volta che deve fare un test di rotta puo'
+       scegliere di non farlo, e ripiega in ordine». Non e' un test al
+       Comando pieno: e' saltare il test, una volta per partita.
+
+       Unbreakable — «non deve fare il test di rotta: cede terreno,
+       spinta indietro dal nemico». Non e' restare fermi. */
   { id:"stubborn", re:/^stubborn/i,
-    what:"il test di rotta si fa senza lo scarto del combattimento",
+    what:"una volta per partita puo' saltare il test di rotta e ripiegare in ordine",
     on: f => { f.stubborn = true; } },
 
   { id:"unbreakable", re:/^unbreakable/i,
-    what:"non fa test di rotta",
+    what:"non fa test di rotta: cede terreno e basta",
     on: f => { f.unbreakable = true; } },
 
   /* Non fa niente qui perche' e' gia' stata fatta: il valore d'armatura
@@ -108,13 +143,13 @@ export const RULEBOOK = [
 export const ELSEWHERE = [
   { re:/^cold blooded/i,      why:"vale sui test di Paura, Panico e Terrore, non sul test di rotta" },
   { re:/^(fear|terror)/i,     why:"si gioca alla dichiarazione della carica" },
-  { re:/^(stupidity|frenzy|hatred|animosity)/i, why:"e' un test di psicologia, prima del contatto" },
+  { re:/^(stupidity|frenzy|animosity)/i, why:"e' un test di psicologia, prima del contatto" },
   { re:/^(skirmish|loose formation|open order|close order)/i, why:"e' una formazione: cambia la sagoma sul tavolo, non i dadi" },
   { re:/^(fly|swiftstride|fast cavalry|move through cover|aquatic|scout|vanguard|ambush|swim)/i,
     why:"riguarda il movimento" },
   { re:/^(requires two hands)/i, why:"e' una scelta di equipaggiamento: decidi tu quale arma impugna" },
   { re:/^(move (and|&) shoot|quick shot|multiple shots|volley fire)/i, why:"riguarda il tiro, non la mischia" },
-  { re:/^(general|battle standard|rallying cry|arcane vassal|lore of|wizard|channel)/i,
+  { re:/^(general|rallying cry|arcane vassal|lore of|wizard|channel)/i,
     why:"comando o magia: fuori dal conto di un assalto" },
   { re:/^(large target|unit strength|drop rocks|breath weapon|regenerat)/i,
     why:"non entra nella risoluzione di una mischia" },
@@ -125,8 +160,9 @@ export const ELSEWHERE = [
    ============================================================ */
 export const emptyFlags = () => ({
   furiousCharge:false, poisoned:false, armourBane:0, killingBlow:false,
-  handWeaponAP:0, impact:null, extraRank:false,
+  handWeaponAP:0, impact:null, stomp:null, extraRank:false, hatred:false,
   strikeFirst:false, strikeLast:false, stubborn:false, unbreakable:false,
+  battleStandard:false,
 });
 
 /* Le regole dell'arma arrivano come una riga sola, separate da virgola:
@@ -158,8 +194,17 @@ function limitMet(limit, weapon){
 
 /* names: le regole dell'unita'. weapons: quelle dell'arma che sta
    usando davvero, che sono altrettanto vincolanti e prima venivano
-   lette e poi buttate. weapon: come si chiama quell'arma. */
-export function readRules(names = [], weapons = [], weapon = ""){
+   lette e poi buttate. weapon: come si chiama quell'arma.
+
+   `texts` e' il pezzo che mancava, ed era in casa da sempre: i file di
+   New Recruit portano il testo per esteso di ogni regola speciale, il
+   parser lo legge e lo tiene su `u.ruleText`, e nessuno lo guardava —
+   settanta regole del manuale scritte per intero dentro le liste
+   salvate. Adesso ogni riga dei tre elenchi se lo porta dietro, e una
+   regola che l'app non conosce smette di essere un nome: diventa un
+   nome e le sue tre righe di manuale, che al tavolo bastano per
+   applicarla a mano. */
+export function readRules(names = [], weapons = [], weapon = "", texts = null){
   const flags = emptyFlags();
   const applied = [], elsewhere = [], unknown = [];
   const seen = new Set();
@@ -169,19 +214,21 @@ export function readRules(names = [], weapons = [], weapon = ""){
     if (!name || seen.has(name.toLowerCase())) continue;
     seen.add(name.toLowerCase());
 
+    const text = (texts && texts[name]) || "";
+
     const hit = RULEBOOK.find(r => r.re.test(name));
     if (hit){
       const limit = limitOf(name);
       const met = limitMet(limit, weapon);
-      if (met === false){ elsewhere.push({ name, why: "vale solo per " + limit }); continue; }
+      if (met === false){ elsewhere.push({ name, text, why: "vale solo per " + limit }); continue; }
       hit.on(flags, name);
-      applied.push({ name, what: hit.what, caveat: met === null ? "solo per " + limit : "" });
+      applied.push({ name, text, what: hit.what, caveat: met === null ? "solo per " + limit : "" });
       continue;
     }
 
     const out = ELSEWHERE.find(r => r.re.test(name));
-    if (out) elsewhere.push({ name, why: out.why });
-    else unknown.push({ name });
+    if (out) elsewhere.push({ name, text, why: out.why });
+    else unknown.push({ name, text });
   }
   return { flags, applied, elsewhere, unknown };
 }

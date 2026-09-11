@@ -122,7 +122,7 @@ ok('non passano piu ferite dei colpi andati a segno',
 ok('le perdite non superano i modelli in campo',
    r.killsA >= 0 && r.killsA <= 12 && r.killsB >= 0 && r.killsB <= 20);
 ok('il conto di fine assalto somma le sue voci',
-   r.cr.A.total === r.cr.A.wounds + r.cr.A.rank + r.cr.A.std + r.cr.A.out + r.cr.A.flank);
+   r.cr.A.total === r.cr.A.parts.reduce((s, p) => s + p.v, 0));
 /* i ranghi si contano a fine assalto, sui modelli rimasti: venti in
    file da cinque partono a +3 e scendono man mano che si accorciano.
    Il numero esatto dipende da come sono andati i dadi, quindi si
@@ -130,11 +130,13 @@ ok('il conto di fine assalto somma le sue voci',
    intervallo fisso, un assalto fortunato faceva fallire la prova una
    volta ogni venti. */
 const rimasti = 20 - r.killsB;
-ok('gli Orchi contano i ranghi e sono in piu',
-   r.cr.B.rank === Math.max(0, Math.min(3, Math.floor(rimasti / 5) - 1)) &&
-   r.cr.B.rank >= 1 && r.cr.B.out === 1);
-ok('e i Saurus, in file da sei e meno numerosi, no',
-   r.cr.A.rank <= 1 && r.cr.A.out === 0);
+ok('gli Orchi contano i ranghi',
+   r.cr.B.rank === Math.max(0, Math.min(3, Math.floor(rimasti / 5) - 1)) && r.cr.B.rank >= 1);
+ok('e i Saurus, in file da sei, quasi no', r.cr.A.rank <= 1);
+/* La superiorita' numerica non e' piu' una voce del risultato: era il
+   bonus dell'edizione di prima, e nell'elenco del manuale non c'e'.
+   Vedi il §3 di melee.js — si riaccende da una costante sola. */
+ok('essere in piu non da piu un punto', r.cr.B.out === 0 && r.cr.A.out === 0);
 ok('chi perde tira per i nervi, chi pareggia no',
    r.cr.loser ? (r.test && r.test.side === r.cr.loser) : r.test === null);
 
@@ -144,16 +146,33 @@ ok('il numero scritto a mano vince sul conto',
    C.strike(few, b).attacks === 3 && C.meleeForecast(few, b).attacks === 3);
 
 console.log('\nurto della carica');
-const boars = C.combatant(unit('Boar Boyz', { M:'7',WS:'3',BS:'3',S:'3',T:'4',W:'1',I:'2',A:'1',Ld:'7' },
-                               6, 3, { rules: ['Impact Hits'] }), { charged: true });
+/* L'urto vuole tre pollici di corsa: lo dice il testo della regola,
+   che le liste salvate portano per esteso. Chi arriva a contatto con
+   mezzo pollice non urta niente. */
+const boarUnit = unit('Boar Boyz', { M:'7',WS:'3',BS:'3',S:'3',T:'4',W:'1',I:'2',A:'1',Ld:'7' },
+                      6, 3, { rules: ['Impact Hits'] });
+const boars = C.combatant(boarUnit, { charged: true, chargeInches: 5 });
 const charge = C.meleeRound(boars, b);
 ok('chi carica urta prima di menare', charge.steps[0].label === 'urto della carica');
 ok('i colpi d urto non tirano per colpire', charge.steps[0].hit.dice.length === 0);
+const nudge = C.meleeRound(C.combatant(boarUnit, { charged: true, chargeInches: 2 }), b);
+ok('sotto i tre pollici non c e urto',
+   nudge.steps.every(s => s.label !== 'urto della carica'));
+/* i tre pollici arrivano dal tavolo: la carica della Tappa 2 li scrive
+   sull'unita' insieme alla faccia da cui e' entrata */
+const dalTavolo = C.combatant({ ...boarUnit, charged: { target:'Orc Mob', inches: 6.2, arc:'fianco' } });
+ok('la carica del tavolo entra nella schiera da sola',
+   dalTavolo.charged === true && dalTavolo.chargeInches === 6.2 && dalTavolo.flank === 'flank');
 
 console.log('\ncinquecento assalti');
 const o = C.odds(a, b, 500);
 ok('vittorie, sconfitte e pareggi fanno cinquecento', o.winA + o.winB + o.draw === 500);
-ok('gli Orchi vincono piu spesso: ranghi e numero', o.winB > o.winA);
+/* I tre esiti del test di rotta si contano separati, e insieme fanno
+   le volte in cui quella parte ha perso l'assalto senza essere
+   annientata: e' la prova che nessun esito si perde per strada. */
+ok('i tre esiti coprono tutte le sconfitte',
+   o.giveA + o.fallA + o.routA === o.winB - o.wipeA &&
+   o.giveB + o.fallB + o.routB === o.winA - o.wipeB);
 const f = C.meleeForecast(a, b);
 ok('la media simulata sta vicino alla previsione', near(o.killsB, f.wounds, 0.6));
 
@@ -271,9 +290,11 @@ ok('e nessuna resta sconosciuta', g.rulesRead.unknown.length === 0);
 
 const plain = C.combatant(unit('Fanti', { M:'4',WS:'3',BS:'0',S:'3',T:'3',W:'1',I:'3',A:'1',Ld:'7' }, 10, 5));
 ok('senza carica gli attacchi sono quelli del profilo', C.contact(g, plain).attacks === 5 * 1 + 5);
-g.charged = true;
+g.charged = true; g.chargeInches = 4;
 ok('in carica la carica furiosa ne aggiunge uno per modello', C.contact(g, plain).attacks === 5 * 2 + 5);
-g.charged = false;
+g.chargeInches = 1;
+ok('ma vuole i suoi tre pollici come l urto', C.contact(g, plain).attacks === 5 * 1 + 5);
+g.charged = false; g.chargeInches = 0;
 
 /* l'arma che colpisce per ultima scavalca l'Iniziativa, che qui e' la piu alta */
 const late = C.meleeRound(g, plain);
@@ -296,23 +317,28 @@ ok('la rigenerazione tira sulle ferite passate dalla speciale',
 ok('e le ferite finali tolgono quelle rimarginate',
    blow.wounds === blow.wound.hits - blow.save.hits - blow.regen.hits);
 
-/* Il testardo tira al Comando pieno, senza lo scarto addosso. Perche' i
-   test siano quelli di chi PERDE, il testardo qui e' la parte debole:
-   dodici scarsi contro dieci guardie con l'arma pesante. */
+/* Lo Stubborn non e' piu' «tira al Comando pieno»: il testo della
+   regola, che sta dentro le liste salvate, dice un'altra cosa — la
+   prima volta che dovrebbe fare il test puo' scegliere di non farlo e
+   ripiega in ordine. Perche' i test siano quelli di chi PERDE, il
+   testardo qui e' la parte debole: dodici scarsi contro dieci guardie
+   con l'arma pesante. */
 const weak = unit('Leva testarda', { M:'4',WS:'2',BS:'0',S:'3',T:'3',W:'1',I:'2',A:'1',Ld:'8' }, 12, 4,
                   { armour: 4, rules: ['Stubborn'] });
-const targets = [], plainTargets = [];
-for (let i = 0; i < 120; i++){
+const stub = [], plainTests = [];
+for (let i = 0; i < 200; i++){
   const rr = C.meleeRound(C.combatant(weak), C.combatant(armed));
-  if (rr.test && rr.test.side === 'A') targets.push({ t: rr.test.target, d: rr.cr.diff });
+  if (rr.test && rr.test.side === 'A') stub.push(rr.test);
   const r2 = C.meleeRound(C.combatant({ ...weak, rules: [] }), C.combatant(armed));
-  if (r2.test && r2.test.side === 'A') plainTargets.push({ t: r2.test.target, d: r2.cr.diff });
+  if (r2.test && r2.test.side === 'A') plainTests.push(r2.test);
 }
-ok('il testardo perde e tira lo stesso, al Comando pieno',
-   targets.length > 0 && targets.every(x => x.t === 8));
-ok('senza Stubborn lo scarto del combattimento si sottrae',
-   plainTargets.length > 0 && plainTargets.every(x => x.t === Math.max(2, 8 - x.d)) &&
-   plainTargets.some(x => x.d > 0));
+ok('il testardo, quando la rotta e probabile, salta il test e ripiega',
+   stub.some(t => t.stubborn && t.outcome === 'fallBack' && !t.dice.length));
+ok('e quando non lo e tira come tutti gli altri',
+   stub.some(t => !t.stubborn && t.dice.length === 2));
+ok('senza Stubborn si tira sempre, con lo scarto addosso',
+   plainTests.length > 0 && plainTests.every(t => t.dice.length === 2) &&
+   plainTests.some(t => t.diff > 0 && t.modified === t.natural + t.diff));
 
 /* ================================================================= */
 console.log('\ni dadi veri');

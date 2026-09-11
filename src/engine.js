@@ -191,10 +191,15 @@ export const ACTIONS = {
                   moments:["onCombatResult"],
                   line: a => a.text || ("scarto di " + (a.diff ?? "?")) },
 
+  /* Il test di rotta non ha piu' due esiti ma tre (p. 154), e la riga
+     di registro deve dire quale: «ha fallito» non basta piu' a sapere
+     dov'e' finito il reggimento, perche' fra il cedere due pollici e
+     l'andarsene dal tavolo ci sono due mosse diverse. */
   breakTest: { label:"test di rotta",
                moments:["onBreakTest"],
                needs: () => [d6("rotta", 2, "test di rotta")],
-               line: (a, r) => nm(a.unit) + " tiene i nervi: " + readRolls(r) },
+               line: (a, r) => nm(a.unit) + ": " + readRolls(r) +
+                               (a.outcome ? " — " + (BREAK_SAYS[a.outcome] || a.outcome) : "") },
 
   panic:   { label:"test di Panico",
              moments:["onPanic"],
@@ -202,8 +207,9 @@ export const ACTIONS = {
              line: (a, r) => nm(a.unit) + " tira il Panico: " + readRolls(r) },
 
   pursue:  { label:"inseguimento",
-             needs: () => [d6("inseguimento", 2, "quanto insegue")],
-             line: (a, r) => nm(a.unit) + " insegue: " + readRolls(r) },
+             needs: a => [d6("inseguimento", a.dice || 2, "quanto insegue")],
+             line: (a, r) => nm(a.unit) + " insegue: " + readRolls(r) +
+                             (a.caught ? " — " + nm(a.target) + " travolta" : "") },
 
   overrun: { label:"sfondamento",
              needs: () => [d6("sfondamento", 2, "quanto sfonda")],
@@ -220,6 +226,10 @@ export const ACTIONS = {
 
 const REACTIONS = {
   hold:"tiene la posizione", shoot:"tira e tiene", flee:"fugge",
+};
+
+const BREAK_SAYS = {
+  give:"cede terreno", fallBack:"ripiega in ordine", rout:"va in rotta",
 };
 
 /* ============================================================

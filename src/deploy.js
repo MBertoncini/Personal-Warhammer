@@ -10,6 +10,7 @@ import { photoForUnit, photoFor, catEntry, matchUnitName } from './catalog.js';
 import { rectPoly, pointInRect, boxCorners, polysOverlap,
          distPointToBox, toWorld, toLocal } from './geom.js';
 import * as CB from './combat.js';
+import * as ML from './melee.js';
 import { stat } from './rules.js';
 import * as EF from './effects.js';
 import { troopType, unitStrength } from './troops.js';
@@ -2036,6 +2037,10 @@ async function runBackward(u, kind){
                 { army: u.army });
     }
   });
+  /* Quanti pollici ha fatto lo deve sapere chi insegue: l'inseguimento
+     raggiunge se copre almeno la fuga (p. 156), e senza questo numero
+     il confronto non si puo' fare. */
+  return mv;
 }
 
 /* ---- giocarla ----
@@ -2178,6 +2183,100 @@ async function runFlee(t, from){
     t.x = mv.to.x; t.y = mv.to.y; t.rot = mv.to.rot;
     t.fled = true;
     t.moved = { kind:"flee", inches: mv.inches };
+  });
+}
+
+/* ============================================================
+   7d · LA FINE DELL'ASSALTO (Tappa 3)
+   Il pannello dello scontro sapeva gia' tirare tutto un assalto e
+   contare chi aveva vinto; quello che non sapeva era *portarlo sul
+   tavolo*. Le perdite si segnavano con un pulsante, il test di rotta
+   restava una frase dentro il pannello, e chi aveva perso lo si
+   spostava a mano indovinando quale delle tre mosse all'indietro
+   toccasse — con il risultato che nove volte su dieci si sceglieva la
+   fuga, che e' la sola che tutti ricordano.
+
+   Qui i quattro gesti tornano nell'ordine del manuale, e ognuno e'
+   un'azione del motore: il risultato (p. 152 e dintorni), il test a
+   tre esiti (p. 154), la mossa che l'esito impone (pp. 132-134),
+   l'inseguimento con l'unita' travolta (p. 156).
+   ============================================================ */
+async function resolveCombat({ a, b, round }){
+  const r = round;
+  /* Due strade e non una: o qualcuno ha perso e tira per i nervi, o
+     qualcuno non ha piu' nessuno in piedi — e allora non c'e' test da
+     fare, c'e' uno sfondamento da tirare (p. 156). La seconda mancava,
+     e il pannello scriveva «chi ha vinto sfonda» senza dare il modo di
+     farlo. */
+  if (!r || (!r.test && !r.wiped)) return;
+  const loserTag = r.wiped || r.cr.loser;
+  if (!loserTag) return;
+  const loser  = loserTag === "A" ? a : b;
+  const winner = loserTag === "A" ? b : a;
+
+  /* 1 · le perdite e il conto, in una casella sola: sono la stessa
+     cosa vista da due parti, e separarle vorrebbe dire due annulla per
+     tornare indietro di un passo. */
+  const parts = r.cr[loserTag === "A" ? "B" : "A"].parts
+    .map(p => p.v + " " + (p.v === 1 ? p.one : p.many)).join(" + ");
+  act("risultato del combattimento", () => {
+    /* Le perdite si segnano nella casella in cui si combatte e il conto
+       si fa in quella dopo: due caselle diverse, e passarci nell'ordine
+       giusto e' la differenza fra un registro pulito e uno in cui ogni
+       riga porta la nota «questo di solito si fa altrove». */
+    if (state.game.on) G.goStep(12);
+    for (const [u, n] of [[a, r.killsA], [b, r.killsB]])
+      if (n > 0) G.setLost(u, (u.lost || 0) + n);
+    if (state.game.on) G.goStep(13);
+    G.dispatch({ type:"combatResult", army: winner.army, diff: r.cr.diff,
+      text: winner.name + (r.wiped ? " spazza via " + loser.name : " vince di " + r.cr.diff) +
+            (parts ? " (" + parts + ")" : "") });
+  });
+
+  /* 2 · il test. I dadi sono quelli che il pannello ha appena mostrato
+     cadere nel vassoio: rifarli qui vorrebbe dire scrivere nel
+     registro un tiro diverso da quello che si e' visto. */
+  if (r.test) act("test di rotta", () => {
+    if (state.game.on) G.goStep(14);
+    G.dispatch({ type:"breakTest", unit: loser, army: loser.army, outcome: r.test.outcome,
+                 text: loser.name + " perde di " + r.cr.diff + ": " + r.test.text },
+               { rotta: { dice: r.test.dice || [], total: r.test.natural || 0 } });
+  });
+
+  /* 3 · la mossa che l'esito impone. Le tre le sa gia' fare la Tappa
+     2: qui cambia solo chi decide quale, e non e' piu' il dito. */
+  const mv = r.test && r.test.move ? await runBackward(loser, r.test.move) : null;
+
+  /* 4 · l'inseguimento. Si insegue chi e' andato in rotta; si sfonda
+     quando davanti non e' rimasto nessuno. Raggiunge se copre almeno
+     la distanza che l'altro ha fatto fuggendo. */
+  const wiped = !!r.wiped || loser.dead;
+  if (!wiped && (!r.test || r.test.outcome !== "rout")) return;
+  /* Il nome della richiesta non e' un dettaglio: il motore riconosce i
+     tiri per identificatore, e l'inseguimento e lo sfondamento — che
+     sono lo stesso tiro — nel vocabolario si chiamano in due modi
+     diversi. Chiamarli tutti e due «inseguimento» voleva dire uno
+     sfondamento che non finiva nel registro e non muoveva nessuno,
+     senza nemmeno un errore da leggere. */
+  const wanted = wiped ? "sfondamento" : "inseguimento";
+  const spec = { ...ML.pursuitDice(MV.swiftOf(winner)), id: wanted,
+                 why: wiped ? "quanto sfonda" : "quanto insegue" };
+  const rolls = await G.askRolls([spec], `${wiped ? "Sfondamento" : "Inseguimento"} di ${winner.name}`);
+  if (!rolls || !rolls[wanted]) return;
+  const roll = rolls[wanted].total;
+  const out = ML.pursuitOutcome({ roll, flee: mv ? mv.inches : 0, wiped });
+  const move = CH.pursuitMove(boxOf(winner), asPiece(loser), { roll });
+  act(wiped ? "sfondamento" : "inseguimento", () => {
+    if (state.game.on) G.goStep(15);
+    G.dispatch({ type: wiped ? "overrun" : "pursue", unit: winner, target: loser,
+                 army: winner.army, dice: spec.n, caught: out.caught,
+                 text: winner.name + " " + out.text }, rolls);
+    if (move){
+      MV.ensureAnchor(winner);
+      winner.x = move.to.x; winner.y = move.to.y; winner.rot = move.to.rot;
+      winner.moved = { kind: wiped ? "overrun" : "pursue", inches: move.inches };
+    }
+    if (out.caught) G.destroy(loser);
   });
 }
 
@@ -3738,6 +3837,10 @@ async function bootDeploy(){
     unit: uid => state.units.find(u => u.uid === uid) || null,
     setSave: (u, key, v) => act({ armour:"armatura", ward:"salvezza speciale", regen:"rigenerazione" }[key] || "salvezza",
                                 () => { u[key] = v; }),
+    /* Il pannello dello scontro non sa niente del tavolo, ed e' giusto
+       cosi': quando l'assalto e' finito chiede a noi di portarne
+       l'esito sui pezzi. */
+    resolveCombat,
     applyLosses: pairs => {
       act("perdite dallo scontro", () => {
         for (const [u, n] of pairs) if (n > 0) G.setLost(u, (u.lost || 0) + n);
