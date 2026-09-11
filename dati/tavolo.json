@@ -609,7 +609,8 @@
       },
       "wounds": 0,
       "tags": [],
-      "counters": []
+      "counters": [],
+      "armour": 3
     },
     {
       "uid": 66,
@@ -1807,8 +1808,12 @@
     "counters": {
       "A": [],
       "B": []
-    }
+    },
+    "step": 8
   },
-  "sel": null,
+  "sel": {
+    "type": "unit",
+    "id": 58
+  },
   "extras": null
 }
