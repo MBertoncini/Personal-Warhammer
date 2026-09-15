@@ -851,7 +851,11 @@ function movementBlockHTML(u){
             b ? ` di ${b.move}″` : ""}</b></div>
         ${cost && cost.plan.legs.length ? `
           <p class="note">${esc(cost.plan.label)}: ${cost.plan.legs.map(l =>
-            `${esc(l.label)} <b>${l.cost.toFixed(1)}″</b>`).join(" · ")}${
+            /* il numero non si ripete: «3″ all'indietro» dice già i
+               pollici percorsi, e accanto ci va solo quello che
+               costano quando è un altro numero */
+            `${esc(l.label)}${Math.abs(l.cost - l.inches) > 0.05 || l.id === "wheel"
+              ? ` <b>${l.cost.toFixed(1)}″</b>` : ""}`).join(" · ")}${
             cost.plan.note ? ` — ${esc(cost.plan.note)}` : ""}</p>
           ${cost.dist !== cost.cost ? `<p class="note dim">Il metro fra l'ancora e adesso dice ${cost.dist.toFixed(1)}″: la differenza è la ruota, che si paga (p. 124).</p>` : ""}
           ${cost.plans.length > 1 ? `<p class="note dim">Altri modi: ${cost.plans.slice(1).map(p =>

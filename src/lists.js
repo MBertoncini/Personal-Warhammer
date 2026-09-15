@@ -551,22 +551,30 @@ function listRowHTML(l){
             : c.toPaint ? `${c.toPaint} da dipingere` : "completa";
   const rec = PAL.recordOf(l.name);
   const faces = ext ? [] : facesOf(l);
+  /* La scheda è due righe e non tre colonne: il nome di una lista è
+     lungo («Il Monolite nella Giungla») e la fazione pure, e messi in
+     colonna accanto a una spunta finivano tutti e due in puntini —
+     cioè proprio le due cose per cui si guarda l'elenco. In fondo,
+     sulla larghezza piena, ci stanno. */
   return `
     <div class="ls-card${l.id === openId ? " sel" : ""}${ext ? " ext" : ""}" data-open="${l.id}">
       <div class="ls-faces">${faces.length
         ? faces.map(p => `<img src="${p}" alt="" loading="lazy">`).join("")
         : `<span class="ph">${ext ? "\u2197" : "\u2014"}</span>`}</div>
       <div class="ls-body">
-        <b class="ls-name">${esc(l.name)}</b>
-        <span class="mono">${esc(l.info?.catalogue || "senza esercito")} \u00b7 ${l.units.length} unit\u00e0 \u00b7 ${l.points} pt</span>
-        ${rec.played ? `<span class="ls-rec">${
+        <b class="ls-name" title="${esc(l.name)}">${esc(l.name)}</b>
+        <span class="mono">${esc(l.info?.catalogue || "senza esercito")}</span>
+      </div>
+      <div class="ls-foot">
+        <span class="mono dim">${l.units.length} unit\u00e0 \u00b7 ${l.points} pt</span>
+        ${rec.played ? `<span class="ls-rec" title="${esc(PAL.recordText(rec))}">${
           rec.won ? `<span class="w">${rec.won}V</span>` : ""}${
           rec.draw ? `<span class="d">${rec.draw}P</span>` : ""}${
           rec.lost ? `<span class="l">${rec.lost}S</span>` : ""}
-          <span class="dim">${rec.pts}\u2013${rec.against} pt</span></span>`
-        : `<span class="ls-rec dim">mai giocata</span>`}
+          <span class="dim">${rec.pts}\u2013${rec.against}</span></span>`
+        : ""}
+        <span class="chip ${key}">${txt}</span>
       </div>
-      <span class="chip ${key}">${txt}</span>
     </div>`;
 }
 
