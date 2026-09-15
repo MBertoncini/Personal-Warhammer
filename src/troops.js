@@ -1,18 +1,21 @@
 /* Schieramento Old World — i tipi di truppa (Core Rulebook 2023, p. 105)
  *
  * Una riga per tipo, e da quella riga discendono tre cose che il resto
- * del motore chiede di continuo: quanti modelli fanno una fila piena,
- * fino a quanti ranghi contano nel risultato del combattimento, e
- * quanta Forza d'Unita' vale ogni modello.
+ * del motore chiede di continuo: quanti modelli deve avere una fila per
+ * contare, fino a quanto sale il bonus di ranghi nel risultato del
+ * combattimento, e quanta Forza d'Unita' vale ogni modello.
  *
- * Da dove vengono i numeri. La colonna della Forza d'Unita' e'
- * verificata sulle dieci liste salvate in `dati/liste.json`: New
- * Recruit la scrive nel file, e per sei tipi su tredici c'e' almeno un
- * esempio vero che la conferma — fanteria 1, cavalleria 2, fanteria e
- * cavalleria mostruosa 3, creatura mostruosa e macchina da guerra 4,
- * colosso 6. Le celle senza esempio nelle liste di casa portano il
- * segno `daVerificare`, e l'app lo dice invece di far finta: e' la
- * regola del §1 del piano, quella che vieta di sbagliare in silenzio.
+ * Da dove vengono i numeri. Dalla tabella del libro (p. 105, pagina
+ * 106 del PDF), letta sul libro. La prima versione di questo file era
+ * scritta dal riassunto del piano e sbagliava quasi tutte le colonne:
+ * tre ranghi di bonus alla fanteria invece di due, cinque modelli per
+ * fila alla fanteria pesante invece di quattro, due ranghi alla
+ * cavalleria invece di uno, quattro di Forza d'Unita' al carro pesante
+ * invece di cinque, e ai mostri un numero fisso dove il libro dice «come
+ * le Ferite iniziali». Le liste salvate lo confermano riga per riga: il
+ * Doomwheel dichiara 5, lo Slann 5 con cinque Ferite, il Bastiladon 4
+ * con quattro. E' il sesto numero del Warhammer di prima trovato nel
+ * motore (§2 del piano).
  *
  * Il nome del tipo arriva dal file come testo libero e non e' pulito:
  * «Heavy Infantry», «Heavy infantry», «Regular infantry (character)».
@@ -22,25 +25,29 @@
 
 /* ============================================================
    1 · LA TABELLA
-   perRank   quanti modelli fanno una fila che conta
-   maxRank   quanti ranghi al massimo danno bonus (0 = non ne danno)
-   us        Forza d'Unita' per modello
-   ranks     se il tipo si schiera in ranghi
+   perRank   quanti modelli deve avere una fila per contare nel bonus
+             di ranghi (0 = il tipo non ne prende)
+   maxRank   il bonus di ranghi massimo (0 = nessuno)
+   us        Forza d'Unita' per modello; `usWounds` quando il libro
+             dice «come le Ferite iniziali»
+   ranks     se il tipo prende un bonus di ranghi
    ============================================================ */
+export const PAGE = 105;
+
 export const TROOPS = [
-  { id:"regularInfantry",  label:"Fanteria regolare",    perRank:5, maxRank:3, us:1, ranks:true  },
-  { id:"heavyInfantry",    label:"Fanteria pesante",     perRank:5, maxRank:3, us:1, ranks:true  },
-  { id:"lightInfantry",    label:"Fanteria leggera",     perRank:5, maxRank:3, us:1, ranks:true,  daVerificare:["us","maxRank"] },
-  { id:"monstrousInfantry",label:"Fanteria mostruosa",   perRank:3, maxRank:2, us:3, ranks:true,  daVerificare:["maxRank"] },
-  { id:"swarm",            label:"Sciame",               perRank:3, maxRank:0, us:3, ranks:true,  daVerificare:["us","maxRank"] },
-  { id:"lightCavalry",     label:"Cavalleria leggera",   perRank:5, maxRank:2, us:2, ranks:true,  daVerificare:["maxRank"] },
-  { id:"heavyCavalry",     label:"Cavalleria pesante",   perRank:5, maxRank:2, us:2, ranks:true,  daVerificare:["maxRank"] },
-  { id:"monstrousCavalry", label:"Cavalleria mostruosa", perRank:3, maxRank:1, us:3, ranks:true,  daVerificare:["maxRank"] },
-  { id:"lightChariot",     label:"Carro leggero",        perRank:1, maxRank:0, us:3, ranks:false, daVerificare:["us"] },
-  { id:"heavyChariot",     label:"Carro pesante",        perRank:1, maxRank:0, us:4, ranks:false, daVerificare:["us"] },
-  { id:"monstrousCreature",label:"Creatura mostruosa",   perRank:1, maxRank:0, us:4, ranks:false },
-  { id:"behemoth",         label:"Colosso",              perRank:1, maxRank:0, us:6, ranks:false },
-  { id:"warMachine",       label:"Macchina da guerra",   perRank:1, maxRank:0, us:4, ranks:false },
+  { id:"regularInfantry",  label:"Fanteria regolare",    perRank:5, maxRank:2, us:1, ranks:true  },
+  { id:"heavyInfantry",    label:"Fanteria pesante",     perRank:4, maxRank:2, us:1, ranks:true  },
+  { id:"monstrousInfantry",label:"Fanteria mostruosa",   perRank:3, maxRank:2, us:3, ranks:true  },
+  { id:"swarm",            label:"Sciame",               perRank:0, maxRank:0, us:3, ranks:false },
+  { id:"lightCavalry",     label:"Cavalleria leggera",   perRank:5, maxRank:1, us:2, ranks:true  },
+  { id:"heavyCavalry",     label:"Cavalleria pesante",   perRank:4, maxRank:1, us:2, ranks:true  },
+  { id:"monstrousCavalry", label:"Cavalleria mostruosa", perRank:3, maxRank:1, us:3, ranks:true  },
+  { id:"warBeasts",        label:"Bestie da guerra",     perRank:5, maxRank:1, us:1, ranks:true  },
+  { id:"lightChariot",     label:"Carro leggero",        perRank:3, maxRank:1, us:3, ranks:true  },
+  { id:"heavyChariot",     label:"Carro pesante",        perRank:0, maxRank:0, us:5, ranks:false },
+  { id:"monstrousCreature",label:"Creatura mostruosa",   perRank:0, maxRank:0, us:0, usWounds:true, ranks:false },
+  { id:"behemoth",         label:"Colosso",              perRank:0, maxRank:0, us:0, usWounds:true, ranks:false },
+  { id:"warMachine",       label:"Macchina da guerra",   perRank:0, maxRank:0, us:0, usWounds:true, ranks:false },
 ];
 
 const byId = Object.fromEntries(TROOPS.map(t => [t.id, t]));
@@ -50,7 +57,7 @@ const byId = Object.fromEntries(TROOPS.map(t => [t.id, t]));
    fanteria regolare perche' e' l'ipotesi meno dannosa. */
 export const UNKNOWN_TROOP = {
   id:"unknown", label:"tipo non riconosciuto",
-  perRank:5, maxRank:3, us:1, ranks:true, unknown:true,
+  perRank:5, maxRank:2, us:1, ranks:true, unknown:true,
 };
 
 /* ============================================================
@@ -58,13 +65,15 @@ export const UNKNOWN_TROOP = {
    ============================================================ */
 /* Le parentesi dicono cose vere — «(character)» marca il personaggio
    che si e' unito a un reggimento — e vanno lette prima di togliere il
-   resto. */
+   resto. La «fanteria leggera» nel libro non c'e': se un file la
+   scrive, e' fanteria regolare. */
 const NAMES = [
   [/monstrous\s+(infantry|fanteria)|fanteria\s+mostruosa/i, "monstrousInfantry"],
   [/monstrous\s+cavalry|cavalleria\s+mostruosa/i,           "monstrousCavalry"],
   [/monstrous\s+(creature|beast)|creatura\s+mostruosa/i,    "monstrousCreature"],
   [/behemoth|colosso/i,                                     "behemoth"],
   [/war\s*machine|macchina\s+da\s+guerra/i,                 "warMachine"],
+  [/war\s*beasts?|besti[ae]\s+da\s+guerra/i,                "warBeasts"],
   [/heavy\s+chariot|carro\s+pesante/i,                      "heavyChariot"],
   [/(light\s+)?chariot|carro/i,                             "lightChariot"],
   [/heavy\s+cavalry|cavalleria\s+pesante/i,                 "heavyCavalry"],
@@ -72,14 +81,13 @@ const NAMES = [
   [/cavalry|cavalleria|mounted/i,                           "heavyCavalry"],
   [/swarm|sciame/i,                                         "swarm"],
   [/heavy\s+infantry|fanteria\s+pesante/i,                  "heavyInfantry"],
-  [/light\s+infantry|fanteria\s+leggera/i,                  "lightInfantry"],
-  [/(regular\s+)?infantry|fanteria/i,                       "regularInfantry"],
+  [/(regular\s+|light\s+)?infantry|fanteria/i,              "regularInfantry"],
 ];
 
 export function troopType(txt){
   const raw = String(txt || "").trim();
   if (!raw) return { ...UNKNOWN_TROOP, raw, isCharacter:false };
-  const isCharacter = /\(\s*character\s*\)|\(\s*personaggio\s*\)/i.test(raw);
+  const isCharacter = /\(\s*(named\s+)?character\s*\)|\(\s*personaggio\s*\)/i.test(raw);
   const clean = raw.replace(/\([^)]*\)/g, " ");
   for (const [re, id] of NAMES) if (re.test(clean)) return { ...byId[id], raw, isCharacter };
   return { ...UNKNOWN_TROOP, raw, isCharacter };
@@ -93,19 +101,26 @@ export function troopType(txt){
    ============================================================ */
 export const perRankOf   = t => troopType(t).perRank;
 export const maxRankOf   = t => troopType(t).maxRank;
-export const usPerModel  = (t, fromFile = 0, models = 1) => {
+
+/* `wounds` sono le Ferite iniziali del modello: servono ai tre tipi per
+   cui il libro dice «come le Ferite iniziali». Senza, si conta 1, che e'
+   il minimo e non finge di sapere. */
+export const usPerModel  = (t, fromFile = 0, models = 1, wounds = 0) => {
   const n = Math.max(0, +fromFile || 0), m = Math.max(1, +models || 1);
-  return n > 0 ? n / m : troopType(t).us;
+  if (n > 0) return n / m;
+  const row = troopType(t);
+  return row.usWounds ? Math.max(1, +wounds || 0) : row.us;
 };
 
 /* Quanta Forza d'Unita' ha un'unita' adesso: i modelli ancora in piedi
    per il valore di uno. E' il conto che decide chi cede terreno, chi
    controlla un obiettivo e in che direzione si fugge. */
-export const unitStrength = (troop, fromFile, models, alive) =>
-  Math.round(usPerModel(troop, fromFile, models) * Math.max(0, alive ?? models ?? 0) * 100) / 100;
+export const unitStrength = (troop, fromFile, models, alive, wounds = 0) =>
+  Math.round(usPerModel(troop, fromFile, models, wounds) * Math.max(0, alive ?? models ?? 0) * 100) / 100;
 
-/* Le celle che nessuna lista di casa conferma: l'app le usa, ma sa
-   dire quali sono. Serve al pannello «cosa non e' verificato». */
+/* Le celle che il libro non conferma. Dalla lettura della tabella vera
+   non ce ne sono piu'; la funzione resta perche' il pannello la chiede,
+   e un file d'esercito con un tipo nuovo puo' riaprirla. */
 export const unverified = () => TROOPS
   .filter(t => t.daVerificare)
   .map(t => ({ id:t.id, label:t.label, campi:t.daVerificare }));

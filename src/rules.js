@@ -228,11 +228,23 @@ export function expected(n, need, again = null){
 /* ============================================================
    4 · RISOLUZIONE DEL COMBATTIMENTO
    ============================================================ */
-/* Ranghi: uno ogni fila piena dietro la prima, fino a tre, e solo se
-   la fila e' larga almeno tre. */
-export function rankBonus(models, frontage, max = 3){
-  if (!frontage || frontage < 3) return 0;
-  return clamp(Math.floor(models / frontage) - 1, 0, max);
+/* Ranghi (pp. 101 e 151): +1 per ogni fila dietro la prima, fino al
+   massimo del tipo di truppa. Una fila conta se ha almeno i modelli
+   che il tipo chiede (`perRank`: cinque per la fanteria regolare,
+   quattro per la pesante, tre per la mostruosa), e l'ultima fila conta
+   anche incompleta, purche' ne abbia abbastanza.
+
+   La versione di prima era quella del Warhammer di prima: «file larghe
+   almeno tre, fino a tre ranghi», per tutti. E dimenticava la colonna
+   di marcia: un'unita' piu' profonda che larga non prende il bonus di
+   ranghi (p. 101). */
+export function rankBonus(models, frontage, max = 2, perRank = 5){
+  if (!perRank || !frontage || frontage < perRank || !max) return 0;
+  const full = Math.floor(models / frontage);
+  const rest = models - full * frontage;
+  const ranks = full + (rest >= perRank ? 1 : 0);
+  if (Math.ceil(models / frontage) > frontage) return 0;     // colonna di marcia
+  return clamp(ranks - 1, 0, max);
 }
 
 /* Test di Comando: due dadi, si passa uguagliando o stando sotto.

@@ -556,7 +556,7 @@ function statsBlockHTML(u){
     </tbody></table>
     ${changed.length ? `<p class="note stat-why">${changed.map(k => esc(EF.explain(u, k))).join(" · ")}</p>` : ""}
     <p class="note">${esc(troop.unknown ? "tipo di truppa non riconosciuto" : troop.label)} · Forza d'Unità ${
-      unitStrength(u.troop, u.us, u.models, alive)}${troop.unknown ? "" : troop.daVerificare ? " (tabella p. 105, cella da verificare)" : ""}</p>`;
+      unitStrength(u.troop, u.us, u.models, alive, stat((u.stats || {}).W))}${troop.unknown ? "" : troop.daVerificare ? " (tabella p. 105, cella da verificare)" : ""}</p>`;
 }
 
 function renderInspector(){
@@ -2035,7 +2035,7 @@ export function shotOn(u, row, plan){
    con il metro in mano e la testa nel manuale: **questa carica si puo'
    dichiarare, e con che probabilita' arriva?**
    ============================================================ */
-const usOf = u => unitStrength(u.troop, u.us, u.models, effModels(u));
+const usOf = u => unitStrength(u.troop, u.us, u.models, effModels(u), stat((u.stats || {}).W));
 const engagedNow = u => contactsNow().some(c => (c.a === u.uid || c.b === u.uid) && c.enemy);
 
 /* Il caricante e i bersagli nella forma che `charge.js` vuole: nome,
@@ -2575,7 +2575,7 @@ async function runShot(u, uid){
    `runShot` perche' la stessa domanda tornera' identica per le altre
    tre cause della Tappa 5: e' una misura piu' un test di Comando. */
 async function panicCheck(t, killed, from, source = null){
-  const us = unitStrength(t.troop, t.us, t.models, t.models);
+  const us = unitStrength(t.troop, t.us, t.models, t.models, stat((t.stats || {}).W));
   /* Quanta Forza d'Unita' se ne va con ogni modello: un Rat Ogre ne
      porta via tre, e contare le teste darebbe la risposta sbagliata
      proprio sulle unita' in cui il Panico conta di piu'. */

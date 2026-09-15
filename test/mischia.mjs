@@ -56,6 +56,15 @@ console.log('\nil risultato del combattimento');
 const base = { wounds: 0, models: 20, frontage: 5, maxRank: 3 };
 ok('i ranghi si contano sulle file piene', ML.combatScore(base).rank === 3);
 ok('il tipo di truppa mette il tetto', ML.combatScore({ ...base, maxRank: 1 }).rank === 1);
+/* pp. 101 e 152: l'ordine di combattimento vale un punto, e mancava */
+ok('in ordine di combattimento si prende un punto',
+   ML.combatScore({ ...base, combatOrder: true }).order === 1 &&
+   ML.combatScore({ ...base, combatOrder: true }).total === ML.combatScore(base).total + 1);
+ok('un reggimento largo e in ordine di combattimento',
+   ML.inCombatOrder({ models: 20, frontage: 5, rules: [] }) === true);
+ok('una colonna no', ML.inCombatOrder({ models: 20, frontage: 2, rules: [] }) === false);
+ok('gli schermagliatori no', ML.inCombatOrder({ models: 10, frontage: 5, rules: ['Skirmishers'] }) === false);
+ok('un mostro solo si', ML.inCombatOrder({ models: 1, frontage: 1, rules: [] }) === true);
 /* il disordine da terreno della Tappa 2 arriva qui, ed e' la prima
    volta che costa qualcosa a qualcuno */
 ok('un quarto dei modelli nel bosco toglie i ranghi',
@@ -269,10 +278,13 @@ console.log('\nle regole dei tre eserciti di casa (Tappa 5 bis)');
   const slann4 = C.combatant(unit('Slann', prof, 1, 1, { faction: 'Lizardmen', rules: ['Arcane Shield'], ward: 4 }));
   ok('e non peggiora una salvezza migliore', slann4.ward === 4);
 
-  const goblin = h => C.combatant(unit('Night Goblin Mob', prof, 40, 5,
+  /* quaranta in file da dieci: quattro file, tre dietro la prima. In
+     file da cinque sarebbero una colonna di marcia, che non prende
+     ranghi (p. 101). */
+  const goblin = h => C.combatant(unit('Night Goblin Mob', prof, 40, 10,
     { troop: 'Regular Infantry', rules: h ? ['Horde'] : [] }));
-  ok('Horde alza di uno il tetto dei ranghi', ML.combatScore(ML.scoreCardOf(goblin(true), 0)).rank === 4);
-  ok('senza Horde il tetto resta tre', ML.combatScore(ML.scoreCardOf(goblin(false), 0)).rank === 3);
+  ok('Horde alza di uno il tetto dei ranghi', ML.combatScore(ML.scoreCardOf(goblin(true), 0)).rank === 3);
+  ok('senza Horde il tetto resta quello della fanteria, +2', ML.combatScore(ML.scoreCardOf(goblin(false), 0)).rank === 2);
 
   const bastiladon = C.combatant(unit('Bastiladon', prof, 1, 1, { rules: ['Impervious Defence'] }));
   const fianco = C.combatant(unit('Cavalieri', prof, 5, 5), { flank: 'flank' });

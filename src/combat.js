@@ -125,7 +125,7 @@ export function combatant(u, over = {}){
        dava per scontato 1 per modello, e un Rat Ogre contava come un
        chiavicaro. Adesso il ripiego e' la tabella dei tipi di truppa
        (p. 105), che per la fanteria mostruosa dice 3. */
-    usPer: usPerModel(u.troop, u.us, u.models),
+    usPer: usPerModel(u.troop, u.us, u.models, stat(st.W)),
     troop: troopType(u.troop),
     armour: u.armour || 0, ward: u.ward || 0, regen: u.regen || 0,
     ap: melee ? weaponAP(melee) : 0,
@@ -200,7 +200,8 @@ export function combatant(u, over = {}){
      una casella che si spunta. La Paura fallita toglie uno al tiro per
      colpire, e quella la dice il tavolo con `over.feared`. */
   c.psych = PS.psychOf(u, { joined: over.joined || [] });
-  const ranks = c.disrupted ? 0 : rankBonus(c.models, c.frontage, c.troop ? c.troop.maxRank : 3);
+  const ranks = c.disrupted ? 0 : rankBonus(c.models, c.frontage,
+    c.troop ? c.troop.maxRank : 2, c.troop ? c.troop.perRank : 5);
   const lead = PS.leadershipOf(c.ld, c.psych, { rankBonus: ranks, fleeing: !!u.fled });
   c.ldBase = c.ld; c.ld = lead.value; c.ldWhy = lead.why;
   c.feared = false;

@@ -142,6 +142,11 @@ export const OUTNUMBER_COUNTS = false;
 export const RESULT_PARTS = [
   { id:"wounds",   label:"ferite",             one:"ferita",            many:"ferite" },
   { id:"rank",     label:"ranghi",             one:"rango",             many:"ranghi" },
+  /* L'ordine di combattimento (pp. 101 e 152): un reggimento in ordine
+     chiuso o aperto largo almeno quanto e' profondo prende un punto.
+     Mancava dalla prima versione del conto — il settimo numero del
+     Warhammer di prima, e questo per assenza. */
+  { id:"order",    label:"ordine di combattimento", one:"ordine di combattimento", many:"ordine di combattimento" },
   { id:"std",      label:"stendardo",          one:"stendardo",         many:"stendardi" },
   { id:"bsb",      label:"stendardo da battaglia", one:"stendardo da battaglia", many:"stendardi da battaglia" },
   { id:"flank",    label:"fianco o retro",     one:"fianco",            many:"fianco" },
@@ -166,8 +171,9 @@ export function combatScore(me = {}, foe = {}){
      solo — e chi ha finito la carica con un quarto dei modelli nel
      terreno difficile non ne prende nessuno (p. 128). Anche questa e'
      una regola che la Tappa 2 riconosceva senza poterla far pagare. */
-  const cap = me.maxRank != null ? me.maxRank : 3;
-  const rank = me.disrupted ? 0 : rankBonus(me.models || 0, me.frontage || 0, cap);
+  const cap = me.maxRank != null ? me.maxRank : 2;
+  const rank = me.disrupted ? 0 : rankBonus(me.models || 0, me.frontage || 0, cap,
+                                            me.perRank != null ? me.perRank : 5);
   const std = me.standard ? 1 : 0;
   const bsb = me.battleStandard ? 1 : 0;
   /* Impervious Defence del nemico toglie il fianco e il retro: la scheda
@@ -178,8 +184,9 @@ export function combatScore(me = {}, foe = {}){
   const over = Math.max(0, Math.round(+me.overkill || 0));
   const out = OUTNUMBER_COUNTS && (+me.us || 0) > (+foe.us || 0) ? 1 : 0;
   const rule = Math.max(0, Math.round(+me.ruleBonus || 0));
+  const order = me.combatOrder ? 1 : 0;
 
-  const got = { wounds, rank, std, bsb, flank, ground, overkill: over, rule, out };
+  const got = { wounds, rank, order, std, bsb, flank, ground, overkill: over, rule, out };
   const parts = RESULT_PARTS.filter(p => got[p.id] > 0)
     .map(p => ({ ...p, v: got[p.id] }));
   const total = Object.values(got).reduce((s, v) => s + v, 0);
@@ -454,11 +461,25 @@ export const highGroundFor = (choice, tag) => choice === (tag === "A" ? "me" : "
    non li' perche' e' la traduzione fra due vocabolari, e le traduzioni
    vanno tenute dalla parte di chi le legge.
    ============================================================ */
+/* In ordine di combattimento e' chi sta in ordine chiuso o aperto — non
+   gli schermagliatori — e non e' piu' profondo che largo (p. 101). Un
+   mostro solo e' un ordine chiuso di un modello per uno, cioe' un
+   quadrato: il libro lo tratta come ordine chiuso (p. 105) e il punto
+   lo prende anche lui. */
+export function inCombatOrder(c = {}){
+  const models = +c.models || 0, front = Math.max(1, +c.frontage || 1);
+  if (models <= 0) return false;
+  if ((c.rules || []).some(r => /^skirmish/i.test(String(r)))) return false;
+  return Math.ceil(models / front) <= front;
+}
+
 export function scoreCardOf(c = {}, wounds = 0){
   return {
+    combatOrder: inCombatOrder(c),
     wounds,
     models: c.models || 0, frontage: c.frontage || 1,
-    maxRank: c.troop ? c.troop.maxRank : 3,
+    maxRank: c.troop ? c.troop.maxRank : 2,
+    perRank: c.troop ? c.troop.perRank : 5,
     standard: !!c.standard, battleStandard: !!(c.flags && c.flags.battleStandard),
     flank: c.flank || "", highGround: !!c.highGround,
     overkill: c.overkill || 0, disrupted: !!c.disrupted,

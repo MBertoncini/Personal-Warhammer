@@ -38,18 +38,24 @@ ok('la creatura mostruosa non diventa fanteria mostruosa',
 ok('un tipo che non c\'e non finge di esserci', troopType('Cosa Strana').unknown === true);
 ok('e si comporta come la fanteria, che e l ipotesi meno dannosa',
    troopType('Cosa Strana').perRank === 5);
-ok('la tabella ha tredici righe', TROOPS.length === 13);
-ok('e dice quali celle non sono confrontate con una lista vera', unverified().length > 0);
+ok('la tabella ha tredici righe, come quella del libro', TROOPS.length === 13);
+ok('e viene tutta dal libro: nessuna cella da verificare', unverified().length === 0);
+ok('la fanteria leggera nel libro non c e: e fanteria regolare',
+   troopType('Light Infantry').id === 'regularInfantry');
+ok('le bestie da guerra ci sono', troopType('War Beasts').id === 'warBeasts');
 
 ok('la Forza d Unita del file vince sulla tabella', usPerModel('Regular Infantry', 3, 1) === 3);
 ok('senza il file si legge la tabella', usPerModel('Monstrous Infantry', 0, 1) === 3);
-ok('e non si da piu per scontato 1 per modello', usPerModel('Behemoth', 0, 1) === 6);
+ok('il carro pesante vale cinque, non quattro', usPerModel('Heavy chariot', 0, 1) === 5);
+ok('un mostro vale quanto le sue Ferite iniziali', usPerModel('Behemoth', 0, 1, 6) === 6 &&
+   usPerModel('Monstrous creature', 0, 1, 4) === 4);
 ok('la Forza d Unita cala con i morti', unitStrength('Monstrous Infantry', 12, 4, 2) === 6);
 
-ok('un colosso non prende ranghi', rankBonus(1, 1, troopType('Behemoth').maxRank) === 0);
-ok('la fanteria ne prende fino a tre', rankBonus(30, 5, troopType('Heavy Infantry').maxRank) === 3);
+ok('un colosso non prende ranghi', rankBonus(1, 1, troopType('Behemoth').maxRank, troopType('Behemoth').perRank) === 0);
+ok('la fanteria pesante ne prende fino a due',
+   rankBonus(30, 6, troopType('Heavy Infantry').maxRank, troopType('Heavy Infantry').perRank) === 2);
 ok('la cavalleria mostruosa si ferma a uno',
-   rankBonus(30, 3, troopType('Monstrous Cavalry').maxRank) === 1);
+   rankBonus(9, 3, troopType('Monstrous Cavalry').maxRank, troopType('Monstrous Cavalry').perRank) === 1);
 
 /* Le dieci liste salvate sono la prova vera: se un tipo non si
    riconosce, si riconosce qui e non a partita cominciata. */
@@ -68,10 +74,11 @@ ok('nessuna unita salvata ha un tipo di truppa sconosciuto',
    riga della tabella sbagliata. Contare i casi noti sarebbe piu'
    preciso e durerebbe fino alla prossima partita archiviata, perche'
    `dati/liste.json` lo riscrive la Nuvola ogni volta che si sincronizza. */
+const tableUS = u => usPerModel(u.troop, 0, u.models, +((u.stats || {}).W || 0));
 const disagree = withTroop.filter(u => u.us && u.models &&
-  Math.abs(u.us / u.models - troopType(u.troop).us) > 0.001);
+  Math.abs(u.us / u.models - tableUS(u)) > 0.001);
 ok('dove il file e la tabella non concordano, e sempre il file a dire di piu',
-   disagree.every(u => u.us / u.models > troopType(u.troop).us));
+   disagree.every(u => u.us / u.models > tableUS(u)));
 ok('e i casi sono quelli con una cavalcatura o un personaggio unito',
    disagree.length > 0 && disagree.length < withTroop.length / 4);
 

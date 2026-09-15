@@ -74,10 +74,16 @@ ok('e nel terreno si tiene il peggiore',
      .every(r => r.total === Math.min(r.dice[0], r.dice[1])));
 
 console.log('\nranghi e nervi');
-ok('venti in file da cinque danno +3', rankBonus(20, 5) === 3);
-ok('il bonus e comunque limitato a 3', rankBonus(60, 5) === 3);
+/* p. 105-106 del libro: la fanteria regolare vuole cinque modelli per
+   fila e prende al massimo +2. Queste quattro righe dicevano +3. */
+ok('quindici in file da cinque danno +2', rankBonus(15, 5) === 2);
+ok('il bonus della fanteria si ferma a +2', rankBonus(25, 5) === 2);
 ok('file da due non contano', rankBonus(20, 2) === 0);
 ok('una fila sola non da bonus', rankBonus(5, 5) === 0);
+ok('l ultima fila conta anche incompleta, se ha abbastanza modelli',
+   rankBonus(11, 6, 2, 5) === 1 && rankBonus(9, 6, 2, 5) === 0);
+ok('la fanteria pesante conta file da quattro', rankBonus(12, 4, 2, 4) === 2);
+ok('la colonna di marcia non prende ranghi', rankBonus(30, 5) === 0);
 
 let insane = 0, taken = 0;
 for (let i = 0; i < 3000; i++){
@@ -123,15 +129,16 @@ ok('le perdite non superano i modelli in campo',
    r.killsA >= 0 && r.killsA <= 12 && r.killsB >= 0 && r.killsB <= 20);
 ok('il conto di fine assalto somma le sue voci',
    r.cr.A.total === r.cr.A.parts.reduce((s, p) => s + p.v, 0));
-/* i ranghi si contano a fine assalto, sui modelli rimasti: venti in
-   file da cinque partono a +3 e scendono man mano che si accorciano.
-   Il numero esatto dipende da come sono andati i dadi, quindi si
-   controlla che sia quello giusto PER QUEI morti: scritto come
-   intervallo fisso, un assalto fortunato faceva fallire la prova una
-   volta ogni venti. */
+/* i ranghi si contano a fine assalto, sui modelli rimasti, e scendono
+   man mano che il reggimento si accorcia. Il numero esatto dipende da
+   come sono andati i dadi, quindi si controlla che sia quello giusto
+   PER QUEI morti, con la regola e il tetto del tipo di truppa (p. 105):
+   la prova di prima ricopiava a mano il tetto di tre del Warhammer di
+   prima, e cosi' passava su un numero sbagliato. */
 const rimasti = 20 - r.killsB;
 ok('gli Orchi contano i ranghi',
-   r.cr.B.rank === Math.max(0, Math.min(3, Math.floor(rimasti / 5) - 1)) && r.cr.B.rank >= 1);
+   r.cr.B.rank === rankBonus(rimasti, r.b.frontage, r.b.troop.maxRank, r.b.troop.perRank) &&
+   (rimasti < 10 || r.cr.B.rank >= 1));
 ok('e i Saurus, in file da sei, quasi no', r.cr.A.rank <= 1);
 /* La superiorita' numerica non e' piu' una voce del risultato: era il
    bonus dell'edizione di prima, e nell'elenco del manuale non c'e'.

@@ -196,6 +196,24 @@ per esteso di settanta regole speciali sta dentro le liste salvate,
 messo lì da New Recruit, e ha corretto da solo quattro regole che
 l'app dichiarava con sicurezza.
 
+**La sesta e la settima le ha trovate il libro vero.** I manuali sono
+sul disco (`Desktop\Warhammer`: Core Rulebook, Battle March, Ravening
+Hordes, Forces of Fantasy, i due Legends), e nessuna tappa li aveva
+aperti. Aprendoli per la magia è saltata fuori la **tabella dei tipi di
+truppa** (p. 105), che `troops.js` aveva preso dal riassunto e sbagliava
+in quasi ogni colonna: la fanteria prende al massimo **+2** ranghi, non
+tre; la cavalleria **+1**, non due; la fanteria pesante conta file da
+**quattro**; il carro pesante vale **5** di Forza d'Unità, e un mostro
+quanto le sue **Ferite iniziali**. Con lei la regola: una fila conta se
+ha i modelli che il tipo chiede — non «almeno tre» per tutti —,
+l'ultima fila conta anche incompleta, e una **colonna di marcia** non
+prende ranghi (p. 101). La settima è un'assenza: un reggimento in
+**ordine di combattimento** prende **+1 al risultato** (pp. 101 e 152),
+e l'app non l'ha mai contato. Le liste salvate confermano la tabella
+riga per riga: il Doomwheel dichiara 5, lo Slann 5 con cinque Ferite.
+
+Da qui in poi ogni tappa comincia aprendo il libro, non le liste.
+
 ---
 
 ## 3 · I dati: da un file New Recruit a un'unità giocabile
