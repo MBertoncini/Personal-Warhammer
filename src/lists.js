@@ -279,6 +279,19 @@ export function coverage(list){
    sono quelle che stanno davvero nell'archivio, con quante liste per
    ognuna — un menu con dodici fazioni di cui ne hai tre è un menu che
    si legge male. */
+/* «Togli i filtri» compare in due posti — nella barra e dentro il
+   messaggio di elenco vuoto — e per un attimo ha avuto lo stesso id in
+   tutti e due: `querySelector` ne trova uno solo, e quello dentro il
+   messaggio era un pulsante che non faceva niente. Che e' peggio di un
+   pulsante che non c'e'. */
+const emptyFilterHTML = () =>
+  `<p class="empty">Nessuna lista con questi filtri. <button class="btn tiny" data-clear="1">Togli i filtri</button></p>`;
+
+function wireClear(host){
+  for (const b of host.querySelectorAll("[data-clear]"))
+    b.addEventListener("click", () => { view = { q:"", faction:"", outcome:"", mine:"" }; renderLists(); });
+}
+
 function wireOpen(host){
   host.querySelectorAll("[data-open]").forEach(b => b.addEventListener("click", () => {
     openId = b.dataset.open; renderLists();
@@ -309,7 +322,7 @@ function filterBarHTML(){
         ${opt("mine", "solo le mie", view.mine)}
         ${opt("ext", "solo le esterne", view.mine)}
       </select>
-      ${active ? `<button class="btn tiny ghost" id="ls-clear">Togli i filtri</button>` : ""}
+      ${active ? `<button class="btn tiny ghost" data-clear="1">Togli i filtri</button>` : ""}
     </div>`;
 }
 
@@ -337,7 +350,7 @@ export function renderLists(){
       <div class="ls-side">
         ${lists.length
           ? (shown.length ? shown.map(listRowHTML).join("")
-             : `<p class="empty">Nessuna lista con questi filtri. <button class="btn tiny" id="ls-clear">Togli i filtri</button></p>`)
+             : emptyFilterHTML())
           : `<p class="empty">Nessuna lista salvata.</p>`}
       </div>
       <div class="ls-detail">${openId ? detailHTML(getList(openId)) : `<p class="empty">Scegli una lista.</p>`}</div>
@@ -353,15 +366,15 @@ export function renderLists(){
     const now = filterLists();
     if (side) side.innerHTML = now.length
       ? now.map(listRowHTML).join("")
-      : `<p class="empty">Nessuna lista con questi filtri.</p>`;
+      : emptyFilterHTML();
     wireOpen(host);
+    wireClear(host);
   });
   for (const [sel, key] of [["#ls-faction", "faction"], ["#ls-outcome", "outcome"], ["#ls-mine", "mine"]]){
     const el = $(sel);
     if (el) el.addEventListener("change", () => { view[key] = el.value; renderLists(); });
   }
-  const clr = $("#ls-clear");
-  if (clr) clr.addEventListener("click", () => { view = { q:"", faction:"", outcome:"", mine:"" }; renderLists(); });
+  wireClear(host);
 
   $("#ls-import").addEventListener("click", () => $("#ls-file").click());
   $("#ls-file").addEventListener("change", async e => {

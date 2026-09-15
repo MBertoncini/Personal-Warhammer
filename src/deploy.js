@@ -857,7 +857,7 @@ function movementBlockHTML(u){
             `${esc(l.label)}${Math.abs(l.cost - l.inches) > 0.05 || l.id === "wheel"
               ? ` <b>${l.cost.toFixed(1)}″</b>` : ""}`).join(" · ")}${
             cost.plan.note ? ` — ${esc(cost.plan.note)}` : ""}</p>
-          ${cost.dist !== cost.cost ? `<p class="note dim">Il metro fra l'ancora e adesso dice ${cost.dist.toFixed(1)}″: la differenza è la ruota, che si paga (p. 124).</p>` : ""}
+          ${cost.wheel > 0.05 ? `<p class="note dim">Il metro fra l'ancora e adesso dice ${cost.dist.toFixed(1)}″: la differenza è la ruota, che si paga (p. 124).</p>` : ""}
           ${cost.plans.length > 1 ? `<p class="note dim">Altri modi: ${cost.plans.slice(1).map(p =>
             `${esc(p.label)} ${p.cost.toFixed(1)}″`).join(" · ")}.</p>` : ""}`
         : ""}
@@ -3232,11 +3232,44 @@ function magicReachOf(u){
 const rangeTxt = s => s.range === "self" ? "sé" : s.range === "combat" ? "mischia"
   : typeof s.range === "number" ? s.range + "″" : String(s.range);
 
+/* Il menu che dichiara a mano un incantesimo vincolato.
+   Sta fuori dal blocco dei maghi perche' il caso per cui esiste e'
+   proprio quello in cui di maghi non ce ne sono: un Bastiladon senza
+   «Solar Engine» fra le regole non e' un mago e non ha un vincolato,
+   quindi il blocco della magia non si disegnava affatto e il menu
+   restava irraggiungibile esattamente dove serviva. */
+function bindPickHTML(x, already = []){
+  const M = MAGIC();
+  if (!M) return "";
+  const free = M.bound.filter(b => !already.some(o => o.id === b.id));
+  if (!free.length) return "";
+  return `<select data-mg-bind="${x.uid}"
+    title="Un incantesimo vincolato che il file della lista non ha scritto: l'oggetto che lo porta">
+    <option value="">— aggiungi un incantesimo vincolato —</option>
+    ${free.map(b => `<option value="${esc(b.id)}">${esc(b.name)} · ${esc(b.regola || "")} · ${esc(rangeTxt(b))}</option>`).join("")}
+  </select>`;
+}
+
 function magicHTML(u){
   const M = MAGIC();
   if (!M || !u || !u.placed || u.dead || isJoined(u)) return "";
   const casters = castersIn(u);
-  if (!casters.length) return "";
+  /* Nessun mago: resta una riga sola, chiusa. Aprirla e' il gesto di
+     chi sa che quel pezzo una magia ce l'ha e il file non l'ha
+     scritta; lasciarla aperta su ogni reggimento di venti Clanrats
+     sarebbe un pannello che chiede una cosa a cui non c'e' risposta
+     diciannove volte su venti. */
+  if (!casters.length){
+    const pick = bindPickHTML(u, []);
+    return pick ? `
+      <details class="magic-block">
+        <summary class="readout"><span>Magia</span><b>nessun mago</b></summary>
+        <p class="note">New Recruit esporta le regole dell'unità base, e l'oggetto che porta un
+        incantesimo spesso non ci finisce — un Bastiladon con il Solar Engine arriva qui senza
+        niente. Se ce l'ha, dillo: da lì in poi vale come le altre magie, gittata compresa.</p>
+        <div class="chiprow">${pick}</div>
+      </details>` : "";
+  }
   const inPlay = magicState().inPlay.map((e, i) => ({ ...e, i }));
   const line = s => `${esc(s.name)} <span class="dim">· ${MG.TYPE_LABEL[s.type]} · ${s.cv}+${s.cv2 ? "/" + s.cv2 + "+" : ""} · ${esc(rangeTxt(s))}${s.rip ? " · resta in gioco" : ""}${s.bound ? " · vincolato, Potere " + s.potere : ""}</span>`;
 
@@ -3276,16 +3309,8 @@ function magicHTML(u){
       `<div class="readout"><span title="${esc(s.testo || "")}">${line(s)}</span>${
         hand.has(s.id) ? `<button class="btn tiny ghost" data-mg-unbind="${x.uid}|${esc(s.id)}"
           title="Toglie l'incantesimo dichiarato a mano">−</button>` : ""}${btn(s)}</div>`).join("");
-    /* Dichiarare a mano un incantesimo vincolato. New Recruit esporta
-       le regole dell'unita' base, e l'oggetto che porta l'incantesimo
-       spesso non ci finisce: in due liste su tre il Bastiladon non ha
-       «Solar Engine» fra le regole, e la sua magia non esisteva. */
-    const free = M.bound.filter(b => !w.bound.some(o => o.id === b.id));
-    if (free.length) setup.push(`<select data-mg-bind="${x.uid}"
-      title="Un incantesimo vincolato che il file della lista non ha scritto: l'oggetto che lo porta">
-      <option value="">— aggiungi un incantesimo vincolato —</option>
-      ${free.map(b => `<option value="${esc(b.id)}">${esc(b.name)} · ${esc(b.regola || "")} · ${esc(rangeTxt(b))}</option>`).join("")}
-    </select>`);
+    const pick = bindPickHTML(x, w.bound);
+    if (pick) setup.push(pick);
 
     const mine = inPlay.filter(e => e.caster === x.uid);
     return `<div class="readout"><span>Mago</span><b>${esc(x.name)}${w.level ? " · Livello " + w.level : ""}${
@@ -5696,10 +5721,7 @@ async function bootDeploy(){
        delle due — e due unità che si incontrano d'angolo si toccano con
        tre modelli mentre la stima ne dava cinque. Le basette lo sanno,
        e stanno tutte qui. */
-    touching: (u, foe) => {
-      const lay = layoutOf(u);
-      return FM.touchingModels(FM.worldCells(u, lay), corners(foe));
-    },
+    touching: (u, foe) => FM.touchingModels(FM.worldCells(u, layoutOf(u)), corners(foe)),
     /* Fianco, retro e disordine guardando il tavolo, a ogni round (pp.
        101, 152-153). Il bonus e' della parte: conta chiunque del mio
        esercito tocchi quel nemico, e fianco e retro si sommano se a

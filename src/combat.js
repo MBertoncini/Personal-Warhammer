@@ -308,25 +308,38 @@ const attacksOf = c => (c.a || 1) + (ranIn(c) && c.flags && c.flags.furiousCharg
    menano, una per profilo.
    ------------------------------------------------------------------ */
 export function contact(att, def, { touching = null } = {}){
-  const chars = (att.retinue || []).length;
-  /* il conto del tavolo puo' arrivare come opzione o gia' scritto
-     sulla schiera: `combatant` lo porta con se' come tutto il resto */
-  const touch = touching != null ? touching : (att.touching || 0);
+  const retinue = att.retinue || [];
+  /* Il conto del tavolo puo' arrivare come opzione o gia' scritto
+     sulla schiera. E' due numeri, non uno: i soldati che toccano e
+     **quali** personaggi toccano, perche' un capo in mezzo a una fila
+     che sfiora il nemico con lo spigolo puo' benissimo non toccare
+     niente, e i suoi quattro attacchi di Forza 5 non li tira. */
+  const raw = touching != null ? touching : att.touching;
+  const seen = raw && typeof raw === "object" ? raw
+             : (+raw > 0 ? { models: +raw, chars: null } : null);
+  const measured = !!seen;
+
   /* la larghezza a contatto: quella vera se il tavolo la sa dire,
      altrimenti la piu' stretta delle due prime file */
-  const wide = touch > 0
-    ? Math.max(1, Math.min(touch, att.frontage, att.models))
+  const wide = measured
+    ? Math.max(0, Math.min(seen.models, att.frontage, att.models))
     : Math.max(1, Math.min(att.frontage, def.frontage, att.models));
-  /* i posti che restano ai soldati, tolti quelli dei personaggi */
-  const front = Math.max(0, wide - Math.min(chars, wide));
-  const inFront = Math.min(chars, wide);        // personaggi che menano per intero
+
+  /* Chi dei personaggi mena. Misurato, sono quelli che il tavolo ha
+     visto toccare; stimato, si suppone che stiano in prima fila —
+     e allora **occupano un posto** dei soldati invece di aggiungerne
+     uno, perche' un capo in una fila da cinque e' uno dei cinque. */
+  const fighting = measured
+    ? (seen.chars ? retinue.filter(g => seen.chars.includes(g.ref && g.ref.uid)) : [])
+    : retinue.slice(0, wide);
+  const front = measured ? wide : Math.max(0, wide - fighting.length);
 
   /* Le file d'appoggio: una, oppure due con la lancia che permette di
      combattere in una fila in piu'. Ognuna appoggia con un colpo a
      testa, non con tutti i suoi attacchi. */
   const ranks = att.flags && att.flags.extraRank ? 2 : 1;
   const behind = Math.max(0, att.models - att.frontage);
-  const support = Math.min(wide * ranks, behind);
+  const support = Math.min(Math.max(1, wide) * ranks, behind);
 
   const groups = [];
   const rankA = front * attacksOf(att) + support;
@@ -335,7 +348,7 @@ export function contact(att, def, { touching = null } = {}){
     ws: att.ws, i: att.i, s: att.s, baseS: att.baseS, ap: att.ap,
     flags: att.flags, attacks: rankA, support,
   });
-  (att.retinue || []).slice(0, inFront).forEach((g, k) => groups.push({
+  fighting.forEach((g, k) => groups.push({
     ...g, id:"char" + k, support: 0,
     attacks: (g.a || 1) + (g.frenzyA || 0) +
              (g.charged && (g.chargeInches || 0) >= CHARGE_IMPETUS &&
@@ -343,8 +356,13 @@ export function contact(att, def, { touching = null } = {}){
   }));
 
   return {
-    front, wide, inFront, support, ranks, groups,
-    estimated: !touch,
+    front, wide, support, ranks, groups,
+    inFront: fighting.length,
+    /* i personaggi uniti che NON menano: sta scritto, perche' «e il
+       capo dov'e' finito?» e' la prima domanda che si fa guardando il
+       pannello */
+    outOfContact: retinue.filter(g => !fighting.includes(g)).map(g => g.name),
+    estimated: !measured,
     attacks: groups.reduce((n, g) => n + g.attacks, 0),
   };
 }

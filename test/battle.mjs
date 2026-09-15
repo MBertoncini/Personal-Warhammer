@@ -187,14 +187,33 @@ console.log('\ni modelli a contatto di basetta');
   const foe = C.combatant(saurus);
   ok('senza il tavolo la stima e la fila piu stretta, e lo dichiara',
      C.contact(C.combatant(orcs), foe).estimated === true);
-  const angolo = C.combatant(orcs, { touching: 2 });
+  const angolo = C.combatant(orcs, { touching: { models: 2, chars: [] } });
   ok('con il conto del tavolo la fila si stringe',
      C.contact(angolo, foe).wide === 2 && C.contact(angolo, foe).estimated === false);
   ok('e gli attacchi calano di conseguenza',
      C.contact(angolo, foe).attacks < C.contact(C.combatant(orcs), foe).attacks);
   ok('ma le file dietro appoggiano lo stesso', C.contact(angolo, foe).support === 2);
   ok('e non si tocca mai con piu modelli di quanti se ne hanno',
-     C.contact(C.combatant({ ...orcs, models: 3, frontage: 3 }, { touching: 9 }), foe).wide === 3);
+     C.contact(C.combatant({ ...orcs, models: 3, frontage: 3 },
+                           { touching: { models: 9, chars: [] } }), foe).wide === 3);
+
+  /* il capo in mezzo a una fila che sfiora il nemico con lo spigolo:
+     il tavolo ha guardato le basette e la sua non tocca niente */
+  const capo = { name:'Big Boss', uid: 99, models: 1,
+                 stats:{ M:'4',WS:'6',BS:'3',S:'5',T:'5',W:'3',I:'4',A:'4',Ld:'8' },
+                 us: 1, weapons: [], rules: [], lost: 0 };
+  const fuori = C.combatant({ ...orcs, uid: 1 },
+    { joined: [capo], touching: { models: 3, chars: [] } });
+  const dentro = C.combatant({ ...orcs, uid: 1 },
+    { joined: [capo], touching: { models: 3, chars: [99] } });
+  ok('un personaggio che non tocca non mena',
+     C.contact(fuori, foe).groups.every(g => !g.character));
+  ok('e lo dice invece di lasciarlo sparire',
+     C.contact(fuori, foe).outOfContact.join() === 'Big Boss');
+  ok('quello che tocca mena con i suoi numeri',
+     C.contact(dentro, foe).groups.some(g => g.character && g.attacks === 4));
+  ok('e non toglie un posto ai soldati, perche il tavolo li ha contati a parte',
+     C.contact(dentro, foe).front === C.contact(fuori, foe).front);
 }
 
 console.log('\nun assalto');

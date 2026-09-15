@@ -370,18 +370,39 @@ export async function setPhotoData(id, data, full = null){
 export async function setPhoto(id){
   const f = await pickImage();
   if (!f) return;
+
+  /* Leggere l'immagine e salvarla sono due fallimenti diversi e vanno
+     detti diversi: un JPEG rotto e una quota piena si riparano in due
+     modi opposti, e «foto non valida» davanti a un archivio pieno
+     manda a cercare il problema dalla parte sbagliata. */
+  let thumb = null, full = null;
   try {
-    const thumb = await shrinkImage(f);
-    let full = null;
+    thumb = await shrinkImage(f);
     if (fullPhotosOn()){
       const img = await readImage(f, { max: FULL_MAX_PX });
       /* un originale che il tetto ha ridotto alla misura della
          miniatura non e' un originale: e' un doppione che pesa */
       if (img && img.data && dataUrlBytes(img.data) > dataUrlBytes(thumb) * 1.5) full = img.data;
     }
-    await setPhotoData(id, thumb, full);
+  } catch (_) {
+    return say("Non riesco a leggere questa immagine.", { title:"Foto non valida" });
   }
-  catch (_) { await say("Non riesco a leggere questa immagine.", { title:"Foto non valida" }); }
+
+  try { await setPhotoData(id, thumb, full); }
+  catch (_) {
+    /* la miniatura da sola pesa un quarantesimo dell'originale: se
+       l'archivio l'accetta, la foto si salva lo stesso e si perde solo
+       quello che si poteva perdere */
+    if (full){
+      try {
+        await setPhotoData(id, thumb, null);
+        return say("L'originale non ci sta nell'archivio: ho tenuto la miniatura. " +
+                   "Libera spazio, o spegni «foto intere» nella barra.",
+                   { title:"Archivio pieno" });
+      } catch (_){ /* non ci sta nemmeno quella: lo dice la riga sotto */ }
+    }
+    await say("L'archivio non accetta altro: libera spazio e riprova.", { title:"Non riesco a salvarla" });
+  }
 }
 
 export async function clearPhoto(id){

@@ -1237,3 +1237,10 @@ table.chart td.hl{background:var(--accent);color:var(--panel);font-weight:700;}
 .duel-chars{margin:4px 0 6px;padding:6px 8px;border-radius:var(--r);
   border:1px solid var(--line);background:var(--panel);}
 .duel-chars .readout{padding:2px 0;}
+
+/* la riga della magia su un pezzo che non ha maghi: chiusa, e si apre
+   solo se sai che quel pezzo una magia ce l'ha e il file non l'ha detto */
+details.magic-block > summary{cursor:pointer;list-style:none;}
+details.magic-block > summary::-webkit-details-marker{display:none;}
+details.magic-block > summary::after{content:"+";margin-left:6px;color:var(--muted);}
+details.magic-block[open] > summary::after{content:"\2212";}
