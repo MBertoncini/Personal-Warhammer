@@ -17,6 +17,8 @@
  * scritti dal file, esce un pugno di flag e tre elenchi.
  */
 
+import { psychRule } from './psych.js';
+
 /* il numero fra parentesi: "Armour Bane (1, Cold One only)" -> 1 */
 const num = (s, dflt = 1) => {
   const m = /\(\s*(\d+)/.exec(String(s));
@@ -141,9 +143,13 @@ export const RULEBOOK = [
    c'entra con questo conto".
    ============================================================ */
 export const ELSEWHERE = [
-  { re:/^cold blooded/i,      why:"vale sui test di Paura, Panico e Terrore, non sul test di rotta" },
-  { re:/^(fear|terror)/i,     why:"si gioca alla dichiarazione della carica" },
-  { re:/^(stupidity|frenzy|animosity)/i, why:"e' un test di psicologia, prima del contatto" },
+  /* Paura, Terrore, Frenzy, Stupidita', Sangue Freddo e le altre della
+     psicologia stavano qui con una frase sola — «si gioca alla
+     dichiarazione della carica». Dalla Tappa 5 si giocano davvero, e la
+     riga la scrive `psych.js`, che sa dire dove. */
+  { re:/^animosity/i, why:"e' un test di psicologia, prima del contatto" },
+  { re:/^magical attacks/i,
+    why:"conta contro chi ha regole sugli attacchi magici: nessuna, nel conto di un assalto" },
   { re:/^(skirmish|loose formation|open order|close order)/i, why:"e' una formazione: cambia la sagoma sul tavolo, non i dadi" },
   { re:/^(fly|swiftstride|fast cavalry|move through cover|aquatic|scout|vanguard|ambush|swim)/i,
     why:"riguarda il movimento" },
@@ -231,9 +237,57 @@ export function readRules(names = [], weapons = [], weapon = "", texts = null){
       continue;
     }
 
+    /* La psicologia (Tappa 5). Quattro regole entrano nel conto di un
+       assalto — la Paura toglie uno per colpire, il Terrore uno al test
+       di rotta, la Frenzy aggiunge un attacco, la Warband alza il
+       Comando — e le altre si giocano in una casella precisa, che la
+       riga nomina invece di dire «altrove». */
+    const ps = psychRule(name);
+    if (ps){
+      if (ps.melee) applied.push({ name, text, what: ps.what, caveat: "" });
+      else elsewhere.push({ name, text, why: ps.where });
+      continue;
+    }
+
     const out = ELSEWHERE.find(r => r.re.test(name));
     if (out) elsewhere.push({ name, text, why: out.why });
     else unknown.push({ name, text });
   }
   return { flags, applied, elsewhere, unknown };
+}
+
+/* ============================================================
+   4 · IL CONTATORE DELLE REGOLE CHE L'APP NON CONOSCE
+   L'ordine in cui insegnare le prossime regole non lo decide l'indice
+   del manuale: lo decidono le partite giocate davvero. Il §3.4 del
+   piano chiedeva un contatore persistente, e non serve un file nuovo
+   per averlo — le partite archiviate portano con se' le liste con le
+   regole di ogni unita', e le liste salvate le portano anche loro.
+   Qui si contano, una volta per unita', e si mettono in fila: prima
+   quelle viste in piu' partite, poi quelle che stanno in piu' liste.
+
+   `groups` e' un elenco di { kind: "game" | "list", units: [...] }.
+   ============================================================ */
+export function tallyUnknown(groups = []){
+  const map = new Map();
+  for (const g of groups || []){
+    const seenHere = new Set();
+    for (const u of (g && g.units) || []){
+      const r = readRules(u.rules || [], [], "", u.ruleText || null);
+      for (const x of r.unknown){
+        const e = map.get(x.name) || { name: x.name, text: x.text || "", games: 0, lists: 0, units: 0 };
+        if (!e.text && x.text) e.text = x.text;
+        e.units++;
+        /* una partita o una lista contano una volta sola, anche se la
+           regola sta su tre unita' diverse */
+        if (!seenHere.has(x.name)){
+          seenHere.add(x.name);
+          if (g.kind === "game") e.games++; else e.lists++;
+        }
+        map.set(x.name, e);
+      }
+    }
+  }
+  return [...map.values()].sort((a, b) =>
+    b.games - a.games || b.lists - a.lists || b.units - a.units || a.name.localeCompare(b.name));
 }

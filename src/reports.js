@@ -27,6 +27,7 @@ import { SCENARIOS } from './scenarios.js';
 import { customScenarioMap } from './scenariokit.js';
 import { state } from './deploy.js';
 import * as BL from './battlelog.js';
+import { tallyUnknown } from './rulebook.js';
 import { shotFromTurn, shotSVG, shotCaption } from './tableshot.js';
 
 const REP_KEY = "reports:all";
@@ -218,6 +219,7 @@ export function renderReports(){
         <label class="field">&nbsp;<button class="btn primary" id="rp-create">Crea</button></label>
       </div>
     </div>
+    ${unknownHTML(ls)}
     <div class="ls-split" style="margin-top:10px">
       <div class="ls-side">
         ${reports.length ? reports.map(sideRow).join("") : `<p class="empty">Nessuna partita registrata.</p>`}
@@ -227,6 +229,31 @@ export function renderReports(){
 
   wireTop(host, ls);
   if (rep) wireDetail(host, rep);
+}
+
+/* Il contatore delle regole che l'app non gioca ancora (Tappa 5). Non
+   c'e' un file suo: le partite archiviate portano dentro le liste con
+   le regole di ogni unita', e le liste salvate pure — quindi il conto
+   resta com'e' finche' restano loro. In cima quelle viste in piu'
+   partite: e' l'ordine in cui conviene insegnarle all'app, e non
+   l'indice del manuale. */
+function unknownHTML(ls){
+  const rows = tallyUnknown([
+    ...reports.map(r => ({ kind:"game", units: [...((r.roster || {}).A || []), ...((r.roster || {}).B || [])] })),
+    ...ls.map(l => ({ kind:"list", units: l.units || [] })),
+  ]);
+  if (!rows.length) return "";
+  const top = rows.slice(0, 12);
+  const n = (v, one, many) => `${v} ${v === 1 ? one : many}`;
+  return `
+    <details class="raw" id="rp-unknown" style="margin-top:10px">
+      <summary>Regole che l'app non gioca ancora: ${rows.length}</summary>
+      <p class="note">In ordine di partite archiviate in cui compaiono, poi di liste salvate: è l'ordine in cui
+      conviene insegnarle all'app. Il testo per esteso, quando la lista lo porta, sta sul nome.</p>
+      ${top.map(x => `<div class="readout"><span title="${esc(x.text || "")}">${esc(x.name)}</span>
+        <b>${n(x.games, "partita", "partite")} · ${n(x.lists, "lista", "liste")}</b></div>`).join("")}
+      ${rows.length > top.length ? `<p class="note">… e altre ${rows.length - top.length}.</p>` : ""}
+    </details>`;
 }
 
 const listOpts = ls => `<option value="">—</option>` +

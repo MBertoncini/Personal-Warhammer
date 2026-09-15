@@ -25,8 +25,15 @@ export const duelOpen = () => !!cur;
    lista non dice chi ha caricato, chi porta lo stendardo, e quasi mai
    che armatura indossa. Quelle tre righe le sa solo chi guarda il tavolo. */
 function sideOpts(u, foe){
-  const c = C.combatant(u), f = C.combatant(foe);
+  const joined = x => ctx && ctx.joined ? ctx.joined(x) : [];
+  const c = C.combatant(u, { joined: joined(u) }), f = C.combatant(foe, { joined: joined(foe) });
+  /* La Paura in mischia (Tappa 5): chi ci e' dentro contro un nemico
+     piu' grosso che la fa tira quando il combattimento viene scelto, e
+     se fallisce ha −1 per colpire. Il test lo tira il tavolo, una volta
+     per turno; qui arriva l'esito, e la casella resta spuntabile. */
+  const fear = ctx && ctx.fearFor ? ctx.fearFor(u, foe) : null;
   return {
+    fear, feared: !!(fear && fear.already && !fear.passed),
     attacks: C.contact(c, f).attacks,
     armour: u.armour || 0, ward: u.ward || 0, regen: u.regen || 0,
     /* lo stendardo adesso arriva dal file quando c'e': era una casella
@@ -60,6 +67,7 @@ function sideOf(u, o, tag){
     armour: o.armour, ward: o.ward, regen: o.regen, forcedAttacks: o.attacks,
     standard: o.standard, charged: o.charged, chargeInches: o.inches,
     flank: o.flank, highGround: ML.highGroundFor(cur.ground, tag),
+    feared: !!o.feared, joined: ctx && ctx.joined ? ctx.joined(u) : [],
   });
   /* lo stendardo da battaglia lo legge il registro delle regole, ma
      resta spuntabile: nelle liste il portastendardo e' un personaggio
@@ -187,7 +195,10 @@ function testHTML(r, names){
   const cut = t.text.lastIndexOf("→ ");
   const head = cut < 0 ? t.text : t.text.slice(0, cut + 2);
   const verb = cut < 0 ? t.label.toLowerCase() : t.text.slice(cut + 2);
-  return `<p class="note"><b>${esc(names[side])}</b> perde di ${r.cr.diff} (Comando ${ld}):
+  /* da dove viene il Comando del test: la Warband che lo alza, il
+     Terrore del vincitore che lo abbassa (Tappa 5) */
+  const ldWhy = [(side === "A" ? r.a : r.b).ldWhy, t.terror].filter(Boolean).join("; ");
+  return `<p class="note"><b>${esc(names[side])}</b> perde di ${r.cr.diff} (Comando ${ld}${ldWhy ? " — " + esc(ldWhy) : ""}):
     ${esc(head)}<b style="color:var(--${colour})">${esc(verb)}</b>. ${odds}</p>
     ${t.daVerificare ? `<p class="note">La riga della Forza d'Unità più che doppia è dedotta dal testo di
       <b>Stubborn</b>, non letta sulla pagina del test: se il manuale dice altro, si cambia
@@ -328,6 +339,9 @@ function controls(tag, u){
         <label><input type="checkbox" id="d-std-${tag}"${o.standard ? " checked" : ""}> stendardo</label>
         <label><input type="checkbox" id="d-bsb-${tag}"${o.bsb ? " checked" : ""}> da battaglia</label>
         <label><input type="checkbox" id="d-chg-${tag}"${o.charged ? " checked" : ""}> ha caricato</label>
+        ${(o.fear && (o.fear.must || o.fear.already)) || o.feared
+          ? `<label title="${esc(o.fear ? o.fear.why : "")}"><input type="checkbox" id="d-fear-${tag}"${
+              o.feared ? " checked" : ""}> Paura fallita (−1 per colpire)</label>` : ""}
         ${o.charged ? `<label class="field inline">di
           <input type="number" min="0" max="30" step="0.5" id="d-inc-${tag}" value="${o.inches || 0}">″</label>` : ""}
         <label class="field inline">colpisce di
@@ -340,6 +354,9 @@ function controls(tag, u){
       ${o.charged && (o.inches || 0) < C.CHARGE_IMPETUS
         ? `<p class="note">Sotto i ${C.CHARGE_IMPETUS}″ di corsa non ci sono ferite d'urto né carica furiosa,
            e il bonus di Iniziativa vale un punto per pollice intero.</p>` : ""}
+      ${o.fear && o.fear.must
+        ? `<p class="note">${esc(o.fear.why)}: il test di Paura si tira quando il combattimento
+           viene scelto, una volta per turno — dal pulsante <b>Paura</b> nell'ispettore.</p>` : ""}
     </div>`;
 }
 
@@ -429,6 +446,7 @@ function render(){
     set(`#d-std-${tag}`, el => { o.standard = el.checked; });
     set(`#d-bsb-${tag}`, el => { o.bsb      = el.checked; });
     set(`#d-chg-${tag}`, el => { o.charged  = el.checked; });
+    set(`#d-fear-${tag}`, el => { o.feared  = el.checked; });
     set(`#d-inc-${tag}`, el => { o.inches   = Math.max(0, +el.value || 0); });
     set(`#d-flk-${tag}`, el => { o.flank    = el.value; });
   }

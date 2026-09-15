@@ -199,20 +199,28 @@ export function alsoInTheWay(placedPoly, others = [], exclude = null){
    fare chi e' gia' impegnato in un combattimento, perche' non ha da
    che parte andare.
    ============================================================ */
+/* `noFlee` e `mustHold` sono le due frasi che la psicologia aggiunge
+   (Tappa 5): chi e' Immune to Psychology o frenetico non puo' scegliere
+   la fuga, e chi e' in preda alla Stupidita' deve tenere la posizione.
+   Arrivano gia' scritte da `psych.js`, cosi' il perche' sta accanto al
+   pulsante spento. */
 export function reactions({ dist = 0, chargerMove = 0, shots = 0,
-                            engaged = false, fleeing = false } = {}){
+                            engaged = false, fleeing = false,
+                            noFlee = "", mustHold = "" } = {}){
   const tooNear = dist < chargerMove;
   const list = [
     { id:"hold", label:"Tiene la posizione", can:true, why:"" },
     { id:"shoot", label:"Tira e tiene",
-      can: shots > 0 && !engaged && !tooNear,
+      can: shots > 0 && !engaged && !tooNear && !mustHold,
       why: shots <= 0 ? "non ha niente da tirare"
          : engaged ? "è già in combattimento"
+         : mustHold ? mustHold
          : tooNear ? "il caricante è a " + r1(dist) + "″, meno del suo Movimento (" + chargerMove + "″)"
          : "" },
     { id:"flee", label:"Fugge",
-      can: !engaged && !fleeing,
-      why: engaged ? "è già in combattimento" : fleeing ? "sta già fuggendo" : "" },
+      can: !engaged && !fleeing && !noFlee && !mustHold,
+      why: engaged ? "è già in combattimento" : fleeing ? "sta già fuggendo"
+         : mustHold || noFlee || "" },
   ];
   return list;
 }
@@ -621,9 +629,10 @@ export function chargeSurvey(charger, targets = [], { pieces = [] } = {}){
    marcia sta nel secondo gruppo (p. 101), ed e' la distinzione che al
    tavolo si sbaglia sempre. */
 export function canCharge({ engaged = false, fleeing = false,
-                            rallied = false, column = false } = {}){
+                            rallied = false, column = false, stupid = false } = {}){
   const stop = [], slow = [];
   if (engaged) stop.push("è già in combattimento (p. 119)");
+  if (stupid)  stop.push("è in preda alla Stupidità: non si muove, salvo fuggire");
   if (fleeing) stop.push("sta fuggendo (p. 119)");
   if (rallied) stop.push("si è radunata in questo turno (p. 119)");
   if (column)  slow.push("in colonna di marcia si dichiara ma non si muove (p. 101)");

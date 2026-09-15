@@ -115,6 +115,10 @@ export function expired(e, now){
     if (u === "combat") return !!now.combatOver;
     if (u === "turn")   return now.turn > (at.turn ?? now.turn) || (at.side != null && now.side !== at.side);
     if (u === "round")  return now.round > (at.round ?? now.round);
+    /* «fino al suo prossimo inizio di turno»: e' la durata della
+       Stupidita' (Tappa 5), che attraversa il turno dell'avversario e
+       scade quando tocca di nuovo alla stessa parte, un turno dopo. */
+    if (u === "ownTurn") return now.turn > (at.turn ?? now.turn) && (at.side == null || now.side === at.side);
     return false;
   }
   if (u.turn != null && now.turn > u.turn) return true;

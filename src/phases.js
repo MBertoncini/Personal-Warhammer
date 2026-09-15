@@ -33,8 +33,8 @@
 export const PHASES = [
   { id:"strategy", label:"Strategia", page:115, steps:[
     { id:"turnStart", label:"Inizio turno",
-      what:"gli effetti che scadono, gli imboscati che arrivano",
-      does:["note","roll","reserve","expire"] },
+      what:"gli effetti che scadono, gli imboscati che arrivano, il test di Stupidità",
+      does:["note","roll","reserve","expire","psych"] },
     { id:"command", label:"Comando",
       what:"le abilita' di comando usabili adesso, una per modello",
       does:["note","roll","command"] },
@@ -47,8 +47,10 @@ export const PHASES = [
   ]},
   { id:"movement", label:"Movimento", page:118, steps:[
     { id:"declare", label:"Dichiarazione cariche",
-      what:"si dichiarano le cariche e si scelgono le reazioni",
-      does:["note","roll","declareCharge","chargeReaction"] },
+      what:"si dichiarano le cariche e si scelgono le reazioni; la Paura di chi carica, il Terrore di chi è caricato",
+      /* la fuga come reazione succede qui, subito: chi fallisce il
+         Terrore o sceglie di fuggire non aspetta le mosse di carica */
+      does:["note","roll","declareCharge","chargeReaction","psych","flee"] },
     { id:"chargeMoves", label:"Mosse di carica",
       what:"il tiro di carica e i caricanti che arrivano a contatto",
       does:["note","roll","chargeMove","flee"] },
@@ -79,8 +81,8 @@ export const PHASES = [
   ]},
   { id:"combat", label:"Corpo a corpo", page:144, steps:[
     { id:"fight", label:"Scegli e combatti",
-      what:"un combattimento per volta, in ordine di Iniziativa",
-      does:["note","roll","fight","toHit","toWound","save","loss","wound","challenge"] },
+      what:"un combattimento per volta, in ordine di Iniziativa; la Paura quando il combattimento viene scelto",
+      does:["note","roll","fight","toHit","toWound","save","loss","wound","challenge","psych","panic"] },
     { id:"result", label:"Risultato del combattimento",
       what:"ferite, ranghi, stendardo, fianco, retro, terreno piu' alto",
       does:["note","roll","combatResult"] },
@@ -90,10 +92,10 @@ export const PHASES = [
        si portava dietro la nota «questo di solito si fa altrove». */
     { id:"breakTest", label:"Test di rotta",
       what:"cede terreno, ripiega in ordine, oppure rotta",
-      does:["note","roll","breakTest","flee","compulsoryMove"] },
+      does:["note","roll","breakTest","flee","compulsoryMove","panic"] },
     { id:"pursuit", label:"Inseguimento",
       what:"inseguimento, sfondamento, unita' travolta",
-      does:["note","roll","pursue","overrun"] },
+      does:["note","roll","pursue","overrun","panic"] },
   ]},
 ];
 

@@ -8,7 +8,7 @@ import { R, T, SCENARIOS, geometry } from './scenarios.js';
 import { saveDoc, loadDoc } from './store.js';
 import { photoForUnit, photoFor, catEntry, matchUnitName } from './catalog.js';
 import { rectPoly, pointInRect, boxCorners, polysOverlap,
-         distPointToBox, toWorld, toLocal } from './geom.js';
+         distPointToBox, toWorld, toLocal, polyDistance } from './geom.js';
 import * as CB from './combat.js';
 import * as ML from './melee.js';
 import { stat } from './rules.js';
@@ -28,6 +28,7 @@ import { survey, frontArcPoly, movementBands, reachFan, sightFan,
          shootingSurvey } from './tactics.js';
 import * as CH from './charge.js';
 import * as SH from './shoot.js';
+import * as PS from './psych.js';
 import { splitWeaponRules } from './rulebook.js';
 import { showDiceGroups } from './dicebox.js';
 import { askText, askConfirm, askPick, showMenu, closeMenu,
@@ -615,6 +616,7 @@ function renderInspector(){
       ${defenceHTML(u)}
       ${shootingHTML(u)}
       ${chargeHTML(u)}
+      ${psychHTML(u)}
       ${gameBlockHTML(u)}
       ${nearbyHTML(u)}
       <div class="grid2"><button class="btn" id="i-rot-l">↺ 90°</button><button class="btn" id="i-rot-r">↻ 90°</button></div>
@@ -659,6 +661,10 @@ function renderInspector(){
     b.addEventListener("click", () => runCharge(u, b.dataset.charge));
   for (const b of host.querySelectorAll("[data-back]"))
     b.addEventListener("click", () => runBackward(u, b.dataset.back));
+  /* I test di psicologia della Tappa 5: ognuno tira dal vassoio, scrive
+     la riga e — se va male — porta la conseguenza sul tavolo. */
+  for (const b of host.querySelectorAll("[data-psych]"))
+    b.addEventListener("click", () => runPsychButton(u, b.dataset.psych));
   /* L'arco tira la raffica per intero: dichiarazione, dadi, perdite,
      Panico. La sagoma e il bombardamento sono l'altra meta' della
      Tappa 4, quella che non tira per colpire. */
@@ -1985,6 +1991,7 @@ export function shootPlanFor(u){
     gate: SH.canShoot({
       charged, marched, engaged: engagedNow(u), fleeing: !!u.fled,
       moved: !!(mv && !mv.still), weaponFlags: rules.flags,
+      stupid: psychFor(u).stupid,
     }),
   };
 }
@@ -2031,6 +2038,64 @@ const engagedNow = u => contactsNow().some(c => (c.a === u.uid || c.b === u.uid)
    riceve la riga puo' tornare al pezzo sul tavolo. */
 const asPiece = u => ({ name:u.name, box: boxOf(u), poly: corners(u), unit:u, us: usOf(u) });
 
+/* ---- la psicologia (Tappa 5) ----
+   Il profilo psicologico di un'unita' con i personaggi che le stanno
+   uniti, e gli effetti a tempo letti nel momento vero della partita:
+   una Stupidita' scaduta non deve fermare piu' nessuno. */
+const effNow = () => ({ turn: state.game.turn || 1, side: state.game.army || "A",
+                        round: state.game.turn || 1, phaseIndex: state.game.step || 0 });
+const psychFor = u => PS.psychOf(u, { joined: attachedOf(u), now: state.game.on ? effNow() : null });
+
+/* Un test di Paura per turno: l'esito sta sull'unita', con il turno e la
+   parte, cosi' l'annulla lo porta via con il resto. */
+const fearTested = u => {
+  const f = u && u.fearTest;
+  return f && f.turn === state.game.turn && f.side === state.game.army ? f : null;
+};
+
+/* Il Comando con cui si tira un test: quello del conto dell'assalto,
+   che sa della Warband. L'Impetuosita' lo vuole senza. */
+function unitLd(u, { forImpetuous = false } = {}){
+  const c = CB.combatant(u, { joined: attachedOf(u) });
+  if (forImpetuous)
+    return { value: c.ldBase, why: c.psych.warband && c.ld !== c.ldBase ? "senza il bonus della Warband" : "" };
+  return { value: c.ld, why: c.ldWhy };
+}
+
+/* Gli amici entro una distanza, da bordo a bordo: e' la misura del
+   Panico, che al tavolo si fa a occhio e si sbaglia di mezzo pollice
+   proprio quando conta. */
+function friendsNear(u, inches){
+  const poly = corners(u);
+  return state.units
+    .filter(o => o !== u && o.army === u.army && o.placed && !o.dead && !isJoined(o))
+    .map(o => ({ unit:o, name:o.name, dist: inch(polyDistance(poly, corners(o))) }))
+    .filter(f => f.dist <= inches + 0.01);
+}
+
+const insidePoly = (pt, poly) => {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++){
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+};
+
+/* Le reazioni del bersaglio, con le due frasi che la psicologia
+   aggiunge: chi non puo' scegliere la fuga, e chi deve tenere. */
+function reactionsOf(r, move){
+  const t = r.unit.unit;
+  const fl = PS.canFleeReaction(psychFor(t));
+  return CH.reactions({
+    dist: r.dist, chargerMove: move,
+    shots: CB.rangedWeapons(t).length ? CB.shooters(t) : 0,
+    engaged: engagedNow(t), fleeing: !!t.fled,
+    noFlee: fl.can || fl.hold ? "" : fl.why,
+    mustHold: fl.hold ? fl.why : "",
+  });
+}
+
 export function chargePlanFor(u){
   if (!u || !u.placed || u.dead || isJoined(u)) return null;
   const mb = movementBands(u);
@@ -2042,23 +2107,24 @@ export function chargePlanFor(u){
   /* Prima ancora della geometria c'e' lo stato: chi e' in mischia, chi
      sta fuggendo e chi si e' appena radunato non dichiara nessuna
      carica, per quanto bene stia messo sul tavolo (p. 119). */
+  const pu = psychFor(u);
   const pre = CH.canCharge({
     engaged: engagedNow(u), fleeing: !!u.fled,
     rallied: !!u.rallied, column: u.formation === "column",
+    stupid: pu.stupid,
   });
   return {
-    charger, move, swift: charger.swift, pre,
+    charger, move, swift: charger.swift, pre, psych: pu,
+    /* chi deve caricare e chi tira per saperlo (Frenzy, Impetuous): la
+       frase compare solo se una carica si puo' davvero dichiarare */
+    must: PS.mustCharge({ p: pu, canDeclare: pre.can && rows.some(r => r.can) }),
     march: CH.marchCheck(corners(u), foes.map(f => ({ ...f, fleeing: !!f.unit.fled })),
                          { fly: flies(u) }),
     max: CH.chargeBands(move, charger.swift).max,
     rows: rows.map(r => ({
       ...r,
       unit: r.unit.unit,
-      reactions: CH.reactions({
-        dist: r.dist, chargerMove: move,
-        shots: CB.rangedWeapons(r.unit.unit).length ? CB.shooters(r.unit.unit) : 0,
-        engaged: engagedNow(r.unit.unit), fleeing: !!r.unit.unit.fled,
-      }),
+      reactions: reactionsOf(r, move),
     })),
   };
 }
@@ -2077,6 +2143,7 @@ function chargeHTML(u){
       <div class="readout"><span>Carica${plan.swift ? " · passo lungo" : ""}</span>
         <b>fino a ${fmtIn(plan.max)}″</b></div>
       ${plan.pre.can ? "" : `<p class="note">${esc(u.name)}: ${esc(plan.pre.why.join("; "))}</p>`}
+      ${plan.must.why ? `<p class="note" style="color:var(--warn)">${esc(plan.must.why)}.</p>` : ""}
       ${rows.length ? rows.map(r => {
         const t = r.terrain || {};
         const note = [
@@ -2176,6 +2243,7 @@ async function runBackward(u, kind){
     ? CH.pursuitMove(boxOf(u), foes[0], { roll })
     : CH.backwardMove(kind, boxOf(u), foes, { roll });
   if (!mv) return;
+  const box0 = [u.x, u.y];
 
   act(spec.label.toLowerCase(), () => {
     G.dispatch({ ...action, text: `${u.name} ${mv.text}` }, rolls);
@@ -2192,6 +2260,9 @@ async function runBackward(u, kind){
                 { army: u.army });
     }
   });
+  /* chi fugge passando attraverso i propri amici li manda al Panico
+     (Tappa 5) */
+  if (kind === "flee") await panicFledThrough(u, box0);
   /* Quanti pollici ha fatto lo deve sapere chi insegue: l'inseguimento
      raggiunge se copre almeno la fuga (p. 156), e senza questo numero
      il confronto non si puo' fare. */
@@ -2218,6 +2289,39 @@ async function runCharge(u, uid){
   });
   if (!row.can) toast("Dichiarata lo stesso: l'app propone, non impedisce.");
 
+  /* 1 bis · la psicologia della dichiarazione (Tappa 5). Prima la Paura
+     di chi carica: se il bersaglio la fa ed e' piu' grosso si tira, e
+     chi fallisce non carica — resta fermo, ed e' una carica fallita.
+     Poi il Terrore di chi e' caricato: se chi carica lo fa, il
+     bersaglio tira subito, e chi fallisce deve fuggire. */
+  const pu = psychFor(u), pt = psychFor(t);
+  const fear = PS.fearCheck({ me: pu, foe: pt, meUS: usOf(u), foeUS: usOf(t),
+                              tested: fearTested(u), foeName: t.name });
+  if (fear.already && !fear.passed){
+    act("carica fallita", () => failCharge(u, t, "ha già fallito il test di Paura in questo turno"));
+    return;
+  }
+  if (fear.must){
+    const res = await runPsych(u, "fear", { check: fear, foe: t, at: 4 });
+    if (!res) return;
+    if (!res.passed){
+      act("carica fallita", () => failCharge(u, t, PS.FEAR_FAIL.charge));
+      return;
+    }
+  }
+  const canFlee = row.reactions.find(r => r.id === "flee");
+  const terror = PS.terrorCheck({ charger: pu, target: pt, canFlee: !!(canFlee && canFlee.can),
+                                  chargerName: u.name });
+  if (terror.must){
+    const res = await runPsych(t, "terror", { check: terror, foe: u, at: 4 });
+    if (!res) return;
+    if (!res.passed){
+      act("reazione alla carica", () => G.dispatch({ type:"chargeReaction", unit:t, kind:"flee", army:t.army,
+        text: `${t.name} fallisce il test di Terrore e deve fuggire` }));
+      return runFlee(t, u);
+    }
+  }
+
   /* 2 · la reazione, che e' del bersaglio e non di chi carica */
   const opts = row.reactions.map(r => ({ id:r.id, label: r.can ? r.label : r.label + " ✕" }));
   const kind = await askPick({
@@ -2235,14 +2339,28 @@ async function runCharge(u, uid){
   const action = { type:"chargeMove", unit:u, target:t, army:u.army,
                    swift:spec.swift, worst:spec.worst, dice:spec.n,
                    keep:spec.keep, drop:spec.drop, foot:spec.foot };
-  const rolls = await G.askRolls(G.engine().asks(action), `Carica di ${u.name}`);
+  let rolls = await G.askRolls(G.engine().asks(action), `Carica di ${u.name}`);
   if (!rolls || !rolls.carica) return;
   /* il Movimento che passa qui e' quello di profilo: il pollice che il
      terreno difficile toglie lo scala chargeOutcome, e scalarlo due
      volte vorrebbe dire una carica corta di un pollice a ogni bosco */
-  const out = CH.chargeOutcome({ dice: rolls.carica.dice, spec,
-                                 move: row.base != null ? row.base : row.move,
-                                 dist: row.dist });
+  const outOf = r => CH.chargeOutcome({ dice: r.carica.dice, spec,
+                                        move: row.base != null ? row.base : row.move,
+                                        dist: row.dist });
+  let out = outOf(rolls);
+  /* La Warband «puo' ritirare il tiro di carica» (Tappa 5). L'app lo
+     propone solo quando serve — la carica e' corta — e il secondo tiro
+     vale anche se e' peggiore: un dado non si ritira due volte (p. 93). */
+  if (!out.made && pu.warband &&
+      await askConfirm(`${u.name} arriva a ${out.reach}″ su ${row.dist.toFixed(1)}″. Warband: ritirare il tiro di carica?`,
+                       { title:"Ritiro della carica" })){
+    const again = await G.askRolls(G.engine().asks(action), `Carica di ${u.name} · ritiro (Warband)`);
+    if (again && again.carica){
+      again.carica = { ...again.carica, first: rolls.carica.dice, rerolled: true };
+      rolls = again;
+      out = outOf(rolls);
+    }
+  }
 
   act("mossa di carica", () => {
     if (state.game.on) G.goStep(5);
@@ -2268,8 +2386,19 @@ async function runCharge(u, uid){
 function landCharge(u, t, row, out){
   const al = row.align || CH.alignTo(boxOf(u), boxOf(t));
   if (al){ u.x = al.x; u.y = al.y; u.rot = al.rot; }
-  u.charged = { target: t.name, uid: t.uid, inches: out.reach, arc: al ? al.arc : "fronte" };
+  u.charged = { target: t.name, uid: t.uid, inches: out.reach, arc: al ? al.arc : "fronte",
+                turn: state.game.turn, side: state.game.army };
   u.moved = { kind:"charge", inches: out.reach };
+
+  /* First Charge (Tappa 5): «se la prima carica della partita riesce, il
+     bersaglio e' in disordine fino alla fine della fase di combattimento
+     di quel turno». Una volta per partita, e lo stato «gia' usata» sta
+     sull'unita', dove l'annulla lo trova. */
+  if (psychFor(u).firstCharge && EF.spend(u, "firstCharge")){
+    t.disrupted = true;
+    G.logLine(`${t.name}: in disordine per la prima carica di ${u.name} (First Charge), ` +
+              `fino alla fine del corpo a corpo di questo turno.`, { army: u.army });
+  }
 
   /* riesce a mettersi a filo, o c'e' qualcosa in mezzo? */
   const blockedBy = alignBlockers(u, t);
@@ -2319,6 +2448,8 @@ function shortCharge(u, t, out){
   const fix = CH.nudgeClear(at, from, enemiesOf(u).map(asPiece));
   u.x = fix.x; u.y = fix.y;
   u.moved = { kind:"failedCharge", inches: out.reach };
+  /* la prima carica della partita e' questa, anche se non e' arrivata */
+  if (psychFor(u).firstCharge) EF.spend(u, "firstCharge");
   if (fix.moved > 0)
     G.logLine(u.name + ": scostata di " + fix.moved.toFixed(1) + "″ per il pollice di p. 118.", { army: u.army });
 }
@@ -2331,6 +2462,7 @@ async function runFlee(t, from){
                                  `Fuga di ${t.name}`);
   if (!rolls || !rolls.fuga) return;
   const mv = CH.backwardMove("flee", boxOf(t), [asPiece(from)], { roll: rolls.fuga.total });
+  const start = [t.x, t.y];
   act("fuga", () => {
     G.dispatch({ type:"flee", unit:t, army:t.army,
                  text: `${t.name} ${mv.text}` }, rolls);
@@ -2339,6 +2471,7 @@ async function runFlee(t, from){
     t.fled = true;
     t.moved = { kind:"flee", inches: mv.inches };
   });
+  await panicFledThrough(t, start);
 }
 
 /* ============================================================
@@ -2425,13 +2558,15 @@ async function runShot(u, uid){
 
   /* 4 · il Panico. Il conto si fa sulla Forza d'Unita' quando c'e', e
      l'app sa quanti ne sono partiti meglio di chiunque al tavolo. */
-  if (r.kills > 0) await panicCheck(t, r.kills, `il tiro di ${u.name}`);
+  if (r.kills > 0) await panicCheck(t, r.kills, `il tiro di ${u.name}`, u);
+  /* e chi e' rimasto a guardare un'unita' amica spazzata via (Tappa 5) */
+  if (t.dead) await panicWave("destroyed", t);
 }
 
 /* Il test di Panico oltre un quarto (p. 141). Vive qui e non dentro
    `runShot` perche' la stessa domanda tornera' identica per le altre
    tre cause della Tappa 5: e' una misura piu' un test di Comando. */
-async function panicCheck(t, killed, from){
+async function panicCheck(t, killed, from, source = null){
   const us = unitStrength(t.troop, t.us, t.models, t.models);
   /* Quanta Forza d'Unita' se ne va con ogni modello: un Rat Ogre ne
      porta via tre, e contare le teste darebbe la risposta sbagliata
@@ -2443,14 +2578,184 @@ async function panicCheck(t, killed, from){
     destroyed: !!t.dead,
   });
   if (!chk.must) return;
-  const rolls = await G.askRolls([{ id:"panico", kind:"d6", n:2, why:"test di Panico" }],
-                                 `Panico di ${t.name}`);
-  if (!rolls || !rolls.panico) return;
-  act("test di Panico", () => {
-    if (state.game.on) G.goStep(11);
-    G.dispatch({ type:"panic", unit:t, army:t.army,
-      text: `${t.name} tira il Panico per ${from}: ${chk.why}` }, rolls);
+  /* Da qui in poi e' la stessa sequenza delle altre tre cause (Tappa 5):
+     chi e' esente, quanti dadi, l'esito, e la fuga se va male. Prima il
+     test si tirava e basta, e la riga non diceva se era passato. */
+  await runPanic(t, "casualties", { source, why: `${from}: ${chk.why}`, at: 11 });
+}
+
+/* ============================================================
+   7d bis · LA PSICOLOGIA (Tappa 5)
+   Un test di psicologia e' sempre la stessa sequenza: si decide se va
+   fatto e perche' (`psych.js`), si fanno rotolare i dadi che servono —
+   tre con Cold Blooded, nessuno per chi passa da solo — si scrive la
+   riga con l'esito, e se va male si porta la conseguenza sul tavolo.
+   Qui la sequenza c'e' una volta sola, e le cause la chiamano.
+   ============================================================ */
+async function runPsych(u, kind, { check = null, foe = null, at = null, forImpetuous = false } = {}){
+  const p = psychFor(u);
+  const k = PS.KINDS[kind];
+  const ld = unitLd(u, { forImpetuous });
+  const ask = PS.testDice(kind, p);
+  let rolls = null;
+  if (ask.length){
+    rolls = await G.askRolls(ask, `${k.label} di ${u.name}`);
+    if (!rolls || !rolls[ask[0].id]) return null;
+  }
+  const got = rolls ? rolls[ask[0].id] : null;
+  const res = PS.psychTest({ kind, ld: ld.value, dice: got ? got.dice : [], p });
+  act(k.label, () => {
+    if (state.game.on && at != null) G.goStep(at);
+    G.dispatch({ type: kind === "panic" ? "panic" : "psych", kind, label: k.label,
+      unit:u, army:u.army, ask, auto: res.auto, autoWhy: res.text,
+      outcome: res.passed ? "passato" : "fallito",
+      text: `${u.name}: ${k.label}` + (check && check.why ? ` (${check.why})` : "") +
+            ` — ${res.text}` + (ld.why && !res.auto ? ` [${ld.why}]` : "") +
+            (!res.passed && check && check.fail ? ` — ${check.fail}` : "") }, rolls);
+    if (kind === "fear")
+      u.fearTest = { turn: state.game.turn, side: state.game.army, passed: res.passed, vs: foe ? foe.uid : null };
+    if (kind === "stupidity" && !res.passed) EF.addEffect(u, PS.stupidEffect(effNow()));
   });
+  return res;
+}
+
+/* Il Panico: chi e' esente lo dice `psych.js`, il test lo tira
+   `runPsych`, e chi fallisce fugge — dopo averlo chiesto, perche' quella
+   conseguenza e' dichiarata da verificare. */
+async function runPanic(u, cause, { source = null, why = "", at = null, check = null } = {}){
+  const c = check || PS.panicCheck({ cause, me: psychFor(u), source: source ? psychFor(source) : null,
+                                     fleeing: !!u.fled, engaged: engagedNow(u),
+                                     sourceName: source ? source.name : "" });
+  if (!c.must){
+    if (c.why) act("niente Panico", () => G.logLine(`${u.name}: niente test di Panico — ${c.why}.`, { army: u.army }));
+    return null;
+  }
+  const res = await runPsych(u, "panic", { check: { ...c, why: why || c.why }, at });
+  if (res && !res.passed) await panicFlee(u, source);
+  return res;
+}
+
+async function panicFlee(u, source){
+  const pick = await askPick({
+    title: `${u.name} fallisce il Panico`,
+    label: "Chi fallisce il Panico fugge, lontano da quello che lo ha causato. " +
+           "La regola è dichiarata da verificare sul manuale: decidete voi.",
+    options: [{ id:"flee", label:"Fugge" }, { id:"stay", label:"Resta dov'è" }],
+  });
+  if (!pick) return;
+  if (pick !== "flee")
+    return act("Panico", () => G.logLine(`${u.name}: fallito il Panico, resta dov'è per scelta dei giocatori.`, { army: u.army }));
+  const near = nearFoes(u)[0];
+  const from = source || (near && near.unit) || null;
+  if (!from) return toast("Serve qualcosa da cui fuggire: la direzione si misura da lì.");
+  return runFlee(u, from);
+}
+
+/* Tutti quelli che una stessa cosa manda al Panico, uno dopo l'altro:
+   gli amici entro 6″ di chi e' stato distrutto o e' andato in rotta.
+   Chi non tira lo dice, perche' «e quelli perche' no?» e' la domanda
+   che al tavolo si fa sempre. */
+async function panicWave(cause, source){
+  if (!state.game.on || !source) return;
+  const sp = psychFor(source);
+  const friends = friendsNear(source, PS.PANIC_RANGE).map(f => ({
+    ...f, p: psychFor(f.unit), fleeing: !!f.unit.fled, engaged: engagedNow(f.unit) }));
+  const { tests, spared } = PS.panicAround({ cause, source: { ...sp, name: source.name }, friends });
+  if (spared.length)
+    act("niente Panico", () => {
+      for (const s of spared)
+        G.logLine(`${s.name}: niente Panico per ${source.name} — ${s.check.why}.`, { army: s.unit.army });
+    });
+  for (const f of tests) await runPanic(f.unit, cause, { source, check: f.check });
+}
+
+/* Chi fugge attraverso un'unita' amica la manda al Panico. Il percorso
+   e' il segmento dal centro di partenza a quello d'arrivo, e i pezzi
+   sono gli amici con il loro poligono vero. */
+async function panicFledThrough(u, from){
+  if (!state.game.on || !from) return;
+  const pieces = state.units
+    .filter(o => o !== u && o.army === u.army && o.placed && !o.dead && !isJoined(o))
+    .map(o => { const poly = corners(o); return { unit:o, contains: pt => insidePoly(pt, poly) }; });
+  for (const hit of CH.crossed(from, [u.x, u.y], pieces))
+    await runPanic(hit.unit, "fledThrough", { source: u });
+}
+
+/* I nemici a contatto che fanno Paura e sono piu' grossi: il test di
+   Paura in mischia, quando il combattimento viene scelto. */
+function fearFoes(u){
+  const ids = contactsNow().filter(c => c.enemy && (c.a === u.uid || c.b === u.uid))
+                           .map(c => c.a === u.uid ? c.b : c.a);
+  const pu = psychFor(u);
+  return [...new Set(ids)].map(id => state.units.find(o => o.uid === id)).filter(Boolean)
+    .map(foe => ({ foe, check: PS.fearCheck({ me: pu, foe: psychFor(foe), meUS: usOf(u), foeUS: usOf(foe),
+                                              when:"combat", tested: fearTested(u), foeName: foe.name }) }))
+    .filter(x => x.check.must || x.check.already);
+}
+
+function failCharge(u, t, why){
+  MV.ensureAnchor(u);
+  u.moved = { kind:"failedCharge", inches: 0 };
+  if (psychFor(u).firstCharge) EF.spend(u, "firstCharge");
+  G.dispatch({ type:"note", army:u.army, text: `${u.name} non carica ${t.name}: ${why}.` });
+}
+
+async function runPsychButton(u, kind){
+  if (kind === "stupidity"){
+    const c = PS.stupidityCheck({ p: psychFor(u), fleeing: !!u.fled, engaged: engagedNow(u) });
+    if (!c.must && c.why) toast(c.why + ": si tira lo stesso, lo decidete voi.");
+    return runPsych(u, "stupidity", { check: { ...c, fail:"fino al suo prossimo turno: " + PS.STUPID_LIMITS.join(", ") }, at: 0 });
+  }
+  if (kind === "impetuous")
+    return runPsych(u, "impetuous", { check: { why:"Impetuous", fail:"deve dichiarare una carica" },
+                                      at: 4, forImpetuous: true });
+  if (kind === "fear"){
+    const list = fearFoes(u).filter(x => x.check.must);
+    if (!list.length) return toast("Nessun nemico a contatto che faccia Paura e sia più grosso.");
+    return runPsych(u, "fear", { check: list[0].check, foe: list[0].foe, at: 12 });
+  }
+  if (kind === "panic"){
+    const cause = await askPick({
+      title: `Panico di ${u.name}`, label: "Per quale causa?",
+      options: Object.values(PS.PANIC_CAUSES).map(c => ({ id:c.id, label:c.label })),
+    });
+    if (!cause) return;
+    const c = PS.PANIC_CAUSES[cause];
+    return runPanic(u, cause, { check: { must:true, why: c.label, fail:"fugge" } });
+  }
+}
+
+/* Il blocco nell'ispettore: le regole di psicologia dell'unita', lo
+   stato in cui si trova adesso — in preda alla Stupidita', senza piu'
+   Frenzy, con la Paura gia' tirata — e i test che si possono tirare. */
+function psychHTML(u){
+  if (!u || !u.placed || u.dead || isJoined(u)) return "";
+  const p = psychFor(u);
+  const lines = [];
+  if (p.stupid) lines.push("In preda alla Stupidità fino al suo prossimo turno: " + PS.STUPID_LIMITS.join(", ") + ".");
+  if (p.frenzyLost) lines.push("Ha perso la Frenzy perdendo un round di combattimento.");
+  const ft = fearTested(u);
+  if (ft) lines.push("Test di Paura " + (ft.passed ? "passato" : "fallito") + " in questo turno: non se ne tira un altro.");
+  const lead = unitLd(u);
+  if (lead.why) lines.push(lead.why + ".");
+  if (!p.rules.length && !lines.length && !state.game.on) return "";
+  const fearNow = state.game.on ? fearFoes(u).filter(x => x.check.must) : [];
+  const btn = (id, label, title) =>
+    `<button class="btn tiny" data-psych="${id}" title="${esc(title)}">${label}</button>`;
+  const buttons = !state.game.on ? "" : [
+    p.stupidity ? btn("stupidity", "Stupidità", "Test di Comando all'inizio del turno: se fallisce resta ferma fino al prossimo") : "",
+    p.impetuous ? btn("impetuous", "Impetuosa", "Test di Comando senza la Warband: se fallisce deve caricare") : "",
+    fearNow.length ? btn("fear", "Paura", fearNow[0].check.why) : "",
+    btn("panic", "Panico", "Un test di Panico a mano, scegliendo la causa"),
+  ].join("");
+  return `
+    <div class="psych-block">
+      <div class="readout"><span>Psicologia</span><b>${p.rules.length
+        ? p.rules.map(r => esc(r.name)).join(" · ") : "—"}</b></div>
+      ${p.rules.map(r => `<p class="note"><b>${esc(r.name)}</b>: ${esc(r.what || "")}</p>`).join("")}
+      ${lines.map(s => `<p class="note" style="color:var(--warn)">${esc(s)}</p>`).join("")}
+      ${buttons ? `<div class="chiprow">${buttons}</div>` : ""}
+    </div>`;
 }
 
 /* ---- la sagoma sul tavolo ----
@@ -2546,7 +2851,8 @@ async function runBombard(u){
     if (state.game.on) G.goStep(11);
     for (const [foe, n] of perUnit) G.setLost(foe, (foe.lost || 0) + n);
   });
-  for (const [foe, n] of perUnit) await panicCheck(foe, n, `la sagoma di ${u.name}`);
+  for (const [foe, n] of perUnit) await panicCheck(foe, n, `la sagoma di ${u.name}`, u);
+  for (const foe of perUnit.keys()) if (foe.dead) await panicWave("destroyed", foe);
 }
 
 /* ============================================================
@@ -2596,6 +2902,14 @@ async function resolveCombat({ a, b, round }){
             (parts ? " (" + parts + ")" : "") });
   });
 
+  /* 1 bis · la Frenzy (Tappa 5): «ogni modello che perde un round di
+     combattimento perde subito questa regola». */
+  if (!r.wiped && r.cr.loser && PS.losesFrenzy(psychFor(loser)))
+    act("Frenzy persa", () => {
+      loser.frenzyLost = true;
+      G.logLine(`${loser.name} perde il round e con lui la Frenzy.`, { army: loser.army });
+    });
+
   /* 2 · il test. I dadi sono quelli che il pannello ha appena mostrato
      cadere nel vassoio: rifarli qui vorrebbe dire scrivere nel
      registro un tiro diverso da quello che si e' visto. */
@@ -2609,6 +2923,10 @@ async function resolveCombat({ a, b, round }){
   /* 3 · la mossa che l'esito impone. Le tre le sa gia' fare la Tappa
      2: qui cambia solo chi decide quale, e non e' piu' il dito. */
   const mv = r.test && r.test.move ? await runBackward(loser, r.test.move) : null;
+  /* chi rompe e fugge dal combattimento manda al Panico gli amici entro
+     6″, e chi e' stato spazzato via anche (Tappa 5) */
+  if (r.test && r.test.outcome === "rout") await panicWave("broke", loser);
+  if (r.wiped) await panicWave("destroyed", loser);
 
   /* 4 · l'inseguimento. Si insegue chi e' andato in rotta; si sfonda
      quando davanti non e' rimasto nessuno. Raggiunge se copre almeno
@@ -2641,6 +2959,7 @@ async function resolveCombat({ a, b, round }){
     }
     if (out.caught) G.destroy(loser);
   });
+  if (out.caught) await panicWave("destroyed", loser);
 }
 
 function drawTactics(svg, g, u){
@@ -4204,6 +4523,11 @@ async function bootDeploy(){
        cosi': quando l'assalto e' finito chiede a noi di portarne
        l'esito sui pezzi. */
     resolveCombat,
+    /* la psicologia che lo scontro sente (Tappa 5): i personaggi uniti,
+       e la Paura con l'esito del test gia' tirato in questo turno */
+    joined: u => attachedOf(u),
+    fearFor: (u, foe) => PS.fearCheck({ me: psychFor(u), foe: psychFor(foe), meUS: usOf(u), foeUS: usOf(foe),
+                                        when:"combat", tested: fearTested(u), foeName: foe.name }),
     applyLosses: pairs => {
       act("perdite dallo scontro", () => {
         for (const [u, n] of pairs) if (n > 0) G.setLost(u, (u.lost || 0) + n);

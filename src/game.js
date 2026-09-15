@@ -38,6 +38,7 @@ import * as PH from './phases.js';
 import { createEngine, ACTIONS } from './engine.js';
 import * as CH from './charge.js';
 import * as EF from './effects.js';
+import * as PS from './psych.js';
 
 /* Le quattro fasi restano, perche' il pannello le raggruppa e il
    registro le nomina; sotto ognuna ci sono adesso le quattro caselle
@@ -147,6 +148,31 @@ function wireCoreRules(E){
         gone.push(u.name + ": " + (e.from || e.id));
     if (gone.length) E.dispatch({ type:"expire", gone });
   }, "effetti a tempo");
+
+  /* La Tappa 5. Le regole della psicologia che il motore chiama da solo
+     quando passa un test: non decidono l'esito, lasciano nella traccia
+     perche' i dadi erano tre, o perche' non ce n'erano. */
+  for (const h of PS.HOOKS) E.on(h.moment, h.id, h.fn, h.from);
+
+  /* E le due caselle in cui la psicologia si dimentica sempre: l'inizio
+     del turno (la Stupidita') e la dichiarazione delle cariche (chi
+     deve caricare, chi tira per saperlo). Questo ascoltatore viene dopo
+     quello delle scadenze, cosi' una Stupidita' finita non viene
+     ricordata un'altra volta. */
+  E.on("onStepEnter", "psicologia", ctx => {
+    if (ctx.to !== 0 && ctx.to !== 4) return;
+    const g = game();
+    if (!g.on) return;
+    const s = S();
+    const when = { turn:g.turn, side:g.army, round:g.turn, phaseIndex:ctx.to };
+    const rows = s.units
+      .filter(u => u.army === g.army && u.placed && !u.dead && !FM.hostUnit(s.units, u))
+      .map(u => ({ name:u.name, fleeing: !!u.fled,
+                   p: PS.psychOf(u, { joined: FM.attachedTo(s.units, u), now: when }) }));
+    const line = PS.reminders(ctx.to, rows);
+    if (line) E.dispatch({ type:"note", army:g.army,
+      text: line + (ctx.to === 0 ? " Chi è in combattimento non tira." : "") });
+  }, "promemoria della psicologia");
 }
 
 /* La riga nel registro. `phase` resta la fase — il report la stampa
@@ -237,9 +263,14 @@ export function captureTurn({ closing = false } = {}){
 export function closeTurn(){
   const g = game();
   captureTurn();
-  g.step = 0; g.phase = 0;
   if (g.army === "A") g.army = "B";
   else { g.army = "A"; g.turn++; }
+  /* Nella prima casella si entra passando dal motore, non scrivendo
+     l'indice a mano: e' li' che scadono gli effetti a tempo e che la
+     psicologia ricorda la Stupidita'. Scritto a mano, «Chiudi turno»
+     saltava tutti e due, e una Stupidita' presa il turno prima non se
+     ne andava piu' (Tappa 5). */
+  goStep(0);
   /* Il turno nuovo riparte da dove sei arrivato: le ancore si rimettono
      tutte qui. E' quello che rende «mosso 4.7 di 8» una risposta al
      turno in corso invece che al totale della partita. */
@@ -638,7 +669,11 @@ function fromTray(r, q = {}){
      Farlo qui una seconda volta vorrebbe dire due regole che possono
      divergere. */
   let kept = dice;
-  if (q.keep && dice.length > q.keep) kept = CH.keepDice(dice, q);
+  /* Cold Blooded non e' un tiro di carica: tre dadi insieme, e si
+     tengono i due minori. La regola sta in `psych.js`, e la si legge da
+     li' come quella della carica si legge da `charge.js`. */
+  if (q.coldBlooded) kept = PS.keptDice(dice, true);
+  else if (q.keep && dice.length > q.keep) kept = CH.keepDice(dice, q);
   /* Quanti ne passano si porta indietro solo se un punteggio da fare
      c'era davvero. Senza, il vassoio torna comunque `hits: 0` — non ha
      torto, zero dadi hanno passato un punteggio che non esisteva — e il

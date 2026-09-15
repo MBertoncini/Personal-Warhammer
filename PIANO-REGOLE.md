@@ -278,7 +278,10 @@ giochi davvero**, e l'app lo sa già — l'elenco «regole che non conosco»
 del pannello dello scontro è, letteralmente, la lista della spesa
 ordinata per frequenza. Il primo lavoro è renderla persistente: un
 contatore di quante volte ogni regola sconosciuta è comparsa nelle
-partite. Da lì si implementa dall'alto.
+partite. Da lì si implementa dall'alto. ~~Il contatore~~ c'è dalla
+Tappa 5 (`tallyUnknown` in `rulebook.js`, nella scheda Partite), e non
+ha chiesto un file nuovo: le partite archiviate portano già dentro le
+liste con le regole di ogni unità.
 
 E una parte della lista si può già leggere adesso, senza aspettare il
 contatore: passando `readRules` sulle dieci liste salvate restano fuori
@@ -482,11 +485,15 @@ Per ogni fase: cosa l'app può fare da sola, e cosa resta ai giocatori.
   test di trattenuta di chi preferirebbe non inseguire.
 
 ### Psicologia
-Panico (pp. 160-161) con le sue quattro cause ricorrenti — perdite oltre
+~~Panico (pp. 160-161) con le sue quattro cause ricorrenti — perdite oltre
 un quarto della Forza d'Unità, amico vicino distrutto, amico vicino che
 lascia il combattimento, unità attraversata da chi fuggiva — più paura,
-terrore, odio, stupidità, frenesia. Sono quasi tutte **misure di
-distanza più un test di Comando**: due cose che l'app fa già bene.
+terrore, odio, stupidità, frenesia.~~ Fatto nella Tappa 5 (`psych.js`).
+Erano davvero **misure di distanza più un test di Comando**; quello che
+mancava era sapere chi ne è esente e cosa succede dopo, e il testo delle
+liste lo dice regola per regola. Restano da verificare tre righe della
+pagina del Panico, e restano fuori il Comando del Generale e il ritiro
+dello stendardo da battaglia.
 
 ### Magia
 Il ciclo completo (pp. 106-112): domini e generazione degli incantesimi
@@ -1076,10 +1083,100 @@ porta alla pagina giusta invece che a una riga inventata. Le prove
 stanno in `test/tiro.mjs`, che guarda il tiro dal lato dei numeri come
 `test/mischia.mjs` guarda l'assalto.
 
-**Tappa 5 — Psicologia e le prime venti regole speciali.**
-Panico con le quattro cause, paura, terrore, odio, stupidità, frenesia;
-il registro delle regole con gli agganci; il contatore delle regole
-sconosciute che decide l'ordine delle prossime.
+**Tappa 5 — Psicologia e le prime venti regole speciali. — fatta, con tre righe da verificare**
+~~Panico con le quattro cause~~, ~~paura~~, ~~terrore~~, ~~odio~~ (era già
+un ritiro dalla Tappa 3), ~~stupidità~~, ~~frenesia~~; ~~il registro
+delle regole con gli agganci~~; ~~il contatore delle regole sconosciute
+che decide l'ordine delle prossime~~. Stanno in `psych.js`, che di
+tavolo non sa niente come `charge.js`, `melee.js` e `shoot.js`: entrano
+profili, Forze d'Unità, distanze e facce già uscite, escono esiti con
+la traccia di come sono venuti.
+
+Da dove viene. Questa è la prima tappa scritta *tutta* sul testo delle
+liste invece che sul riassunto del piano: Fear, Terror, Frenzy, Blood
+Frenzy, Stupidity, Impetuous, Warband, Cold Blooded, Immune to
+Psychology, Ignore Panic, Ignore Goblin Panic, Fear of Elves, Quell
+Impetuosity e First Charge stanno per esteso in `dati/liste.json`. Le
+regole erano venti nel titolo; sono quindici, perché le altre cinque
+che le liste portano davvero erano già entrate nelle Tappe 3 e 4. La
+pagina del Panico del manuale base invece in casa non c'è, e le tre
+cose che servono e che nessun testo di lista dice sono costanti
+dichiarate (sotto, *quello che resta fuori*).
+
+Come si vede al tavolo. La bandierina della carica ha due passi in più,
+prima della reazione: la **Paura** di chi carica un nemico più grosso
+che la fa — chi fallisce non si muove, ed è una carica fallita — e il
+**Terrore** del bersaglio di chi lo fa, che se fallisce fugge. Le
+reazioni si spengono da sole con il perché accanto. Nell'ispettore c'è
+il blocco **Psicologia**: le regole dell'unità in una riga ciascuna, lo
+stato in cui si trova, e i pulsanti dei test. Il **Panico** non è più un
+tiro che finiva nel registro senza esito: dopo il tiro, dopo una rotta,
+dopo un'unità distrutta, dopo una fuga che attraversa un amico, l'app
+misura i 6″, scrive chi non tira e perché, tira per gli altri e chiede
+se chi ha fallito fugge. All'inizio del turno il registro ricorda la
+Stupidità da tirare, alla dichiarazione delle cariche chi deve caricare
+e chi tira per saperlo. Il contatore sta nella scheda Partite.
+
+Le regole come ascoltatori, finalmente per davvero: *Cold Blooded* e
+l'immunità si agganciano ai momenti `onPanic` e `onPsych` del motore, e
+la riga di registro dice nella traccia perché i dadi erano tre, o
+perché non ce n'erano.
+
+Quello che questa tappa ha trovato per strada, e non era in programma:
+
+- **La Warband tirava con due o tre punti di Comando in meno.** Il
+  testo dice che il bonus di ranghi *attuale* si somma al Comando, fino
+  a 10, salvo che l'unità fugga. Diciotto unità delle liste salvate lo
+  hanno, e ognuna faceva test di rotta e di Panico con il Comando di
+  profilo. Adesso lo conta la schiera di `combat.js`, quindi lo sanno il
+  test di rotta, il Panico e il pannello, che scrive da dove viene.
+- **Il Panico del tiro non diceva com'era andato.** La Tappa 4 faceva
+  rotolare i due dadi e scriveva le facce, e il registro non sapeva se
+  il reggimento era rimasto o se n'era andato. Adesso la riga porta
+  l'esito, e chi fallisce ha la sua fuga a un clic.
+- **«Chiudi turno» saltava la prima casella.** Scriveva l'indice a mano
+  invece di entrare nella casella dal motore, e gli effetti a tempo non
+  scadevano mai da quel pulsante: una Stupidità presa al primo turno
+  sarebbe rimasta per tutta la partita. Adesso ci entra dal motore, come
+  le frecce.
+- **Il registro diceva mezza verità su Paura e Terrore.** «Si gioca alla
+  dichiarazione della carica» era vero per metà: la Paura vale anche in
+  mischia (−1 per colpire) e il Terrore anche nel test di rotta (−1 al
+  Comando). Tutte e due adesso entrano nel conto di un assalto.
+- **«Fear of Elves» comincia con «Fear».** Un'espressione scritta di
+  fretta avrebbe fatto di ogni Orco uno che fa Paura. Se n'è accorta la
+  prova prima del tavolo.
+
+Quello che resta fuori, detto per non lasciarlo scoprire a una partita:
+
+- **Tre righe da verificare sulla pagina del Panico** (pp. 160-161), che
+  in casa non c'è: che chi è in combattimento non tiri il Panico per gli
+  altri (`PANIC_SKIP_ENGAGED`), che chi fallisce fugga (`PANIC_FAIL`, e
+  per questo l'app lo chiede invece di farlo), e che chi fa Terrore non
+  sconti il −1 del Terrore nel test di rotta (`TERROR_MOD_SPARES_TERROR`).
+- **Il Comando del Generale e lo stendardo da battaglia.** I test usano
+  il Comando dell'unità: *Inspiring Presence* e il ritiro del Panico
+  nel raggio dello stendardo sono scritti per esteso nelle liste e non
+  ancora contati.
+- *Blood Frenzy* è letta e non applicata (il conto non separa le ferite
+  della cavalcatura); *Quell Impetuosity* è ricordata e non ritira;
+  l'obbligo di caricare di Frenzy e Impetuous è una riga arancione, non
+  una carica dichiarata da sola.
+- Il +1 Attacchi della Frenzy **dopo un inseguimento** ha la sua
+  funzione ma il tavolo non tiene ancora chi ha inseguito il turno
+  prima; e quello della carica vale finché la carica resta scritta
+  sull'unità, che a fine turno non viene tolta — nel pannello dello
+  scontro si toglie la spunta.
+- Il disordine di *First Charge* non se ne va da solo a fine corpo a
+  corpo, come quello del terreno. Il test di Paura in mischia si tira
+  dal pulsante dell'ispettore, non all'apertura dello scontro.
+
+*Fatto quando*: una carica contro un mostro che fa Terrore fa tirare
+chi carica e chi è caricato nell'ordine giusto, e un reggimento
+distrutto manda al Panico chi gli stava a 6″ senza che nessuno misuri.
+**Lo fa**. Le prove stanno in `test/psicologia.mjs`, che guarda la
+psicologia dal lato dei numeri come `test/tiro.mjs` guarda il tiro, e
+il gesto sul tavolo lo guarda `test/boot.mjs`.
 
 **Tappa 5 bis — Le regole dei tre eserciti di casa.**
 Dieci regole per gli Orchi e Goblin, sei per gli Skaven, quelle degli

@@ -16,12 +16,13 @@
  * da sola quando un pezzo le manca.
  */
 
-import { hitMelee, woundOn, saveOn, pool, roll, chance, expected,
+import { hitMelee, woundOn, saveOn, pool, roll, chance, expected, rankBonus,
          stat, weaponStrength, weaponAP, IMPOSSIBLE } from './rules.js';
 import { readRules, splitWeaponRules, emptyFlags } from './rulebook.js';
 import { troopType, usPerModel } from './troops.js';
 import * as ML from './melee.js';
 import * as SH from './shoot.js';
+import * as PS from './psych.js';
 
 /* ============================================================
    1 · DALL'UNITA' DEL TAVOLO ALLA SCHIERA CHE COMBATTE
@@ -71,6 +72,13 @@ const ranIn = c => !!c.charged && (c.chargeInches || 0) >= CHARGE_IMPETUS;
    passa sempre, quindi contarli fra i dadi usciti basta e non serve
    sapere quale punteggio servisse. */
 const sixes = p => (p.dice || []).filter(v => v === 6).length;
+
+/* La Paura fallita in mischia (Tappa 5): −1 al tiro per colpire contro
+   chi la fa. La tabella di p. 149 non chiede mai piu' di 5+, quindi con
+   il −1 si arriva al 6+ e non oltre; chi colpisce senza tirare continua
+   a non tirare. */
+const fearful = (need, att) => !att || !att.feared || need <= 0 || need >= IMPOSSIBLE
+  ? need : Math.min(6, need + 1);
 
 /* due tiri separati raccontati come uno solo, per il pannello */
 function mergePools(a, b){
@@ -152,13 +160,36 @@ export function combatant(u, over = {}){
   if (c.flags.handWeaponAP && melee && /hand weapon|arma a una mano/i.test(melee.name))
     c.ap = Math.max(c.ap, c.flags.handWeaponAP);
 
-  return Object.assign(c, over);
+  /* La psicologia (Tappa 5), nelle tre cose che un assalto sente.
+
+     Il Comando della Warband sale del bonus di ranghi *attuale* — quello
+     vero, che il disordine azzera — fino a 10, salvo che l'unita' stia
+     fuggendo. E' il numero con cui si tira il test di rotta, e diciotto
+     unita' delle liste salvate lo tiravano con due o tre punti di meno.
+
+     La Frenzy da' un attacco in piu' nel turno in cui carica: si
+     ricalcola dopo le correzioni del pannello, perche' «ha caricato» e'
+     una casella che si spunta. La Paura fallita toglie uno al tiro per
+     colpire, e quella la dice il tavolo con `over.feared`. */
+  c.psych = PS.psychOf(u, { joined: over.joined || [] });
+  const ranks = c.disrupted ? 0 : rankBonus(c.models, c.frontage, c.troop ? c.troop.maxRank : 3);
+  const lead = PS.leadershipOf(c.ld, c.psych, { rankBonus: ranks, fleeing: !!u.fled });
+  c.ldBase = c.ld; c.ld = lead.value; c.ldWhy = lead.why;
+  c.feared = false;
+
+  const out = Object.assign(c, over);
+  if (over.frenzyA == null)
+    out.frenzyA = PS.frenzyBonus({ p: out.psych, chargedThisTurn: !!out.charged }).a;
+  return out;
 }
 
 /* Gli attacchi che questo modello porta adesso: la caratteristica del
    profilo piu' quello che la carica furiosa aggiunge — e la carica
    furiosa vuole i suoi tre pollici di corsa, come l'urto. */
-const attacksOf = c => (c.a || 1) + (ranIn(c) && c.flags && c.flags.furiousCharge ? 1 : 0);
+const attacksOf = c => (c.a || 1) + (ranIn(c) && c.flags && c.flags.furiousCharge ? 1 : 0) +
+                       /* la Frenzy non vuole i tre pollici: le basta aver
+                          caricato, o aver inseguito il turno prima */
+                       (c.frenzyA || 0);
 
 /* Quanti si toccano davvero: la prima fila e' larga quanto la piu'
    stretta delle due, e una fila dietro appoggia con un colpo a testa.
@@ -187,7 +218,8 @@ export function strike(att, def, { attacks, auto = false, strength, ap, label = 
   const f = att.flags || emptyFlags();
   const notes = [];
 
-  const hitNeed = auto ? 0 : hitMelee(att.ws, def.ws);
+  const hitNeed = auto ? 0 : fearful(hitMelee(att.ws, def.ws), att);
+  if (!auto && att.feared) notes.push("Paura: −1 per colpire");
   /* L'Odio ritira i colpi mancati, e solo nel primo assalto. Era
      elencato fra le regole «che si giocano altrove — e' un test di
      psicologia»: nel manuale di questa edizione non e' un test, e' un
@@ -343,13 +375,19 @@ export function meleeRound(A, B, { round = 1, challenge = false } = {}){
 function breakFor(side, winner, diff, tag){
   const f = side.flags || {};
   const crushed = ML.crushingUS(usOf(winner), usOf(side));
-  const chances = ML.breakChances(side.ld, diff, { crushed });
-  const base = { side: tag, chances, crushed };
+  /* Il Terrore (Tappa 5): se fra chi ha vinto c'e' chi lo fa, chi ha
+     perso ha −1 al Comando nel test. Il −1 entra anche nelle
+     probabilita', cosi' il numero che il pannello mostra e' quello con
+     cui si tira davvero. */
+  const terror = PS.terrorBreakMod({ winners: [winner.psych], loser: side.psych || {} });
+  const ldMod = terror.mod;
+  const chances = ML.breakChances(side.ld, diff, { crushed, ldMod });
+  const base = { side: tag, chances, crushed, terror: terror.why };
   if (f.unbreakable)
     return { ...base, ...ML.breakOutcome({ ld: side.ld, diff, unbreakable: true }) };
   if (f.stubborn && !side.stubbornUsed && chances.rout > chances.give)
     return { ...base, ...ML.breakOutcome({ ld: side.ld, diff, stubbornNow: true }) };
-  return { ...base, ...ML.breakOutcome({ ld: side.ld, diff, dice: roll(2), crushed }) };
+  return { ...base, ...ML.breakOutcome({ ld: side.ld, diff, dice: roll(2), crushed, ldMod }) };
 }
 
 /* Il conto di fine assalto. Le voci sono quelle che al tavolo si
@@ -393,7 +431,7 @@ export function odds(A, B, n = 500, opts = {}){
 export function meleeForecast(att, def, attacks){
   const n = attacks ?? att.forcedAttacks ?? contact(att, def).attacks;
   const f = att.flags || emptyFlags();
-  const h = hitMelee(att.ws, def.ws);
+  const h = fearful(hitMelee(att.ws, def.ws), att);
   /* Con l'Odio i colpi mancati si ritirano, e la media dei colpi
      andati a segno sale: il conto lo sa gia' fare `expected`, che la
      stessa regola la applica ai dadi veri. */

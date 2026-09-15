@@ -147,6 +147,8 @@ Fino a poco fa l'app tirava 2D6 e li **sommava**, che è la regola del Warhammer
 
 **Le quattro mosse all'indietro.** Quando c'è un nemico vicino compaiono quattro pulsanti: *cede 2″*, *ripiega*, *fugge*, *insegue*. Sono la stessa geometria vista quattro volte — lontano dal nemico con la Forza d'Unità più alta, in diagonale quando i più grossi sono due — e l'app la misura invece di farla stimare a occhio. Il cedimento non chiede nemmeno i dadi: sono due pollici fissi. Chi fugge gira le spalle, chi cede terreno e chi ripiega restano girati verso il nemico.
 
+**La psicologia, giocata.** Paura, Terrore, Panico, Stupidità, Frenzy e Impetuosità si tirano nel momento in cui capitano, che è sempre nel mezzo di un'altra cosa. La bandierina della carica, prima della reazione, fa tirare la **Paura** a chi carica un nemico più grosso che la fa — chi fallisce resta fermo, ed è una carica fallita — e il **Terrore** al bersaglio di chi lo fa: chi fallisce fugge. Le reazioni si spengono da sole con il perché accanto: *Immune to Psychology* e la *Frenzy* non fuggono, chi è in preda alla Stupidità tiene. Il test di rotta di chi perde contro chi fa Terrore ha −1, e quello di una *Warband* ha il bonus di ranghi sommato al Comando, fino a 10. Il **Panico** ha le sue quattro cause: più di un quarto perso al tiro, un'unità amica distrutta o in rotta entro 6″, un'unità amica in fuga che ti passa attraverso. L'app misura chi è a 6″, dice chi non tira e perché (*Ignore Panic*, *Ignore Goblin Panic*, sta già fuggendo), tira per gli altri e, se il test va male, chiede se fuggire. *Cold Blooded* fa rotolare tre dadi e scarta il maggiore; chi passa da solo non fa rotolare niente. Nell'ispettore c'è il blocco **Psicologia**: le regole dell'unità dette in una riga, lo stato in cui si trova — in preda alla Stupidità fino al suo prossimo turno, senza più Frenzy, con la Paura già tirata — e i pulsanti dei test. All'inizio del turno il registro ricorda chi deve tirare la Stupidità, alla dichiarazione delle cariche chi deve caricare.
+
 **Scontro simulato.** Accanto a ogni nemico vicino, nell'ispettore, c'è una spada. Apre un pannello con le due schiere a confronto: profili, quanti modelli si toccano, armatura e salvezza speciale, stendardo e stendardo da battaglia, terreno più alto, sfida. Chi ha caricato e da che faccia è arrivato non si spuntano più a mano: li scrive la carica quando va a segno, e con loro i pollici percorsi.
 
 - *Tira i dadi* fa **un assalto** e mostra **ogni faccia uscita**: per colpire, per ferire, per salvare. Si mena in ordine di Iniziativa, e dentro l'Iniziativa c'è il **bonus della carica**: un punto per ogni pollice intero percorso, fino a +3 arrivando di fronte e +4 di fianco o di retro. È la riga che ribalta l'ordine in mezza partita, perché una cavalleria che ha corso sette pollici mena prima di chiunque. L'urto della carica arriva prima di tutto e vuole i suoi tre pollici di corsa; i pestoni arrivano per ultimi, dopo ogni altro attacco. Poi il conto di fine assalto — ferite, ranghi, stendardo, stendardo da battaglia, fianco, retro, terreno più alto, overkill nelle sfide — e il test di rotta.
@@ -375,6 +377,7 @@ src/
   charge.js           la carica: dichiararla, allinearla, e le mosse all'indietro
   melee.js            la mischia: Iniziativa della carica, risultato, test di rotta, inseguimento
   shoot.js            il tiro: tiratori modello per modello, modificatori, sagome, macchine, Panico
+  psych.js            la psicologia: Paura, Terrore, Panico, Stupidità, Frenzy, e chi ne è esente
   scenariokit.js      scenari propri e generatore di terreno a specchio
   catalog.js          voci di collezione, foto, pittura, aggancio dei nomi
   lists.js            liste salvate e collegamento unità → catalogo
@@ -391,6 +394,7 @@ test/
   movimento.mjs       carica: arco, vista, distanza, reazioni, allineamento, fuga
   mischia.mjs         bonus della carica, risultato, i tre esiti del test di rotta, overkill
   tiro.mjs            tiratori per modello, modificatori, sagome, deviazione, cannone, Panico
+  psicologia.mjs      Paura, Terrore, Panico e le sue cause, Stupidità, Frenzy, Warband, il contatore
   sync.mjs            archivio su GitHub, contro un GitHub finto in memoria
   boot.mjs            la pagina intera: schede, annulla, zoom, partita, report, link
 tools/

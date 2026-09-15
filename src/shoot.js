@@ -81,10 +81,14 @@ export const PAGE = {
    di no e dice perche', e chi gioca decide lo stesso.
    ============================================================ */
 export function canShoot({ charged = false, marched = false, engaged = false,
-                           fleeing = false, moved = false, weaponFlags = null } = {}){
+                           fleeing = false, moved = false, weaponFlags = null,
+                           stupid = false } = {}){
   const why = [];
   if (engaged) why.push("e' a contatto di basetta");
   if (fleeing) why.push("sta fuggendo");
+  /* la Stupidita' in cui si e' caduti all'inizio del turno: «non tira e
+     non lancia incantesimi» fino al proprio turno successivo */
+  if (stupid) why.push("e' in preda alla Stupidita'");
   if (charged) why.push("ha caricato in questo turno");
   if (marched) why.push("ha marciato");
   /* Il divieto che non viene dall'unita' ma dall'arma: un jezzail o un

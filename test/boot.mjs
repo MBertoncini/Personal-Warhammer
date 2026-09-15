@@ -1080,6 +1080,57 @@ console.log('\nla carica dal pannello (Tappa 2)');
   for (const id of parcheggiate) by(id).placed = true;
 }
 
+console.log('\nla psicologia al tavolo (Tappa 5)');
+{
+  const G = await import('../src/game.js');
+  const EFm = await import('../src/effects.js');
+  ok('la partita e aperta', state.game.on === true);
+  const aId = state.units.find(u => u.army === 'A' && u.placed && !u.dead).uid;
+  const bId = state.units.find(u => u.army === 'B' && u.placed && !u.dead).uid;
+  const by = id => state.units.find(u => u.uid === id);
+  const parcheggiate = state.units.filter(u => u.placed && u.uid !== aId && u.uid !== bId)
+                                  .map(u => { u.placed = false; return u.uid; });
+  deploy.act('psicologia di prova', () => {
+    const x = by(aId), y = by(bId);
+    x.x = 500; x.y = 900; x.rot = 0; x.moveOverride = 6;
+    y.x = 500; y.y = 900 - 5 * 25.4; y.rot = 180;
+    x.rules = [...(x.rules || []), 'Stupidity'];
+    y.rules = [...(y.rules || []), 'Immune To Psychology'];
+  });
+  state.sel = { type: 'unit', id: aId };
+  deploy.renderAll();
+
+  const row = deploy.chargePlanFor(by(aId)).rows.find(r => r.unit.uid === bId);
+  const fuga = row.reactions.find(r => r.id === 'flee');
+  ok('chi e Immune to Psychology non puo scegliere la fuga, e il perche sta accanto',
+     fuga.can === false && /Immune/.test(fuga.why));
+  const blocco = doc.querySelector('#inspector .psych-block');
+  ok('il blocco della psicologia compare nell ispettore', !!blocco && /Stupidity/.test(blocco.textContent));
+  ok('con il test di Stupidita e quello di Panico a portata di dito',
+     !!doc.querySelector('#inspector [data-psych="stupidity"]') &&
+     !!doc.querySelector('#inspector [data-psych="panic"]'));
+
+  deploy.act('stupidita di prova', () => {
+    EFm.addEffect(by(aId), { id: 'stupidity', from: 'Stupidità', flags: { stupid: true },
+                             until: 'ownTurn', at: { turn: state.game.turn, side: by(aId).army } });
+  });
+  const ferma = deploy.chargePlanFor(by(aId)).pre;
+  ok('in preda alla Stupidita non si carica, e lo dice', ferma.can === false &&
+     ferma.why.some(w => /Stupidità/.test(w)));
+
+  deploy.act('fine turno', () => G.closeTurn());
+  deploy.act('fine turno', () => G.closeTurn());
+  ok('due «Chiudi turno» dopo, la Stupidita e scaduta',
+     !EFm.effectsOf(by(aId)).some(e => e.id === 'stupidity'));
+  ok('e all inizio del suo turno il registro ricorda il test da tirare',
+     state.game.log.slice(0, 20).some(l => /Stupidità per/.test(l.text)));
+  for (let i = 0; i < 4; i++) history.undo();
+  ok('l annulla riporta indietro turni, effetto e regole',
+     !(by(aId).rules || []).includes('Stupidity') && !EFm.effectsOf(by(aId)).length);
+  for (const id of parcheggiate) by(id).placed = true;
+  ok('nessun errore nella psicologia', errors.length === 0);
+}
+
 console.log('\nunita scritte a mano');
 const handList = await listsMod.createList('Lista a mano');
 await listsMod.addUnit(handList.id, { name: 'Orc Boyz', models: 20, pts: 140, baseId: '25x25' });

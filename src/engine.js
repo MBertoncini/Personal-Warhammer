@@ -52,7 +52,7 @@ export const MOMENTS = [
   "onDeclareCharge", "onChargeReaction", "onChargeMove",
   "onMove", "onTerrain",
   "onToHit", "onToWound", "onSave",
-  "onCombatResult", "onBreakTest", "onPanic",
+  "onCombatResult", "onBreakTest", "onPanic", "onPsych",
   "onCast", "onDispel", "onRally",
   "onStepEnter", "onStepLeave", "onTurnStart",
 ];
@@ -220,10 +220,27 @@ export const ACTIONS = {
                line: (a, r) => nm(a.unit) + ": " + readRolls(r) +
                                (a.outcome ? " — " + (BREAK_SAYS[a.outcome] || a.outcome) : "") },
 
+  /* Il Panico e gli altri test di psicologia (Tappa 5). Quanti dadi
+     servono lo decide `psych.js` e arriva gia' scritto in `a.ask`: tre
+     con Cold Blooded, nessuno quando il test passa da solo — e allora
+     il motore non chiede niente, che e' il modo onesto di dire che non
+     c'era niente da tirare. Senza `ask`, i due dadi di sempre. */
   panic:   { label:"test di Panico",
              moments:["onPanic"],
-             needs: () => [d6("panico", 2, "test di Panico")],
-             line: (a, r) => nm(a.unit) + " tira il Panico: " + readRolls(r) },
+             needs: a => a.ask || [d6("panico", 2, "test di Panico")],
+             line: (a, r) => nm(a.unit) + (a.auto ? " passa il Panico senza tirare"
+                                                  : " tira il Panico: " + readRolls(r)) +
+                             (a.outcome ? " — " + a.outcome : "") },
+
+  /* Paura, Terrore, Stupidita', Impetuosita': stessa forma del
+     Panico, e `kind` dice quale. Il nome del test lo porta l'azione
+     (`a.label`), perche' e' `psych.js` a sapere come si chiama. */
+  psych:   { label:"test di psicologia",
+             moments:["onPsych"],
+             needs: a => a.ask || [d6("comando", 2, a.label || "test di Comando")],
+             line: (a, r) => nm(a.unit) + ": " + (a.label || "test di Comando") +
+                             (a.auto ? " passato senza tirare" : " — " + readRolls(r)) +
+                             (a.outcome ? " — " + a.outcome : "") },
 
   pursue:  { label:"inseguimento",
              needs: a => [d6("inseguimento", a.dice || 2, "quanto insegue")],
