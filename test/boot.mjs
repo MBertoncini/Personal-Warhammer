@@ -1564,6 +1564,32 @@ const written = listsMod.getList(copy.id) || listsMod.getList(handList.id);
 const added = written.units[written.units.length - 1];
 ok('l unita entra in lista gia agganciata al catalogo',
    added.name === 'Saurus Warriors' && cat.catEntry(added.catId)?.name === 'Saurus Warriors');
+/* i filtri dell'elenco: quelli che rispondono a «quali liste hanno i
+   Clanrats?» senza aprirle una per una */
+listsMod.renderLists();
+const carteTutte = doc.querySelectorAll('#lists .ls-card').length;
+ok('le liste si vedono come schede, non come righe', carteTutte > 0);
+const q = doc.querySelector('#ls-q');
+q.value = 'saurus';
+q.dispatchEvent(new window.Event('input', { bubbles: true }));
+const carteFiltro = doc.querySelectorAll('#lists .ls-card').length;
+ok('il testo filtra l elenco guardando dentro le unita', carteFiltro < carteTutte);
+q.value = '';
+q.dispatchEvent(new window.Event('input', { bubbles: true }));
+ok('e togliendolo tornano tutte',
+   doc.querySelectorAll('#lists .ls-card').length === carteTutte);
+
+/* una lista esterna: non è tua e non deve comparire nel conto della vetrina */
+const esterna = await listsMod.createList('Quella del vicino', { external: true });
+await listsMod.addUnit(esterna.id, { name: 'Saurus Warriors', models: 30, pts: 300 });
+ok('una lista esterna non si aggancia alla collezione',
+   listsMod.getList(esterna.id).units[0].catId == null);
+ok('e non chiede cosa ti manca',
+   listsMod.coverage(listsMod.getList(esterna.id)).missing === 0 &&
+   listsMod.coverage(listsMod.getList(esterna.id)).external === true);
+listsMod.renderLists();
+ok('nell elenco si riconosce', !!doc.querySelector('#lists .ls-card.ext'));
+
 const unitsBefore = state.units.length;
 doc.querySelector('[data-addunit="B"]').dispatchEvent(new window.Event('click'));
 await answer('Reggimento a mano');

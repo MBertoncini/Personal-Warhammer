@@ -795,7 +795,9 @@ export function reportMarkdown(rep, { prompt = false } = {}){
        dice chi, e se non c'e' lo dice anche quello. */
     ["Ho giocato", m.mine === "A" || m.mine === "B"
       ? `Esercito ${m.mine} — ${ARMY(rep, m.mine)}` : "non dichiarato"],
-    ["Turni registrati", played.length + (m.rounds ? " su " + m.rounds + " previsti" : "")],
+    ["Turni registrati", played.length
+      ? played.length + (m.rounds ? " su " + m.rounds + " previsti" : "")
+      : "nessuno — registrata solo per il risultato"],
     ["Esito", v.text],
   ]), "");
   if (rep.scenario.desc) out.push(`> ${rep.scenario.desc}`, "");

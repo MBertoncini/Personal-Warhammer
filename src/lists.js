@@ -28,17 +28,25 @@ import { attachSuggest, closeSuggest } from './suggest.js';
 import { emit } from './bus.js';
 import * as PREP from './prep.js';
 import { loadArmies, armiesNow, coverage as armyCoverage } from './armies.js';
+import * as PAL from './palmares.js';
 
 const LIST_KEY = "lists:all";
 
 let lists = [];
 let openId = null;
+/* Il filtro dell'elenco. Vive qui e non nel DOM perché un render lo
+   butterebbe via, ed è proprio durante un render — hai appena
+   agganciato un'unità — che non lo vuoi perdere. */
+let view = { q: "", faction: "", outcome: "", mine: "" };
 
 export async function initLists(){
   lists = await loadDoc(LIST_KEY, []) || [];
   /* i file d'esercito: se non arrivano non succede niente, la scheda
      lo dice e il resto funziona */
   await loadArmies();
+  /* il palmarès: quante partite ha fatto ogni lista e come sono
+     andate. Senza, il filtro «quelle che hanno vinto» non esiste. */
+  await PAL.initPalmares();
 }
 
 const persist = () => saveDoc(LIST_KEY, lists).then(() => emit("lists:changed"));
@@ -51,7 +59,7 @@ const newId = () => "l" + Date.now().toString(36) + Math.random().toString(36).s
 /* ============================================================
    1 · IMPORT
    ============================================================ */
-export async function importListText(text){
+export async function importListText(text, { external = false } = {}){
   const raw = parseAny(text);
   if (!raw) throw new Error("Non riesco a leggere questo file.");
   const r = parseRoster(raw);
@@ -62,8 +70,12 @@ export async function importListText(text){
     name: r.rosterName || "Lista importata",
     info: { catalogue: r.catalogue, forceName: r.forceName, limit: r.limit },
     points: r.total,
+    external: !!external,
     imported: new Date().toISOString(),
-    units: r.units.map(u => ({ ...u, catId: matchUnitName(u.name) })),
+    /* una lista esterna non si aggancia alla collezione: l'aggancio
+       serve a contare quante miniature ti mancano, e di una lista che
+       non e' tua non te ne manca nessuna */
+    units: r.units.map(u => ({ ...u, catId: external ? null : matchUnitName(u.name) })),
   };
   lists.push(list);
   await persist();
@@ -88,12 +100,19 @@ export function blankUnit({ name = "Unità", models = 1, pts = 0, baseId = "25x2
   };
 }
 
-export async function createList(name){
+/* `external` e' una lista che non e' tua: quella dell'avversario
+   ricopiata dal foglio, una trovata su un forum da provare in una
+   partita finta, una di un torneo a cui non hai giocato. Cambia una
+   cosa sola e importante — **non si confronta con la collezione** —
+   perche' «mancano 18 modelli» su una lista che non devi comprare e'
+   una risposta a una domanda che nessuno ha fatto, e sporca l'unico
+   numero per cui quella colonna esiste. */
+export async function createList(name, { external = false } = {}){
   const list = {
     id: newId(),
-    name: name || "Lista mia",
-    info: { catalogue: "", forceName: "scritta a mano", limit: 0 },
-    points: 0, byHand: true,
+    name: name || (external ? "Lista esterna" : "Lista mia"),
+    info: { catalogue: "", forceName: external ? "esterna" : "scritta a mano", limit: 0 },
+    points: 0, byHand: true, external: !!external,
     imported: new Date().toISOString(),
     units: [],
   };
@@ -113,6 +132,9 @@ export async function addUnit(listId, data){
   const l = getList(listId);
   if (!l) return null;
   const u = blankUnit(data);
+  /* in una lista esterna l'aggancio non serve e confonde: conterebbe
+     le miniature che ti mancano per giocare la lista di un altro */
+  if (l.external) u.catId = null;
   l.units.push(u);
   recount(l);
   await persist();
@@ -224,6 +246,9 @@ export async function entryFromUnit(listId, unitIndex){
 export function coverage(list){
   const need = new Map();
   let unlinked = 0;
+  /* una lista esterna non e' in vetrina: niente scoperto, niente da
+     dipingere, niente da agganciare */
+  if (list && list.external) return { rows: [], unlinked: 0, missing: 0, toPaint: 0, external: true };
   for (const u of list.units){
     if (!u.catId) { unlinked++; continue; }
     need.set(u.catId, (need.get(u.catId) || 0) + u.models);
@@ -250,28 +275,93 @@ export function coverage(list){
 /* ============================================================
    3 · INTERFACCIA
    ============================================================ */
+/* La barra dei filtri. Le fazioni non sono un elenco scritto a mano:
+   sono quelle che stanno davvero nell'archivio, con quante liste per
+   ognuna — un menu con dodici fazioni di cui ne hai tre è un menu che
+   si legge male. */
+function wireOpen(host){
+  host.querySelectorAll("[data-open]").forEach(b => b.addEventListener("click", () => {
+    openId = b.dataset.open; renderLists();
+  }));
+}
+
+function filterBarHTML(){
+  const facts = factionsOf();
+  const opt = (v, label, sel) => `<option value="${esc(v)}"${sel === v ? " selected" : ""}>${esc(label)}</option>`;
+  const active = view.q || view.faction || view.outcome || view.mine;
+  return `
+    <div class="bar ls-filters">
+      <input type="search" id="ls-q" placeholder="Cerca: nome, esercito, o un'unità dentro (\u00abclanrats\u00bb)"
+             value="${esc(view.q)}" style="min-width:220px">
+      <select id="ls-faction" title="L'esercito dichiarato nel file">
+        ${opt("", "ogni esercito", view.faction)}
+        ${facts.map(([f, n]) => opt(f, `${f} (${n})`, view.faction)).join("")}
+      </select>
+      <select id="ls-outcome" title="Dal diario delle partite: il palmarès di una lista è quello del suo nome">
+        ${opt("", "giocate o no", view.outcome)}
+        ${opt("won", "hanno vinto", view.outcome)}
+        ${opt("lost", "hanno perso", view.outcome)}
+        ${opt("played", "già giocate", view.outcome)}
+        ${opt("never", "mai giocate", view.outcome)}
+      </select>
+      <select id="ls-mine" title="Le liste esterne sono quelle che non hai in vetrina">
+        ${opt("", "mie ed esterne", view.mine)}
+        ${opt("mine", "solo le mie", view.mine)}
+        ${opt("ext", "solo le esterne", view.mine)}
+      </select>
+      ${active ? `<button class="btn tiny ghost" id="ls-clear">Togli i filtri</button>` : ""}
+    </div>`;
+}
+
 export function renderLists(){
   const host = $("#lists");
   if (!host) return;
+  const shown = filterLists();
 
   host.innerHTML = `
     <div class="bar">
       <button class="btn primary" id="ls-import">Importa da New Recruit</button>
       <button class="btn" id="ls-paste">Incolla JSON\u2026</button>
       <button class="btn" id="ls-new" title="Per la lista che l'avversario ti mostra stampata">Nuova lista a mano</button>
+      <button class="btn" id="ls-ext" title="Una lista che non è tua: quella dell'avversario, una da provare in una partita finta, una vista a un torneo. Non si confronta con la collezione.">Lista esterna…</button>
       ${openId ? `<button class="btn" id="ls-dup">Duplica questa lista</button>` : ""}
     </div>
     <div id="ls-paste-box" hidden>
       <textarea id="ls-paste-area" rows="5" placeholder="Incolla qui il contenuto del file\u2026"></textarea>
+      <label class="dice-anim" style="margin-top:6px"><input type="checkbox" id="ls-paste-ext"> è una lista esterna (non si confronta con la collezione)</label>
       <button class="btn tiny primary" id="ls-paste-ok" style="margin-top:6px">Importa</button>
     </div>
     <input type="file" id="ls-file" accept=".json,.ros,.xml" hidden>
+    ${filterBarHTML()}
     <div class="ls-split">
       <div class="ls-side">
-        ${lists.length ? lists.map(listRowHTML).join("") : `<p class="empty">Nessuna lista salvata.</p>`}
+        ${lists.length
+          ? (shown.length ? shown.map(listRowHTML).join("")
+             : `<p class="empty">Nessuna lista con questi filtri. <button class="btn tiny" id="ls-clear">Togli i filtri</button></p>`)
+          : `<p class="empty">Nessuna lista salvata.</p>`}
       </div>
       <div class="ls-detail">${openId ? detailHTML(getList(openId)) : `<p class="empty">Scegli una lista.</p>`}</div>
     </div>`;
+
+  /* i filtri. Il testo si applica mentre si scrive e non ridisegna il
+     campo: rifare l'input a ogni lettera sposta il cursore, ed e' il
+     modo piu' rapido di rendere inusabile una ricerca. */
+  const qEl = $("#ls-q");
+  if (qEl) qEl.addEventListener("input", e => {
+    view.q = e.target.value;
+    const side = host.querySelector(".ls-side");
+    const now = filterLists();
+    if (side) side.innerHTML = now.length
+      ? now.map(listRowHTML).join("")
+      : `<p class="empty">Nessuna lista con questi filtri.</p>`;
+    wireOpen(host);
+  });
+  for (const [sel, key] of [["#ls-faction", "faction"], ["#ls-outcome", "outcome"], ["#ls-mine", "mine"]]){
+    const el = $(sel);
+    if (el) el.addEventListener("change", () => { view[key] = el.value; renderLists(); });
+  }
+  const clr = $("#ls-clear");
+  if (clr) clr.addEventListener("click", () => { view = { q:"", faction:"", outcome:"", mine:"" }; renderLists(); });
 
   $("#ls-import").addEventListener("click", () => $("#ls-file").click());
   $("#ls-file").addEventListener("change", async e => {
@@ -286,7 +376,10 @@ export function renderLists(){
     const b = $("#ls-paste-box"); b.hidden = !b.hidden;
   });
   $("#ls-paste-ok").addEventListener("click", async () => {
-    try { await importListText($("#ls-paste-area").value); renderLists(); }
+    try {
+      await importListText($("#ls-paste-area").value, { external: $("#ls-paste-ext").checked });
+      renderLists();
+    }
     catch (err) { await say(err.message, { title:"Non riesco a leggerlo" }); }
   });
   $("#ls-new").addEventListener("click", async () => {
@@ -297,12 +390,21 @@ export function renderLists(){
     await createList(n.trim() || "Lista mia");
     renderLists();
   });
+  $("#ls-ext").addEventListener("click", async () => {
+    const n = await askText({ title:"Lista esterna",
+      label:"Non è tua: non si confronta con la collezione e non chiede cosa ti manca. " +
+            "Serve a provarla in una partita finta e a tenere il conto di come vanno le liste degli altri. " +
+            "Le unità si aggiungono a mano, oppure si incolla il file con «Incolla JSON».",
+      value:"Lista esterna", placeholder:"Come si chiama" });
+    if (n === null) return;
+    await createList(n.trim() || "Lista esterna", { external: true });
+    renderLists();
+  });
+
   const dup = $("#ls-dup");
   if (dup) dup.addEventListener("click", async () => { await duplicateList(openId); renderLists(); });
 
-  host.querySelectorAll("[data-open]").forEach(b => b.addEventListener("click", () => {
-    openId = b.dataset.open; renderLists();
-  }));
+  wireOpen(host);
   host.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", async e => {
     e.stopPropagation();
     if (await askConfirm("La lista sparisce dall'archivio. Gli schieramenti salvati restano dove sono.",
@@ -364,6 +466,18 @@ export function renderLists(){
     renderLists();
   }));
 
+  host.querySelectorAll("[data-ext]").forEach(el => el.addEventListener("change", async () => {
+    const l = getList(el.dataset.ext);
+    if (!l) return;
+    l.external = el.checked;
+    /* diventando esterna perde l'aggancio alla collezione, e
+       tornando tua se lo riprende: tenerlo a meta' vorrebbe dire una
+       lista che conta un po' nella vetrina e un po' no */
+    for (const u of l.units) u.catId = l.external ? null : matchUnitName(u.name);
+    await persist();
+    renderLists();
+  }));
+
   wireSuggest(host);
 }
 
@@ -401,18 +515,103 @@ function wireSuggest(host){
   });
 }
 
+/* ------------------------------------------------------------------
+   La scheda di una lista nell'elenco.
+
+   Prima era una riga: nome, fazione, punti, e una spunta sullo stato
+   della collezione. Va bene con cinque liste; con venti serve sapere
+   a colpo d'occhio **di che esercito è** e **come è andata**, che sono
+   le due domande per cui uno apre l'elenco.
+
+   Le facce delle unità sono le foto della collezione, quattro al
+   massimo: è il modo più corto di riconoscere una lista senza
+   leggerne il nome, e le foto ci sono già.
+   ------------------------------------------------------------------ */
+const FACES = 4;
+
+function facesOf(l){
+  const out = [];
+  for (const u of l.units || []){
+    if (out.length >= FACES) break;
+    const p = u.catId && photoFor(u.catId);
+    if (p && !out.includes(p)) out.push(p);
+  }
+  return out;
+}
+
 function listRowHTML(l){
+  const ext = !!l.external;
   const c = coverage(l);
-  const key = c.unlinked ? "warn" : c.missing ? "bad" : c.toPaint ? "warn" : "ok";
-  const txt = c.unlinked ? `${c.unlinked} da agganciare`
+  /* una lista esterna non è in vetrina: dirle «mancano 18 modelli» è
+     rispondere a una domanda che nessuno ha fatto */
+  const key = ext ? "" : c.unlinked ? "warn" : c.missing ? "bad" : c.toPaint ? "warn" : "ok";
+  const txt = ext ? "esterna"
+            : c.unlinked ? `${c.unlinked} da agganciare`
             : c.missing ? `mancano ${c.missing}`
             : c.toPaint ? `${c.toPaint} da dipingere` : "completa";
+  const rec = PAL.recordOf(l.name);
+  const faces = ext ? [] : facesOf(l);
   return `
-    <div class="row u-row ${l.id === openId ? "sel" : ""}" data-open="${l.id}">
-      <span class="nm"><b><span class="txt">${esc(l.name)}</span></b>
-        <span class="mono">${esc(l.info?.catalogue || "")} \u00b7 ${l.units.length} unit\u00e0 \u00b7 ${l.points} pt</span></span>
+    <div class="ls-card${l.id === openId ? " sel" : ""}${ext ? " ext" : ""}" data-open="${l.id}">
+      <div class="ls-faces">${faces.length
+        ? faces.map(p => `<img src="${p}" alt="" loading="lazy">`).join("")
+        : `<span class="ph">${ext ? "\u2197" : "\u2014"}</span>`}</div>
+      <div class="ls-body">
+        <b class="ls-name">${esc(l.name)}</b>
+        <span class="mono">${esc(l.info?.catalogue || "senza esercito")} \u00b7 ${l.units.length} unit\u00e0 \u00b7 ${l.points} pt</span>
+        ${rec.played ? `<span class="ls-rec">${
+          rec.won ? `<span class="w">${rec.won}V</span>` : ""}${
+          rec.draw ? `<span class="d">${rec.draw}P</span>` : ""}${
+          rec.lost ? `<span class="l">${rec.lost}S</span>` : ""}
+          <span class="dim">${rec.pts}\u2013${rec.against} pt</span></span>`
+        : `<span class="ls-rec dim">mai giocata</span>`}
+      </div>
       <span class="chip ${key}">${txt}</span>
     </div>`;
+}
+
+/* ------------------------------------------------------------------
+   I filtri.
+   Tre domande che al circolo ci si fa davvero: «quali liste hanno i
+   Clanrats?», «quali sono di Ogre?», «quali hanno vinto?». La prima
+   guarda dentro le unità e non solo il nome della lista, che è il
+   motivo per cui una ricerca sul nome non bastava.
+   ------------------------------------------------------------------ */
+const norm = s => String(s || "").toLowerCase()
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+export function factionsOf(all = lists){
+  const seen = new Map();
+  for (const l of all){
+    const f = (l.info && l.info.catalogue) || "";
+    if (!f) continue;
+    seen.set(f, (seen.get(f) || 0) + 1);
+  }
+  return [...seen].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+}
+
+export function filterLists(all = lists, v = view){
+  const q = norm(v.q).trim();
+  const words = q ? q.split(/\s+/) : [];
+  return all.filter(l => {
+    if (v.faction && ((l.info && l.info.catalogue) || "") !== v.faction) return false;
+    if (v.mine === "mine" && l.external) return false;
+    if (v.mine === "ext" && !l.external) return false;
+    if (v.outcome){
+      const r = PAL.recordOf(l.name);
+      if (v.outcome === "won" && !r.won) return false;
+      if (v.outcome === "lost" && !r.lost) return false;
+      if (v.outcome === "played" && !r.played) return false;
+      if (v.outcome === "never" && r.played) return false;
+    }
+    if (!words.length) return true;
+    /* il testo cercato dentro tutto quello che una lista sa dire di sé:
+       il nome, l'esercito, e i nomi delle unità — «clan rats» */
+    const hay = norm([l.name, (l.info && l.info.catalogue) || "",
+                      (l.info && l.info.forceName) || "",
+                      ...(l.units || []).map(u => u.name)].join(" "));
+    return words.every(w => hay.includes(w));
+  });
 }
 
 /* ============================================================
@@ -501,6 +700,28 @@ function prepHTML(l){
     </details>`;
 }
 
+/* Il palmarès della lista: com'è andata, partita per partita.
+   Sta nella scheda della lista e non solo nel diario perché la domanda
+   «questa lista come va?» ci si fa guardando la lista, non scorrendo
+   le partite. L'aggancio è per nome: una lista rinominata perde il suo
+   passato, ed è meglio di un aggancio invisibile che sopravvive al
+   fatto che quella lista adesso è un'altra cosa. */
+function palmaresHTML(l){
+  const r = PAL.recordOf(l.name);
+  if (!r.played) return `<p class="note dim">Mai giocata. Le partite si segnano nella scheda <b>Partite</b>, e da lì tornano qui.</p>`;
+  const row = g => `
+    <div class="readout"><span>${esc(g.date || "senza data")} \u00b7 contro ${esc(g.foe || "?")}${
+      g.turns ? "" : " <span class=\"dim\">(solo il risultato)</span>"}</span>
+      <b style="color:var(--${g.how === "won" ? "ok" : g.how === "lost" ? "bad" : "muted"})">${
+        g.how === "won" ? "vinta" : g.how === "lost" ? "persa" : "pari"} ${g.mine}\u2013${g.theirs}</b></div>`;
+  return `
+    <div class="prep-army">
+      <p class="note"><b>${esc(PAL.recordText(r))}</b> \u00b7 ${r.pts} punti fatti, ${r.against} presi.</p>
+      ${r.games.slice(0, 6).map(row).join("")}
+      ${r.games.length > 6 ? `<p class="note dim">e altre ${r.games.length - 6}.</p>` : ""}
+    </div>`;
+}
+
 function detailHTML(l){
   if (!l) return `<p class="empty">Lista non trovata.</p>`;
   const cat = catalogAll();
@@ -509,6 +730,9 @@ function detailHTML(l){
       <button class="btn tiny ghost" data-del="${l.id}" style="color:var(--bad);float:right">Elimina</button></div>
     <p class="note">${esc([l.info?.catalogue, l.info?.forceName,
       l.info?.limit ? "limite " + l.info.limit + " pt" : ""].filter(Boolean).join(" \u00b7 "))}</p>
+    <label class="dice-anim" title="Una lista esterna non è in vetrina: non si confronta con la collezione e non chiede cosa ti manca">
+      <input type="checkbox" data-ext="${l.id}"${l.external ? " checked" : ""}> lista esterna</label>
+    ${palmaresHTML(l)}
     <div class="tray">
       ${l.units.map((u, i) => {
         const e = u.catId && catEntry(u.catId);
