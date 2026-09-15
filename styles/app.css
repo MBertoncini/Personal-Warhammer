@@ -517,6 +517,22 @@ textarea{
 .cat-photo img{width:100%;height:100%;object-fit:cover;display:block;}
 .cat-photo .ph{font-size:11.5px;color:var(--muted);line-height:96px;display:block;text-align:center;}
 .cat-body{min-width:0;display:flex;flex-direction:column;gap:2px;}
+
+/* il visore della foto intera: sopra tutto, e l'immagine non esce mai
+   dallo schermo — una foto da 2048 px dentro un telefono, senza il
+   tetto, si guarda un angolo per volta */
+.photoview{
+  position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;gap:8px;
+  padding:12px;background:rgba(0,0,0,.82);backdrop-filter:blur(2px);
+}
+.photoview .pv-head{display:flex;align-items:center;gap:10px;color:#fff;flex:0 0 auto;}
+.photoview .pv-head .mono{font-family:"IBM Plex Mono",monospace;font-size:12px;opacity:.75;}
+.photoview .pv-head .spacer{flex:1;}
+.photoview .pv-head .btn{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.3);}
+.photoview img{
+  flex:1 1 auto;min-height:0;max-width:100%;margin:0 auto;
+  object-fit:contain;border-radius:var(--r);
+}
 .cat-body b{font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .cat-body .mono{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted);}
 .cat-body .owned{font-size:13px;color:var(--ok);font-weight:600;}

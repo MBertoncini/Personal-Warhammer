@@ -124,6 +124,21 @@ ok('catalogo.json torna la sua chiave', S.keyOf('catalogo.json') === 'catalog:en
 ok('foto/abc.png torna la sua chiave', S.keyOf('foto/abc.png') === 'photo:abc');
 ok('altro/ torna la chiave com\'era', S.keyOf('altro/roba%3Anuova.json') === 'roba:nuova');
 ok('un file non nostro si ignora', S.keyOf('README.md') === null);
+
+/* le foto intere: cartella loro, e la chiave piu' lunga vince */
+ok('l originale va in foto-intere/',
+   S.pathOf('photo-full:abc', 'data:image/jpeg;base64,AAAA') === 'foto-intere/abc.jpg');
+ok('e non finisce fra le miniature',
+   S.pathOf('photo-full:abc', 'data:image/jpeg;base64,AAAA').startsWith('foto-intere/'));
+ok('foto-intere/abc.jpg torna la sua chiave', S.keyOf('foto-intere/abc.jpg') === 'photo-full:abc');
+ok('e la miniatura resta la miniatura', S.keyOf('foto/abc.jpg') === 'photo:abc');
+/* e viaggia come immagine vera, non come JSON con dentro una stringa */
+const conIntera = S.filesFromData({ 'photo-full:abc': 'data:image/jpeg;base64,QUJD' });
+const intera = conIntera.find(f => f.path === 'foto-intere/abc.jpg');
+ok('l originale e un JPEG dentro il repository', !!intera && intera.b64 === 'QUJD');
+const riletto = S.dataFromFiles([intera]);
+ok('e rileggendolo torna il dataURL di prima',
+   riletto.data['photo-full:abc'] === 'data:image/jpeg;base64,QUJD');
 ok('l\'indice non e\' un documento', S.keyOf('indice.json') === null);
 
 console.log('\nandata e ritorno');

@@ -108,6 +108,65 @@ export function shrinkImage(file, size = THUMB_PX){
   });
 }
 
+/* ------------------------------------------------------------------
+   La stessa foto, intera.
+   La miniatura da 256 px e' quello che serve a disegnare: sta in
+   memoria per tutte le voci insieme, viaggia dentro gli SVG esportati
+   e finisce nel repository della Nuvola. Ma e' anche tutto quello che
+   restava di uno scatto fatto apposta per far vedere come e' venuto
+   il mantello, ed e' una perdita che non si recupera piu'.
+
+   Cosi' adesso sono due cose distinte: la miniatura per l'app,
+   l'originale per gli occhi. L'originale si carica solo quando lo si
+   guarda, e non entra in nessuno dei posti dove il peso conta.
+
+   `max` e' un tetto di cortesia sul lato lungo: 0 vuol dire "il file
+   com'e'". Sopra il tetto si ridimensiona una volta sola, in JPEG,
+   perche' quattromila pixel di lato dentro IndexedDB sono un modo
+   silenzioso di riempire la quota e far buttare via tutto al browser.
+   ------------------------------------------------------------------ */
+export const FULL_MAX_PX = 2048;
+
+export function readImage(file, { max = FULL_MAX_PX } = {}){
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onerror = () => rej(new Error("lettura fallita"));
+    fr.onload = () => {
+      const src = fr.result;
+      const img = new Image();
+      img.onerror = () => rej(new Error("immagine non valida"));
+      img.onload = () => {
+        const long = Math.max(img.width, img.height);
+        /* sotto il tetto non si tocca niente: re-comprimere un file
+           gia' buono lo peggiora e basta, e a una PNG toglierebbe
+           anche la trasparenza */
+        if (!max || long <= max)
+          return res({ data: src, w: img.width, h: img.height, resized: false });
+        const k = max / long;
+        const w = Math.max(1, Math.round(img.width * k));
+        const h = Math.max(1, Math.round(img.height * k));
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h);
+        res({ data: c.toDataURL("image/jpeg", 0.92), w, h, resized: true });
+      };
+      img.src = src;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+/* Quanto pesa un dataURL, in byte veri: il base64 gonfia di un terzo,
+   e dirlo storto accanto a «quota piena» sarebbe peggio che tacere. */
+export function dataUrlBytes(data){
+  const s = String(data || "");
+  const i = s.indexOf(",");
+  if (i < 0) return 0;
+  const b64 = s.slice(i + 1);
+  const pad = b64.endsWith("==") ? 2 : b64.endsWith("=") ? 1 : 0;
+  return Math.max(0, Math.floor(b64.length * 3 / 4) - pad);
+}
+
 export function pickImage(){
   return new Promise(res => {
     const inp = document.createElement("input");

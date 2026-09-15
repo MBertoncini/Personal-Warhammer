@@ -70,6 +70,10 @@ const NAMED = new Map([
 const BY_PATH = new Map([...NAMED].map(([k, p]) => [p, k]));
 
 const PHOTO = "foto/";
+/* Gli originali a piena risoluzione stanno in una cartella loro: nel
+   repository si distinguono a colpo d'occhio dalle miniature, e chi
+   non li vuole sincronizzare cancella una cartella sola. */
+const FULL  = "foto-intere/";
 const OTHER = "altro/";
 
 /* Le foto sono immagini vere dentro il repository, non stringhe
@@ -101,25 +105,31 @@ const b64ToText = b => dec.decode(b64ToBytes(b));
 const isDataUrl = v => typeof v === "string" && /^data:image\/[a-z+]+;base64,/.test(v);
 
 /* chiave dell'archivio -> percorso dentro la cartella */
+const imgPath = (dir, id, value) => {
+  const mime = isDataUrl(value) ? value.slice(5, value.indexOf(";")) : "image/jpeg";
+  return dir + encodeURIComponent(id) + "." + (MIME_EXT[mime] || "bin");
+};
+
 export function pathOf(key, value){
   if (NAMED.has(key)) return NAMED.get(key);
-  if (key.startsWith("photo:")){
-    const id = key.slice(6);
-    const mime = isDataUrl(value) ? value.slice(5, value.indexOf(";")) : "image/jpeg";
-    return PHOTO + encodeURIComponent(id) + "." + (MIME_EXT[mime] || "bin");
-  }
+  /* prima la chiave piu' lunga: "photo-full:" comincia per "photo"
+     e senza quest'ordine gli originali finirebbero fra le miniature */
+  if (key.startsWith("photo-full:")) return imgPath(FULL, key.slice(11), value);
+  if (key.startsWith("photo:")) return imgPath(PHOTO, key.slice(6), value);
   return OTHER + encodeURIComponent(key) + ".json";
 }
 
 /* e il contrario, per i file che arrivano da GitHub */
+const idOf = file => {
+  const dot = file.lastIndexOf(".");
+  return decodeURIComponent(dot < 0 ? file : file.slice(0, dot));
+};
+
 export function keyOf(path){
   if (path === INDEX) return null;
   if (BY_PATH.has(path)) return BY_PATH.get(path);
-  if (path.startsWith(PHOTO)){
-    const file = path.slice(PHOTO.length);
-    const dot = file.lastIndexOf(".");
-    return "photo:" + decodeURIComponent(dot < 0 ? file : file.slice(0, dot));
-  }
+  if (path.startsWith(FULL))  return "photo-full:" + idOf(path.slice(FULL.length));
+  if (path.startsWith(PHOTO)) return "photo:" + idOf(path.slice(PHOTO.length));
   if (path.startsWith(OTHER)) return decodeURIComponent(path.slice(OTHER.length).replace(/\.json$/, ""));
   return null;   // roba che non abbiamo scritto noi: non la tocchiamo
 }
@@ -132,7 +142,7 @@ export function filesFromData(data, { who = "", at = "" } = {}){
   for (const [key, value] of Object.entries(data || {})){
     if (value === undefined) continue;
     const path = pathOf(key, value);
-    if (path.startsWith(PHOTO) && isDataUrl(value))
+    if ((path.startsWith(PHOTO) || path.startsWith(FULL)) && isDataUrl(value))
       files.push({ path, b64: value.slice(value.indexOf(",") + 1) });
     else
       files.push({ path, b64: textToB64(JSON.stringify(value, null, 2) + "\n") });
@@ -161,7 +171,7 @@ export function dataFromFiles(files){
     const key = keyOf(f.path);
     if (!key){ skipped.push(f.path); continue; }
     try {
-      if (f.path.startsWith(PHOTO)){
+      if (f.path.startsWith(PHOTO) || f.path.startsWith(FULL)){
         const ext = f.path.slice(f.path.lastIndexOf(".") + 1).toLowerCase();
         data[key] = "data:" + (EXT_MIME[ext] || "image/jpeg") + ";base64," + String(f.b64).replace(/\s+/g, "");
       } else {
@@ -349,6 +359,7 @@ export async function push(cfg, { data = null, force = false, onStep = () => {} 
    una partita", senza aprire il diff. */
 function commitMessage(cfg, changed, removed){
   const nice = p => BY_PATH.has(p) ? p.replace(/\.json$/, "")
+                  : p.startsWith(FULL) ? "foto intere"
                   : p.startsWith(PHOTO) ? "foto" : "archivio";
   const what = [...new Set(changed.map(f => nice(f.path)))];
   const testa = what.length ? what.slice(0, 4).join(", ") + (what.length > 4 ? "…" : "") : "pulizia";
