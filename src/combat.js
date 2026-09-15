@@ -20,6 +20,8 @@ import { hitMelee, woundOn, saveOn, pool, roll, chance, expected, rankBonus,
          stat, weaponStrength, weaponAP, IMPOSSIBLE } from './rules.js';
 import { readRules, splitWeaponRules, emptyFlags } from './rulebook.js';
 import { troopType, usPerModel } from './troops.js';
+import { flagsOf, spent } from './effects.js';
+import { armyFor, meleeBoosts, fleeBonus } from './armies.js';
 import * as ML from './melee.js';
 import * as SH from './shoot.js';
 import * as PS from './psych.js';
@@ -151,10 +153,36 @@ export function combatant(u, over = {}){
   /* Le regole: quelle dell'unita' e quelle dell'arma che sta davvero
      impugnando. Le seconde stavano nel file da sempre, lette e mai
      usate — ed e' li' che vive meta' di quello che decide un assalto. */
+  /* E il file del suo esercito (Tappa 5 bis), trovato dalla fazione che
+     il parser scrive su ogni unita': le regole che nomina smettono di
+     essere sconosciute, e quelle che il vocabolario sa dire entrano nel
+     conto. */
+  const army = armyFor(u);
   const read = readRules(u.rules || [], splitWeaponRules(melee && melee.rules),
-                         melee ? melee.name : "", u.ruleText || null);
+                         melee ? melee.name : "", u.ruleText || null, army);
   c.flags = read.flags;
   c.rulesRead = { applied: read.applied, elsewhere: read.elsewhere, unknown: read.unknown };
+  c.armyName = army ? army.name : "";
+
+  /* Horde: un rango di bonus in piu' di quanti il tipo di truppa ne
+     conceda. Il tetto vive sul tipo di truppa, e la copia serve a non
+     alzarlo a tutta la fanteria del tavolo. */
+  if (c.flags.horde && c.troop) c.troop = { ...c.troop, maxRank: (c.troop.maxRank || 0) + 1 };
+
+  /* La salvezza speciale che una regola fissa — l'Arcane Shield dello
+     Slann — vale se e' migliore di quella del file, che il piu' delle
+     volte non la dichiara affatto. */
+  const still = meleeBoosts(c.flags.army, { weapon: c.weapon });
+  if (still.ward && (!c.ward || still.ward < c.ward)){ c.ward = still.ward; c.wardFrom = still.from.ward; }
+
+  /* Gli effetti a tempo che l'assalto sente: il Waaagh! acceso nella
+     sotto-fase di comando vive qui, come un incantesimo. E le due regole
+     da una volta per partita gia' spese, che il tavolo ricorda su
+     `u.spent` e l'annulla riporta indietro. */
+  const ef = flagsOf(u);
+  c.eff = ef.flags; c.effWhy = ef.why;
+  c.stubbornUsed = spent(u, "stubborn");
+  c.shieldwallUsed = spent(u, "shieldwall");
 
   /* le lame di ossidiana valgono sull'arma a una mano, non sull'alabarda */
   if (c.flags.handWeaponAP && melee && /hand weapon|arma a una mano/i.test(melee.name))
@@ -205,6 +233,28 @@ export function contact(att, def){
   return { front, support, ranks, attacks: front * attacksOf(att) + support };
 }
 
+/* Le regole d'esercito di una schiera in questo momento: quelle del
+   file, tradotte da `armies.js`, e quelle accese da un effetto a tempo.
+   «Ha caricato» qui non vuole i tre pollici dell'urto: la Choppa dice
+   «nel turno in cui ha caricato» e basta. */
+function boostsOf(att){
+  const b = meleeBoosts((att.flags && att.flags.army) || [], { charged: !!att.charged, weapon: att.weapon });
+  const e = att.eff || {}, why = att.effWhy || {};
+  const by = () => (why.reroll || [])[0] || "effetto";
+  if (e.reroll && e.reroll.toHit && !b.rerollHit){ b.rerollHit = e.reroll.toHit; b.from.hit = by(); }
+  if (e.reroll && e.reroll.toWound && !b.rerollWound){ b.rerollWound = e.reroll.toWound; b.from.wound = by(); }
+  return b;
+}
+
+/* Quanto in piu' fugge un'unita' del tavolo, e perche': la Scurry Away
+   degli Skaven. Sta qui perche' qui si sa trovare l'esercito di
+   un'unita'; il tiro lo fa chi muove i pezzi. */
+export function fleeBonusOf(u){
+  const army = armyFor(u);
+  if (!army) return { mod: 0, why: "" };
+  return fleeBonus(readRules((u && u.rules) || [], [], "", null, army).flags.army);
+}
+
 /* ============================================================
    2 · UN COLPO
    ============================================================ */
@@ -212,11 +262,16 @@ export function strike(att, def, { attacks, auto = false, strength, ap, label = 
   /* `forcedAttacks` e' il numero corretto a mano nel pannello: chi
      guarda il tavolo vede quanti si toccano meglio di qualsiasi conto */
   const n = Math.max(0, attacks ?? att.forcedAttacks ?? contact(att, def).attacks);
-  const S = strength ?? att.s;
-  const AP = ap ?? att.ap;
-
   const f = att.flags || emptyFlags();
   const notes = [];
+
+  /* Le regole d'esercito valgono sui colpi che si tirano con l'arma: la
+     Choppa migliora la perforazione «della sua arma», e l'urto e i
+     pestoni non passano da un'arma. */
+  const boost = auto ? null : boostsOf(att);
+  const S = (strength ?? att.s) + (boost ? boost.s : 0);
+  const AP = (ap ?? att.ap) + (boost ? boost.ap : 0);
+  if (boost) notes.push(...boost.notes, ...boost.off);
 
   const hitNeed = auto ? 0 : fearful(hitMelee(att.ws, def.ws), att);
   if (!auto && att.feared) notes.push("Paura: −1 per colpire");
@@ -227,9 +282,14 @@ export function strike(att, def, { attacks, auto = false, strength, ap, label = 
      tre righe. Il ritiro vero lo fa `pool`, che sa gia' che un dado
      non si ritira due volte (p. 93). */
   const hateful = !auto && f.hatred && round === 1;
-  const hit = auto ? { dice: [], hits: n, need: 0, of: n } : pool(n, hitNeed, hateful ? "misses" : null);
-  if (hit.rerolled) notes.push("Odio: " + hit.rerolled +
-    (hit.rerolled === 1 ? " colpo mancato ritirato" : " colpi mancati ritirati"));
+  /* L'Odio ritira tutti i mancati, e quindi anche gli 1: con lui il
+     ritiro degli 1 del Waaagh! non aggiunge niente, perche' un dado non
+     si ritira due volte (p. 93). */
+  const hitAgain = hateful ? "misses" : (boost && boost.rerollHit) || null;
+  const hit = auto ? { dice: [], hits: n, need: 0, of: n } : pool(n, hitNeed, hitAgain);
+  if (hit.rerolled) notes.push(hateful
+    ? "Odio: " + hit.rerolled + (hit.rerolled === 1 ? " colpo mancato ritirato" : " colpi mancati ritirati")
+    : boost.from.hit + ": " + hit.rerolled + (hit.rerolled === 1 ? " 1 per colpire ritirato" : " 1 per colpire ritirati"));
 
   /* Veleno: il 6 naturale per colpire non ferisce da solo, da' due punti
      al tiro per ferire. Quei colpi si tirano a parte, con il loro
@@ -237,9 +297,13 @@ export function strike(att, def, { attacks, auto = false, strength, ap, label = 
   const woundNeed = woundOn(S, def.t);
   const venom = f.poisoned ? Math.min(sixes(hit), hit.hits) : 0;
   const venomNeed = Math.max(2, woundNeed - 2);
-  const plain = pool(hit.hits - venom, woundNeed);
-  const spiked = venom ? pool(venom, venomNeed) : null;
+  const woundAgain = (boost && boost.rerollWound) || null;
+  const plain = pool(hit.hits - venom, woundNeed, woundAgain);
+  const spiked = venom ? pool(venom, venomNeed, woundAgain) : null;
   const wound = mergePools(plain, spiked);
+  const woundRe = (plain.rerolled || 0) + (spiked ? spiked.rerolled || 0 : 0);
+  if (woundRe) notes.push(boost.from.wound + ": " + woundRe +
+    (woundRe === 1 ? " 1 per ferire ritirato" : " 1 per ferire ritirati"));
   if (venom) notes.push(venom + (venom === 1 ? " colpo avvelenato feriva" : " colpi avvelenati ferivano")
                         + " a " + venomNeed + "+ invece che a " + woundNeed + "+");
 
@@ -381,13 +445,18 @@ function breakFor(side, winner, diff, tag){
      cui si tira davvero. */
   const terror = PS.terrorBreakMod({ winners: [winner.psych], loser: side.psych || {} });
   const ldMod = terror.mod;
-  const chances = ML.breakChances(side.ld, diff, { crushed, ldMod });
+  /* Shieldwall (Tappa 5 bis): una volta per partita, nel turno in cui e'
+     stata caricata. «E' stata caricata» qui e' «chi ha vinto ha
+     caricato», che in un assalto a due e' la stessa cosa; l'ordine
+     chiuso lo dice il tavolo, lo scudo in uso lo guarda chi gioca. */
+  const shieldwall = !!f.shieldwall && !side.shieldwallUsed && !!winner.charged && !side.loose;
+  const chances = ML.breakChances(side.ld, diff, { crushed, ldMod, shieldwall });
   const base = { side: tag, chances, crushed, terror: terror.why };
   if (f.unbreakable)
     return { ...base, ...ML.breakOutcome({ ld: side.ld, diff, unbreakable: true }) };
   if (f.stubborn && !side.stubbornUsed && chances.rout > chances.give)
-    return { ...base, ...ML.breakOutcome({ ld: side.ld, diff, stubbornNow: true }) };
-  return { ...base, ...ML.breakOutcome({ ld: side.ld, diff, dice: roll(2), crushed, ldMod }) };
+    return { ...base, ...ML.breakOutcome({ ld: side.ld, diff, stubbornNow: true, shieldwall }) };
+  return { ...base, ...ML.breakOutcome({ ld: side.ld, diff, dice: roll(2), crushed, ldMod, shieldwall }) };
 }
 
 /* Il conto di fine assalto. Le voci sono quelle che al tavolo si
@@ -395,7 +464,12 @@ function breakFor(side, winner, diff, tag){
    al resto del combattimento: qui resta la traduzione da schiera a
    scheda, che e' l'unica cosa che sa di `combat.js`. */
 export function resolution(a, b, done){
-  return ML.combatResult(ML.scoreCardOf(a, done.A), ML.scoreCardOf(b, done.B));
+  const ca = ML.scoreCardOf(a, done.A), cb = ML.scoreCardOf(b, done.B);
+  /* Impervious Defence e' una regola di chi viene preso di fianco, ma
+     toglie il punto a chi lo prende: si scrive sulla scheda dell'altro. */
+  if (b.flags && b.flags.impervious && ca.flank) ca.flankDenied = "Impervious Defence";
+  if (a.flags && a.flags.impervious && cb.flank) cb.flankDenied = "Impervious Defence";
+  return ML.combatResult(ca, cb);
 }
 
 /* ============================================================
@@ -435,21 +509,27 @@ export function meleeForecast(att, def, attacks){
   /* Con l'Odio i colpi mancati si ritirano, e la media dei colpi
      andati a segno sale: il conto lo sa gia' fare `expected`, che la
      stessa regola la applica ai dadi veri. */
-  const hChance = f.hatred ? expected(1, h, "misses") : chance(h);
-  const w = woundOn(att.s, def.t);
+  /* le regole d'esercito entrano nella media come nei dadi veri: gli 1
+     ritirati li conta `expected`, la perforazione e la Forza si sommano */
+  const boost = boostsOf(att);
+  const hChance = f.hatred ? expected(1, h, "misses")
+    : boost.rerollHit ? expected(1, h, boost.rerollHit) : chance(h);
+  const w = woundOn(att.s + boost.s, def.t);
+  const wOne = need => boost.rerollWound ? expected(1, need, boost.rerollWound) : chance(need);
   /* col veleno un colpo su sei ferisce con due punti di sconto: la
      media si fa sui due casi, non su uno */
   const wChance = f.poisoned && h < IMPOSSIBLE
-    ? (5 / 6) * chance(w) + (1 / 6) * chance(Math.max(2, w - 2))
-    : chance(w);
-  const sv = saveOn(def.armour, att.ap);
+    ? (5 / 6) * wOne(w) + (1 / 6) * wOne(Math.max(2, w - 2))
+    : wOne(w);
+  const ap = att.ap + boost.ap;
+  const sv = saveOn(def.armour, ap);
   const svChance = f.killingBlow ? (5 / 6) * chance(sv)
-    : f.armourBane ? (5 / 6) * chance(sv) + (1 / 6) * chance(saveOn(def.armour, att.ap + f.armourBane))
+    : f.armourBane ? (5 / 6) * chance(sv) + (1 / 6) * chance(saveOn(def.armour, ap + f.armourBane))
     : chance(sv);
   const wd = saveOn(def.ward, 0), rg = saveOn(def.regen, 0);
   const wounds = n * hChance * wChance * (1 - svChance) * (1 - chance(wd)) * (1 - chance(rg));
   return { attacks: n, hitNeed: h, woundNeed: w, saveNeed: sv, wardNeed: wd, regenNeed: rg,
-           hatred: !!f.hatred, wounds, kills: wounds / def.w };
+           hatred: !!f.hatred, boost, wounds, kills: wounds / def.w };
 }
 
 /* ============================================================

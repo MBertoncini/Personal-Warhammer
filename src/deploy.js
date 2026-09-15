@@ -29,6 +29,7 @@ import { survey, frontArcPoly, movementBands, reachFan, sightFan,
 import * as CH from './charge.js';
 import * as SH from './shoot.js';
 import * as PS from './psych.js';
+import * as ARM from './armies.js';
 import { splitWeaponRules } from './rulebook.js';
 import { showDiceGroups } from './dicebox.js';
 import { askText, askConfirm, askPick, showMenu, closeMenu,
@@ -617,6 +618,7 @@ function renderInspector(){
       ${shootingHTML(u)}
       ${chargeHTML(u)}
       ${psychHTML(u)}
+      ${armyBlockHTML(u)}
       ${gameBlockHTML(u)}
       ${nearbyHTML(u)}
       <div class="grid2"><button class="btn" id="i-rot-l">↺ 90°</button><button class="btn" id="i-rot-r">↻ 90°</button></div>
@@ -665,6 +667,9 @@ function renderInspector(){
      la riga e — se va male — porta la conseguenza sul tavolo. */
   for (const b of host.querySelectorAll("[data-psych]"))
     b.addEventListener("click", () => runPsychButton(u, b.dataset.psych));
+  /* i gesti d'esercito da una volta per partita (Tappa 5 bis) */
+  for (const b of host.querySelectorAll("[data-army]"))
+    b.addEventListener("click", () => runArmyAbility(u, b.dataset.army));
   /* L'arco tira la raffica per intero: dichiarazione, dadi, perdite,
      Panico. La sagoma e il bombardamento sono l'altra meta' della
      Tappa 4, quella che non tira per colpire. */
@@ -2239,14 +2244,15 @@ async function runBackward(u, kind){
     roll = Object.values(rolls)[0].total || 0;
   }
 
+  const fb = kind === "flee" ? CB.fleeBonusOf(u) : { mod: 0, why: "" };
   const mv = kind === "pursue"
     ? CH.pursuitMove(boxOf(u), foes[0], { roll })
-    : CH.backwardMove(kind, boxOf(u), foes, { roll });
+    : CH.backwardMove(kind, boxOf(u), foes, { roll, mod: fb.mod });
   if (!mv) return;
   const box0 = [u.x, u.y];
 
   act(spec.label.toLowerCase(), () => {
-    G.dispatch({ ...action, text: `${u.name} ${mv.text}` }, rolls);
+    G.dispatch({ ...action, text: `${u.name} ${mv.text}${fb.why ? " (" + fb.why + ")" : ""}` }, rolls);
     MV.ensureAnchor(u);
     u.x = mv.to.x; u.y = mv.to.y; u.rot = mv.to.rot;
     u.moved = { kind, inches: mv.inches };
@@ -2461,11 +2467,13 @@ async function runFlee(t, from){
   const rolls = await G.askRolls([{ id:"fuga", kind:"d6", n:2, why:"quanto si fugge" }],
                                  `Fuga di ${t.name}`);
   if (!rolls || !rolls.fuga) return;
-  const mv = CH.backwardMove("flee", boxOf(t), [asPiece(from)], { roll: rolls.fuga.total });
+  /* la Scurry Away degli Skaven (Tappa 5 bis): +1 al tiro di fuga */
+  const fb = CB.fleeBonusOf(t);
+  const mv = CH.backwardMove("flee", boxOf(t), [asPiece(from)], { roll: rolls.fuga.total, mod: fb.mod });
   const start = [t.x, t.y];
   act("fuga", () => {
     G.dispatch({ type:"flee", unit:t, army:t.army,
-                 text: `${t.name} ${mv.text}` }, rolls);
+                 text: `${t.name} ${mv.text}${fb.why ? " (" + fb.why + ")" : ""}` }, rolls);
     MV.ensureAnchor(t);
     t.x = mv.to.x; t.y = mv.to.y; t.rot = mv.to.rot;
     t.fled = true;
@@ -2758,6 +2766,90 @@ function psychHTML(u){
     </div>`;
 }
 
+/* ---- le regole d'esercito (Tappa 5 bis) ----
+   Quello che il file d'esercito sa dire di quest'unita' e dei personaggi
+   che le stanno uniti: le regole che il conto applica da solo, quelle
+   che restano a voi con il perche', e i gesti da una volta per partita
+   — il Waaagh! — con il pulsante che li tira. Quelle che gioca la
+   psicologia stanno gia' nel blocco sopra, e qui non si ripetono. */
+function armyRowsOf(x){
+  const info = (state.armies[x.army] && state.armies[x.army].info) || {};
+  const army = ARM.armyFor(x, info.catalogue || "");
+  if (!army) return [];
+  return (x.rules || []).map(name => ({ name, rule: ARM.ruleFor(army, name), army, owner: x }))
+    .filter(r => r.rule && !r.rule.gioca);
+}
+
+function armyBlockHTML(u){
+  if (!u || !u.placed || u.dead || isJoined(u)) return "";
+  const seen = new Set();
+  const rows = [u, ...attachedOf(u)].flatMap(armyRowsOf)
+    .filter(r => { const k = r.owner.uid + "|" + r.rule.id; return !seen.has(k) && seen.add(k); });
+  if (!rows.length) return "";
+  const buttons = !state.game.on ? "" : rows.filter(r => r.rule.once && r.rule.when === "command").map(r => {
+    const used = EF.spent(r.owner, r.rule.id);
+    return `<button class="btn tiny" data-army="${esc(r.rule.id)}|${r.owner.uid}" ${used ? "disabled" : ""}
+      title="${esc(used ? r.owner.name + " l'ha già tentato in questa partita" : r.rule.what || "")}">${esc(r.rule.name)}${
+      r.owner !== u ? " · " + esc(r.owner.name) : ""}</button>`;
+  }).join("");
+  const active = EF.effectsOf(u).filter(e => rows.some(r => r.rule.id === e.id));
+  return `
+    <div class="army-block">
+      <div class="readout"><span>Regole d'esercito</span><b>${esc(rows[0].army.name)}</b></div>
+      ${rows.map(r => {
+        const on = ARM.applies(r.rule);
+        return `<p class="note"><b>${esc(r.name)}</b>${r.owner !== u ? " (" + esc(r.owner.name) + ")" : ""}: ${
+          esc(on ? r.rule.what || "" : r.rule.perche || r.rule.what || "")}${on ? "" : ` <span class="dim">— a mano</span>`}</p>`;
+      }).join("")}
+      ${active.map(e => `<p class="note" style="color:var(--ok)">Attivo: ${esc(e.from)}, fino al suo prossimo inizio turno.</p>`).join("")}
+      ${buttons ? `<div class="chiprow">${buttons}</div>` : ""}
+    </div>`;
+}
+
+/* Il gesto da una volta per partita: un test di Comando del personaggio
+   con il suo Comando, nella sotto-fase di comando. Se passa, l'effetto
+   va su di lui e — quando la regola lo dice — sull'unita' a cui e'
+   unito. Il tentativo si spende comunque: «una volta per partita puo'
+   tentare», dice il testo del Waaagh!, e un tentativo fallito e' un
+   tentativo. */
+async function runArmyAbility(host, key){
+  const [id, ownerUid] = String(key).split("|");
+  /* `uid` e' un numero e `dataset` torna sempre una stringa: con `===`
+     il personaggio non si trovava mai, e il pulsante non faceva niente */
+  const owner = state.units.find(o => String(o.uid) === ownerUid);
+  const row = owner && armyRowsOf(owner).find(r => r.rule.id === id);
+  if (!row) return;
+  const { rule, army } = row;
+  if (EF.spent(owner, id)) return toast(`${owner.name} ha già tentato ${rule.name} in questa partita.`);
+  const rolls = await G.askRolls([{ id:"comando", kind:"d6", n:2, why:`test di Comando per ${rule.name}` }],
+                                 `${rule.name} di ${owner.name}`);
+  if (!rolls || !rolls.comando) return;
+  const res = PS.psychTest({ kind:"", ld: EF.val(owner, "Ld"), dice: rolls.comando.dice || [] });
+  const spread = spreadsTo(host, owner, rule.estende);
+  const gets = res.passed ? [owner, ...(spread ? [host] : [])] : [];
+  act(rule.name, () => {
+    if (state.game.on) G.goStep(1);
+    EF.spend(owner, id);
+    const at = { turn: state.game.turn, side: state.game.army };
+    for (const x of gets) EF.addEffect(x, ARM.toEffect(rule, army, { at }));
+    G.dispatch({ type:"command", unit: owner, ability: rule.name, army: owner.army,
+      text: `${owner.name}: ${rule.name} — ${res.text}` +
+            (res.passed ? ` — fino al suo prossimo inizio turno ${gets.map(x => x.name).join(" e ")}: ${rule.effetto || rule.what}`
+                        : " — il tentativo della partita è speso") +
+            (res.passed && host !== owner && !spread ? ` (non ${host.name}: la regola vale solo per un'unità di Orchi)` : "") },
+      rolls);
+  });
+}
+
+/* A chi si allarga l'effetto: all'unita' ospite, se il nome dice che e'
+   quella giusta e nessuno dentro dice il contrario. Per il Waaagh! «di
+   soli Orchi», e un Goblin unito la fa smettere di esserlo. */
+function spreadsTo(host, owner, rule){
+  if (!rule || !host || host === owner) return false;
+  const yes = new RegExp(rule.nome, "i"), no = rule.non ? new RegExp(rule.non, "i") : null;
+  return yes.test(host.name) && !(no && [host, ...attachedOf(host)].some(x => no.test(x.name)));
+}
+
 /* ---- la sagoma sul tavolo ----
    Sta in `state.extras`, che e' il secchio che i tre serializzatori
    copiano alla cieca: cosi' la sagoma si annulla, si salva e si
@@ -2918,6 +3010,11 @@ async function resolveCombat({ a, b, round }){
     G.dispatch({ type:"breakTest", unit: loser, army: loser.army, outcome: r.test.outcome,
                  text: loser.name + " perde di " + r.cr.diff + ": " + r.test.text },
                { rotta: { dice: r.test.dice || [], total: r.test.natural || 0 } });
+    /* Stubborn e Shieldwall valgono una volta per partita: la spesa sta
+       sull'unita', dentro la stessa azione, cosi' l'annulla la riporta
+       indietro insieme al test (Tappa 5 bis). */
+    if (r.test.stubborn) EF.spend(loser, "stubborn");
+    if (r.test.shieldwall) EF.spend(loser, "shieldwall");
   });
 
   /* 3 · la mossa che l'esito impone. Le tre le sa gia' fare la Tappa

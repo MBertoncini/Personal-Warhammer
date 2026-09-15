@@ -220,5 +220,89 @@ for (let i = 0; i < 200 && !visto; i++){
 ok('in una sfida l overkill finisce nel risultato', visto);
 
 /* ================================================================= */
+console.log('\nle regole dei tre eserciti di casa (Tappa 5 bis)');
+{
+  const fs = await import('node:fs');
+  const dir = new URL('../dati/eserciti/', import.meta.url);
+  const idx = JSON.parse(fs.readFileSync(new URL('indice.json', dir), 'utf8'));
+  const AR = await import('../src/armies.js');
+  const EFm = await import('../src/effects.js');
+  AR.useArmies(AR.makeArmies(idx.file.map(f => JSON.parse(fs.readFileSync(new URL(f, dir), 'utf8')))));
+
+  const prof = { M:'4',WS:'3',BS:'3',S:'3',T:'4',W:'1',I:'2',A:'1',Ld:'7' };
+  const hand = [{ name: 'Hand weapon', range: '', S: '', AP: '' }];
+  const muro = C.combatant(unit('Muro', { ...prof, WS:'3', T:'3' }, 20, 5));
+
+  const orco = (extra = {}) => unit('Orc Mob', prof, 20, 5,
+    { faction: 'Orc and Goblin Tribes', rules: ['Choppas'], weapons: hand, ...extra });
+  const carica = C.combatant(orco(), { charged: true, chargeInches: 6 });
+  const ferma  = C.combatant(orco());
+  ok('la Choppa si riconosce dal file degli Orchi, non e piu sconosciuta',
+     ferma.rulesRead.applied.some(x => x.name === 'Choppas') && !ferma.rulesRead.unknown.length);
+  const colpiC = C.strike(carica, muro, { attacks: 300 });
+  ok('in carica perfora di uno in piu', colpiC.ap === ferma.ap + 1 &&
+     colpiC.notes.some(n => /Choppas: perforazione \+1/.test(n)));
+  ok('e ritira gli 1 per ferire, e lo scrive', colpiC.notes.some(n => /Choppas: \d+ 1 per ferire ritirat/.test(n)));
+  const colpiF = C.strike(ferma, muro, { attacks: 300 });
+  ok('senza carica niente', colpiF.ap === ferma.ap && !colpiF.notes.some(n => /Choppas/.test(n)));
+  ok('e la previsione la conta', C.meleeForecast(carica, muro, 20).wounds > C.meleeForecast(ferma, muro, 20).wounds);
+  ok('l urto non passa dalla Choppa',
+     C.strike(carica, muro, { attacks: 10, auto: true, strength: 3 }).ap === ferma.ap);
+  ok('senza il file d esercito la Choppa torna sconosciuta',
+     C.combatant(orco({ faction: '' })).rulesRead.unknown.some(x => x.name === 'Choppas'));
+
+  const ratto = w => C.combatant(unit('Clanrats', prof, 20, 5,
+    { faction: 'Skaven', rules: ['Warpstone Weapons', 'Scurry Away'], weapons: w }));
+  ok('le armi di warpstone perforano di uno con l arma a una mano',
+     C.strike(ratto(hand), muro, { attacks: 5 }).ap === 1);
+  const conAlabarda = ratto([{ name: 'Halberd', range: '', S: 'S+1' }]);
+  const alabarda = C.strike(conAlabarda, muro, { attacks: 5 });
+  ok('con un alabarda no, e lo dice', alabarda.ap === conAlabarda.ap &&
+     alabarda.notes.some(n => /solo con l'arma a una mano/.test(n)));
+  ok('la Scurry Away da +1 alla fuga, con il suo nome',
+     C.fleeBonusOf({ faction: 'Skaven', rules: ['Scurry Away'] }).mod === 1 &&
+     /Scurry Away \+1/.test(C.fleeBonusOf({ faction: 'Skaven', rules: ['Scurry Away'] }).why));
+  ok('e chi non ce l ha fugge come sempre', C.fleeBonusOf({ faction: 'Skaven', rules: [] }).mod === 0);
+
+  const slann = C.combatant(unit('Slann', prof, 1, 1, { faction: 'Lizardmen', rules: ['Arcane Shield'] }));
+  ok('l Arcane Shield da la salvezza speciale 5+ che il file non dichiara', slann.ward === 5 && slann.wardFrom === 'Arcane Shield');
+  const slann4 = C.combatant(unit('Slann', prof, 1, 1, { faction: 'Lizardmen', rules: ['Arcane Shield'], ward: 4 }));
+  ok('e non peggiora una salvezza migliore', slann4.ward === 4);
+
+  const goblin = h => C.combatant(unit('Night Goblin Mob', prof, 40, 5,
+    { troop: 'Regular Infantry', rules: h ? ['Horde'] : [] }));
+  ok('Horde alza di uno il tetto dei ranghi', ML.combatScore(ML.scoreCardOf(goblin(true), 0)).rank === 4);
+  ok('senza Horde il tetto resta tre', ML.combatScore(ML.scoreCardOf(goblin(false), 0)).rank === 3);
+
+  const bastiladon = C.combatant(unit('Bastiladon', prof, 1, 1, { rules: ['Impervious Defence'] }));
+  const fianco = C.combatant(unit('Cavalieri', prof, 5, 5), { flank: 'flank' });
+  const crI = C.resolution(fianco, bastiladon, { A: 0, B: 0 });
+  ok('chi prende di fianco l Impervious Defence non ne ha il punto', crI.A.flank === 0 &&
+     crI.A.flankDenied === 'Impervious Defence');
+  ok('e contro chi non ce l ha il punto c e',
+     C.resolution(fianco, C.combatant(unit('Altro', prof, 1, 1)), { A: 0, B: 0 }).A.flank === 1);
+
+  const scudo = ML.breakOutcome({ ld: 7, diff: 3, dice: [3, 3], shieldwall: true });
+  ok('Shieldwall trasforma il ripiegamento in cedimento, e lo scrive',
+     scudo.outcome === 'give' && scudo.shieldwall && /Shieldwall/.test(scudo.text));
+  ok('ma non tocca la rotta', ML.breakOutcome({ ld: 7, diff: 3, dice: [5, 6], shieldwall: true }).outcome === 'rout');
+  ok('e le probabilita lo sanno',
+     ML.breakChances(7, 3, { shieldwall: true }).fallBack === 0 &&
+     ML.breakChances(7, 3, { shieldwall: true }).give > ML.breakChances(7, 3).give);
+  const guardia2 = unit('Temple Guard', prof, 20, 5, { rules: ['Shieldwall'] });
+  ok('lo Shieldwall speso non torna', (() => { EFm.spend(guardia2, 'shieldwall');
+    return C.combatant(guardia2).shieldwallUsed === true; })());
+
+  const boss = unit('Black Orc Mob', prof, 20, 5, { faction: 'Orc and Goblin Tribes', weapons: hand });
+  EFm.addEffect(boss, AR.toEffect(AR.armiesNow().find('Orc and Goblin Tribes').rules.find(r => r.id === 'waaagh'),
+                                  AR.armiesNow().find('Orc and Goblin Tribes')));
+  const urlando = C.combatant(boss);
+  ok('il Waaagh! acceso e un +1 al risultato', ML.combatScore(ML.scoreCardOf(urlando, 0)).rule === 1);
+  ok('e ritira gli 1 per colpire, dicendo chi', C.strike(urlando, muro, { attacks: 300 }).notes
+     .some(n => /Waaagh! — Orchi e Goblin: \d+ 1 per colpire ritirat/.test(n)));
+  AR.useArmies(null);
+}
+
+/* ================================================================= */
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

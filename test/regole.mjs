@@ -12,8 +12,8 @@ import { boxCorners } from '../src/geom.js';
 import * as EF from '../src/effects.js';
 import { TERRAIN, catOf, isNatural, coverOf, CAT_IDS } from '../src/terrain.js';
 import * as BM from '../src/battlemarch.js';
-import { makeArmies, coverage, rulesNow, toEffect, expressible, unmatched } from '../src/armies.js';
-import { readRules } from '../src/rulebook.js';
+import { makeArmies, coverage, rulesNow, toEffect, expressible, unmatched, applies, ruleFor } from '../src/armies.js';
+import { readRules, tallyUnknown } from '../src/rulebook.js';
 import { readUnit } from '../src/parser.js';
 import * as PREP from '../src/prep.js';
 import * as D from '../src/dice.js';
@@ -258,9 +258,19 @@ ok('e quelle senza catalogo non ne inventano uno',
 
 const og = A.find('Orc and Goblin Tribes');
 const cov = coverage(og);
-ok('le dieci regole degli Orchi ci sono tutte', cov.total === 10);
-ok('otto l app le sa applicare', cov.applied.length === 8);
-ok('e le due che non sa dicono perche', cov.manual.length === 2 && cov.manual.every(m => m.why));
+ok('gli Orchi hanno le dieci regole del libro e le dieci delle unita salvate', cov.total === 20);
+ok('quelle che l app non applica dicono tutte perche', cov.manual.length > 0 && cov.manual.every(m => m.why));
+ok('Warpaint e Big Uns sono da verificare, e lo dicono',
+   cov.unverified.map(x => x.name).join(',') === "Warpaint,Big 'Uns");
+const tuskRule = og.rules.find(r => r.id === 'tuskerCharge');
+ok('la Tusker Charge si sa dire ma non si applica: il conto non separa il cinghiale',
+   expressible(tuskRule) && !applies(tuskRule) && cov.manual.some(m => m.name === 'Tusker Charge'));
+ok('le regole che gioca la psicologia contano come applicate',
+   ['Fear of Elves', 'Ignore Panic', 'Ignore Goblin Panic'].every(n => cov.applied.some(a => a.name === n)));
+ok('una regola si riconosce dal nome con cui la scrive New Recruit',
+   ruleFor(og, 'Choppas').id === 'choppas' && ruleFor(og, 'Waaagh!').id === 'waaagh');
+ok('e il vecchio nome italiano che non combaciava con nessuna lista non c e piu',
+   !og.rules.some(r => /Frena/.test(r.name)) && ruleFor(og, 'Quell Impetuosity').id === 'quellImpetuosity');
 
 ok('in carica valgono le regole di carica e quelle di sempre',
    rulesNow(og, 'charge').map(r => r.id).join(',') === 'warpaint,choppas,tuskerCharge');
@@ -281,15 +291,42 @@ ok('e effects.js lo applica senza sapere che viene da un army book',
    EF.val(boar, 'S') === 4 && EF.val(boar, 'S', { who:'mount' }) === 4);
 
 const sk = A.find('Skaven');
-ok('gli Skaven hanno cinque regole', coverage(sk).total === 5);
+ok('gli Skaven hanno cinque regole del libro e due delle unita salvate', coverage(sk).total === 7);
 ok('e quattro oggetti a uso singolo', sk.items.length === 4 && sk.items.every(i => i.once));
-ok('la Fuga Precipitosa e esprimibile', expressible(sk.rules.find(r => r.id === 'scurryAway')));
-ok('le Masse Brulicanti no, e lo dice',
+ok('la Scurry Away e esprimibile e si applica', applies(sk.rules.find(r => r.id === 'scurryAway')));
+ok('le Teeming Masses no, e lo dice',
    !expressible(sk.rules.find(r => r.id === 'teemingMasses')));
 
 const lm = A.find('Lizardmen');
-ok('il file degli Uomini Lucertola c e ma e vuoto, e lo dichiara',
-   lm.rules.length === 0 && /trascritte/.test(lm.nota));
+ok('il file degli Uomini Lucertola dichiara che le regole del libro mancano',
+   /non sono ancora trascritte/.test(lm.nota));
+ok('ma ha quelle delle unita che le liste schierano', lm.rules.length === 5);
+ok('la parentesi dietro il nome non la nasconde', ruleFor(lm, 'Howdah (Lizardmen)').id === 'howdah');
+
+/* Da dove viene ogni riga. `testo: lista` e' una promessa — «scritta
+   leggendo il testo per esteso che le liste si portano dietro» — e si
+   controlla: quel testo deve esserci davvero. E il contrario per le
+   righe da verificare, che dicono di non averlo trovato. */
+const inLists = new Set(lists.flatMap(l => (l.units || [])
+  .flatMap(u => Object.keys(u.ruleText || {}).map(s => s.toLowerCase()))));
+ok('le righe scritte sul testo delle liste lo trovano davvero nelle liste',
+   A.list.every(a => a.rules.filter(r => r.testo === 'lista')
+     .every(r => (r.nomi || []).some(n => inLists.has(n.toLowerCase())))));
+ok('e quelle da verificare davvero non lo trovano',
+   A.list.every(a => a.rules.filter(r => r.daVerificare)
+     .every(r => !(r.nomi || []).some(n => inLists.has(n.toLowerCase())))));
+
+/* Il «fatto quando» della Tappa 5 bis: l'elenco delle regole che l'app
+   non conosce e' vuoto per le liste salvate. Non vuol dire che le
+   applichi tutte — vuol dire che di ognuna sa dire se la applica, e se
+   no perche'. */
+const armyOf = (u, g) => A.find(u.faction || '') || A.find(g.catalogue || '');
+const ignote = tallyUnknown(lists.map(l => ({ kind: 'list', units: l.units || [],
+                                              catalogue: (l.info || {}).catalogue || '' })), { armyOf });
+ok('nessuna regola delle liste salvate resta sconosciuta' +
+   (ignote.length ? ' (restano: ' + ignote.map(x => x.name).join(', ') + ')' : ''), ignote.length === 0);
+ok('e senza i file d esercito le regole d esercito tornano sconosciute',
+   tallyUnknown(lists.map(l => ({ kind: 'list', units: l.units || [] }))).some(x => x.name === 'Choppas'));
 
 ok('le regole che nessuno riconosce si contano per frequenza',
    unmatched(['Waaagh!', 'Cosa Strana', 'Cosa Strana'], og)[0].name === 'Cosa Strana');

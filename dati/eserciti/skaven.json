@@ -3,19 +3,23 @@
   "name": "Skaven",
   "matches": ["Skaven", "Skaven Legacy Army List"],
   "book": { "title": "Skaven — Legacy Army List", "rules": 23, "items": 20 },
-  "nota": "Cinque regole d'esercito a p. 23. Due si appoggiano a codice che esiste gia' — il pool a parte del veleno in combat.js e il modificatore di fuga in rules.js — e sono quelle che il vocabolario copre meglio.",
+  "nota": "Le regole d'esercito stanno a p. 23. Tre le liste salvate le portano per esteso (Scurry Away, Verminous Valour, Warpstone Weapons) e sono scritte su quel testo; due no, e portano `daVerificare`. Poi le regole delle unita' che le liste salvate schierano davvero.",
   "rules": [
     {
       "id": "poisonedWind",
-      "name": "Vento Velenoso",
+      "name": "Poisoned Wind",
+      "nomi": ["Poisoned Wind"],
       "page": 23,
       "when": "always",
       "what": "il 6 per ferire riesce sempre, anche contro una Resistenza fuori portata, e non concede armatura; la salvezza speciale e la rigenerazione restano",
-      "flags": { "autoWoundOnSix": true, "ignoreArmourOnSix": true }
+      "flags": { "autoWoundOnSix": true, "ignoreArmourOnSix": true },
+      "daVerificare": "nessuna lista salvata la porta: la riga viene dal riassunto del piano, non dal testo"
     },
     {
       "id": "scurryAway",
-      "name": "Fuga Precipitosa",
+      "name": "Scurry Away",
+      "nomi": ["Scurry Away"],
+      "testo": "lista",
       "page": 23,
       "when": "flee",
       "what": "+1 al tiro di fuga",
@@ -23,30 +27,52 @@
     },
     {
       "id": "teemingMasses",
-      "name": "Masse Brulicanti",
+      "name": "Teeming Masses",
+      "nomi": ["Teeming Masses"],
       "page": 23,
-      "when": "always",
+      "when": "leadership",
       "what": "entro 3 pollici da un'unita' amica il Comando sale del bonus di ranghi di quell'unita', fino a 10",
-      "manuale": "dipende da chi si ha vicino adesso: il numero si calcola sul tavolo, non si fissa nel file",
-      "perche": "e' una misura di distanza piu' il bonus di ranghi di un'altra unita': serve il motore delle fasi"
+      "perche": "e' una misura di distanza piu' il bonus di ranghi di un'altra unita': il Comando dei test non la conta ancora",
+      "daVerificare": "nessuna lista salvata la porta: la riga viene dal riassunto del piano, non dal testo"
     },
     {
       "id": "verminousValour",
-      "name": "Valore Verminoso",
+      "name": "Verminous Valour",
+      "nomi": ["Verminous Valour"],
+      "testo": "lista",
       "page": 23,
       "when": "melee",
-      "what": "il personaggio si ritira nelle file di dietro e smette di menare e di essere menato",
-      "manuale": "e' una posizione di modello dentro l'unita': si sposta nell'editor di formazione",
-      "perche": "non e' un modificatore, e' dove sta il modello"
+      "what": "fuori da una sfida, il personaggio unito a un'unita' con Forza d'Unita' 10 o piu' puo' ritirarsi in fondo: non mena e non viene menato, ma l'unita' usa ancora il suo Comando",
+      "perche": "e' dove sta il modello dentro l'unita': si sposta nell'editor di formazione"
     },
     {
       "id": "warpstoneWeapons",
-      "name": "Armi di Warpstone",
+      "name": "Warpstone Weapons",
+      "nomi": ["Warpstone Weapons"],
+      "testo": "lista",
       "page": 23,
       "when": "melee",
-      "what": "l'arma a una mano diventa magica e perfora di 1",
+      "what": "una sola arma a una mano normale diventa magica e perfora di 1; con due armi o un'arma diversa non vale",
       "ap": 1,
       "flags": { "magicalAttacks": true, "handWeaponOnly": true }
+    },
+    {
+      "id": "safeFromHarm",
+      "name": "Safe From Harm",
+      "nomi": ["Safe From Harm"],
+      "testo": "lista",
+      "when": "shoot",
+      "what": "a chi tira su Rat Ogre con Packmaster, ogni colpo va su un Rat Ogre con 1-4 su un D6; in mischia gli attacchi si assegnano a chi si tocca",
+      "perche": "e' la ripartizione dei colpi fra due profili nella stessa unita': il conto non separa i Rat Ogre dai Packmaster"
+    },
+    {
+      "id": "leaderOfThePack",
+      "name": "Leader Of The Pack",
+      "nomi": ["Leader Of The Pack"],
+      "testo": "lista",
+      "when": "list",
+      "what": "i Packmaster stanno nelle file di dietro, e i Rat Ogre o i Ratti Giganti davanti",
+      "perche": "e' la posizione dei modelli nelle file: si sistema nell'editor di formazione"
     }
   ],
   "items": [

@@ -1131,6 +1131,86 @@ console.log('\nla psicologia al tavolo (Tappa 5)');
   ok('nessun errore nella psicologia', errors.length === 0);
 }
 
+console.log('\nle regole d esercito al tavolo (Tappa 5 bis)');
+{
+  /* Nel jsdom i file d'esercito non arrivano — il fetch dell'avvio non
+     sa leggere un percorso relativo — e l'app lo regge restando senza.
+     Qui si caricano dal disco, come fa `test/regole.mjs`. */
+  const AR = await import('../src/armies.js');
+  const EFm = await import('../src/effects.js');
+  const CBm = await import('../src/combat.js');
+  const MLm = await import('../src/melee.js');
+  const D = await import('../src/dice.js');
+  const dir = path.join(root, 'dati', 'eserciti');
+  const idx = JSON.parse(fs.readFileSync(path.join(dir, 'indice.json'), 'utf8'));
+  const prima = AR.armiesNow();
+  AR.useArmies(AR.makeArmies(idx.file.map(f => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')))));
+
+  const aId = state.units.find(u => u.army === 'A' && u.placed && !u.dead).uid;
+  const bId = state.units.find(u => u.army === 'B' && u.placed && !u.dead).uid;
+  const by = id => state.units.find(u => u.uid === id);
+  const parcheggiate = state.units.filter(u => u.placed && u.uid !== aId && u.uid !== bId)
+                                  .map(u => { u.placed = false; return u.uid; });
+  const regoleA = [...(by(aId).rules || [])];
+  deploy.act('eserciti di prova', () => {
+    const x = by(aId), y = by(bId);
+    x.x = 500; x.y = 900; x.rot = 0;
+    y.x = 500; y.y = 900 - 5 * 25.4; y.rot = 180;
+    x.faction = 'Orc and Goblin Tribes';
+    x.rules = [...(x.rules || []), 'Waaagh!', 'Choppas', 'Da Boyz'];
+    y.faction = 'Skaven';
+    y.rules = [...(y.rules || []), 'Scurry Away'];
+  });
+  state.sel = { type: 'unit', id: aId };
+  deploy.renderAll();
+
+  const blocco = doc.querySelector('#inspector .army-block');
+  ok('il blocco delle regole d esercito compare nell ispettore',
+     !!blocco && /Orchi e Goblin/.test(blocco.textContent));
+  ok('con quelle che il conto fa da solo e quelle che restano a voi',
+     /Choppas/.test(blocco.textContent) && /Da Boyz[^]*a mano/.test(blocco.textContent));
+  const waaagh = () => doc.querySelector('#inspector [data-army^="waaagh|"]');
+  ok('e il Waaagh! ha il suo pulsante', !!waaagh() && !waaagh().disabled);
+
+  /* il doppio uno passa sempre: con i dadi fissati la prova non dipende
+     dalla fortuna */
+  D.setSource(() => 0);
+  waaagh().dispatchEvent(new window.Event('click'));
+  await settle(30);
+  ok('il pulsante apre il vassoio con il test di Comando',
+     tray().hidden === false && /Waaagh!/.test(tray().textContent));
+  tray().querySelector('#dx-roll').dispatchEvent(new window.Event('click'));
+  await settle(60);
+  ok('il tentativo della partita e speso', EFm.spent(by(aId), 'waaagh'));
+  ok('e passato, l effetto sta sull unita', EFm.effectsOf(by(aId)).some(e => e.id === 'waaagh'));
+  ok('il registro lo scrive nella sotto-fase di comando',
+     /Waaagh!.*passato/.test(state.game.log[0].text) && /Comando/.test(state.game.log[0].step));
+  ok('e lo scontro conta il punto in piu',
+     MLm.combatScore(MLm.scoreCardOf(CBm.combatant(by(aId)), 0)).rule === 1);
+  deploy.renderAll();
+  ok('il pulsante adesso e spento', waaagh().disabled === true);
+
+  /* la Scurry Away: la fuga dall ispettore tira due dadi e somma uno */
+  state.sel = { type: 'unit', id: bId };
+  deploy.renderAll();
+  doc.querySelector('#inspector [data-back="flee"]').dispatchEvent(new window.Event('click'));
+  await settle(30);
+  tray().querySelector('#dx-roll').dispatchEvent(new window.Event('click'));
+  await settle(60);
+  ok('chi ha la Scurry Away fugge con il suo +1, e il registro lo dice',
+     state.game.log.slice(0, 3).some(l => /Scurry Away \+1/.test(l.text)));
+  D.setSource(null);
+  tray().querySelector('#dx-close').dispatchEvent(new window.Event('click'));
+
+  for (let i = 0; i < 3; i++) history.undo();
+  ok('l annulla riporta indietro fuga, Waaagh! speso e regole',
+     !EFm.spent(by(aId), 'waaagh') && !EFm.effectsOf(by(aId)).length &&
+     JSON.stringify(by(aId).rules || []) === JSON.stringify(regoleA));
+  AR.useArmies(prima);
+  for (const id of parcheggiate) by(id).placed = true;
+  ok('nessun errore attorno alle regole d esercito', errors.length === 0);
+}
+
 console.log('\nunita scritte a mano');
 const handList = await listsMod.createList('Lista a mano');
 await listsMod.addUnit(handList.id, { name: 'Orc Boyz', models: 20, pts: 140, baseId: '25x25' });

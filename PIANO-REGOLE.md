@@ -533,7 +533,7 @@ Perché il piano sia onesto sui tempi, conviene contare i dati:
 | Armi da mischia e da tiro | ~20 | pp. 213-219 | profili |
 | Armature ed equipaggiamento | ~10 | pp. 220-221 | profili |
 | *Battle March*: due tabelle a D6, sei mappe, oggetti | — | §8.1 | tabelle + dati |
-| Regole d'esercito dei tre eserciti di casa | 10 + 5 + Lucertola | §8.2, §8.3 | file per esercito |
+| Regole d'esercito dei tre eserciti di casa | 10 + 5 + Lucertola | §8.2, §8.3 | file per esercito — *fatte per quello che le liste portano; le regole del libro dei Lucertola da trascrivere* |
 
 Le regole speciali e gli incantesimi sono i due mucchi grossi, e sono
 anche i due che **si possono fare a fette**: dieci regole per volta,
@@ -1178,13 +1178,97 @@ distrutto manda al Panico chi gli stava a 6″ senza che nessuno misuri.
 psicologia dal lato dei numeri come `test/tiro.mjs` guarda il tiro, e
 il gesto sul tavolo lo guarda `test/boot.mjs`.
 
-**Tappa 5 bis — Le regole dei tre eserciti di casa.**
-Dieci regole per gli Orchi e Goblin, sei per gli Skaven, quelle degli
-Uomini Lucertola (§8.2, §8.3). Sono poche perché il grosso del lavoro è
-già stato fatto nelle tappe precedenti: qui si scrivono file di dati,
-non codice. L'oggetto a **uso singolo** è l'unica cosa nuova.
+**Tappa 5 bis — Le regole dei tre eserciti di casa. — fatta, con quattro righe da verificare**
+~~Le regole degli Orchi e Goblin~~, ~~degli Skaven~~, ~~quelle delle
+unità degli Uomini Lucertola~~, ~~l'uso singolo~~. Stanno in
+`dati/eserciti/`, come il §7 chiedeva: file di dati, non codice. Il
+codice nuovo è il pezzo che mancava fra quei file e il conto, e sta in
+`armies.js`: riconoscere una regola dal nome con cui New Recruit la
+scrive, e tradurla nelle quattro cose che `combat.js` sapeva già fare —
+ritirare, perforare, alzare la Forza, fissare la salvezza speciale.
+
+Da dove viene. La Tappa 0 aveva scritto i file dal riassunto del §8, e
+questa tappa li ha riscritti sul testo per esteso che le liste salvate
+si portano dietro, come la Tappa 5. Ogni riga dice da dove viene:
+`testo: lista` se è stata letta lì, `daVerificare` se nessuna lista la
+porta. Una prova controlla che le prime trovino davvero il loro testo
+nelle liste e che le seconde davvero no.
+
+Come si vede al tavolo. Nell'ispettore, sotto la Psicologia, c'è il
+blocco **Regole d'esercito**: una riga per regola dell'unità e dei
+personaggi uniti, con *a mano* e il perché accanto a quelle che l'app
+conosce e non gioca. Il **Waaagh!** ha il suo pulsante: test di Comando
+del personaggio dal vassoio, nella sotto-fase di comando, e se passa
+l'effetto va su di lui e sull'unità di Orchi a cui è unito fino al loro
+prossimo inizio turno. Nel pannello dello scontro le regole entrano nei
+dadi con il loro nome nelle note — «Choppas: 3 1 per ferire ritirati»
+— e nel risultato: la *Horde* prende il quarto rango, l'*Impervious
+Defence* toglie il punto di fianco a chi lo prende e il pannello dice
+perché, lo *Shieldwall* cede terreno invece di ripiegare. La fuga di chi
+ha la *Scurry Away* scrive il suo +1 nel registro.
+
+I nomi che le liste salvate portano e l'app non conosceva erano
+trenta. Otto adesso entrano nei conti: *Choppas*, *Waaagh!*, *Scurry
+Away*, *Warpstone Weapons*, *Arcane Shield* dai file d'esercito, e
+*Horde*, *Shieldwall*, *Impervious Defence* dal registro universale,
+perché il loro testo non nomina nessun esercito. Gli altri ventidue
+l'app li conosce e non li gioca, e ognuno dice perché.
+
+Quello che questa tappa ha trovato per strada, e non era in programma:
+
+- **I file d'esercito non li leggeva nessuno.** Dalla Tappa 0 stavano in
+  `dati/eserciti/` e la scheda di preparazione ne contava le regole;
+  `combat.js` non li importava. Il Warpaint era «applicato» in un
+  elenco e in nessun dado.
+- **E non avrebbero trovato niente.** Le regole avevano i nomi del
+  riassunto, in italiano — «Carica delle Zanne», «Frena l'Impetuosità» —
+  e le liste le scrivono in inglese. La seconda non esisteva nemmeno:
+  è *Quell Impetuosity*, che la Tappa 5 giocava già. Adesso ogni regola
+  ha i suoi `nomi`.
+- **Lo Stubborn non si spendeva mai.** `combat.js` leggeva
+  `stubbornUsed` dalla Tappa 3 e nessuno lo scriveva: al tavolo il
+  testardo saltava il test a ogni assalto. Adesso lo Stubborn e lo
+  Shieldwall si spendono nella stessa azione del test di rotta, e
+  l'annulla li riporta indietro.
+- **La salvezza del pannello veniva dall'unità grezza.** Una salvezza
+  speciale fissata da una regola sarebbe stata rimessa a zero dal campo
+  del pannello. Adesso il campo parte dalla schiera.
+- **La Tusker Charge era dichiarata esprimibile, ed era vero**: il
+  file sa dire cosa fa. Ma vale per il cinghiale e non per chi lo
+  cavalca, e il conto dell'assalto non separa i due profili. Una regola
+  che si sa scrivere e non si sa giocare adesso porta il suo `perche`,
+  e la scheda la conta fra quelle a mano.
+
+Quello che resta fuori, detto per non lasciarlo scoprire a una partita:
+
+- **Quattro righe da verificare**: *Warpaint* e *Big 'Uns* degli Orchi,
+  *Poisoned Wind* e *Teeming Masses* degli Skaven. Nessuna lista salvata
+  le porta, e vengono dal riassunto del §8: la scheda della lista lo
+  scrive.
+- **Il Waaagh! fallito si spende.** Il testo dice «una volta per partita
+  può tentare», e l'app legge che il tentativo è la cosa che si fa una
+  volta. Se il libro dice altro, è una riga in `runArmyAbility`.
+- **Lo Shieldwall non guarda gli scudi.** Il conto controlla che l'unità
+  sia stata caricata e non sia in ordine aperto; lo scudo in uso lo
+  guarda chi gioca, e il pannello glielo ricorda.
+- **Le regole a mano che contano di più**: la *Tusker Charge* e la
+  *Howdah* aspettano che l'assalto meni con due profili; il Comando di
+  Ogdruz prestato ai Troll aspetta quello del Generale; gli attacchi
+  alternativi del Gigante, i Fanatici e gli *Squigs Go Wild* aspettano
+  un pulsante loro; *Guardians*, *Safe From Harm* e *Protect Da Boss*
+  aspettano un tiro che sappia spostare i colpi da un bersaglio
+  all'altro; la *Counter Charge* aspetta una quarta reazione alla carica.
+- **Le regole d'esercito vere degli Uomini Lucertola**, quelle del
+  libro, non sono trascritte: il file ha solo quelle delle unità
+  schierate. E gli oggetti a uso singolo degli Skaven sanno di essere a
+  uso singolo, ma non hanno ancora un pulsante.
+
 *Fatto quando*: l'elenco «regole che non conosco» del pannello dello
-scontro è vuoto per le dieci liste salvate.
+scontro è vuoto per le dieci liste salvate. **Lo fa**, per le tredici che
+ci sono adesso: la prova sta in `test/regole.mjs`, e senza i file
+d'esercito le stesse liste tornano a mostrare la *Choppas* fra le ignote.
+Le regole nei dadi le guarda `test/mischia.mjs`, il pulsante del Waaagh!
+e la fuga sul tavolo `test/boot.mjs`.
 
 **Tappa 6 — Magia.**
 Generazione degli incantesimi, il ciclo di lancio e dissolvimento,

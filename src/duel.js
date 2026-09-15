@@ -35,7 +35,10 @@ function sideOpts(u, foe){
   return {
     fear, feared: !!(fear && fear.already && !fear.passed),
     attacks: C.contact(c, f).attacks,
-    armour: u.armour || 0, ward: u.ward || 0, regen: u.regen || 0,
+    /* dalla schiera e non dall'unita': la salvezza speciale che una
+       regola d'esercito fissa (l'Arcane Shield) sta li', e il campo del
+       pannello la mostra gia' giusta invece di rimetterla a zero */
+    armour: c.armour, ward: c.ward, regen: c.regen,
     /* lo stendardo adesso arriva dal file quando c'e': era una casella
        da spuntare a mano ogni volta, e il dato stava li' dall'inizio */
     standard: c.standard,
@@ -202,7 +205,9 @@ function testHTML(r, names){
     ${esc(head)}<b style="color:var(--${colour})">${esc(verb)}</b>. ${odds}</p>
     ${t.daVerificare ? `<p class="note">La riga della Forza d'Unità più che doppia è dedotta dal testo di
       <b>Stubborn</b>, non letta sulla pagina del test: se il manuale dice altro, si cambia
-      <span class="mono">CRUSHING_BLOCKS_FALLBACK</span>.</p>` : ""}${stub}`;
+      <span class="mono">CRUSHING_BLOCKS_FALLBACK</span>.</p>` : ""}${stub}${t.shieldwall
+      ? `<p class="note"><b>Shieldwall</b>: cede terreno invece di ripiegare, e se la gioca per tutta la partita.
+         Vale in ordine chiuso e con gli scudi in uso: se non li usava, l'esito è il ripiegamento.</p>` : ""}`;
 }
 
 /* Chi mena per primo. Non e' sempre l'Iniziativa: chi ha caricato ne
@@ -287,6 +292,9 @@ function crHTML(r, names, tint){
       ${row("A", r.cr.A)}${row("B", r.cr.B)}
       ${r.cr.tie ? `<p class="note">Pareggio rotto dal musico di <b>${esc(names[r.cr.tie])}</b>.</p>` : ""}
       ${lost}
+      ${[["A", "B"], ["B", "A"]].filter(([t]) => r.cr[t].flankDenied).map(([t, o]) =>
+        `<p class="note"><b>${esc(names[t])}</b> è di fianco o di retro ma non ne prende il punto:
+         <b>${esc(names[o])}</b> ha ${esc(r.cr[t].flankDenied)}.</p>`).join("")}
       ${r.wiped
         ? `<p class="note"><b>${esc(names[r.wiped])}</b> non ha più nessuno in piedi: il combattimento finisce qui,
            e chi ha vinto sfonda invece di inseguire (p. 156).</p>`

@@ -446,6 +446,8 @@ function armyHTML(l){
         ${c.applied.length} applicate, ${c.manual.length} in mano tua.</p>
       ${c.manual.length ? `<ul class="prep-open">${c.manual.map(m =>
         `<li><b>${esc(m.name)}</b>${m.page ? ` (p. ${m.page})` : ""} — ${esc(m.why)}</li>`).join("")}</ul>` : ""}
+      ${c.unverified.length ? `<p class="note">Da verificare sul libro: ${c.unverified.map(m => esc(m.name)).join(", ")} —
+        nessuna lista salvata le porta per esteso, e le righe vengono da un riassunto.</p>` : ""}
     </div>`;
 }
 

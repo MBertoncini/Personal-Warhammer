@@ -3,96 +3,210 @@
   "name": "Orchi e Goblin",
   "matches": ["Orc and Goblin Tribes", "Orc & Goblin Tribes", "Orcs and Goblins"],
   "book": { "title": "Ravening Hordes", "list": 11, "rules": 45 },
-  "nota": "Le dieci regole d'esercito stanno alle pp. 45-46. Il testo esteso sta nel libro: qui c'e' solo quello che serve al motore per applicarle, e le regole che il vocabolario non copre lo dicono.",
+  "nota": "Le regole d'esercito stanno alle pp. 45-46; quelle delle singole unita' nelle loro schede. Da dove viene ogni riga: `testo: lista` vuol dire che e' stata scritta leggendo il testo per esteso che le liste salvate si portano dietro; `daVerificare` vuol dire che nessuna lista salvata la porta e la riga viene dal riassunto del piano. `nomi` sono i nomi con cui New Recruit la scrive, ed e' da li' che l'app la riconosce su un'unita'.",
   "rules": [
     {
       "id": "warpaint",
       "name": "Warpaint",
+      "nomi": ["Warpaint"],
       "page": 45,
       "when": "always",
       "what": "salvezza speciale 6+, ma niente armatura",
       "set": { "ward": 6 },
-      "clear": ["armour"]
+      "clear": ["armour"],
+      "daVerificare": "nessuna lista salvata la porta: la riga viene dal riassunto del piano, non dal testo"
     },
     {
       "id": "bigUns",
       "name": "Big 'Uns",
+      "nomi": ["Big 'Uns", "Big Uns"],
       "page": 45,
       "when": "melee",
       "what": "+1 Forza in mischia e Perfora-Armature (1)",
       "mods": { "S": 1 },
-      "ap": 1
+      "ap": 1,
+      "daVerificare": "nessuna lista salvata la porta: la riga viene dal riassunto del piano, non dal testo"
     },
     {
       "id": "choppas",
       "name": "Choppas",
+      "nomi": ["Choppas"],
+      "testo": "lista",
       "page": 45,
       "when": "charge",
-      "what": "in carica ritira gli 1 naturali per ferire e migliora la perforazione di 1",
+      "what": "nel turno in cui carica ritira gli 1 naturali per ferire e perfora di 1 in piu'; non con un'arma magica e non per la cavalcatura",
       "reroll": { "toWound": "ones" },
-      "ap": 1
+      "ap": 1,
+      "flags": { "notMount": true, "notMagic": true }
     },
     {
       "id": "tuskerCharge",
-      "name": "Carica delle Zanne",
+      "name": "Tusker Charge",
+      "nomi": ["Tusker Charge"],
+      "testo": "lista",
       "page": 45,
       "when": "charge",
-      "what": "in carica il cinghiale mena a Forza +1 e perforazione 1; il cavaliere no",
+      "what": "nel turno in cui carica il cinghiale mena a Forza +1 e perfora di 1; il cavaliere no",
       "who": "mount",
       "mods": { "S": 1 },
-      "ap": 1
+      "ap": 1,
+      "perche": "vale per gli attacchi del cinghiale, e il conto dell'assalto non li separa ancora da quelli di chi lo cavalca"
     },
     {
       "id": "waaagh",
       "name": "Waaagh!",
+      "nomi": ["Waaagh!", "Waaagh"],
+      "testo": "lista",
       "page": 46,
       "when": "command",
       "once": true,
-      "what": "una volta per partita, con un test di Comando: ritiro degli 1 per colpire e +1 al risultato del combattimento",
+      "test": "Ld",
+      "estende": { "nome": "\\borc", "non": "goblin" },
+      "what": "una volta per partita, nella sotto-fase di comando, un test di Comando del personaggio: se passa, fino al suo prossimo inizio turno lui e l'unita' di Orchi a cui e' unito ritirano gli 1 per colpire e hanno +1 al risultato del combattimento",
+      "effetto": "ritira gli 1 per colpire e ha +1 al risultato del combattimento",
       "reroll": { "toHit": "ones" },
       "flags": { "combatResult": 1 },
-      "until": "turn"
+      "until": "ownTurn"
     },
     {
       "id": "fearOfElves",
       "name": "Fear of Elves",
+      "nomi": ["Fear of Elves"],
+      "testo": "lista",
       "page": 46,
       "when": "psych",
-      "what": "gli Elfi fanno Paura",
-      "flags": { "fearsElves": true }
+      "gioca": "psych.js",
+      "what": "gli Elfi le fanno Paura"
     },
     {
       "id": "ignoreGoblinPanic",
-      "name": "Ignora il Panico dei Goblin",
+      "name": "Ignore Goblin Panic",
+      "nomi": ["Ignore Goblin Panic"],
+      "testo": "lista",
       "page": 46,
       "when": "psych",
-      "what": "non fa test di Panico per quello che succede ai Goblin",
-      "flags": { "ignorePanicFrom": "goblin" }
+      "gioca": "psych.js",
+      "what": "niente Panico per quello che succede ai Goblin"
     },
     {
       "id": "ignorePanic",
-      "name": "Ignora il Panico",
+      "name": "Ignore Panic",
+      "nomi": ["Ignore Panic"],
+      "testo": "lista",
       "page": 46,
       "when": "psych",
-      "what": "non fa test di Panico causati da altre unita'",
-      "flags": { "ignorePanicFromFriends": true }
+      "gioca": "psych.js",
+      "what": "niente Panico per le unita' amiche che non hanno la stessa regola"
     },
     {
       "id": "daBoyz",
       "name": "Da Boyz",
+      "nomi": ["Da Boyz"],
+      "testo": "lista",
       "page": 46,
       "when": "list",
-      "what": "un Boss di Orchi Neri per ogni reggimento di Orchi Neri",
-      "manuale": "vincolo di composizione della lista: si controlla nella scheda di preparazione, non al tavolo"
+      "what": "un Boss di Orchi Neri per ogni reggimento di Orchi Neri, e viceversa",
+      "perche": "vincolo di composizione della lista: si controlla nella scheda di preparazione, non al tavolo"
     },
     {
-      "id": "curbTheImpetuous",
-      "name": "Frena l'Impetuosita'",
+      "id": "quellImpetuosity",
+      "name": "Quell Impetuosity",
+      "nomi": ["Quell Impetuosity"],
+      "testo": "lista",
       "page": 46,
       "when": "psych",
-      "what": "la psicologia cambia secondo chi si ha vicino",
-      "manuale": "dipende da quali unita' amiche stanno entro una certa distanza: serve il sistema di Panico della Tappa 5",
-      "perche": "e' una condizione sul tavolo, non un modificatore fisso"
+      "what": "entro 6 pollici un'unita' impetuosa amica ritira il test fallito",
+      "perche": "il blocco Psicologia la ricorda; il ritiro del test lo tirate voi"
+    },
+    {
+      "id": "daTrollCalla",
+      "name": "Da Troll Calla",
+      "nomi": ["Da Troll Calla"],
+      "testo": "lista",
+      "when": "leadership",
+      "what": "i Troll amici nel raggio di comando di Ogdruz usano il suo Comando, se lui non fugge",
+      "perche": "e' il Comando di un personaggio prestato a un'altra unita', come quello del Generale: i test usano ancora il Comando dell'unita'"
+    },
+    {
+      "id": "protectDaBoss",
+      "name": "Protect Da Boss",
+      "nomi": ["Protect Da Boss"],
+      "testo": "lista",
+      "when": "shoot",
+      "what": "entro 3 pollici da un'unita' di Troll amica non puo' essere bersaglio di tiro o di incantesimi, salvo che sia il bersaglio piu' vicino",
+      "perche": "e' una scelta del bersaglio: il pannello del tiro elenca i nemici, e questo lo escludete voi"
+    },
+    {
+      "id": "syphonedStrength",
+      "name": "Syphoned Strength",
+      "nomi": ["Syphoned Strength"],
+      "testo": "lista",
+      "when": "magic",
+      "what": "+1 al tiro di lancio entro 3 pollici da un'unita' di Troll non in fuga con Forza d'Unita' 6 o piu'",
+      "perche": "e' un modificatore di lancio: la magia e' la Tappa 6"
+    },
+    {
+      "id": "mobRule",
+      "name": "Mob Rule",
+      "nomi": ["Mob Rule"],
+      "testo": "lista",
+      "when": "magic",
+      "what": "+1 al tiro di lancio finche' e' unito a un'unita' di Orchi con Forza d'Unita' 10 o piu'",
+      "perche": "e' un modificatore di lancio: la magia e' la Tappa 6"
+    },
+    {
+      "id": "releaseTheFanatics",
+      "name": "Release the Fanatics!",
+      "nomi": ["Release the Fanatics!", "Release the Fanatics"],
+      "testo": "lista",
+      "when": "turnStart",
+      "what": "i Fanatici restano nascosti nell'unita' e si liberano a inizio turno; poi si muovono di 2D6 nelle mosse obbligate",
+      "perche": "sono modelli che il tavolo non ha ancora: si piazzano a mano, e il loro movimento si tira dal vassoio"
+    },
+    {
+      "id": "fanaticBallAndChain",
+      "name": "Fanatic Ball & Chain",
+      "nomi": ["Fanatic Ball & Chain", "Fanatic Ball and Chain"],
+      "testo": "lista",
+      "when": "compulsory",
+      "what": "chi attraversa un Fanatico, o viene attraversato, subisce D6 colpi a Forza 5 con perforazione 3",
+      "perche": "si risolve nelle mosse obbligate, quando il Fanatico passa: il pannello del tiro sa tirare i colpi, ma non sa quando un Fanatico attraversa qualcuno"
+    },
+    {
+      "id": "squigsGoWild",
+      "name": "Squigs Go Wild",
+      "nomi": ["Squigs Go Wild"],
+      "testo": "lista",
+      "when": "melee",
+      "what": "se la mandria va in rotta, con cinque Squig o piu' colpisce tutti entro 2D6 pollici e poi e' distrutta",
+      "perche": "succede dopo il test di rotta e colpisce amici e nemici a distanza: il pannello dello scontro si ferma alla fuga"
+    },
+    {
+      "id": "pickUpAnd",
+      "name": "Pick Up And...",
+      "nomi": ["Pick Up And...", "Pick Up And"],
+      "testo": "lista",
+      "when": "melee",
+      "what": "al posto degli attacchi il Gigante afferra fanti uno alla volta, con test di Iniziativa, finche' un D6 non lo distrae",
+      "perche": "e' un attacco alternativo con la sua sequenza di dadi: il conto dell'assalto usa gli attacchi del profilo"
+    },
+    {
+      "id": "giantAttacks",
+      "name": "Giant Attacks",
+      "nomi": ["Giant Attacks"],
+      "testo": "lista",
+      "when": "melee",
+      "what": "al posto degli attacchi il Gigante tira sulla sua tabella a D6",
+      "perche": "e' un attacco alternativo su tabella: il conto dell'assalto usa gli attacchi del profilo, e la tabella si tira dal vassoio"
+    },
+    {
+      "id": "timber",
+      "name": "Timmm-Berrr!",
+      "nomi": ["Timmm-Berrr!", "Timmm-Berrr"],
+      "testo": "lista",
+      "when": "melee",
+      "what": "quando cade, il Gigante crolla da un lato e chi gli sta a contatto da quella parte subisce D6 colpi",
+      "perche": "succede quando il modello muore, e da che lato cade lo decide uno spareggio: lo risolvete voi"
     }
   ],
   "lores": [

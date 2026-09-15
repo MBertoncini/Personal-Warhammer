@@ -18,6 +18,7 @@
  */
 
 import { psychRule } from './psych.js';
+import { ruleFor, applies } from './armies.js';
 
 /* il numero fra parentesi: "Armour Bane (1, Cold One only)" -> 1 */
 const num = (s, dflt = 1) => {
@@ -127,6 +128,36 @@ export const RULEBOOK = [
     what:"non fa test di rotta: cede terreno e basta",
     on: f => { f.unbreakable = true; } },
 
+  /* Tre regole della Tappa 5 bis. Stanno su unita' di un esercito
+     preciso — i Night Goblin, la Temple Guard, il Bastiladon — ma il
+     loro testo non nomina nessun esercito, quindi stanno qui e non in un
+     file di `dati/eserciti/`: un'unita' di un altro libro che le porta
+     le trova gia' pronte.
+
+       Horde — «puo' aumentare di uno il bonus di ranghi massimo che il
+       suo tipo di truppa le concede». Sono le Night Goblin Mobs, e il
+       quarto rango e' la ragione per cui si schierano da quaranta.
+
+       Shieldwall — «una volta per partita, nel turno in cui e' stata
+       caricata, in ordine chiuso e con gli scudi, puo' cedere terreno
+       invece di ripiegare in ordine». Il conto la gioca da solo, perche'
+       cedere e' sempre meglio; lo scudo in uso e l'ordine chiuso li
+       guarda chi gioca.
+
+       Impervious Defence — «i nemici non prendono i punti di fianco o
+       di retro per essere a contatto con questo modello». */
+  { id:"horde", re:/^horde\b/i,
+    what:"un rango in piu' di bonus massimo rispetto al suo tipo di truppa",
+    on: f => { f.horde = true; } },
+
+  { id:"shieldwall", re:/^shieldwall/i,
+    what:"una volta per partita, se caricata, cede terreno invece di ripiegare in ordine",
+    on: f => { f.shieldwall = true; } },
+
+  { id:"impervious", re:/^impervious defen[cs]e/i,
+    what:"chi la prende di fianco o di retro non ne ha il bonus nel risultato",
+    on: f => { f.impervious = true; } },
+
   /* Non fa niente qui perche' e' gia' stata fatta: il valore d'armatura
      che arriva dal file la contiene. Sta in elenco lo stesso, altrimenti
      comparirebbe fra le regole che l'app non conosce. */
@@ -164,6 +195,15 @@ export const ELSEWHERE = [
     why:"comando o magia: fuori dal conto di un assalto" },
   { re:/^(large target|unit strength|drop rocks|breath weapon|regenerat)/i,
     why:"non entra nella risoluzione di una mischia" },
+  /* Le tre universali che le liste portano e che un tavolo non puo'
+     giocare da solo: due sono vincoli su come e' fatta l'unita', la
+     terza e' una reazione alla carica che il pannello non offre. */
+  { re:/^motley crew/i,
+    why:"modelli armati e corazzati in modo diverso nella stessa unità: si tirano a mucchi separati, e il conto usa l'arma e l'armatura della maggioranza" },
+  { re:/^loner/i,
+    why:"vincolo sui personaggi che si uniscono e sul Generale: si rispetta schierando" },
+  { re:/^counter charge/i,
+    why:"è una reazione alla carica di cavalleria, carri e mostri: il pannello offre tenere, tirare e fuggire, e questa la muovete voi" },
 ];
 
 /* ============================================================
@@ -173,7 +213,10 @@ export const emptyFlags = () => ({
   furiousCharge:false, poisoned:false, armourBane:0, killingBlow:false,
   handWeaponAP:0, impact:null, stomp:null, extraRank:false, hatred:false,
   strikeFirst:false, strikeLast:false, stubborn:false, unbreakable:false,
-  battleStandard:false,
+  battleStandard:false, horde:false, shieldwall:false, impervious:false,
+  /* le regole d'esercito riconosciute e applicabili, come stanno nel
+     file: `combat.js` le traduce con `meleeBoosts` */
+  army:[],
 });
 
 /* Le regole dell'arma arrivano come una riga sola, separate da virgola:
@@ -215,7 +258,12 @@ function limitMet(limit, weapon){
    regola che l'app non conosce smette di essere un nome: diventa un
    nome e le sue tre righe di manuale, che al tavolo bastano per
    applicarla a mano. */
-export function readRules(names = [], weapons = [], weapon = "", texts = null){
+/* `army` e' il file d'esercito dell'unita' (Tappa 5 bis). Una regola che
+   il registro universale non conosce e che il file nomina non e' piu'
+   «sconosciuta»: e' applicata, o e' conosciuta con il perche' non lo
+   e'. La differenza che conta al tavolo e' quella fra «l'app non sa
+   cosa sia» e «l'app lo sa, e questo lo fate voi». */
+export function readRules(names = [], weapons = [], weapon = "", texts = null, army = null){
   const flags = emptyFlags();
   const applied = [], elsewhere = [], unknown = [];
   const seen = new Set();
@@ -249,6 +297,18 @@ export function readRules(names = [], weapons = [], weapon = "", texts = null){
       continue;
     }
 
+    const ar = army ? ruleFor(army, name) : null;
+    if (ar){
+      const caveat = ar.daVerificare ? "da verificare: " + ar.daVerificare : "";
+      if (applies(ar)){
+        applied.push({ name, text, what: ar.what || "", caveat, army: army.name });
+        if (!ar.gioca) flags.army.push(ar);
+      } else {
+        elsewhere.push({ name, text, why: ar.perche || ar.manuale || "si applica a mano", army: army.name });
+      }
+      continue;
+    }
+
     const out = ELSEWHERE.find(r => r.re.test(name));
     if (out) elsewhere.push({ name, text, why: out.why });
     else unknown.push({ name, text });
@@ -267,13 +327,15 @@ export function readRules(names = [], weapons = [], weapon = "", texts = null){
    quelle viste in piu' partite, poi quelle che stanno in piu' liste.
 
    `groups` e' un elenco di { kind: "game" | "list", units: [...] }.
+   `armyOf(unita', gruppo)` dice il file d'esercito, quando c'e': senza,
+   le regole d'esercito tornano tutte sconosciute.
    ============================================================ */
-export function tallyUnknown(groups = []){
+export function tallyUnknown(groups = [], { armyOf = null } = {}){
   const map = new Map();
   for (const g of groups || []){
     const seenHere = new Set();
     for (const u of (g && g.units) || []){
-      const r = readRules(u.rules || [], [], "", u.ruleText || null);
+      const r = readRules(u.rules || [], [], "", u.ruleText || null, armyOf ? armyOf(u, g) : null);
       for (const x of r.unknown){
         const e = map.get(x.name) || { name: x.name, text: x.text || "", games: 0, lists: 0, units: 0 };
         if (!e.text && x.text) e.text = x.text;

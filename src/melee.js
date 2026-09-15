@@ -147,6 +147,9 @@ export const RESULT_PARTS = [
   { id:"flank",    label:"fianco o retro",     one:"fianco",            many:"fianco" },
   { id:"ground",   label:"terreno più alto",  one:"terreno più alto", many:"terreno più alto" },
   { id:"overkill", label:"overkill",           one:"overkill",          many:"overkill" },
+  /* Il punto che viene da una regola e non dal tavolo: il Waaagh! degli
+     Orchi (Tappa 5 bis). Il nome di chi l'ha dato lo porta la scheda. */
+  { id:"rule",     label:"regole speciali",    one:"da regola speciale", many:"da regole speciali" },
   { id:"out",      label:"superiorità numerica", one:"in più",        many:"in più" },
 ];
 
@@ -167,17 +170,22 @@ export function combatScore(me = {}, foe = {}){
   const rank = me.disrupted ? 0 : rankBonus(me.models || 0, me.frontage || 0, cap);
   const std = me.standard ? 1 : 0;
   const bsb = me.battleStandard ? 1 : 0;
-  const flank = me.flank === "rear" ? 2 : me.flank === "flank" ? 1 : 0;
+  /* Impervious Defence del nemico toglie il fianco e il retro: la scheda
+     arriva con il nome della regola invece che con il bonus, cosi' il
+     pannello puo' dire perche' il punto non c'e'. */
+  const flank = me.flankDenied ? 0 : me.flank === "rear" ? 2 : me.flank === "flank" ? 1 : 0;
   const ground = me.highGround ? 1 : 0;
   const over = Math.max(0, Math.round(+me.overkill || 0));
   const out = OUTNUMBER_COUNTS && (+me.us || 0) > (+foe.us || 0) ? 1 : 0;
+  const rule = Math.max(0, Math.round(+me.ruleBonus || 0));
 
-  const got = { wounds, rank, std, bsb, flank, ground, overkill: over, out };
+  const got = { wounds, rank, std, bsb, flank, ground, overkill: over, rule, out };
   const parts = RESULT_PARTS.filter(p => got[p.id] > 0)
     .map(p => ({ ...p, v: got[p.id] }));
   const total = Object.values(got).reduce((s, v) => s + v, 0);
   return { ...got, parts, total,
-           rankCapped: cap, disrupted: !!me.disrupted };
+           rankCapped: cap, disrupted: !!me.disrupted,
+           flankDenied: me.flank && me.flankDenied ? me.flankDenied : "" };
 }
 
 /* Il conto delle due parti insieme, con la parita' rotta dal musico:
@@ -245,7 +253,7 @@ export const crushingUS = (winner = 0, loser = 0) => (+winner || 0) > 2 * (+lose
 
 export function breakOutcome({ ld = 0, diff = 0, dice = [], ldMod = 0,
                                unbreakable = false, crushed = false,
-                               stubbornNow = false } = {}){
+                               stubbornNow = false, shieldwall = false } = {}){
   const target = Math.max(2, (+ld || 0) + (+ldMod || 0));
   const diffN = Math.max(0, +diff || 0);
 
@@ -265,9 +273,16 @@ export function breakOutcome({ ld = 0, diff = 0, dice = [], ldMod = 0,
   if (unbreakable)
     return done("give", { unbreakable:true, tested:false, ld:target, diff:diffN,
                           text:"Unbreakable: non tira il test, cede terreno spinta indietro" });
+  /* *Shieldwall* (Tappa 5 bis): «puo' cedere terreno invece di
+     ripiegare in ordine», una volta per partita e nel turno in cui e'
+     stata caricata. Chi chiama dice se vale adesso; qui si cambia
+     l'esito e lo si scrive, anche quando il ripiegamento viene da
+     Stubborn. */
+  const WALL = " — Shieldwall: cede terreno invece di ripiegare";
   if (stubbornNow)
-    return done("fallBack", { stubborn:true, tested:false, ld:target, diff:diffN,
-                              text:"Stubborn: sceglie di non tirare e ripiega in ordine" });
+    return done(shieldwall ? "give" : "fallBack", { stubborn:true, shieldwall: !!shieldwall,
+                              tested:false, ld:target, diff:diffN,
+                              text:"Stubborn: sceglie di non tirare e ripiega in ordine" + (shieldwall ? WALL : "") });
 
   const faces = (dice || []).map(v => +v || 0);
   const natural = faces.reduce((s, v) => s + v, 0);
@@ -280,22 +295,25 @@ export function breakOutcome({ ld = 0, diff = 0, dice = [], ldMod = 0,
   const held = insane || modified <= target;
   const keptNerve = insane || natural <= target;
   const blocked = crushed && CRUSHING_BLOCKS_FALLBACK && !insane;
-  const id = held ? "give" : (keptNerve && !blocked) ? "fallBack" : "rout";
+  let id = held ? "give" : (keptNerve && !blocked) ? "fallBack" : "rout";
+  const walled = id === "fallBack" && !!shieldwall;
+  if (walled) id = "give";
 
   return done(id, {
     tested:true, dice: faces, natural, modified, ld: target, diff: diffN,
-    insane, keptNerve, crushed: !!crushed, blocked,
+    insane, keptNerve, crushed: !!crushed, blocked, shieldwall: walled,
     daVerificare: blocked, ldMod: +ldMod || 0,
     text: (insane ? "doppio uno: tiene i nervi qualunque fosse lo scarto"
                   : "Comando " + target + ", 2D6 = " + natural +
                     (diffN ? " e con lo scarto di " + diffN + " fa " + modified : "")) +
           (blocked ? " — e chi ha vinto ha più del doppio della Forza d'Unità: non si ripiega" : "") +
+          (walled ? WALL : "") +
           " → " + BREAK[id].verb,
   });
 }
 function done(id, extra){
   return { ...BREAK[id], outcome:id, page: PAGE.breakTest,
-           routed: id === "rout", tested:true, unbreakable:false, stubborn:false,
+           routed: id === "rout", tested:true, unbreakable:false, stubborn:false, shieldwall:false,
            insane:false, natural:0, modified:0, dice:[], ...extra };
 }
 
@@ -305,7 +323,7 @@ function done(id, extra){
    perde di tre, una volta su quattro se ne va» — e serve a decidere
    se giocarsi lo Stubborn, che e' una scelta da fare prima dei dadi e
    una volta sola in tutta la partita. */
-export function breakChances(ld, diff = 0, { ldMod = 0, crushed = false } = {}){
+export function breakChances(ld, diff = 0, { ldMod = 0, crushed = false, shieldwall = false } = {}){
   const target = Math.max(2, (+ld || 0) + (+ldMod || 0));
   const penalty = Math.max(0, +diff || 0);
   const out = { give:0, fallBack:0, rout:0 };
@@ -314,7 +332,7 @@ export function breakChances(ld, diff = 0, { ldMod = 0, crushed = false } = {}){
       const nat = a + b, insane = a === 1 && b === 1;
       const blocked = crushed && CRUSHING_BLOCKS_FALLBACK && !insane;
       if (insane || nat + penalty <= target) out.give++;
-      else if (nat <= target && !blocked) out.fallBack++;
+      else if (nat <= target && !blocked) out[shieldwall ? "give" : "fallBack"]++;
       else out.rout++;
     }
   return { give: out.give / 36, fallBack: out.fallBack / 36, rout: out.rout / 36,
@@ -445,5 +463,6 @@ export function scoreCardOf(c = {}, wounds = 0){
     flank: c.flank || "", highGround: !!c.highGround,
     overkill: c.overkill || 0, disrupted: !!c.disrupted,
     musician: !!c.musician, us: (c.usPer || 1) * (c.models || 0),
+    ruleBonus: +((c.eff || {}).combatResult) || 0,
   };
 }

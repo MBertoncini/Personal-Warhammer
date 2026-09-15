@@ -149,6 +149,8 @@ Fino a poco fa l'app tirava 2D6 e li **sommava**, che è la regola del Warhammer
 
 **La psicologia, giocata.** Paura, Terrore, Panico, Stupidità, Frenzy e Impetuosità si tirano nel momento in cui capitano, che è sempre nel mezzo di un'altra cosa. La bandierina della carica, prima della reazione, fa tirare la **Paura** a chi carica un nemico più grosso che la fa — chi fallisce resta fermo, ed è una carica fallita — e il **Terrore** al bersaglio di chi lo fa: chi fallisce fugge. Le reazioni si spengono da sole con il perché accanto: *Immune to Psychology* e la *Frenzy* non fuggono, chi è in preda alla Stupidità tiene. Il test di rotta di chi perde contro chi fa Terrore ha −1, e quello di una *Warband* ha il bonus di ranghi sommato al Comando, fino a 10. Il **Panico** ha le sue quattro cause: più di un quarto perso al tiro, un'unità amica distrutta o in rotta entro 6″, un'unità amica in fuga che ti passa attraverso. L'app misura chi è a 6″, dice chi non tira e perché (*Ignore Panic*, *Ignore Goblin Panic*, sta già fuggendo), tira per gli altri e, se il test va male, chiede se fuggire. *Cold Blooded* fa rotolare tre dadi e scarta il maggiore; chi passa da solo non fa rotolare niente. Nell'ispettore c'è il blocco **Psicologia**: le regole dell'unità dette in una riga, lo stato in cui si trova — in preda alla Stupidità fino al suo prossimo turno, senza più Frenzy, con la Paura già tirata — e i pulsanti dei test. All'inizio del turno il registro ricorda chi deve tirare la Stupidità, alla dichiarazione delle cariche chi deve caricare.
 
+**Le regole d'esercito.** Orchi e Goblin, Skaven e Uomini Lucertola hanno ognuno un file in `dati/eserciti/`, e l'app ci trova le regole delle unità dal nome con cui New Recruit le scrive. Quelle che il conto sa fare entrano nei dadi con il loro nome accanto: la *Choppa* in carica ritira gli 1 per ferire e perfora di uno in più, le *Warpstone Weapons* perforano con l'arma a una mano e con l'alabarda no, l'*Arcane Shield* dello Slann dà la salvezza speciale 5+ che il file non dichiara, la *Horde* dei Night Goblin prende il quarto rango, chi carica di fianco un *Impervious Defence* non ne ha il punto, lo *Shieldwall* cede terreno invece di ripiegare una volta per partita, e chi ha la *Scurry Away* fugge con un pollice in più. Nell'ispettore c'è il blocco **Regole d'esercito**: una riga per regola, con *a mano* e il perché accanto a quelle che l'app conosce ma non gioca — gli attacchi del Gigante, i Fanatici, il Comando di Ogdruz prestato ai Troll. Il **Waaagh!** ha il suo pulsante: test di Comando del personaggio dal vassoio, e se passa lui e l'unità di Orchi a cui è unito ritirano gli 1 per colpire e hanno +1 al risultato fino al loro prossimo inizio turno. Il tentativo vale per la partita, e dopo il pulsante resta spento.
+
 **Scontro simulato.** Accanto a ogni nemico vicino, nell'ispettore, c'è una spada. Apre un pannello con le due schiere a confronto: profili, quanti modelli si toccano, armatura e salvezza speciale, stendardo e stendardo da battaglia, terreno più alto, sfida. Chi ha caricato e da che faccia è arrivato non si spuntano più a mano: li scrive la carica quando va a segno, e con loro i pollici percorsi.
 
 - *Tira i dadi* fa **un assalto** e mostra **ogni faccia uscita**: per colpire, per ferire, per salvare. Si mena in ordine di Iniziativa, e dentro l'Iniziativa c'è il **bonus della carica**: un punto per ogni pollice intero percorso, fino a +3 arrivando di fronte e +4 di fianco o di retro. È la riga che ribalta l'ordine in mezza partita, perché una cavalleria che ha corso sette pollici mena prima di chiunque. L'urto della carica arriva prima di tutto e vuole i suoi tre pollici di corsa; i pestoni arrivano per ultimi, dopo ogni altro attacco. Poi il conto di fine assalto — ferite, ranghi, stendardo, stendardo da battaglia, fianco, retro, terreno più alto, overkill nelle sfide — e il test di rotta.
@@ -363,7 +365,7 @@ src/
   dicebox.js          il vassoio in tre dimensioni: cubi che rotolano e si fermano sulla faccia uscita
   rules.js            i conti con i dadi: punteggi da fare, ritiri, ranghi, nervi
   effects.js          le caratteristiche con i modificatori attivi e da dove vengono
-  armies.js           il vocabolario dei file d'esercito, che stanno in dati/eserciti/
+  armies.js           i file d'esercito: riconoscere una regola e tradurla in dadi
   battlemarch.js      le due tabelle a D6 di Battle March e il controllo degli obiettivi
   combat.js           lo scontro simulato e la raffica, senza interfaccia
   duel.js             il pannello dello scontro: dadi in chiaro e perdite
@@ -389,10 +391,10 @@ src/
 test/
   smoke.mjs           catalogo, aggancio, import, copertura, pittura
   battle.mjs          punteggi, dadi, ventagli e ombre, senza pagina
-  regole.mjs          tipi di truppa, ritiri, archi, effetti, terreno, file d'esercito
+  regole.mjs          tipi di truppa, ritiri, archi, effetti, terreno, file d'esercito, nessuna regola ignota
   motore.mjs          le sedici caselle, le azioni, i dadi chiesti, il registro
   movimento.mjs       carica: arco, vista, distanza, reazioni, allineamento, fuga
-  mischia.mjs         bonus della carica, risultato, i tre esiti del test di rotta, overkill
+  mischia.mjs         bonus della carica, risultato, i tre esiti del test di rotta, overkill, regole d'esercito
   tiro.mjs            tiratori per modello, modificatori, sagome, deviazione, cannone, Panico
   psicologia.mjs      Paura, Terrore, Panico e le sue cause, Stupidità, Frenzy, Warband, il contatore
   sync.mjs            archivio su GitHub, contro un GitHub finto in memoria

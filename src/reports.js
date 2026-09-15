@@ -28,6 +28,7 @@ import { customScenarioMap } from './scenariokit.js';
 import { state } from './deploy.js';
 import * as BL from './battlelog.js';
 import { tallyUnknown } from './rulebook.js';
+import { armyFor } from './armies.js';
 import { shotFromTurn, shotSVG, shotCaption } from './tableshot.js';
 
 const REP_KEY = "reports:all";
@@ -240,8 +241,10 @@ export function renderReports(){
 function unknownHTML(ls){
   const rows = tallyUnknown([
     ...reports.map(r => ({ kind:"game", units: [...((r.roster || {}).A || []), ...((r.roster || {}).B || [])] })),
-    ...ls.map(l => ({ kind:"list", units: l.units || [] })),
-  ]);
+    ...ls.map(l => ({ kind:"list", units: l.units || [], catalogue: (l.info || {}).catalogue || "" })),
+  /* le regole d'esercito le riconosce il file del loro esercito
+     (Tappa 5 bis): senza, tornerebbero tutte in questo elenco */
+  ], { armyOf: (u, g) => armyFor(u, g.catalogue || "") });
   if (!rows.length) return "";
   const top = rows.slice(0, 12);
   const n = (v, one, many) => `${v} ${v === 1 ? one : many}`;

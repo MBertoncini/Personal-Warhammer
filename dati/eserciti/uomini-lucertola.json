@@ -3,8 +3,54 @@
   "name": "Uomini Lucertola",
   "matches": ["Lizardmen", "Legends: Lizardmen"],
   "book": { "title": "Legends: Lizardmen" },
-  "nota": "Il file c'e' e il formato regge: quello che manca sono le regole d'esercito, che stanno nel libro e vanno trascritte una per una. Un file vuoto e' un file onesto — l'app dice «di questo esercito conosco zero regole proprie» invece di far finta che non ne abbia. Le regole che le liste salvate portano davvero — Cold Blooded, Aquatic, Predatory Fighter — sono regole universali e passano dal registro di rulebook.js, non da qui.",
-  "rules": [],
+  "nota": "Le regole d'esercito vere del libro non sono ancora trascritte. Qui ci sono quelle delle unita' che le liste salvate schierano, scritte sul testo per esteso che le liste si portano dietro. Cold Blooded, Aquatic e Predatory Fighter sono regole universali e passano dal registro di rulebook.js, non da qui; Shieldwall e Impervious Defence hanno un testo che non nomina nessun esercito, e stanno anche loro nel registro universale.",
+  "rules": [
+    {
+      "id": "arcaneShield",
+      "name": "Arcane Shield",
+      "nomi": ["Arcane Shield"],
+      "testo": "lista",
+      "when": "always",
+      "what": "salvezza speciale 5+ contro qualunque ferita",
+      "set": { "ward": 5 }
+    },
+    {
+      "id": "guardians",
+      "name": "Guardians",
+      "nomi": ["Guardians"],
+      "testo": "lista",
+      "when": "shoot",
+      "what": "un colpo di tiro su uno Slann entro 3 pollici passa a questa unita' con 2+ su un D6, e i suoi modelli lanciano e accettano sfide come personaggi",
+      "perche": "e' un colpo spostato da un'unita' all'altra durante il tiro nemico: il pannello del tiro colpisce il bersaglio scelto"
+    },
+    {
+      "id": "solarRadiance",
+      "name": "Solar Radiance",
+      "nomi": ["Solar Radiance"],
+      "testo": "lista",
+      "when": "always",
+      "what": "entro 6 pollici da un Solar Engine le unita' amiche Cold Blooded hanno +1 Iniziativa",
+      "perche": "e' una misura di distanza dal Bastiladon: l'Iniziativa dello scontro si corregge a mano nel pannello"
+    },
+    {
+      "id": "solarEngine",
+      "name": "Solar Engine",
+      "nomi": ["Solar Engine"],
+      "testo": "lista",
+      "when": "magic",
+      "what": "lancia Beam of Chotec con Livello di Potere 2",
+      "perche": "e' un incantesimo: la magia e' la Tappa 6"
+    },
+    {
+      "id": "howdah",
+      "name": "Howdah (Lizardmen)",
+      "nomi": ["Howdah (Lizardmen)", "Howdah"],
+      "testo": "lista",
+      "when": "melee",
+      "what": "profilo diviso da carro con piattaforma di tiro: lo Stegadonte e' una cavalcatura da carro",
+      "perche": "l'equipaggio e la bestia menano con due profili, e il conto dell'assalto usa ancora quello principale"
+    }
+  ],
   "items": [],
   "lores": []
 }
