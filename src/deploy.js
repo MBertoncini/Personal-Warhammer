@@ -2603,7 +2603,12 @@ async function runFlee(t, from){
    scontro simulato: al contrario il risultato sarebbe gia' li' e i
    cubi diventerebbero un fregio.
    ============================================================ */
-const asDice = (p, need) => (p.dice || []).map(v => ({ value:v, win: need ? v >= need && v > 1 : false }));
+/* `raw` e' la faccia grezza che il cubo deve mostrare, e per un D6 e'
+   il valore stesso. Senza, il vassoio leggeva `undefined`, ripiegava
+   sull'uno e faceva atterrare tutta la raffica sul pallino in mezzo:
+   i numeri erano giusti, le facce dicevano un'altra cosa. */
+const asDice = (p, need) => (p.dice || []).map(v =>
+  ({ raw:v, value:v, win: need ? v >= need && v > 1 : false }));
 
 function shotGroups(r, who, target){
   const out = [];

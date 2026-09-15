@@ -122,6 +122,18 @@ const MAX_SHOWN = 40;
    girano ancora fa girare i cubi per niente — e allora tanto vale la
    riga di numeri di prima. Per questo l'etichetta di destra, i dadi
    accesi e la riga in fondo nascono vuoti e li riempie paintResults. */
+/* La faccia grezza su cui il cubo si deve fermare. Chi passa dadi gia'
+   tirati altrove a volte manda solo il valore letto — per un D6 sono la
+   stessa cosa — e un cubo senza faccia atterrava tutto sull'uno senza
+   dirlo a nessuno. Qui il ripiego e' scritto, e vale solo quando il
+   valore e' davvero una faccia di dado. */
+export function faceOf(d){
+  const r = Number((d && d.raw) != null ? d.raw : NaN);
+  if (r >= 1 && r <= 6) return r | 0;
+  const v = Number((d && d.value) != null ? d.value : NaN);
+  return v >= 1 && v <= 6 ? v | 0 : 1;
+}
+
 function groupHTML(g, i){
   const kind = g.kind || "d6";
   const dice = (g.dice || []).slice(0, MAX_SHOWN);
@@ -133,7 +145,7 @@ function groupHTML(g, i){
         <b class="dg-tail" data-tail="${i}"></b></div>` : ""}
       <div class="dice3d">
         ${dice.map((d, j) => `
-          <div class="d3d" data-die="${i}.${j}" data-face="${d.raw}"
+          <div class="d3d" data-die="${i}.${j}" data-face="${faceOf(d)}"
                ${d.win ? `data-win="1"` : ""}${d.misfire ? ` data-mis="1"` : ""}
                ${kind === "scatter" ? ` data-deg="${d.deg}"` : ""}>
             ${[1, 2, 3, 4, 5, 6].map(f =>
