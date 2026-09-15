@@ -14,6 +14,7 @@ import { bootDeploy, renderAll, refreshLinks as refreshBoardLinks, toast } from 
 import { exportAll, importAll, requestPersistence } from './store.js';
 import { initSync } from './syncui.js';
 import { openDiceBox } from './dicebox.js';
+import { toggleCharts, openCharts } from './charts.js';
 import { on } from './bus.js';
 import { askConfirm, say } from './uikit.js';
 
@@ -115,6 +116,21 @@ on("lists:changed",   () => { renderMatchup(); });
    c'e' anche il gemello nel pannello, che scrive il risultato nel
    registro; questo tira e basta. */
 $("#btn-dice").addEventListener("click", () => openDiceBox({ title:"Dadi" }));
+
+/* ---------- le tabelle del manuale ----------
+   Accanto ai dadi, perche' si guardano insieme: chi tira a mano vuole
+   sapere a quanto, e chi legge un punteggio del simulatore vuole
+   sapere da dove viene. Ogni «3+» scritto con `chartLink` — nello
+   scontro, nel tiro — apre la stessa scheda con i suoi valori, e un
+   ascoltatore solo basta per tutti. */
+$("#btn-charts").addEventListener("click", () => toggleCharts());
+document.addEventListener("click", e => {
+  const b = e.target && e.target.closest && e.target.closest("[data-chart]");
+  if (!b) return;
+  let opts = {};
+  try { opts = JSON.parse(b.dataset.chart); } catch { /* scheda vuota, valori di prima */ }
+  openCharts(opts);
+});
 
 /* ---------- backup ---------- */
 $("#btn-export").addEventListener("click", async () => {

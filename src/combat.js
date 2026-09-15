@@ -76,7 +76,7 @@ const ranIn = c => !!c.charged && (c.chargeInches || 0) >= CHARGE_IMPETUS;
 const sixes = p => (p.dice || []).filter(v => v === 6).length;
 
 /* La Paura fallita in mischia (Tappa 5): −1 al tiro per colpire contro
-   chi la fa. La tabella di p. 149 non chiede mai piu' di 5+, quindi con
+   chi la fa. La tabella di p. 148 non chiede mai piu' di 5+, quindi con
    il −1 si arriva al 6+ e non oltre; chi colpisce senza tirare continua
    a non tirare. */
 const fearful = (need, att) => !att || !att.feared || need <= 0 || need >= IMPOSSIBLE
@@ -578,9 +578,10 @@ export function shootForecast(shooter, target, { weapon, mods = 0, shots } = {})
   const wChance = f.poisoned && need < IMPOSSIBLE
     ? (5 / 6) * chance(wNeed) + (1 / 6) * chance(Math.max(2, wNeed - 2))
     : chance(wNeed);
-  const hChance = SH.hitChance(need, aim.again);
+  const hChance = SH.hitChance(need, aim.again, aim.then);
   const wounds = n * hChance * wChance * (1 - chance(sNeed)) * (1 - chance(kNeed)) * (1 - chance(rNeed));
-  return { shots: n, hitNeed: need, hitAgain: aim.again, strength: S, ap: AP, poisoned: f.poisoned,
+  return { shots: n, hitNeed: need, hitAgain: aim.again, hitThen: aim.then || 0, hitRaw: aim.raw || need,
+           bs, strength: S, ap: AP, poisoned: f.poisoned,
            woundNeed: wNeed, saveNeed: sNeed, wardNeed: kNeed, regenNeed: rNeed,
            wounds, kills: wounds / t.w, targetW: t.w };
 }
@@ -593,7 +594,17 @@ export function shootRoll(shooter, target, opts){
      `pool`, ed e' la differenza che conta: li' il dado rifatto si
      confronta con lo stesso punteggio, qui con un SECONDO punteggio,
      piu' alto. Sono due tiri in fila, e vanno scritti come tali. */
-  const first = pool(f.shots, f.hitNeed);
+  let first = pool(f.shots, f.hitNeed);
+  /* Il 7+ (p. 139): il primo tiro cerca i 6 naturali, e quei dadi si
+     ritirano contro il secondo punteggio. Colpisce solo chi passa
+     tutti e due, e il pannello mostra i due mucchi separati. */
+  let follow = null;
+  if (f.hitThen && first.hits){
+    follow = pool(first.hits, f.hitThen);
+    notes.push(`serviva ${f.hitRaw}+: ${first.hits} ${first.hits === 1 ? "sei ritirato" : "sei ritirati"} a ` +
+               `${f.hitThen}+, ${follow.hits} colpisc${follow.hits === 1 ? "e" : "ono"}`);
+    first = { ...first, hits: follow.hits };
+  }
   const again = f.hitAgain ? pool(first.of - first.hits, f.hitAgain) : null;
   const hit = mergePools(first, again);
   if (again) notes.push((first.of - first.hits) + " mancati ritirati a " + f.hitAgain +
@@ -612,5 +623,5 @@ export function shootRoll(shooter, target, opts){
   const left = through - ward.hits;
   const regen = pool(left, f.regenNeed);
   const wounds = left - regen.hits;
-  return { ...f, notes, hit, wound, save, ward, regen, wounds, kills: Math.floor(wounds / f.targetW) };
+  return { ...f, notes, hit, follow, wound, save, ward, regen, wounds, kills: Math.floor(wounds / f.targetW) };
 }

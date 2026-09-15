@@ -15,6 +15,7 @@ import * as C from './combat.js';
 import * as ML from './melee.js';
 import { IMPOSSIBLE, AUTOHIT } from './rules.js';
 import { showDiceGroups } from './dicebox.js';
+import { chartLink } from './charts.js';
 
 let host = null, ctx = null, cur = null;
 
@@ -89,8 +90,16 @@ function bothSides(){
    ============================================================ */
 const SAVE_OPTS = [[0, "—"], [2, "2+"], [3, "3+"], [4, "4+"], [5, "5+"], [6, "6+"]];
 /* "sempre" e' il punteggio di chi non deve tirare: chi ha davanti
-   un'Abilita' Combattimento 0 colpisce e basta (p. 98). */
+   un'Abilita' Combattimento 0 colpisce e basta (p. 97). */
 const need = n => n >= IMPOSSIBLE ? "mai" : n <= AUTOHIT ? "sempre" : n + "+";
+
+/* Da un punteggio alla sua tabella: toccare il «3+» apre la scheda con
+   le due Abilita' Combattimento, o con Forza e Resistenza, gia'
+   scelte. La Forza e' quella con cui il conto ferisce davvero, regole
+   d'esercito comprese; la Paura che alza il tiro di uno la tabella non
+   la mostra, e il pannello la scrive accanto. */
+const meleeChart = (x, y) => ({ tab:"melee", wsA: x.ws, wsD: y.ws });
+const woundChart = (x, y, f) => ({ tab:"wound", s: x.s + ((f.boost && f.boost.s) || 0), t: y.t });
 /* "1 ferite" si legge male: il pannello lo si guarda cento volte per
    partita ed e' il genere di sciatteria che si nota tutte e cento. */
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -399,8 +408,8 @@ function render(){
         <div class="readout"><span>Senza tirare, in media</span>
           <b>${fa.wounds.toFixed(1)} ferite ↔ ${fb.wounds.toFixed(1)}</b></div>
         <p class="note">
-          ${esc(names.A)} colpisce ${need(fa.hitNeed)}, ferisce ${need(fa.woundNeed)}${fa.saveNeed < IMPOSSIBLE ? `, armatura ${need(fa.saveNeed)}` : ""}.
-          ${esc(names.B)} colpisce ${need(fb.hitNeed)}, ferisce ${need(fb.woundNeed)}${fb.saveNeed < IMPOSSIBLE ? `, armatura ${need(fb.saveNeed)}` : ""}.
+          ${esc(names.A)} colpisce ${chartLink(need(fa.hitNeed), meleeChart(a, b))}, ferisce ${chartLink(need(fa.woundNeed), woundChart(a, b, fa))}${fa.saveNeed < IMPOSSIBLE ? `, armatura ${need(fa.saveNeed)}` : ""}.
+          ${esc(names.B)} colpisce ${chartLink(need(fb.hitNeed), meleeChart(b, a))}, ferisce ${chartLink(need(fb.woundNeed), woundChart(b, a, fb))}${fb.saveNeed < IMPOSSIBLE ? `, armatura ${need(fb.saveNeed)}` : ""}.
           ${orderLine(a, b, names)}
         </p>
       </div>

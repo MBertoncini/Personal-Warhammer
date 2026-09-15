@@ -34,22 +34,22 @@
  * di come sono venuti. Chi tira e' il vassoio, chi scrive e' il
  * motore, chi decide e' chi gioca.
  *
- * Una cosa va detta in cima perche' vale per tutto il file. Le due
- * tabelle del Mancato Colpo sono sei righe ognuna a p. 347, e in casa
- * non c'e' nessun file che le contenga — le liste di New Recruit
- * portano il testo delle regole speciali, non quello delle tabelle del
- * manuale. Qui sotto ci sono le due tabelle vuote e dichiarate tali:
- * l'app tira il D6, dice che faccia e' uscita e dove si legge, e chi
- * trascrive una riga se la ritrova scritta la volta dopo. Inventarle
- * sarebbe stato il modo piu' rapido di far sbagliare un tiro a chi si
- * fida.
+ * Una cosa va detta in cima perche' vale per tutto il file. Fino alla
+ * Tappa 6 il libro in casa non c'era, e tre numeri di questo file
+ * erano dichiarati da verificare: le due tabelle del Mancato Colpo,
+ * lasciate vuote invece che inventate, e il ritiro dell'Abilita'
+ * Balistica alta. Aperto il libro, le tabelle sono trascritte (p. 347)
+ * e il ritiro era sbagliato di uno scalino (p. 138). E c'era un quarto
+ * numero che nessuno aveva dichiarato: il 7+ per colpire, che l'app
+ * chiamava 6+ e il libro fa tirare due volte (p. 139). Il conto di
+ * tutti e tre sta in `rules.js`, accanto alle tabelle della mischia.
  */
 
 import { MM } from './util.js';
 import { boxCorners, closestPoints, distPointToBox,
          segIntersectsPoly } from './geom.js';
 import { sightBlocked, coverOn } from './tactics.js';
-import { IMPOSSIBLE, chance } from './rules.js';
+import { IMPOSSIBLE, chance, shootTarget, shootChance, BS_REROLL } from './rules.js';
 
 const r1 = v => Math.round(v * 10) / 10;
 const r2 = v => Math.round(v * 100) / 100;
@@ -66,7 +66,8 @@ const cornersOf = o => (o && o.poly) || boxCorners(o.box || o);
 export const PAGE = {
   shooting:  136,   // la fase di tiro
   who:       137,   // chi puo' tirare e chi no
-  mods:      138,   // i modificatori del tiro, cumulativi
+  mods:      138,   // la tabella, i modificatori cumulativi e l'AB alta
+  sevenPlus: 139,   // il 7+ per colpire: un 6 e poi un secondo dado
   panic:     141,   // il test di Panico oltre un quarto
   templates:  95,   // le sagome e la deviazione
   machines:  222,   // le macchine da guerra
@@ -257,46 +258,45 @@ export function modsFor({ survey = null, shooter = null, target = null,
    in su non si scende sotto il 2+, si guadagna un RITIRO con un
    secondo punteggio.
 
-   Il secondo punteggio e' il numero che questo file non ha modo di
-   verificare: il §6 del piano dice «AB 6+ ha il ritiro con un secondo
-   punteggio» e non dice quale. La riga sta qui, una sola e dichiarata,
-   e chi ha il libro aperto la corregge in un punto invece che in
-   cinque.
+   Il secondo punteggio era dichiarato da verificare, e letto sul libro
+   (p. 138) era sbagliato di uno scalino: AB 6 ritira a 6+ e AB 10 a
+   2+, e i modificatori pesano solo sul primo tiro. La terza regola
+   questo file non la sapeva: oltre il 6 si tira lo stesso, e un 6
+   naturale seguito da un secondo dado colpisce (p. 139). Il conto sta
+   in `rules.js`, `shootTarget`, perche' lo legge anche la scheda delle
+   tabelle.
    ============================================================ */
 export const NATURAL_1_MISSES = true;     // p. 138: l'1 non colpisce mai
 
-export const BS_AGAIN = { 6:0, 7:6, 8:5, 9:4, 10:3 };
-export const BS_AGAIN_DA_VERIFICARE = true;
+export const BS_AGAIN = BS_REROLL;
+export const BS_AGAIN_DA_VERIFICARE = false;
 
 export function hitNeed(bs = 0, mod = 0){
   const b = Math.max(0, bs | 0);
   if (!b) return { need: IMPOSSIBLE, again: 0, natural1: NATURAL_1_MISSES,
                    why: "senza Abilita' Balistica non tira", page: PAGE.mods };
-  /* Il punteggio base: 7 meno l'Abilita' Balistica, mai meglio del 2+.
-     I modificatori lo alzano, e mai oltre il 6 — il 6 e' l'ultima
-     faccia, sotto non si va. */
-  const base = Math.max(2, 7 - b);
-  const need = clamp(base - mod, 2, 6);
-  const again = BS_AGAIN[Math.min(b, 10)] || 0;
+  /* Il punteggio della tabella, i modificatori sopra, e oltre il 6 il
+     secondo dado dei 6 naturali: `need` e' il primo dado, `then` il
+     secondo, `again` il ritiro dell'AB alta. */
+  const t = shootTarget(b, mod);
+  const over = t.raw > 6;
   return {
-    need, again,
+    need: t.need, then: t.then, again: t.again, raw: t.raw,
     natural1: NATURAL_1_MISSES,
-    base, mod,
-    daVerificare: again > 0 && BS_AGAIN_DA_VERIFICARE,
-    why: `AB ${b}: ${base}+` + (mod ? `, ${mod > 0 ? "+" : ""}${mod} di modificatori` : "") +
-         (again ? `, ritiro a ${again}+` : ""),
-    page: PAGE.mods,
+    base: t.base, mod,
+    daVerificare: false,
+    why: `AB ${b}: ${t.base}+` + (mod ? `, ${mod > 0 ? "+" : ""}${mod} di modificatori` : "") +
+         (t.then ? `, serve ${t.raw}+: un 6 e poi ${t.then}+` : over ? `, serve ${t.raw}+: non colpisce` : "") +
+         (t.again ? `, ritiro a ${t.again}+` : ""),
+    page: over ? PAGE.sevenPlus : PAGE.mods,
   };
 }
 
-/* Quante volte su cento un singolo tiro colpisce, ritiro compreso.
-   Serve alla riga del pannello, che deve dire un numero prima che i
-   dadi rotolino. */
-export function hitChance(need, again = 0){
-  const p = chance(need);
-  if (!again) return p;
-  const second = chance(again);
-  return p + (1 - p) * second;
+/* Quante volte su cento un singolo tiro colpisce, 7+ e ritiro
+   compresi. Serve alla riga del pannello, che deve dire un numero
+   prima che i dadi rotolino. */
+export function hitChance(need, again = 0, then = 0){
+  return shootChance({ need, again, then });
 }
 
 /* ============================================================
@@ -518,23 +518,31 @@ export function cannonLine(from, angleDeg, shot){
 }
 
 /* ---- le due tabelle del Mancato Colpo (p. 347) ----
-   Vuote, e per una ragione. Ogni altro numero di questo file viene dal
-   piano o dal testo che le liste di New Recruit si portano dietro;
-   queste dodici righe non vengono da nessuna parte, e riempirle a
-   naso vorrebbe dire far saltare un cannone con una regola inventata
-   davanti a qualcuno che si fida. Finche' restano vuote l'app tira il
-   D6, dice che faccia e' uscita e dove si legge. Trascriverne una e'
-   cambiare una stringa. */
+   Vuote fino alla Tappa 6, perche' in casa non c'erano e inventarle
+   voleva dire far saltare un cannone con una regola che non esiste.
+   Adesso sono lette sul libro, e sono piu' corte di quanto il piano
+   dicesse: tre righe ognuna, non sei — 1 distrutta, 2-4 guasto, 5-6
+   il tiro salta e basta. E la tabella del «cannone» nel libro si
+   chiama della polvere nera: vale per tutto quello che spara a
+   polvere. Qui ogni faccia porta la sua riga, cosi' chi legge la
+   faccia uscita non deve ricordare come si raggruppano. */
+const MF = {
+  destroyed: "Distrutta: la macchina è distrutta e si toglie subito dal gioco.",
+  stuck:     "Guasto: un serviente resta preso nel meccanismo. L'equipaggio perde subito una Ferita, la macchina non tira in questo turno e non tira fino alla fine del round successivo.",
+  twang:     "Twang: si è spezzato qualcosa. La macchina non tira in questo turno.",
+  tipped:    "Guasto: la carica fa cilecca e rovescia la macchina. L'equipaggio perde subito una Ferita, la macchina non tira in questo turno e non tira fino alla fine del round successivo.",
+  pffft:     "Pffft: la miccia si è spenta. La macchina non tira in questo turno.",
+};
 export const MISFIRE = {
   page: PAGE.misfire,
-  daVerificare: true,
-  nota: "Le due tabelle stanno a p. 347, sei righe ognuna. Finche' una riga e' vuota l'app dice la faccia e la pagina, e non inventa l'esito.",
-  cannon: ["", "", "", "", "", ""],
-  stone:  ["", "", "", "", "", ""],
+  daVerificare: false,
+  nota: "Le due tabelle di p. 347: con 1 la macchina è distrutta, con 2-4 si guasta e perde una Ferita, con 5-6 salta il tiro.",
+  cannon: [MF.destroyed, MF.tipped, MF.tipped, MF.tipped, MF.pffft, MF.pffft],
+  stone:  [MF.destroyed, MF.stuck,  MF.stuck,  MF.stuck,  MF.twang, MF.twang],
 };
 
 export const MISFIRE_KINDS = {
-  cannon: "Cannone",
+  cannon: "Polvere nera",
   stone:  "Lanciapietre",
 };
 
@@ -542,10 +550,13 @@ export function misfireRead(kind, face){
   const table = MISFIRE[kind] || [];
   const i = clamp((face | 0) - 1, 0, 5);
   const what = table[i] || "";
+  const label = (MISFIRE_KINDS[kind] || kind).toLowerCase();
   return {
     kind, face: i + 1, what, page: MISFIRE.page,
     known: !!what,
-    text: what || `Mancato Colpo, faccia ${i + 1}: la riga sta nella tabella del ${(MISFIRE_KINDS[kind] || kind).toLowerCase()}, p. ${MISFIRE.page}.`,
+    text: what
+      ? `Mancato Colpo (${label}, ${i + 1}): ${what} (p. ${MISFIRE.page})`
+      : `Mancato Colpo, faccia ${i + 1}: la riga sta nella tabella del ${label}, p. ${MISFIRE.page}.`,
   };
 }
 

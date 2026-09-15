@@ -33,6 +33,7 @@ import * as ARM from './armies.js';
 import * as MG from './magic.js';
 import { splitWeaponRules } from './rulebook.js';
 import { showDiceGroups } from './dicebox.js';
+import { chartLink } from './charts.js';
 import { askText, askConfirm, askPick, showMenu, closeMenu,
          countersHTML, wireCounters, tagsHTML, wireTags } from './uikit.js';
 import * as EX from './extras.js';
@@ -976,6 +977,24 @@ function defenceHTML(u){
     </div>`;
 }
 
+/* ---- il punteggio del tiro, come si dice al tavolo ----
+   «4+», oppure «6·4» quando serve un 7+ e il 6 va seguito da un
+   secondo dado (p. 139). Toccandolo si apre la tabella con la stessa
+   Abilita' Balistica e gli stessi modificatori spuntati: quelli che la
+   scheda non nomina finiscono fra gli altri. */
+const hitText = f => f.hitNeed >= 7 ? "mai" : f.hitThen ? `6·${f.hitThen}` : f.hitNeed + "+";
+const CHART_MOD = { long:"long", moved:"moved", standAndShoot:"sns", soft:"partial", hard:"full" };
+function shootChart(f){
+  const mods = {};
+  let other = 0;
+  for (const m of (f.mods && f.mods.list) || []){
+    if (CHART_MOD[m.id]) mods[CHART_MOD[m.id]] = true;
+    else other += m.v || 0;
+  }
+  if (other) mods.other = other;
+  return { tab:"shoot", bs: f.bs, mods };
+}
+
 /* ---- che cosa arriva a tiro ----
    La domanda non e' "quanto e' lontano" ma "lo prendo?": serve sapere
    insieme gittata, arco, linea di vista e riparo. Se manca uno dei
@@ -1013,9 +1032,9 @@ function shootingHTML(u){
           out.sight ? `${out.sight} non lo vedono` : "",
         ].filter(Boolean).join(", ");
         return `<div class="readout near"><span>${esc(shortName(r.unit.name))} · ${r.dist.toFixed(1)}″${why ? ` <span class="dim">(${why})</span>` : ""}</span>
-                  <b style="color:var(--ok)">${f.hitNeed >= 7 ? "mai" : f.hitNeed + "+"} · ${f.kills.toFixed(1)}</b>
+                  <b style="color:var(--ok)">${chartLink(hitText(f), shootChart(f))} · ${f.kills.toFixed(1)}</b>
                   <button class="btn tiny shoot-go" data-shoot="${r.unit.uid}"
-                          title="Tira su ${esc(r.unit.name)}: ${f.shots} tiri, ${f.hitNeed}+ per colpire">🏹</button>
+                          title="Tira su ${esc(r.unit.name)}: ${f.shots} tiri, ${hitText(f)} per colpire">🏹</button>
                 </div>
                 <p class="note">${f.shots} tir${f.shots === 1 ? "o" : "i"} da ${f.survey.n} modell${f.survey.n === 1 ? "o" : "i"}${fuori ? ` · ${esc(fuori)}` : ""}</p>`;
       }).join("") : `<p class="note">Nessun nemico sul tavolo.</p>`}
@@ -1048,7 +1067,7 @@ function machineHTML(u, plan){
     </div>
     <p class="note">${mine
       ? `Sagoma ${esc(SH.TEMPLATES[mine.id].label.toLowerCase())} sul tavolo. «Bombarda» tira la deviazione, la sposta e conta chi resta sotto: sotto del tutto è colpito, sotto in parte a ${SH.PARTIAL_NEED}+ (p. ${SH.PAGE.templates}).`
-      : `Posa una sagoma sul bersaglio, poi bombarda. Il Mancato Colpo manda alla tabella di p. ${SH.MISFIRE.page}, che in quest'app è ancora da trascrivere.`}</p>`;
+      : `Posa una sagoma sul bersaglio, poi bombarda. Il Mancato Colpo tira sulla tabella di p. ${SH.MISFIRE.page}: con 1 la macchina è distrutta, con 2-4 si guasta, con 5-6 salta il tiro.`}</p>`;
 }
 
 /* ---- chi ho intorno: le tre distanze che si guardano davvero ---- */
@@ -2509,7 +2528,13 @@ function shotGroups(r, who, target){
     if (!p || !(p.dice || []).length || (need || 0) >= 7) return;
     out.push({ kind:"d6", label, dice: asDice(p, need), tail: `${p.hits} su ${p.of}` });
   };
-  add(`${who} · colpisce ${r.hitNeed}+`, r.hit, r.hitNeed);
+  /* il 7+ sono due mucchi: i 6 del primo tiro, e quei dadi ritirati
+     contro il secondo punteggio (p. 139) */
+  if (r.hitThen){
+    add(`${who} · serve ${r.hitRaw}+, prima i 6`, { dice: r.hit.dice, of: r.hit.of,
+        hits: r.follow ? r.follow.of : 0 }, 6);
+    add(`${who} · e poi ${r.hitThen}+`, r.follow, r.hitThen);
+  } else add(`${who} · colpisce ${r.hitNeed}+`, r.hit, r.hitNeed);
   add(`${who} · ferisce ${r.woundNeed}+`, r.wound, r.woundNeed);
   add(`${target} · armatura ${r.saveNeed}+`, r.save, r.saveNeed);
   add(`${target} · speciale ${r.wardNeed}+`, r.ward, r.wardNeed);
@@ -3559,7 +3584,7 @@ function drawTactics(svg, g, u){
                            "stroke-dasharray": good ? "none" : "4 6" });
         const f = shotOn(u, row, plan);
         const label = good
-          ? `${f.hitNeed >= 7 ? "mai" : f.hitNeed + "+"} · ${f.kills.toFixed(1)} mod.`
+          ? `${hitText(f)} · ${f.kills.toFixed(1)} mod.`
           : row.blocked ? "non lo vedo" : !row.inArc ? "fuori arco" : "fuori gittata";
         const w = label.length * 7.6 + 12;
         /* il cartellino risale verso chi tira, cosi' resta dentro il

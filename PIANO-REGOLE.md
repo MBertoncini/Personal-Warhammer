@@ -214,6 +214,26 @@ riga per riga: il Doomwheel dichiara 5, lo Slann 5 con cinque Ferite.
 
 Da qui in poi ogni tappa comincia aprendo il libro, non le liste.
 
+**L'ottava e la nona le hanno trovate le tabelle.** Mettendo dentro
+l'app le tre tabelle che si guardano a ogni fase — colpire in mischia,
+colpire al tiro, ferire — per chi vuole tirare a mano, la pagina del
+tiro (p. 138) è stata letta cella per cella. Il ritiro dell'Abilità
+Balistica alta, dichiarato da verificare dalla Tappa 4, era sbagliato
+di uno scalino: AB 6 ritira a 6+ e AB 10 a 2+, e l'app dava AB 6 senza
+ritiro e AB 10 a 3+. E il **7+ per colpire** non è «mai» né 6+: chi
+dopo i modificatori dovrebbe fare 7 tira lo stesso, e ogni 6 naturale
+si ritira e colpisce con un 4+ (con 8 serve il 5+, con 9 il 6, dal 10
+non si colpisce, p. 139). L'app si fermava al 6+, cioè un AB 2 dietro
+copertura piena colpiva il doppio di quanto il libro conceda. Le due
+tabelle della mischia invece erano giuste; erano sbagliate le loro
+pagine, una avanti: p. 148 per colpire e p. 149 per ferire.
+
+La scheda si apre da **▦ Tabelle** nella barra del tavolo, e dal
+pannello dello scontro e del tiro toccando un punteggio: arriva con i
+valori di quel bersaglio e la cella accesa. Le celle non sono scritte
+nella scheda: le chiede a `rules.js`, alle stesse funzioni che tirano i
+dadi del simulatore, e le due cose non possono contraddirsi.
+
 ---
 
 ## 3 · I dati: da un file New Recruit a un'unità giocabile
@@ -1072,16 +1092,16 @@ Le cose che questa tappa ha reso spiegabili, e prima non lo erano:
 
 Quello che resta fuori, detto per non lasciarlo scoprire a una partita:
 
-- **Le due tabelle del Mancato Colpo sono vuote.** Stanno a p. 347, sei
-  righe ognuna, e in casa non c'è nessun file che le contenga: le liste
-  di New Recruit portano il testo delle regole speciali, non quello
-  delle tabelle del manuale. L'app tira il D6, dice la faccia e la
-  pagina, e non inventa l'esito. Trascriverle è riempire dodici stringhe
-  in `MISFIRE`, e da quel momento il registro scrive la riga vera.
-- **Tre numeri dichiarati da verificare**: il secondo punteggio
-  dell'Abilità Balistica alta (il piano dice che c'è, non dice quale),
-  e le due larghezze della goccia (il piano dà la lunghezza, otto
-  pollici, e non la testa e la coda). Stanno in una costante ognuno.
+- ~~**Le due tabelle del Mancato Colpo sono vuote.**~~ Trascritte da
+  p. 347, aperto il libro: sono tre righe ognuna e non sei — 1 la
+  macchina è distrutta, 2-4 si guasta e perde una Ferita, 5-6 salta il
+  tiro — e quella del «cannone» nel libro è la tabella della polvere
+  nera. Il registro scrive adesso la riga vera.
+- **Due numeri dichiarati da verificare**: ~~il secondo punteggio
+  dell'Abilità Balistica alta~~ (letto a p. 138, ed era sbagliato di uno
+  scalino: vedi il §2), e le due larghezze della goccia — il libro
+  (p. 95) dice solo «circa otto pollici», e testa e coda si misurano
+  sulla sagoma vera. Stanno in una costante ognuna.
 - *Quick Shot* e *Volley Fire* sono lette ma non contate fino in fondo:
   la prima non aggiunge tiri finché non si sa quanti, la seconda alza il
   tetto a tutte le file senza il modificatore che forse porta. Il

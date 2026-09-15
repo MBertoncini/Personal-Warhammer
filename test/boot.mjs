@@ -354,6 +354,56 @@ tray().querySelector('#dx-close').dispatchEvent(new window.Event('click'));
 ok('il vassoio si chiude', tray().hidden === true);
 ok('nessun errore attorno ai dadi', errors.length === 0);
 
+console.log('\nle tabelle del manuale');
+const charts = () => doc.querySelector('#charts');
+const chartPick = (key, v) => {
+  const s = charts().querySelector(`[data-ckey="${key}"]`);
+  s.value = String(v);
+  s.dispatchEvent(new window.Event('change', { bubbles: true }));
+};
+const chartTab = id => charts().querySelector(`[data-ctab="${id}"]`).dispatchEvent(new window.Event('click'));
+const lit = () => charts().querySelector('td.hl').textContent;
+window.localStorage.removeItem('tow-charts');
+click('#btn-charts');
+ok('la scheda si apre dalla barra, accanto ai dadi', !!charts() && charts().hidden === false);
+ok('e parte dalla mischia', charts().querySelector('[data-ctab="melee"]').classList.contains('on'));
+ok('la cella accesa e AC 4 contro AC 3, a 3+', lit() === '3+');
+ok('la griglia e dieci per dieci', charts().querySelectorAll('table.chart tbody td').length === 100);
+chartPick('wsA', 7); chartPick('wsD', 3);
+ok('piu del doppio colpisce a 2+', lit() === '2+');
+
+chartTab('wound');
+chartPick('s', 3); chartPick('t', 9);
+ok('F 3 contro R 9 non ferisce', lit() === '–' &&
+   /non ferisce/.test(charts().querySelector('.chart-verdict').textContent));
+charts().querySelector('td[data-r="4"][data-c="4"]').dispatchEvent(new window.Event('click'));
+ok('toccare una cella sceglie la sua riga e la sua colonna',
+   lit() === '4+' && /F 4 contro R 4/.test(charts().textContent));
+
+chartTab('shoot');
+chartPick('bs', 2);
+for (const id of ['moved', 'long']){
+  const c = charts().querySelector(`[data-cflag="${id}"]`);
+  c.checked = true;
+  c.dispatchEvent(new window.Event('change', { bubbles: true }));
+}
+ok('AB 2 con -2 serve 7+: un 6 e poi 4+', lit() === '6·4' &&
+   /un 6 e poi 4\+/.test(charts().querySelector('.chart-verdict').textContent));
+
+/* un punteggio scritto altrove — nello scontro, nel tiro — apre la
+   stessa scheda con i suoi valori gia' scelti */
+const { chartLink } = await import('../src/charts.js');
+const linkBox = doc.createElement('div');
+linkBox.innerHTML = chartLink('5+', { tab: 'melee', wsA: 2, wsD: 5 });
+doc.body.appendChild(linkBox);
+linkBox.querySelector('[data-chart]').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+ok('un punteggio toccato apre la sua tabella',
+   charts().querySelector('[data-ctab="melee"]').classList.contains('on') && lit() === '5+');
+linkBox.remove();
+click('#btn-charts');
+ok('e il pulsante della barra la richiude', charts().hidden === true);
+ok('nessun errore attorno alle tabelle', errors.length === 0);
+
 console.log('\nrighelli');
 const rulerCount = () => state.rulers.length;
 deploy.act('misura', () => { state.rulers.push([[0, 0], [254, 0]]); });

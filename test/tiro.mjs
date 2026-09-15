@@ -171,11 +171,22 @@ ok('AB 5 colpisce a 2+', SH.hitNeed(5).need === 2);
 ok('senza AB non si tira', SH.hitNeed(0).need === 7);
 ok('i modificatori alzano il punteggio', SH.hitNeed(3, -2).need === 6);
 /* le due regole che il conto di prima non sapeva dire */
-ok('non si va mai oltre il 6', SH.hitNeed(3, -5).need === 6);
 ok('e mai sotto il 2', SH.hitNeed(5, +3).need === 2);
 ok('l 1 naturale non colpisce mai', SH.hitNeed(5).natural1 === true);
-ok('dall AB alta in su c e un secondo punteggio', SH.hitNeed(8).again === 5);
-ok('ed e dichiarato da verificare', SH.hitNeed(8).daVerificare === true);
+/* il 7+ del libro (p. 139): un 6, e poi un secondo dado */
+ok('AB 3 con -3 serve 7+: un 6 e poi 4+', SH.hitNeed(3, -3).need === 6 && SH.hitNeed(3, -3).then === 4);
+ok('con -4 serve 8+: un 6 e poi 5+', SH.hitNeed(3, -4).then === 5);
+ok('con -5 serve 9+: un 6 e poi 6', SH.hitNeed(3, -5).need === 6 && SH.hitNeed(3, -5).then === 6);
+ok('da 10+ non si colpisce piu', SH.hitNeed(3, -6).need === 7 && !SH.hitNeed(3, -6).then);
+ok('un 7+ colpisce una volta su dodici', near(SH.hitChance(6, 0, 4), 1 / 12, 1e-9));
+ok('e il pannello lo manda alla pagina giusta', SH.hitNeed(2, -2).page === 139);
+/* il ritiro dell AB alta, letto sul libro (p. 138) */
+ok('AB 6 colpisce a 2+ e ritira a 6+', SH.hitNeed(6).need === 2 && SH.hitNeed(6).again === 6);
+ok('AB 8 ritira a 4+', SH.hitNeed(8).again === 4);
+ok('AB 10 ritira a 2+', SH.hitNeed(10).again === 2);
+ok('i modificatori pesano solo sul primo tiro',
+   SH.hitNeed(7, -2).need === 4 && SH.hitNeed(7, -2).again === 5);
+ok('e non e piu da verificare', !SH.hitNeed(8).daVerificare);
 ok('sotto non c e nessun ritiro', SH.hitNeed(4).again === 0);
 /* il ritiro vale, ed e un numero che si controlla a mano */
 ok('il ritiro alza la probabilita del colpo',
@@ -247,12 +258,16 @@ const linea = SH.cannonLine([0, 0], 0, palla);
 ok('la linea arriva fin dove si e fermata', near(linea.to[0] / MM, 30, 1e-6));
 ok('e segna anche dove ha toccato terra', near(linea.land[0] / MM, 24, 1e-6));
 
-/* le due tabelle del Mancato Colpo: vuote, e lo dicono */
+/* le due tabelle del Mancato Colpo, trascritte da p. 347 */
 const guasto = SH.misfireRead('cannon', 3);
-ok('una riga non trascritta non viene inventata', guasto.known === false);
-ok('ma dice la faccia e la pagina',
-   guasto.face === 3 && /347/.test(guasto.text));
-ok('e la tabella e dichiarata da verificare', SH.MISFIRE.daVerificare === true);
+ok('un 3 sulla polvere nera e un guasto', guasto.known && /Guasto/.test(guasto.text));
+ok('e dice la faccia e la pagina', guasto.face === 3 && /347/.test(guasto.text));
+ok('un 1 distrugge la macchina', /distrutta/i.test(SH.misfireRead('stone', 1).text));
+ok('un 5 o un 6 fa solo saltare il tiro',
+   /non tira in questo turno/.test(SH.misfireRead('stone', 6).what) &&
+   !/Ferita/.test(SH.misfireRead('cannon', 5).what));
+ok('le due tabelle hanno sei facce piene',
+   ['cannon', 'stone'].every(k => SH.MISFIRE[k].length === 6 && SH.MISFIRE[k].every(Boolean)));
 
 /* ================================================================= */
 console.log('\nil test di Panico del tiro (p. 141)');
@@ -305,7 +320,17 @@ ok('e le ferite scendono di conseguenza', lontano.wounds < vicino.wounds);
 /* e il ritiro dell AB alta entra nel conto invece di sparire */
 const cecchino = { ...arcieri, stats: { ...arcieri.stats, BS:'8' } };
 const conRitiro = C.shootForecast(cecchino, bersaglio, { weapon: arco, mods: -3 });
-ok('l AB alta porta il suo secondo punteggio', conRitiro.hitAgain === 5);
+ok('l AB alta porta il suo secondo punteggio (AB 8 ritira a 4+, p. 138)', conRitiro.hitAgain === 4);
+/* e il 7+ entra nel conto invece di diventare un 6+ */
+const lontanissimo = C.shootForecast(arcieri, bersaglio, { weapon: arco, mods: -5 });
+ok('AB 4 con -5 serve 8+: un 6 e poi 5+', lontanissimo.hitNeed === 6 && lontanissimo.hitThen === 5);
+ok('e ferisce meno di un 6+ semplice',
+   lontanissimo.wounds < C.shootForecast(arcieri, bersaglio, { weapon: arco, mods: -3 }).wounds);
+const raffica = C.shootRoll(arcieri, bersaglio, { weapon: arco, mods: -5 });
+ok('la raffica del 7+ ritira solo i 6',
+   (raffica.follow ? raffica.follow.of : 0) === raffica.hit.dice.filter(v => v === 6).length);
+ok('e colpisce solo chi passa anche il secondo dado',
+   raffica.hit.hits === (raffica.follow ? raffica.follow.hits : 0));
 ok('e ferisce piu di chi non ce l ha',
    conRitiro.wounds > C.shootForecast({ ...arcieri, stats: { ...arcieri.stats, BS:'5' } },
                                       bersaglio, { weapon: arco, mods: -3 }).wounds);

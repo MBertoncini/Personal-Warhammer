@@ -4,7 +4,8 @@
  */
 import { hitMelee, hitShoot, woundOn, saveOn, chance, pool, rankBonus,
          leadershipTest, chargeRoll, stat, weaponStrength, weaponAP,
-         IMPOSSIBLE, AUTOHIT } from '../src/rules.js';
+         IMPOSSIBLE, AUTOHIT, shootTarget, shootLabel, HIT_MELEE } from '../src/rules.js';
+import { shootModTotal } from '../src/charts.js';
 import * as C from '../src/combat.js';
 import * as D from '../src/dice.js';
 import { reachFan, sightFan, coverOn, stepCost, movementBands } from '../src/tactics.js';
@@ -51,6 +52,25 @@ ok('abilita balistica 3 tira a 4', hitShoot(3) === 4);
 ok('la lunga gittata la peggiora', hitShoot(3, -1) === 5);
 ok('i modificatori non portano oltre il 6', hitShoot(2, -4) === 6);
 ok('e non portano sotto il 2', hitShoot(6, 2) === 2);
+
+/* il tiro del libro (pp. 138-139): la tabella, il ritiro e il 7+ */
+ok('AB 6 colpisce a 2+ e ritira a 6+', shootTarget(6).need === 2 && shootTarget(6).again === 6);
+ok('AB 2 con -2 serve 7+: un 6 e poi 4+', shootTarget(2, -2).raw === 7 && shootTarget(2, -2).then === 4);
+ok('e si scrive come si dice', shootLabel(shootTarget(2, -2)) === '6 e poi 4+');
+ok('senza AB non si tira', shootTarget(0).need === IMPOSSIBLE);
+
+/* la scheda delle tabelle: i modificatori che non si sommano (p. 139) */
+ok('il tira e tieni non somma la lunga gittata', shootModTotal({ sns: true, long: true }).total === -1);
+ok('la copertura piena vince sulla parziale',
+   shootModTotal({ partial: true, full: true, moved: true }).total === -3);
+ok('e gli altri modificatori si aggiungono', shootModTotal({ moved: true, other: -1 }).total === -2);
+
+/* la griglia di p. 148 riga per riga: la diagonale e 4+, e sotto la
+   diagonale non c e mai niente di peggio che sopra */
+ok('pari abilita e sempre 4+', [1,2,3,4,5,6,7,8,9,10].every(v => hitMelee(v, v) === 4));
+ok('la tabella ha dieci righe da dieci', HIT_MELEE.length === 10 && HIT_MELEE.every(r => r.length === 10));
+ok('piu abile non e mai peggio', HIT_MELEE.every((row, i) =>
+   row.every((v, j) => i === 9 || v >= HIT_MELEE[i + 1][j])));
 
 console.log('\nprobabilita');
 ok('un 4+ passa una volta su due', chance(4) === 0.5);

@@ -11,8 +11,12 @@
  * come conto. Dove il manuale stampa una tabella che nessuna formula
  * riproduce, sta la tabella: e' il caso del tiro per colpire in
  * mischia, che in The Old World e' una griglia 10 × 10 (Core Rulebook
- * 2023, p. 149 e Quick Reference p. 348) e non piu' la vecchia regola
+ * 2023, p. 148 e Quick Reference p. 348) e non piu' la vecchia regola
  * «pari a 4, piu' abile a 3, contro il doppio a 5».
+ *
+ * Le pagine sono quelle stampate, lette sul libro: la tabella per
+ * colpire in mischia sta a p. 148 e quella per ferire a p. 149 (e a
+ * p. 140 nel tiro). Questo file citava 149 e 150, una pagina avanti.
  */
 
 /* ============================================================
@@ -82,8 +86,12 @@ export const CHARGE = {
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 export const IMPOSSIBLE = 7;
 
+/* Le pagine delle tabelle, in un posto solo: le citano il conto, il
+   pannello dello scontro e la scheda delle tabelle. */
+export const CHART_PAGE = { melee: 148, wound: 149, woundShoot: 140, shoot: 138, sevenPlus: 139, zero: 97, quick: 347 };
+
 /* Corpo a corpo: la tabella del manuale, riga = Abilita' Combattimento
-   di chi mena, colonna = quella di chi para (p. 149).
+   di chi mena, colonna = quella di chi para (p. 148).
 
    Non e' la vecchia regola a tre valori: qui il 2+ esiste, e serve
    essere piu' del doppio dell'avversario per averlo. La griglia
@@ -97,12 +105,12 @@ export const IMPOSSIBLE = 7;
        meno della meta' dell'avversario ... 4+
      meno della meta' dell'avversario ..... 5+
 
-   Chi ha AC 0 non sa difendersi e viene colpito senza tirare (p. 98):
+   Chi ha AC 0 non sa difendersi e viene colpito senza tirare (p. 97):
    torna AUTOHIT, che non e' un punteggio da fare ma il segnale che il
    dado non si tira proprio. */
 export const AUTOHIT = 0;
 
-const HIT_MELEE = [
+export const HIT_MELEE = [
   /*  AC avversario  1   2   3   4   5   6   7   8   9  10 */
   /*  1 */          [ 4,  4,  5,  5,  5,  5,  5,  5,  5,  5 ],
   /*  2 */          [ 3,  4,  4,  4,  5,  5,  5,  5,  5,  5 ],
@@ -124,15 +132,64 @@ export function hitMelee(wsA, wsD){
   return HIT_MELEE[clamp(wsA, 1, 10) - 1][clamp(wsD, 1, 10) - 1];
 }
 
-/* Tiro: il punteggio base scende con l'abilita' balistica, poi i
-   modificatori lo alzano. `mod` e' la somma dei modificatori con il
-   loro segno: -1 lunga gittata, -1 mosso, -1 copertura leggera… */
-export function hitShoot(bs, mod = 0){
-  if (!bs) return IMPOSSIBLE;
-  return clamp(Math.max(2, 7 - bs) - mod, 2, 6);
+/* Tiro: la tabella di p. 138 e le due regole che le stanno accanto.
+   `mod` e' la somma dei modificatori con il loro segno: -1 mosso, -1
+   lunga gittata, -1 tira e tieni, -1 copertura parziale, -2 piena.
+
+     AB 1 2 3 4 5 ............ 6+ 5+ 4+ 3+ 2+
+     AB 6 7 8 9 10 ........... 2+, e chi manca ritira a 6+ 5+ 4+ 3+ 2+
+
+   Sopra l'AB 5 non si colpisce meglio: si guadagna un RITIRO dei
+   mancati con un secondo punteggio, e i modificatori pesano solo sul
+   primo tiro (p. 138). L'app lo metteva uno scalino piu' in alto — AB 6
+   senza ritiro, AB 7 a 6+ — e lo dichiarava da verificare.
+
+   E il 7+ non e' «mai» (p. 139): chi dopo i modificatori dovrebbe fare
+   7 tira lo stesso, e ogni 6 naturale si ritira e colpisce con un 4+;
+   con 8 serve il 5+, con 9 il 6; dal 10 e' impossibile. L'app si
+   fermava al 6+, cioe' faceva colpire un AB 2 con −2 due volte di piu'
+   di quanto il libro conceda.
+
+   Torna `need` (il primo dado), `then` (il secondo dado dei 6, per il
+   7+), `again` (il ritiro dell'AB alta) e `raw`, il punteggio come lo
+   si scrive — «7+» — che e' quello che si cerca nella tabella. */
+export const BS_TABLE = { 1:6, 2:5, 3:4, 4:3, 5:2 };
+export const BS_REROLL = { 6:6, 7:5, 8:4, 9:3, 10:2 };
+export const SEVEN_PLUS = { 7:4, 8:5, 9:6 };
+
+export function shootTarget(bs, mod = 0){
+  const b = Math.max(0, bs | 0);
+  if (!b) return { need: IMPOSSIBLE, then: 0, again: 0, raw: IMPOSSIBLE, base: IMPOSSIBLE, mod };
+  const k = clamp(b, 1, 10);
+  const base = BS_TABLE[k] || 2;
+  const again = BS_REROLL[k] || 0;
+  const raw = Math.max(2, base - (+mod || 0));
+  if (raw <= 6)  return { need: raw, then: 0, again, raw, base, mod };
+  if (raw >= 10) return { need: IMPOSSIBLE, then: 0, again, raw, base, mod };
+  return { need: 6, then: SEVEN_PLUS[raw], again, raw, base, mod };
 }
 
-/* Ferire: qui la tabella (p. 150) e' davvero un conto, perche' dipende
+/* Il primo dado e basta, per chi vuole un numero solo: il 7+ torna 6,
+   che e' la faccia da cui si parte. Il resto lo sa `shootTarget`. */
+export function hitShoot(bs, mod = 0){
+  return shootTarget(bs, mod).need;
+}
+
+/* La probabilita' di un colpo al tiro, 7+ e ritiro compresi */
+export function shootChance(t){
+  if (!t) return 0;
+  const first = t.need >= IMPOSSIBLE ? 0 : t.then ? (1 / 6) * chance(t.then) : chance(t.need);
+  return t.again ? first + (1 - first) * chance(t.again) : first;
+}
+
+/* Come si dice un punteggio del tiro: «4+», «6 e poi 4+», «mai» */
+export function shootLabel(t){
+  if (!t || t.need >= IMPOSSIBLE) return t && t.again ? `mai, ritiro a ${t.again}+` : "mai";
+  const first = t.then ? `6 e poi ${t.then}+` : `${t.need}+`;
+  return t.again ? `${first}, ritiro a ${t.again}+` : first;
+}
+
+/* Ferire: qui la tabella (p. 149, e p. 140 nel tiro) e' davvero un conto, perche' dipende
    solo dallo scarto fra Resistenza e Forza. Due punti di Forza in piu'
    non fanno meglio del 2; dal secondo punto di Resistenza in piu' si
    resta al 6, e ci si resta a lungo — una Forza 3 ferisce ancora una
