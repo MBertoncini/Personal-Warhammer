@@ -1188,3 +1188,10 @@ table.chart td.hl{background:var(--accent);color:var(--panel);font-weight:700;}
 }
 .chart-link:hover{color:var(--accent);}
 .chart-link:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+/* il promemoria della Stupidità nella prima casella del turno: si nota
+   senza urlare, perché è un test che si dimentica e non un errore */
+.stupid-ask{
+  margin:8px 0;padding:8px;border-radius:var(--r);
+  border:1px solid var(--warn);background:var(--panel);
+}

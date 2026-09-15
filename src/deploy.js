@@ -1645,6 +1645,24 @@ function drawBoard(){
                                  "paint-order":"stroke", opacity:".95" });
       t.textContent = s2 + (u.tags.length > 3 ? " +" + (u.tags.length - 3) : "");
     }
+    /* Lo stato dell'unità, in due parole sopra la testa.
+       È il marcatore che al tavolo si appoggia accanto al reggimento:
+       chi è in preda alla Stupidità non si muove, non tira e non
+       lancia per tutto il turno, e finché la cosa viveva solo dentro
+       l'ispettore bisognava selezionare l'unità per scoprirlo — cioè
+       proprio quando avevi già deciso di muoverla.
+       Generico apposta: la Stupidità è la prima riga, non l'unica. */
+    if (state.game.on){
+      const marks = stateMarks(u);
+      if (marks.length){
+        const yb = Math.min(...corners(u).map(p => p[1])) - (EX.woundsOf(u) ? 24 : 6);
+        const t = g(lab, "text", { x:u.x, y:yb, "text-anchor":"middle", "font-size":16,
+                                   "font-weight":"600",
+                                   fill:"var(--warn)", stroke:"var(--paper)", "stroke-width":"2.6",
+                                   "paint-order":"stroke" });
+        t.textContent = marks.map(m => m.text).join(" · ");
+      }
+    }
     if (state.game.on && EX.woundsOf(u)){
       const yb = Math.min(...corners(u).map(p => p[1])) - 6;
       const t = g(lab, "text", { x:u.x, y:yb, "text-anchor":"middle", "font-size":17,
@@ -2211,6 +2229,21 @@ const asPiece = u => ({ name:u.name, box: boxOf(u), poly: corners(u), unit:u, us
 const effNow = () => ({ turn: state.game.turn || 1, side: state.game.army || "A",
                         round: state.game.turn || 1, phaseIndex: state.game.step || 0 });
 const psychFor = u => PS.psychOf(u, { joined: attachedOf(u), now: state.game.on ? effNow() : null });
+
+/* I marcatori di stato: quello che, al tavolo, si appoggia accanto al
+   reggimento perche' altrimenti ce se ne dimentica.
+   Uno per riga di regola, e nessuno di questi impedisce niente: sono
+   promemoria con un nome, e il pannello che li ha messi li toglie. */
+function stateMarks(u){
+  if (!u || !u.placed || u.dead || isJoined(u)) return [];
+  const p = psychFor(u);
+  const out = [];
+  if (p.stupid) out.push({ id:"stupid", text:"STUPIDA" });
+  if (u.fled)   out.push({ id:"fled", text:"in fuga" });
+  if (u.disordered) out.push({ id:"disordered", text:"disordinata" });
+  if (p.frenzy) out.push({ id:"frenzy", text:"frenetica" });
+  return out;
+}
 
 /* Un test di Paura per turno: l'esito sta sull'unita', con il turno e la
    parte, cosi' l'annulla lo porta via con il resto. */
@@ -2882,7 +2915,87 @@ function failCharge(u, t, why){
   G.dispatch({ type:"note", army:u.army, text: `${u.name} non carica ${t.name}: ${why}.` });
 }
 
+/* Il marcatore della Stupidita'.
+ *
+ * Il test lo tira `runPsych`, e chi lo fallisce si prende l'effetto.
+ * Ma al tavolo la Stupidita' capita anche senza passare di qui: la
+ * si è tirata con i dadi veri, o l'ha causata un incantesimo, o
+ * semplicemente l'app era chiusa. Senza un modo di dirlo a mano,
+ * l'unico stato che l'app conosceva era quello che aveva visto
+ * succedere — ed e' lo stesso principio per cui ogni altro numero
+ * dell'ispettore si corregge.
+ *
+ * Dura fino al proprio prossimo inizio di turno, che e' quanto dice
+ * la regola: attraversa il turno dell'avversario e scade dove si
+ * rifa' il test. Toglierlo e' un gesto solo, e finisce nel registro
+ * come tutto il resto.
+ */
+function markStupid(u, on){
+  if (on) EF.addEffect(u, PS.stupidEffect(effNow()));
+  else EF.removeEffect(u, "stupidity", "Stupidità");
+  G.dispatch({ type:"note", army:u.army,
+    text: on ? `${u.name}: segnata in preda alla Stupidità — ${PS.STUPID_LIMITS.join(", ")}.`
+             : `${u.name}: non è più in preda alla Stupidità.` });
+}
+
+/* Tutti quelli che devono tirarla, uno dopo l'altro. All'inizio del
+   turno il promemoria diceva i nomi e poi toccava cercarli sul tavolo
+   uno per uno: con sei unita' stupide in lista sono sei selezioni e
+   sei pulsanti, ed e' il genere di attrito per cui al tavolo il test
+   si salta. */
+export function stupidityPending(){
+  if (!state.game.on) return [];
+  return state.units.filter(u => {
+    if (u.army !== state.game.army || !u.placed || u.dead || isJoined(u)) return false;
+    const p = psychFor(u);
+    /* chi ci e' gia' dentro il test lo ha fatto, e gli e' andato male:
+       rifarglielo nello stesso turno sarebbe un secondo tiro gratis */
+    if (p.stupid) return false;
+    return PS.stupidityCheck({ p, fleeing: !!u.fled, engaged: engagedNow(u) }).must;
+  });
+}
+
+async function runAllStupidity(){
+  const list = stupidityPending();
+  if (!list.length) return toast("Nessuno deve tirare la Stupidità adesso.");
+  for (const u of list) await runPsychButton(u, "stupidity");
+}
+
+/* Il promemoria della prima casella diventa un pulsante.
+ *
+ * Il registro scriveva già «Da tirare adesso: Stupidità per X, Y, Z»
+ * e poi toccava cercarli sul tavolo uno per uno: con tre unità
+ * stupide sono tre selezioni e tre pulsanti, ed è esattamente il
+ * genere di attrito per cui al tavolo il test si salta — sempre a
+ * favore di chi lo salta. Qui c'è un gesto solo, e i dadi sono gli
+ * stessi di prima. Chi è già in preda alla Stupidità non ricompare
+ * nell'elenco: il test lo ha già fatto e gli è andato male.
+ */
+function stupidityPrompt(){
+  const host = $("#game");
+  if (!host) return;
+  const old = host.querySelector("#g-stupid-all");
+  if (old) old.closest(".stupid-ask").remove();
+  if (!state.game.on || state.game.deploying || state.game.step !== 0) return;
+  const list = stupidityPending();
+  if (!list.length) return;
+
+  const box = document.createElement("div");
+  box.className = "stupid-ask";
+  box.innerHTML = `
+    <p class="note" style="color:var(--warn);margin:0 0 4px">
+      <b>Stupidità</b> da tirare: ${esc(list.map(u => u.name).join(", "))}.
+      Chi fallisce non si muove, non tira e non lancia fino al suo prossimo turno.</p>
+    <button class="btn tiny" id="g-stupid-all" style="width:100%">Tira la Stupidità per tutti (${list.length})</button>`;
+  const anchor = host.querySelector(".stepacts") || host.querySelector(".steps");
+  if (anchor) anchor.after(box); else host.appendChild(box);
+  box.querySelector("#g-stupid-all").addEventListener("click", runAllStupidity);
+}
+
 async function runPsychButton(u, kind){
+  /* il marcatore non tira niente: dice e basta */
+  if (kind === "stupid")   return act("Stupidità", () => markStupid(u, true));
+  if (kind === "unstupid") return act("Stupidità", () => markStupid(u, false));
   if (kind === "stupidity"){
     const c = PS.stupidityCheck({ p: psychFor(u), fleeing: !!u.fled, engaged: engagedNow(u) });
     if (!c.must && c.why) toast(c.why + ": si tira lo stesso, lo decidete voi.");
@@ -2926,6 +3039,11 @@ function psychHTML(u){
     `<button class="btn tiny" data-psych="${id}" title="${esc(title)}">${label}</button>`;
   const buttons = !state.game.on ? "" : [
     p.stupidity ? btn("stupidity", "Stupidità", "Test di Comando all'inizio del turno: se fallisce resta ferma fino al prossimo") : "",
+    /* il marcatore a mano: vale anche per chi la Stupidita' se l'e'
+       presa fuori dall'app, e per chi l'ha tirata con i dadi veri */
+    p.stupid
+      ? `<button class="btn tiny" data-psych="unstupid" title="Toglie il marcatore: l'unità torna a muoversi, tirare e lanciare">Non è più stupida</button>`
+      : (p.stupidity ? `<button class="btn tiny" data-psych="stupid" title="Segna l'unità in preda alla Stupidità fino al suo prossimo turno, senza tirare">Segnala stupida</button>` : ""),
     p.impetuous ? btn("impetuous", "Impetuosa", "Test di Comando senza la Warband: se fallisce deve caricare") : "",
     fearNow.length ? btn("fear", "Paura", fearNow[0].check.why) : "",
     btn("panic", "Panico", "Un test di Panico a mano, scegliendo la causa"),
@@ -3300,7 +3418,8 @@ async function runCast(caster, spellId, preUid = null){
     ? { id: ph[Math.floor(idx / 4)].steps[idx % 4].id, phaseId: ph[Math.floor(idx / 4)].id }
     : G.stepNow();
   const gate = MG.canCast(sp, { fleeing: !!host.fled, engaged: engagedNow(host),
-    castThisTurn: cs ? cs.ids : [], stopped: !!(cs && cs.stop), stepId: step.id, phaseId: step.phaseId });
+    castThisTurn: cs ? cs.ids : [], stopped: !!(cs && cs.stop), stepId: step.id, phaseId: step.phaseId,
+    stupid: psychFor(host).stupid });
 
   /* 1 · il bersaglio */
   let target = null, targetWhy = [];
@@ -4049,6 +4168,7 @@ function updateStat(sc){
 function renderAll(){
   reindex(); syncImportBox(); renderArmies(); renderInspector(); renderTerrainList(); renderMarkerList();
   G.renderGamePanel($("#game"), { esc });
+  stupidityPrompt();
   renderDuel();
   drawBoard(); refreshEditor(); save();
 }

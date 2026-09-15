@@ -170,10 +170,15 @@ export function whenOk(type, { stepId = "", phaseId = "" } = {}){
    E una del fiasco: dopo un 8-12 sulla tabella non si lancia piu'
    niente per il resto del turno (p. 109). */
 export function canCast(spell, { fleeing = false, engaged = false, castThisTurn = [], stopped = false,
-                                  stepId = "", phaseId = "", armoured = false } = {}){
+                                  stepId = "", phaseId = "", armoured = false, stupid = false } = {}){
   const why = [];
   if (!spell) return { can: false, why: ["incantesimo sconosciuto"] };
   if (fleeing) why.push("chi fugge non lancia (p. 108)");
+  /* La Stupidita' ferma anche la magia. Il tiro e la carica lo
+     sapevano da una tappa, il lancio no: un Troll in preda alla
+     Stupidita' continuava a lanciare incantesimi come se niente
+     fosse, perche' nessuno aveva mai passato il dato fin qui. */
+  if (stupid) why.push("è in preda alla Stupidità: non lancia incantesimi");
   if (engaged && spell.type !== "assailment" && spell.range !== "self")
     why.push("in combattimento si lanciano solo gli assalti e gli incantesimi «self» (p. 108)");
   if (!engaged && spell.type === "assailment") why.push("un assalto si lancia solo in combattimento (p. 107)");
