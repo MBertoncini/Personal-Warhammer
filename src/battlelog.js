@@ -55,6 +55,12 @@ export const aliveOf = u => Math.max(0, (u.models || 0) - (u.lost || 0));
 export const emptyMeta = () => ({
   date: today(), place: "", event: "", playerA: "", playerB: "",
   first: "A",              // chi ha giocato il primo turno
+  /* Chi ha giocato il report, fra i due eserciti. E' la riga che
+     cambia il resoconto da cronaca a lezione: senza, l'AI che legge
+     commenta tutte e due le parti con la stessa cortesia e non
+     critica nessuno. Vuoto vuol dire "non l'ho ancora detto", e
+     l'esportazione lo chiede invece di indovinare. */
+  mine: "",                // "A", "B", o "" se non dichiarato
   pts: 0,                  // punti concordati; 0 = lo deduce dalle liste
   rounds: 6,               // quanti turni erano previsti
 });
@@ -648,19 +654,68 @@ const hasPos = r => r.placed && !r.dead && (r.x || r.y);
 const pos = r => hasPos(r) ? `${r.x}, ${r.y}` : "—";
 const facing = r => hasPos(r) ? r.rot + "°" : "—";
 
-export const PROMPT = [
-  "Sei un giocatore esperto di Warhammer: The Old World e mi fai da allenatore.",
-  "Qui sotto c'è il resoconto completo di una mia partita, esportato dall'app che uso per",
-  "schierare: le due liste, lo schieramento iniziale, la posizione e le perdite di ogni",
-  "unità alla fine di ogni turno, e il punteggio finale voce per voce.",
-  "",
-  "Leggilo e dimmi cosa è andato storto: se è un problema di lista, di schieramento, o di",
-  "come ho giocato; in quale turno la partita è girata e perché; quali unità non hanno reso",
-  "quello che costavano. Nel resoconto trovi anche, per ogni turno, quali unità erano a",
-  "contatto di basetta e da che lato, e quali stavano dentro un elemento di terreno.",
-  "Se un dato ti manca chiedimelo, non inventarlo: il registro è",
-  "tenuto a mano durante la partita e può avere buchi.",
-].join("\n");
+/* La richiesta che va davanti al resoconto.
+ *
+ * La domanda a cui risponde e' «chi commento?». Un report e' la
+ * cronaca di due eserciti, e senza sapere quale dei due ha giocato
+ * chi legge — che sia una persona o un'AI — commenta tutti e due con
+ * la stessa cortesia: escono osservazioni vere e inutili, perche'
+ * meta' riguardano mosse che non ha fatto nessuno che stia leggendo.
+ *
+ * Detto chi sei, il testo cambia mestiere: diventa una critica delle
+ * TUE scelte, con l'avversario nel ruolo di chi te le ha fatte pagare.
+ * Se non e' dichiarato resta il testo neutro di prima, che e'
+ * comunque meglio di un lato indovinato a caso.
+ */
+export function promptFor(rep = null){
+  const m = (rep && rep.meta) || {};
+  const side = m.mine === "A" || m.mine === "B" ? m.mine : "";
+  const other = side === "A" ? "B" : "A";
+  const nameOf = k => {
+    const a = (rep && rep.armies && rep.armies[k]) || {};
+    return a.name || ("Esercito " + k);
+  };
+  const player = k => {
+    const n = k === "A" ? m.playerA : m.playerB;
+    return n ? ` (${n})` : "";
+  };
+
+  const head = [
+    "Sei un giocatore esperto di Warhammer: The Old World e mi fai da allenatore.",
+    "Qui sotto c'è il resoconto completo di una mia partita, esportato dall'app che uso per",
+    "schierare: le due liste, lo schieramento iniziale, la posizione e le perdite di ogni",
+    "unità alla fine di ogni turno, e il punteggio finale voce per voce.",
+  ];
+
+  const who = side ? [
+    "",
+    `**Ho giocato l'Esercito ${side}: ${nameOf(side)}${player(side)}.** Dall'altra parte c'era ` +
+    `l'Esercito ${other}: ${nameOf(other)}${player(other)}.`,
+    "Commenta criticamente le MIE scelte — lista, schieramento, movimento, quando ho tirato e",
+    "quando ho caricato — e tratta l'avversario come il metro che me le ha fatte pagare, non",
+    "come un secondo allievo da consigliare. Dove ha giocato meglio di me dimmelo chiaramente.",
+    "Non addolcire: preferisco una critica dura e precisa a un incoraggiamento.",
+  ] : [
+    "",
+    "Non ti ho detto quale dei due eserciti ho giocato: se dal resoconto non si capisce,",
+    "chiedimelo prima di commentare.",
+  ];
+
+  const tail = [
+    "",
+    "Leggilo e dimmi cosa è andato storto: se è un problema di lista, di schieramento, o di",
+    "come ho giocato; in quale turno la partita è girata e perché; quali unità non hanno reso",
+    "quello che costavano. Nel resoconto trovi anche, per ogni turno, quali unità erano a",
+    "contatto di basetta e da che lato, e quali stavano dentro un elemento di terreno.",
+    "Se un dato ti manca chiedimelo, non inventarlo: il registro è",
+    "tenuto a mano durante la partita e può avere buchi.",
+  ];
+
+  return [...head, ...who, ...tail].join("\n");
+}
+
+/* Il testo neutro, per chi lo vuole senza un report davanti. */
+export const PROMPT = promptFor(null);
 
 function legend(rep){
   return [
@@ -691,7 +746,7 @@ export function reportMarkdown(rep, { prompt = false } = {}){
   const v = verdict(rep);
   const m = rep.meta;
 
-  if (prompt) out.push(PROMPT, "", "---", "");
+  if (prompt) out.push(promptFor(rep), "", "---", "");
   out.push(`# ${rep.title}`, "", `<!-- ${FORMAT} -->`, "");
   out.push("## Come leggere questi dati", "", legend(rep), "");
 
@@ -709,6 +764,10 @@ export function reportMarkdown(rep, { prompt = false } = {}){
     ["Esercito A", `${ARMY(rep, "A")}${m.playerA ? " — " + m.playerA : ""} — ${ptsA} pt, ${rep.roster.A.length} unità`],
     ["Esercito B", `${ARMY(rep, "B")}${m.playerB ? " — " + m.playerB : ""} — ${ptsB} pt, ${rep.roster.B.length} unità`],
     ["Primo turno", m.first === "B" ? ARMY(rep, "B") : ARMY(rep, "A")],
+    /* Chi legge il report lo legge per giudicare qualcuno: la riga
+       dice chi, e se non c'e' lo dice anche quello. */
+    ["Ho giocato", m.mine === "A" || m.mine === "B"
+      ? `Esercito ${m.mine} — ${ARMY(rep, m.mine)}` : "non dichiarato"],
     ["Turni registrati", played.length + (m.rounds ? " su " + m.rounds + " previsti" : "")],
     ["Esito", v.text],
   ]), "");

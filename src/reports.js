@@ -20,7 +20,7 @@
 import { $, esc } from './util.js';
 import { loadDoc, saveDoc } from './store.js';
 import { emit, on } from './bus.js';
-import { askConfirm, say } from './uikit.js';
+import { askConfirm, askPick, say } from './uikit.js';
 import { copyText } from './share.js';
 import { allLists, getList } from './lists.js';
 import { SCENARIOS } from './scenarios.js';
@@ -296,6 +296,13 @@ function detailHTML(rep){
       <label class="field">Giocatore A<input type="text" data-f="meta.playerA" value="${esc(rep.meta.playerA || "")}"></label>
       <label class="field">Giocatore B<input type="text" data-f="meta.playerB" value="${esc(rep.meta.playerB || "")}"></label>
     </div>
+    <label class="field">Chi hai giocato
+      <select data-f="meta.mine">
+        <option value="" ${!rep.meta.mine ? "selected" : ""}>non dichiarato</option>
+        <option value="A" ${rep.meta.mine === "A" ? "selected" : ""}>Esercito A — ${esc(rep.armies.A.name || "A")}</option>
+        <option value="B" ${rep.meta.mine === "B" ? "selected" : ""}>Esercito B — ${esc(rep.armies.B.name || "B")}</option>
+      </select></label>
+    <p class="note">È la riga che il resoconto per l'AI legge per sapere <b>chi commentare</b>: dichiarata, chiede una critica delle tue scelte invece di un resoconto cortese di tutte e due le parti.</p>
     <label class="field">Scenario
       <select data-f="scenario.id">
         ${Object.entries(sc).map(([id, d]) =>
@@ -513,6 +520,48 @@ function wireTop(host, ls){
   }));
 }
 
+/* La domanda che l'esportazione fa una volta sola: **chi hai giocato?**
+ *
+ * Il resoconto per l'AI e' una richiesta di critica, e una critica ha
+ * bisogno di un bersaglio. Senza questa riga chi legge commenta tutti
+ * e due gli eserciti con la stessa cortesia, e meta' di quello che
+ * dice riguarda mosse che non hai fatto tu.
+ *
+ * Si chiede qui e non nella scheda perche' e' li' che serve, e chi
+ * compila la scheda a fine partita ha in testa il punteggio, non
+ * l'esportazione. Risposta ricordata: la seconda volta non chiede.
+ * «Non lo dico» e' una risposta buona — il resoconto esce lo stesso,
+ * con il testo neutro — mentre chiudere la finestra ferma tutto,
+ * perche' e' il gesto di chi ha cambiato idea.
+ *
+ * Torna true se si puo' esportare.
+ */
+async function askWhoPlayed(rep){
+  if (rep.meta.mine === "A" || rep.meta.mine === "B") return true;
+  const nameOf = k => rep.armies[k].name || ("Esercito " + k);
+  const pick = await askPick({
+    title: "Chi hai giocato?",
+    label: "Va davanti al resoconto: l'AI critica le scelte di quell'esercito invece di commentare cortesemente tutti e due.",
+    options: [
+      { id:"A", label:`Esercito A — ${nameOf("A")}` },
+      { id:"B", label:`Esercito B — ${nameOf("B")}` },
+      { id:"",  label:"Non lo dico" },
+    ],
+  });
+  if (pick === null) return false;          // finestra chiusa: niente esportazione
+  if (pick === "A" || pick === "B"){
+    rep.meta.mine = pick;
+    rep.saved = new Date().toISOString();
+    await persist();
+    /* il campo si allinea da solo invece di ridisegnare il pannello:
+       il pulsante che ha appena chiesto deve restare vivo per dire
+       «Copiato ✓», e un render lo butterebbe via mezzo secondo prima */
+    const sel = $("#reports") && $("#reports").querySelector('[data-f="meta.mine"]');
+    if (sel) sel.value = pick;
+  }
+  return true;
+}
+
 function wireDetail(host, rep){
   const save = async ({ render = true } = {}) => {
     rep.saved = new Date().toISOString();
@@ -611,12 +660,17 @@ function wireDetail(host, rep){
     setTimeout(() => { btn.textContent = old; }, 2200);
   };
   const copy = async (btn, text) => flash(btn, await copyText(text) ? "Copiato ✓" : "Non riesco a copiare");
-  host.querySelector("#rp-copy-ai").addEventListener("click", e =>
-    copy(e.currentTarget, BL.reportMarkdown(rep, { prompt: true })));
+  host.querySelector("#rp-copy-ai").addEventListener("click", async e => {
+    const btn = e.currentTarget;
+    if (!await askWhoPlayed(rep)) return;
+    copy(btn, BL.reportMarkdown(rep, { prompt: true }));
+  });
   host.querySelector("#rp-copy-md").addEventListener("click", e =>
     copy(e.currentTarget, BL.reportMarkdown(rep)));
-  host.querySelector("#rp-dl-md").addEventListener("click", () =>
-    download(BL.reportMarkdown(rep, { prompt: true }), BL.fileName(rep, "md"), "text/markdown"));
+  host.querySelector("#rp-dl-md").addEventListener("click", async () => {
+    if (!await askWhoPlayed(rep)) return;
+    download(BL.reportMarkdown(rep, { prompt: true }), BL.fileName(rep, "md"), "text/markdown");
+  });
   host.querySelector("#rp-dl-json").addEventListener("click", () =>
     download(BL.reportJSON(rep), BL.fileName(rep, "json"), "application/json"));
 }

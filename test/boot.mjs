@@ -893,6 +893,19 @@ ok('e il terreno occupato pure', /\| Terreno \|/.test(md));
 ok('il terreno dello schieramento e datato', /## Terreno allo schieramento/.test(md));
 ok('la legenda spiega le voci nuove',
    /Contatti di basetta/.test(md.slice(0, md.indexOf('## Scheda'))));
+
+/* chi ha giocato: la riga che dice all'AI chi criticare */
+ok('senza dirlo, il resoconto non indovina il lato',
+   /non ti ho detto quale dei due eserciti/i.test(md) && /\| Ho giocato \| non dichiarato \|/.test(md));
+rep.meta.mine = 'A';
+const mdMine = BL.reportMarkdown(rep, { prompt: true });
+ok('dichiarato il lato, chiede una critica delle mie scelte',
+   /\*\*Ho giocato l'Esercito A/.test(mdMine) && /Commenta criticamente le MIE scelte/.test(mdMine));
+ok('e nomina l avversario come metro, non come allievo',
+   /Dall'altra parte c'era/.test(mdMine) && !/non ti ho detto quale/i.test(mdMine));
+ok('la scheda lo scrive accanto agli altri dati',
+   /\| Ho giocato \| Esercito A/.test(mdMine));
+rep.meta.mine = '';
 ok('il JSON si porta dietro tutto',
    /"contacts"/.test(BL.reportJSON(rep)) && /"form"/.test(BL.reportJSON(rep)));
 ok('le unita compaiono con nome e perdite', md.includes(scout.name) && /Perdite/.test(md));
