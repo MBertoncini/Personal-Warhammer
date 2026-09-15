@@ -276,6 +276,11 @@ export function closeTurn(){
   const g = game();
   captureTurn();
   objectivesLine(g.turns[g.turns.length - 1]);
+  /* La carica e il movimento valgono per il turno in cui sono successi.
+     Non li azzerava nessuno: dal turno dopo chi aveva caricato non
+     tirava piu', si teneva il bonus di Iniziativa della carica e
+     restava «di fianco» anche a combattimento finito. */
+  for (const u of S().units){ u.charged = null; u.moved = null; }
   /* la partita comincia sempre da A: chiudere B chiude il round */
   if (g.army === "B") roundLine(g.turn);
   if (g.army === "A") g.army = "B";

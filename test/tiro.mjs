@@ -22,12 +22,12 @@ const ok = (label, cond) => {
 const near = (a, b, tol) => Math.abs(a - b) <= tol;
 
 /* un pezzo di terreno nella forma che tactics.js si aspetta */
-const piece = (x, y, w, h, { blocks = false, cover = '', label = 'Bosco' } = {}) => {
+const piece = (x, y, w, h, { blocks = false, cover = '', label = 'Bosco', kind = '' } = {}) => {
   const box = { x: x * MM, y: y * MM, w: w * MM, h: h * MM, rot: 0 };
   const poly = [[box.x - box.w / 2, box.y - box.h / 2], [box.x + box.w / 2, box.y - box.h / 2],
                 [box.x + box.w / 2, box.y + box.h / 2], [box.x - box.w / 2, box.y + box.h / 2]];
   return {
-    label, blocks, cover, box, poly, circle: false,
+    kind, label, blocks, cover, box, poly, circle: false,
     contains: p => Math.abs(p[0] - box.x) <= box.w / 2 && Math.abs(p[1] - box.y) <= box.h / 2,
   };
 };
@@ -65,27 +65,35 @@ ok('e ogni no dice il suo perche',
 /* ================================================================= */
 console.log('\nquanti tirano, modello per modello');
 
-/* dodici modelli, sei di fronte e due file, bersaglio dritto davanti */
+/* dodici modelli, sei di fronte e due file: di solito tira la prima sola
+   (p. 143). L'app ne faceva tirare due. */
 const dritto = SH.shooterSurvey({
   cells: rows(12, 6, 0, 0), target: foe(2.5, 10), range: 24, front: 6,
 });
-ok('due file su due tirano tutte e due', dritto.n === 12);
+ok('di due file tira la prima sola (p. 143)', dritto.n === 6);
 ok('e ognuna sa in che fila sta',
    dritto.rows[0].rank === 0 && dritto.rows[11].rank === 1);
+ok('e il pannello sa perche la seconda no', dritto.out.rank === 6);
 
-/* tre file: la terza resta fuori, e il conto dice quale causa */
-const treFile = SH.shooterSurvey({
-  cells: rows(18, 6, 0, 0), target: foe(2.5, 10), range: 24, front: 6,
+/* la collina aggiunge una fila, se l'unita' ci sta tutta sopra */
+const dallaCollina = SH.shooterSurvey({
+  cells: rows(18, 6, 0, 0), target: foe(2.5, 10), range: 24, front: 6, fromHill: 'all',
 });
-ok('la terza fila non tira', treFile.n === 12);
-ok('e il pannello sa perche', treFile.out.rank === 6);
+ok('dalla collina tira anche la seconda fila (p. 143)', dallaCollina.n === 12 && dallaCollina.hill);
+ok('e la terza resta fuori', dallaCollina.out.rank === 6);
+ok('mezza sulla collina non basta',
+   SH.shooterSurvey({ cells: rows(12, 6, 0, 0), target: foe(2.5, 10), range: 24, front: 6,
+                      fromHill: 'part' }).n === 6);
 
-/* la salva alza il tetto a tutte le file */
+/* la salva: meta' di ogni fila dietro la prima, per eccesso (p. 180) */
 const salva = SH.shooterSurvey({
-  cells: rows(18, 6, 0, 0), target: foe(2.5, 10), range: 24, front: 6, volley: true,
+  cells: rows(17, 6, 0, 0), target: foe(2.5, 10), range: 24, front: 6, volley: true,
 });
-ok('con la salva tirano tutte le file', salva.n === 18);
-/* e la formazione sciolta pure */
+ok('con la salva tira meta di ogni fila dietro, per eccesso (p. 180)', salva.n === 6 + 3 + 3);
+ok('ma non dopo aver mosso',
+   SH.shooterSurvey({ cells: rows(17, 6, 0, 0), target: foe(2.5, 10), range: 24, front: 6,
+                      volley: true, moved: true }).n === 6);
+/* e la formazione sciolta tira tutta */
 ok('in ordine sciolto tirano tutti',
    SH.shooterSurvey({ cells: rows(18, 6, 0, 0), target: foe(2.5, 10),
                       range: 24, front: 6, loose: true }).n === 18);
@@ -93,7 +101,7 @@ ok('in ordine sciolto tirano tutti',
 /* la gittata si misura da OGNI modello, non dal centro dell unita:
    e la meta del punto di questa tappa */
 const alLimite = SH.shooterSurvey({
-  cells: rows(12, 6, 0, 0), target: foe(2.5, -10.5), range: 10, front: 6,
+  cells: rows(12, 6, 0, 0), target: foe(2.5, -10.5), range: 10, front: 6, hill: true,
 });
 ok('la prima fila ci arriva e la seconda no',
    alLimite.n === 6 && alLimite.out.range === 6);
@@ -109,32 +117,65 @@ ok('e chi ce l ha di lato tira', ombra.n > 0);
 ok('e la riga dice cosa aveva davanti',
    ombra.rows.some(r => r.blockedBy === 'Monolite'));
 
-/* la lunga gittata e la copertura sono del bersaglio: valgono per la
-   maggioranza di chi tira davvero, che e come si guarda al tavolo */
+/* la lunga gittata e' della maggioranza di chi tira davvero */
 ok('oltre meta gittata e lunga gittata',
    SH.shooterSurvey({ cells: rows(6, 6, 0, 0), target: foe(2.5, 14),
                       range: 24, front: 6 }).long === true);
 ok('entro meta gittata no',
    SH.shooterSurvey({ cells: rows(6, 6, 0, 0), target: foe(2.5, 8),
                       range: 24, front: 6 }).long === false);
-ok('un bosco in mezzo e copertura leggera',
-   SH.shooterSurvey({ cells: rows(6, 6, 0, 0), target: foe(2.5, 12), range: 24, front: 6,
-                      pieces: [piece(2.5, 7, 8, 3, { cover: 'soft' })] }).cover === 'soft');
 
-/* e vale la maggioranza, non il caso peggiore: un muretto davanti a un
-   solo modello su sei non ripara tutta la raffica */
+/* Il riparo si conta sui modelli del bersaglio coperti (p. 139): fino
+   alla meta' parziale, oltre la meta' pieno. Un bersaglio senza modelli
+   conta come un modello solo. */
+const fila = { cells: rows(6, 6, 0, 0), range: 24, front: 6 };
+/* sei modelli bersaglio in fila, da x 0 a x 5, a dodici pollici */
+const sei = { ...foe(2.5, 12, 6, 1), cells: rows(6, 6, 0, 12) };
 ok('un muretto davanti a un modello solo non da copertura a tutti',
-   SH.shooterSurvey({ cells: rows(6, 6, 0, 0), target: foe(2.5, 10, 6, 2), range: 24, front: 6,
+   SH.shooterSurvey({ ...fila, target: foe(2.5, 10, 6, 2),
                       pieces: [piece(0, 5, 1, 1, { cover: 'hard', label: 'Muretto' })] }).cover === '');
 ok('un muretto davanti a tutta la fila si',
-   SH.shooterSurvey({ cells: rows(6, 6, 0, 0), target: foe(2.5, 10, 6, 2), range: 24, front: 6,
+   SH.shooterSurvey({ ...fila, target: foe(2.5, 10, 6, 2),
                       pieces: [piece(2.5, 5, 8, 1, { cover: 'hard', label: 'Muretto' })] }).cover === 'hard');
+ok('tre modelli su sei nel bosco: riparo parziale (p. 270)',
+   SH.shooterSurvey({ ...fila, target: sei,
+                      pieces: [piece(1, 12, 3, 2, { kind: 'wood' })] }).cover === 'soft');
+ok('quattro su sei: riparo pieno',
+   SH.shooterSurvey({ ...fila, target: sei,
+                      pieces: [piece(1.5, 12, 4, 2, { kind: 'wood' })] }).cover === 'hard');
+const bosco = SH.shooterSurvey({ ...fila, target: sei,
+                                 pieces: [piece(2.5, 6, 12, 3, { kind: 'wood', label: 'Bosco' })] });
+ok('un bosco in mezzo, con tutti e due fuori, toglie la vista (p. 270)',
+   bosco.n === 0 && bosco.out.sight === 6);
 
-/* il tetto di prima resta, e si dichiara stima */
-ok('senza modelli sul tavolo resta il conto a tetto',
-   SH.shooterCap({ models: 20, frontage: 5 }) === 10);
+/* le unita' bloccano la vista (p. 103), e coprono */
+const orchi = (x, y, w, h, hill = '') => ({ name: 'Orc Mob', poly: foe(x, y, w, h).poly, hill });
+const dietro = SH.shooterSurvey({ ...fila, target: sei, others: [orchi(2.5, 6, 12, 2)] });
+ok('un reggimento in mezzo toglie la vista (p. 103)', dietro.n === 0);
+ok('e la riga dice chi', dietro.rows.every(r => r.blockedBy === 'Orc Mob'));
+ok('mezzo reggimento davanti al bersaglio e riparo parziale',
+   SH.shooterSurvey({ ...fila, target: sei, others: [orchi(1, 10.5, 3, 1)] }).cover === 'soft');
+
+/* la collina (p. 271) */
+ok('dalla collina si vede oltre chi non ci sta',
+   SH.shooterSurvey({ ...fila, target: sei, others: [orchi(2.5, 6, 12, 2)], fromHill: 'all' }).n === 6);
+ok('ma non oltre chi sta sulla collina anche lui',
+   SH.shooterSurvey({ ...fila, target: sei, others: [orchi(2.5, 6, 12, 2, 'part')], fromHill: 'all' }).n === 0);
+ok('chi sta tutto sulla collina si fa vedere oltre le unita',
+   SH.shooterSurvey({ ...fila, target: sei, others: [orchi(2.5, 6, 12, 2)], toHill: 'all' }).n === 6);
+ok('una collina in mezzo taglia la vista a chi non ci sta sopra',
+   SH.shooterSurvey({ ...fila, target: sei, pieces: [piece(2.5, 6, 12, 3, { kind: 'hill' })] }).n === 0);
+ok('ma da sopra la collina si vede',
+   SH.shooterSurvey({ ...fila, target: sei, pieces: [piece(2.5, 1, 12, 5, { kind: 'hill' })] }).n === 6);
+
+/* il tetto resta, e si dichiara stima */
+ok('senza modelli sul tavolo resta il conto a tetto: una fila',
+   SH.shooterCap({ models: 20, frontage: 5 }) === 5);
 ok('e non conta i caduti',
-   SH.shooterCap({ models: 20, lost: 12, frontage: 5 }) === 8);
+   SH.shooterCap({ models: 20, lost: 17, frontage: 5 }) === 3);
+ok('dalla collina due file', SH.shooterCap({ models: 20, frontage: 5, hill: true }) === 10);
+ok('con la salva meta delle file dietro',
+   SH.shooterCap({ models: 20, frontage: 5, volley: true }) === 5 + 3 + 3 + 3);
 
 /* ================================================================= */
 console.log('\ni modificatori (p. 138)');
@@ -293,8 +334,9 @@ ok('«Move & Shoot» e letta', lette.flags.moveAndShoot === true);
 ok('la salva alza il tetto delle file', lette.flags.volleyFire === true);
 ok('quello che non si conosce resta in elenco',
    lette.unknown.length === 1 && lette.unknown[0].name === 'Grugnito Feroce');
-ok('e le due incerte lo dichiarano',
-   lette.applied.filter(a => a.daVerificare).length === 2);
+/* la salva non e' piu' incerta: il libro la scrive a p. 180 */
+ok('e l incerta lo dichiara',
+   lette.applied.filter(a => a.daVerificare).length === 1);
 ok('«Multiple Shots (2)» legge il numero',
    SH.readShooting(['Multiple Shots (2)']).flags.multipleShots === 2);
 ok('e diventa due tiri per modello',
@@ -311,7 +353,7 @@ const arcieri = { name:'Arcieri', stats:{ M:'5',WS:'4',BS:'4',S:'3',T:'3',W:'1',
 const bersaglio = { name:'Saurus', stats:{ M:'4',WS:'3',BS:'0',S:'4',T:'4',W:'1',I:'2',A:'1',Ld:'8' },
                     models:20, frontage:5, weapons:[], rules:[], lost:0, armour:4 };
 const arco = { name:'Arco', range:'24"', S:'3', ap:'0', rules:'' };
-ok('tirano le prime due file', C.shooters(arcieri) === 16);
+ok('tira la prima fila (p. 143)', C.shooters(arcieri) === 8);
 const vicino = C.shootForecast(arcieri, bersaglio, { weapon: arco, mods: 0 });
 const lontano = C.shootForecast(arcieri, bersaglio, { weapon: arco, mods: -1 });
 ok('il punteggio resta quello di prima', vicino.hitNeed === 3);

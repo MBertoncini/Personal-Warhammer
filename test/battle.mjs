@@ -205,9 +205,9 @@ ok('la media simulata sta vicino alla previsione', near(o.killsB, f.wounds, 0.6)
 
 console.log('\ntiro');
 const archers = unit('Goblin Archers', { M:'4',WS:'2',BS:'3',S:'3',T:'3',W:'1',I:'2',A:'1',Ld:'6' }, 16, 8);
-ok('tirano le prime due file', C.shooters(archers) === 16);
+ok('tira la prima fila (p. 143)', C.shooters(archers) === 8);
 ok('un reggimento largo poco ne tira meno',
-   C.shooters({ ...archers, frontage: 4 }) === 8);
+   C.shooters({ ...archers, frontage: 4 }) === 4);
 ok('in formazione sciolta tirano tutti',
    C.shooters({ ...archers, loose: true, frontage: 4 }) === 16);
 
@@ -218,7 +218,7 @@ ok('la lunga gittata alza il punteggio da fare', far18.hitNeed === near18.hitNee
 ok('e quindi le perdite calano', far18.wounds < near18.wounds);
 ok('la Forza dell arco batte la Resistenza giusta', near18.woundNeed === woundOn(3, 4));
 const shot = C.shootRoll(archers, saurus, { weapon: bow, mods: 0 });
-ok('la raffica tira un dado per tiro', shot.hit.dice.length === 16);
+ok('la raffica tira un dado per tiro', shot.hit.dice.length === 8);
 ok('e non ferisce piu di quanto colpisca', shot.wound.hits <= shot.hit.hits);
 
 const mods = C.shootMods({ long: true, cover: 'hard', looseTarget: true });

@@ -33,7 +33,14 @@ function sideOpts(u, foe){
      se fallisce ha −1 per colpire. Il test lo tira il tavolo, una volta
      per turno; qui arriva l'esito, e la casella resta spuntabile. */
   const fear = ctx && ctx.fearFor ? ctx.fearFor(u, foe) : null;
+  /* Fianco, retro e disordine dal tavolo: chi tocca chi e da che lato,
+     a ogni round e non solo nel turno della carica (pp. 101 e 152). Se
+     le due unita' non si toccano resta quello che ha detto la carica. */
+  const table = ctx && ctx.tableSide ? ctx.tableSide(u, foe) : null;
   return {
+    flankWhy: table ? table.flankWhy : "",
+    disrupted: !!(table && table.disrupted) || !!c.disrupted,
+    disruptedWhy: table && table.disrupted ? table.disruptedWhy : c.disrupted ? "terreno difficile" : "",
     fear, feared: !!(fear && fear.already && !fear.passed),
     attacks: C.contact(c, f).attacks,
     /* dalla schiera e non dall'unita': la salvezza speciale che una
@@ -46,7 +53,8 @@ function sideOpts(u, foe){
     /* e con la Tappa 3 ci arriva anche la carica. Il tavolo sa da che
        faccia e' arrivata e quanti pollici ha percorso: chiederlo di
        nuovo qui era far ripetere a mano una risposta gia' data. */
-    charged: c.charged, inches: c.chargeInches, flank: c.flank,
+    charged: c.charged, inches: c.chargeInches,
+    flank: table && table.flank != null ? table.flank : c.flank,
     bsb: !!(c.flags && c.flags.battleStandard),
     ground: "", challenge: false,
   };
@@ -56,11 +64,14 @@ function sideOpts(u, foe){
    unita' da zero e i riferimenti diretti resterebbero appesi a una
    copia vecchia, che e' il modo silenzioso di mostrare numeri finti. */
 export function openDuel(a, b){
+  /* il terreno piu' alto lo guarda il tavolo: chi combatte con la prima
+     fila sulla collina e chi no (p. 152). Resta un menu. */
+  const ground = ctx && ctx.groundFor ? ctx.groundFor(a, b) : { id: "", why: "" };
   cur = { uidA: a.uid, uidB: b.uid, A: sideOpts(a, b), B: sideOpts(b, a),
           /* il terreno piu' alto e la sfida non sono di una parte sola:
              sono due domande sul combattimento, e si rispondono una
              volta per tutte e due */
-          ground: "", challenge: false, roll: null, odds: null };
+          ground: ground.id, groundWhy: ground.why, challenge: false, roll: null, odds: null };
   render();
 }
 export function closeDuel(){ cur = null; render(); }
@@ -70,7 +81,7 @@ function sideOf(u, o, tag){
   const c = C.combatant(u, {
     armour: o.armour, ward: o.ward, regen: o.regen, forcedAttacks: o.attacks,
     standard: o.standard, charged: o.charged, chargeInches: o.inches,
-    flank: o.flank, highGround: ML.highGroundFor(cur.ground, tag),
+    flank: o.flank, highGround: ML.highGroundFor(cur.ground, tag), disrupted: !!o.disrupted,
     feared: !!o.feared, joined: ctx && ctx.joined ? ctx.joined(u) : [],
   });
   /* lo stendardo da battaglia lo legge il registro delle regole, ma
@@ -366,8 +377,13 @@ function controls(tag, u){
             <option value=""${o.flank === "" ? " selected" : ""}>fronte</option>
             <option value="flank"${o.flank === "flank" ? " selected" : ""}>fianco</option>
             <option value="rear"${o.flank === "rear" ? " selected" : ""}>retro</option>
+            <option value="both"${o.flank === "both" ? " selected" : ""}>fianco e retro</option>
           </select></label>
+        <label title="${esc(o.disruptedWhy || "Preso di fianco o di retro da un'unità con Forza d'Unità 5 o più, o con un quarto dei modelli nel terreno difficile (p. 101)")}">
+          <input type="checkbox" id="d-dsr-${tag}"${o.disrupted ? " checked" : ""}> in disordine (niente ranghi)</label>
       </div>
+      ${o.flankWhy ? `<p class="note">Dal tavolo: ${esc(o.flankWhy)} (p. 152).</p>` : ""}
+      ${o.disrupted && o.disruptedWhy ? `<p class="note">In disordine: ${esc(o.disruptedWhy)}.</p>` : ""}
       ${o.charged && (o.inches || 0) < C.CHARGE_IMPETUS
         ? `<p class="note">Sotto i ${C.CHARGE_IMPETUS}″ di corsa non ci sono ferite d'urto né carica furiosa,
            e il bonus di Iniziativa vale un punto per pollice intero.</p>` : ""}
@@ -419,6 +435,7 @@ function render(){
           <select id="d-ground">
             ${ML.HIGH_GROUND.map(g => `<option value="${g.id}"${cur.ground === g.id ? " selected" : ""}>${esc(g.label)}</option>`).join("")}
           </select></label>
+        ${cur.groundWhy ? `<span class="note">${esc(cur.groundWhy)}</span>` : ""}
         <label title="Le ferite in più di quelle che bastavano contano nel risultato">
           <input type="checkbox" id="d-chal"${cur.challenge ? " checked" : ""}> sfida</label>
       </div>
@@ -466,6 +483,7 @@ function render(){
     set(`#d-fear-${tag}`, el => { o.feared  = el.checked; });
     set(`#d-inc-${tag}`, el => { o.inches   = Math.max(0, +el.value || 0); });
     set(`#d-flk-${tag}`, el => { o.flank    = el.value; });
+    set(`#d-dsr-${tag}`, el => { o.disrupted = el.checked; });
   }
   const setShared = (sel, fn) => {
     const el = q(sel);

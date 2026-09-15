@@ -129,7 +129,7 @@ export function chargeChance(need, swift = false, worst = false){
    «non puoi» e «guarda che sono quattordici pollici» e' tutta la
    differenza fra un arbitro e un aiuto.
    ============================================================ */
-export function declareCharge({ charger, target, pieces = [], worst = false } = {}){
+export function declareCharge({ charger, target, pieces = [], worst = false, sight = null } = {}){
   if (!charger || !target || !charger.box || !target.box) return null;
   const bA = charger.box, pA = cornersOf(charger);
   const bB = target.box, pB = cornersOf(target);
@@ -141,14 +141,22 @@ export function declareCharge({ charger, target, pieces = [], worst = false } = 
      probabilita' che arrivi */
   const bands = chargeBands(charger.move, charger.swift, worst);
   const arc = arcOfPoly(pB, bA);
-  const inArc = arc.has.includes("fronte");
+  /* gli schermagliatori caricano in ogni direzione (p. 184) */
+  const inArc = !!charger.loose || arc.has.includes("fronte");
+  /* Da che lato si prende il bersaglio lo decide dove sta il caricante
+     quando dichiara, nell'arco del bersaglio (p. 127); a cavallo di due
+     archi vale quello che da' meno vantaggio, ed e' l'ordine in cui
+     `arcOfPoly` rompe le parita'. */
+  const side = arcOfPoly(pA, bB).arc;
 
-  /* La vista parte dal centro del fronte, come per il tiro: e' il
-     punto da cui l'unita' guarda, e usarne un altro vorrebbe dire
-     avere due linee di vista diverse nella stessa app. */
+  /* La vista: quella del libro quando il tavolo la manda (`sight`, con
+     le unita' in mezzo e le colline), altrimenti dal centro del fronte
+     contro il terreno che la blocca. */
   const eye = frontCenter(bA);
   const aim = closestPoints([eye], pB).b;
-  const blocker = charger.fly ? null : sightBlocked(eye, aim, pieces.filter(p => p.blocks));
+  const blocker = charger.fly ? null
+    : sight ? (sight.sees ? null : (sight.blockedBy || { label: "qualcosa" }))
+    : sightBlocked(eye, aim, pieces.filter(p => p.blocks));
 
   const need = Math.max(0, r1(dist - bands.move));
   const chance = chargeChance(need, charger.swift, worst);
@@ -156,13 +164,14 @@ export function declareCharge({ charger, target, pieces = [], worst = false } = 
 
   const reasons = [];
   if (!inArc) reasons.push({ id:"arc", text:"il bersaglio non è nell'arco frontale: sta di " + arc.arc });
-  if (blocker) reasons.push({ id:"sight", text:"la vista è tagliata da " + (blocker.label || "un elemento scenico").toLowerCase() });
+  if (blocker) reasons.push({ id:"sight", text:"la vista è tagliata da " +
+    (blocker.unit ? blocker.label : (blocker.label || "un elemento scenico").toLowerCase()) });
   if (impossible) reasons.push({ id:"far",
     text:"sono " + r1(dist) + "″ e la carica arriva al massimo a " + bands.max + "″ (p. 119)" });
 
   return {
     charger: nameOf(charger), target: nameOf(target),
-    dist: r1(dist), arc: arc.arc, inArc,
+    dist: r1(dist), arc: arc.arc, inArc, side,
     blocked: !!blocker, blockedBy: blocker ? blocker.label : "",
     move: bands.move, base: bands.base, max: bands.max, avg: bands.avg, swift: bands.swift,
     worst: !!worst, penalty: worst ? 1 : 0,
@@ -594,7 +603,7 @@ export function pursuitMove(box, fled, { roll = 0 } = {}){
    vicini. E' la stessa forma di `shootingSurvey`, e non e' un caso —
    la domanda e' la stessa cambiata di fase.
    ============================================================ */
-export function chargeSurvey(charger, targets = [], { pieces = [] } = {}){
+export function chargeSurvey(charger, targets = [], { pieces = [], look = null } = {}){
   const rows = [];
   for (const t of targets){
     /* Prima il terreno, poi la dichiarazione. L'ordine conta: un bosco
@@ -604,7 +613,8 @@ export function chargeSurvey(charger, targets = [], { pieces = [] } = {}){
        dire scrivere «si puo'» e poi tirare con altri numeri. */
     const path = crossed([charger.box.x, charger.box.y], [t.box.x, t.box.y], pieces);
     const eff = terrainEffect(path);
-    const d = declareCharge({ charger, target: t, pieces, worst: eff.worstDie });
+    const d = declareCharge({ charger, target: t, pieces, worst: eff.worstDie,
+                              sight: look ? look(t) : null });
     if (!d) continue;
     rows.push({
       ...d, unit: t,

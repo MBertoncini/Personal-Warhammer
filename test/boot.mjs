@@ -207,6 +207,71 @@ ok('il bosco in mezzo interrompe la linea di vista', !!shaded.blocked);
 ok('e il bersaglio smette di essere tirabile', shaded.canShoot === false);
 history.undo();
 
+/* un reggimento in mezzo toglie la vista come il bosco (p. 103): il
+   piu' largo del tavolo, di traverso a meta' strada */
+const muro = state.units.filter(u => u.placed && u.uid !== shooter.uid && u.uid !== victim.uid)
+  .sort((a, b) => b.frontage * b.baseW - a.frontage * a.baseW)[0];
+deploy.act('reggimento in mezzo', () => {
+  muro.x = (shooter.x + victim.x) / 2; muro.y = (shooter.y + victim.y) / 2; muro.rot = shooter.rot;
+});
+const dietroMuro = deploy.shootPlanFor(shooter).rows.find(r => r.unit.uid === victim.uid);
+ok('un reggimento in mezzo interrompe la linea di vista (p. 103)', !!dietroMuro.blocked);
+ok('e la riga dice chi', dietroMuro.blockedBy === muro.name);
+history.undo();
+
+/* dalla collina tira anche la seconda fila (p. 143) */
+deploy.act('collina sotto', () => {
+  state.terrain.push({ tid: 9002, kind: 'hill', x: shooter.x, y: shooter.y, w: 30, h: 20, rot: 0 });
+});
+ok('tutta sulla collina, il piano lo sa', deploy.shootPlanFor(shooter).hill === true);
+history.undo();
+ok('e scesa dalla collina non piu', deploy.shootPlanFor(shooter).hill === false);
+
+/* La mira: una linea che segue il puntatore e dice se il colpo arriva.
+   Sul tavolo vuoto i colori sono certi: verde a corta gittata, giallo a
+   lunga, rosso oltre, grigio fuori arco. */
+{
+  const FMy = await import('../src/formation.js');
+  state.sel = { type: 'unit', id: shooter.uid };
+  deploy.renderAll();
+  const mirino = doc.querySelector('#inspector [data-aim^="shoot"]');
+  ok('il pannello del tiro ha il mirino', !!mirino);
+  mirino.dispatchEvent(new window.Event('click'));
+  const gitt = deploy.shootPlanFor(shooter).range;
+  deploy.act('tavolo vuoto', () => {
+    state.terrain = [];
+    for (const o of state.units) if (o.uid !== shooter.uid) o.placed = false;
+  });
+  const lay = FMy.layout(shooter, { alive: deploy.effModels(shooter) });
+  const ang = (shooter.rot || 0) * Math.PI / 180, dir = [Math.sin(ang), -Math.cos(ang)];
+  const at = d => [shooter.x + dir[0] * (lay.h / 2 + d * 25.4), shooter.y + dir[1] * (lay.h / 2 + d * 25.4)];
+  ok('a corta gittata la mira e verde', deploy.aimVerdict(at(gitt / 4)).tone === 'ok');
+  ok('a lunga gittata gialla', deploy.aimVerdict(at(gitt * 0.75)).tone === 'long');
+  ok('oltre la gittata rossa', deploy.aimVerdict(at(gitt * 1.5)).tone === 'far');
+  ok('e dietro le spalle grigia, fuori arco',
+     shooter.loose || /fuori arco/.test(deploy.aimVerdict(at(-gitt / 2 - lay.h / 25.4)).lines.join(' ')));
+  deploy.setAimPoint(at(gitt / 4));
+  deploy.renderAll();
+  ok('la linea si disegna sul tavolo', !!doc.querySelector('#board .aim line'));
+
+  /* sopra un nemico il cartellino dice il tiro e il clic lo gioca */
+  /* dopo un Annulla le unita' sono rifatte: si riprende quella viva */
+  const bersaglioVivo = state.units.find(o => o.uid === victim.uid);
+  deploy.act('bersaglio davanti', () => {
+    bersaglioVivo.placed = true; [bersaglioVivo.x, bersaglioVivo.y] = at(gitt / 3);
+    bersaglioVivo.rot = ((shooter.rot || 0) + 180) % 360;
+  });
+  const sopra = deploy.aimVerdict([bersaglioVivo.x, bersaglioVivo.y]);
+  ok('sopra un nemico la mira lo riconosce', !!sopra && sopra.target && sopra.target.uid === victim.uid);
+  ok('e dice quanti tirano e cosa serve', /per colpire/.test(sopra.lines.join(' ')));
+
+  doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+  ok('Esc toglie la mira', deploy.aimVerdict(at(gitt / 4)) === null);
+  deploy.setAimPoint(null);
+  history.undo(); history.undo();
+  deploy.renderAll();
+}
+
 /* La Tappa 4: il conto dei tiratori e il cancello di p. 137 arrivano
    dal tavolo vero, non da una casella spuntata. */
 /* Un bersaglio tirabile con niente in mezzo deve avere qualcuno che
@@ -281,6 +346,29 @@ ok('la simulazione riporta le percentuali', /500 assalti simulati/.test(duelHost
 deploy.act('rimuovi', () => { state.units = state.units.filter(u => u.uid !== attacker.uid); });
 ok('l\'unita rimossa chiude il pannello', duelHost.hidden === true);
 history.undo();
+
+/* Fianco e retro li guarda il tavolo, a ogni round (p. 152): due unita'
+   messe a contatto sul fianco, senza nessuna carica */
+{
+  const FMx = await import('../src/formation.js');
+  const Dx = await import('../src/duel.js');
+  const preda = state.units.find(u => u.army === 'B' && u.placed && u.models > 4);
+  const lupo = state.units.find(u => u.army === 'A' && u.placed && u.models > 4 && u.uid !== preda.uid);
+  deploy.act('sul fianco', () => {
+    preda.rot = 0; preda.x = 600; preda.y = 400; lupo.charged = null;
+    const lp = FMx.layout(preda, { alive: deploy.effModels(preda) });
+    const ll = FMx.layout(lupo, { alive: deploy.effModels(lupo) });
+    lupo.rot = 270;                                   // il fronte guarda verso -x
+    lupo.x = preda.x + lp.w / 2 + ll.h / 2; lupo.y = preda.y;
+  });
+  Dx.openDuel(lupo, preda);
+  ok('a contatto sul fianco lo scontro lo sa senza carica (p. 152)',
+     duelHost.querySelector('#d-flk-A').value === 'flank');
+  ok('e chi e preso di fianco colpisce di fronte', duelHost.querySelector('#d-flk-B').value === '');
+  ok('e il pannello dice da dove lo ha visto', /Dal tavolo/.test(duelHost.textContent));
+  Dx.closeDuel();
+  history.undo();
+}
 ok('nessun errore nello scontro simulato', errors.length === 0);
 
 console.log('\nil vassoio dei dadi');
@@ -1031,10 +1119,16 @@ ok('i cerchi restano fermi sull ancora invece di seguire il pezzo', rings.length
 ok('e la riga dice quanti pollici hai fatto',
    /4\.0″ di 8″/.test(doc.querySelector('#board').textContent));
 const before = game.game().turns.length;
+deploy.act('carica finta', () => {
+  mover.charged = { target: 'qualcuno', uid: -1, inches: 5, arc: 'fianco' };
+  mover.moved = { kind: 'charge', inches: 5 };
+});
 deploy.act('fine turno', game.closeTurn);
 ok('chiudere il turno rimette le ancore dove sei arrivato',
    game.game().turns.length === before + 1 &&
    Math.abs(MV.anchorOf(mover).x - mover.x) < 0.01);
+ok('e la carica vale solo per il turno in cui e successa',
+   mover.charged === null && mover.moved === null);
 
 console.log('\nmarcatori e sagome');
 const mk0 = state.markers.length;

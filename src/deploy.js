@@ -8,7 +8,7 @@ import { R, T, SCENARIOS, geometry } from './scenarios.js';
 import { saveDoc, loadDoc } from './store.js';
 import { photoForUnit, photoFor, catEntry, matchUnitName } from './catalog.js';
 import { rectPoly, pointInRect, boxCorners, polysOverlap,
-         distPointToBox, toWorld, toLocal, polyDistance } from './geom.js';
+         distPointToBox, toWorld, toLocal, polyDistance, closestPoints } from './geom.js';
 import * as CB from './combat.js';
 import * as ML from './melee.js';
 import { stat } from './rules.js';
@@ -28,6 +28,7 @@ import { survey, frontArcPoly, movementBands, reachFan, sightFan,
          shootingSurvey } from './tactics.js';
 import * as CH from './charge.js';
 import * as SH from './shoot.js';
+import * as SG from './sight.js';
 import * as PS from './psych.js';
 import * as ARM from './armies.js';
 import * as MG from './magic.js';
@@ -680,6 +681,17 @@ function renderInspector(){
      Tappa 4, quella che non tira per colpire. */
   for (const b of host.querySelectorAll("[data-shoot]"))
     b.addEventListener("click", () => runShot(u, b.dataset.shoot));
+  /* il mirino: la seconda pressione sullo stesso gesto lo spegne */
+  for (const b of host.querySelectorAll("[data-aim]"))
+    b.addEventListener("click", () => {
+      const [kind, casterUid, spellId] = b.dataset.aim.split("|");
+      const a = aimNow();
+      const same = !!a && a.uid === u.uid && a.kind === kind && (kind !== "spell" || a.spellId === spellId);
+      aimPick = same ? { uid: u.uid, off: true }
+                     : { uid: u.uid, kind, casterUid: casterUid ? +casterUid : null, spellId: spellId || null };
+      if (!same) toast("Mira: muovi il puntatore sul tavolo e fai clic su un bersaglio. Esc per togliere.");
+      renderInspector(); drawBoard();
+    });
   for (const b of host.querySelectorAll("[data-tmpl]"))
     b.addEventListener("click", () => putTemplate(u, b.dataset.tmpl));
   for (const b of host.querySelectorAll("[data-bombard]"))
@@ -1004,7 +1016,8 @@ function shootingHTML(u){
   if (!plan) return "";
   const rows = plan.rows.slice(0, 5);
   const cap = SH.shooterCap({ models: u.models, lost: u.lost || 0, frontage: u.frontage,
-                              loose: !!u.loose, volley: !!plan.rules.flags.volleyFire });
+                              loose: !!u.loose, volley: !!plan.rules.flags.volleyFire && !plan.moved,
+                              hill: plan.hill });
   /* Le regole d'arma che l'app non sa applicare fino in fondo lo
      dicono qui, accanto al numero che influenzerebbero: al tavolo e'
      l'unico posto in cui una riga del genere si legge davvero. */
@@ -1012,7 +1025,7 @@ function shootingHTML(u){
   return `
     <div>
       <div class="readout"><span>Tiro${plan.weapon ? " · " + esc(plan.weapon.name) : ""}</span>
-        <b>${plan.range}″ · fino a ${cap} tiri</b></div>
+        <b>${plan.range}″ · fino a ${cap} tiri</b>${aimButton(u, "shoot")}</div>
       ${plan.gate.can ? "" : `<p class="note" style="color:var(--warn)">Non tira: ${esc(plan.gate.why.join("; "))} (p. ${SH.PAGE.who}).</p>`}
       ${rows.length ? rows.map(r => {
         if (!r.canShoot){
@@ -1036,7 +1049,10 @@ function shootingHTML(u){
                   <button class="btn tiny shoot-go" data-shoot="${r.unit.uid}"
                           title="Tira su ${esc(r.unit.name)}: ${f.shots} tiri, ${hitText(f)} per colpire">🏹</button>
                 </div>
-                <p class="note">${f.shots} tir${f.shots === 1 ? "o" : "i"} da ${f.survey.n} modell${f.survey.n === 1 ? "o" : "i"}${fuori ? ` · ${esc(fuori)}` : ""}</p>`;
+                <p class="note">${f.shots} tir${f.shots === 1 ? "o" : "i"} da ${f.survey.n} modell${f.survey.n === 1 ? "o" : "i"}${fuori ? ` · ${esc(fuori)}` : ""}${
+                  f.survey.coverWhy ? ` · riparo: ${esc(f.survey.coverWhy)} (p. ${SG.PAGE.cover})` : ""}${
+                  f.survey.hill ? ` · dalla collina tira anche la seconda fila (p. ${SH.RANK_PAGES.hill})` : ""}${
+                  f.survey.volleyOff ? ` · ${esc(f.survey.volleyOff)}` : ""}</p>`;
       }).join("") : `<p class="note">Nessun nemico sul tavolo.</p>`}
       ${plan.machine ? machineHTML(u, plan) : ""}
       ${dubbie.length ? `<p class="note">Da verificare sul libro: ${dubbie.map(a =>
@@ -1098,7 +1114,8 @@ function renderTerrainInspector(host){
   host.innerHTML = `
     <div class="insp">
       <div class="army-head"><span class="swatch" style="background:${cfg.color}"></span><b>${cfg.label}</b></div>
-      <p class="note">${{ open:"Terreno aperto", difficult:"Terreno difficile", obstacle:"Ostacolo", blocked:"Impassabile" }[cfg.pass]}${cfg.los ? " · blocca la linea di vista" : ""}</p>
+      <p class="note">${{ open:"Terreno aperto", difficult:"Terreno difficile", obstacle:"Ostacolo", blocked:"Impassabile" }[cfg.pass]}${cfg.los === "crest" ? " · blocca la vista a chi non ci sta sopra, e da sopra si vede oltre le unità (p. 271)"
+        : cfg.los ? " · blocca la linea di vista" : ""}</p>
       ${t.kind === "treasure"
         ? `<p class="note">Base tonda da 40 mm. Il cerchio tratteggiato è il minimo di ${TREASURE_CLEAR}″ da ogni elemento scenico, misurato dal centro del segnalino.</p>`
         : `<div class="grid2">
@@ -1648,6 +1665,22 @@ function drawBoard(){
 
   /* ---- aiuti tattici sull'unità selezionata ---- */
   drawTactics(svg, g, selUnit);
+  drawAim(svg, g);
+
+  /* ---- il pollice mentre si trascina (p. 118) ----
+     Una riga rossa verso ogni nemico nuovo entro 1″: si vede prima di
+     lasciare il pezzo, non dopo. */
+  if (drag && drag.moved && drag.near0){
+    const layer = g(svg, "g", { "pointer-events":"none" });
+    for (const n of tooNearFoes(drag.obj).filter(x => !drag.near0.has(x.unit.uid))){
+      const pts = closestPoints(corners(drag.obj), corners(n.unit));
+      g(layer, "line", { x1:pts.a[0], y1:pts.a[1], x2:pts.b[0], y2:pts.b[1], stroke:"var(--bad)",
+                         "stroke-width":3, "stroke-dasharray":"5 4" });
+      const t = g(layer, "text", { x:(pts.a[0] + pts.b[0]) / 2, y:(pts.a[1] + pts.b[1]) / 2 - 8,
+                                   "text-anchor":"middle", "font-size":14, fill:"var(--bad)" });
+      t.textContent = n.gap < 0.05 ? "a contatto senza carica" : `${fmtIn(Math.round(n.gap * 10) / 10)}″ < 1″`;
+    }
+  }
 
   /* ---- righelli: restano sul tavolo finché non li togli ---- */
   const ruler2 = g(svg, "g", { "pointer-events":"none" });
@@ -1726,7 +1759,7 @@ function drawBoard(){
 
   /* il cursore dice in che modalità sei: disegnare una zona e misurare
      non sono trascinare */
-  svgEl.style.cursor = (state.zoning || state.measure) ? "crosshair" : "";
+  svgEl.style.cursor = (state.zoning || state.measure || aimNow()) ? "crosshair" : "";
 
   $("#sc-name").textContent = sc.label + (sc.pts ? ` · ${sc.pts} pt` : "");
   $("#sc-desc").textContent = sc.desc || "";
@@ -1969,6 +2002,48 @@ const sightPieces = () => terrainPieces().filter(p => p.blocks);
 
 const enemiesOf = u => state.units.filter(o => o.army !== u.army && o.placed && !o.dead && !isJoined(o));
 
+/* ---- la vista del libro (`sight.js`) ----
+   Le unita' sul tavolo come ostacoli, con le basette e la collina sotto
+   i piedi. Si rifa' solo quando cambia qualcosa da cui dipende —
+   posizioni, modelli in piedi, formazione, terreno — perche' il pannello
+   la chiede una volta per nemico e il disegno una volta per pixel. */
+let sightCache = { key: "", ctx: null };
+function sightNow(){
+  const key = state.units.map(o => {
+    const f = FM.ensureFormation(o);
+    return [o.uid, Math.round(o.x), Math.round(o.y), o.rot || 0, o.placed ? 1 : 0, o.dead ? 1 : 0,
+            o.loose ? 1 : 0, effModels(o), o.frontage, f.mode, f.preset, f.spacing,
+            FM.joinedHost(o) ?? "", (o.fallen || []).join(".")].join(":");
+  }).join("|") + "#" + state.terrain.map(t =>
+    [t.kind, Math.round(t.x), Math.round(t.y), t.w, t.h, t.rot || 0].join(":")).join("|");
+  if (sightCache.key === key && sightCache.ctx) return sightCache.ctx;
+  const terrain = terrainPieces();
+  const units = state.units.filter(o => o.placed && !o.dead && !isJoined(o)).map(o => {
+    const lay = layoutOf(o), cells = FM.worldCells(o, lay);
+    return { uid: o.uid, unit: o, name: o.name, poly: corners(o), cells, front: lay.front,
+             loose: !!o.loose, hill: SG.hillState(cells.map(c => [c.wx, c.wy]), terrain) };
+  });
+  sightCache = { key, ctx: { terrain, units, byUid: new Map(units.map(x => [x.uid, x])) } };
+  return sightCache.ctx;
+}
+
+/* i modelli che guardano: la prima fila, le prime due sulla collina
+   (p. 143); in ordine sparso tutti */
+const eyesOf = s => s.cells.filter(c => s.loose || SH.rankOf(c.cell, s.front) < 1 + (s.hill === "all" ? 1 : 0));
+
+/* Chi vede chi, come dice il libro: unita' in mezzo, colline, boschi,
+   riparo contato sui modelli coperti. `null` quando uno dei due non e'
+   un pezzo del tavolo (un personaggio unito, un'unita' ritirata). */
+function lookFor(u, t){
+  const S = sightNow(), me = S.byUid.get(u.uid), th = S.byUid.get(t.uid);
+  if (!me || !th) return null;
+  return SG.unitSight({
+    eyes: eyesOf(me).map(c => [c.wx, c.wy]), targets: th.cells,
+    terrain: S.terrain, others: S.units.filter(x => x !== me && x !== th),
+    fromHill: me.hill, toHill: th.hill,
+  });
+}
+
 export function surveyFor(u){
   if (!u || !u.placed) return [];
   return survey(u, enemiesOf(u), { cornersOf: corners, boxOf, sightPieces: sightPieces(), inch });
@@ -1995,8 +2070,9 @@ export function shootPlanFor(u){
   if (!range) return null;
   const pieces = terrainPieces();
   const rows = shootingSurvey(u, enemiesOf(u), {
-    cornersOf: corners, boxOf, pieces, range, inch,
+    cornersOf: corners, boxOf, pieces, range, inch, look: t => lookFor(u, t),
   });
+  const me = sightNow().byUid.get(u.uid);
   /* Le regole del tiro stanno sull'unita' e sull'arma, e vanno lette
      insieme: il giavellotto porta «Move & Shoot», l'arco corto porta
      «Volley Fire», e nessuna delle due sta fra le regole dell'unita'. */
@@ -2012,6 +2088,8 @@ export function shootPlanFor(u){
   const marched = !charged && !!mv && !mv.still && move > 0 && mv.dist > move + 0.01;
   return {
     weapon, range, rows, rules, pieces,
+    /* tutta sulla collina: tira anche la seconda fila (p. 143) */
+    hill: !!me && me.hill === "all",
     cells: FM.worldCells(u, lay), front: lay.front,
     moved: !!(mv && !mv.still), marched, charged,
     shots: SH.shotsPerModel(rules.flags),
@@ -2032,10 +2110,13 @@ export function shotOn(u, row, plan){
   /* Il bersaglio va passato come poligono del tavolo, non come unita':
      l'unita' non ha larghezza e profondita' sue — le ha la formazione —
      e con l'oggetto grezzo ogni modello risultava fuori gittata. */
+  const S = sightNow(), me = S.byUid.get(u.uid), th = S.byUid.get(row.unit.uid);
   const survey = SH.shooterSurvey({
-    cells: plan.cells, target: { poly: corners(row.unit) }, pieces: plan.pieces,
-    range: plan.range, front: plan.front,
-    loose: !!u.loose, volley: !!plan.rules.flags.volleyFire,
+    cells: plan.cells, target: { poly: corners(row.unit), cells: th ? th.cells : null },
+    pieces: plan.pieces, range: plan.range, front: plan.front,
+    loose: !!u.loose, volley: !!plan.rules.flags.volleyFire, moved: plan.moved,
+    others: S.units.filter(x => x !== me && x !== th),
+    fromHill: me ? me.hill : "", toHill: th ? th.hill : "",
   });
   const mods = SH.modsFor({
     survey, shooter: { ...u, movedThisTurn: plan.moved }, target: row.unit,
@@ -2064,7 +2145,7 @@ const engagedNow = u => contactsNow().some(c => (c.a === u.uid || c.b === u.uid)
 /* Il caricante e i bersagli nella forma che `charge.js` vuole: nome,
    scatola, poligono. L'unita' vera viaggia dentro `unit`, cosi' chi
    riceve la riga puo' tornare al pezzo sul tavolo. */
-const asPiece = u => ({ name:u.name, box: boxOf(u), poly: corners(u), unit:u, us: usOf(u) });
+const asPiece = u => ({ name:u.name, box: boxOf(u), poly: corners(u), unit:u, us: usOf(u), loose: !!u.loose });
 
 /* ---- la psicologia (Tappa 5) ----
    Il profilo psicologico di un'unita' con i personaggi che le stanno
@@ -2131,7 +2212,9 @@ export function chargePlanFor(u){
   if (!move) return null;                       // senza M non si dichiara niente
   const charger = { ...asPiece(u), move, swift: !!(mb && mb.swift), fly: flies(u) };
   const foes = enemiesOf(u).map(asPiece);
-  const rows = CH.chargeSurvey(charger, foes, { pieces: terrainPieces() });
+  /* la vista della carica e' la stessa del tiro: unita' in mezzo e
+     colline comprese (pp. 103 e 119) */
+  const rows = CH.chargeSurvey(charger, foes, { pieces: terrainPieces(), look: t => lookFor(u, t.unit) });
   /* Prima ancora della geometria c'e' lo stato: chi e' in mischia, chi
      sta fuggendo e chi si e' appena radunato non dichiara nessuna
      carica, per quanto bene stia messo sul tavolo (p. 119). */
@@ -2169,7 +2252,7 @@ function chargeHTML(u){
   return `
     <div>
       <div class="readout"><span>Carica${plan.swift ? " · passo lungo" : ""}</span>
-        <b>fino a ${fmtIn(plan.max)}″</b></div>
+        <b>fino a ${fmtIn(plan.max)}″</b>${aimButton(u, "charge")}</div>
       ${plan.pre.can ? "" : `<p class="note">${esc(u.name)}: ${esc(plan.pre.why.join("; "))}</p>`}
       ${plan.must.why ? `<p class="note" style="color:var(--warn)">${esc(plan.must.why)}.</p>` : ""}
       ${rows.length ? rows.map(r => {
@@ -2959,6 +3042,7 @@ function magicHTML(u){
     }
     const cs = castNow(x);
     const btn = s => !state.game.on ? "" :
+      (typeof s.range === "number" && s.type !== "vortex" ? aimButton(u, "spell", x.uid, s.id) : "") +
       `<button class="btn tiny" data-mg-cast="${x.uid}|${s.id}" title="${esc(s.testo || "")}">${
         cs && cs.ids.includes(s.id) ? "Già tentato" : "Lancia"}</button>`;
     const rows = [...w.known, ...w.bound].map(s =>
@@ -3055,7 +3139,8 @@ function magicTargets(host, sp){
   const pool = state.units.filter(o => o.placed && !o.dead && !isJoined(o) &&
                                      (friendly ? o.army === host.army : o.army !== host.army));
   const rows = shootingSurvey(host, pool, { cornersOf: corners, boxOf, pieces: terrainPieces(),
-                                            range: typeof sp.range === "number" ? sp.range : 0, inch });
+                                            range: typeof sp.range === "number" ? sp.range : 0, inch,
+                                            look: t => t === host ? { sees: true, cover: "" } : lookFor(host, t) });
   return rows.map(r => ({
     unit: r.unit, dist: r.dist,
     check: MG.targetCheck(sp, { dist: r.dist, inArc: r.unit === host || r.inArc, engaged: engagedNow(r.unit),
@@ -3133,7 +3218,7 @@ function castStepIndex(type){
 }
 
 /* ---- lanciare (pp. 108-111) ---- */
-async function runCast(caster, spellId){
+async function runCast(caster, spellId, preUid = null){
   const M = MAGIC();
   const sp = M && M.spell(spellId);
   if (!caster || !sp) return;
@@ -3162,7 +3247,8 @@ async function runCast(caster, spellId){
     const rows = magicTargets(host, sp);
     if (!rows.length) return toast(sp.type === "assailment"
       ? `${sp.name}: nessun nemico in combattimento con ${caster.name}.` : `${sp.name}: nessun bersaglio sul tavolo.`);
-    const pick = await askPick({
+    const pre = preUid != null ? rows.find(r => r.unit.uid === +preUid) : null;
+    const pick = pre ? String(pre.unit.uid) : await askPick({
       title: `${sp.name}: il bersaglio`,
       label: (gate.why.length ? "Attenzione: " + gate.why.join("; ") + ". " : "") +
              "Chi non va bene porta il perché, e si può scegliere lo stesso.",
@@ -3514,6 +3600,209 @@ async function resolveCombat({ a, b, round }){
   if (out.caught) await panicWave("destroyed", loser);
 }
 
+/* ============================================================
+   7e · LA MIRA
+   Selezionata un'unita' nella fase di tiro — o nella dichiarazione
+   delle cariche, o con il mirino di un incantesimo — una linea segue il
+   puntatore dal bordo dell'unita' e dice subito se ci si arriva: verde
+   a corta gittata (o una carica che arriva col Movimento), gialla a
+   lunga gittata (o una carica che chiede un tiro), rossa oltre la
+   portata, grigia tratteggiata quando la vista e' tagliata o si e' fuori
+   dall'arco frontale. Sopra un bersaglio il cartellino dice quanti
+   tirano, che punteggio serve e perche' — o da che lato si prende il
+   nemico caricando — e il clic gioca il gesto. Esc la toglie.
+
+   Le regole sono quelle dei pannelli, non una copia: il cartellino
+   legge `shootPlanFor`, `chargePlanFor` e `magicTargets`, e la vista
+   dal punto libero e' quella di `sight.js`.
+   ============================================================ */
+let aimAt = null, aimPick = null, aimRaf = 0;
+const r1 = v => Math.round(v * 10) / 10;
+
+/* La mira di adesso: quella scelta col mirino, o quella che la fase
+   accende da sola. `aimPick` con `off` e' la mira tolta con Esc, e vale
+   finche' non si seleziona un'altra unita'. */
+function aimNow(){
+  const u = state.sel && state.sel.type === "unit" ? state.units.find(x => x.uid === state.sel.id) : null;
+  if (!u || !u.placed || u.dead || isJoined(u)) return null;
+  if (aimPick && aimPick.uid === u.uid) return aimPick.off ? null : { ...aimPick, unit: u };
+  if (!state.game.on || G.deploying()) return null;
+  const now = G.stepNow();
+  if (now.phaseId === "shooting" && (CB.rangedWeapons(u).length || u.maxRange)) return { kind: "shoot", uid: u.uid, unit: u };
+  if (now.id === "declare" && (MV.moveOf(u) || movementBands(u))) return { kind: "charge", uid: u.uid, unit: u };
+  return null;
+}
+
+const aimSpellOf = a => { const M = MAGIC(); return (M && a.spellId && M.spell(a.spellId)) || null; };
+
+/* il pezzo sotto il puntatore, fra quelli che quel gesto puo' prendere */
+function aimTarget(a, p){
+  let pool;
+  if (a.kind === "spell"){
+    const sp = aimSpellOf(a);
+    const friendly = !!sp && (sp.type === "enchantment" || sp.type === "conveyance");
+    pool = state.units.filter(o => o.placed && !o.dead && !isJoined(o) && o !== a.unit &&
+                                   (friendly ? o.army === a.unit.army : o.army !== a.unit.army));
+  } else pool = enemiesOf(a.unit);
+  return pool.find(o => SG.pointInPoly(p, corners(o))) || null;
+}
+
+/* la vista verso un punto libero: basta un modello della prima fila che
+   ci arrivi senza niente in mezzo (p. 103) */
+function freeSight(u, p){
+  const S = sightNow(), me = S.byUid.get(u.uid);
+  if (!me) return null;
+  const opts = { terrain: S.terrain, others: S.units.filter(x => x !== me), fromHill: me.hill, toHill: "" };
+  let first = null;
+  for (const c of eyesOf(me)){
+    const look = SG.lookLine([c.wx, c.wy], p, opts);
+    if (!look.blocked) return null;
+    first = first || look.blocked;
+  }
+  return first;
+}
+
+function aimShot(u, target, dist, p, inArc){
+  const plan = shootPlanFor(u);
+  if (!plan) return null;
+  if (target){
+    const row = plan.rows.find(r => r.unit.uid === target.uid);
+    if (!row) return null;
+    const name = shortName(target.name);
+    if (!row.canShoot){
+      const why = row.blocked ? `vista tagliata da ${row.blockedBy}` : !row.inArc ? "fuori arco frontale"
+                : `fuori gittata: ${fmtIn(r1(row.dist))}″ di ${fmtIn(plan.range)}″`;
+      return { tone: row.blocked || !row.inArc ? "blocked" : "far", lines: [name, why, "clic: tira lo stesso"] };
+    }
+    const f = shotOn(u, row, plan);
+    const mods = f.mods.list.map(m => `${m.v} ${m.why}`).join(", ");
+    return { tone: row.long ? "long" : "ok", lines: [
+      `${name} · ${fmtIn(r1(row.dist))}″ · ${row.long ? "lunga gittata" : "corta gittata"}`,
+      `${f.shots} tir${f.shots === 1 ? "o" : "i"} da ${f.survey.n} modell${f.survey.n === 1 ? "o" : "i"} · ${hitText(f)} per colpire`,
+      ...(mods ? [mods] : []),
+      ...(f.survey.coverWhy ? [`riparo: ${f.survey.coverWhy} (p. ${SG.PAGE.cover})`] : []),
+      `≈ ${f.kills.toFixed(1)} perdite · clic per tirare`,
+      ...(plan.gate.can ? [] : [`attenzione: ${plan.gate.why.join("; ")}`]),
+    ]};
+  }
+  const head = `${plan.weapon ? plan.weapon.name + " · " : ""}${fmtIn(r1(dist))}″ di ${fmtIn(plan.range)}″`;
+  if (!inArc) return { tone: "blocked", lines: [head, "fuori arco frontale"] };
+  const blocked = freeSight(u, p);
+  if (blocked) return { tone: "blocked", lines: [head, `vista tagliata da ${SG.blockerLabel(blocked)}`] };
+  if (dist > plan.range) return { tone: "far", lines: [head, `oltre la gittata di ${fmtIn(r1(dist - plan.range))}″`] };
+  if (dist > plan.range / 2) return { tone: "long", lines: [head, "lunga gittata: −1 per colpire"] };
+  return { tone: "ok", lines: [head, "corta gittata"] };
+}
+
+function aimCharge(u, target, dist, p, inArc){
+  const plan = chargePlanFor(u);
+  if (!plan) return null;
+  const warn = plan.pre.can ? [] : [`attenzione: ${plan.pre.why.join("; ")}`];
+  if (target){
+    const row = plan.rows.find(r => r.unit.uid === target.uid);
+    if (!row) return null;
+    const head = `${shortName(target.name)} · ${fmtIn(r1(row.dist))}″ · lo prende di ${row.side} (p. 127)`;
+    if (!row.can) return { tone: row.impossible && !row.blocked && row.inArc ? "far" : "blocked",
+      lines: [head, row.reasons.map(r => r.text).join("; "), "clic: dichiara lo stesso", ...warn] };
+    return { tone: row.need ? "long" : "ok", lines: [head,
+      row.need ? `serve ${fmtIn(row.need)}″ di tiro · ${Math.round(row.chance * 100)} volte su 100` : "ci arriva col Movimento",
+      "clic per dichiarare la carica", ...warn] };
+  }
+  const head = `carica · ${fmtIn(r1(dist))}″ di ${fmtIn(plan.max)}″`;
+  if (!inArc) return { tone: "blocked", lines: [head, "fuori arco frontale: non si carica"] };
+  const blocked = flies(u) ? null : freeSight(u, p);
+  if (blocked) return { tone: "blocked", lines: [head, `vista tagliata da ${SG.blockerLabel(blocked)}`] };
+  if (dist > plan.max) return { tone: "far", lines: [head, `oltre la carica massima di ${fmtIn(r1(dist - plan.max))}″`] };
+  const need = r1(Math.max(0, dist - plan.move));
+  if (need > 0) return { tone: "long", lines: [head,
+    `serve ${fmtIn(need)}″ di tiro · ${Math.round(CH.chargeChance(need, plan.swift) * 100)} volte su 100`] };
+  return { tone: "ok", lines: [head, "ci arriva col Movimento"] };
+}
+
+function aimCast(a, host, target, dist, p, inArc){
+  const sp = aimSpellOf(a);
+  if (!sp) return null;
+  const range = typeof sp.range === "number" ? sp.range : 0;
+  const head = `${sp.name} · ${fmtIn(r1(dist))}″${range ? " di " + fmtIn(range) + "″" : ""}`;
+  if (target){
+    const row = magicTargets(host, sp).find(r => r.unit.uid === target.uid);
+    if (!row) return { tone: "blocked", lines: [head, "non è un bersaglio per questo incantesimo"] };
+    return { tone: row.check.ok ? "ok" : range && row.dist > range ? "far" : "blocked",
+             lines: [`${shortName(target.name)} · ${fmtIn(r1(row.dist))}″`,
+                     row.check.ok ? "bersaglio valido" : row.check.why.join("; "),
+                     `clic per lanciare ${sp.name}`] };
+  }
+  if (!inArc) return { tone: "blocked", lines: [head, "fuori arco frontale"] };
+  const blocked = freeSight(host, p);
+  if (blocked) return { tone: "blocked", lines: [head, `vista tagliata da ${SG.blockerLabel(blocked)}`] };
+  if (range && dist > range) return { tone: "far", lines: [head, `oltre la gittata di ${fmtIn(r1(dist - range))}″`] };
+  return { tone: "ok", lines: [head, "in gittata"] };
+}
+
+/* Che cosa dice la mira in un punto del tavolo, in millimetri: la linea
+   da disegnare, il colore e il cartellino. Esportata perche' e' quella
+   che si prova senza muovere un mouse. */
+export function aimVerdict(p){
+  const a = aimNow();
+  if (!a || !p) return null;
+  const u = a.unit;
+  const target = aimTarget(a, p);
+  const cp = closestPoints(corners(u), target ? corners(target) : [p]);
+  const dist = inch(cp.d);
+  const inArc = !!u.loose || FM.arcOf(p, boxOf(u)) === "fronte";
+  const v = a.kind === "shoot" ? aimShot(u, target, dist, p, inArc)
+          : a.kind === "charge" ? aimCharge(u, target, dist, p, inArc)
+          : aimCast(a, u, target, dist, p, inArc);
+  return v && { ...v, kind: a.kind, from: cp.a, to: target ? cp.b : p, target };
+}
+export function setAimPoint(p){ aimAt = p; }
+
+const AIM_TONE = { ok: "var(--ok)", long: "var(--warn)", far: "var(--bad)", blocked: "var(--muted)" };
+
+function drawAim(svg, g){
+  const v = aimVerdict(aimAt);
+  if (!v) return;
+  const col = AIM_TONE[v.tone];
+  const layer = g(svg, "g", { "pointer-events": "none", class: "aim" });
+  if (v.target) g(layer, "polygon", { points: corners(v.target).map(q => q.join(",")).join(" "),
+                                      fill: col, "fill-opacity": .14, stroke: col, "stroke-width": px(2) });
+  g(layer, "line", { x1: v.from[0], y1: v.from[1], x2: v.to[0], y2: v.to[1], stroke: col,
+                     "stroke-width": px(3), "stroke-linecap": "round",
+                     "stroke-dasharray": v.tone === "blocked" ? `${px(7)} ${px(6)}` : "none" });
+  g(layer, "circle", { cx: v.from[0], cy: v.from[1], r: px(4), fill: col });
+  g(layer, "circle", { cx: v.to[0], cy: v.to[1], r: px(6), fill: "none", stroke: col, "stroke-width": px(2) });
+  /* il cartellino sta accanto al puntatore, dentro il tavolo */
+  const fs = px(13), lh = px(17), pad = px(8);
+  const w = Math.max(...v.lines.map(l => l.length)) * fs * 0.56 + pad * 2;
+  const h = v.lines.length * lh + pad;
+  const x = Math.max(0, Math.min(aimAt[0] + px(18), state.tableW - w));
+  const y = Math.max(0, Math.min(aimAt[1] + px(18), state.tableH - h));
+  g(layer, "rect", { x, y, width: w, height: h, rx: px(5), fill: "var(--panel)", stroke: col,
+                     "stroke-width": px(1.5), opacity: .97 });
+  v.lines.forEach((l, i) => {
+    const t = g(layer, "text", { x: x + pad, y: y + pad / 2 + lh * (i + 0.75), "font-size": fs,
+                                 fill: i ? "var(--muted)" : "var(--ink)", "font-weight": i ? 400 : 600 });
+    t.textContent = l;
+  });
+}
+
+/* il puntatore sul tavolo: si ridisegna una volta per fotogramma */
+function trackAim(e){
+  const a = aimNow();
+  if (!a && !aimAt) return;
+  aimAt = a ? toSvg(e) : null;
+  if (!aimRaf) aimRaf = requestAnimationFrame(() => { aimRaf = 0; drawBoard(); });
+}
+
+/* il mirino nei pannelli: accende la mira di quel gesto, o la spegne */
+function aimButton(u, kind, casterUid = "", spellId = ""){
+  const a = aimNow();
+  const on = !!a && a.uid === u.uid && a.kind === kind && (kind !== "spell" || a.spellId === spellId);
+  const what = { shoot: "il tiro", charge: "la carica", spell: "l'incantesimo" }[kind];
+  return `<button class="btn tiny${on ? " on" : ""}" data-aim="${kind}|${casterUid}|${spellId}"
+    title="Mira: una linea segue il puntatore e dice se ${what} arriva; clic su un bersaglio per giocarlo, Esc per togliere">🎯</button>`;
+}
+
 function drawTactics(svg, g, u){
   if (!u || !u.placed) return;
   const col = state.armies[u.army].color;
@@ -3561,7 +3850,14 @@ function drawTactics(svg, g, u){
     const plan = shootPlanFor(u);
     if (plan){
       const layer = g(svg, "g", { "pointer-events":"none" });
-      const box = boxOf(u), blockers = pieces.filter(p => p.blocks);
+      const box = boxOf(u);
+      /* le unita' fanno ombra come il terreno (p. 103), salvo che si
+         guardi dalla collina oltre chi non ci sta (p. 271) */
+      const S = sightNow(), me = S.byUid.get(u.uid);
+      const shade = S.units.filter(x => x !== me && !(me && me.hill === "all" && !x.hill))
+        .flatMap(x => x.loose ? x.cells.map(SG.cellPoly) : [x.poly])
+        .map(poly => ({ poly, circle: false, contains: () => false }));
+      const blockers = [...pieces.filter(p => p.blocks), ...shade];
       const fan = r => sightFan(box, r * MM, blockers).map(p => p.join(",")).join(" ");
       g(layer, "polygon", { points: fan(plan.range), fill: col, opacity:.08,
                             stroke: col, "stroke-width":1.2, "stroke-opacity":.45,
@@ -3984,6 +4280,19 @@ svgEl.addEventListener("pointerdown", e => {
     return;
   }
 
+  /* con la mira accesa il clic su un bersaglio gioca il gesto invece di
+     selezionarlo: tiro, carica o incantesimo. Sul resto del tavolo il
+     clic fa quello che ha sempre fatto. */
+  const aim = e.button === 0 ? aimNow() : null;
+  const aimed = aim && aimTarget(aim, p);
+  if (aimed){
+    aimAt = null;
+    if (aim.kind === "shoot") runShot(aim.unit, aimed.uid);
+    else if (aim.kind === "charge") runCharge(aim.unit, aimed.uid);
+    else runCast(unitByUid(aim.casterUid), aim.spellId, aimed.uid);
+    return;
+  }
+
   const host = e.target.closest("[data-uid],[data-tid],[data-mid],[data-zid]");
   if (!host){
     /* il vuoto non deseleziona subito: prima si prova a scorrere, e se
@@ -4022,6 +4331,10 @@ svgEl.addEventListener("pointerdown", e => {
      un tasto per dirlo. Chi schiera invece sta solo mettendo il pezzo. */
   if (obj.uid !== undefined && !G.deploying()) MV.ensureAnchor(obj);
   drag = { obj, dx: obj.x - p[0], dy: obj.y - p[1], moved:false };
+  /* la regola del pollice (p. 118) guarda solo i nemici nuovi: chi era
+     gia' a contatto o vicino prima di muoversi non va avvisato di nuovo */
+  if (obj.uid !== undefined && !G.deploying())
+    drag.near0 = new Set(tooNearFoes(obj).map(n => n.unit.uid));
   /* tenendo premuto senza muovere si apre il menu del pezzo: e' il
      tasto destro di chi non ha un tasto destro */
   cancelPress();
@@ -4036,6 +4349,8 @@ svgEl.addEventListener("pointerdown", e => {
 });
 
 svgEl.addEventListener("pointermove", e => {
+  /* la mira segue il puntatore quando non si sta trascinando niente */
+  if (!sizing && !zoneDrag && !state.zonePts && !spin && !drag) trackAim(e);
   if (sizing){
     const t = sizing.obj, cfg = TERRAIN[t.kind];
     const [lx, ly] = toLocal(toSvg(e), FM.terrainBox(t));
@@ -4123,9 +4438,30 @@ function endDrag(e){
      passo aperto al pointerdown si toglie, sennò per tornare indietro
      di un movimento vero ne servirebbero due. */
   if (!drag.moved) history.discard();
+  /* Il pollice (p. 118): fuori da una carica nessuno finisce entro 1″
+     da un nemico, e a contatto ci si arriva caricando. L'app non
+     impedisce: lo dice, e il pezzo resta dove l'hai lasciato. */
+  if (drag.moved && drag.near0){
+    const fresh = tooNearFoes(drag.obj).filter(n => !drag.near0.has(n.unit.uid));
+    if (fresh.length){
+      const n = fresh[0], me = shortName(drag.obj.name), foe = shortName(n.unit.name);
+      toast(n.gap < 0.05
+        ? `${me} tocca ${foe} senza caricare: a contatto si arriva con la carica (p. 118). Fianco e retro contano lo stesso.`
+        : `${me} è a ${fmtIn(Math.round(n.gap * 10) / 10)}″ da ${foe}: fuori da una carica nessuno si ferma entro 1″ da un nemico (p. 118).`);
+    }
+  }
   drag = null;
   try { svgEl.releasePointerCapture(e.pointerId); } catch (_) {}
   renderAll();
+}
+
+/* i nemici entro un pollice, da bordo a bordo */
+function tooNearFoes(u){
+  const poly = corners(u);
+  return enemiesOf(u)
+    .map(o => ({ unit: o, gap: inch(polyDistance(poly, corners(o))) }))
+    .filter(n => n.gap < 1 - 0.01)
+    .sort((a, b) => a.gap - b.gap);
 }
 /* doppio clic su un'unita': la formazione. E' il gesto che ci si
    aspetta da un pezzo composto da tante basette, e risparmia il giro
@@ -4138,6 +4474,7 @@ svgEl.addEventListener("dblclick", e => {
 });
 svgEl.addEventListener("pointerup", endDrag);
 svgEl.addEventListener("pointercancel", endDrag);
+svgEl.addEventListener("pointerleave", () => { if (aimAt){ aimAt = null; drawBoard(); } });
 
 /* rotella con Shift sopra un pezzo selezionato: cambia il fronte.
    E' il secondo gesto piu' ripetuto dopo lo spostamento. */
@@ -4184,6 +4521,12 @@ document.addEventListener("keydown", e => {
   if (e.key === "+" || e.key === "="){ e.preventDefault(); view.zoomBy(1.25); return; }
   if (e.key === "-" || e.key === "_"){ e.preventDefault(); view.zoomBy(1 / 1.25); return; }
   if (e.key === "0"){ e.preventDefault(); view.fit(); return; }
+
+  /* Esc toglie la mira, finche' non si sceglie un'altra unita' */
+  if (e.key === "Escape"){
+    const a = aimNow();
+    if (a){ aimPick = { uid: a.uid, off: true }; aimAt = null; renderInspector(); drawBoard(); return; }
+  }
 
   if (!state.sel) return;
   const isUnit = state.sel.type === "unit";
@@ -5087,6 +5430,53 @@ async function bootDeploy(){
     /* la psicologia che lo scontro sente (Tappa 5): i personaggi uniti,
        e la Paura con l'esito del test gia' tirato in questo turno */
     joined: u => attachedOf(u),
+    /* Fianco, retro e disordine guardando il tavolo, a ogni round (pp.
+       101, 152-153). Il bonus e' della parte: conta chiunque del mio
+       esercito tocchi quel nemico, e fianco e retro si sommano se a
+       prenderli sono due unita' diverse. Se le due unita' non si toccano
+       `flank` resta null e il pannello tiene quello della carica. */
+    tableSide: (u, foe) => {
+      const pairs = contactsNow().filter(c => c.enemy);
+      const touch = (x, y) => pairs.some(c => (c.a === x.uid && c.b === y.uid) || (c.b === x.uid && c.a === y.uid));
+      const out = { flank: null, flankWhy: "", disrupted: false, disruptedWhy: "" };
+      if (touch(u, foe)){
+        const mine = state.units.filter(x => x.army === u.army && x.placed && !x.dead && !isJoined(x) && touch(x, foe))
+          .map(x => ({ x, arc: FM.arcOfPoly(corners(x), boxOf(foe)).arc }));
+        const flank = mine.some(m => m.arc === "fianco"), rear = mine.some(m => m.arc === "retro");
+        out.flank = flank && rear ? "both" : rear ? "rear" : flank ? "flank" : "";
+        const side = mine.filter(m => m.arc !== "fronte");
+        out.flankWhy = side.length
+          ? side.map(m => `${shortName(m.x.name)} sul ${m.arc} di ${shortName(foe.name)}`).join("; ")
+          : `${shortName(u.name)} è sul fronte di ${shortName(foe.name)}`;
+      }
+      /* In disordine chi e' preso sul fianco o sul retro da un'unita' con
+         Forza d'Unita' 5 o piu' (p. 101); la fanteria pesante in ordine
+         chiuso o aperto regge fino a 10 (p. 191), e gli schermagliatori
+         non disordinano nessuno (p. 185). */
+      const heavy = troopType(u.troop).id === "heavyInfantry" && !u.loose;
+      const need = heavy ? 10 : 5;
+      const hit = state.units
+        .filter(x => x.army !== u.army && x.placed && !x.dead && !isJoined(x) && !x.loose && touch(u, x))
+        .map(x => ({ x, arc: FM.arcOfPoly(corners(x), boxOf(u)).arc, us: usOf(x) }))
+        .find(h => h.arc !== "fronte" && h.us >= need);
+      if (hit){
+        out.disrupted = true;
+        out.disruptedWhy = `preso sul ${hit.arc} da ${shortName(hit.x.name)}, Forza d'Unità ${hit.us}` +
+          (heavy ? " (la fanteria pesante regge fino a 10)" : "") + " (p. 101)";
+      }
+      return out;
+    },
+    /* Il terreno piu' alto: chi ha la prima fila sulla collina e chi no
+       (p. 152). Tutti e due sopra, o nessuno, si annullano (p. 153). */
+    groundFor: (a, b) => {
+      const S = sightNow(), A = S.byUid.get(a.uid), B = S.byUid.get(b.uid);
+      if (!A || !B) return { id: "", why: "" };
+      const front = s => s.cells.filter(c => s.loose || SH.rankOf(c.cell, s.front) === 0).map(c => [c.wx, c.wy]);
+      const ha = SG.hillShare(front(A), S.terrain) > 0.5, hb = SG.hillShare(front(B), S.terrain) > 0.5;
+      if (ha === hb) return { id: "", why: ha ? "Tutti e due con la prima fila sulla collina: si annullano (p. 153)." : "" };
+      return { id: ha ? "me" : "foe",
+               why: `Dal tavolo: ${shortName((ha ? a : b).name)} combatte con la prima fila sulla collina (p. 152).` };
+    },
     fearFor: (u, foe) => PS.fearCheck({ me: psychFor(u), foe: psychFor(foe), meUS: usOf(u), foeUS: usOf(foe),
                                         when:"combat", tested: fearTested(u), foeName: foe.name }),
     applyLosses: pairs => {

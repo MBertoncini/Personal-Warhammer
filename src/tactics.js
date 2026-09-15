@@ -195,8 +195,13 @@ export function coverOn(p, q, pieces){
    LA RIGA CHE SI LEGGE PRIMA DI TIRARE
    Per ogni nemico: quanto e' lontano, se lo vedo, se e' nell'arco, se
    e' oltre meta' gittata, e dietro cosa si e' messo.
+
+   `look(t)`, quando c'e', e' la vista del libro (`sight.js`: unita' in
+   mezzo, colline, riparo contato sui modelli) e vince sul conto fatto
+   qui dal centro del fronte, che resta per chi non ha il tavolo intero.
+   Gli schermagliatori guardano tutto intorno (p. 184).
    ============================================================ */
-export function shootingSurvey(unit, targets, { cornersOf, boxOf, pieces = [], range = 0, inch }){
+export function shootingSurvey(unit, targets, { cornersOf, boxOf, pieces = [], range = 0, inch, look = null }){
   const b = boxOf(unit);
   const eye = frontCenter(b);
   const myPoly = cornersOf(unit);
@@ -208,14 +213,18 @@ export function shootingSurvey(unit, targets, { cornersOf, boxOf, pieces = [], r
     const { d, a, b: to } = edgeDistance(myPoly, poly);
     const dist = inch(d);
     const aim = closestPoints([eye], poly).b;
-    const blocker = sightBlocked(eye, aim, losPieces);
-    const inArc = polysIntersect(arc, poly);
+    const seen = look ? look(t) : null;
+    const blocker = seen
+      ? (seen.sees ? null : (seen.blockedBy || { label: "qualcosa" }))
+      : sightBlocked(eye, aim, losPieces);
+    const inArc = !!unit.loose || polysIntersect(arc, poly);
     return {
       unit: t, dist, from: a, to, aim,
-      blocked: blocker, blockedBy: blocker ? blocker.label : "",
+      blocked: blocker, blockedBy: blocker ? (blocker.label || "") : "",
       inArc, inRange: range > 0 && dist <= range,
       long: range > 0 && dist > range / 2,
-      cover: coverOn(eye, aim, pieces),
+      cover: seen ? seen.cover : coverOn(eye, aim, pieces),
+      coverWhy: seen ? seen.coverWhy : "",
       canShoot: range > 0 && dist <= range && inArc && !blocker,
     };
   }).sort((x, y) => (y.canShoot - x.canShoot) || (x.dist - y.dist));

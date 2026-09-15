@@ -57,8 +57,12 @@ export const WOOD_SIGHT = 3;     // pollici, dentro il bosco
    il tipo di elemento sa dire da solo; il resto lo decidono i due
    giocatori guardando il pezzo vero.
    ============================================================ */
+/* La collina e' terreno aperto ma non trasparente: «oltre la cresta»
+   la vista non passa se nessuno dei due ci sta sopra (p. 271). `los`
+   la dice «crest» perche' non e' un muro: chi ci sta sopra vede e si fa
+   vedere, e il conto lo fa `sight.js`. */
 const TERRAIN = {
-  hill:     { label:"Collina",  color:"var(--t-hill)",     shape:"rect",   pass:"open",     los:false, cover:"",     w:10, h:6,     cat:"open",       natural:true  },
+  hill:     { label:"Collina",  color:"var(--t-hill)",     shape:"rect",   pass:"open",     los:"crest", cover:"",   w:10, h:6,     cat:"open",       natural:true  },
   wood:     { label:"Bosco",    color:"var(--t-wood)",     shape:"rect",   pass:"difficult",los:true,  cover:"soft", w:8,  h:6,     cat:"wood",       natural:true  },
   marsh:    { label:"Palude",   color:"var(--t-marsh)",    shape:"rect",   pass:"difficult",los:false, cover:"",     w:9,  h:5,     cat:"dangerous",  natural:true  },
   ruins:    { label:"Rovine",   color:"var(--t-ruins)",    shape:"rect",   pass:"difficult",los:true,  cover:"hard", w:6,  h:5,     cat:"highWall",   natural:false },

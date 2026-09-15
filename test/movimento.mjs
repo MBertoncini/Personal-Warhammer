@@ -99,6 +99,24 @@ console.log('\nla dichiarazione: arco, vista, distanza');
   ok('e si sa che cosa la taglia', /bosco/.test(blind.why));
   ok('chi vola non se ne cura',
      CH.declareCharge({ charger:{ ...orc, fly:true }, target: sauri, pieces:[wood] }).can === true);
+
+  /* la vista del tavolo, quando arriva, vince: un reggimento in mezzo */
+  const muro = CH.declareCharge({ charger: orc, target: sauri,
+                                  sight: { sees: false, blockedBy: { label: 'Goblin Mob', unit: {} } } });
+  ok('un reggimento in mezzo taglia la vista della carica (p. 103)', muro.blocked && !muro.can);
+  ok('e il suo nome resta scritto com e', /Goblin Mob/.test(muro.why));
+
+  /* gli schermagliatori caricano in ogni direzione (p. 184) */
+  ok('lo schermagliatore carica anche dietro le spalle',
+     CH.declareCharge({ charger: { ...orc, loose: true }, target: unit('Skink', 0, 8, 5 * MM, 2 * MM) }).inArc === true);
+
+  /* da che lato si prende il bersaglio: dove sta il caricante nell arco
+     del bersaglio (p. 127) */
+  ok('davanti al bersaglio lo si prende di fronte', d.side === 'fronte');
+  const fianco = CH.declareCharge({ charger: unit('Orc Mobs', 8, -8, 5 * MM, 2 * MM, 270, { move:4 }), target: sauri });
+  ok('di lato lo si prende di fianco', fianco.side === 'fianco');
+  const retro = CH.declareCharge({ charger: unit('Orc Mobs', 0, -16, 5 * MM, 2 * MM, 0, { move:4 }), target: sauri });
+  ok('e alle spalle di retro', retro.side === 'retro');
 }
 
 /* ================================================================= */

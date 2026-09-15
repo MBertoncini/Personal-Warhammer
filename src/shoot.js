@@ -48,7 +48,7 @@
 import { MM } from './util.js';
 import { boxCorners, closestPoints, distPointToBox,
          segIntersectsPoly } from './geom.js';
-import { sightBlocked, coverOn } from './tactics.js';
+import { unitSight, blockerLabel } from './sight.js';
 import { IMPOSSIBLE, chance, shootTarget, shootChance, BS_REROLL } from './rules.js';
 
 const r1 = v => Math.round(v * 10) / 10;
@@ -113,8 +113,15 @@ export function canShoot({ charged = false, marched = false, engaged = false,
    `cells` sono i modelli: `{ wx, wy, cell, w, h, rot }`, cioe' quello
    che `formation.js` gia' produce. `front` serve solo a sapere in che
    fila sta ognuno, perche' il tetto delle file resta una regola.
+
+   Il tetto era sbagliato: due file. Il libro ne fa tirare una (p. 143),
+   due a chi sta sulla collina, e la salva aggiunge meta' di ogni fila
+   dietro — non tutte (p. 180). La vista e il riparo li decide
+   `sight.js`: le unita' in mezzo bloccano, e il riparo si conta sui
+   modelli del bersaglio coperti.
    ============================================================ */
-export const RANKS_THAT_SHOOT = 2;     // la prima fila e la seconda
+export const RANKS_THAT_SHOOT = 1;     // di solito la prima fila sola (p. 143)
+export const RANK_PAGES = { ranks: 143, hill: 143, volley: 180 };
 
 export function rankOf(cell, front){
   return Math.floor(Math.max(0, cell || 0) / Math.max(1, front || 1));
@@ -122,76 +129,114 @@ export function rankOf(cell, front){
 
 /* Una riga per modello: dove sta, in che fila, quanto e' lontano dal
    bersaglio, se lo vede, se ci arriva, e — quando non tira — quale
-   delle quattro cose gliel'ha impedito. */
+   delle quattro cose gliel'ha impedito.
+
+   `target` porta il poligono e, quando ci sono, i modelli (`cells`):
+   senza modelli il bersaglio conta come un modello solo. `others` sono
+   le unita' che possono stare in mezzo, `fromHill` e `toHill` dicono
+   chi sta sulla collina ("all", "part" o ""). */
 export function shooterSurvey({ cells = [], target = null, pieces = [], range = 0,
                                 front = 1, ranks = RANKS_THAT_SHOOT,
-                                loose = false, volley = false } = {}){
+                                loose = false, volley = false, moved = false,
+                                others = [], fromHill = "", toHill = "", hill = null } = {}){
   const poly = target ? cornersOf(target) : null;
-  const blockers = pieces.filter(p => p.blocks);
-  /* In formazione sciolta tirano tutti; la salva («volley fire») alza
-     il tetto a tutte le file. Senza nessuna delle due, due file. */
-  const cap = loose || volley ? Infinity : Math.max(1, ranks);
+  /* la fila in piu' della collina (p. 143) vuole l'unita' tutta sopra,
+     come la vista oltre le unita' (p. 271) */
+  const onHill = hill != null ? !!hill : fromHill === "all";
+  const base = Math.max(1, ranks) + (onHill ? 1 : 0);
+  /* la salva non si tira dopo aver mosso (p. 180) */
+  const volleyOn = !!volley && !loose && !moved;
+  const tCells = target && Array.isArray(target.cells) && target.cells.length ? target.cells : null;
 
   const rows = cells.map(c => {
     const eye = [c.wx, c.wy];
-    const rank = rankOf(c.cell, front);
+    const rank = loose ? 0 : rankOf(c.cell, front);
     const aim = poly ? closestPoints([eye], poly).b : eye;
     const dist = poly ? Math.hypot(aim[0] - eye[0], aim[1] - eye[1]) / MM : Infinity;
-    const blocker = poly ? sightBlocked(eye, aim, blockers) : null;
-    const inRank = rank < cap;
-    const inRange = range > 0 && dist <= range;
-    const sees = !blocker;
     return {
-      cell: c.cell, rank, at: eye, aim,
-      dist: r2(dist), sees, inRange, inRank,
-      blockedBy: blocker ? blocker.label : "",
+      cell: c.cell, rank, file: loose ? 0 : Math.max(0, c.cell || 0) % Math.max(1, front || 1),
+      at: eye, aim, dist: r2(dist),
+      inRange: range > 0 && dist <= range,
+      /* in ordine sparso non ci sono file: tirano tutti */
+      inRank: loose || rank < base,
       long: range > 0 && dist > range / 2,
-      cover: poly ? coverOn(eye, aim, pieces) : "",
-      can: inRank && inRange && sees,
+      sees: true, blockedBy: "", volley: false, can: false,
     };
   });
 
-  const n = rows.filter(r => r.can).length;
+  const sightOpts = { targets: tCells || [], poly: tCells ? null : poly,
+                      terrain: pieces, others, fromHill, toHill };
+  const eyes = rows.filter(r => r.inRank);
+  if (poly && eyes.length){
+    const look = unitSight({ ...sightOpts, eyes: eyes.map(r => r.at) });
+    eyes.forEach((r, k) => {
+      r.sees = look.perEye[k].sees;
+      r.blockedBy = r.sees ? "" : blockerLabel(look.perEye[k].blockedBy);
+    });
+  }
+  /* chi sta dietro guarda con gli occhi del primo della sua colonna
+     (p. 180): e' quello che la salva chiede */
+  const lead = new Map(rows.filter(r => r.rank === 0).map(r => [r.file, r]));
+  for (const r of rows) if (!r.inRank){
+    const l = lead.get(r.file);
+    r.sees = !!(l && l.sees);
+    r.blockedBy = l ? l.blockedBy : "";
+  }
+  for (const r of rows) r.can = r.inRank && r.inRange && r.sees;
+  if (volleyOn){
+    const byRank = new Map();
+    for (const r of rows) if (!r.inRank){
+      if (!byRank.has(r.rank)) byRank.set(r.rank, []);
+      byRank.get(r.rank).push(r);
+    }
+    /* meta' della fila, arrotondando per eccesso, fra chi ci arriva */
+    for (const list of byRank.values()){
+      let quota = Math.ceil(list.length / 2);
+      for (const r of list) if (quota > 0 && r.inRange && r.sees){ r.can = r.volley = true; quota--; }
+    }
+  }
+
+  const shooting = rows.filter(r => r.can);
+  /* Il riparo lo guarda chi tira davvero dalle prime file: quanti modelli
+     del bersaglio sono coperti, e non quale pezzo di terreno sta in mezzo
+     (p. 139). Se non tira nessuno lo si guarda dalle file che potrebbero. */
+  const coverEyes = shooting.filter(r => !r.volley);
+  const coverLook = poly && (coverEyes.length || eyes.length)
+    ? unitSight({ ...sightOpts, eyes: (coverEyes.length ? coverEyes : eyes).map(r => r.at) }) : null;
+
   /* Perche' gli altri non tirano, contato per causa: e' la riga che al
      tavolo fa capire se conviene girare il reggimento o spostarlo. */
   const out = {
-    rank:    rows.filter(r => !r.inRank).length,
-    range:   rows.filter(r => r.inRank && !r.inRange).length,
-    sight:   rows.filter(r => r.inRank && r.inRange && !r.sees).length,
+    rank:  rows.filter(r => !r.inRank && !r.can).length,
+    range: rows.filter(r => r.inRank && !r.inRange).length,
+    sight: rows.filter(r => r.inRank && r.inRange && !r.sees).length,
   };
   return {
-    n, rows, out, cap: cap === Infinity ? rows.length : cap,
-    /* La copertura e la lunga gittata sono del bersaglio, non del
-       singolo modello: vale quella che vede la maggioranza di chi
-       tira davvero, che e' il modo in cui la si guarda al tavolo. */
-    long:  majority(rows.filter(r => r.can).map(r => r.long)),
-    cover: majorityCover(rows.filter(r => r.can).map(r => r.cover)),
+    n: shooting.length, rows, out,
+    ranks: loose ? rows.length : base, cap: loose ? rows.length : base,
+    hill: onHill, volley: volleyOn,
+    volleyOff: volley && moved && !loose ? "ha mosso: niente salva (p. 180)" : "",
+    /* la lunga gittata e' della maggioranza di chi tira davvero */
+    long: majority(shooting.map(r => r.long)),
+    cover: coverLook ? coverLook.cover : "",
+    coverWhy: coverLook ? coverLook.coverWhy : "",
     page: PAGE.shooting,
   };
 }
 
 const majority = list => list.length ? list.filter(Boolean).length * 2 > list.length : false;
-/* La copertura della maggioranza, non la peggiore. Con la peggiore
-   bastava un solo arciere in fondo alla fila che guardasse oltre lo
-   spigolo di un muretto per dare la copertura pesante a tutta la
-   raffica, e il browser lo ha fatto vedere su quattro bersagli su
-   cinque. Pesante se la vede piu' della meta'; leggera se piu' della
-   meta' vede un riparo qualsiasi; altrimenti niente. */
-const majorityCover = list => {
-  if (!list.length) return "";
-  const hard = list.filter(c => c === "hard").length;
-  const any = list.filter(Boolean).length;
-  return hard * 2 > list.length ? "hard" : any * 2 > list.length ? "soft" : "";
-};
 
-/* Il tetto di prima, tenuto perche' serve quando i modelli sul tavolo
-   non ci sono — una stima, una lista non ancora schierata. Dice di
-   essere una stima: e' la differenza fra «non lo so» e «e' cosi'». */
+/* Il tetto, tenuto perche' serve quando i modelli sul tavolo non ci
+   sono — una stima, una lista non ancora schierata. Dice di essere una
+   stima: e' la differenza fra «non lo so» e «e' cosi'». */
 export function shooterCap({ models = 1, lost = 0, frontage = 1, loose = false,
-                             volley = false, ranks = RANKS_THAT_SHOOT } = {}){
+                             volley = false, hill = false, ranks = RANKS_THAT_SHOOT } = {}){
   const alive = Math.max(0, models - lost);
-  if (loose || volley) return alive;
-  return Math.min(alive, Math.max(1, frontage) * Math.max(1, ranks));
+  if (loose) return alive;
+  const f = Math.max(1, frontage);
+  let n = Math.min(alive, f * (Math.max(1, ranks) + (hill ? 1 : 0)));
+  if (volley) for (let rest = alive - n; rest > 0; rest -= f) n += Math.ceil(Math.min(f, rest) / 2);
+  return n;
 }
 
 /* ============================================================
@@ -632,8 +677,7 @@ export const SHOOTING_RULES = [
     on: f => { f.quickShot = true; } },
 
   { id:"volleyFire", re:/^volley fire/i,
-    what:"tirano anche le file oltre la seconda",
-    daVerificare:"quante file, e con quale modificatore",
+    what:"dietro la prima fila tira meta' di ogni fila, se l'unita' non ha mosso (p. 180)",
     on: f => { f.volleyFire = true; } },
 
   { id:"multipleWounds", re:/^multiple wounds/i,
@@ -699,12 +743,14 @@ export function shotsPerModel(flags = {}){
    ============================================================ */
 export function shotPlan({ shooter = null, target = null, cells = [], pieces = [],
                            range = 0, front = 1, bs = 0, weaponRules = [],
-                           standAndShoot = false, texts = null, state = {} } = {}){
+                           standAndShoot = false, texts = null, state = {},
+                           others = [], fromHill = "", toHill = "" } = {}){
   const read = readShooting(weaponRules, texts);
   const f = read.flags;
   const gate = canShoot({ ...state, moved: !!(state.moved), weaponFlags: f });
   const survey = shooterSurvey({ cells, target, pieces, range, front,
-                                 loose: !!(shooter && shooter.loose), volley: f.volleyFire });
+                                 loose: !!(shooter && shooter.loose), volley: f.volleyFire,
+                                 moved: !!state.moved, others, fromHill, toHill });
   const mods = modsFor({ survey, shooter, target, standAndShoot, weaponFlags: f });
   const per = shotsPerModel(f);
   const need = hitNeed(bs, mods.total);

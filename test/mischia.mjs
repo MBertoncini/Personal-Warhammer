@@ -75,6 +75,8 @@ ok('lo stendardo da battaglia vale un altro uno, e si sommano',
 ok('il fianco vale uno e il retro due',
    ML.combatScore({ ...base, flank: 'flank' }).flank === 1 &&
    ML.combatScore({ ...base, flank: 'rear' }).flank === 2);
+ok('fianco e retro da due unita diverse si sommano (p. 153)',
+   ML.combatScore({ ...base, flank: 'both' }).flank === 3);
 ok('il terreno piu alto vale uno', ML.combatScore({ ...base, highGround: true }).ground === 1);
 /* La superiorita' numerica era il bonus dell'edizione di prima, e
    nell'elenco del manuale non c'e': spenta, e dietro una costante sola

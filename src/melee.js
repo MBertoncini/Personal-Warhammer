@@ -163,7 +163,10 @@ export const RESULT_PARTS = [
    reggimento per controllare che il fianco valga uno.
 
    { wounds, models, frontage, maxRank, standard, battleStandard,
-     flank:""|"flank"|"rear", highGround, overkill, disrupted, us } */
+     flank:""|"flank"|"rear"|"both", highGround, overkill, disrupted, us }
+
+   "both" e' la parte che prende lo stesso nemico sul fianco con
+   un'unita' e sul retro con un'altra: i due bonus si sommano (p. 153). */
 export function combatScore(me = {}, foe = {}){
   const wounds = Math.max(0, +me.wounds || 0);
   /* I ranghi che contano sono al massimo quelli che il tipo di truppa
@@ -179,7 +182,7 @@ export function combatScore(me = {}, foe = {}){
   /* Impervious Defence del nemico toglie il fianco e il retro: la scheda
      arriva con il nome della regola invece che con il bonus, cosi' il
      pannello puo' dire perche' il punto non c'e'. */
-  const flank = me.flankDenied ? 0 : me.flank === "rear" ? 2 : me.flank === "flank" ? 1 : 0;
+  const flank = me.flankDenied ? 0 : me.flank === "both" ? 3 : me.flank === "rear" ? 2 : me.flank === "flank" ? 1 : 0;
   const ground = me.highGround ? 1 : 0;
   const over = Math.max(0, Math.round(+me.overkill || 0));
   const out = OUTNUMBER_COUNTS && (+me.us || 0) > (+foe.us || 0) ? 1 : 0;
