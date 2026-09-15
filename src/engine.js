@@ -163,6 +163,25 @@ export const ACTIONS = {
                    : nm(a.unit) + " si prepara a tirare") +
                    (a.weapon ? " con " + nm(a.weapon) : "") },
 
+  /* Le tre azioni della macchina da guerra. Sono azioni e non conti
+     dentro un pannello per la ragione di sempre: cosi' si annullano
+     una per una e il registro dice dove e' caduta la sagoma, che il
+     giorno dopo e' l'unica cosa che nessuno ricorda. */
+  template: { label:"sagoma",
+              line: a => nm(a.unit) + " piazza " + (a.what || "la sagoma") +
+                         on(a.target, "su") },
+
+  scatter: { label:"deviazione",
+             needs: a => [{ id:"deviazione", kind:"scatter",
+                            dist: a.dist || "artillery", why: a.why || "deviazione della sagoma" }],
+             line: (a, r) => readRolls(r) +
+                             (a.text ? " — " + a.text : "") },
+
+  misfire: { label:"Mancato Colpo",
+             needs: () => [d6("guasto", 1, "tabella del Mancato Colpo")],
+             line: (a, r) => nm(a.unit) + ": Mancato Colpo — " + readRolls(r) +
+                             (a.text ? " — " + a.text : "") },
+
   toHit:   { label:"per colpire",
              moments:["onToHit"],
              needs: a => [d6("colpire", a.dice || 1, "per colpire",
@@ -246,6 +265,12 @@ export function readRolls(rolls){
 }
 function readOne(r){
   if (!r) return "—";
+  /* Il vassoio legge certe cose meglio di qualunque frase generica: la
+     deviazione con i gradi e il punto cardinale, il Mancato Colpo del
+     dado di artiglieria. Quando porta il suo testo si tiene quello —
+     «4 + 0 = 4» al posto di «devia di 4″ verso destra» e' il tipo di
+     riga che nel registro non dice piu' niente il giorno dopo. */
+  if (r.text) return r.text;
   const dice = r.dice || [];
   const kept = r.kept && r.kept.length ? r.kept : dice;
   const total = r.total != null ? r.total : kept.reduce((s, v) => s + v, 0);

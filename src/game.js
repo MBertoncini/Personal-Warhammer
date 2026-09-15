@@ -595,6 +595,11 @@ function askDice(ask, title){
       const q = ask[i++];
       openDiceBox({
         kind: q.kind || "d6", n: q.n || 1, target: q.need || 0,
+        /* La deviazione ha un secondo dado che dice i pollici, e quale
+           sia lo decide l'arma: artiglieria per il lanciapietre, D6 per
+           la sagoma piccola. Senza questa riga il vassoio si apriva
+           sempre sul D6 e la macchina da guerra deviava sbagliato. */
+        dist: q.dist || undefined,
         title: title + " · " + q.why,
         /* La spiegazione sotto i cubi la scrive la regola quando ce
            l'ha — il tiro di carica ha tre modi diversi di leggersi — e
@@ -613,6 +618,19 @@ function askDice(ask, title){
    lungo: il vassoio tira tre cubi e li mostra tutti e tre, e quale si
    butta lo decide la regola, non il dado. */
 function fromTray(r, q = {}){
+  /* La deviazione non e' un pugno di facce da sommare: e' una
+     direzione, dei pollici e un Colpito!. Il vassoio la legge gia'
+     meglio di chiunque — `readOut` scrive la frase con i gradi e il
+     punto cardinale — e qui si porta indietro tutta intera, perche'
+     chi la riceve deve spostare una sagoma, non fare una somma. */
+  if (r && r.kind === "scatter")
+    return { kind:"scatter", dice: [], kept: [], total: r.inches || 0,
+             hit: !!r.hit, misfire: !!r.misfire, deg: r.deg, compass: r.compass,
+             inches: r.inches || 0, text: readOut(r) };
+  if (r && r.kind === "artillery")
+    return { kind:"artillery", dice: (r.dice || []).map(d => d.value),
+             kept: (r.dice || []).map(d => d.value), total: r.total || 0,
+             misfire: !!r.misfires, text: readOut(r) };
   const dice = (r && r.dice || []).map(d => (d && d.value != null ? d.value : d));
   /* Quale dado si butta lo sa `charge.js`, che e' il posto in cui la
      regola sta scritta: il passo lungo butta il minore, il terreno

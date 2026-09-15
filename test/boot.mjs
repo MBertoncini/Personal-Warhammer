@@ -206,6 +206,33 @@ const shaded = deploy.shootPlanFor(shooter).rows.find(r => r.unit.uid === victim
 ok('il bosco in mezzo interrompe la linea di vista', !!shaded.blocked);
 ok('e il bersaglio smette di essere tirabile', shaded.canShoot === false);
 history.undo();
+
+/* La Tappa 4: il conto dei tiratori e il cancello di p. 137 arrivano
+   dal tavolo vero, non da una casella spuntata. */
+/* Un bersaglio tirabile con niente in mezzo deve avere qualcuno che
+   tira davvero: la versione di prima di questa prova controllava solo
+   che il numero esistesse, e non si era accorta che era sempre zero. */
+const tirabile = plan.rows.find(r => r.canShoot && !r.blocked);
+ok('il piano dice quanti modelli tirano davvero',
+   !tirabile || deploy.shotOn(shooter, tirabile, plan).survey.n > 0);
+ok('e perche gli altri no',
+   ['rank', 'range', 'sight'].every(k => typeof deploy.shotOn(shooter, plan.rows[0], plan).survey.out[k] === 'number'));
+ok('chi non ha fatto niente puo tirare', deploy.shootPlanFor(shooter).gate.can === true);
+deploy.act('carica finta', () => { shooter.moved = { kind:'charge', inches: 5 }; });
+ok('chi ha caricato no', deploy.shootPlanFor(shooter).gate.can === false);
+history.undo();
+
+/* la sagoma: si posa, si disegna, e dice chi ci sta sotto */
+deploy.renderAll();
+const bersaglio = plan.rows[0].unit;
+deploy.act('sagoma di prova', () => {
+  state.extras = { template: { id:'large', x: bersaglio.x, y: bersaglio.y, angle: 0, by: shooter.uid } };
+});
+ok('la sagoma finisce sul tavolo', doc.querySelectorAll('#board circle').length > 0);
+ok('e dice quanti ci stanno sotto', /sotto/.test(doc.querySelector('#board').textContent));
+history.undo();
+deploy.renderAll();
+
 click('#btn-shoot');
 ok('nessun errore con movimento e tiro accesi', errors.length === 0);
 

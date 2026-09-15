@@ -148,7 +148,12 @@ export const ELSEWHERE = [
   { re:/^(fly|swiftstride|fast cavalry|move through cover|aquatic|scout|vanguard|ambush|swim)/i,
     why:"riguarda il movimento" },
   { re:/^(requires two hands)/i, why:"e' una scelta di equipaggiamento: decidi tu quale arma impugna" },
-  { re:/^(move (and|&) shoot|quick shot|multiple shots|volley fire)/i, why:"riguarda il tiro, non la mischia" },
+  /* Queste quattro non sono piu' «da qualche altra parte» e basta: dalla
+     Tappa 4 il posto ce l'hanno, ed e' `shoot.js`. Restano qui perche'
+     in un conto di mischia non entrano davvero, ma la riga dice dove
+     sono finite invece di lasciarle nel vago. */
+  { re:/^(move (and|&) shoot|move or shoot|quick shot|multiple shots|volley fire|cumbersome|ponderous)/i,
+    why:"riguarda il tiro: la legge la fase di tiro, non il conto di un assalto" },
   { re:/^(general|rallying cry|arcane vassal|lore of|wizard|channel)/i,
     why:"comando o magia: fuori dal conto di un assalto" },
   { re:/^(large target|unit strength|drop rocks|breath weapon|regenerat)/i,

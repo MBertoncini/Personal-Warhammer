@@ -21,6 +21,7 @@ import { hitMelee, woundOn, saveOn, pool, roll, chance, expected,
 import { readRules, splitWeaponRules, emptyFlags } from './rulebook.js';
 import { troopType, usPerModel } from './troops.js';
 import * as ML from './melee.js';
+import * as SH from './shoot.js';
 
 /* ============================================================
    1 · DALL'UNITA' DEL TAVOLO ALLA SCHIERA CHE COMBATTE
@@ -419,30 +420,26 @@ export function meleeForecast(att, def, attacks){
    quanti tirano, con che punteggio, e quanti ne restano a terra.
    ============================================================ */
 
-/* I modificatori che si contano davvero prima di tirare. Ognuno porta la
-   sua etichetta, cosi' il pannello puo' dire *perche'* serve un 5. */
-export function shootMods({ long = false, moved = false, cover = "", looseTarget = false } = {}){
-  const list = [];
-  if (long) list.push({ v: -1, why: "lunga gittata" });
-  if (moved) list.push({ v: -1, why: "ha mosso" });
-  if (cover === "soft") list.push({ v: -1, why: "copertura leggera" });
-  if (cover === "hard") list.push({ v: -2, why: "copertura pesante" });
-  if (looseTarget) list.push({ v: -1, why: "bersaglio sciolto" });
-  return { list, total: list.reduce((s, m) => s + m.v, 0) };
-}
+/* I modificatori e il conto dei tiratori stavano qui e adesso stanno in
+   `shoot.js`, che e' il posto in cui la fase di tiro abita per intero
+   dalla Tappa 4. Restano esportati da qui perche' mezza app li chiama
+   con questo nome, ma la regola e' scritta una volta sola: il -1 della
+   lunga gittata e il tetto delle due file si correggono in un punto. */
+export const shootMods = SH.shootMods;
 
-/* Quanti modelli possono tirare: la prima fila sempre, la seconda solo
-   se c'e'. In formazione sciolta tirano tutti. */
-export function shooters(u){
-  const alive = Math.max(0, (u.models || 1) - (u.lost || 0));
-  if (u.loose) return alive;
-  return Math.min(alive, Math.max(1, u.frontage || 1) * 2);
-}
+export const shooters = u => SH.shooterCap({
+  models: u.models || 1, lost: u.lost || 0,
+  frontage: u.frontage || 1, loose: !!u.loose,
+});
 
 export function shootForecast(shooter, target, { weapon, mods = 0, shots } = {}){
   const bs = stat((shooter.stats || {}).BS);
   const n = shots ?? shooters(shooter);
-  const need = bs ? Math.max(2, Math.min(6, Math.max(2, 7 - bs) - mods)) : IMPOSSIBLE;
+  /* Il punteggio non e' piu' un conto scritto qui: l'1 naturale che non
+     colpisce mai e il ritiro dell'Abilita' Balistica alta sono due
+     regole, e stanno dove stanno le altre del tiro. */
+  const aim = SH.hitNeed(bs, mods);
+  const need = aim.need;
   const S = weaponStrength(weapon, stat((shooter.stats || {}).S));
   const AP = weaponAP(weapon);
   const t = combatant(target);
@@ -454,8 +451,9 @@ export function shootForecast(shooter, target, { weapon, mods = 0, shots } = {})
   const wChance = f.poisoned && need < IMPOSSIBLE
     ? (5 / 6) * chance(wNeed) + (1 / 6) * chance(Math.max(2, wNeed - 2))
     : chance(wNeed);
-  const wounds = n * chance(need) * wChance * (1 - chance(sNeed)) * (1 - chance(kNeed)) * (1 - chance(rNeed));
-  return { shots: n, hitNeed: need, strength: S, ap: AP, poisoned: f.poisoned,
+  const hChance = SH.hitChance(need, aim.again);
+  const wounds = n * hChance * wChance * (1 - chance(sNeed)) * (1 - chance(kNeed)) * (1 - chance(rNeed));
+  return { shots: n, hitNeed: need, hitAgain: aim.again, strength: S, ap: AP, poisoned: f.poisoned,
            woundNeed: wNeed, saveNeed: sNeed, wardNeed: kNeed, regenNeed: rNeed,
            wounds, kills: wounds / t.w, targetW: t.w };
 }
@@ -464,7 +462,15 @@ export function shootForecast(shooter, target, { weapon, mods = 0, shots } = {})
 export function shootRoll(shooter, target, opts){
   const f = shootForecast(shooter, target, opts);
   const notes = [];
-  const hit = pool(f.shots, f.hitNeed);
+  /* Il ritiro dell'Abilita' Balistica alta non e' il ritiro di
+     `pool`, ed e' la differenza che conta: li' il dado rifatto si
+     confronta con lo stesso punteggio, qui con un SECONDO punteggio,
+     piu' alto. Sono due tiri in fila, e vanno scritti come tali. */
+  const first = pool(f.shots, f.hitNeed);
+  const again = f.hitAgain ? pool(first.of - first.hits, f.hitAgain) : null;
+  const hit = mergePools(first, again);
+  if (again) notes.push((first.of - first.hits) + " mancati ritirati a " + f.hitAgain +
+                        "+ (Abilita' Balistica alta): " + again.hits + " passano");
 
   const venom = f.poisoned ? Math.min(sixes(hit), hit.hits) : 0;
   const venomNeed = Math.max(2, f.woundNeed - 2);

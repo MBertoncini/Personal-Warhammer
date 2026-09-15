@@ -27,6 +27,9 @@ import { initScenarioKit, customScenarioMap, saveCustom, removeCustom,
 import { survey, frontArcPoly, movementBands, reachFan, sightFan,
          shootingSurvey } from './tactics.js';
 import * as CH from './charge.js';
+import * as SH from './shoot.js';
+import { splitWeaponRules } from './rulebook.js';
+import { showDiceGroups } from './dicebox.js';
 import { askText, askConfirm, askPick, showMenu, closeMenu,
          countersHTML, wireCounters, tagsHTML, wireTags } from './uikit.js';
 import * as EX from './extras.js';
@@ -656,6 +659,17 @@ function renderInspector(){
     b.addEventListener("click", () => runCharge(u, b.dataset.charge));
   for (const b of host.querySelectorAll("[data-back]"))
     b.addEventListener("click", () => runBackward(u, b.dataset.back));
+  /* L'arco tira la raffica per intero: dichiarazione, dadi, perdite,
+     Panico. La sagoma e il bombardamento sono l'altra meta' della
+     Tappa 4, quella che non tira per colpire. */
+  for (const b of host.querySelectorAll("[data-shoot]"))
+    b.addEventListener("click", () => runShot(u, b.dataset.shoot));
+  for (const b of host.querySelectorAll("[data-tmpl]"))
+    b.addEventListener("click", () => putTemplate(u, b.dataset.tmpl));
+  for (const b of host.querySelectorAll("[data-bombard]"))
+    b.addEventListener("click", () => runBombard(u));
+  for (const b of host.querySelectorAll("[data-tmpl-off]"))
+    b.addEventListener("click", () => act("togli la sagoma", () => setTemplate(null)));
   $("#i-rot-l").addEventListener("click", () => upd(() => { u.rot = (u.rot + 270) % 360; }, "ruota"));
   $("#i-rot-r").addEventListener("click", () => upd(() => { u.rot = (u.rot + 90) % 360; }, "ruota"));
   $("#i-swap").addEventListener("click", () => upd(() => {
@@ -955,11 +969,17 @@ function shootingHTML(u){
   const plan = shootPlanFor(u);
   if (!plan) return "";
   const rows = plan.rows.slice(0, 5);
-  const shots = CB.shooters(u);
+  const cap = SH.shooterCap({ models: u.models, lost: u.lost || 0, frontage: u.frontage,
+                              loose: !!u.loose, volley: !!plan.rules.flags.volleyFire });
+  /* Le regole d'arma che l'app non sa applicare fino in fondo lo
+     dicono qui, accanto al numero che influenzerebbero: al tavolo e'
+     l'unico posto in cui una riga del genere si legge davvero. */
+  const dubbie = plan.rules.applied.filter(a => a.daVerificare);
   return `
     <div>
       <div class="readout"><span>Tiro${plan.weapon ? " · " + esc(plan.weapon.name) : ""}</span>
-        <b>${plan.range}″ · ${shots} tiri</b></div>
+        <b>${plan.range}″ · fino a ${cap} tiri</b></div>
+      ${plan.gate.can ? "" : `<p class="note" style="color:var(--warn)">Non tira: ${esc(plan.gate.why.join("; "))} (p. ${SH.PAGE.who}).</p>`}
       ${rows.length ? rows.map(r => {
         if (!r.canShoot){
           const why = r.blocked ? `dietro ${esc(r.blockedBy.toLowerCase())}`
@@ -969,11 +989,51 @@ function shootingHTML(u){
         }
         const f = shotOn(u, r, plan);
         const why = f.mods.list.map(m => `${m.v} ${m.why}`).join(", ");
+        /* Quanti tirano, e perche' gli altri no: sono le tre cause del
+           §2 di `shoot.js`, contate sul tavolo vero. */
+        const out = f.survey.out;
+        const fuori = [
+          out.rank  ? `${out.rank} in coda` : "",
+          out.range ? `${out.range} fuori gittata` : "",
+          out.sight ? `${out.sight} non lo vedono` : "",
+        ].filter(Boolean).join(", ");
         return `<div class="readout near"><span>${esc(shortName(r.unit.name))} · ${r.dist.toFixed(1)}″${why ? ` <span class="dim">(${why})</span>` : ""}</span>
-                  <b style="color:var(--ok)">${f.hitNeed >= 7 ? "mai" : f.hitNeed + "+"} · ${f.kills.toFixed(1)}</b></div>`;
+                  <b style="color:var(--ok)">${f.hitNeed >= 7 ? "mai" : f.hitNeed + "+"} · ${f.kills.toFixed(1)}</b>
+                  <button class="btn tiny shoot-go" data-shoot="${r.unit.uid}"
+                          title="Tira su ${esc(r.unit.name)}: ${f.shots} tiri, ${f.hitNeed}+ per colpire">🏹</button>
+                </div>
+                <p class="note">${f.shots} tir${f.shots === 1 ? "o" : "i"} da ${f.survey.n} modell${f.survey.n === 1 ? "o" : "i"}${fuori ? ` · ${esc(fuori)}` : ""}</p>`;
       }).join("") : `<p class="note">Nessun nemico sul tavolo.</p>`}
-      <p class="note">L'ultima colonna è il punteggio per colpire e i modelli che cadrebbero in media con una raffica.</p>
+      ${plan.machine ? machineHTML(u, plan) : ""}
+      ${dubbie.length ? `<p class="note">Da verificare sul libro: ${dubbie.map(a =>
+          `<b>${esc(a.name)}</b> — ${esc(a.daVerificare)}`).join(" · ")}</p>` : ""}
+      ${plan.shots.nota ? `<p class="note">${esc(plan.shots.nota)}</p>` : ""}
+      <p class="note">L'arco apre il tiro: i modelli che tirano davvero, i modificatori, i dadi e le perdite, con il test di Panico oltre un quarto (p. ${SH.PAGE.panic}).</p>
     </div>`;
+}
+
+/* ---- la macchina da guerra ----
+   Non tira per colpire: piazza una sagoma e devia. I tre pulsanti sono
+   le tre sagome del manuale (p. 95); il quarto gesto e' il
+   bombardamento, che le mette insieme — si sceglie il punto, si tira
+   la deviazione, la sagoma si sposta e sotto ci finisce chi ci
+   finisce. */
+function machineHTML(u, plan){
+  const t = state.extras && state.extras.template;
+  const mine = t && t.by === u.uid ? t : null;
+  return `
+    <div class="readout"><span>Macchina da guerra</span><b>p. ${SH.PAGE.machines}</b></div>
+    <div class="grid3">
+      ${SH.TEMPLATE_IDS.map(id => `<button class="btn tiny tmpl-go" data-tmpl="${id}"
+          title="${esc(SH.TEMPLATES[id].label)}">${id === "teardrop" ? "goccia" : SH.TEMPLATES[id].d + "″"}</button>`).join("")}
+    </div>
+    <div class="grid2">
+      <button class="btn tiny" data-bombard="1" ${mine ? "" : "disabled title=\"Prima posa una sagoma\""}>Bombarda</button>
+      <button class="btn tiny" data-tmpl-off="1" ${mine ? "" : "disabled"}>Togli la sagoma</button>
+    </div>
+    <p class="note">${mine
+      ? `Sagoma ${esc(SH.TEMPLATES[mine.id].label.toLowerCase())} sul tavolo. «Bombarda» tira la deviazione, la sposta e conta chi resta sotto: sotto del tutto è colpito, sotto in parte a ${SH.PARTIAL_NEED}+ (p. ${SH.PAGE.templates}).`
+      : `Posa una sagoma sul bersaglio, poi bombarda. Il Mancato Colpo manda alla tabella di p. ${SH.MISFIRE.page}, che in quest'app è ancora da trascrivere.`}</p>`;
 }
 
 /* ---- chi ho intorno: le tre distanze che si guardano davvero ---- */
@@ -1493,6 +1553,11 @@ function drawBoard(){
   // le sagome di misura vanno SOPRA i modelli: sul tavolo si appoggiano
   drawMarkers(svg, g, true);
 
+  /* e sopra i modelli ci va anche la sagoma della macchina da guerra,
+     per la stessa ragione: al tavolo il pezzo di plastica si appoggia
+     sulle teste, e quello che si vuole vedere e' chi ci sta sotto */
+  drawTemplate(svg, g);
+
   /* l'ancora di movimento: i cerchi restano dove l'unità è partita */
   if (state.moveAid) drawMoveAid(svg, g, selUnit);
 
@@ -1647,6 +1712,49 @@ function shortName(n){
    quello glielo dà chi scrive l'etichetta. Le sagome di misura sono lo
    stesso oggetto senza riempimento, e si disegnano sopra i modelli
    perché sul tavolo ci si appoggiano davvero. */
+/* La sagoma della macchina da guerra: cerchio o goccia, il crocino nel
+   punto che si e' scelto e i modelli sotto segnati uno per uno —
+   pieno chi e' sotto del tutto, vuoto chi e' sotto solo in parte e
+   dovra' tirare il suo 4+ (p. 95). E' la riga che il §9 del piano
+   chiede per dire fatta questa tappa: la sagoma si sposta e i modelli
+   sotto si elencano. */
+function drawTemplate(svg, g){
+  const t = templateNow();
+  if (!t) return;
+  const shape = SH.placeTemplate(t.id, [t.x, t.y], t.angle || 0);
+  if (!shape) return;
+  const layer = g(svg, "g", { "pointer-events":"none" });
+  const col = "var(--warn)";
+  if (shape.kind === "circle")
+    g(layer, "circle", { cx:shape.c[0], cy:shape.c[1], r:shape.r, fill:col, opacity:.18,
+                         stroke:col, "stroke-width":2, "stroke-opacity":.8 });
+  else
+    g(layer, "polygon", { points: shape.poly.map(p => p.join(",")).join(" "), fill:col,
+                          opacity:.18, stroke:col, "stroke-width":2, "stroke-opacity":.8 });
+  /* il crocino del centro: una sagoma senza centro non si appoggia */
+  for (const [dx, dy] of [[-7, 0], [0, -7]])
+    g(layer, "line", { x1:t.x - dx, y1:t.y - dy, x2:t.x + dx, y2:t.y + dy,
+                       stroke:col, "stroke-width":1.6, opacity:.9 });
+
+  const cells = [];
+  for (const foe of state.units){
+    if (!foe.placed || foe.dead || isJoined(foe)) continue;
+    for (const c of FM.worldCells(foe, layoutOf(foe))) cells.push(c);
+  }
+  const under = SH.modelsUnder(cells.map((c, i) => ({ ...c, cell: i })), shape);
+  const mark = (list, fill) => {
+    for (const i of list){
+      const c = cells[i];
+      g(layer, "circle", { cx:c.wx, cy:c.wy, r:5, fill, stroke:"var(--paper)", "stroke-width":1.4 });
+    }
+  };
+  mark(under.full, "var(--bad)");
+  mark(under.partial, "none");
+  const txt = g(layer, "text", { x:t.x, y:t.y - (shape.kind === "circle" ? shape.r : 0) - 10,
+                                 "text-anchor":"middle", "font-size":15, fill:col });
+  txt.textContent = `${under.full.length} sotto · ${under.partial.length} a ${SH.PARTIAL_NEED}+`;
+}
+
 function drawMarkers(svg, g, measure){
   const list = state.markers.filter(m => !!m.measure === !!measure);
   if (!list.length) return;
@@ -1837,24 +1945,71 @@ const fmtIn = n => (Number.isInteger(n) ? String(n) : n.toFixed(1)).replace(".",
 const flies = u => (u.rules || []).some(r => /\bfly\b|volan|vola\b/i.test(r));
 
 /* Il piano di tiro: l'arma piu' lunga, e per ogni nemico se lo si vede,
-   se e' nell'arco, a che gittata e dietro che riparo. */
+   se e' nell'arco, a che gittata e dietro che riparo.
+
+   Dalla Tappa 4 ci sono due cose in piu', e sono le due che cambiano il
+   conto. La prima e' il CANCELLO (p. 137): chi ha caricato, marciato,
+   e' a contatto o sta fuggendo non tira, e adesso l'app lo sa da se'
+   invece di lasciarlo alla memoria. La seconda e' che i modelli che
+   tirano si contano uno per uno, e il conto sta nella riga del singolo
+   bersaglio perche' dipende da lui: lo stesso reggimento ne ha otto che
+   vedono il bosco a sinistra e tre che vedono la collina a destra. */
 export function shootPlanFor(u){
   if (!u || !u.placed) return null;
   const weapon = CB.rangedWeapons(u)[0] || null;
   const range = weapon ? stat(weapon.range) : (u.maxRange || 0);
   if (!range) return null;
+  const pieces = terrainPieces();
   const rows = shootingSurvey(u, enemiesOf(u), {
-    cornersOf: corners, boxOf, pieces: terrainPieces(), range, inch,
+    cornersOf: corners, boxOf, pieces, range, inch,
   });
-  return { weapon, range, rows };
+  /* Le regole del tiro stanno sull'unita' e sull'arma, e vanno lette
+     insieme: il giavellotto porta «Move & Shoot», l'arco corto porta
+     «Volley Fire», e nessuna delle due sta fra le regole dell'unita'. */
+  const rules = SH.readShooting(
+    [...(u.rules || []), ...splitWeaponRules(weapon && weapon.rules)], u.ruleText);
+  const lay = layoutOf(u);
+  const mv = MV.movedFrom(u);
+  const move = MV.moveOf(u);
+  const charged = !!(u.moved && u.moved.kind === "charge") || !!u.charged;
+  /* La marcia non e' un campo: e' l'ancora di movimento della Tappa 2
+     che dice di essere andati oltre il Movimento di profilo. Senza M
+     non si dichiara niente, come sempre. */
+  const marched = !charged && !!mv && !mv.still && move > 0 && mv.dist > move + 0.01;
+  return {
+    weapon, range, rows, rules, pieces,
+    cells: FM.worldCells(u, lay), front: lay.front,
+    moved: !!(mv && !mv.still), marched, charged,
+    shots: SH.shotsPerModel(rules.flags),
+    machine: troopType(u.troop).id === "warMachine",
+    gate: SH.canShoot({
+      charged, marched, engaged: engagedNow(u), fleeing: !!u.fled,
+      moved: !!(mv && !mv.still), weaponFlags: rules.flags,
+    }),
+  };
 }
 
 /* Quanto costa un colpo su quel bersaglio, modificatori spiegati uno
-   per uno: e' la riga che dice *perche'* serve un 5. */
+   per uno: e' la riga che dice *perche'* serve un 5. E quanti modelli
+   lo tirano davvero, che e' la riga che dice perche' sono otto e non
+   sedici. */
 export function shotOn(u, row, plan){
-  const mods = CB.shootMods({ long: row.long, cover: row.cover, looseTarget: row.unit.loose });
+  /* Il bersaglio va passato come poligono del tavolo, non come unita':
+     l'unita' non ha larghezza e profondita' sue — le ha la formazione —
+     e con l'oggetto grezzo ogni modello risultava fuori gittata. */
+  const survey = SH.shooterSurvey({
+    cells: plan.cells, target: { poly: corners(row.unit) }, pieces: plan.pieces,
+    range: plan.range, front: plan.front,
+    loose: !!u.loose, volley: !!plan.rules.flags.volleyFire,
+  });
+  const mods = SH.modsFor({
+    survey, shooter: { ...u, movedThisTurn: plan.moved }, target: row.unit,
+    weaponFlags: plan.rules.flags,
+  });
   const weapon = plan.weapon || { range: String(plan.range), S: "", ap: "" };
-  return { mods, ...CB.shootForecast(u, row.unit, { weapon, mods: mods.total }) };
+  const shots = survey.n * plan.shots.n;
+  return { survey, mods, shots,
+           ...CB.shootForecast(u, row.unit, { weapon, mods: mods.total, shots }) };
 }
 
 /* ============================================================
@@ -2187,7 +2342,215 @@ async function runFlee(t, from){
 }
 
 /* ============================================================
-   7d · LA FINE DELL'ASSALTO (Tappa 3)
+   7d · IL TIRO (Tappa 4)
+   Il pannello sapeva gia' dire quanti pollici, che punteggio e quante
+   perdite in media; quello che non sapeva era *tirare*. L'arco in
+   fondo alla riga fa i quattro gesti della fase nell'ordine del
+   manuale, e ognuno e' un'azione del motore che si annulla da sola:
+   si dichiara il bersaglio (p. 137), si tira la raffica con i
+   modificatori che il tavolo ha gia' calcolato (p. 138), si tolgono i
+   modelli, e chi ne ha persi piu' di un quarto tira il Panico
+   (p. 141).
+
+   I dadi si vedono cadere prima di leggere il conto, come nello
+   scontro simulato: al contrario il risultato sarebbe gia' li' e i
+   cubi diventerebbero un fregio.
+   ============================================================ */
+const asDice = (p, need) => (p.dice || []).map(v => ({ value:v, win: need ? v >= need && v > 1 : false }));
+
+function shotGroups(r, who, target){
+  const out = [];
+  const add = (label, p, need) => {
+    if (!p || !(p.dice || []).length || (need || 0) >= 7) return;
+    out.push({ kind:"d6", label, dice: asDice(p, need), tail: `${p.hits} su ${p.of}` });
+  };
+  add(`${who} · colpisce ${r.hitNeed}+`, r.hit, r.hitNeed);
+  add(`${who} · ferisce ${r.woundNeed}+`, r.wound, r.woundNeed);
+  add(`${target} · armatura ${r.saveNeed}+`, r.save, r.saveNeed);
+  add(`${target} · speciale ${r.wardNeed}+`, r.ward, r.wardNeed);
+  add(`${target} · rigenera ${r.regenNeed}+`, r.regen, r.regenNeed);
+  return out;
+}
+
+async function runShot(u, uid){
+  const plan = shootPlanFor(u);
+  const row = plan && plan.rows.find(r => r.unit.uid === +uid);
+  if (!row) return;
+  const t = row.unit;
+  const f = shotOn(u, row, plan);
+  const why = f.mods.list.map(m => `${m.v} ${m.why}`).join(", ");
+
+  /* 1 · la dichiarazione. La nona delle sedici caselle e' il posto in
+     cui vive; se siamo altrove ci si va, e il registro lo scrive. */
+  act("dichiarazione di tiro", () => {
+    if (state.game.on) G.goStep(8);
+    G.dispatch({ type:"declareShot", unit:u, target:t, army:u.army,
+      weapon: plan.weapon ? plan.weapon.name : "",
+      text: `${u.name} prende di mira ${t.name} a ${row.dist.toFixed(1)}″: ` +
+            `${f.shots} tir${f.shots === 1 ? "o" : "i"} da ${f.survey.n} modell${f.survey.n === 1 ? "o" : "i"}` +
+            (why ? ` (${why})` : "") });
+  });
+  if (!plan.gate.can) toast("Tira lo stesso: l'app propone, non impedisce.");
+  if (!f.shots) return toast("Nessun modello vede il bersaglio a gittata.");
+
+  /* 2 · la raffica, vista cadere */
+  const weapon = plan.weapon || { range: String(plan.range), S: "", ap: "" };
+  const r = CB.shootRoll(u, t, { weapon, mods: f.mods.total, shots: f.shots });
+  await showDiceGroups(shotGroups(r, u.name, t.name), {
+    title: `Tiro di ${u.name} su ${t.name}`,
+    foot: r.notes.length ? r.notes.join(" · ")
+                         : "Gli stessi dadi del conto: nessuno viene ritirato.",
+  });
+
+  /* 3 · le tre caselle del tiro, con i dadi che si sono appena visti.
+     Rifarli qui vorrebbe dire scrivere nel registro un tiro diverso da
+     quello caduto nel vassoio. */
+  act("tiro", () => {
+    if (state.game.on) G.goStep(9);
+    G.dispatch({ type:"toHit", unit:u, army:u.army, need:r.hitNeed, dice:f.shots },
+               { colpire: { dice: r.hit.dice, hits: r.hit.hits } });
+    if (r.hit.hits){
+      if (state.game.on) G.goStep(10);
+      G.dispatch({ type:"toWound", unit:u, army:u.army, need:r.woundNeed, dice:r.hit.hits },
+                 { ferire: { dice: r.wound.dice, hits: r.wound.hits } });
+      if (r.wound.hits && r.saveNeed < 7)
+        G.dispatch({ type:"save", unit:t, army:t.army, need:r.saveNeed, dice:r.wound.hits },
+                   { salvezza: { dice: r.save.dice, hits: r.save.hits } });
+    }
+    if (state.game.on) G.goStep(11);
+    if (r.kills > 0) G.setLost(t, (t.lost || 0) + r.kills);
+    else G.dispatch({ type:"note", army:u.army,
+                      text: `${t.name}: nessuna perdita — ${r.wounds} ferit${r.wounds === 1 ? "a" : "e"} passate` });
+  });
+
+  /* 4 · il Panico. Il conto si fa sulla Forza d'Unita' quando c'e', e
+     l'app sa quanti ne sono partiti meglio di chiunque al tavolo. */
+  if (r.kills > 0) await panicCheck(t, r.kills, `il tiro di ${u.name}`);
+}
+
+/* Il test di Panico oltre un quarto (p. 141). Vive qui e non dentro
+   `runShot` perche' la stessa domanda tornera' identica per le altre
+   tre cause della Tappa 5: e' una misura piu' un test di Comando. */
+async function panicCheck(t, killed, from){
+  const us = unitStrength(t.troop, t.us, t.models, t.models);
+  /* Quanta Forza d'Unita' se ne va con ogni modello: un Rat Ogre ne
+     porta via tre, e contare le teste darebbe la risposta sbagliata
+     proprio sulle unita' in cui il Panico conta di piu'. */
+  const perModel = us / Math.max(1, t.models);
+  const chk = SH.panicFromShooting({
+    start: t.models, lost: t.lost || 0,
+    us, usLost: Math.round(killed * perModel),
+    destroyed: !!t.dead,
+  });
+  if (!chk.must) return;
+  const rolls = await G.askRolls([{ id:"panico", kind:"d6", n:2, why:"test di Panico" }],
+                                 `Panico di ${t.name}`);
+  if (!rolls || !rolls.panico) return;
+  act("test di Panico", () => {
+    if (state.game.on) G.goStep(11);
+    G.dispatch({ type:"panic", unit:t, army:t.army,
+      text: `${t.name} tira il Panico per ${from}: ${chk.why}` }, rolls);
+  });
+}
+
+/* ---- la sagoma sul tavolo ----
+   Sta in `state.extras`, che e' il secchio che i tre serializzatori
+   copiano alla cieca: cosi' la sagoma si annulla, si salva e si
+   condivide come tutto il resto, senza toccare tre moduli. */
+const templateNow = () => (state.extras && state.extras.template) || null;
+
+function setTemplate(t){
+  state.extras = { ...(state.extras || {}), template: t };
+}
+
+function putTemplate(u, id){
+  /* Si posa davanti alla bocca dell'arma, a meta' strada dal nemico
+     piu' vicino: e' il punto che al tavolo si sceglie per primo, e da
+     li' lo si trascina. */
+  const near = shootPlanFor(u);
+  const row = near && near.rows.find(r => r.canShoot);
+  const aim = row ? row.aim : [u.x, u.y - unitD(u)];
+  const ang = Math.atan2(aim[1] - u.y, aim[0] - u.x) * 180 / Math.PI;
+  act("posa la sagoma", () => {
+    setTemplate({ id, x: aim[0], y: aim[1], angle: ang, by: u.uid });
+    if (state.game.on) G.goStep(8);
+    G.dispatch({ type:"template", unit:u, army:u.army,
+      what: SH.TEMPLATES[id].label.toLowerCase(),
+      target: row ? row.unit : null });
+  });
+}
+
+async function runBombard(u){
+  const t = templateNow();
+  if (!t || t.by !== u.uid) return;
+  /* La distanza della deviazione la tira il dado di artiglieria, che e'
+     anche il dado che dice il Mancato Colpo: sono lo stesso gesto, e
+     per questo il vassoio si apre gia' impostato cosi'. */
+  const rolls = await G.askRolls([{ id:"deviazione", kind:"scatter", dist:"artillery",
+                                    why:"deviazione della sagoma",
+                                    foot:"Il dado di artiglieria dice i pollici; il Mancato Colpo manda alla tabella dell'arma." }],
+                                 `Bombardamento di ${u.name}`);
+  if (!rolls || !rolls.deviazione) return;
+  const d = rolls.deviazione;
+  const out = SH.bombard({ aim: [t.x, t.y], template: t.id, angle: t.angle,
+                           deg: d.deg || 0, inches: d.inches || 0,
+                           hit: !!d.hit, misfire: !!d.misfire });
+
+  if (out.misfire){
+    const guasto = await G.askRolls([{ id:"guasto", kind:"d6", n:1, why:"tabella del Mancato Colpo" }],
+                                    `Mancato Colpo di ${u.name}`);
+    if (!guasto || !guasto.guasto) return;
+    const face = (guasto.guasto.dice || [])[0] || 1;
+    const read = SH.misfireRead("stone", face);
+    act("Mancato Colpo", () => {
+      if (state.game.on) G.goStep(9);
+      G.dispatch({ type:"misfire", unit:u, army:u.army, text: read.text }, guasto);
+    });
+    return;
+  }
+
+  /* Chi resta sotto: sotto del tutto e' colpito, sotto in parte a 4+.
+     I modelli sono quelli veri, basetta per basetta, non il rettangolo
+     dell'unita'. */
+  const cells = [];
+  for (const foe of enemiesOf(u))
+    for (const c of FM.worldCells(foe, layoutOf(foe)))
+      cells.push({ ...c, foe });
+  const under = SH.modelsUnder(cells.map((c, i) => ({ ...c, cell: i })), out.shape);
+  let hits = SH.templateHits(under);
+  if (under.partial.length){
+    const parziali = await G.askRolls([{ id:"parziali", kind:"d6", n: under.partial.length,
+                                         need: SH.PARTIAL_NEED, why:"chi e' sotto solo in parte" }],
+                                      `Sagoma di ${u.name}`);
+    if (parziali && parziali.parziali) hits = SH.templateHits(under, parziali.parziali.dice);
+  }
+
+  /* Quanti per unita': la sagoma non conosce i reggimenti, li conosce
+     il tavolo. */
+  const perUnit = new Map();
+  for (const i of hits.cells || []){
+    const foe = cells[i].foe;
+    perUnit.set(foe, (perUnit.get(foe) || 0) + 1);
+  }
+  const detta = [...perUnit.entries()].map(([f, n]) => `${f.name}: ${n}`).join(", ");
+
+  act("bombardamento", () => {
+    setTemplate({ ...t, x: out.to[0], y: out.to[1] });
+    if (state.game.on) G.goStep(9);
+    G.dispatch({ type:"scatter", unit:u, army:u.army,
+      text: `${out.text} Sotto: ${hits.full} del tutto, ${hits.partial} in parte` +
+            (detta ? ` — ${detta}` : " — nessuno") }, rolls);
+  });
+  if (!perUnit.size) return toast("La sagoma è caduta sul vuoto.");
+  act("perdite dalla sagoma", () => {
+    if (state.game.on) G.goStep(11);
+    for (const [foe, n] of perUnit) G.setLost(foe, (foe.lost || 0) + n);
+  });
+  for (const [foe, n] of perUnit) await panicCheck(foe, n, `la sagoma di ${u.name}`);
+}
+
+/* ============================================================
+   7e · LA FINE DELL'ASSALTO (Tappa 3)
    Il pannello dello scontro sapeva gia' tirare tutto un assalto e
    contare chi aveva vinto; quello che non sapeva era *portarlo sul
    tavolo*. Le perdite si segnavano con un pulsante, il test di rotta

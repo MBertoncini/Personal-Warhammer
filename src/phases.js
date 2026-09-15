@@ -62,10 +62,14 @@ export const PHASES = [
   { id:"shooting", label:"Tiro", page:136, steps:[
     { id:"pick", label:"Scelta e bersaglio",
       what:"chi tira e a cosa: non chi ha caricato, marciato o e' in mischia",
-      does:["note","roll","declareShot"] },
+      does:["note","roll","declareShot","template"] },
+    /* La sagoma e la sua deviazione stanno qui e non in una casella
+       loro: una macchina da guerra non tira per colpire, piazza e
+       devia, e quello e' il suo «per colpire» (p. 95). Il Mancato
+       Colpo e' l'altro esito dello stesso gesto. */
     { id:"toHit", label:"Per colpire",
       what:"i modificatori si sommano qui: mosso, lunga gittata, copertura",
-      does:["note","roll","toHit"] },
+      does:["note","roll","toHit","template","scatter","misfire"] },
     { id:"toWound", label:"Per ferire e salvezze",
       what:"ferire, armatura, salvezza speciale, rigenerazione",
       does:["note","roll","toWound","save"] },

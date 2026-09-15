@@ -379,10 +379,11 @@ Qui il progetto parte molto avanti. Quello che manca è preciso:
    inseguimento**~~ — fatti (pp. 132-134 e 156): una direzione lontano dal
    nemico con la Forza d'Unità più alta, in diagonale quando i più
    grossi sono due, e i pollici che il vassoio ha tirato.
-7. **Sagome**: cerchio da 3″ e da 5″, goccia da 8″ (p. 95), con la
-   regola «sotto del tutto = colpito, sotto in parte = 4+». La
-   deviazione c'è già nel vassoio: manca il pezzo che la applica sul
-   tavolo, cioè una sagoma che si sposta di N pollici in una direzione.
+7. ~~**Sagome**: cerchio da 3″ e da 5″, goccia da 8″ (p. 95), con la
+   regola «sotto del tutto = colpito, sotto in parte = 4+»~~ — fatto
+   nella Tappa 4 (`shoot.js`), e con la deviazione che finalmente sposta
+   la sagoma sul tavolo. Le due larghezze della goccia sono dichiarate
+   da verificare.
 8. **Terreno per categoria** (pp. 269-270): aperto, difficile,
    pericoloso, impassabile, ostacolo basso, ostacolo alto, bosco. Oggi i
    tipi di terreno sono grafici e uno o due sono trattati come
@@ -397,8 +398,8 @@ già rappresentabili con quello che l'app disegna, manca solo il campo
 che dice **che tipo di terreno è**. Il campo c'è dalla Tappa 0, e dalla
 Tappa 2 la carica lo legge: il pezzo attraversato dice se rallenta, se
 fa tenere il dado peggiore, se chiede il test di terreno pericoloso e
-se fa arrivare in disordine. Restano il punto 7 (le sagome, che sono
-della Tappa 4) e le due eccezioni dell'ostacolo difeso.
+se fa arrivare in disordine. Restano le due eccezioni dell'ostacolo
+difeso.
 
 ---
 
@@ -438,20 +439,25 @@ Per ogni fase: cosa l'app può fare da sola, e cosa resta ai giocatori.
   (frenesia, stupidità) arrivano con la Tappa 5.
 
 ### Tiro
-- Chi può tirare: non ha caricato, non ha marciato, non è in mischia,
-  non è in fuga (p. 137).
-- Chi vede e chi è in gittata, modello per modello: c'è già il campo di
-  tiro, va portato al conteggio per modello.
-- Modificatori: mosso, lunga gittata, tira e tieni, copertura parziale,
-  copertura piena — cumulativi (p. 138). Il pannello li scrive già uno
-  per uno, va agganciato alle condizioni vere invece che alle caselle.
-- L'1 naturale non colpisce mai; AB 6+ ha il ritiro con un secondo
-  punteggio.
-- Perdite e **test di Panico** oltre un quarto (p. 141).
-- Macchine da guerra (pp. 222-229): bombardamento con deviazione,
-  palla di cannone con rimbalzo, tabelle del Mancato Colpo. Il dado di
-  artiglieria e quello di deviazione ci sono già; qui si aggiungono le
-  sagome e le due tabelle di guasto.
+- ~~Chi può tirare: non ha caricato, non ha marciato, non è in mischia,
+  non è in fuga (p. 137).~~ Fatto nella Tappa 4, e l'arma *Move or
+  Shoot* aggiunge il suo divieto a chi ha mosso.
+- ~~Chi vede e chi è in gittata, modello per modello.~~ Fatto: ogni
+  modello misura la sua distanza e guarda la sua linea di vista, e il
+  pannello dice perché gli altri restano fermi.
+- ~~Modificatori: mosso, lunga gittata, tira e tieni, copertura
+  parziale, copertura piena — cumulativi (p. 138).~~ Fatto, e agganciati
+  alle condizioni vere: l'ancora di movimento, la gittata e la copertura
+  viste dalla maggioranza di chi tira.
+- ~~L'1 naturale non colpisce mai; AB 6+ ha il ritiro con un secondo
+  punteggio.~~ Fatto; quale sia il secondo punteggio è dichiarato da
+  verificare.
+- ~~Perdite e **test di Panico** oltre un quarto (p. 141).~~ Fatto, e
+  contato sulla Forza d'Unità invece che sulle teste.
+- Macchine da guerra (pp. 222-229): ~~bombardamento con deviazione~~
+  fatto; la palla di cannone con rimbalzo è scritta ma non ha ancora il
+  suo pulsante; le due tabelle del Mancato Colpo sono vuote finché
+  qualcuno non le trascrive da p. 347.
 
 ### Corpo a corpo
 - Chi combatte: fila che combatte, contatto di basetta, attacchi di
@@ -515,7 +521,7 @@ Perché il piano sia onesto sui tempi, conviene contare i dati:
 | Regole speciali universali | ~80 | pp. 166-181 | registro con agganci |
 | Incantesimi | 8 domini × 7 | pp. 319-335 | dati + vocabolario di effetti |
 | Macchine da guerra | 6 tipi | pp. 223-229 | procedure |
-| Tabelle del Mancato Colpo | 2 | p. 347 | tabelle |
+| Tabelle del Mancato Colpo | 2 | p. 347 | tabelle — *vuote in `shoot.js`, da trascrivere* |
 | Tabella del fiasco | 1 | p. 109 | tabella |
 | Armi da mischia e da tiro | ~20 | pp. 213-219 | profili |
 | Armature ed equipaggiamento | ~10 | pp. 220-221 | profili |
@@ -973,12 +979,102 @@ preme un pulsante e sul tavolo si muovono i pezzi giusti. Le prove
 stanno in `test/mischia.mjs`, che guarda l'assalto dal lato dei numeri
 come `test/movimento.mjs` guarda la carica dal lato del tavolo.
 
-**Tappa 4 — Tiro e macchine da guerra.**
-Conteggio dei tiratori modello per modello, modificatori automatici,
-sagome sul tavolo, deviazione applicata, cannone e lanciapietre con le
-tabelle di guasto, test di Panico.
+**Tappa 4 — Tiro e macchine da guerra. — fatta, con due tabelle vuote**
+~~Conteggio dei tiratori modello per modello~~, ~~modificatori
+automatici~~, ~~sagome sul tavolo~~, ~~deviazione applicata~~,
+~~cannone e lanciapietre~~ con le tabelle di guasto *ancora da
+trascrivere*, ~~test di Panico~~. Stanno in `shoot.js`, che di tavolo
+non sa niente come `charge.js` e `melee.js`: entrano punti, poligoni e
+facce già uscite, escono conti e posizioni con la traccia di come sono
+venuti.
+
+Come si vede al tavolo. Nel pannello del tiro ogni nemico ha una riga
+in più, e sotto la riga c'è quello che prima si contava a occhio:
+«8 tiri da 8 modelli · 6 in coda, 2 non lo vedono». In fondo alla riga
+c'è l'arco, e l'arco gioca la fase per intero nell'ordine del manuale:
+si dichiara il bersaglio (p. 137), la raffica cade nel vassoio con i
+modificatori che il tavolo ha già calcolato (p. 138), i modelli si
+tolgono, e chi ha perso più di un quarto tira il Panico (p. 141). Ogni
+passo è un'azione del motore, e ognuno si annulla da solo.
+
+Una macchina da guerra ha tre pulsanti in più: le tre sagome del
+manuale (p. 95). La sagoma si posa sul nemico più vicino, si disegna
+sopra i modelli con i pallini pieni su chi è sotto del tutto e vuoti su
+chi è sotto in parte, e «Bombarda» tira la deviazione con il dado di
+artiglieria, la sposta, chiede i 4+ dei parziali e toglie i modelli
+unità per unità. È esattamente il *fatto quando* di questa tappa.
+
+Le cose che questa tappa ha reso spiegabili, e prima non lo erano:
+
+- **Il tetto delle due file non è un conto.** L'app contava `fronte ×
+  2` e basta. È giusto come tetto e sbagliato come conto: un reggimento
+  obliquo dietro una collina ha metà della prima fila che il bersaglio
+  non lo vede e l'altra metà fuori gittata di due pollici. Adesso ogni
+  modello misura la sua distanza e guarda la sua linea di vista, e il
+  pannello dice per quale delle tre ragioni gli altri restano fermi.
+- **I modificatori venivano dalle caselle.** Il −1 del movimento lo
+  spuntava chi si ricordava di aver mosso. Adesso lo dice l'ancora di
+  movimento della Tappa 2, la lunga gittata e la copertura le dice la
+  maggioranza dei modelli che tirano davvero, e *Move & Shoot* toglie
+  il −1 da sé.
+- **Il cancello di p. 137.** Chi ha caricato, marciato, è a contatto o
+  sta fuggendo non tira, e l'arma *Move or Shoot* non tira dopo aver
+  mosso. L'app lo scrive in arancio sopra le righe, e poi lascia tirare
+  lo stesso: è il §1.
+- **L'Abilità Balistica alta non si fermava al 2+.** Il conto la
+  tagliava lì e basta. Adesso porta il ritiro dei mancati con un
+  **secondo punteggio**, che non è il ritiro di `pool`: lì il dado
+  rifatto si confronta con lo stesso numero, qui con uno più alto. Sono
+  due tiri in fila, e la previsione e la raffica li contano tutti e due.
+- **Le quattro regole d'arma «altrove».** *Move & Shoot*, *Quick Shot*,
+  *Volley Fire* e *Multiple Shots* stavano fra le regole che «riguardano
+  il tiro, non la mischia», e nessuno le leggeva. Sono quelle che le
+  liste salvate portano davvero sui giavellotti, sugli archi corti e sui
+  jezzail, e adesso le legge la fase di tiro.
+- **La deviazione del vassoio non spostava niente.** Il vassoio la
+  tirava da sempre, e il motore la riceveva come un pugno di facce da
+  sommare. Adesso arriva intera — gradi, pollici, Colpito!, Mancato
+  Colpo — e il registro scrive «devia di 6″ verso destra» invece di
+  «4 + 0 = 4».
+- **Due errori li ha trovati solo il tavolo vero.** Le prove passavano,
+  e nel browser gli arcieri goblin avevano zero tiratori su bersagli a
+  dodici pollici: il bersaglio arrivava al conto come unità grezza, che
+  non ha larghezza sua, e ogni modello risultava fuori gittata. Poi,
+  sistemato quello, un solo arciere che guardava oltre lo spigolo di un
+  muretto dava la copertura pesante a tutta la raffica. Adesso vale la
+  copertura della maggioranza, come il paragrafo sopra diceva già, e
+  un'unità spazzata via dalla raffica non viene più chiamata al Panico.
+
+Quello che resta fuori, detto per non lasciarlo scoprire a una partita:
+
+- **Le due tabelle del Mancato Colpo sono vuote.** Stanno a p. 347, sei
+  righe ognuna, e in casa non c'è nessun file che le contenga: le liste
+  di New Recruit portano il testo delle regole speciali, non quello
+  delle tabelle del manuale. L'app tira il D6, dice la faccia e la
+  pagina, e non inventa l'esito. Trascriverle è riempire dodici stringhe
+  in `MISFIRE`, e da quel momento il registro scrive la riga vera.
+- **Tre numeri dichiarati da verificare**: il secondo punteggio
+  dell'Abilità Balistica alta (il piano dice che c'è, non dice quale),
+  e le due larghezze della goccia (il piano dà la lunghezza, otto
+  pollici, e non la testa e la coda). Stanno in una costante ognuno.
+- *Quick Shot* e *Volley Fire* sono lette ma non contate fino in fondo:
+  la prima non aggiunge tiri finché non si sa quanti, la seconda alza il
+  tetto a tutte le file senza il modificatore che forse porta. Il
+  pannello lo scrive accanto al numero. *Cumbersome* e *Ponderous* sono
+  solo nominate.
+- Il **cannone** è scritto — distanza indovinata, primo dado di
+  artiglieria, rimbalzo, la linea che la palla percorre — ma sul tavolo
+  non ha ancora il suo pulsante: il pannello gioca il bombardamento,
+  non la palla. Il *tira e tieni* apre ancora la reazione senza tirare
+  la raffica.
+- Le altre tre cause del Panico sono della Tappa 5; qui c'è solo quella
+  che il tiro produce da sé.
+
 *Fatto quando*: un lanciapietre si risolve dal tavolo, con la sagoma
-che si sposta e i modelli sotto elencati.
+che si sposta e i modelli sotto elencati. **Lo fa**, e il Mancato Colpo
+porta alla pagina giusta invece che a una riga inventata. Le prove
+stanno in `test/tiro.mjs`, che guarda il tiro dal lato dei numeri come
+`test/mischia.mjs` guarda l'assalto.
 
 **Tappa 5 — Psicologia e le prime venti regole speciali.**
 Panico con le quattro cause, paura, terrore, odio, stupidità, frenesia;
