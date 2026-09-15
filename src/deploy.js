@@ -30,6 +30,7 @@ import * as CH from './charge.js';
 import * as SH from './shoot.js';
 import * as PS from './psych.js';
 import * as ARM from './armies.js';
+import * as MG from './magic.js';
 import { splitWeaponRules } from './rulebook.js';
 import { showDiceGroups } from './dicebox.js';
 import { askText, askConfirm, askPick, showMenu, closeMenu,
@@ -619,6 +620,7 @@ function renderInspector(){
       ${chargeHTML(u)}
       ${psychHTML(u)}
       ${armyBlockHTML(u)}
+      ${magicHTML(u)}
       ${gameBlockHTML(u)}
       ${nearbyHTML(u)}
       <div class="grid2"><button class="btn" id="i-rot-l">↺ 90°</button><button class="btn" id="i-rot-r">↻ 90°</button></div>
@@ -670,6 +672,8 @@ function renderInspector(){
   /* i gesti d'esercito da una volta per partita (Tappa 5 bis) */
   for (const b of host.querySelectorAll("[data-army]"))
     b.addEventListener("click", () => runArmyAbility(u, b.dataset.army));
+  /* la magia (Tappa 6): il mago si prepara, genera, lancia, dissolve */
+  wireMagic(host);
   /* L'arco tira la raffica per intero: dichiarazione, dadi, perdite,
      Panico. La sagoma e il bombardamento sono l'altra meta' della
      Tappa 4, quella che non tira per colpire. */
@@ -2850,6 +2854,432 @@ function spreadsTo(host, owner, rule){
   return yes.test(host.name) && !(no && [host, ...attachedOf(host)].some(x => no.test(x.name)));
 }
 
+/* ============================================================
+   7d ter · LA MAGIA (Tappa 6)
+   Il ciclo del libro (pp. 106-111) portato sul tavolo. Il mago si
+   prepara una volta — Livello e dominio, che il file di New Recruit non
+   dice — e genera gli incantesimi dal vassoio. In partita ogni
+   incantesimo ha il suo pulsante: si sceglie il bersaglio, si tira il
+   lancio, il fiasco ha la sua tabella, l'avversario sceglie se e con chi
+   dissolvere, e quello che resta in piedi diventa un effetto a tempo o
+   una raffica di colpi. Ogni passo e' un'azione del motore, quindi ogni
+   passo si annulla da solo.
+
+   `magic.js` sa le regole; qui c'e' solo quello che sa il tavolo: chi e'
+   a quanti pollici, chi vede chi, chi combatte con chi.
+   ============================================================ */
+const MAGIC = () => { const m = MG.magicNow(); return m && m.ok ? m : null; };
+
+/* Quello che la magia ricorda fra un turno e l'altro sta in
+   `state.extras`, come la sagoma: cosi' si annulla, si salva e si
+   condivide con il resto senza toccare i serializzatori. */
+const magicState = () => ({ fated: {}, inPlay: [], ...((state.extras && state.extras.magic) || {}) });
+const setMagicState = patch => { state.extras = { ...(state.extras || {}), magic: { ...magicState(), ...patch } }; };
+const turnKey = () => "T" + (state.game.turn || 1) + (state.game.army || "A");
+const castNow = x => {
+  const c = x && x.magic && x.magic.cast;
+  return c && c.turn === state.game.turn && c.side === state.game.army ? c : null;
+};
+const unitByUid = v => state.units.find(o => String(o.uid) === String(v)) || null;
+const spellName = id => ((MAGIC() && MAGIC().spell(id)) || {}).name || id;
+
+function wizardOf(x){
+  const M = MAGIC(), m = (x && x.magic) || {};
+  return {
+    level: MG.levelOf(x, m), lore: m.lore || "", numbers: m.numbers || [], swaps: m.swaps || [],
+    known: M ? MG.knownSpells(M, m.lore, m.numbers || [], m.swaps || []) : [],
+    bound: M ? M.boundFor((x && x.rules) || []) : [],
+    loreObj: M && m.lore ? M.lore(m.lore) : null,
+  };
+}
+const castersIn = u => MAGIC() ? [u, ...attachedOf(u)].filter(x =>
+  MG.isWizard(x, x.magic) || MAGIC().boundFor(x.rules || []).length > 0) : [];
+
+const rangeTxt = s => s.range === "self" ? "sé" : s.range === "combat" ? "mischia"
+  : typeof s.range === "number" ? s.range + "″" : String(s.range);
+
+function magicHTML(u){
+  const M = MAGIC();
+  if (!M || !u || !u.placed || u.dead || isJoined(u)) return "";
+  const casters = castersIn(u);
+  if (!casters.length) return "";
+  const inPlay = magicState().inPlay.map((e, i) => ({ ...e, i }));
+  const line = s => `${esc(s.name)} <span class="dim">· ${MG.TYPE_LABEL[s.type]} · ${s.cv}+${s.cv2 ? "/" + s.cv2 + "+" : ""} · ${esc(rangeTxt(s))}${s.rip ? " · resta in gioco" : ""}${s.bound ? " · vincolato, Potere " + s.potere : ""}</span>`;
+
+  const blocks = casters.map(x => {
+    const w = wizardOf(x);
+    const setup = [];
+    if (MG.isWizard(x, x.magic)){
+      if (!w.level || !w.lore)
+        setup.push(`<div class="chiprow">
+          <select data-mg-level="${x.uid}" title="Il Livello del mago: il file della lista non lo dice">
+            <option value="">— Livello —</option>${[1, 2, 3, 4].map(n =>
+              `<option value="${n}" ${w.level === n ? "selected" : ""}>Livello ${n}</option>`).join("")}
+          </select>
+          <select data-mg-lore="${x.uid}" title="Il dominio scelto quando si è scritta la lista (p. 106)">
+            <option value="">— dominio —</option>${M.lores.map(l =>
+              `<option value="${l.id}" ${w.lore === l.id ? "selected" : ""}>${esc(l.label)}</option>`).join("")}
+          </select></div>`);
+      else if (!w.numbers.length)
+        setup.push(`<div class="chiprow"><button class="btn tiny" data-mg-gen="${x.uid}"
+          title="Tanti D6 quanti il Livello, e i doppioni si ritirano (p. 106)">Genera gli incantesimi (${w.level}D6)</button></div>`);
+      else {
+        const opts = MG.swapOptions(M, w.lore, x.rules || []).filter(o => !w.known.some(k => k.id === o.id));
+        if (!w.swaps.length && opts.length)
+          setup.push(`<select data-mg-swap="${x.uid}" title="Uno degli incantesimi generati si può scambiare con la firma del dominio, o con un incantesimo del dominio d'esercito (p. 106)">
+            <option value="">— scambia un incantesimo —</option>
+            ${w.known.flatMap(k => opts.map(o => `<option value="${k.id}|${o.id}">${esc(k.name)} → ${esc(o.name)}</option>`)).join("")}
+          </select>`);
+      }
+    }
+    const cs = castNow(x);
+    const btn = s => !state.game.on ? "" :
+      `<button class="btn tiny" data-mg-cast="${x.uid}|${s.id}" title="${esc(s.testo || "")}">${
+        cs && cs.ids.includes(s.id) ? "Già tentato" : "Lancia"}</button>`;
+    const rows = [...w.known, ...w.bound].map(s =>
+      `<div class="readout"><span title="${esc(s.testo || "")}">${line(s)}</span>${btn(s)}</div>`).join("");
+    const mine = inPlay.filter(e => e.caster === x.uid);
+    return `<div class="readout"><span>Mago</span><b>${esc(x.name)}${w.level ? " · Livello " + w.level : ""}${
+        w.loreObj ? " · " + esc(w.loreObj.label) : ""}</b></div>
+      ${setup.join("")}${rows}
+      ${cs && cs.stop ? `<p class="note" style="color:var(--warn)">Dopo il fiasco non lancia altro in questo turno (p. 109).</p>` : ""}
+      ${mine.map(e => `<div class="readout"><span>In gioco: ${esc(spellName(e.spellId))}${
+        e.target != null ? " su " + esc((unitByUid(e.target) || {}).name || "?") : ""}</span>
+        <button class="btn tiny" data-mg-end="${e.i}" title="Il mago lo termina all'inizio di una sotto-fase qualsiasi (p. 111)">Termina</button></div>`).join("")}`;
+  }).join("");
+
+  const foeRip = !state.game.on ? [] : inPlay.filter(e => e.army !== u.army);
+  return `
+    <div class="magic-block">
+      <div class="readout"><span>Magia</span><b>${casters.length > 1 ? casters.length + " maghi" : ""}</b></div>
+      ${blocks}
+      ${foeRip.map(e => `<div class="readout"><span>Nemico in gioco: ${esc(spellName(e.spellId))}</span>
+        <button class="btn tiny" data-mg-dispel="${e.i}"
+          title="Nella congiurazione dei turni dopo, contro il valore di lancio (p. 111)">Dissolvi</button></div>`).join("")}
+    </div>`;
+}
+
+function wireMagic(host){
+  const on = (sel, ev, fn) => { for (const el of host.querySelectorAll(sel)) el.addEventListener(ev, () => fn(el)); };
+  on("[data-mg-level]", "change", el => {
+    const x = unitByUid(el.dataset.mgLevel); if (!x) return;
+    act("Livello del mago", () => { x.magic = { ...(x.magic || {}), level: +el.value || 0, numbers: [], swaps: [] }; });
+    renderAll();
+  });
+  on("[data-mg-lore]", "change", el => {
+    const x = unitByUid(el.dataset.mgLore); if (!x) return;
+    act("dominio del mago", () => { x.magic = { ...(x.magic || {}), lore: el.value, numbers: [], swaps: [] }; });
+    renderAll();
+  });
+  on("[data-mg-gen]", "click", el => runGenerate(unitByUid(el.dataset.mgGen)));
+  on("[data-mg-swap]", "change", el => {
+    const x = unitByUid(el.dataset.mgSwap); if (!x || !el.value) return;
+    const [out, into] = el.value.split("|");
+    act("scambio di incantesimo", () => {
+      x.magic = { ...(x.magic || {}), swaps: [{ out, into }] };
+      G.logLine(`${x.name} scarta ${spellName(out)} e prende ${spellName(into)} (p. 106).`, { army: x.army });
+    });
+    renderAll();
+  });
+  on("[data-mg-cast]", "click", el => {
+    const [uid, id] = el.dataset.mgCast.split("|");
+    runCast(unitByUid(uid), id);
+  });
+  on("[data-mg-end]", "click", el => endSpell(+el.dataset.mgEnd, "il mago lo termina"));
+  on("[data-mg-dispel]", "click", el => runDispelLater(+el.dataset.mgDispel));
+}
+
+/* ---- generare (p. 106) ----
+   Si tirano tanti D6 quanti il Livello; se esce un doppione il vassoio
+   si riapre per i dadi che mancano. Quello che si scrive nel registro
+   sono le facce, i doppioni ritirati e gli incantesimi che ne escono. */
+async function runGenerate(x){
+  const w = x && wizardOf(x);
+  if (!w || !w.level || !w.loreObj) return;
+  const faces = [];
+  let res = MG.generateSpells({ level: w.level, dice: faces });
+  for (let guard = 0; !res.done && guard < 12; guard++){
+    const r = await G.askRolls([{ id:"incantesimi", kind:"d6", n: res.need,
+      why:`incantesimi di ${x.name} (${w.loreObj.label})`, foot:"I doppioni si ritirano (p. 106)." }],
+      `Incantesimi di ${x.name}`);
+    if (!r || !r.incantesimi) return;
+    faces.push(...r.incantesimi.dice);
+    res = MG.generateSpells({ level: w.level, dice: faces });
+  }
+  const known = MG.knownSpells(MAGIC(), w.lore, res.numbers, []);
+  act("incantesimi generati", () => {
+    x.magic = { ...(x.magic || {}), numbers: res.numbers, swaps: [] };
+    G.logLine(`${x.name} genera gli incantesimi: ${faces.join(", ")}` +
+      (res.rerolled.length ? ` (doppioni ritirati: ${res.rerolled.join(", ")})` : "") +
+      ` — ${known.map(s => s.name).join(", ")}.`, { army: x.army });
+  });
+}
+
+/* ---- i bersagli (p. 108) ----
+   La stessa misura del tiro: distanza da bordo a bordo, arco frontale,
+   vista tagliata dagli elementi che la bloccano. Chi non va bene resta
+   nell'elenco con il perche', e si puo' scegliere lo stesso. */
+function magicTargets(host, sp){
+  if (sp.type === "assailment"){
+    const ids = contactsNow().filter(c => c.enemy && (c.a === host.uid || c.b === host.uid))
+                             .map(c => c.a === host.uid ? c.b : c.a);
+    return [...new Set(ids)].map(unitByUid).filter(Boolean)
+      .map(unit => ({ unit, dist: 0, check: MG.targetCheck(sp, { touching: true }) }));
+  }
+  const friendly = sp.type === "enchantment" || sp.type === "conveyance";
+  const pool = state.units.filter(o => o.placed && !o.dead && !isJoined(o) &&
+                                     (friendly ? o.army === host.army : o.army !== host.army));
+  const rows = shootingSurvey(host, pool, { cornersOf: corners, boxOf, pieces: terrainPieces(),
+                                            range: typeof sp.range === "number" ? sp.range : 0, inch });
+  return rows.map(r => ({
+    unit: r.unit, dist: r.dist,
+    check: MG.targetCheck(sp, { dist: r.dist, inArc: r.unit === host || r.inArc, engaged: engagedNow(r.unit),
+                                friendly, sight: !r.blocked }),
+  })).sort((a, b) => (b.check.ok - a.check.ok) || (a.dist - b.dist));
+}
+
+/* ---- chi puo' dissolvere (p. 110) ----
+   I maghi dell'altra parte entro 18 o 24 pollici dal mago che lancia,
+   non in fuga e non in combattimento. */
+function dispellersFor(caster){
+  const from = corners(hostOf(caster) || caster);
+  return state.units.filter(o => o.army !== caster.army && !o.dead && MG.levelOf(o, o.magic) > 0)
+    .map(o => {
+      const h = hostOf(o) || o;
+      const level = MG.levelOf(o, o.magic);
+      return { unit: o, level, host: h, dist: h.placed ? inch(polyDistance(corners(h), from)) : 999 };
+    })
+    .filter(d => d.host.placed && !d.host.fled && !engagedNow(d.host) && d.dist <= MG.dispelRange(d.level) + 0.01)
+    .sort((a, b) => b.level - a.level || a.dist - b.dist);
+}
+
+async function offerDispel(caster, sp, { total = 0, later = false } = {}){
+  const foes = dispellersFor(caster);
+  const fatedUsed = !!magicState().fated[turnKey()];
+  const options = [
+    ...foes.map(f => ({ id: "w" + f.unit.uid, label: `${f.unit.name} · Livello ${f.level} · ${f.dist.toFixed(1)}″` })),
+    ...(fatedUsed ? [] : [{ id: "fated", label: "Affidato alla sorte" }]),
+    { id: "none", label: "Nessun dissolvimento" },
+  ];
+  const pick = await askPick({
+    title: `${sp.name}: si dissolve?`,
+    label: later
+      ? `In gioco da un turno prima: si dissolve superando il valore di lancio, ${sp.cv} (p. 111).`
+      : `Lanciato con ${total}: per dissolverlo bisogna superarlo (p. 110).` +
+        (fatedUsed ? " La sorte è già stata tentata in questo turno." : "") +
+        (foes.length ? "" : " Nessun mago nemico è in gittata di dissolvimento."),
+    options,
+  });
+  if (!pick || pick === "none") return null;
+  const fated = pick === "fated";
+  const f = fated ? null : foes.find(d => "w" + d.unit.uid === pick);
+  const rolls = await G.askRolls([{ id:"dissolvimento", kind:"d6", n:2,
+    why: fated ? "dissolvimento affidato alla sorte" : `dissolvimento di ${f.unit.name}` }], `Dissolvimento di ${sp.name}`);
+  if (!rolls || !rolls.dissolvimento) return null;
+  let res = MG.dispelResult({ dice: rolls.dissolvimento.dice, level: f ? f.level : 0, fated,
+                              castTotal: total, later, cv: sp.cv });
+  let out = null, outRolls = null;
+  if (res.outclassed){
+    outRolls = await G.askRolls([{ id:"fiasco", kind:"d6", n:2, why:"surclassato: tabella del fiasco (p. 110)" }],
+                                `${f.unit.name} è surclassato`);
+    if (outRolls && outRolls.fiasco){
+      out = MG.miscastRead(outRolls.fiasco.total, { dispel: true });
+      if (out.dispelled) res = { ...res, dispelled: true };
+    }
+  }
+  return { res, rolls, by: f ? f.unit : null, fated, out, outRolls };
+}
+
+/* La casella in cui il libro mette quel tipo di incantesimo. Se si e'
+   gia' nella fase giusta si resta dove si e': un dardo si lancia
+   «quando il mago viene scelto», e la casella la sceglie chi gioca. */
+function castStepIndex(type){
+  const want = MG.CAST_STEP[type];
+  const now = G.stepNow();
+  if (!want) return null;
+  if (now.id === want || now.phaseId === want) return now.index;
+  const ph = G.phases();
+  for (let pi = 0; pi < ph.length; pi++){
+    if (ph[pi].id === want) return pi * 4;
+    const si = ph[pi].steps.findIndex(s => s.id === want);
+    if (si >= 0) return pi * 4 + si;
+  }
+  return null;
+}
+
+/* ---- lanciare (pp. 108-111) ---- */
+async function runCast(caster, spellId){
+  const M = MAGIC();
+  const sp = M && M.spell(spellId);
+  if (!caster || !sp) return;
+  const host = hostOf(caster) || caster;
+  const w = wizardOf(caster);
+  const cs = castNow(caster);
+  /* La casella in cui il libro mette l'incantesimo: se sta piu' avanti
+     nel turno ci si va, e il lancio non e' fuori posto; se sta piu'
+     indietro si resta dove si e' — il turno non torna indietro per un
+     incantesimo — e il registro scrive dove andava. Il browser l'ha
+     mostrato: una maledizione lanciata dall'inizio del turno finiva
+     nella congiurazione con la nota «si lancia nella congiurazione». */
+  const idx = state.game.on ? castStepIndex(sp.type) : null;
+  const forward = idx != null && idx > (state.game.step || 0);
+  const ph = G.phases();
+  const step = forward
+    ? { id: ph[Math.floor(idx / 4)].steps[idx % 4].id, phaseId: ph[Math.floor(idx / 4)].id }
+    : G.stepNow();
+  const gate = MG.canCast(sp, { fleeing: !!host.fled, engaged: engagedNow(host),
+    castThisTurn: cs ? cs.ids : [], stopped: !!(cs && cs.stop), stepId: step.id, phaseId: step.phaseId });
+
+  /* 1 · il bersaglio */
+  let target = null, targetWhy = [];
+  if (sp.range === "self") target = host;
+  else if (sp.type !== "vortex"){
+    const rows = magicTargets(host, sp);
+    if (!rows.length) return toast(sp.type === "assailment"
+      ? `${sp.name}: nessun nemico in combattimento con ${caster.name}.` : `${sp.name}: nessun bersaglio sul tavolo.`);
+    const pick = await askPick({
+      title: `${sp.name}: il bersaglio`,
+      label: (gate.why.length ? "Attenzione: " + gate.why.join("; ") + ". " : "") +
+             "Chi non va bene porta il perché, e si può scegliere lo stesso.",
+      options: rows.map(r => ({ id: String(r.unit.uid),
+        label: `${r.unit.name}${r.dist ? " · " + r.dist.toFixed(1) + "″" : ""}${r.check.ok ? "" : " — " + r.check.why.join("; ")}` })),
+    });
+    if (!pick) return;
+    const row = rows.find(r => String(r.unit.uid) === pick);
+    target = row.unit; targetWhy = row.check.why;
+  }
+
+  /* 2 · il tiro di lancio, e il fiasco */
+  const rolls = await G.askRolls([{ id:"lancio", kind:"d6", n:2,
+    why:`tiro di lancio: ${sp.name} (${sp.cv}+${sp.bound ? ", Potere " + sp.potere : w.level ? ", Livello " + w.level : ""})` }],
+    `${sp.name} di ${caster.name}`);
+  if (!rolls || !rolls.lancio) return;
+  let res = MG.castResult({ dice: rolls.lancio.dice, level: w.level, cv: sp.cv, cv2: sp.cv2 || 0,
+                            bound: !!sp.bound, power: sp.potere || 0 });
+  let mis = null, misRolls = null;
+  if (res.miscast){
+    misRolls = await G.askRolls([{ id:"fiasco", kind:"d6", n:2, why:"tabella del fiasco (p. 109)" }], `Fiasco di ${caster.name}`);
+    if (misRolls && misRolls.fiasco){
+      mis = MG.miscastRead(misRolls.fiasco.total);
+      if (mis.cast) res = { ...res, cast: true, perfect: !!mis.perfect, total: mis.atValue ? sp.cv : res.total };
+    }
+  }
+
+  /* 3 · il dissolvimento, che sceglie l'avversario */
+  const disp = res.cast && !res.perfect ? await offerDispel(caster, sp, { total: res.total }) : null;
+  const final = res.cast && !(disp && disp.res.dispelled);
+
+  /* 4 · i dadi dell'effetto: il D3 di una maledizione, i colpi di un dardo */
+  let rolled = 0, hitRolls = null, hitCount = 0;
+  const hits = MG.hitsOf(sp);
+  const e = sp.effetto || {};
+  if (final && target && e.modificheDado){
+    const r = await G.askRolls([{ id:"effetto", kind: /d3/i.test(e.modificheDado.dado) ? "d3" : "d6", n:1,
+                                  why:`${sp.name}: ${e.modificheDado.dado}` }], sp.name);
+    rolled = r && r.effetto ? r.effetto.total : 0;
+  }
+  if (final && target && hits){
+    const spec = MG.parseDice(hits.dadi);
+    if (spec && spec.n){
+      hitRolls = await G.askRolls([{ id:"colpi", kind: spec.die === 3 ? "d3" : "d6", n: spec.n,
+                                     why:`${sp.name}: ${hits.dadi} colpi` }], sp.name);
+      hitCount = hitRolls && hitRolls.colpi ? MG.diceTotal(spec, hitRolls.colpi.dice) : 0;
+    } else hitCount = spec ? spec.plus : 0;
+  }
+  /* I colpi di un incantesimo non tirano per colpire (p. 107): passano
+     dalla stessa catena dello scontro con i colpi automatici, e senza
+     armatura o rigenerazione quando l'incantesimo lo dice. */
+  let volley = null, kills = 0;
+  if (final && target && hits && hitCount > 0){
+    const def = CB.combatant(target);
+    const side = { ...def, armour: hits.noArmour ? 0 : def.armour, regen: hits.noRegen ? 0 : def.regen };
+    volley = CB.strike({ name: caster.name }, side, { attacks: hitCount, auto: true, strength: hits.S, ap: hits.AP,
+                                                      label: sp.name });
+    kills = CB.applyWounds({ ...side, spill: 0 }, volley.wounds);
+  }
+
+  act(sp.name, () => {
+    if (forward) G.goStep(idx);
+    caster.magic = { ...(caster.magic || {}), cast: {
+      turn: state.game.turn, side: state.game.army,
+      ids: [...(cs ? cs.ids : []), sp.id], stop: !!(cs && cs.stop) || !!(mis && mis.stop) } };
+    const notes = [...gate.why, ...targetWhy];
+    G.dispatch({ type:"cast", wizard: caster, spell: sp, army: caster.army,
+      text: `${caster.name} lancia ${sp.name}${target && target !== host ? " su " + target.name : ""}: ${res.text}` +
+            (notes.length ? ` [${notes.join("; ")}]` : "") }, rolls);
+    if (mis) G.dispatch({ type:"roll", army: caster.army, why:"tabella del fiasco",
+      text: `${caster.name}, fiasco — ${misRolls.fiasco.total}: ${mis.label}, ${mis.text}` }, misRolls);
+    if (disp){
+      if (disp.fated) setMagicState({ fated: { ...magicState().fated, [turnKey()]: true } });
+      G.dispatch({ type:"dispel", spell: sp, army: disp.by ? disp.by.army : (caster.army === "A" ? "B" : "A"),
+        text: `${disp.by ? disp.by.name : "La sorte"} contro ${sp.name}: ${disp.res.text}` +
+              (disp.out ? ` — ${disp.outRolls.fiasco.total}: ${disp.out.label}, ${disp.out.text}` : "") }, disp.rolls);
+    }
+    if (!final) return;
+
+    /* l'effetto a tempo, su chi lo riceve */
+    const at = { turn: state.game.turn, side: state.game.army };
+    const eff = MG.effectOf(sp, { at, rolled, casterName: caster.name });
+    const who = sp.range === "self" ? (MG.selfAndUnit(sp) && host !== caster ? [caster, host] : [caster])
+              : target ? [target] : [];
+    if (eff) for (const x of who){
+      if (MG.skipOn(sp, { armour: EF.val(x, "armour") })){
+        G.logLine(`${sp.name}: ${x.name} non ha armatura da peggiorare.`, { army: caster.army });
+        continue;
+      }
+      for (const id of MG.cancelled(sp, EF.effectsOf(x))) EF.removeEffect(x, id);
+      EF.addEffect(x, eff);
+    }
+    if (sp.rip) setMagicState({ inPlay: [...magicState().inPlay, {
+      spellId: sp.id, caster: caster.uid, target: target ? target.uid : null, army: caster.army,
+      cv: sp.cv, total: res.total, perfect: !!res.perfect, turn: state.game.turn, side: state.game.army }] });
+
+    if (volley){
+      G.dispatch({ type:"roll", army: caster.army, why: sp.name + ": colpi",
+        text: `${target.name}: ${hitCount} colpi a Forza ${hits.S}${hits.AP ? ", perforazione " + hits.AP : ""}` +
+              `${hits.noArmour ? ", senza armatura" : ""} — ${volley.wounds} ferit${volley.wounds === 1 ? "a" : "e"}, ` +
+              `${kills} modell${kills === 1 ? "o" : "i"} a terra` }, hitRolls);
+      if (kills > 0) G.setLost(target, (target.lost || 0) + kills);
+    }
+    const manual = MG.manualOf(sp);
+    if (manual) G.logLine(`${sp.name}, a mano: ${manual}.`, { army: caster.army });
+  });
+}
+
+/* Un incantesimo che resta in gioco finisce quando il mago lo decide,
+   quando il mago muore, o quando qualcuno lo dissolve (p. 111). Con lui
+   se ne vanno gli effetti che aveva messo. */
+function endSpell(i, why){
+  const list = magicState().inPlay;
+  const e = list[i];
+  if (!e) return;
+  act("incantesimo terminato", () => {
+    for (const uid of [e.target, e.caster]){
+      const x = unitByUid(uid);
+      if (x) EF.removeEffect(x, "spell:" + e.spellId);
+    }
+    setMagicState({ inPlay: list.filter((_, k) => k !== i) });
+    G.logLine(`${spellName(e.spellId)}: ${why}.`, { army: e.army });
+  });
+}
+
+async function runDispelLater(i){
+  const e = magicState().inPlay[i];
+  const sp = e && MAGIC() && MAGIC().spell(e.spellId);
+  const caster = e && unitByUid(e.caster);
+  if (!sp || !caster) return;
+  if (G.stepNow().id !== "conjuration")
+    toast("Un incantesimo in gioco si dissolve nella congiurazione (p. 111): si tira lo stesso, lo decidete voi.");
+  const disp = await offerDispel(caster, sp, { later: true });
+  if (!disp) return;
+  act("dissolvimento", () => {
+    if (disp.fated) setMagicState({ fated: { ...magicState().fated, [turnKey()]: true } });
+    G.dispatch({ type:"dispel", spell: sp, army: disp.by ? disp.by.army : (caster.army === "A" ? "B" : "A"),
+      text: `${disp.by ? disp.by.name : "La sorte"} contro ${sp.name} in gioco: ${disp.res.text}` }, disp.rolls);
+  });
+  if (disp.res.dispelled) endSpell(i, "dissolto");
+}
+
 /* ---- la sagoma sul tavolo ----
    Sta in `state.extras`, che e' il secchio che i tre serializzatori
    copiano alla cieca: cosi' la sagoma si annulla, si salva e si
@@ -4610,6 +5040,9 @@ async function bootDeploy(){
   if (th) document.documentElement.setAttribute("data-theme", th);
 
   await initScenarioKit();
+  /* i domini della magia (Tappa 6): se il file non arriva, il blocco
+     della magia non compare e il resto del tavolo funziona */
+  await MG.loadMagic();
   fillScenarioSelect();
   G.initGame({ getState: () => state, act });
   initDuel($("#duel"), {

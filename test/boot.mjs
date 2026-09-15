@@ -1211,6 +1211,123 @@ console.log('\nle regole d esercito al tavolo (Tappa 5 bis)');
   ok('nessun errore attorno alle regole d esercito', errors.length === 0);
 }
 
+console.log('\nla magia al tavolo (Tappa 6)');
+{
+  /* Come i file d'esercito, i domini nel jsdom non arrivano da soli: si
+     leggono dal disco. I dadi sono fissati, cosi' la prova racconta
+     sempre la stessa partita. */
+  const MGm = await import('../src/magic.js');
+  const EFm = await import('../src/effects.js');
+  const G = await import('../src/game.js');
+  const D = await import('../src/dice.js');
+  const prima = MGm.magicNow();
+  MGm.useMagic(MGm.makeMagic(JSON.parse(fs.readFileSync(path.join(root, 'dati', 'magia', 'domini.json'), 'utf8'))));
+  const facce = list => { let i = 0; return () => list[Math.min(i++, list.length - 1)] - 1; };
+  const pick = async id => {
+    await settle(30);
+    const b = doc.querySelector(`.dlg-back [data-pick="${id}"]`);
+    if (!b) return false;
+    b.dispatchEvent(new window.Event('click'));
+    await settle(30);
+    return true;
+  };
+  const tira = async ms => {
+    await settle(30);
+    tray().querySelector('#dx-roll').dispatchEvent(new window.Event('click'));
+    await settle(ms || 60);
+  };
+
+  const aId = state.units.find(u => u.army === 'A' && u.placed && !u.dead).uid;
+  const bId = state.units.find(u => u.army === 'B' && u.placed && !u.dead).uid;
+  const by = id => state.units.find(u => u.uid === id);
+  const parcheggiate = state.units.filter(u => u.placed && u.uid !== aId && u.uid !== bId)
+                                  .map(u => { u.placed = false; return u.uid; });
+  const righe = state.game.log.length;
+  deploy.act('mago di prova', () => {
+    const x = by(aId), y = by(bId);
+    x.x = 500; x.y = 900; x.rot = 0;
+    y.x = 500; y.y = 900 - 10 * 25.4; y.rot = 180;
+    x.rules = [...(x.rules || []), 'Wizard'];
+  });
+  state.sel = { type: 'unit', id: aId };
+  deploy.renderAll();
+
+  ok('il blocco della magia compare per un mago', !!doc.querySelector('#inspector .magic-block'));
+  setField(`#inspector [data-mg-level="${aId}"]`, 2);
+  setField(`#inspector [data-mg-lore="${aId}"]`, 'battle');
+  await settle(30);
+  ok('Livello e dominio si scelgono dall ispettore', by(aId).magic.level === 2 && by(aId).magic.lore === 'battle');
+
+  /* 1, 1: un doppione, e il vassoio si riapre per il dado che manca */
+  D.setSource(facce([1, 1, 5]));
+  doc.querySelector(`#inspector [data-mg-gen="${aId}"]`).dispatchEvent(new window.Event('click'));
+  await tira();
+  await tira();
+  ok('gli incantesimi si generano, e il doppione si ritira',
+     JSON.stringify(by(aId).magic.numbers) === '[1,5]' &&
+     state.game.log.slice(0, 3).some(l => /doppioni ritirati: 1/.test(l.text) && /Fireball, Oaken Shield/.test(l.text)));
+  deploy.renderAll();
+  ok('e ognuno ha il suo pulsante', !!doc.querySelector(`#inspector [data-mg-cast="${aId}|fireball"]`));
+
+  /* Oaken Shield dall'inizio del turno, con un doppio 6: la casella del
+     libro (la congiurazione) sta piu' avanti, e il lancio ci va da solo
+     senza portarsi dietro la nota «fuori posto». E' l'errore che solo il
+     browser aveva visto. */
+  deploy.act('inizio turno', () => G.goStep(0));
+  deploy.renderAll();
+  D.setSource(facce([6, 6]));
+  doc.querySelector(`#inspector [data-mg-cast="${aId}|oakenShield"]`).dispatchEvent(new window.Event('click'));
+  await tira();
+  const avanti = state.game.log[0];
+  ok('dall inizio del turno il lancio va da solo nella congiurazione, senza nota',
+     state.game.step === 2 && /Oaken Shield/.test(avanti.text) && /Congiurazione/.test(avanti.step) &&
+     !/\[/.test(avanti.text));
+  ok('il doppio 6 e un invocazione perfetta, e nessuno chiede di dissolverla',
+     /invocazione perfetta/.test(avanti.text) && !doc.querySelector('.dlg-back'));
+  ok('l effetto sta sul mago', EFm.effectsOf(by(aId)).some(e => e.id === 'spell:oakenShield'));
+
+  /* Fireball nella fase di tiro: bersaglio, 4 + 5 + Livello 2 = 11 contro
+     8, nessun dissolvimento, sei e sei fanno dodici colpi */
+  deploy.act('fase di tiro', () => G.goStep(8));
+  deploy.renderAll();
+  D.setSource(facce([4, 5, 6, 6, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]));
+  doc.querySelector(`#inspector [data-mg-cast="${aId}|fireball"]`).dispatchEvent(new window.Event('click'));
+  ok('il lancio chiede il bersaglio', await pick(String(bId)));
+  await tira();
+  ok('lanciato, l avversario sceglie se dissolvere', await pick('none'));
+  await tira();
+  const lanci = state.game.log.slice(0, 6).map(l => l.text).join(' | ');
+  ok('il registro scrive il lancio con il suo tiro', /lancia Fireball su .*lancio 4 \+ 5 \+ 2 di Livello = 11 contro 8\+ — lanciato/.test(lanci));
+  ok('e i colpi, tirati e risolti', /12 colpi a Forza 4/.test(lanci));
+  ok('l incantesimo e tentato per questo turno', castTried(by(aId), 'fireball'));
+
+  /* Oaken Shield di nuovo, adesso dalla fase di tiro: la congiurazione e'
+     rimasta indietro, e il turno non torna indietro per un incantesimo.
+     Si lancia dove si e', e il registro dice dove andava e che era gia'
+     stato tentato. */
+  D.setSource(facce([6, 6]));
+  deploy.renderAll();
+  doc.querySelector(`#inspector [data-mg-cast="${aId}|oakenShield"]`).dispatchEvent(new window.Event('click'));
+  await tira();
+  const indietro = state.game.log[0];
+  ok('dalla fase di tiro non si torna indietro nel turno', state.game.step === 8 && /Oaken Shield/.test(indietro.text));
+  ok('e il registro dice dove andava, e che era gia tentato',
+     /congiurazione/.test(indietro.text) && /una volta per turno/.test(indietro.text));
+  D.setSource(null);
+
+  /* si annulla fino a prima del «mago di prova»: le tendine del Livello e
+     del dominio sono azioni che non scrivono righe, e contare le righe
+     del registro fermava l'annulla a meta' */
+  for (let i = 0; i < 40 && (by(aId).rules || []).includes('Wizard'); i++) history.undo();
+  ok('l annulla riporta indietro lanci, effetti e preparazione del mago',
+     !(by(aId).rules || []).includes('Wizard') && !by(aId).magic &&
+     !EFm.effectsOf(by(aId)).some(e => /^spell:/.test(e.id)) && state.game.log.length === righe);
+  MGm.useMagic(prima);
+  for (const id of parcheggiate) by(id).placed = true;
+  ok('nessun errore attorno alla magia', errors.length === 0);
+}
+function castTried(x, id){ return !!(x.magic && x.magic.cast && x.magic.cast.ids.includes(id)); }
+
 console.log('\nunita scritte a mano');
 const handList = await listsMod.createList('Lista a mano');
 await listsMod.addUnit(handList.id, { name: 'Orc Boyz', models: 20, pts: 140, baseId: '25x25' });

@@ -154,8 +154,16 @@ export function statOf(u, key, { who = null, now = null } = {}){
     if (e.who && e.who !== owner) continue;
     const m = e.mods && e.mods[key];
     if (m == null) continue;
-    const set = (typeof m === "object" && m.set != null) ? +m.set : null;
+    let set = (typeof m === "object" && m.set != null) ? +m.set : null;
     const delta = typeof m === "number" ? m : (+m.add || 0);
+    /* `best` e' per le salvezze che un incantesimo regala: 5+ vale se
+       l'unita' non ne ha una, o ne ha una peggiore. Un 4+ gia' suo
+       resta 4+ — «gain a 5+ Ward save» non toglie niente a nessuno. */
+    if (typeof m === "object" && m.best != null){
+      const b = +m.best;
+      if (value && value <= b) continue;
+      set = b;
+    }
     if (set != null){
       mods.push({ from: e.from || e.id || "effetto", delta: set - value, set, page: e.page || 0, until: e.until || null });
       value = set;

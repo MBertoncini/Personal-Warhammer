@@ -20,7 +20,7 @@ import { hitMelee, woundOn, saveOn, pool, roll, chance, expected, rankBonus,
          stat, weaponStrength, weaponAP, IMPOSSIBLE } from './rules.js';
 import { readRules, splitWeaponRules, emptyFlags } from './rulebook.js';
 import { troopType, usPerModel } from './troops.js';
-import { flagsOf, spent } from './effects.js';
+import { flagsOf, spent, val } from './effects.js';
 import { armyFor, meleeBoosts, fleeBonus } from './armies.js';
 import * as ML from './melee.js';
 import * as SH from './shoot.js';
@@ -109,11 +109,16 @@ export function combatant(u, over = {}){
      Tappa 3 non lo leggeva nessuno — il pannello ripeteva a mano la
      domanda «ha caricato?» a cui il tavolo aveva gia' risposto. */
   const ch = u.charged && typeof u.charged === "object" ? u.charged : null;
+  /* Le caratteristiche passano da `effects.js`, con gli effetti a tempo
+     sopra: un Word of Pain che toglie un punto di Resistenza deve
+     toglierlo ai dadi, non solo alla tabella dell'ispettore. Fino alla
+     Tappa 6 la schiera leggeva il profilo grezzo, e gli effetti si
+     vedevano scritti e non pesavano su niente. */
   const c = {
     ref: u, name: u.name, army: u.army,
-    ws: stat(st.WS), bs: stat(st.BS), s: stat(st.S), t: stat(st.T),
-    w: Math.max(1, stat(st.W) || 1), i: stat(st.I), a: Math.max(1, stat(st.A) || 1),
-    ld: stat(st.Ld),
+    ws: val(u, "WS"), bs: val(u, "BS"), s: val(u, "S"), t: val(u, "T"),
+    w: Math.max(1, val(u, "W") || 1), i: val(u, "I"), a: Math.max(1, val(u, "A") || 1),
+    ld: val(u, "Ld"),
     models: Math.max(1, alive), frontage: Math.max(1, u.frontage || 1),
     /* la forza d'unita' per modello: quando cadono i modelli deve calare
        anche lei, altrimenti a fine assalto un reggimento dimezzato
@@ -127,7 +132,7 @@ export function combatant(u, over = {}){
        (p. 105), che per la fanteria mostruosa dice 3. */
     usPer: usPerModel(u.troop, u.us, u.models, stat(st.W)),
     troop: troopType(u.troop),
-    armour: u.armour || 0, ward: u.ward || 0, regen: u.regen || 0,
+    armour: val(u, "armour"), ward: val(u, "ward"), regen: val(u, "regen"),
     ap: melee ? weaponAP(melee) : 0,
     weapon: melee ? melee.name : "",
     loose: !!u.loose, rules: u.rules || [],
@@ -244,6 +249,8 @@ function boostsOf(att){
   const by = () => (why.reroll || [])[0] || "effetto";
   if (e.reroll && e.reroll.toHit && !b.rerollHit){ b.rerollHit = e.reroll.toHit; b.from.hit = by(); }
   if (e.reroll && e.reroll.toWound && !b.rerollWound){ b.rerollWound = e.reroll.toWound; b.from.wound = by(); }
+  /* la perforazione che un effetto regala: Daemonic Vessel, +1 */
+  if (e.ap){ b.ap += +e.ap || 0; b.notes.push(((why.ap || [])[0] || "effetto") + ": perforazione +" + e.ap); }
   return b;
 }
 
@@ -282,7 +289,8 @@ export function strike(att, def, { attacks, auto = false, strength, ap, label = 
      ritiro, e il testo che le liste salvate portano con se' lo dice in
      tre righe. Il ritiro vero lo fa `pool`, che sa gia' che un dado
      non si ritira due volte (p. 93). */
-  const hateful = !auto && f.hatred && round === 1;
+  /* l'Odio puo' venire anche da un incantesimo (Battle Lust) */
+  const hateful = !auto && (f.hatred || !!(att.eff && att.eff.hatred)) && round === 1;
   /* L'Odio ritira tutti i mancati, e quindi anche gli 1: con lui il
      ritiro degli 1 del Waaagh! non aggiunge niente, perche' un dado non
      si ritira due volte (p. 93). */

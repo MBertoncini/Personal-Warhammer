@@ -1,0 +1,278 @@
+{
+  "formato": "tow-magia/1",
+  "nota": "Gli otto domini del Core Rulebook (pp. 319-335) e gli innesti degli army book di casa, letti sui libri in Desktop/Warhammer. Le pagine sono quelle stampate: nel PDF del Core Rulebook sono una in piu'. Il testo degli incantesimi sta nei libri; qui c'e' quello che serve al motore — tipo, valore di lancio, gittata, se resta in gioco — e l'effetto detto in una riga. `effetto` usa un vocabolario piccolo: `colpi` (dadi, Forza, perforazione) e `modifiche` (caratteristiche fino a un momento) l'app li applica; tutto il resto e' `a mano`, e la riga dice cosa fare.",
+  "tipi": {
+    "enchantment": { "label": "Potenziamento", "casella": "conjuration", "bersaglio": "amico" },
+    "hex":         { "label": "Maledizione",   "casella": "conjuration", "bersaglio": "nemico" },
+    "conveyance":  { "label": "Trasporto",     "casella": "remaining",   "bersaglio": "amico" },
+    "missile":     { "label": "Dardo magico",  "casella": "shooting",    "bersaglio": "nemico", "vista": true },
+    "vortex":      { "label": "Vortice",       "casella": "shooting",    "bersaglio": "nessuno" },
+    "assailment":  { "label": "Assalto",       "casella": "combat",      "bersaglio": "mischia" }
+  },
+  "domini": [
+    {
+      "id": "battle", "name": "Battle Magic", "label": "Magia da Battaglia", "page": 320,
+      "spells": [
+        { "id": "hammerhand", "n": 0, "name": "Hammerhand", "type": "assailment", "cv": 7, "range": "combat", "page": 320,
+          "effetto": { "colpi": { "dadi": "2D3", "S": 4, "AP": 2 } },
+          "testo": "un'unita' nemica in combattimento con il mago subisce 2D3 colpi a Forza 4, perforazione 2" },
+        { "id": "fireball", "n": 1, "name": "Fireball", "type": "missile", "cv": 8, "range": 24, "page": 321,
+          "effetto": { "colpi": { "dadi": "2D6", "S": 4, "AP": 0, "flaming": true } },
+          "testo": "2D6 colpi a Forza 4, attacchi infuocati" },
+        { "id": "curseOfArrowAttraction", "n": 2, "name": "Curse Of Arrow Attraction", "type": "hex", "cv": 7, "range": 21, "page": 321,
+          "effetto": { "a mano": "fino al tuo prossimo inizio turno chi tira sul bersaglio ritira gli 1 per colpire" },
+          "testo": "chi tira sul bersaglio ritira gli 1 per colpire" },
+        { "id": "pillarOfFire", "n": 3, "name": "Pillar Of Fire", "type": "vortex", "cv": 9, "range": 12, "rip": true, "page": 321,
+          "effetto": { "a mano": "sagoma da 3 pollici entro 12, terreno pericoloso; a ogni inizio turno si muove di D6 dove vuole il mago e chi tocca subisce D3+3 colpi a Forza 3, perforazione 2, infuocati" },
+          "testo": "sagoma piccola che si muove e brucia chi tocca" },
+        { "id": "arcaneUrgency", "n": 4, "name": "Arcane Urgency", "type": "conveyance", "cv": 10, "range": 15, "page": 321,
+          "effetto": { "a mano": "l'unita' amica non in fuga che ha gia' mosso in questa fase muove di nuovo" },
+          "testo": "un'unita' amica gia' mossa muove di nuovo" },
+        { "id": "oakenShield", "n": 5, "name": "Oaken Shield", "type": "enchantment", "cv": 7, "range": "self", "page": 321,
+          "effetto": { "modifiche": { "ward": { "set": 5 } }, "fino": "ownTurn", "chi": "mago e unita'" },
+          "testo": "il mago e la sua unita' hanno salvezza speciale 5+ fino al tuo prossimo inizio turno" },
+        { "id": "curseOfCowardlyFlight", "n": 6, "name": "Curse Of Cowardly Flight", "type": "hex", "cv": 9, "range": 15, "page": 321,
+          "effetto": { "a mano": "il bersaglio tira subito il Panico; chi lo passerebbe da solo tira lo stesso, e se fallisce cede terreno" },
+          "testo": "il bersaglio tira subito il Panico" }
+      ]
+    },
+    {
+      "id": "daemonology", "name": "Daemonology", "label": "Demonologia", "page": 322,
+      "spells": [
+        { "id": "theSummoning", "n": 0, "name": "The Summoning", "type": "missile", "cv": 9, "range": 18, "page": 322,
+          "effetto": { "colpi": { "dadi": "2D6", "S": 4, "AP": 1 } },
+          "testo": "2D6 colpi a Forza 4, perforazione 1" },
+        { "id": "steedOfShadows", "n": 1, "name": "Steed Of Shadows", "type": "conveyance", "cv": 9, "range": 15, "page": 323,
+          "effetto": { "a mano": "fanteria amica non in fuga e non ancora mossa: vola (12) fino al tuo prossimo inizio turno" },
+          "testo": "una fanteria amica vola (12)" },
+        { "id": "gatheringDarkness", "n": 2, "name": "Gathering Darkness", "type": "hex", "cv": 9, "range": 12, "engaged": true, "page": 323,
+          "effetto": { "modifiche": { "I": -2, "Ld": -2 }, "fino": "ownTurn", "a mano": "e non puo' usare l'Inspiring Presence del Generale; Iniziativa non sotto 1, Comando non sotto 2" },
+          "testo": "−2 Iniziativa e −2 Comando fino al tuo prossimo inizio turno" },
+        { "id": "daemonicFamiliars", "n": 3, "name": "Daemonic Familiars", "type": "assailment", "cv": 8, "range": "combat", "page": 323,
+          "effetto": { "colpi": { "dadi": "2D6", "S": 2, "AP": 0, "noArmour": true } },
+          "testo": "2D6 colpi a Forza 2 senza armatura" },
+        { "id": "daemonicVessel", "n": 4, "name": "Daemonic Vessel", "type": "enchantment", "cv": 10, "range": "self", "page": 323,
+          "effetto": { "modifiche": { "S": 1, "A": 1 }, "ap": 1, "fino": "turn", "chi": "mago e unita'" },
+          "testo": "+1 Forza, +1 Attacchi e perforazione +1 al mago e alla sua unita' fino a fine turno" },
+        { "id": "vortexOfChaos", "n": 5, "name": "Vortex Of Chaos", "type": "vortex", "cv": 8, "range": 15, "rip": true, "page": 323,
+          "effetto": { "a mano": "sagoma da 3 pollici entro 15, terreno pericoloso; a ogni inizio turno devia di D6 e chi tocca subisce D6+1 colpi a Forza 3" },
+          "testo": "sagoma piccola che vaga e colpisce chi tocca" },
+        { "id": "daemonicVigour", "n": 6, "name": "Daemonic Vigour", "type": "enchantment", "cv": 9, "range": 15, "page": 323,
+          "effetto": { "modifiche": { "M": 1, "T": 1, "I": 1 }, "fino": "turn" },
+          "testo": "+1 Movimento, Resistenza e Iniziativa fino a fine turno" }
+      ]
+    },
+    {
+      "id": "dark", "name": "Dark Magic", "label": "Magia Oscura", "page": 324,
+      "spells": [
+        { "id": "doombolt", "n": 0, "name": "Doombolt", "type": "missile", "cv": 8, "range": 24, "page": 324,
+          "effetto": { "a mano": "sagoma da 3 pollici sul centro del bersaglio; i nemici sotto rischiano un colpo a Forza 3, perforazione 2 (p. 95)" },
+          "testo": "sagoma piccola sul bersaglio, Forza 3 perforazione 2" },
+        { "id": "wordOfPain", "n": 1, "name": "Word Of Pain", "type": "hex", "cv": 10, "range": 18, "engaged": true, "page": 325,
+          "effetto": { "modifiche": { "S": -1, "T": -1 }, "fino": "ownTurn" },
+          "testo": "−1 Forza e −1 Resistenza fino al tuo prossimo inizio turno" },
+        { "id": "streamOfCorruption", "n": 2, "name": "Stream Of Corruption", "type": "assailment", "cv": 8, "range": "combat", "page": 325,
+          "effetto": { "a mano": "sagoma a goccia dal mago sull'unita' in combattimento; chi e' sotto, amico o nemico, rischia un colpo a Forza 3, perforazione 1" },
+          "testo": "goccia dal mago, Forza 3 perforazione 1" },
+        { "id": "infernalGateway", "n": 3, "name": "Infernal Gateway", "type": "conveyance", "cv": 10, "range": 12, "engaged": true, "page": 325,
+          "effetto": { "a mano": "un personaggio amico non in fuga si rimette entro 12 dal punto di partenza, non entro 6 dai nemici; puo' lasciare il combattimento" },
+          "testo": "un personaggio amico si sposta di 12 pollici" },
+        { "id": "phantasmagoria", "n": 4, "name": "Phantasmagoria", "type": "vortex", "cv": 9, "range": 12, "rip": true, "page": 325,
+          "effetto": { "a mano": "sagoma ferma da 3 pollici, terreno pericoloso; i nemici che finiscono il movimento entro 12 tirano il Panico: chi fallisce ripiega o fugge, chi passa diventa Impetuous" },
+          "testo": "sagoma ferma che manda al Panico" },
+        { "id": "battleLust", "n": 5, "name": "Battle Lust", "type": "enchantment", "cv": 9, "range": 12, "page": 325,
+          "effetto": { "flag": { "frenzy": true, "hatred": true }, "fino": "turn" },
+          "testo": "Frenzy e Hatred fino a fine turno" },
+        { "id": "soulEater", "n": 6, "name": "Soul Eater", "type": "assailment", "cv": 7, "range": "combat", "page": 325,
+          "effetto": { "a mano": "un modello nemico in combattimento subisce un colpo a Forza 3 con Multiple Wounds (3), senza armatura" },
+          "testo": "un colpo a Forza 3, Multiple Wounds (3), senza armatura" }
+      ]
+    },
+    {
+      "id": "elementalism", "name": "Elementalism", "label": "Elementalismo", "page": 326,
+      "spells": [
+        { "id": "stormCall", "n": 0, "name": "Storm Call", "type": "hex", "cv": 7, "range": 12, "annulla": "hex", "page": 326,
+          "effetto": { "modifiche": { "M": -1, "I": -1 }, "fino": "ownTurn" },
+          "testo": "−1 Movimento e −1 Iniziativa fino al tuo prossimo inizio turno; le altre maledizioni sul bersaglio finiscono" },
+        { "id": "flamingSword", "n": 1, "name": "Flaming Sword", "type": "assailment", "cv": 8, "range": "combat", "page": 327,
+          "effetto": { "colpi": { "dadi": "D6+1", "S": 3, "AP": 0, "flaming": true } },
+          "testo": "D6+1 colpi a Forza 3, infuocati" },
+        { "id": "plagueOfRust", "n": 2, "name": "Plague Of Rust", "type": "hex", "cv": 9, "range": 21, "engaged": true, "page": 327,
+          "effetto": { "modifiche": { "armour": 2 }, "fino": "ownTurn", "soloConArmatura": true },
+          "testo": "−2 al valore d'armatura fino al tuo prossimo inizio turno" },
+        { "id": "summonElementalSpirit", "n": 3, "name": "Summon Elemental Spirit", "type": "vortex", "cv": 9, "range": 15, "rip": true, "page": 327,
+          "effetto": { "a mano": "sagoma da 3 pollici entro 15, terreno pericoloso che blocca la vista; a ogni inizio turno devia di D6 e i nemici che tocca subiscono D3+3 colpi a Forza 4, perforazione 1" },
+          "testo": "sagoma piccola che vaga e colpisce i nemici" },
+        { "id": "earthenRamparts", "n": 4, "name": "Earthen Ramparts", "type": "enchantment", "cv": 10, "range": 15, "page": 327,
+          "effetto": { "modifiche": { "ward": { "set": 5 } }, "flag": { "noMarch": true, "noCharge": true }, "fino": "ownTurn",
+                       "a mano": "e se caricata conta come dietro un ostacolo basso difeso" },
+          "testo": "salvezza speciale 5+ e ostacolo difeso, ma niente marcia ne' carica" },
+        { "id": "windBlast", "n": 5, "name": "Wind Blast", "type": "missile", "cv": 8, "range": 15, "page": 327,
+          "effetto": { "colpi": { "dadi": "D3+3", "S": 5, "AP": 1 }, "a mano": "poi il bersaglio cede terreno" },
+          "testo": "D3+3 colpi a Forza 5, perforazione 1, e il bersaglio cede terreno" },
+        { "id": "travelMysticalPathway", "n": 6, "name": "Travel Mystical Pathway", "type": "conveyance", "cv": 10, "range": 9, "page": 327,
+          "effetto": { "a mano": "un'unita' amica non ancora mossa si rimette entro 12 dal punto di partenza, non entro 6 dai nemici, e non muove piu' in questa fase" },
+          "testo": "un'unita' amica si sposta di 12 pollici" }
+      ]
+    },
+    {
+      "id": "high", "name": "High Magic", "label": "Alta Magia", "page": 328,
+      "spells": [
+        { "id": "drainMagic", "n": 0, "name": "Drain Magic", "type": "hex", "cv": 9, "range": "self", "rip": true, "page": 328,
+          "effetto": { "a mano": "finche' resta in gioco, i maghi nemici entro 24 dal mago lanciano con il valore di lancio aumentato di 2" },
+          "testo": "i maghi nemici entro 24 pollici lanciano a +2" },
+        { "id": "walkBetweenWorlds", "n": 1, "name": "Walk Between Worlds", "type": "conveyance", "cv": 10, "range": "self", "page": 329,
+          "effetto": { "a mano": "il mago e la sua unita' hanno Ethereal e Reserve Move fino al tuo prossimo inizio turno" },
+          "testo": "Ethereal e Reserve Move al mago e alla sua unita'" },
+        { "id": "fieryConvocation", "n": 2, "name": "Fiery Convocation", "type": "missile", "cv": 10, "range": 18, "page": 329,
+          "effetto": { "a mano": "sagoma da 5 pollici sul bersaglio che devia di D3+1; i nemici sotto rischiano un colpo a Forza 4, perforazione 2, infuocato" },
+          "testo": "sagoma grande che devia, Forza 4 perforazione 2" },
+        { "id": "tempest", "n": 3, "name": "Tempest", "type": "vortex", "cv": 9, "range": 12, "rip": true, "page": 329,
+          "effetto": { "a mano": "sagoma ferma da 3 pollici, terreno pericoloso; entro 6 i nemici trattano il terreno aperto come difficile e il difficile come pericoloso" },
+          "testo": "sagoma ferma che rallenta i nemici vicini" },
+        { "id": "corporealUnmaking", "n": 4, "name": "Corporeal Unmaking", "type": "assailment", "cv": 8, "range": "combat", "page": 329,
+          "effetto": { "colpi": { "dadi": "D3", "S": 5, "AP": 0, "noArmour": true, "noRegen": true } },
+          "testo": "D3 colpi a Forza 5 senza armatura ne' rigenerazione" },
+        { "id": "furyOfKhaine", "n": 5, "name": "Fury Of Khaine", "type": "enchantment", "cv": 9, "range": 12, "engaged": true, "page": 329,
+          "effetto": { "modifiche": { "A": 1 }, "fino": "turn" },
+          "testo": "Extra Attacks (+1) fino a fine turno" },
+        { "id": "shieldOfSaphery", "n": 6, "name": "Shield Of Saphery", "type": "enchantment", "cv": 9, "range": 18, "annulla": "enchantment", "page": 329,
+          "effetto": { "modifiche": { "ward": { "set": 5 } }, "fino": "turn" },
+          "testo": "salvezza speciale 5+ fino a fine turno; gli altri potenziamenti sul bersaglio finiscono" }
+      ]
+    },
+    {
+      "id": "illusion", "name": "Illusion", "label": "Illusione", "page": 330,
+      "spells": [
+        { "id": "glitteringRobe", "n": 0, "name": "Glittering Robe", "type": "enchantment", "cv": 8, "range": "self", "annulla": "enchantment", "page": 330,
+          "effetto": { "a mano": "fino al tuo prossimo inizio turno i nemici hanno −1 per colpire il mago e la sua unita'" },
+          "testo": "−1 per colpire contro il mago e la sua unita'" },
+        { "id": "mindRazor", "n": 1, "name": "Mind Razor", "type": "missile", "cv": 7, "range": 15, "page": 331,
+          "effetto": { "a mano": "il bersaglio tira il Comando: se passa subisce D3 colpi a Forza 3, se fallisce D3+3 colpi a Forza 4 con perforazione 3" },
+          "testo": "test di Comando, poi D3 colpi o D3+3 molto piu' forti" },
+        { "id": "shimmeringDragon", "n": 2, "name": "Shimmering Dragon", "type": "conveyance", "cv": 8, "range": 12, "page": 331,
+          "effetto": { "a mano": "un personaggio amico non in fuga e non ancora mosso vola (10) fino a fine turno" },
+          "testo": "un personaggio amico vola (10)" },
+        { "id": "columnOfCrystal", "n": 3, "name": "Column Of Crystal", "type": "vortex", "cv": 10, "range": 9, "rip": true, "page": 331,
+          "effetto": { "a mano": "sagoma ferma da 5 pollici entro 9: terreno impassabile che blocca la vista" },
+          "testo": "una colonna impassabile che blocca la vista" },
+        { "id": "confoundingConvocation", "n": 4, "name": "Confounding Convocation", "type": "hex", "cv": 9, "range": 9, "rip": true, "page": 331,
+          "effetto": { "a mano": "finche' resta in gioco il bersaglio ha Stupidity" },
+          "testo": "il bersaglio diventa stupido" },
+        { "id": "spectralDoppelganger", "n": 5, "name": "Spectral Doppelganger", "type": "assailment", "cv": 9, "range": "combat", "page": 331,
+          "effetto": { "a mano": "un'unita' nemica in combattimento subisce 2D6 colpi con le caratteristiche, le regole e l'arma del mago" },
+          "testo": "2D6 colpi con il profilo del mago" },
+        { "id": "miasmicMirage", "n": 6, "name": "Miasmic Mirage", "type": "hex", "cv": 11, "range": 15, "annulla": "hex", "page": 331,
+          "effetto": { "modifiche": { "M": -2 }, "flag": { "noMarch": true, "noCharge": true }, "fino": "ownTurn" },
+          "testo": "−2 Movimento, niente marcia ne' carica; le altre maledizioni finiscono" }
+      ]
+    },
+    {
+      "id": "necromancy", "name": "Necromancy", "label": "Negromanzia", "page": 332,
+      "spells": [
+        { "id": "dwellersBelow", "n": 0, "name": "The Dwellers Below", "type": "assailment", "cv": 7, "range": "combat", "page": 332,
+          "effetto": { "a mano": "sagoma da 3 pollici sull'unita' in combattimento che devia di D3+1; i nemici sotto rischiano un colpo a Forza 3" },
+          "testo": "sagoma piccola che devia, Forza 3" },
+        { "id": "deathlyCabal", "n": 1, "name": "Deathly Cabal", "type": "enchantment", "cv": 10, "range": "self", "page": 333,
+          "effetto": { "a mano": "il mago e la sua unita': salvezza speciale 6+ contro attacchi non magici, e Fear (o Terror se hanno gia' Fear) fino al tuo prossimo inizio turno" },
+          "testo": "salvezza 6+ contro i colpi non magici, e Paura" },
+        { "id": "unquietSpirits", "n": 2, "name": "Unquiet Spirits", "type": "missile", "cv": 8, "range": 15, "page": 333,
+          "effetto": { "colpi": { "dadi": "3D6", "S": 2, "AP": 0, "noArmour": true } },
+          "testo": "3D6 colpi a Forza 2 senza armatura" },
+        { "id": "spiritualVortex", "n": 3, "name": "Spiritual Vortex", "type": "vortex", "cv": 11, "range": 12, "rip": true, "page": 333,
+          "effetto": { "a mano": "sagoma ferma da 5 pollici, terreno pericoloso; entro 8 i nemici hanno −1 Comando e niente Inspiring Presence" },
+          "testo": "sagoma ferma che toglie Comando ai nemici vicini" },
+        { "id": "curseOfYears", "n": 4, "name": "Curse Of Years", "type": "hex", "cv": 10, "range": 15, "annulla": "hex", "page": 333,
+          "effetto": { "modifiche": { "M": -1, "WS": -1, "T": -1 }, "fino": "ownTurn" },
+          "testo": "−1 Movimento, Abilita' Combattimento e Resistenza; le altre maledizioni finiscono" },
+        { "id": "spectralSteed", "n": 5, "name": "Spectral Steed", "type": "conveyance", "cv": 9, "range": 12, "rip": true, "page": 333,
+          "effetto": { "a mano": "un personaggio amico di fanteria ha Ethereal e Fly (10) finche' resta in gioco" },
+          "testo": "un personaggio a piedi vola (10) ed e' etereo" },
+        { "id": "spiritLeech", "n": 6, "name": "Spirit Leech", "type": "hex", "cv": 8, "range": 18, "engaged": true, "page": 333,
+          "effetto": { "modifiche": { "Ld": -2 }, "fino": "turn", "a mano": "e niente Inspiring Presence; Comando non sotto 2" },
+          "testo": "−2 Comando fino a fine turno" }
+      ]
+    },
+    {
+      "id": "waaagh", "name": "Waaagh! Magic", "label": "Magia Waaagh!", "page": 334,
+      "spells": [
+        { "id": "fistOfGork", "n": 0, "name": "Fist Of Gork (Or Mork)", "type": "assailment", "cv": 9, "range": "combat", "page": 334,
+          "effetto": { "a mano": "sagoma da 5 pollici sull'unita' in combattimento che devia di D3+1; chi e' sotto, amico o nemico, rischia un colpo a Forza 4, perforazione 1" },
+          "testo": "sagoma grande che devia, Forza 4 perforazione 1" },
+        { "id": "vindictiveGlare", "n": 1, "name": "Vindictive Glare", "type": "missile", "cv": 8, "range": 21, "engaged": true, "page": 335,
+          "effetto": { "a mano": "un colpo a Forza 7 con Multiple Wounds (D3), senza armatura" },
+          "testo": "un colpo a Forza 7, Multiple Wounds (D3), senza armatura" },
+        { "id": "handOfMork", "n": 2, "name": "Hand Of Mork (Or Gork)", "type": "conveyance", "cv": 7, "range": 18, "engaged": true, "page": 335,
+          "effetto": { "a mano": "un personaggio amico si rimette entro 2D6 dal punto di partenza, non entro 3 dai nemici; con un doppio 1 perde una Ferita" },
+          "testo": "un personaggio amico viene lanciato di 2D6 pollici" },
+        { "id": "badMoonRizin", "n": 3, "name": "Bad Moon Rizin'", "type": "hex", "cv": 10, "range": 15, "page": 335,
+          "effetto": { "modificheDado": { "dado": "D3", "segno": -1, "chiavi": ["WS", "I"] }, "fino": "turn" },
+          "testo": "−D3 Abilita' Combattimento e Iniziativa fino a fine turno" },
+        { "id": "evilSunShinin", "n": 4, "name": "Evil Sun Shinin'", "type": "enchantment", "cv": 9, "range": "self", "page": 335,
+          "effetto": { "a mano": "fino al tuo prossimo inizio turno le unita' amiche nel raggio di comando del mago ritirano gli 1 per colpire e perforano di 1 in piu'" },
+          "testo": "ritiro degli 1 per colpire e perforazione +1 nel raggio di comando" },
+        { "id": "ereWeGo", "n": 5, "name": "'Ere We Go!", "type": "enchantment", "cv": 9, "range": "self", "page": 335,
+          "effetto": { "a mano": "in questo turno le unita' amiche nel raggio di comando hanno +3 alla portata massima di carica e +D3 al tiro di carica" },
+          "testo": "+3 alla portata di carica e +D3 al tiro nel raggio di comando" },
+        { "id": "footOfGork", "n": 6, "name": "Foot Of Gork (Or Mork)", "type": "vortex", "cv": 8, "range": 15, "rip": true, "page": 335,
+          "effetto": { "a mano": "sagoma da 5 pollici entro 15, terreno pericoloso; a ogni inizio turno devia di 2D6 e chi tocca subisce D3+3 colpi a Forza 5, perforazione 1" },
+          "testo": "sagoma grande che vaga e pesta chi tocca" }
+      ]
+    }
+  ],
+  "innesti": [
+    {
+      "id": "gork", "regola": "Lore of Gork", "libro": "Ravening Hordes", "page": 47,
+      "spells": [
+        { "id": "brainBursta", "name": "Brain Bursta", "type": "assailment", "cv": 10, "range": "combat", "page": 47,
+          "effetto": { "a mano": "un modello nemico in combattimento subisce un colpo a Forza 6 con Multiple Wounds (D3), senza armatura ne' rigenerazione" },
+          "testo": "un colpo a Forza 6, Multiple Wounds (D3)" },
+        { "id": "gazeOfGork", "name": "Gaze of Gork", "type": "missile", "cv": 9, "range": "5D6", "page": 47,
+          "effetto": { "a mano": "una linea di 5D6 pollici dal mago: ogni modello sotto, amico o nemico, subisce un colpo a Forza 5, perforazione 3" },
+          "testo": "una linea di 5D6 pollici, Forza 5 perforazione 3" }
+      ]
+    },
+    {
+      "id": "mork", "regola": "Lore of Mork", "libro": "Ravening Hordes", "page": 47,
+      "spells": [
+        { "id": "morksCurse", "name": "Mork's Curse", "type": "hex", "cv": 8, "range": 18, "rip": true, "page": 47,
+          "effetto": { "a mano": "finche' resta in gioco il bersaglio ritira i 6 naturali ai tiri d'armatura" },
+          "testo": "il bersaglio ritira i 6 d'armatura" },
+        { "id": "itchyNuisance", "name": "Itchy Nuisance", "type": "hex", "cv": 9, "range": 15, "page": 47,
+          "effetto": { "modificheDado": { "dado": "D3", "segno": -1, "chiavi": ["T", "I"] }, "fino": "ownTurn" },
+          "testo": "−D3 Resistenza e Iniziativa fino al tuo prossimo inizio turno" }
+      ]
+    },
+    {
+      "id": "hornedRat", "regola": "Lore of the Horned Rat", "libro": "Legends: Skaven", "pdfPage": 25,
+      "spells": [
+        { "id": "skitterleap", "name": "Skitterleap", "type": "conveyance", "cv": 8, "range": 18, "engaged": true, "pdfPage": 25,
+          "effetto": { "a mano": "un personaggio amico di fanteria si rimette entro 24 dal punto di partenza, non entro 6 dai nemici, e non muove piu' in questa fase" },
+          "testo": "un personaggio a piedi salta di 24 pollici" },
+        { "id": "warpLightning", "name": "Warp Lightning", "type": "missile", "cv": 10, "range": 18, "pdfPage": 25,
+          "effetto": { "colpi": { "dadi": "D3+1", "S": 5, "AP": 3 } },
+          "testo": "D3+1 colpi a Forza 5, perforazione 3" },
+        { "id": "cloudOfCorruption", "name": "Cloud Of Corruption", "type": "vortex", "cv": 10, "range": 9, "rip": true, "pdfPage": 25,
+          "effetto": { "a mano": "sagoma ferma da 3 pollici entro 9, terreno pericoloso che blocca la vista; entro 3 i nemici hanno −1 Resistenza" },
+          "testo": "nube ferma: −1 Resistenza ai nemici vicini" }
+      ]
+    },
+    {
+      "id": "lustria", "regola": "Lore Of Lustria", "libro": "Legends: Lizardmen", "pdfPage": 22,
+      "spells": [
+        { "id": "apotheosis", "name": "Apotheosis", "type": "enchantment", "cv": 10, "cv2": 12, "range": 24, "engaged": true, "pdfPage": 22,
+          "effetto": { "a mano": "un personaggio amico di fanteria o cavalleria recupera D3 Ferite (D3+1 con 12 o piu') e ha Fear, o Terror se ha gia' Fear" },
+          "testo": "cura D3 Ferite, D3+1 con 12 o piu', e Paura" },
+        { "id": "monsoon", "name": "Monsoon", "type": "vortex", "cv": 8, "range": 15, "rip": true, "pdfPage": 22,
+          "effetto": { "a mano": "sagoma da 5 pollici entro 15 che blocca la vista e devia di D6 a ogni inizio turno; i nemici che tocca restano bagnati per la partita: −1 per colpire al tiro, e le macchine da guerra non tirano con un 1" },
+          "testo": "tempesta che bagna i nemici: −1 al tiro per il resto della partita" }
+      ]
+    }
+  ],
+  "vincolati": [
+    { "id": "beamOfChotec", "name": "Beam of Chotec", "regola": "Solar Engine", "potere": 2, "type": "missile", "cv": 9, "range": 24,
+      "libro": "Legends: Lizardmen", "pdfPage": 15,
+      "effetto": { "colpi": { "dadi": "3D3", "S": 5, "AP": 2, "flaming": true } },
+      "testo": "3D3 colpi a Forza 5, perforazione 2, infuocati" }
+  ]
+}

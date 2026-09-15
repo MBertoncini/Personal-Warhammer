@@ -64,7 +64,9 @@ export const PHASES = [
   { id:"shooting", label:"Tiro", page:136, steps:[
     { id:"pick", label:"Scelta e bersaglio",
       what:"chi tira e a cosa: non chi ha caricato, marciato o e' in mischia",
-      does:["note","roll","declareShot","template"] },
+      /* i dardi magici e i vortici si lanciano «quando il mago viene
+         scelto nella fase di tiro» (p. 108) */
+      does:["note","roll","declareShot","template","cast","dispel"] },
     /* La sagoma e la sua deviazione stanno qui e non in una casella
        loro: una macchina da guerra non tira per colpire, piazza e
        devia, e quello e' il suo «per colpire» (p. 95). Il Mancato
@@ -82,7 +84,8 @@ export const PHASES = [
   { id:"combat", label:"Corpo a corpo", page:144, steps:[
     { id:"fight", label:"Scegli e combatti",
       what:"un combattimento per volta, in ordine di Iniziativa; la Paura quando il combattimento viene scelto",
-      does:["note","roll","fight","toHit","toWound","save","loss","wound","challenge","psych","panic"] },
+      /* gli assalti magici «quando il mago combatte» (p. 108) */
+      does:["note","roll","fight","toHit","toWound","save","loss","wound","challenge","psych","panic","cast","dispel"] },
     { id:"result", label:"Risultato del combattimento",
       what:"ferite, ranghi, stendardo, fianco, retro, terreno piu' alto",
       does:["note","roll","combatResult"] },

@@ -1288,12 +1288,93 @@ d'esercito le stesse liste tornano a mostrare la *Choppas* fra le ignote.
 Le regole nei dadi le guarda `test/mischia.mjs`, il pulsante del Waaagh!
 e la fuga sul tavolo `test/boot.mjs`.
 
-**Tappa 6 — Magia.**
-Generazione degli incantesimi, il ciclo di lancio e dissolvimento,
-fiasco e invocazione perfetta, effetti a tempo, incantesimi che restano
-in gioco, un dominio per volta — e gli innesti degli army book (Gork,
-Mork, il Ratto Cornuto) sul formato degli otto domini base, previsti
-dal primo giorno e non aggiunti dopo.
+**Tappa 6 — Magia. — fatta, con due righe del libro che non si accordano**
+~~Generazione degli incantesimi~~, ~~il ciclo di lancio e
+dissolvimento~~, ~~fiasco e invocazione perfetta~~, ~~effetti a
+tempo~~, ~~incantesimi che restano in gioco~~, e non un dominio per
+volta ma ~~tutti e otto~~, con ~~gli innesti degli army book~~ — Gork,
+Mork, il Ratto Cornuto e Lustria — e il Beam of Chotec vincolato del
+Bastiladon. Le regole stanno in `magic.js`, che di tavolo non sa niente
+come `psych.js`; gli incantesimi in `dati/magia/domini.json`, fuori dal
+codice come i file d'esercito.
+
+Da dove viene. È la prima tappa scritta con **il libro aperto**: i
+manuali sono in `Desktop\Warhammer`, e le pagine della magia (106-111)
+e dei domini (319-335) sono state lette lì, non nel riassunto. Le pagine
+citate sono quelle stampate, che nel PDF sono una in più.
+
+Come si vede al tavolo. Un'unità con un mago dentro ha il blocco
+**Magia** nell'ispettore. Livello e dominio si scelgono lì, perché il
+file di New Recruit non li dice; *Genera gli incantesimi* tira i D6 nel
+vassoio e lo riapre per i doppioni; una tendina fa lo scambio con la
+firma del dominio o con un incantesimo del dominio d'esercito. In
+partita ogni incantesimo ha il suo *Lancia*, e il lancio è una
+sequenza di azioni del motore, ognuna annullabile: il bersaglio scelto
+fra quelli misurati — distanza, arco, vista, in combattimento o no, e
+chi non va bene porta il perché —, il tiro di lancio, la tabella del
+fiasco, la finestra in cui l'avversario sceglie se dissolvere con un
+mago in gittata o con la sorte, e alla fine l'effetto. Se la casella
+del libro sta più avanti nel turno il lancio ci va da solo; se sta più
+indietro si lancia lo stesso dove si è, e il registro scrive dove
+andava — il turno non torna indietro per un incantesimo.
+
+Il browser vero ha giocato il ciclo con i dadi veri: una generazione
+con due doppioni ritirati, e un lancio finito in fiasco con la sua riga
+della tabella. E ha trovato l'unico errore che le prove non vedevano:
+una maledizione lanciata dall'inizio del turno finiva nella
+congiurazione portandosi dietro la nota «si lancia nella
+congiurazione».
+
+Dei sessantasei incantesimi, **dieci** fanno colpi che l'app risolve da
+sola, passando dalla stessa catena dello scontro con i colpi automatici
+e senza armatura o rigenerazione quando il testo lo dice; **sedici**
+diventano effetti a tempo o bandierine (quattro con una parte a mano);
+**quaranta** — sagome, vortici, trasporti, Multiple Wounds, aure nel
+raggio di comando — restano a mano, e il registro scrive la riga che
+dice cosa fare. Quattordici restano in gioco, hanno *Termina*, e dal
+turno dopo si dissolvono contro il valore di lancio.
+
+Quello che questa tappa ha trovato per strada, e non era in programma:
+
+- **Il libro contraddice se stesso sul dissolvimento.** A p. 110 si
+  dissolve quando il risultato *supera* il lancio; nel riepilogo di
+  p. 344, quando lo *uguaglia o supera*. Vince il testo della regola, e
+  la costante `DISPEL_TIES` è il punto in cui cambiarlo se una FAQ dice
+  altro.
+- **Gli effetti non pesavano sui dadi.** `combatant` leggeva il profilo
+  grezzo, e un −1 Resistenza stava scritto nell'ispettore e in nessun
+  tiro — valeva anche per gli effetti della Tappa 0. Adesso la schiera
+  legge da `effects.js`, e un Word of Pain toglie davvero un punto.
+- **Una salvezza regalata sostituiva quella che c'era.** «Gain a 5+
+  Ward save» su un'unità con 4+ l'avrebbe peggiorata. `effects.js`
+  sa adesso la differenza fra fissare un valore e regalarne uno.
+- **Le due correzioni del §2**, la tabella dei tipi di truppa e
+  l'ordine di combattimento, sono venute fuori aprendo il libro per
+  questa tappa.
+
+Quello che resta fuori, detto per non lasciarlo scoprire a una partita:
+
+- **Le sagome e i vortici** sono tutti a mano: la sagoma della Tappa 4
+  sa cadere e deviare, ma non ancora muoversi a ogni inizio turno.
+- **La Magic Resistance e il Drain Magic** sono scritti in `castResult`
+  (`mod` e `cvUp`) e il tavolo non li passa ancora; lo stesso vale per
+  Mob Rule e Syphoned Strength degli Orchi.
+- **Il mago con l'armatura** non tira (p. 111): `canCast` lo sa, il
+  tavolo non glielo dice, perché il file non distingue bene l'armatura
+  del mago da quella della cavalcatura.
+- **I danni del fiasco** — le due sagome e il colpo a Forza 4 — sono
+  scritti nel registro e tirati a mano; un incantesimo in gioco non
+  finisce da solo quando il mago muore.
+- **La scheda di preparazione della lista** chiede ancora gli
+  incantesimi come testo, e non li porta al tavolo: si scelgono
+  sull'unità.
+- **Gli oggetti arcani** (Power Scroll, Dispel Scroll, Wand of Jet…) e
+  il Panico dopo le perdite da un dardo magico non ci sono.
+
+*Fatto quando*: un mago si prepara, genera, lancia e l'avversario
+dissolve senza aprire il manuale, e il registro racconta tutto. **Lo
+fa**. Le prove stanno in `test/magia.mjs`, che guarda la magia dal lato
+dei numeri e dei dati, e il gesto sul tavolo lo guarda `test/boot.mjs`.
 
 **Tappa 7 — Scenari, punti vittoria, fine partita.**
 Le sei battaglie campali (pp. 288-299), i punti vittoria, la durata
