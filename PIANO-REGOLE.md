@@ -405,10 +405,12 @@ Qui il progetto parte molto avanti. Quello che manca è preciso:
    è cosa diversa su un bersaglio lungo. Resta l'eccezione
    dell'ostacolo difeso; la *carica disordinata* (p. 128) c'è, ed è
    tenuta distinta dal disordine da terreno, che è un'altra regola.
-3. ~~**La ruota** (*wheel*) e il pivot~~ — il costo c'è
-   (`wheelCost`: lo spigolo esterno percorre un arco di raggio pari al
-   fronte), e l'allineamento dice di quanti gradi si gira. Quello che
-   manca è scalarlo da un budget di movimento.
+3. ~~**La ruota** (*wheel*) e il pivot~~ — fatto del tutto nella Tappa 8:
+   il costo c'era (`wheelCost`: lo spigolo esterno percorre un arco di
+   raggio pari al fronte), e adesso si scala da un **budget di
+   movimento** (`movePlans`, `moveCost`). Un reggimento non va in
+   diagonale: ruota per puntare, poi cammina, e paga tutti e due dal
+   Movimento.
 4. ~~**Il massimo di carica** e la carica impossibile~~ (p. 119) —
    fatto, e con la probabilità esatta accanto: «serve un 8, sono
    quattordici volte su trentasei», che è l'informazione per cui uno
@@ -912,9 +914,9 @@ Le cose che questa tappa ha reso spiegabili, e prima non lo erano:
   a fine movimento (p. 134).
 
 Quello che resta fuori, detto per non lasciarlo scoprire a una partita:
-il costo della ruota si calcola ma non si scala da un budget di
-movimento; il *tira e tieni* si può scegliere ma la raffica va tirata a
-mano dal pannello del tiro; le mosse obbligate della frenesia e della
+~~il costo della ruota si calcola ma non si scala da un budget di
+movimento~~ (fatto nella Tappa 8); il *tira e tieni* si può scegliere
+ma la raffica va tirata a mano dal pannello del tiro; le mosse obbligate della frenesia e della
 stupidità sono della Tappa 5; e il test di terreno pericoloso e quello
 di Pericolo di chi attraversa un nemico fuggendo sono scritti
 (`perilAsk`) ma non hanno ancora chi li preme.
@@ -1469,6 +1471,103 @@ Quello che resta fuori, detto per non lasciarlo scoprire a una partita:
 quanto secondo il libro. **Lo fa**, con le due voci da scrivere a mano.
 Le prove stanno in `test/vittoria.mjs`, e il gesto sul tavolo lo guarda
 `test/boot.mjs`.
+
+**Tappa 8 — Il budget del movimento, i personaggi che menano, e l'archivio che risponde. — fatta**
+
+Cinque cose che il piano dichiarava aperte, più due che erano buchi e
+basta.
+
+1. **Il budget di movimento.** Il §5.3 di questo piano diceva da due
+   tappe: «il costo della ruota si calcola ma non si scala da un budget
+   di movimento». Era il buco peggiore, perché produceva un numero
+   sbagliato con l'aria di essere giusto: **un reggimento non va in
+   diagonale**, e l'app disegnava un cerchio attorno all'ancora e diceva
+   di sì a una diagonale che al tavolo non esiste. `movePlans` mette in
+   fila i modi di arrivare in un punto — ruota e avanti, all'indietro,
+   di lato, giro sul posto — ognuno con il suo costo contro il Movimento
+   base: un pollice avanti ne costa uno, uno indietro ne costa due
+   (p. 125), un arco di ruota costa i suoi pollici veri (p. 124), un
+   giro di 90° un quarto del Movimento e uno di 180° la metà. Il più
+   economico è quello che si legge, gli altri restano scritti. Tre
+   conseguenze al tavolo: l'ispettore dice «8,4″ di 8″ (6,1″ di corsa
+   più 2,3″ di ruota)», il tavolo disegna il gomito vero invece della
+   diagonale, e la **marcia si riconosce sul costo** — un reggimento
+   largo che gira di novanta gradi e poi fa quattro pollici ha
+   marciato, e il pannello del tiro lo sa. `wheelCost` si trasferisce in
+   `movement.js` con il resto del budget.
+
+2. **I personaggi uniti menano.** Entravano nella psicologia e nel
+   bonus dello stendardo, e i loro colpi sparivano: un Big Boss con
+   quattro Attacchi di Forza 5 dentro un mob dove tutti ne hanno uno di
+   Forza 3 spostava il risultato dell'assalto di due o tre punti senza
+   lasciare traccia. Adesso ognuno è una squadra con il profilo intero,
+   e l'ordine di Iniziativa non è più fra due contendenti ma fra tutte
+   le squadre in campo, a gradini: chi sta sullo stesso gradino mena
+   insieme, e le ferite di un gradino si applicano alla fine di quel
+   gradino. Resta ai giocatori **a chi assegnare le ferite in arrivo**,
+   che è quello che dice il manuale.
+
+3. **Quanti si toccano davvero.** «La prima fila è larga quanto la più
+   stretta delle due» è generoso e quasi sempre giusto di fronte, ma due
+   unità che si incontrano d'angolo si toccano con tre modelli e il
+   conto ne dava cinque. `touchingModels` conta le basette addosso al
+   poligono nemico, e il pannello dichiara se il numero è contato o
+   stimato — perché è il numero che moltiplica tutto il resto. Un
+   personaggio in prima fila **occupa un posto** invece di aggiungerne
+   uno.
+
+4. **La Stupidità diventa un marcatore.** Il test c'era, l'effetto
+   c'era, la scadenza giusta pure; mancava vederla. Adesso c'è un
+   marcatore sopra il pezzo, un pulsante che la tira per tutti nella
+   prima casella del turno, e il marcatore a mano — la Stupidità capita
+   anche fuori dall'app. E una regola che mancava: chi ci è dentro
+   **non lancia incantesimi**. Il tiro e la carica lo sapevano dalla
+   Tappa 5, `canCast` no.
+
+5. **La gittata della magia è una proprietà del profilo.** Esisteva nei
+   dati dei vincolati, ma si scopriva solo premendo «mira»: sul tavolo i
+   cerchi di portata erano quelli delle armi, e un Bastiladon con il
+   Solar Engine — ventiquattro pollici — mostrava gli otto del suo
+   giavellotto. `magicRange` risponde a «fin dove arriva la magia di
+   questo pezzo», e da lì escono un cerchio, una riga nell'ispettore e
+   una colonna nel report. Gli incantesimi vincolati si possono anche
+   **dichiarare a mano**: New Recruit esporta le regole dell'unità base
+   e l'oggetto che porta l'incantesimo spesso non ci finisce.
+
+E due buchi che non erano regole.
+
+- **Il dado del tiro mostrava sempre l'uno.** Il vassoio gira ogni cubo
+  sulla faccia grezza del D6; i dadi della mischia la dichiarano, quelli
+  del tiro no — passavano `{ value, win }` — quindi il cubo leggeva
+  `undefined` e ripiegava sull'uno. I numeri erano giusti e le facce
+  raccontavano un'altra partita, che è il modo più rapido di far perdere
+  fiducia a un simulatore che mostra i dadi apposta. Corretto in due
+  posti, perché uno solo lascia in piedi la trappola.
+- **L'archivio adesso risponde.** Il nuovo `palmares.js` dice come va
+  una lista leggendo il diario delle partite, e da lì escono i filtri
+  dell'elenco («quali hanno i Clanrats?», «quali di Ogre?», «quali hanno
+  vinto?»), le **liste esterne** — quelle che non sono tue e non devono
+  comparire nel conto della vetrina — e le **partite senza turni**, che
+  è come si archivia un torneo: quattro risultati e nessuna fotografia
+  sono un dato completo, non una partita a metà. Il resoconto per l'AI
+  chiede **chi hai giocato**, perché una critica ha bisogno di un
+  bersaglio; e le foto del catalogo si tengono anche **intere**, non
+  solo nella miniatura da 256 px con cui l'app disegna.
+
+*Fatto quando*: si gioca un turno di movimento e il numero che si legge
+è quello che il Movimento paga davvero, ruota compresa. **Lo fa.**
+Le prove stanno in `test/movimento.mjs` (il budget), `test/battle.mjs`
+(i personaggi e i contatti), `test/magia.mjs` (la gittata),
+`test/dadi.mjs` (la faccia del cubo) e `test/liste.mjs` (palmarès,
+filtri, liste esterne).
+
+Quello che resta fuori, detto per non lasciarlo scoprire a una partita:
+il costo decompone lo spostamento in **una manovra più una corsa**, che
+è il gesto del tavolo ma non l'unico possibile — chi ruota due volte in
+mezzo a un movimento paga più di quanto l'app scrive; la ruota vera fa
+perno su uno spigolo e sposta anche il pezzo, mentre qui è contata come
+un arco e poi come una corsa; e l'assegnazione delle ferite ai
+personaggi resta dei giocatori, come dice il manuale.
 
 ---
 
