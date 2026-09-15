@@ -1668,6 +1668,24 @@ ok('e si chiude', !doc.querySelector('#sync-modal'));
 ok('nessun errore attorno alla sincronia', errors.length === 0);
 window.localStorage.removeItem('tow-sync');
 
+/* Il guscio che va in cache per l'uso senza rete.
+   Un modulo nuovo che nessuno aggiunge a `sw.js` non si vede: l'app
+   funziona finché c'è campo, e al circolo — dove il service worker
+   serve — si apre rotta. Il conto lo fa la prova, che lo sa fare. */
+console.log('\nil guscio per stare senza rete');
+{
+  const root = path.resolve(here, '..');
+  const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+  const inCache = new Set([...sw.matchAll(/"\.\/(src\/[\w.-]+\.js)"/g)].map(m => m[1]));
+  const onDisk = fs.readdirSync(path.join(root, 'src')).filter(f => f.endsWith('.js')).map(f => 'src/' + f);
+  const mancanti = onDisk.filter(f => !inCache.has(f));
+  const fantasmi = [...inCache].filter(f => !onDisk.includes(f));
+  if (mancanti.length) console.log('      mancano: ' + mancanti.join(', '));
+  if (fantasmi.length) console.log('      fantasmi: ' + fantasmi.join(', '));
+  ok('ogni modulo dell app sta nella cache del service worker', mancanti.length === 0);
+  ok('e nella cache non c e niente che non esiste', fantasmi.length === 0);
+}
+
 if (errors.length) console.log('\nerrori:\n  ' + errors.join('\n  '));
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

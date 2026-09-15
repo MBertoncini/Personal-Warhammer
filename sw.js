@@ -11,7 +11,7 @@
  * di rete. Qui dentro c'e' solo il guscio dell'app.
  */
 
-const VERSION = "v26";
+const VERSION = "v27";
 const SHELL = "shell-" + VERSION;
 const RUNTIME = "runtime-" + VERSION;
 
@@ -31,6 +31,7 @@ const FILES = [
   "./src/extras.js", "./src/movement.js", "./src/zones.js", "./src/uikit.js",
   "./src/suggest.js",
   "./src/troops.js", "./src/effects.js", "./src/battlemarch.js",
+  "./src/palmares.js", "./src/sight.js",
   "./src/armies.js", "./src/prep.js",
   "./src/phases.js", "./src/engine.js", "./src/charge.js", "./src/melee.js",
   "./src/shoot.js", "./src/psych.js", "./src/magic.js", "./src/charts.js", "./src/victory.js",
