@@ -11,6 +11,7 @@
       "playerA": "",
       "playerB": "",
       "first": "A",
+      "mine": "",
       "pts": 750,
       "rounds": 6
     },
@@ -9453,31 +9454,31 @@
       "rows": [
         {
           "id": "kill",
-          "label": "Unità nemiche distrutte",
+          "label": "Unità nemiche distrutte o fuggite dal tavolo (100%)",
           "auto": "kill",
           "A": 332,
           "B": 559,
           "manual": false
         },
         {
-          "id": "halved",
-          "label": "Unità nemiche ridotte a metà o meno",
-          "auto": "halved",
-          "A": 188,
-          "B": 28,
-          "manual": false
-        },
-        {
           "id": "fled",
-          "label": "Unità nemiche in rotta a fine partita",
+          "label": "Unità nemiche in fuga a fine partita (50%)",
           "auto": "fled",
           "A": 0,
           "B": 0,
           "manual": false
         },
         {
+          "id": "under25",
+          "label": "Unità nemiche sotto un quarto della Forza d'Unità (25%)",
+          "auto": "under25",
+          "A": 0,
+          "B": 0,
+          "manual": false
+        },
+        {
           "id": "general",
-          "label": "Generale nemico ucciso",
+          "label": "Generale nemico ucciso, fuggito o in fuga",
           "auto": null,
           "A": 0,
           "B": 0,
@@ -9485,7 +9486,7 @@
         },
         {
           "id": "bsb",
-          "label": "Portastendardo da battaglia",
+          "label": "Portastendardo da battaglia nemico",
           "auto": null,
           "A": 0,
           "B": 0,
@@ -9493,7 +9494,7 @@
         },
         {
           "id": "banner",
-          "label": "Stendardi catturati",
+          "label": "Stendardi presi come trofeo",
           "auto": null,
           "A": 0,
           "B": 0,
@@ -9501,16 +9502,8 @@
         },
         {
           "id": "objective",
-          "label": "Obiettivi controllati",
-          "auto": null,
-          "A": 0,
-          "B": 0,
-          "manual": false
-        },
-        {
-          "id": "quarter",
-          "label": "Quarti di tavolo",
-          "auto": null,
+          "label": "Obiettivi tenuti a fine turno",
+          "auto": "objective",
           "A": 0,
           "B": 0,
           "manual": false
@@ -9522,6 +9515,14 @@
           "A": 0,
           "B": 0,
           "manual": false
+        },
+        {
+          "id": "halved",
+          "label": "Unità nemiche ridotte a metà o meno (voce di prima, non del libro)",
+          "auto": null,
+          "A": 188,
+          "B": 28,
+          "manual": true
         }
       ]
     },
@@ -10500,6 +10501,7 @@
         "text": "Inizio della partita.",
         "at": 1788904089619
       }
-    ]
+    ],
+    "noTurns": false
   }
 ]
