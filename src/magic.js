@@ -92,6 +92,35 @@ export const isWizard = (u = {}, prep = {}) =>
 /* La gittata del dissolvimento dipende dal Livello (p. 110). */
 export const dispelRange = level => (+level || 0) >= 3 ? 24 : 18;
 
+/* ------------------------------------------------------------------
+   Fin dove arriva la magia di questo pezzo.
+
+   La gittata di un incantesimo e' scritta nell'incantesimo, e fin qui
+   la si scopriva solo premendo «mira»: sul tavolo i cerchi di portata
+   erano quelli delle armi, e un Bastiladon con il Solar Engine —
+   ventiquattro pollici di raggio — mostrava gli otto del suo
+   giavellotto. Cioe' il numero sbagliato, proprio a chi stava
+   decidendo dove metterlo.
+
+   Qui la gittata torna a essere una proprieta' del **profilo**: entra
+   l'elenco degli incantesimi che quel pezzo puo' lanciare — quelli
+   generati e quelli vincolati alle sue regole — ed esce il piu'
+   lungo, con il nome di chi ce lo porta.
+
+   «self», «mischia» e i vortici non hanno una portata da disegnare e
+   restano fuori: un cerchio da zero pollici non dice niente a nessuno.
+   ------------------------------------------------------------------ */
+export const rangeOf = s => (s && typeof s.range === "number" && s.range > 0) ? s.range : 0;
+
+export function magicRange(spells = []){
+  let best = null;
+  for (const s of spells || []){
+    const r = rangeOf(s);
+    if (r > 0 && (!best || r > best.range)) best = { range: r, name: s.name, type: s.type, id: s.id };
+  }
+  return best;
+}
+
 /* ============================================================
    3 · GENERARE GLI INCANTESIMI (p. 106)
    Tanti D6 quanti il Livello, e i doppioni si ritirano. `dice` sono le

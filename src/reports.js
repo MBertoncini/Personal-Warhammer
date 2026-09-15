@@ -126,6 +126,7 @@ function rosterFromList(list, army){
     models: u.models || 1, pts: u.pts || 0, us: u.us || 0,
     baseW: u.baseW, baseH: u.baseH, frontage: u.frontage || 1,
     loose: !!u.loose, maxRange: u.maxRange || 0,
+    magicRange: BL.magicReachOf(u),
     move: u.stats && /^\d+$/.test(String(u.stats.M)) ? +u.stats.M : 0,
     rules: Array.isArray(u.rules) ? u.rules.slice(0, 10) : [],
     weapons: Array.isArray(u.weapons) ? u.weapons.map(w => w.name).slice(0, 6) : [],

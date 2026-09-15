@@ -36,6 +36,7 @@ import * as FM from './formation.js';
 import * as EX from './extras.js';
 import { zoneSnapshot, zoneKind } from './zones.js';
 import * as V from './victory.js';
+import * as MG from './magic.js';
 
 const r1 = v => Math.round(v * 10) / 10;
 const pad2 = n => String(n).padStart(2, "0");
@@ -505,12 +506,38 @@ export function progress(rep){
 /* ============================================================
    5 · IL REPORT
    ============================================================ */
+/* Fin dove arriva la magia di un pezzo: gli incantesimi generati e
+   quelli vincolati alle sue regole, o dichiarati a mano nel pannello.
+   Zero quando i domini non sono caricati, che e' quello che succede
+   nelle prove: un report senza la riga e' meglio di uno con la riga
+   sbagliata. */
+export function magicReachOf(u){ return magicReach(u); }
+
+function magicReach(u){
+  const M = MG.magicNow();
+  if (!M || !u) return 0;
+  const m = u.magic || {};
+  const hand = (m.bound || []).map(id => M.bound.find(b => b.id === id)).filter(Boolean);
+  const list = [
+    ...MG.knownSpells(M, m.lore, m.numbers || [], m.swaps || []),
+    ...M.boundFor(u.rules || []),
+    ...hand,
+  ];
+  const r = MG.magicRange(list);
+  return r ? r.range : 0;
+}
+
 const unitCard = u => ({
   uid: u.uid, idx: u.idx, army: u.army, name: u.name,
   troop: u.troop || "", slot: u.slot || "",
   models: u.models || 0, pts: u.pts || 0, us: u.us || 0,
   baseW: u.baseW, baseH: u.baseH, frontage: u.frontage,
   loose: !!u.loose, maxRange: u.maxRange || 0,
+  /* la gittata della magia accanto a quella delle armi: un Bastiladon
+     con il Solar Engine arriva a ventiquattro pollici mentre il suo
+     giavellotto ne fa otto, e un report che scrive solo gli otto fa
+     ragionare chi legge su un pezzo diverso da quello che era in campo */
+  magicRange: magicReach(u),
   /* le ferite del profilo servono a chi legge il report per capire se
      «tre ferite» sono un graffio o quasi la morte */
   wounds: EX.woundsPerModel(u),
@@ -780,10 +807,11 @@ export function reportMarkdown(rep, { prompt = false } = {}){
     out.push("", `### Esercito ${k} — ${ARMY(rep, k)}` +
       (rep.armies[k].info && rep.armies[k].info.catalogue ? ` (${rep.armies[k].info.catalogue})` : ""), "");
     if (!list.length){ out.push("_Nessuna unità registrata._"); continue; }
-    out.push(tbl(["#", "Unità", "Ruolo", "Modelli", "Punti", "US", "Base mm", "Formazione", "M", "Tiro max"],
+    out.push(tbl(["#", "Unità", "Ruolo", "Modelli", "Punti", "US", "Base mm", "Formazione", "M", "Tiro max", "Magia max"],
       list.map(u => [u.idx ?? "", u.name, [u.troop, u.slot].filter(Boolean).join(" / ") || "—",
         u.models, u.pts, u.us || "—", `${u.baseW}×${u.baseH}`, formText(u),
-        u.move || "—", u.maxRange ? u.maxRange + "″" : "—"])));
+        u.move || "—", u.maxRange ? u.maxRange + "″" : "—",
+        u.magicRange ? u.magicRange + "″" : "—"])));
     const withRules = list.filter(u => u.rules.length);
     if (withRules.length){
       out.push("", "Regole speciali dichiarate nel roster:");

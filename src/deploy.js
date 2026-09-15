@@ -610,6 +610,8 @@ function renderInspector(){
         ${u.us ? `<div class="readout"><span>Unit Strength</span><b>${u.us}</b></div>` : ""}
         ${u.crew ? `<div class="readout"><span>Equipaggio</span><b>${u.crew}</b></div>` : ""}
         ${u.maxRange ? `<div class="readout"><span>Tiro più lungo</span><b>${u.maxRange}″</b></div>` : ""}
+        ${(() => { const r = magicReachOf(u); return r
+          ? `<div class="readout"><span>Magia più lunga</span><b>${r.range}″ · ${esc(r.name)}</b></div>` : ""; })()}
         <div class="readout"><span>Stato</span><b style="color:var(--${st.key === "idle" ? "muted" : st.key})">${st.text}</b></div>
       </div>
       ${movementBlockHTML(u)}
@@ -1541,6 +1543,11 @@ function drawBoard(){
       t.textContent = label;
     };
     if (selUnit.maxRange) ring(selUnit.maxRange, "2 8", .55, `tiro ${selUnit.maxRange}″`);
+    /* e la magia, che e' una gittata come le altre: il Solar Engine di
+       un Bastiladon arriva a ventiquattro pollici mentre il suo
+       giavellotto ne fa otto, e il cerchio mostrava gli otto */
+    const reach = magicReachOf(selUnit);
+    if (reach) ring(reach.range, "6 3 1 3", .6, `${shortName(reach.name)} ${reach.range}″`);
     /* senza ancora i cerchi del movimento restano attorno all'unità:
        meglio di niente, ma è proprio il caso che l'ancora risolve */
     if (!MV.anchorOf(selUnit)){
@@ -3171,17 +3178,52 @@ const castNow = x => {
 const unitByUid = v => state.units.find(o => String(o.uid) === String(v)) || null;
 const spellName = id => ((MAGIC() && MAGIC().spell(id)) || {}).name || id;
 
+/* Gli incantesimi vincolati di un pezzo: quelli che le sue regole
+   nominano, piu' quelli dichiarati a mano.
+
+   La dichiarazione a mano non e' un ripiego: New Recruit esporta le
+   regole dell'unita' base, e l'oggetto che porta l'incantesimo —
+   il Solar Engine di un Bastiladon — in due liste su tre non compare
+   fra le regole. Senza un modo di dirlo, l'unica magia che l'app
+   conosce e' quella che il file si e' ricordato di scrivere. */
+const boundOf = x => {
+  const M = MAGIC();
+  if (!M) return [];
+  const own = M.boundFor((x && x.rules) || []);
+  const hand = (((x && x.magic) || {}).bound || [])
+    .map(id => M.bound.find(b => b.id === id)).filter(Boolean)
+    .filter(b => !own.some(o => o.id === b.id));
+  return [...own, ...hand];
+};
+
 function wizardOf(x){
   const M = MAGIC(), m = (x && x.magic) || {};
   return {
     level: MG.levelOf(x, m), lore: m.lore || "", numbers: m.numbers || [], swaps: m.swaps || [],
     known: M ? MG.knownSpells(M, m.lore, m.numbers || [], m.swaps || []) : [],
-    bound: M ? M.boundFor((x && x.rules) || []) : [],
+    bound: boundOf(x),
     loreObj: M && m.lore ? M.lore(m.lore) : null,
   };
 }
 const castersIn = u => MAGIC() ? [u, ...attachedOf(u)].filter(x =>
-  MG.isWizard(x, x.magic) || MAGIC().boundFor(x.rules || []).length > 0) : [];
+  MG.isWizard(x, x.magic) || boundOf(x).length > 0) : [];
+
+/* Fin dove arriva la magia di quest'unita', e chi ce la porta. E' la
+   riga che il cerchio sul tavolo disegna: la gittata di un incantesimo
+   e' una proprieta' del profilo come la portata di un arco, e finche'
+   la si scopriva solo premendo «mira» il tavolo mostrava il numero
+   sbagliato a chi stava decidendo dove mettere il pezzo. */
+function magicReachOf(u){
+  const M = MAGIC();
+  if (!M || !u) return null;
+  let best = null;
+  for (const x of castersIn(u)){
+    const w = wizardOf(x);
+    const r = MG.magicRange([...w.known, ...w.bound]);
+    if (r && (!best || r.range > best.range)) best = { ...r, who: x.name };
+  }
+  return best;
+}
 
 const rangeTxt = s => s.range === "self" ? "sé" : s.range === "combat" ? "mischia"
   : typeof s.range === "number" ? s.range + "″" : String(s.range);
@@ -3225,8 +3267,22 @@ function magicHTML(u){
       (typeof s.range === "number" && s.type !== "vortex" ? aimButton(u, "spell", x.uid, s.id) : "") +
       `<button class="btn tiny" data-mg-cast="${x.uid}|${s.id}" title="${esc(s.testo || "")}">${
         cs && cs.ids.includes(s.id) ? "Già tentato" : "Lancia"}</button>`;
+    const hand = new Set((((x.magic) || {}).bound) || []);
     const rows = [...w.known, ...w.bound].map(s =>
-      `<div class="readout"><span title="${esc(s.testo || "")}">${line(s)}</span>${btn(s)}</div>`).join("");
+      `<div class="readout"><span title="${esc(s.testo || "")}">${line(s)}</span>${
+        hand.has(s.id) ? `<button class="btn tiny ghost" data-mg-unbind="${x.uid}|${esc(s.id)}"
+          title="Toglie l'incantesimo dichiarato a mano">−</button>` : ""}${btn(s)}</div>`).join("");
+    /* Dichiarare a mano un incantesimo vincolato. New Recruit esporta
+       le regole dell'unita' base, e l'oggetto che porta l'incantesimo
+       spesso non ci finisce: in due liste su tre il Bastiladon non ha
+       «Solar Engine» fra le regole, e la sua magia non esisteva. */
+    const free = M.bound.filter(b => !w.bound.some(o => o.id === b.id));
+    if (free.length) setup.push(`<select data-mg-bind="${x.uid}"
+      title="Un incantesimo vincolato che il file della lista non ha scritto: l'oggetto che lo porta">
+      <option value="">— aggiungi un incantesimo vincolato —</option>
+      ${free.map(b => `<option value="${esc(b.id)}">${esc(b.name)} · ${esc(b.regola || "")} · ${esc(rangeTxt(b))}</option>`).join("")}
+    </select>`);
+
     const mine = inPlay.filter(e => e.caster === x.uid);
     return `<div class="readout"><span>Mago</span><b>${esc(x.name)}${w.level ? " · Livello " + w.level : ""}${
         w.loreObj ? " · " + esc(w.loreObj.label) : ""}</b></div>
@@ -3253,6 +3309,25 @@ function wireMagic(host){
   on("[data-mg-level]", "change", el => {
     const x = unitByUid(el.dataset.mgLevel); if (!x) return;
     act("Livello del mago", () => { x.magic = { ...(x.magic || {}), level: +el.value || 0, numbers: [], swaps: [] }; });
+    renderAll();
+  });
+  on("[data-mg-bind]", "change", el => {
+    const x = unitByUid(el.dataset.mgBind);
+    if (!x || !el.value) return;
+    const id = el.value;
+    act("incantesimo vincolato", () => {
+      const have = ((x.magic || {}).bound) || [];
+      x.magic = { ...(x.magic || {}), bound: have.includes(id) ? have : [...have, id] };
+    });
+    renderAll();
+  });
+  on("[data-mg-unbind]", "click", el => {
+    const [uid, id] = el.dataset.mgUnbind.split("|");
+    const x = unitByUid(uid);
+    if (!x) return;
+    act("incantesimo vincolato", () => {
+      x.magic = { ...(x.magic || {}), bound: (((x.magic) || {}).bound || []).filter(v => v !== id) };
+    });
     renderAll();
   });
   on("[data-mg-lore]", "change", el => {
