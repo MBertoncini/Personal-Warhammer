@@ -38,6 +38,9 @@ import * as PH from './phases.js';
 import { createEngine, ACTIONS } from './engine.js';
 import * as CH from './charge.js';
 import * as EF from './effects.js';
+import * as V from './victory.js';
+import { SCENARIOS } from './scenarios.js';
+import { unitStrength } from './troops.js';
 import * as PS from './psych.js';
 
 /* Le quattro fasi restano, perche' il pannello le raggruppa e il
@@ -263,6 +266,9 @@ export function captureTurn({ closing = false } = {}){
 export function closeTurn(){
   const g = game();
   captureTurn();
+  objectivesLine(g.turns[g.turns.length - 1]);
+  /* la partita comincia sempre da A: chiudere B chiude il round */
+  if (g.army === "B") roundLine(g.turn);
   if (g.army === "A") g.army = "B";
   else { g.army = "A"; g.turn++; }
   /* Nella prima casella si entra passando dal motore, non scrivendo
@@ -275,6 +281,100 @@ export function closeTurn(){
      tutte qui. E' quello che rende «mosso 4.7 di 8» una risposta al
      turno in corso invece che al totale della partita. */
   MV.anchorAll(S().units);
+  breakPointLine();
+}
+
+/* ------------------------------------------------------------------
+   Come finisce (Tappa 7)
+   Il formato viene dallo scenario — Battle March o il libro base — e
+   si scavalca a mano; la durata viene dal formato e si sceglie nel
+   pannello. Nessuna delle due ferma la partita: il registro dice che
+   era l'ultimo round, e «Chiudi partita» resta un gesto di chi gioca.
+   ------------------------------------------------------------------ */
+export function formatNow(){
+  const g = game();
+  if (V.FORMATS[g.meta.format]) return g.meta.format;
+  return V.formatFor(SCENARIOS[S().scenario]);
+}
+export function lengthNow(){
+  const g = game();
+  return V.LENGTHS[g.meta.length] ? g.meta.length : V.defaultLength(formatNow());
+}
+const chaosNow = () => game().meta.chaos || [];
+const armyName = k => S().armies[k].name || "Esercito " + k;
+const r1 = v => Math.round(v * 10) / 10;
+
+/* La Forza d'Unita' di un esercito, adesso e a inizio partita: chi e'
+   in riserva o ha inseguito fuori dal tavolo conta ancora (p. 291). */
+export function armyStrength(army){
+  let now = 0, start = 0;
+  for (const u of S().units){
+    if (u.army !== army) continue;
+    const W = EX.woundsPerModel(u);
+    start += unitStrength(u.troop, u.us, u.models, u.models, W);
+    if (!u.dead) now += unitStrength(u.troop, u.us, u.models, Math.max(0, (u.models || 0) - (u.lost || 0)), W);
+  }
+  return { now: r1(now), start: r1(start) };
+}
+
+function objectivesLine(rec){
+  if (!rec || !Array.isArray(rec.objectives) || !rec.objectives.length) return;
+  const fmt = formatNow();
+  const parts = rec.objectives.map(o =>
+    `${o.label}: ${o.army ? armyName(o.army) + (o.by ? " (" + o.by + ")" : "") : o.contested ? "conteso" : "nessuno"}`);
+  const gain = V.objectivePoints([rec], fmt, chaosNow());
+  logLine("Obiettivi a fine turno — " + parts.join(", ") +
+          (gain.A || gain.B ? ` · +${gain.A} a ${armyName("A")}, +${gain.B} a ${armyName("B")} (Battle March p. 27)` : "") + ".");
+}
+
+function roundLine(round){
+  const g = game();
+  const out = V.endOfRound({ length: lengthNow(), round, chaos: chaosNow() });
+  g.pendingLength = out.roll ? round : 0;
+  if (out.ends)
+    logLine(`Fine del round ${round}: ${out.why}, la battaglia finisce qui (p. ${out.page}). «Chiudi partita» fa il conto dei punti vittoria.`);
+  else if (out.roll)
+    logLine(`Fine del round ${round}: ${out.why} (p. ${out.page}).`);
+}
+
+/* il D6 della durata casuale, tirato dal vassoio dopo «Chiudi il turno» */
+export function rollLength(round, die){
+  const g = game();
+  const out = V.endOfRound({ length: lengthNow(), round, die, chaos: chaosNow() });
+  g.pendingLength = 0;
+  logLine(`Durata della battaglia: ${out.why} (p. ${out.page}).` +
+          (out.ends ? " «Chiudi partita» fa il conto dei punti vittoria." : ""));
+  return out;
+}
+
+function breakPointLine(){
+  if (lengthNow() !== "breakpoint") return;
+  for (const k of ["A", "B"]){
+    const s = armyStrength(k);
+    const b = V.broken(s.now, s.start);
+    if (b.broken)
+      logLine(`${armyName(k)} è sotto il punto di rottura: Forza d'Unità ${s.now}, il limite è ${b.bp} (p. ${b.page}). ` +
+              "La battaglia finisce e l'altro esercito stravince; se si sono rotti tutti e due, contano i punti vittoria.", { army: k });
+  }
+}
+
+function endHTML(esc){
+  const g = game();
+  const fmt = formatNow(), len = lengthNow();
+  const L = V.LENGTHS[len];
+  let status;
+  if (len === "random") status = g.turn < L.from ? `Round ${g.turn}: dalla fine del quinto si tira un D6 più il round, e con 10 finisce.`
+                                                 : `Round ${g.turn}: a fine round si tira un D6, e con ${Math.max(1, L.need - g.turn)} o più finisce.`;
+  else if (len === "breakpoint") status = ["A", "B"].map(k => {
+    const s = armyStrength(k);
+    return `${armyName(k)} ${s.now} su ${V.breakPoint(s.start)}`;
+  }).join(" · ") + " di Forza d'Unità (si rompe chi scende sotto)";
+  else status = `Round ${g.turn} di ${V.roundsFor(len, chaosNow())}.`;
+  return `
+    <label class="field">Durata · ${esc(V.FORMATS[fmt].label)}
+      <select id="g-length">${V.LENGTH_IDS.map(id =>
+        `<option value="${id}"${id === len ? " selected" : ""}>${esc(V.LENGTHS[id].label)}</option>`).join("")}</select></label>
+    <p class="note">${esc(status)} <span class="mono">(${fmt === "bm" && len === "bm" ? "Battle March " : ""}p. ${L.page})</span></p>`;
 }
 
 /* Lo schieramento si aggiusta ancora un momento dopo aver premuto
@@ -297,6 +397,9 @@ export function reportView(){
   const g = game();
   return {
     meta: g.meta, score: g.score, turns: g.turns,
+    /* senza lo scenario il punteggio non saprebbe se la partita e'
+       Battle March, e gli obiettivi varrebbero zero */
+    scenario: { id: s.scenario, group: (SCENARIOS[s.scenario] || {}).group || "" },
     armies: { A:{ name:s.armies.A.name }, B:{ name:s.armies.B.name } },
     roster: {
       A: s.units.filter(u => u.army === "A"),
@@ -787,6 +890,7 @@ export function renderGamePanel(host, { esc }){
     <button class="btn primary" id="g-close" style="width:100%;margin-top:8px"
       title="Fotografa il tavolo com'è adesso e passa la mano">Chiudi il turno di ${esc(names[g.army])}</button>
     <div class="readout"><span>Registrate</span><b>${played ? played + (played === 1 ? " fotografia" : " fotografie") : "solo lo schieramento"}</b></div>
+    ${endHTML(esc)}
     <div class="grid2" style="margin-top:6px">
       <button class="btn tiny" id="g-dice" title="Il vassoio: D6, D3, artiglieria e deviazione. Quello che esce finisce nel registro con turno e fase.">⚀ Tira i dadi</button>
       <button class="btn tiny" id="g-note">Annota…</button>
@@ -854,7 +958,19 @@ export function renderGamePanel(host, { esc }){
     });
     if (t && t.trim()) ctx.act("annotazione", () => logLine(t.trim()));
   });
-  host.querySelector("#g-close").addEventListener("click", () => ctx.act("fine turno", closeTurn));
+  host.querySelector("#g-close").addEventListener("click", async () => {
+    ctx.act("fine turno", closeTurn);
+    /* la durata casuale (p. 289): finito il round si tira dal vassoio,
+       e il registro scrive se si va avanti */
+    const r = game().pendingLength;
+    if (!r) return;
+    const rolls = await askDice([{ id:"durata", kind:"d6", n:1, why:"durata della battaglia" }], `Fine del round ${r}`);
+    const got = rolls && rolls.durata;
+    const die = got ? ((got.dice || [])[0] || got.total || 0) : 0;
+    if (die) ctx.act("durata", () => rollLength(r, +die));
+  });
+  host.querySelector("#g-length").addEventListener("change", e =>
+    ctx.act("durata", () => { game().meta.length = e.target.value; }));
   const redo = host.querySelector("#g-redeploy");
   if (redo) redo.addEventListener("click", () => ctx.act("foto schieramento", recaptureDeploy));
   const opn = host.querySelector("#g-open");

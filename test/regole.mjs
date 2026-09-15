@@ -214,7 +214,7 @@ const wood = { kind:'wood', tid:'t1' };
 ok('un terreno naturale si tira', BM.canRollWild(wood));
 const wild = BM.rollWildTerrain(wood);
 ok('ed esce una riga della tabella', wild && wild.id === 'troll');
-ok('che dice di confrontare l abbinamento con il libro', /libro/.test(wild.nota));
+ok('e l abbinamento e quello del libro (p. 40), non piu da verificare', wild.daVerificare === false && wild.page === 40);
 ok('non si tira due volte sullo stesso pezzo', BM.rollWildTerrain(wood) === null);
 ok('e non si tira su un muretto', !BM.canRollWild({ kind:'wall' }));
 

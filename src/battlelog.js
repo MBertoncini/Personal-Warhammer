@@ -26,11 +26,16 @@
  * colonna.
  */
 
-import { inch } from './util.js';
+import { MM, inch } from './util.js';
+import { unitStrength } from './troops.js';
+import { flagsOf } from './effects.js';
+import { distPointToBox } from './geom.js';
+import { objectiveHolder, OBJECTIVE_RANGE } from './battlemarch.js';
 import { TERRAIN } from './terrain.js';
 import * as FM from './formation.js';
 import * as EX from './extras.js';
 import { zoneSnapshot, zoneKind } from './zones.js';
+import * as V from './victory.js';
 
 const r1 = v => Math.round(v * 10) / 10;
 const pad2 = n => String(n).padStart(2, "0");
@@ -229,8 +234,51 @@ export function turnRecord(state, { n, army, events = [], note = "" }){
     zones: zoneSnapshot(state.zones),
     counters: countersSnapshot(state.game),
     contacts: contactsNow(ctx),
+    objectives: objectivesNow(state, ctx),
     events, note,
   };
+}
+
+/* Chi tiene gli obiettivi alla fine di questo turno (Battle March
+   p. 25): una sola unita' entro 3″, con Forza d'Unita' 5 o piu', che non
+   fugge e non e' stupida; la piu' vicina, a pari distanza la piu'
+   forte, e a pari forza e' conteso. La regola sta in `battlemarch.js`
+   dalla Tappa 0 bis e nessuno la chiamava: qui la si chiama a ogni
+   fotografia, e i punti vittoria li somma `victory.js`.
+
+   Obiettivi sono i tesori, il landmark e il monolite — che negli
+   scenari Battle March dell'app fa da landmark. La distanza si misura
+   dal bordo della basetta del pezzo al bordo dell'unita', e la Forza
+   d'Unita' conta anche i personaggi uniti. */
+const OBJECTIVE_KINDS = { treasure:"treasure", landmark:"landmark", monolith:"landmark" };
+function objectivesNow(state, ctx){
+  const pieces = (state.terrain || []).filter(t => OBJECTIVE_KINDS[t.kind]);
+  if (!pieces.length) return [];
+  const usOf = u => unitStrength(u.troop, u.us, u.models,
+    u.dead ? 0 : Math.max(0, (u.models || 0) - (u.lost || 0)), EX.woundsPerModel(u));
+  let troves = 0;
+  return pieces.map(p => {
+    const kind = OBJECTIVE_KINDS[p.kind];
+    const cfg = TERRAIN[p.kind] || {};
+    const radius = ((p.w ?? cfg.w ?? 0) * MM) / 2;
+    const near = [];
+    for (const u of ctx.onBoard){
+      const it = ctx.info.get(u.uid);
+      if (!it || !it.box) continue;
+      const d = Math.max(0, distPointToBox([p.x, p.y], it.box) - radius) / MM;
+      if (d > OBJECTIVE_RANGE + 0.01) continue;
+      const us = usOf(u) + (it.chars || []).reduce((s, c) => s + usOf(c), 0);
+      near.push({ uid: u.uid, name: u.name, army: u.army, us, dist: r1(d),
+                  fleeing: !!u.fled, stupid: !!flagsOf(u).flags.stupid });
+    }
+    const h = objectiveHolder(near);
+    return {
+      tid: p.tid, kind,
+      label: kind === "treasure" ? `Tesoro ${++troves}` : (cfg.label || "Landmark"),
+      army: h.held ? h.army : null, by: h.held ? h.by.name : "",
+      contested: !!h.contested,
+    };
+  });
 }
 
 /* Turno aggiunto a mano, senza tavolo: si porta avanti l'ultima
@@ -287,31 +335,61 @@ export function recount(rep){
 
 /* ============================================================
    3 · PUNTEGGIO
-   L'app non conosce le regole e non vuole conoscerle: propone i conti
-   che si possono fare da soli guardando il tavolo (chi e' morto, chi e'
-   ridotto a meta', chi e' scappato) e lascia scritti a mano quelli che
-   dipendono dallo scenario e dagli accordi — obiettivi, generale,
-   stendardi, quarti di tavolo. Ogni riga resta modificabile: il numero
+   Le voci sono quelle del libro (p. 286, e Battle March p. 27), non
+   quelle del Warhammer di prima: fino alla Tappa 7 il report contava le
+   unita' «ridotte a meta'» e i «quarti di tavolo», che in The Old World
+   non ci sono, e una scala di vittoria proporzionale inventata qui.
+   Adesso un'unita' vale il 100% se e' distrutta, il 50% se fugge a fine
+   partita e il 25% se e' sotto un quarto della sua Forza d'Unita', e le
+   regole stanno in `victory.js`.
+
+   Tre voci si leggono dal tavolo, e una quarta dalle fotografie: gli
+   obiettivi tenuti a fine di ogni turno. Generale, portastendardo e
+   stendardi restano a mano, perche' chi e' il generale lo dice la
+   scheda della lista e chi ha preso uno stendardo lo dice il modo in
+   cui un'unita' e' morta. Ogni riga resta modificabile: il numero
    proposto e' un suggerimento, non un arbitro.
    ============================================================ */
 export const SCORE_DEFS = [
-  { id:"kill",      label:"Unità nemiche distrutte",             auto:"kill" },
-  { id:"halved",    label:"Unità nemiche ridotte a metà o meno", auto:"halved" },
-  { id:"fled",      label:"Unità nemiche in rotta a fine partita",auto:"fled" },
-  { id:"general",   label:"Generale nemico ucciso",                   auto:null },
-  { id:"bsb",       label:"Portastendardo da battaglia",              auto:null },
-  { id:"banner",    label:"Stendardi catturati",                      auto:null },
-  { id:"objective", label:"Obiettivi controllati",                    auto:null },
-  { id:"quarter",   label:"Quarti di tavolo",                         auto:null },
-  { id:"bonus",     label:"Bonus di scenario",                        auto:null },
+  { id:"kill",      label:"Unità nemiche distrutte o fuggite dal tavolo (100%)",       auto:"kill" },
+  { id:"fled",      label:"Unità nemiche in fuga a fine partita (50%)",                auto:"fled" },
+  { id:"under25",   label:"Unità nemiche sotto un quarto della Forza d'Unità (25%)",   auto:"under25" },
+  { id:"general",   label:"Generale nemico ucciso, fuggito o in fuga",                  auto:null },
+  { id:"bsb",       label:"Portastendardo da battaglia nemico",                         auto:null },
+  { id:"banner",    label:"Stendardi presi come trofeo",                                auto:null },
+  { id:"objective", label:"Obiettivi tenuti a fine turno",                              auto:"objective" },
+  { id:"bonus",     label:"Bonus di scenario",                                          auto:null },
 ];
 
 export const emptyScore = () => ({
   rows: SCORE_DEFS.map(d => ({ ...d, A:0, B:0, manual:false })),
 });
 
+/* Le partite salvate prima della Tappa 7 hanno le voci di prima. Non si
+   buttano: le voci del libro prendono il loro posto, quello che era
+   scritto a mano resta scritto a mano, e le due voci che il libro non
+   conosce restano in fondo con il perche' nel nome, se valevano
+   qualcosa. */
+const OLD_ROWS = { halved: "ridotte a metà", quarter: "quarti di tavolo" };
 export function ensureScore(s){
   if (!s || !Array.isArray(s.rows) || !s.rows.length) return emptyScore();
+  if (s.rows.some(r => r.id === "under25")) return s;
+  const old = new Map(s.rows.map(r => [r.id, r]));
+  const rows = SCORE_DEFS.map(d => {
+    const o = old.get(d.id);
+    if (!o) return { ...d, A:0, B:0, manual:false };
+    /* una voce che era a mano e adesso si calcola: se aveva un numero,
+       quel numero l'aveva scritto qualcuno, e resta suo */
+    const typed = !o.auto && ((+o.A || 0) || (+o.B || 0));
+    return { ...o, label: d.label, auto: d.auto, manual: !!o.manual || !!(d.auto && typed) };
+  });
+  for (const r of s.rows){
+    if (SCORE_DEFS.some(d => d.id === r.id)) continue;
+    if (!(+r.A || 0) && !(+r.B || 0) && OLD_ROWS[r.id]) continue;
+    rows.push({ ...r, auto:null, manual:true,
+                label: OLD_ROWS[r.id] ? `${r.label} (voce di prima, non del libro)` : r.label });
+  }
+  s.rows = rows;
   return s;
 }
 
@@ -328,22 +406,28 @@ export function rosterMap(rep){
   return m;
 }
 
-/* Quanto vale, per l'avversario, quello che e' successo a ogni unita'.
-   Le tre righe automatiche sono le uniche che si leggono dal tavolo
-   senza sapere le regole dello scenario. */
+/* Quanto vale, per l'avversario, quello che e' successo a ogni unita'
+   (p. 286): una soglia sola per unita', la piu' alta. Poi gli obiettivi,
+   sommati sulle fotografie di fine turno (Battle March p. 27). */
 export function autoValues(rep){
   const cards = rosterMap(rep);
-  const out = { kill:{ A:0, B:0 }, halved:{ A:0, B:0 }, fled:{ A:0, B:0 } };
+  const out = { kill:{ A:0, B:0 }, fled:{ A:0, B:0 }, under25:{ A:0, B:0 }, objective:{ A:0, B:0 } };
   for (const r of finalUnits(rep)){
     const card = cards.get(r.uid);
     if (!card) continue;
     const to = r.army === "A" ? "B" : "A";      // incassa l'avversario
-    const p = card.pts || 0;
-    if (r.dead){ out.kill[to] += p; continue; }
-    if (r.fled){ out.fled[to] += p; continue; }
-    const models = card.models || r.models || 0;
-    if (models && r.alive * 2 <= models) out.halved[to] += Math.round(p / 2);
+    const share = V.strengthShare({
+      models: card.models || r.models || 0, alive: r.alive,
+      woundsPer: card.wounds || 1, woundsLost: r.wounds || 0,
+    });
+    const v = V.unitVP({ pts: card.pts || 0, dead: !!r.dead, fleeing: !!r.fled, share });
+    if (v.rule === "dead") out.kill[to] += v.vp;
+    else if (v.rule === "fleeing") out.fled[to] += v.vp;
+    else if (v.rule === "under25") out.under25[to] += v.vp;
   }
+  const obj = V.objectivePoints(rep.turns, V.formatOf(rep), (rep.meta && rep.meta.chaos) || []);
+  out.objective.A = obj.A;
+  out.objective.B = obj.B;
   return out;
 }
 
@@ -364,24 +448,25 @@ export function totals(rep){
   return { A, B, diff: Math.abs(A - B), winner: A === B ? null : (A > B ? "A" : "B") };
 }
 
-/* Quanto e' larga la vittoria. Non e' una regola del manuale ma una
-   scala proporzionale ai punti giocati: dirlo e' meglio che stampare
-   una differenza secca che al torneo non vuol dire niente. */
+/* Chi ha vinto, e come, con le parole del libro (p. 286): si vince con
+   almeno cento punti di scarto, si stravince con il doppio, e il resto
+   e' pareggio. In Battle March basta averne di piu' (p. 27). Fino alla
+   Tappa 7 qui c'era una scala proporzionale ai punti giocati — «di
+   misura», «netta» — che nessun libro stampa. */
 export function verdict(rep){
   const t = totals(rep);
   const size = +rep.meta.pts || Math.max(
     (rep.roster.A || []).reduce((s, u) => s + (u.pts || 0), 0),
     (rep.roster.B || []).reduce((s, u) => s + (u.pts || 0), 0), 1);
-  const share = t.diff / size;
-  const level = share < 0.05 ? "pareggio"
-              : share < 0.15 ? "vittoria di misura"
-              : share < 0.30 ? "vittoria netta" : "vittoria schiacciante";
+  const format = V.formatOf(rep);
+  const book = V.victory(t.A, t.B, format);
   const name = w => (w === "A" ? rep.armies.A.name : rep.armies.B.name) || ("Esercito " + w);
+  const src = format === "bm" ? `Battle March p. ${book.page}` : `p. ${book.page}`;
   return {
-    ...t, size, share, level,
-    text: !t.winner || level === "pareggio"
-      ? `Pareggio (${t.A} a ${t.B}).`
-      : `${level.charAt(0).toUpperCase() + level.slice(1)} di ${name(t.winner)}: ${t.A} a ${t.B}, ${t.diff} punti di scarto su ${size} giocati.`,
+    ...t, winner: book.winner, size, share: t.diff / size, level: book.label, format, book,
+    text: !book.winner
+      ? `Pareggio (${t.A} a ${t.B}): ${book.why} (${src}).`
+      : `${book.label.charAt(0).toUpperCase() + book.label.slice(1)} di ${name(book.winner)}: ${t.A} a ${t.B}, ${book.why} (${src}).`,
   };
 }
 

@@ -783,13 +783,14 @@ Quello che questa tappa ha trovato per strada, e non era in programma:
 **Tappa 0 bis — Le due tabelle di Battle March. — il motore c'è**
 Terreno Selvaggio e Caso della Guerra (§8.1) stanno in
 `battlemarch.js`, con il controllo degli obiettivi di p. 25 che era
-lì accanto e costava poco. Le due tabelle tirano, dicono cos'è uscito
-e dichiarano una cosa: il piano elenca i sei esiti di ognuna ma non
-dice quale faccia porta a quale, e quello sta nel libro. Gli esiti
-stanno nell'ordine in cui il piano li elenca, ogni tabella lo dichiara
-con `ordineDaVerificare`, e chi ha il libro aperto corregge l'ordine
-cambiando una riga. Resta da attaccarle al tavolo: il tiro sul pezzo di
-terreno e la riga nel diario.
+lì accanto e costava poco. Le due tabelle tirano e dicono cos'è
+uscito. L'ordine delle facce, dichiarato da verificare, è stato letto
+sul libro nella Tappa 7: il Terreno Selvaggio (p. 40) era giusto, il
+Caso della Guerra (p. 41, *The Chaos of War*) aveva il 2 e il 3
+scambiati — il 2 è il carro perso, il 3 le munizioni — e un esito già
+uscito si ritira invece di prendere il primo rimasto. Il controllo
+degli obiettivi è attaccato al tavolo dalla Tappa 7; resta da attaccare
+il tiro sul pezzo di terreno e quello del Caso della Guerra.
 *Fatto quando*: si finisce una partita e il diario racconta cosa c'era
 in quel bosco e cosa è andato storto al terzo turno.
 
@@ -1396,12 +1397,78 @@ dissolve senza aprire il manuale, e il registro racconta tutto. **Lo
 fa**. Le prove stanno in `test/magia.mjs`, che guarda la magia dal lato
 dei numeri e dei dati, e il gesto sul tavolo lo guarda `test/boot.mjs`.
 
-**Tappa 7 — Scenari, punti vittoria, fine partita.**
-Le sei battaglie campali (pp. 288-299), i punti vittoria, la durata
-variabile della partita, e il report che a fine partita dice chi ha
-vinto e di quanto secondo lo scenario. Qui rientra il resto di Battle
-March: controllo degli obiettivi a fine turno, le sei mappe di
-schieramento, gli obiettivi secondari, i tetti di composizione.
+**Tappa 7 — Scenari, punti vittoria, fine partita. — fatta per il conto e la durata; mappe e obiettivi secondari restano fuori**
+~~I punti vittoria~~, ~~il verdetto~~, ~~la durata variabile e il
+punto di rottura~~, ~~le sei battaglie campali come dati~~ (pp. 286-299);
+di Battle March ~~il controllo degli obiettivi a fine turno~~, ~~i
+bonus dimezzati e i cinque round~~, ~~le tabelle a D6 degli obiettivi,
+del landmark e delle mappe~~ (pp. 24-27), e ~~l'ordine delle due tabelle
+della Tappa 0 bis~~ (pp. 40-41). Le regole stanno in `victory.js`, che
+di tavolo non sa niente come `psych.js`.
+
+Da dove viene. Il Core Rulebook alle pp. 286-299 e *Battle March*
+alle pp. 24-27 e 40-41. Il secondo è un PDF fatto di immagini, e per la
+prima volta un libro è stato letto con gli occhi invece che estraendo
+il testo: le pagine si rendono a mezze pagine e si leggono.
+
+Il numero sbagliato, questa volta, era un intero riquadro. **Il
+punteggio del report era del Warhammer di prima**: contava le unità
+«ridotte a metà» e i «quarti di tavolo», che in *The Old World* non
+esistono, e diceva «vittoria di misura», «netta», «schiacciante» su una
+scala proporzionale ai punti giocati che nessun libro stampa. Il libro
+(p. 286) dice altro: un'unità distrutta o fuggita dal tavolo vale il
+100% dei suoi punti, una in fuga a fine partita il 50%, una sotto un
+quarto della Forza d'Unità iniziale il 25%; il generale 100, il
+portastendardo da battaglia 50, ogni stendardo preso 50; e **si vince
+solo con cento punti di scarto**, si stravince con il doppio, tutto il
+resto è pareggio. Battle March (p. 27) dimezza i bonus, fa durare la
+partita cinque round, dà 10 punti per ogni tesoro e 25 per il landmark
+tenuti alla fine di *ogni* turno di giocatore, e fa vincere chi ne ha di
+più, senza lo scarto.
+
+Come si vede al tavolo. Ogni «Chiudi il turno» misura gli obiettivi con
+la regola di p. 25 — la unità più vicina entro 3″ con Forza d'Unità 5 o
+più, non in fuga e non stupida, a pari distanza la più forte, a pari
+forza conteso — e il registro lo scrive con i punti. Nel pannello della
+partita c'è la **Durata**: sei round, casuale, fino al punto di rottura,
+o i cinque di Battle March, scelta dallo scenario e cambiabile. Alla fine
+del round il registro dice se era l'ultimo; con la durata casuale si apre
+il vassoio per il D6; con il punto di rottura, all'inizio di ogni turno,
+si guarda chi è sceso sotto un quarto della sua Forza d'Unità. Nella
+scheda Partite il punteggio ha le voci del libro, si sceglie se contare
+come il libro base o come Battle March, e il verdetto cita la pagina.
+Le partite archiviate prima tengono quello che era scritto a mano, e le
+due voci del Warhammer di prima restano in fondo con il perché nel nome.
+
+Quello che resta fuori, detto per non lasciarlo scoprire a una partita:
+
+- **Le mappe di schieramento** di Battle March (p. 26) e delle battaglie
+  campali sono dati, non zone: *Close Encounter*, *Opposed Flanks* e
+  *Outflank* hanno cerchi e cunei, e `zones.js` disegna rettangoli. La
+  tabella a D6 dice quale mappa, e la zona si disegna a mano.
+- **Generale, portastendardo e stendardi presi** sono voci a mano: chi è
+  il generale lo dice la scheda della lista e non arriva ancora al
+  tavolo, e uno stendardo è un trofeo solo se l'unità è morta in
+  combattimento o travolta in fuga (p. 200), cosa che il registro non
+  distingue.
+- **La Forza d'Unità a fine partita** è letta sui modelli, o sulle Ferite
+  di un modello solo: un reggimento con dentro modelli diversi va
+  corretto a mano.
+- **Gli obiettivi secondari** di Battle March (*Raid & Burn*, i carri
+  bagagli, pp. 36-37), le carte segrete e **il tiro del Caso della
+  Guerra** all'inizio del turno non sono attaccati; il Caso della Guerra
+  che fa valere di più i tesori e quello che allunga la partita si
+  scrivono in `meta.chaos` e il conto li sente.
+- **La caratteristica speciale** di *Comando e Controllo* (200 punti) e
+  il suo controllo a 6″ del libro base (p. 272) non sono misurati: il
+  controllo a fine turno misura solo tesori, landmark e monolite.
+- **I tetti di composizione** di Battle March restano un controllo da
+  fare sulla lista.
+
+*Fatto quando*: una partita finisce e il report dice chi ha vinto e di
+quanto secondo il libro. **Lo fa**, con le due voci da scrivere a mano.
+Le prove stanno in `test/vittoria.mjs`, e il gesto sul tavolo lo guarda
+`test/boot.mjs`.
 
 ---
 

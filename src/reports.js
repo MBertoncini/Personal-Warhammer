@@ -27,6 +27,7 @@ import { SCENARIOS } from './scenarios.js';
 import { customScenarioMap } from './scenariokit.js';
 import { state } from './deploy.js';
 import * as BL from './battlelog.js';
+import * as V from './victory.js';
 import { tallyUnknown } from './rulebook.js';
 import { armyFor } from './armies.js';
 import { shotFromTurn, shotSVG, shotCaption } from './tableshot.js';
@@ -309,6 +310,12 @@ function detailHTML(rep){
           <option value="B" ${rep.meta.first === "B" ? "selected" : ""}>Esercito B</option>
         </select></label>
     </div>
+    <label class="field">Punteggio secondo
+      <select data-f="meta.format">
+        <option value="" ${!V.FORMATS[rep.meta.format] ? "selected" : ""}>lo scenario: ${esc(V.FORMATS[V.formatFor(rep.scenario)].label)}</option>
+        ${Object.values(V.FORMATS).map(f =>
+          `<option value="${f.id}" ${rep.meta.format === f.id ? "selected" : ""}>${esc(f.label)}</option>`).join("")}
+      </select></label>
 
     ${rosterHTML(rep)}
     ${progressHTML(rep)}
@@ -456,7 +463,10 @@ function goneBefore(rep, ti, uid){
 function scoreHTML(rep, v){
   return `
     <div class="panel-title" style="margin-top:14px">Punteggio</div>
-    <p class="note">Le prime tre righe le calcola l'app sull'ultima situazione registrata: unità distrutte, ridotte a metà o in rotta. Le altre le sai solo tu — obiettivi, generale, stendardi, quarti di tavolo. Scrivendo un numero a mano su una riga calcolata, quella riga smette di essere ricalcolata.</p>
+    ${(() => {
+      const fmt = V.formatOf(rep), b = V.bonuses(fmt, rep.meta.chaos || []);
+      return `<p class="note">Le voci sono quelle del libro (${fmt === "bm" ? "Battle March p. 27, che per le unità rimanda a p. 286" : "Core Rulebook p. 286"}). Le prime tre le calcola l'app sull'ultima situazione registrata: un'unità distrutta o fuggita dal tavolo vale tutti i suoi punti, una in fuga la metà, una sotto un quarto della Forza d'Unità un quarto. ${b.treasure ? `Gli obiettivi li somma dalle fotografie di fine turno: ${b.treasure} a tesoro e ${b.landmark} il landmark, a ogni turno di giocatore. ` : ""}Il generale (${b.general}), il portastendardo da battaglia (${b.bsb}) e gli stendardi presi (${b.banner} l'uno) li scrivi tu. Scrivendo un numero a mano su una riga calcolata, quella riga smette di essere ricalcolata.</p>`;
+    })()}
     <div class="tablewrap"><table class="grid-table score-table">
       <thead><tr><th>Voce</th><th>${esc(rep.armies.A.name || "A")}</th><th>${esc(rep.armies.B.name || "B")}</th><th></th></tr></thead>
       <tbody>
@@ -526,7 +536,9 @@ function wireDetail(host, rep){
                        deploy: d.deploy || "", desc: d.desc || "" };
       if (d.table) rep.table = { w: d.table[0], h: d.table[1], gap: d.gap || rep.table.gap };
     } else setPath(rep, path, value);
-    await save({ render: path === "scenario.id" });
+    /* il formato cambia quanto valgono gli obiettivi e come si vince */
+    if (path === "scenario.id" || path === "meta.format") BL.applyAuto(rep);
+    await save({ render: path === "scenario.id" || path === "meta.format" });
   }));
 
   /* turni */

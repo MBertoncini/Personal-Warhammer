@@ -667,6 +667,28 @@ ok('la posizione e detta anche a parole', /corsia/.test(rec.zone));
 ok('chiudere il turno passa la mano', state.game.army === 'B' && state.game.turn === 1);
 click('#g-close');
 ok('dopo B ricomincia il turno dopo', state.game.turn === 2 && state.game.army === 'A');
+/* Tappa 7: la fotografia dice chi tiene gli obiettivi, e il pannello
+   dice quanto dura la battaglia */
+const treasures = state.terrain.filter(t => t.kind === 'treasure' || t.kind === 'landmark' || t.kind === 'monolith').length;
+ok('la fotografia di fine turno misura gli obiettivi',
+   Array.isArray(t1.objectives) && t1.objectives.length === treasures);
+ok('e il registro li scrive', !treasures || state.game.log.some(l => /Obiettivi a fine turno/.test(l.text || l)));
+ok('il pannello ha la durata della battaglia', !!doc.querySelector('#g-length'));
+/* una misura che dice sempre «nessuno» non prova niente: un reggimento
+   messo sopra un tesoro lo deve tenere */
+const troveP = state.terrain.find(t => t.kind === 'treasure');
+const holder = state.units.find(u => u.army === 'A' && u.placed && !u.dead &&
+  !(u.join && u.join.host != null) && (u.models || 0) - (u.lost || 0) >= 5);
+if (troveP && holder){
+  const was = [holder.x, holder.y];
+  holder.x = troveP.x; holder.y = troveP.y;
+  const recHeld = BL.turnRecord(state, { n: 9, army: 'A' });
+  holder.x = was[0]; holder.y = was[1];
+  const mine = recHeld.objectives.find(o => o.tid === troveP.tid);
+  ok('un reggimento sopra un tesoro lo tiene', !!mine && (mine.army === 'A' || mine.contested));
+  ok('e gli altri tesori lontani restano di nessuno',
+     recHeld.objectives.filter(o => o.tid !== troveP.tid).every(o => o.army !== 'A' || o.contested === false));
+} else ok('c e un tesoro e un reggimento per provare il controllo', false);
 history.undo();
 ok('anche la fotografia si annulla', state.game.turns.length === 2);
 
@@ -679,7 +701,12 @@ ok('l\'unita distrutta vale punti per l\'avversario', auto.kill.A >= (doomed.pts
 ok('il punteggio automatico finisce nelle righe',
    preview.score.rows.find(r => r.id === 'kill').A === auto.kill.A);
 const vd = BL.verdict(preview);
-ok('il verdetto dice chi ha vinto e di quanto', vd.winner === 'A' && /vittoria|pareggio/i.test(vd.text));
+ok('il verdetto e quello del libro: con meno di cento punti di scarto e pareggio',
+   vd.winner === (vd.diff >= 100 ? (vd.A > vd.B ? 'A' : 'B') : null) &&
+   /vittoria|pareggio/i.test(vd.text) && /p\. 286/.test(vd.text));
+ok('le voci del Warhammer di prima non ci sono piu',
+   !preview.score.rows.some(r => r.id === 'halved' || r.id === 'quarter') &&
+   preview.score.rows.some(r => r.id === 'under25'));
 
 console.log('\nperdite scelte modello per modello');
 const sk = state.units.find(u => u.uid === skirm.uid);

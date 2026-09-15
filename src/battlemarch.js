@@ -17,14 +17,14 @@
  *   e' fatto di distanze e di Forza d'Unita', cioe' di due cose che si
  *   misurano male a occhio e bene con un'app.
  *
- * Una nota che vale per tutte e due le tabelle, e va detta forte.
- * Il piano (§8.1) elenca i sei esiti di ciascuna, ma non dice quale
- * faccia del dado porta a quale: quello sta nel libro. Qui gli esiti
- * stanno nell'ordine in cui il piano li elenca, e ogni tabella lo
- * dichiara con `ordineDaVerificare`. L'app tira, mostra e annota; chi
- * ha il libro aperto corregge l'ordine cambiando una riga di questo
- * file, e chi non ce l'ha vede scritto che l'abbinamento non e' stato
- * confrontato. E' la regola del §1: mai sbagliare in silenzio.
+ * Una nota che vale per tutte e due le tabelle. Fino alla Tappa 7 gli
+ * esiti stavano nell'ordine in cui il piano li elencava, dichiarato da
+ * verificare, perche' il libro in casa non c'era. Letto il libro — che
+ * e' fatto di immagini, e si legge con gli occhi — il Terreno Selvaggio
+ * era nell'ordine giusto e diceva poco; il Caso della Guerra aveva la
+ * faccia 2 e la faccia 3 scambiate, e al posto di ritirare un esito
+ * gia' uscito prendeva il primo rimasto. Adesso le righe dicono quello
+ * che il libro dice, in breve, e le pagine sono quelle stampate.
  */
 
 import { d6 } from './dice.js';
@@ -38,20 +38,20 @@ import { isNatural, TERRAIN } from './terrain.js';
    ============================================================ */
 export const WILD_TERRAIN = {
   page: 40,
-  ordineDaVerificare: true,
+  ordineDaVerificare: false,
   rows: [
     { id:"roveto",     label:"Roveto",
-      what:"il pezzo diventa terreno difficile per chi lo attraversa" },
+      what:"terreno difficile; chi ci marcia, carica, fugge o insegue attraverso lo tratta come pericoloso" },
     { id:"difendibile", label:"Posizione difendibile",
-      what:"chi lo occupa combatte come dietro un ostacolo" },
+      what:"chi lo occupa difende un ostacolo basso, e chi carica un'unità che lo occupa arriva disordinato" },
     { id:"spore",      label:"Spore tossiche",
-      what:"il pezzo diventa terreno pericoloso" },
+      what:"ogni modello che finisce il movimento del tutto dentro fa un test di Resistenza, e se lo fallisce perde una Ferita" },
     { id:"magia",      label:"Magia residua",
-      what:"chi lo occupa ha un effetto sulla magia" },
+      what:"le unità dentro hanno Magic Resistance (-1)" },
     { id:"erbe",       label:"Erbe curative",
-      what:"chi lo occupa recupera qualcosa" },
+      what:"subito, e a ogni inizio turno, un modello dentro che non combatte, non fugge e non è stupido recupera una Ferita" },
     { id:"troll",      label:"La tana del Troll",
-      what:"esce un Troll Infuriato, con il suo profilo dal libro" },
+      what:"un Troll Infuriato (p. 40) carica il fronte di chi l'ha scoperto con Iniziativa 10, e si combatte subito un round" },
   ],
 };
 
@@ -89,21 +89,21 @@ export function rollWildTerrain(piece){
    ============================================================ */
 export const FORTUNES = {
   page: 41,
-  ordineDaVerificare: true,
+  ordineDaVerificare: false,
   fromTurn: 2,
   rows: [
     { id:"ventiInstabili", label:"Venti di magia instabili",
-      what:"i venti di magia cambiano per il resto della partita" },
+      what:"nel tiro di lancio un doppio 1, 2 o 3 naturale è un fiasco, e un doppio 4, 5 o 6 un'invocazione perfetta" },
+    { id:"carro",          label:"Un carro bagagli perso",
+      what:"una deviazione dal centro del tavolo fino al bordo dice dove arriva; chi vince lo spareggio lo difende, l'altro lo attacca (p. 36)" },
     { id:"munizioni",      label:"Le munizioni si diradano",
-      what:"il tiro peggiora per il resto della partita" },
-    { id:"carro",          label:"Un carro perso al centro del tavolo",
-      what:"entra in gioco un carro bagagli al centro" },
-    { id:"tesori",         label:"I tesori valgono di piu'",
-      what:"i punti vittoria degli obiettivi salgono" },
-    { id:"seiRound",       label:"Partita a sei round",
-      what:"la durata della partita e' fissata a sei round" },
+      what:"chi ha armi da tiro le usa solo un turno sì e uno no" },
+    { id:"tesori",         label:"I tesori dell'entroterra",
+      what:"per questa battaglia un tesoro vale 20 punti vittoria e un landmark 50" },
+    { id:"seiRound",       label:"Conflitto prolungato",
+      what:"la partita dura sei round invece di cinque" },
     { id:"mercenari",      label:"Mercenari erranti",
-      what:"arrivano mercenari sul tavolo" },
+      what:"chi vince lo spareggio prende dieci Wandering Mercenaries, che entrano come rinforzi da un bordo fuori dalle zone e valgono 50 punti; col pari li prendono tutti e due" },
   ],
 };
 
@@ -118,8 +118,10 @@ export function fortunesCheck(turn, already = []){
 
   const left = FORTUNES.rows.filter(r => !already.includes(r.id));
   if (!left.length) return { rolled:true, face, need:t, happened:false, why:"sono usciti tutti" };
-  const pick = FORTUNES.rows[d6() - 1];
-  const row = already.includes(pick.id) ? left[0] : pick;
+  /* un esito gia' uscito si ritira (p. 41): non si prende il primo
+     rimasto, che darebbe ai primi della tabella piu' probabilita' */
+  let row = FORTUNES.rows[d6() - 1];
+  while (already.includes(row.id)) row = FORTUNES.rows[d6() - 1];
   return {
     rolled:true, face, need:t, happened:true, ...row,
     page: FORTUNES.page,
