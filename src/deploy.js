@@ -3681,7 +3681,8 @@ function updateStat(sc){
   add(`${warn.length} fuori zona`, "warn", warn, "unit");
   add(`${bad.length} in conflitto`, "bad", bad, "unit");
   add(`${terr.length} avvisi terreno`, "warn", terr, "terr");
-  if (state.game.on){
+  if (state.game.on && state.game.deploying) add("Schieramento", "turn", [], null);
+  else if (state.game.on){
     const s = G.score();
     add(`T${state.game.turn} ${G.phaseLabel()}`, "turn", [], null);
     add(`−${s.A.lostPts} / −${s.B.lostPts} pt`, "", [], null);
@@ -3718,10 +3719,11 @@ function place(u){
   u.placed = true;
   const [x, y] = findSpot(u, zone, sc);
   u.x = x; u.y = y;
-  /* schierare non e' muoversi: l'ancora riparte da dove il pezzo e'
-     appena stato messo, sennò il primo movimento risulterebbe misurato
-     dalla riserva */
-  MV.setAnchor(u);
+  /* schierare non e' muoversi. Mentre si schiera non c'e' nessun
+     movimento da misurare; a partita avviata (un rinforzo che entra)
+     l'ancora riparte da dove il pezzo e' appena stato messo, sennò il
+     primo movimento risulterebbe misurato dalla riserva */
+  if (G.deploying()) MV.clearAnchor(u); else MV.setAnchor(u);
 }
 function findSpot(u, zone, sc){
   const rot = u.rot % 180 !== 0;
@@ -4017,8 +4019,8 @@ svgEl.addEventListener("pointerdown", e => {
   history.push("sposta " + what);
   /* Il punto di partenza si dichiara da solo al primo spostamento: chi
      muove un'unità sta cominciando il suo movimento, e non deve premere
-     un tasto per dirlo. */
-  if (obj.uid !== undefined) MV.ensureAnchor(obj);
+     un tasto per dirlo. Chi schiera invece sta solo mettendo il pezzo. */
+  if (obj.uid !== undefined && !G.deploying()) MV.ensureAnchor(obj);
   drag = { obj, dx: obj.x - p[0], dy: obj.y - p[1], moved:false };
   /* tenendo premuto senza muovere si apre il menu del pezzo: e' il
      tasto destro di chi non ha un tasto destro */
@@ -4191,7 +4193,7 @@ document.addEventListener("keydown", e => {
   const turn = isUnit ? 90 : 15;
   /* anche le frecce sono un movimento: l'ancora si mette qui come si
      mette al primo trascinamento */
-  if (isUnit && /^Arrow/.test(e.key)) MV.ensureAnchor(obj);
+  if (isUnit && /^Arrow/.test(e.key) && !G.deploying()) MV.ensureAnchor(obj);
   /* prima si decide cosa fare, poi act() mette da parte lo stato di
      prima e solo dopo esegue: al contrario si salverebbe il tavolo
      gia' modificato e Annulla non tornerebbe da nessuna parte */
@@ -4790,7 +4792,11 @@ $("#btn-anchor-all").addEventListener("click", () => {
   toast("Ancore rimesse: da qui in poi il movimento si misura da adesso.");
 });
 $("#btn-auto").addEventListener("click", () =>
-  act("schiera tutto", () => { autoDeploy(); MV.anchorAll(state.units); }, { render:false }));
+  act("schiera tutto", () => {
+    autoDeploy();
+    if (G.deploying()) for (const u of state.units) MV.clearAnchor(u);
+    else MV.anchorAll(state.units);
+  }, { render:false }));
 $("#btn-recall").addEventListener("click", () =>
   act("ritira tutto", () => { for (const u of state.units){ u.placed = false; MV.clearAnchor(u); } }));
 

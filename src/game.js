@@ -50,7 +50,7 @@ import * as PS from './psych.js';
 const PHASES = PH.PHASES;
 
 export const emptyGame = () => ({
-  on:false, turn:1, army:"A", phase:0, step:0, log:[],
+  on:false, deploying:false, turn:1, army:"A", phase:0, step:0, log:[],
   /* il registro della partita: [0] e' lo schieramento, poi una voce per
      turno giocato */
   turns:[], lastCapture:0,
@@ -72,6 +72,7 @@ export function ensureGame(g){
   g.score = BL.ensureScore(g.score);
   if (typeof g.notes !== "string") g.notes = "";
   if (typeof g.lastCapture !== "number") g.lastCapture = 0;
+  g.deploying = !!(g.on && g.deploying);
   /* Le partite cominciate quando le fasi erano quattro non hanno la
      casella: si entra all'inizio della fase in cui erano rimaste, che
      e' l'unico posto onesto in cui metterle. Da qui in poi la casella
@@ -96,6 +97,12 @@ export const phaseLabel = () => stepNow().phaseLabel;
 /* La riga che il pannello e il righello mostrano: la fase da sola non
    basta piu' a dire dove siamo. */
 export const stepLabel = () => stepNow().full;
+
+/* Lo schieramento sta dentro la partita ma non e' un turno: i pezzi si
+   mettono e si rimettono, e niente di quello che succede e' movimento.
+   Fuori dalla partita il tavolo e' il simulatore di schieramento, e vale
+   lo stesso. L'ancora si mette da sola solo quando si gioca davvero. */
+export const deploying = () => { const g = game(); return !g.on || !!g.deploying; };
 
 /* Andare a una casella qualsiasi. Il motore la registra, perche' due
    dei momenti in cui vivranno gli effetti a tempo sono proprio
@@ -220,20 +227,22 @@ export function start(){
     u.lost = 0; u.dead = false; u.fled = false; u.fallen = [];
     u.wounds = 0; u.tags = []; u.counters = [];
   }
-  /* la partita comincia da dove sono i pezzi: ogni movimento del primo
-     turno si misura dallo schieramento */
-  MV.anchorAll(S().units);
+  /* la partita comincia schierando: finche' il turno 1 non parte non
+     c'e' nessuna ancora, sennò ogni pezzo messo al suo posto
+     risulterebbe «mosso» */
+  g.deploying = true;
+  for (const u of S().units) MV.clearAnchor(u);
   shotAt = null;
-  logLine("Inizio della partita.");
-  /* la prima fotografia e' lo schieramento: e' il termine di paragone
-     di ogni movimento che verra' dopo */
+  logLine("Inizio della partita: schieramento.");
+  /* la prima fotografia e' lo schieramento: questa e' provvisoria, e
+     quella vera la scatta la fine dello schieramento */
   g.turns.push(BL.deployRecord(S()));
   g.lastCapture = Date.now();
 }
 
 export function stop(){
   const g = game();
-  g.on = false;
+  g.on = false; g.deploying = false;
   /* l'ultima parola sul tavolo vale quanto un turno: senza questa
      fotografia il punteggio finale non avrebbe da dove leggere chi e'
      rimasto in piedi */
@@ -377,15 +386,26 @@ function endHTML(esc){
     <p class="note">${esc(status)} <span class="mono">(${fmt === "bm" && len === "bm" ? "Battle March " : ""}p. ${L.page})</span></p>`;
 }
 
-/* Lo schieramento si aggiusta ancora un momento dopo aver premuto
-   "Comincia": finche' non e' stato registrato un turno la fotografia
-   iniziale si puo' rifare. */
-export function recaptureDeploy(){
+/* Fine dello schieramento: la fotografia numero zero si scatta adesso, e
+   le ancore si mettono dove stanno i pezzi — ogni movimento del turno 1
+   si misura da li'. */
+export function endDeploy(){
   const g = game();
+  g.deploying = false;
   g.turns = [BL.deployRecord(S())];
   g.lastCapture = Date.now();
   MV.anchorAll(S().units);
-  logLine("Schieramento fotografato di nuovo.");
+  logLine("Schieramento concluso: comincia il turno 1.");
+}
+
+/* Finche' non e' stato chiuso un turno si torna a schierare: serve a chi
+   si accorge di aver cominciato troppo presto. */
+export function backToDeploy(){
+  const g = game();
+  if (!g.on || turnsPlayed()) return;
+  g.deploying = true;
+  for (const u of S().units) MV.clearAnchor(u);
+  logLine("Si torna allo schieramento.");
 }
 
 export const turnsPlayed = () => game().turns.filter(t => t.kind === "turn").length;
@@ -813,6 +833,35 @@ export const LOG_CHIPS = [
 /* ------------------------------------------------------------------
    Pannello
    ------------------------------------------------------------------ */
+const logHTML = esc => {
+  const g = game();
+  return `
+    <div class="gamelog">
+      ${g.log.length ? g.log.slice(0, 40).map(l => `
+        <div class="logline"><span class="lt mono">T${l.t}</span>
+          <span class="swatch" style="background:var(--army${l.army})"></span>
+          <span>${esc(l.text)}</span></div>`).join("")
+        : `<p class="empty">Nessuna annotazione.</p>`}
+    </div>`;
+};
+
+/* I dadi tirati in partita non sono un gesto a parte: quello che esce
+   va nel registro con turno e fase, come un'annotazione scritta a
+   mano — e a fine partita il report dice anche cosa e' stato tirato. */
+function wireDiceAndNote(host, where){
+  host.querySelector("#g-dice").addEventListener("click", () => openDiceBox({
+    title: `Dadi · ${where}`,
+    foot: "Quello che esce viene annotato nel registro, con la casella in cui è successo.",
+    onResult: r => ctx.act("dadi", () => engine().dispatch({ type:"roll", text: readOut(r) })),
+  }));
+  host.querySelector("#g-note").addEventListener("click", async () => {
+    const t = await askText({
+      title:"Annota", label:"Tocca una scorciatoia, oppure scrivi. Finisce nel registro con turno e fase.",
+      placeholder:"cosa è successo…", chips: LOG_CHIPS,
+    });
+    if (t && t.trim()) ctx.act("annotazione", () => logLine(t.trim()));
+  });
+}
 export function renderGamePanel(host, { esc }){
   if (!host) return;
   hostEsc = esc;
@@ -844,6 +893,29 @@ export function renderGamePanel(host, { esc }){
     if (arc) arc.addEventListener("click", () => emit("report:archive"));
     const opn = host.querySelector("#g-open");
     if (opn) opn.addEventListener("click", () => emit("tab:show", "report"));
+    return;
+  }
+
+  if (g.deploying){
+    const names = { A: S().armies.A.name || "Esercito A", B: S().armies.B.name || "Esercito B" };
+    const count = k => {
+      const us = S().units.filter(u => u.army === k && !u.dead);
+      return `${us.filter(u => u.placed || FM.joinedHost(u)).length}/${us.length} schierate`;
+    };
+    host.innerHTML = `
+      <div class="readout"><span>Fase</span><b>Schieramento</b></div>
+      <p class="note">I pezzi si mettono e si rimettono finché non va bene: fino al turno 1 niente di quello che fai sul tavolo è movimento, e l'ancora non si mette.</p>
+      ${["A", "B"].map(k => `<div class="readout"><span><span class="swatch" style="background:var(--army${k})"></span>${esc(names[k])}</span>
+        <b>${count(k)}</b></div>`).join("")}
+      <button class="btn primary" id="g-deployed" style="width:100%;margin-top:8px"
+        title="Fotografa lo schieramento e mette le ancore dove stanno i pezzi">Schieramento finito · comincia il turno 1</button>
+      <div class="grid2" style="margin-top:6px">
+        <button class="btn tiny" id="g-dice" title="Il vassoio: quello che esce finisce nel registro.">⚀ Tira i dadi</button>
+        <button class="btn tiny" id="g-note">Annota…</button>
+      </div>
+      ${logHTML(esc)}`;
+    host.querySelector("#g-deployed").addEventListener("click", () => ctx.act("fine dello schieramento", endDeploy));
+    wireDiceAndNote(host, "schieramento");
     return;
   }
 
@@ -896,19 +968,13 @@ export function renderGamePanel(host, { esc }){
       <button class="btn tiny" id="g-note">Annota…</button>
     </div>
     <div class="grid2" style="margin-top:6px">
-      <button class="btn tiny" id="g-${played ? "open" : "redeploy"}">${played ? "Apri le partite" : "Rifai la foto"}</button>
+      <button class="btn tiny" id="g-${played ? "open" : "redeploy"}">${played ? "Apri le partite" : "Torna allo schieramento"}</button>
       <button class="btn tiny" id="g-archive">Archivia il report</button>
     </div>
     <button class="btn tiny ghost" id="g-stop" style="width:100%;margin-top:6px;color:var(--bad)">Chiudi partita</button>
     ${lossesHTML(esc)}
     ${countersPanelHTML(esc)}
-    <div class="gamelog">
-      ${g.log.length ? g.log.slice(0, 40).map(l => `
-        <div class="logline"><span class="lt mono">T${l.t}</span>
-          <span class="swatch" style="background:var(--army${l.army})"></span>
-          <span>${esc(l.text)}</span></div>`).join("")
-        : `<p class="empty">Nessuna annotazione.</p>`}
-    </div>`;
+    ${logHTML(esc)}`;
 
   wireScreen(host);
   wireLosses(host);
@@ -943,21 +1009,7 @@ export function renderGamePanel(host, { esc }){
     const rolls = await askDice(need, `Turno ${game().turn} · ${stepNow().full}`);
     ctx.act(label, () => dispatch(action, rolls));
   }));
-  /* I dadi tirati in partita non sono un gesto a parte: quello che esce
-     va nel registro con turno e fase, come un'annotazione scritta a
-     mano — e a fine partita il report dice anche cosa e' stato tirato. */
-  host.querySelector("#g-dice").addEventListener("click", () => openDiceBox({
-    title: `Dadi · turno ${g.turn} · ${here.full}`,
-    foot: "Quello che esce viene annotato nel registro, con la casella in cui è successo.",
-    onResult: r => ctx.act("dadi", () => engine().dispatch({ type:"roll", text: readOut(r) })),
-  }));
-  host.querySelector("#g-note").addEventListener("click", async () => {
-    const t = await askText({
-      title:"Annota", label:"Tocca una scorciatoia, oppure scrivi. Finisce nel registro con turno e fase.",
-      placeholder:"cosa è successo…", chips: LOG_CHIPS,
-    });
-    if (t && t.trim()) ctx.act("annotazione", () => logLine(t.trim()));
-  });
+  wireDiceAndNote(host, `turno ${g.turn} · ${here.full}`);
   host.querySelector("#g-close").addEventListener("click", async () => {
     ctx.act("fine turno", closeTurn);
     /* la durata casuale (p. 289): finito il round si tira dal vassoio,
@@ -972,7 +1024,7 @@ export function renderGamePanel(host, { esc }){
   host.querySelector("#g-length").addEventListener("change", e =>
     ctx.act("durata", () => { game().meta.length = e.target.value; }));
   const redo = host.querySelector("#g-redeploy");
-  if (redo) redo.addEventListener("click", () => ctx.act("foto schieramento", recaptureDeploy));
+  if (redo) redo.addEventListener("click", () => ctx.act("torna allo schieramento", backToDeploy));
   const opn = host.querySelector("#g-open");
   if (opn) opn.addEventListener("click", () => emit("tab:show", "report"));
   host.querySelector("#g-archive").addEventListener("click", () => emit("report:archive"));

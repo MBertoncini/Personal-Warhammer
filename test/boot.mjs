@@ -589,6 +589,26 @@ console.log('\nmodalita partita');
 const game = await import('../src/game.js');
 click('#g-start');
 ok('la partita comincia al turno 1', state.game.on && state.game.turn === 1);
+/* Si comincia schierando: mettere e rimettere i pezzi non e' movimento,
+   e l'ancora arriva solo con il turno 1. */
+ok('e comincia dallo schieramento',
+   state.game.deploying === true && /Schieramento finito/.test(doc.querySelector('#game').textContent));
+ok('mentre si schiera nessuna unita ha l ancora', state.units.every(u => !u.anchor));
+{
+  const piece = state.units.find(u => u.placed && !u.dead);
+  state.sel = { type: 'unit', id: piece.uid };
+  doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowRight' }));
+  ok('e spostare un pezzo non la mette', !state.units.find(u => u.uid === piece.uid).anchor);
+  state.sel = null;
+}
+click('#g-deployed');
+ok('finito lo schieramento le ancore stanno dove sono i pezzi',
+   state.game.deploying === false &&
+   state.units.filter(u => u.placed && !u.dead).every(u => u.anchor));
+click('#g-redeploy');
+ok('prima di chiudere un turno si torna a schierare',
+   state.game.deploying === true && state.units.every(u => !u.anchor));
+click('#g-deployed');
 const mob = state.units.find(u => u.models >= 10);
 const depth0 = mob.placed ? deploy.effModels(mob) : mob.models;
 deploy.act('perdite', () => game.setLost(mob, 5));
