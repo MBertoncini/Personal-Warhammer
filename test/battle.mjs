@@ -138,6 +138,65 @@ const ct = C.contact(a, b);
 ok('a contatto va la fila piu stretta delle due', ct.front === 5);
 ok('una fila dietro appoggia con un colpo a testa', ct.attacks === 5 * 2 + 5);
 
+/* ---------------------------------------------------------------
+   I personaggi uniti: un profilo diverso nella stessa scatola
+   --------------------------------------------------------------- */
+console.log('\ni personaggi uniti');
+{
+  const capo = unit('Big Boss', { M:'4',WS:'6',BS:'3',S:'5',T:'5',W:'3',I:'4',A:'4',Ld:'8' }, 1, 1);
+  const mob  = C.combatant(orcs, { joined: [capo] });
+  const foe  = C.combatant(saurus);
+  const solo = C.combatant(orcs);
+
+  ok('il capo diventa una squadra sua', mob.retinue.length === 1 && mob.retinue[0].a === 4);
+  ok('con i suoi numeri, non quelli dei suoi',
+     mob.retinue[0].ws === 6 && mob.retinue[0].s === 5 && mob.retinue[0].i === 4 && mob.retinue[0].t === 5);
+
+  const c = C.contact(mob, foe);
+  ok('e mena in prima fila', c.groups.length === 2 && c.groups[1].character === true);
+  ok('occupando un posto, non aggiungendone uno',
+     c.front === C.contact(solo, foe).front - 1 && c.inFront === 1);
+  ok('i suoi quattro attacchi entrano nel conto',
+     c.attacks === C.contact(solo, foe).attacks - 1 + 4);
+
+  /* i colpi: quattro dadi di Forza 5, non uno di Forza 3 */
+  const r = C.meleeRound(mob, foe);
+  const suo = r.steps.find(x => x.name === 'Big Boss');
+  ok('nel registro dell assalto c e una riga sua', !!suo && suo.character === true);
+  ok('con la sua Forza', suo.strength === 5 && suo.attacks === 4);
+  ok('e mena prima dei suoi, che hanno Iniziativa piu bassa',
+     r.steps.findIndex(x => x.name === 'Big Boss') < r.steps.findIndex(x => x.name === 'Orc Mob'));
+
+  /* e la previsione li somma */
+  const f = C.meleeForecast(mob, foe);
+  ok('la previsione somma le squadre', f.groups.length === 2);
+  ok('e ferisce piu del mob da solo', f.wounds > C.meleeForecast(solo, foe).wounds);
+
+  /* la correzione a mano resta, e vale sulla truppa */
+  const corretto = C.combatant(orcs, { joined: [capo], forcedAttacks: 3 });
+  ok('il numero scritto a mano vale sulla truppa, non sul capo',
+     C.contact(corretto, foe).attacks === C.contact(mob, foe).attacks &&
+     C.strikersOf(corretto, foe, 'A').find(x => !x.g.character).g.attacks === 3);
+}
+
+/* ---------------------------------------------------------------
+   Quanti si toccano davvero
+   --------------------------------------------------------------- */
+console.log('\ni modelli a contatto di basetta');
+{
+  const foe = C.combatant(saurus);
+  ok('senza il tavolo la stima e la fila piu stretta, e lo dichiara',
+     C.contact(C.combatant(orcs), foe).estimated === true);
+  const angolo = C.combatant(orcs, { touching: 2 });
+  ok('con il conto del tavolo la fila si stringe',
+     C.contact(angolo, foe).wide === 2 && C.contact(angolo, foe).estimated === false);
+  ok('e gli attacchi calano di conseguenza',
+     C.contact(angolo, foe).attacks < C.contact(C.combatant(orcs), foe).attacks);
+  ok('ma le file dietro appoggiano lo stesso', C.contact(angolo, foe).support === 2);
+  ok('e non si tocca mai con piu modelli di quanti se ne hanno',
+     C.contact(C.combatant({ ...orcs, models: 3, frontage: 3 }, { touching: 9 }), foe).wide === 3);
+}
+
 console.log('\nun assalto');
 const r = C.meleeRound(a, b);
 ok('mena per primo chi ha Iniziativa piu alta', r.steps[0].side === 'B');

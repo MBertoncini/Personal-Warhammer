@@ -1195,3 +1195,8 @@ table.chart td.hl{background:var(--accent);color:var(--panel);font-weight:700;}
   margin:8px 0;padding:8px;border-radius:var(--r);
   border:1px solid var(--warn);background:var(--panel);
 }
+
+/* le squadre che menano dentro un'unità: la truppa e ogni personaggio */
+.duel-chars{margin:4px 0 6px;padding:6px 8px;border-radius:var(--r);
+  border:1px solid var(--line);background:var(--panel);}
+.duel-chars .readout{padding:2px 0;}

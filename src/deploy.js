@@ -5612,6 +5612,15 @@ async function bootDeploy(){
     /* la psicologia che lo scontro sente (Tappa 5): i personaggi uniti,
        e la Paura con l'esito del test gia' tirato in questo turno */
     joined: u => attachedOf(u),
+    /* Quanti modelli toccano davvero il nemico. Il conto degli attacchi
+       partiva da una stima — la prima fila larga quanto la più stretta
+       delle due — e due unità che si incontrano d'angolo si toccano con
+       tre modelli mentre la stima ne dava cinque. Le basette lo sanno,
+       e stanno tutte qui. */
+    touching: (u, foe) => {
+      const lay = layoutOf(u);
+      return FM.touchingModels(FM.worldCells(u, lay), corners(foe));
+    },
     /* Fianco, retro e disordine guardando il tavolo, a ogni round (pp.
        101, 152-153). Il bonus e' della parte: conta chiunque del mio
        esercito tocchi quel nemico, e fianco e retro si sommano se a

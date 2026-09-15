@@ -214,6 +214,67 @@ export function combatant(u, over = {}){
   const out = Object.assign(c, over);
   if (over.frenzyA == null)
     out.frenzyA = PS.frenzyBonus({ p: out.psych, chargedThisTurn: !!out.charged }).a;
+  /* I personaggi uniti, ognuno con il suo profilo (vedi sotto). Si
+     calcolano dopo le correzioni del pannello perche' «ha caricato» e
+     «e' disordinata» valgono anche per loro. */
+  if (out.retinue == null) out.retinue = retinueOf(over.joined || [], out);
+  return out;
+}
+
+/* ============================================================
+   1b · I PERSONAGGI UNITI
+   Un personaggio dentro un reggimento non e' un modello in piu' del
+   reggimento: e' un profilo diverso nella stessa scatola. Il capo
+   Orco ha quattro Attacchi di Forza 5 dove i suoi ne hanno uno di
+   Forza 3, e per tutte le tappe fin qui l'assalto lo ha ignorato —
+   i personaggi entravano solo nella psicologia e nel bonus dello
+   stendardo, e i loro colpi sparivano.
+
+   Sparivano in un modo che si nota poco e pesa molto: un Big Boss con
+   l'ascia in un mob da venti spostava il risultato dell'assalto di due
+   o tre punti, e il pannello diceva che il mob aveva perso.
+
+   Qui ognuno diventa una **squadra**: un gruppo con i suoi Attacchi,
+   la sua Abilita' Combattimento, la sua Forza, la sua Iniziativa e la
+   sua arma. Mena quando tocca a lui, che non e' quando tocca al
+   reggimento, e le sue ferite si sommano al conto dell'assalto.
+
+   Quello che resta ai giocatori, ed e' scritto nel pannello: **a chi
+   si assegnano le ferite in arrivo**. La Resistenza del personaggio e'
+   diversa da quella dei suoi, ma chi incassa il colpo lo decide il
+   manuale insieme al giocatore che possiede l'unita' — non un conto.
+   ============================================================ */
+export function retinueOf(joined = [], host = null){
+  const out = [];
+  for (const ch of joined || []){
+    if (!ch || ch.dead) continue;
+    const melee = meleeWeapon(ch);
+    const army = armyFor(ch);
+    const read = readRules(ch.rules || [], splitWeaponRules(melee && melee.rules),
+                           melee ? melee.name : "", ch.ruleText || null, army);
+    const baseS = val(ch, "S");
+    const g = {
+      character: true,
+      name: ch.name, ref: ch,
+      ws: val(ch, "WS"), i: val(ch, "I"),
+      a: Math.max(1, val(ch, "A") || 1),
+      baseS, s: melee ? weaponStrength(melee, baseS) : baseS,
+      t: val(ch, "T"), w: Math.max(1, val(ch, "W") || 1),
+      ap: melee ? weaponAP(melee) : 0,
+      weapon: melee ? melee.name : "",
+      flags: read.flags,
+      models: 1,
+      /* la carica e il disordine sono dell'unita' in cui sta: il
+         personaggio e' arrivato con lei */
+      charged: host ? !!host.charged : false,
+      chargeInches: host ? host.chargeInches || 0 : 0,
+      chargeArc: host ? host.chargeArc || "fronte" : "fronte",
+      disordered: host ? !!host.disordered : false,
+      feared: host ? !!host.feared : false,
+    };
+    g.frenzyA = PS.frenzyBonus({ p: PS.psychOf(ch), chargedThisTurn: !!g.charged }).a;
+    out.push(g);
+  }
   return out;
 }
 
@@ -225,18 +286,67 @@ const attacksOf = c => (c.a || 1) + (ranIn(c) && c.flags && c.flags.furiousCharg
                           caricato, o aver inseguito il turno prima */
                        (c.frenzyA || 0);
 
-/* Quanti si toccano davvero: la prima fila e' larga quanto la piu'
-   stretta delle due, e una fila dietro appoggia con un colpo a testa.
-   E' l'ordine di grandezza del tavolo, e nel pannello si corregge. */
-export function contact(att, def){
-  const front = Math.max(1, Math.min(att.frontage, def.frontage, att.models));
+/* ------------------------------------------------------------------
+   Quanti menano, e con quanti dadi.
+
+   La prima fila e' larga quanto la piu' stretta delle due, e una fila
+   dietro appoggia con un colpo a testa. Quello che mancava sono due
+   cose che al tavolo si vedono e qui si tiravano a indovinare:
+
+   - **quanti si toccano davvero**. Due reggimenti che si incontrano
+     d'angolo si toccano con tre modelli, non con la larghezza piena, e
+     `touching` e' il conto che il tavolo sa fare guardando le basette.
+     Senza, resta la stima di prima, che e' onesta e generosa.
+   - **i personaggi occupano un posto**. Un capo in prima fila non e'
+     un modello in piu': e' uno dei posti della fila, con un profilo
+     diverso. Contarlo in mezzo ai suoi voleva dire dargli un attacco
+     di Forza 3 invece di quattro di Forza 5, e insieme regalare al
+     reggimento un modello che non c'e'.
+
+   Torna sempre `attacks` — il totale della truppa, che e' quello che
+   il pannello corregge a mano — piu' l'elenco delle squadre che
+   menano, una per profilo.
+   ------------------------------------------------------------------ */
+export function contact(att, def, { touching = null } = {}){
+  const chars = (att.retinue || []).length;
+  /* il conto del tavolo puo' arrivare come opzione o gia' scritto
+     sulla schiera: `combatant` lo porta con se' come tutto il resto */
+  const touch = touching != null ? touching : (att.touching || 0);
+  /* la larghezza a contatto: quella vera se il tavolo la sa dire,
+     altrimenti la piu' stretta delle due prime file */
+  const wide = touch > 0
+    ? Math.max(1, Math.min(touch, att.frontage, att.models))
+    : Math.max(1, Math.min(att.frontage, def.frontage, att.models));
+  /* i posti che restano ai soldati, tolti quelli dei personaggi */
+  const front = Math.max(0, wide - Math.min(chars, wide));
+  const inFront = Math.min(chars, wide);        // personaggi che menano per intero
+
   /* Le file d'appoggio: una, oppure due con la lancia che permette di
      combattere in una fila in piu'. Ognuna appoggia con un colpo a
      testa, non con tutti i suoi attacchi. */
   const ranks = att.flags && att.flags.extraRank ? 2 : 1;
   const behind = Math.max(0, att.models - att.frontage);
-  const support = Math.min(front * ranks, behind);
-  return { front, support, ranks, attacks: front * attacksOf(att) + support };
+  const support = Math.min(wide * ranks, behind);
+
+  const groups = [];
+  const rankA = front * attacksOf(att) + support;
+  if (rankA > 0) groups.push({
+    id:"rank", name: att.name, character:false, models: front,
+    ws: att.ws, i: att.i, s: att.s, baseS: att.baseS, ap: att.ap,
+    flags: att.flags, attacks: rankA, support,
+  });
+  (att.retinue || []).slice(0, inFront).forEach((g, k) => groups.push({
+    ...g, id:"char" + k, support: 0,
+    attacks: (g.a || 1) + (g.frenzyA || 0) +
+             (g.charged && (g.chargeInches || 0) >= CHARGE_IMPETUS &&
+              g.flags && g.flags.furiousCharge ? 1 : 0),
+  }));
+
+  return {
+    front, wide, inFront, support, ranks, groups,
+    estimated: !touch,
+    attacks: groups.reduce((n, g) => n + g.attacks, 0),
+  };
 }
 
 /* Le regole d'esercito di una schiera in questo momento: quelle del
@@ -363,6 +473,32 @@ export function applyWounds(side, wounds){
 const clone = c => ({ ...c, spill: 0 });
 const usOf = c => (c.usPer || 1) * (c.models || 0);
 
+/* Da una schiera alle squadre che menano davvero: la truppa e ogni
+   personaggio unito che sta in prima fila. Ognuna e' un profilo intero
+   nella forma che `strike` si aspetta, cosi' non c'e' un secondo
+   percorso per i personaggi — sarebbe il posto dove le regole speciali
+   smettono di valere senza che nessuno se ne accorga.
+
+   Le regole d'esercito e gli effetti a tempo restano quelli dell'unita'
+   ospite: il Waaagh! acceso vale per il capo come per i suoi, mentre
+   l'Odio e il Colpo Mortale sono roba sua e vengono dalle sue righe. */
+export function strikersOf(att, def, tag){
+  const c = contact(att, def);
+  return c.groups.map(g => {
+    const forced = g.character ? null : att.forcedAttacks;
+    const n = forced != null ? forced : g.attacks;
+    const who = g.character
+      ? { ...att, name: g.name, ws: g.ws, i: g.i, s: g.s, baseS: g.baseS, ap: g.ap,
+          weapon: g.weapon, models: 1, w: g.w,
+          /* le sue regole, ma l'esercito dell'unita' in cui sta */
+          flags: { ...g.flags, army: (att.flags || {}).army },
+          retinue: [], forcedAttacks: null }
+      : att;
+    return { tag, g: { ...g, attacks: n }, who,
+             label: g.character ? `${g.name} (personaggio)` : "colpi" };
+  });
+}
+
 export function meleeRound(A, B, { round = 1, challenge = false } = {}){
   const a = clone(A), b = clone(B);
   const steps = [];
@@ -387,20 +523,45 @@ export function meleeRound(A, B, { round = 1, challenge = false } = {}){
   }
 
   /* poi si mena, in ordine di Iniziativa — con dentro il bonus della
-     carica (p. 146), che e' la novita' della Tappa 3 — salvo chi ha
-     un'arma che decide l'ordine da sola. */
+     carica (p. 146) — salvo chi ha un'arma che decide l'ordine da sola.
+     Le squadre sono piu' di due: la truppa di ciascuna parte e ogni
+     personaggio unito, che ha la sua Iniziativa e quindi il suo posto
+     in fila. Chi sta sullo stesso gradino mena insieme, e le ferite di
+     un gradino si applicano tutte alla fine di quel gradino: e' la
+     regola dei colpi simultanei, ed e' quello che impedisce a un capo
+     di uccidere un modello che nello stesso istante lo stava
+     colpendo. */
   const order = ML.strikeOrder(a, b);
-  if (order.together){
-    const ra = strike(a, b, { label: "colpi", round }), rb = strike(b, a, { label: "colpi", round });
-    const ka = applyWounds(b, ra.wounds), kb = applyWounds(a, rb.wounds);
-    done.A += ra.wounds; done.B += rb.wounds;
-    steps.push({ side: "A", name: a.name, ...ra, kills: ka, together: true });
-    steps.push({ side: "B", name: b.name, ...rb, kills: kb, together: true });
-  } else {
-    const first  = order.first === "A" ? [a, b, "A"] : [b, a, "B"];
-    const second = order.first === "A" ? [b, a, "B"] : [a, b, "A"];
-    blow(first[0],  first[1],  first[2],  { label: "colpi" });
-    blow(second[0], second[1], second[2], { label: "colpi" });
+  const strikers = [
+    ...strikersOf(a, b, "A"),
+    ...strikersOf(b, a, "B"),
+  ].map(x => ({ ...x, sp: ML.speedOf(x.who) }));
+  /* prima il gradino dell'arma, poi l'Iniziativa: e' lo stesso ordine
+     di `strikeOrder`, aperto a piu' di due contendenti */
+  strikers.sort((p, q) => (q.sp.rank - p.sp.rank) || (q.sp.i - p.sp.i));
+
+  let k = 0;
+  while (k < strikers.length){
+    const lvl = strikers[k].sp;
+    const tier = [];
+    while (k < strikers.length &&
+           strikers[k].sp.rank === lvl.rank && strikers[k].sp.i === lvl.i) tier.push(strikers[k++]);
+    const hits = [];
+    for (const x of tier){
+      const att = x.tag === "A" ? a : b, def = x.tag === "A" ? b : a;
+      if (def.models <= 0 || att.models <= 0) continue;
+      if (x.g.attacks <= 0) continue;
+      hits.push({ x, r: strike(x.who, def, { attacks: x.g.attacks, label: x.label, round }) });
+    }
+    /* le ferite dopo, tutte insieme: dentro un gradino si mena nello
+       stesso momento */
+    for (const { x, r } of hits){
+      const def = x.tag === "A" ? b : a;
+      const kills = applyWounds(def, r.wounds);
+      done[x.tag] += r.wounds;
+      steps.push({ side: x.tag, name: x.who.name, character: !!x.g.character,
+                   ...r, kills, together: tier.length > 1 });
+    }
   }
 
   /* e per ultimi i pestoni: «dopo tutti gli altri attacchi, compresi
@@ -510,9 +671,29 @@ export function odds(A, B, n = 500, opts = {}){
   return out;
 }
 
-/* la stessa cosa senza tirare: quante ferite ci si aspetta in media */
+/* La stessa cosa senza tirare: quante ferite ci si aspetta in media.
+   Con un numero di attacchi dichiarato e' un profilo solo; senza, sono
+   tutte le squadre che menano — la truppa e ogni personaggio unito —
+   e le medie si sommano. La riga in cima resta quella della truppa,
+   perche' e' quella che risponde a «con che punteggio colpisco». */
 export function meleeForecast(att, def, attacks){
-  const n = attacks ?? att.forcedAttacks ?? contact(att, def).attacks;
+  if (attacks == null && (att.retinue || []).length){
+    const parts = strikersOf(att, def, "A")
+      .map(x => ({ x, f: oneForecast(x.who, def, x.g.attacks) }));
+    const rank = parts.find(p => !p.x.g.character) || parts[0];
+    return {
+      ...rank.f,
+      attacks: parts.reduce((n, p) => n + p.f.attacks, 0),
+      wounds: parts.reduce((n, p) => n + p.f.wounds, 0),
+      kills: parts.reduce((n, p) => n + p.f.kills, 0),
+      groups: parts.map(p => ({ name: p.x.who.name, character: !!p.x.g.character, ...p.f })),
+    };
+  }
+  return oneForecast(att, def, attacks ?? att.forcedAttacks ?? contact(att, def).attacks);
+}
+
+function oneForecast(att, def, n0){
+  const n = n0;
   const f = att.flags || emptyFlags();
   const h = fearful(hitMelee(att.ws, def.ws), att);
   /* Con l'Odio i colpi mancati si ritirano, e la media dei colpi
