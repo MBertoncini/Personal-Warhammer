@@ -826,7 +826,12 @@ function wireFormationControls(u, upd){
 function movementBlockHTML(u){
   const b = MV.bandsFor(u);
   const mv = MV.movedFrom(u);
-  const band = mv && b ? MV.bandOf(u, mv.dist) : null;
+  /* Il numero che conta non e' la linea d'aria: e' quello che il
+     Movimento paga davvero, ruota compresa (p. 124). Un reggimento
+     non va in diagonale, e la diagonale che l'app disegnava costava
+     zero pollici di troppo. */
+  const cost = MV.costFrom(u, unitW(u));
+  const band = mv && b ? MV.bandOf(u, cost ? cost.cost : mv.dist) : null;
   return `
     <div class="photo-box movebox">
       <div class="readout"><span>Movimento</span><b>${b
@@ -839,10 +844,18 @@ function movementBlockHTML(u){
                placeholder="${MV.moveOf(u) || "—"}">
       </label>
       ${mv ? `
-        <div class="readout"><span>Mosso dall'ancora</span>
-          <b style="color:${band ? band.color : "var(--ink)"}">${mv.dist.toFixed(1)}″${
-            b ? ` di ${b.move}″` : ""}${mv.turn ? ` · ${mv.turn}°` : ""}</b></div>
-        ${band && band.key !== "none" ? `<p class="note">${esc(band.label)} — spostamento netto fra l'ancora e adesso, non il percorso.</p>` : ""}
+        <div class="readout"><span>Speso dall'ancora</span>
+          <b style="color:${band ? band.color : "var(--ink)"}">${(cost ? cost.cost : mv.dist).toFixed(1)}″${
+            b ? ` di ${b.move}″` : ""}</b></div>
+        ${cost && cost.plan.legs.length ? `
+          <p class="note">${esc(cost.plan.label)}: ${cost.plan.legs.map(l =>
+            `${esc(l.label)} <b>${l.cost.toFixed(1)}″</b>`).join(" · ")}${
+            cost.plan.note ? ` — ${esc(cost.plan.note)}` : ""}</p>
+          ${cost.dist !== cost.cost ? `<p class="note dim">Il metro fra l'ancora e adesso dice ${cost.dist.toFixed(1)}″: la differenza è la ruota, che si paga (p. 124).</p>` : ""}
+          ${cost.plans.length > 1 ? `<p class="note dim">Altri modi: ${cost.plans.slice(1).map(p =>
+            `${esc(p.label)} ${p.cost.toFixed(1)}″`).join(" · ")}.</p>` : ""}`
+        : ""}
+        ${band && band.key !== "none" ? `<p class="note">${esc(band.label)} — il conto parte dall'ancora, non dal percorso camminato.</p>` : ""}
         <div class="grid2">
           <button class="btn tiny" id="i-anchor">Riparti da qui</button>
           <button class="btn tiny ghost" id="i-anchor-off">Togli l'ancora</button>
@@ -1939,11 +1952,48 @@ function drawMoveAid(svg, g, u){
 
   if (!mv || mv.still) return;
 
+  /* quanto e' costato arrivare fin qui: la ruota si paga, e il numero
+     che conta e' quello, non la linea d'aria (p. 124) */
+  const cost = MV.costFrom(u, w);
+  const spent = cost ? cost.cost : mv.dist;
+
   /* la riga fra dov'eri e dove sei, con il numero al centro. Il colore
      è un semaforo, non un arbitro: l'unità si muove lo stesso. */
-  const band = MV.bandOf(u, mv.dist);
+  const band = MV.bandOf(u, spent);
   const c = band.key === "none" ? col : band.color;
-  g(layer, "line", { x1:a.x, y1:a.y, x2:u.x, y2:u.y, stroke:c, "stroke-width":2.6 });
+
+  /* Il percorso che il reggimento farebbe davvero. La linea dritta fra
+     due punti e' una diagonale, e le diagonali al tavolo non esistono:
+     si ruota per puntare e poi si cammina. Disegnare la diagonale
+     mentre il conto dice un altro numero e' il modo piu' rapido di far
+     credere che il conto sia sbagliato. */
+  const legs = cost ? cost.plan.legs : [];
+  const walks = legs.some(l => l.id === "forward") && legs.some(l => l.id === "wheel");
+  if (walks){
+    /* il gomito: dall'ancora si punta verso l'arrivo, e da li' si va
+       dritti. Sono due segmenti, e il secondo e' la corsa vera. */
+    const dx = u.x - a.x, dy = u.y - a.y;
+    const d = Math.hypot(dx, dy) || 1;
+    const nose = (unitD(u) / 2) || 0;
+    const ex = a.x + (dx / d) * Math.min(nose, d * .35);
+    const ey = a.y + (dy / d) * Math.min(nose, d * .35);
+    g(layer, "path", { d:`M ${a.x} ${a.y} L ${ex} ${ey} L ${u.x} ${u.y}`,
+                       stroke:c, "stroke-width":2.6, "stroke-linejoin":"round" });
+    /* l'arco della ruota, attorno all'ancora: e' il pezzo di movimento
+       che si paga senza avanzare di un passo */
+    const wheelIn = legs.filter(l => l.id === "wheel").reduce((s, l) => s + l.cost, 0);
+    if (wheelIn > 0.05){
+      const rr = Math.max(18, w / 2);
+      g(layer, "circle", { cx:a.x, cy:a.y, r:rr, stroke:c, "stroke-width":2,
+                           "stroke-dasharray":"4 4", opacity:.85 });
+      const tw = g(layer, "text", { x:a.x, y:a.y - rr - 6, "text-anchor":"middle",
+                                    "font-size":13, fill:c,
+                                    stroke:"var(--paper)", "stroke-width":"3", "paint-order":"stroke" });
+      tw.textContent = `ruota ${wheelIn.toFixed(1)}″`;
+    }
+  } else {
+    g(layer, "line", { x1:a.x, y1:a.y, x2:u.x, y2:u.y, stroke:c, "stroke-width":2.6 });
+  }
   g(layer, "circle", { cx:u.x, cy:u.y, r:4.5, fill:c, stroke:"none" });
 
   /* il cartellino a metà strada, scostato di lato: in mezzo alla riga
@@ -1952,9 +2002,9 @@ function drawMoveAid(svg, g, u){
   const dx = u.x - a.x, dy = u.y - a.y, len = Math.hypot(dx, dy) || 1;
   const mx = (a.x + u.x) / 2 - (dy / len) * 34;
   const my = (a.y + u.y) / 2 + (dx / len) * 34;
-  const txt = b ? `${mv.dist.toFixed(1)}″ di ${b.move}″` : `${mv.dist.toFixed(1)}″`;
+  const txt = b ? `${spent.toFixed(1)}″ di ${b.move}″` : `${spent.toFixed(1)}″`;
   const sub = b
-    ? (mv.dist <= b.move ? `restano ${(b.move - mv.dist).toFixed(1)}″` : band.label)
+    ? (spent <= b.move ? `restano ${(b.move - spent).toFixed(1)}″` : band.label)
     : (mv.turn ? mv.turn + "° di fronte" : "");
   const wBox = Math.max(96, txt.length * 11 + 26);
   g(layer, "rect", { x:mx - wBox / 2, y:my - 34, width:wBox, height: sub ? 44 : 27, rx:6,
@@ -2084,8 +2134,15 @@ export function shootPlanFor(u){
   const charged = !!(u.moved && u.moved.kind === "charge") || !!u.charged;
   /* La marcia non e' un campo: e' l'ancora di movimento della Tappa 2
      che dice di essere andati oltre il Movimento di profilo. Senza M
-     non si dichiara niente, come sempre. */
-  const marched = !charged && !!mv && !mv.still && move > 0 && mv.dist > move + 0.01;
+     non si dichiara niente, come sempre.
+
+     Il confronto si fa con quello che il movimento e' **costato**,
+     ruota compresa: un reggimento largo che gira di novanta gradi e
+     poi cammina quattro pollici ha marciato, anche se il metro fra
+     l'ancora e adesso ne dice quattro (p. 124). */
+  const spent = MV.costFrom(u, lay.w);
+  const used = spent ? spent.cost : (mv ? mv.dist : 0);
+  const marched = !charged && !!mv && !mv.still && move > 0 && used > move + 0.01;
   return {
     weapon, range, rows, rules, pieces,
     /* tutta sulla collina: tira anche la seconda fila (p. 143) */

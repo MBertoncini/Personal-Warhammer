@@ -6,6 +6,7 @@
  * Si lancia con:  node test/movimento.mjs
  */
 import * as CH from '../src/charge.js';
+import * as MV from '../src/movement.js';
 import { boxCorners, polyDistance } from '../src/geom.js';
 
 const MM = 25.4;
@@ -372,6 +373,58 @@ console.log('\nla riga che si legge prima di dichiarare');
   ok('e chiede il test di terreno pericoloso', rows[0].terrain.danger === true);
   ok('e la carica arriva gia allineata', rows[0].align && rows[0].align.side === 'fronte');
   ok('quello dietro resta in fondo con il suo perche', rows[1].can === false);
+}
+
+/* ================================================================= */
+console.log('\nil budget: la ruota si paga, e in diagonale non si va');
+{
+  const W = 5 * MM;                         // un reggimento largo cinque pollici
+  const da = { x:0, y:0, rot:0 };
+  const a = (xIn, yIn, rot = 0) => ({ x:xIn * MM, y:yIn * MM, rot });
+  const costo = (to, move = 4) => MV.moveCost({ widthMm:W, move, from:da, to });
+
+  ok('un reggimento largo cinque pollici che gira di novanta ne spende quasi otto',
+     near(MV.wheelCost(W, 90), 7.85, 0.02));
+  ok('e girare di poco costa poco', near(MV.wheelCost(W, 15), 1.31, 0.02));
+  ok('un fronte stretto ruota quasi gratis: e perche le colonne girano',
+     MV.wheelCost(1 * MM, 90) < MV.wheelCost(W, 90) / 4);
+
+  const dritto = costo(a(0, -6));
+  ok('dritto davanti, sei pollici costano sei pollici', near(dritto.cost, 6));
+  ok('e nel conto non c e nessuna ruota', dritto.wheel === 0);
+
+  /* la diagonale: il punto e' a sei pollici in linea d'aria, ma il
+     reggimento non ci va in diagonale */
+  const diag = costo(a(4.24, -4.24, 45));
+  ok('in diagonale il metro dice sei pollici', near(diag.dist, 6, 0.05));
+  ok('ma il Movimento ne paga di piu', diag.cost > 6.5);
+  ok('e la differenza e tutta ruota', near(diag.cost - diag.wheel, 6, 0.05));
+  ok('il conto dice da cosa e fatto', /ruota di 45°/.test(diag.why) && /in avanti/.test(diag.why));
+
+  /* lo stesso punto tenendo il fronte com era: al tavolo e' un passo
+     di lato, e il passo di lato si fa a meta velocita */
+  const lato = costo(a(3, 0));
+  ok('tre pollici di lato ne costano sei', near(lato.cost, 6));
+  ok('e si chiamano col loro nome', lato.plan.id === 'side');
+
+  const back = costo(a(0, 3));
+  ok('tre pollici indietro ne costano sei', near(back.cost, 6));
+  ok('e si chiamano col loro nome', back.plan.id === 'back');
+
+  /* fermi, solo girati */
+  ok('un giro di novanta sul posto costa un quarto del Movimento',
+     near(costo(a(0, 0, 90), 8).cost, 2));
+  ok('un giro di centottanta ne costa meta', near(costo(a(0, 0, 180), 8).cost, 4));
+  ok('e i modi alternativi restano scritti', costo(a(0, 0, 90), 8).plans.length > 1);
+
+  /* la riga che si legge sul pezzo */
+  const u = { placed:true, x:4.24 * MM, y:-4.24 * MM, rot:45,
+              stats:{ M:'4' }, anchor:{ x:0, y:0, rot:0 } };
+  ok('la riga separa la corsa dalla ruota',
+     /di corsa più/.test(MV.movedText(u, W)) && /di ruota/.test(MV.movedText(u, W)));
+  ok('senza la larghezza del fronte non si inventa una ruota',
+     MV.costFrom(u, 0).wheel === 0 && MV.costFrom(u, 0).blind === true);
+  ok('e chi non si e mosso non ha un conto', MV.costFrom({ placed:false }, W) === null);
 }
 
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
