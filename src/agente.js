@@ -138,9 +138,11 @@ Come si ragiona in questo gioco:
 - i ranghi contano: un reggimento largo e profondo vince i combattimenti anche senza uccidere;
 - chi perde un combattimento tira un test di rotta, e chi rompe viene inseguito e travolto;
 - le unità da tiro non vanno mandate in mischia, e chi spara dopo aver mosso colpisce peggio;
-- un'unità sola contro due nemici perde: si arriva in due sullo stesso bersaglio quando si può.`;
+- un'unità sola contro due nemici perde: si arriva in due sullo stesso bersaglio quando si può;
+- la mossa «passa» chiude la fase: le unità che non hanno ancora agito in questa fase restano come sono;
+- un tiro con una probabilità bassa di colpire vale poco: meglio avvicinarsi o cambiare bersaglio.`;
 
-export function agenteGemini({ apiKey, model = "gemini-2.5-flash", fetchFn = null,
+export function agenteGemini({ apiKey, model = "gemini-3.6-flash", fetchFn = null,
                                nome = "Gemini", riserva = null, onError = null,
                                attesa = 0, ritenta = 3, dormi = null } = {}){
   const rete = fetchFn || (typeof fetch === "function" ? fetch : null);
@@ -193,6 +195,10 @@ export function agenteGemini({ apiKey, model = "gemini-2.5-flash", fetchFn = nul
 /* la mossa come la legge chi deve sceglierla: cosa fa, contro chi, e
    quello che l'arbitro ha già calcolato */
 export function descrivi(x){
+  /* «avanti» per l'arbitro vuol dire «ho finito questa casella»; a un
+     modello che legge l'italiano sembra «avanza», e sceglierlo al posto
+     di una marcia lasciava ferme tutte le unita' non ancora mosse */
+  if (x.id === "avanti") return `passa — ${x.why || "nessun'altra mossa in questa fase"}`;
   const chi = x.nome ? ` (${x.nome})` : "";
   const contro = x.contro ? ` contro ${x.contro}` : "";
   const dove = x.dove ? ` ${x.dove}` : "";

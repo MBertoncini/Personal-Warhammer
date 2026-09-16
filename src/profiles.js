@@ -44,7 +44,9 @@ const norm = s => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim
    possono chiamare una cavalcatura allo stesso modo. */
 export function profileFor(u){
   if (!TAVOLA || !u) return null;
-  const nome = norm(u.name);
+  /* l'arbitro numera le unita' omonime («Skink Skirmishers 2») e tiene
+     il nome del libro a parte */
+  const nome = norm(u.baseName || u.name);
   if (!nome) return null;
   const fazione = norm(u.faction || u.army || "");
   return TAVOLA.profili.find(p => {

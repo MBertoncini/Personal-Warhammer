@@ -49,6 +49,28 @@ D.setSource(() => 5);
 ok('con la sorgente decisa il dado e deciso', D.d6() === 6);
 D.setSource(null);
 
+/* il generatore con il seme: le partite si rigiocano da li', e un
+   generatore che non tira mai 2, 4 o 6 fa partite finte senza che
+   nessuno se ne accorga */
+{
+  D.setSource(D.seeded(1));
+  const conta = [0, 0, 0, 0, 0, 0];
+  const N = 60000;
+  for (let i = 0; i < N; i++) conta[D.d6() - 1]++;
+  ok('con il seme ogni faccia esce una volta su sei (fra 15,5% e 17,8%)',
+     conta.every(c => c / N > 0.155 && c / N < 0.178));
+  let pari = 0;
+  for (let i = 0; i < 6000; i++) if (D.d6() % 2 === 0) pari++;
+  ok('e i pari escono quanto i dispari', pari > 2700 && pari < 3300);
+  const seq = s => { D.setSource(D.seeded(s)); return D.roll(20).join(''); };
+  ok('lo stesso seme dà la stessa sequenza', seq(7) === seq(7));
+  ok('un seme diverso ne dà un\'altra', seq(7) !== seq(8));
+  D.setSource(D.seeded(3));
+  const grandi = Array.from({ length: 2000 }, () => D.randomInt(360));
+  ok('e regge anche i numeri grandi, fino a 359', grandi.every(v => v >= 0 && v < 360) && new Set(grandi).size > 300);
+  D.setSource(null);
+}
+
 const s = D.scatter({ distance:'d6' });
 ok('la deviazione torna un grado fra 0 e 359', s.deg >= 0 && s.deg <= 359);
 ok('e Colpito! non sposta di un pollice', !s.hit || s.inches === 0);

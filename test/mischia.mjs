@@ -627,5 +627,18 @@ console.log('\nle regole dei tre eserciti di casa (Tappa 5 bis)');
 }
 
 /* ================================================================= */
+console.log('\ngli schermagliatori non stanno in file (p. 101)');
+{
+  const skink = { name:'Skink', models:10, frontage:5, rules:['Move Through Cover', 'Skirmishers'],
+                  troop:{ maxRank:2, perRank:5 } };
+  const card = ML.scoreCardOf(skink, 1);
+  ok('dieci schermagliatori su due file non prendono il bonus di ranghi',
+     card.maxRank === 0 && ML.combatScore(card).rank === 0);
+  ok('e nemmeno l ordine di combattimento', !card.combatOrder);
+  const orchi = ML.scoreCardOf({ ...skink, name:'Orchi', rules:['Close Order'] }, 1);
+  ok('dieci fanti in ordine chiuso il rango lo prendono', ML.combatScore(orchi).rank === 1);
+}
+
+/* ================================================================= */
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

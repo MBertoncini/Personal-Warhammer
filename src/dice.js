@@ -56,6 +56,32 @@ export function randomInt(n){
    setSource(null) rimette quella del browser. */
 export function setSource(fn){ source = typeof fn === "function" ? fn : null; }
 
+/* La sorgente con il seme, per le partite che si devono poter
+   rigiocare identiche. Sta qui e non negli strumenti perche' ne esiste
+   una sola: prima ognuno se la scriveva, e tutti con lo stesso
+   generatore lineare — `(s * 1103515245 + 12345) & 0x7fffffff` — che in
+   JavaScript e' rotto. Il prodotto supera i 2^53 che un numero tiene
+   esatti, i bit bassi si arrotondano a zero, e il resto per sei cadeva
+   quasi sempre su 0, 2 o 4: una partita intera di 1, 3 e 5, con un sei
+   ogni trecento dadi e nessun 2 o 4. Mulberry32 fa i conti con
+   `Math.imul`, che resta a 32 bit, e il suo intero si scala a n con lo
+   stesso scarto della coda che usa il generatore del browser. */
+export function seeded(seed = 1){
+  let s = (seed >>> 0) || 1;
+  const next = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return (t ^ (t >>> 14)) >>> 0;
+  };
+  return n => {
+    const k = Math.max(1, n | 0);
+    const limit = Math.floor(0x100000000 / k) * k;
+    for (;;){ const v = next(); if (v < limit) return v % k; }
+  };
+}
+
 /* Il generatore vero c'e'? Serve a dirlo nel vassoio invece di far
    finta: senza crypto si tira lo stesso, ma peggio. */
 export const trueRandom = () => !!(globalThis.crypto && globalThis.crypto.getRandomValues);

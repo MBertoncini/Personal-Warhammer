@@ -53,10 +53,15 @@ export function setUnitPrep(l, i, patch){
    rumore che riempiva la scheda di domande finte. */
 const NOT_A_CHARACTER = ["lightChariot","heavyChariot","warMachine","behemoth","monstrousCreature","swarm"];
 export const isCharacter = u => {
-  if (/^character/i.test(u.slot || "")) return true;
+  if (/character/i.test(u.slot || "")) return true;
   const t = troopType(u.troop);
   if (t.isCharacter) return true;
   if (NOT_A_CHARACTER.includes(t.id)) return false;
+  /* Quando il file dice la categoria — Core, Special, Rare — e non e'
+     quella dei personaggi, il modello solo non basta: un Troll di pietra
+     da solo stava diventando il generale degli Orchi, con il suo
+     Comando 7 prestato a mezzo esercito. */
+  if (String(u.slot || "").trim()) return false;
   return (u.models || 1) === 1;
 };
 

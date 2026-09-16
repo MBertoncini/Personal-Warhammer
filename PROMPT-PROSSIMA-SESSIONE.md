@@ -85,6 +85,37 @@ parallelo due soluzioni allo stesso problema. La fusione sta sul ramo
   Con i dadi della fusione il seme 7 spingeva un Bastiladon sotto il
   tavolo.
 
+## Fatto: la prima partita fra due modelli, riletta
+
+La prima partita Gemini contro Gemini (`partita.html`) non valeva come
+partita: i dadi con il seme uscivano solo 1, 3 e 5, il controllo del
+bordo leggeva `p.x` su angoli che sono `[x, y]` (chi cedeva terreno non
+si muoveva, chi ripiegava in ordine usciva a mezzo tavolo), «resta
+ferma» contava come movimento per il tiro, e il movimento spostava i
+centri senza guardare nessuno. Tutto corretto, con le prove in
+`test/arbitro.mjs`; `tools/controlla-partita.mjs` rilegge una pagina e
+trova queste anomalie da solo — fallo girare su ogni partita nuova.
+
+**Da controllare sul libro**, perché in quella sessione il manuale non
+c'era:
+
+- il raggio del Comando del generale, preso di **12″**
+  (`RAGGIO_GENERALE` in `arbitro.js`, dichiarato in `LIMITI`);
+- la carica su un bersaglio fuggito: chi lo raggiunge lo travolge,
+  chi non lo raggiunge fa la carica fallita (p. 121?). Manca la
+  ridirezione (in `LIMITI`);
+- chi ripiega in ordine tiene il dado maggiore di 2D6 (`BACKWARD` in
+  `charge.js` lo diceva già, l'arbitro sommava);
+- gli schermagliatori senza bonus di ranghi: la pagina scritta accanto
+  (p. 101) è quella che `inCombatOrder` citava già;
+- seguire chi cede terreno: l'arbitro lo fa sempre, e non segue mai chi
+  ripiega in ordine. Sul libro è una scelta: andrebbe offerta come mossa;
+- i pestoni contro carri e cavalleria: l'arbitro li tira contro tutti.
+
+**Nei dati**: la lista 9 (Skaven Battle March) non ha né tipo di truppa
+né armi. `partita.mjs` adesso lo dice all'avvio; finché non si
+corregge, gli Skaven giocano da fanteria regolare e non sparano.
+
 ## Compito 1 — la magia in partita (p. 106 e seguenti)
 
 È la voce più grossa che l'arbitro dichiara e non gioca, e l'unica che

@@ -580,10 +580,11 @@ export const highGroundFor = (choice, tag) => choice === (tag === "A" ? "me" : "
    mostro solo e' un ordine chiuso di un modello per uno, cioe' un
    quadrato: il libro lo tratta come ordine chiuso (p. 105) e il punto
    lo prende anche lui. */
+export const isSkirmish = c => (c.rules || []).some(r => /^skirmish/i.test(String(r)));
 export function inCombatOrder(c = {}){
   const models = +c.models || 0, front = Math.max(1, +c.frontage || 1);
   if (models <= 0) return false;
-  if ((c.rules || []).some(r => /^skirmish/i.test(String(r)))) return false;
+  if (isSkirmish(c)) return false;
   return Math.ceil(models / front) <= front;
 }
 
@@ -604,7 +605,10 @@ export function scoreCardOf(c = {}, wounds = 0, { foe = "" } = {}){
     foe, name: c.name || "", attached: dentro,
     wounds,
     models: c.models || 0, frontage: c.frontage || 1,
-    maxRank: dentro ? 0 : (c.troop ? c.troop.maxRank : 2),
+    /* gli schermagliatori non stanno in file, e il bonus di ranghi non
+       lo prendono (p. 101): prima dieci Skink sparpagliati ne
+       reclamavano uno, come un reggimento */
+    maxRank: dentro || isSkirmish(c) ? 0 : (c.troop ? c.troop.maxRank : 2),
     perRank: c.troop ? c.troop.perRank : 5,
     standard: !dentro && !!c.standard, battleStandard: !!(c.flags && c.flags.battleStandard),
     flank: dentro ? "" : (c.flank || ""), highGround: !dentro && !!c.highGround,

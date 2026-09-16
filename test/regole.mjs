@@ -383,6 +383,17 @@ ok('ma il Warboss si',
    PREP.isCharacter({ name:'Black Orc Warboss', models:1, troop:'Heavy Infantry', slot:'Characters' }));
 ok('e un personaggio unito a un reggimento pure',
    PREP.isCharacter({ name:'Warlock Engineer', models:1, troop:'Regular infantry (character)' }));
+ok('un Troll da solo nella categoria Special non è un personaggio',
+   !PREP.isCharacter({ name:'Stone Troll Mobs', models:1, troop:'Monstrous Infantry', slot:'Special' }));
+ok('un personaggio con nome invece sì',
+   PREP.isCharacter({ name:'Ogdruz Swampdigga', models:1, troop:'Regular Infantry (named character)', slot:'Named Characters' }));
+{
+  const l6 = lists.find(l => (l.units || []).some(u => u.name === 'Night Goblin Oddnob') &&
+                             (l.units || []).some(u => u.name === 'Stone Troll Mobs'));
+  ok('e nella lista con i Troll il generale proposto è un personaggio',
+     !l6 || PREP.isCharacter(l6.units[PREP.guessGeneral(l6)]) &&
+            l6.units[PREP.guessGeneral(l6)].name !== 'Stone Troll Mobs');
+}
 
 const fresh = JSON.parse(JSON.stringify(og9));
 ok('una lista appena importata ha domande aperte', PREP.questions(fresh).length > 0);

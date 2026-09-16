@@ -51,11 +51,15 @@ export function rangedWeapons(u){
    ferita per modello della prima fila, che per un carro e' generoso e
    per un mostro solo e' assurdo. Quando fra parentesi non c'e' niente
    si torna al vecchio ordine di grandezza. */
-function autoHits(a, front){
+/* `dadi`, se c'e', raccoglie le facce tirate: il registro le mostra */
+function autoHits(a, front, dadi = null){
   if (!a) return 0;
   if (a.flat) return a.flat;
-  if (a.die) return roll(a.times || 1).reduce((s, d) => s + 1 + Math.floor((d - 1) * a.die / 6), 0)
-                    + (a.plus || 0);
+  if (a.die){
+    const facce = roll(a.times || 1);
+    if (dadi) dadi.push(...facce);
+    return facce.reduce((s, d) => s + 1 + Math.floor((d - 1) * a.die / 6), 0) + (a.plus || 0);
+  }
   return front;
 }
 
@@ -809,15 +813,16 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
     if (!def || def.models <= 0 || e.c.models <= 0) return null;
     return { e, def, r: strike(e.c, def, { round, ...opts }) };
   };
-  const land = x => {
+  const land = (x, facce = null) => {
     if (!x) return;
+    if (facce && facce.length) x.r.autoDice = facce;
     const kills = applyWounds(x.def, x.r.wounds);
     x.e.c.dealt += x.r.wounds;
     done[x.e.tag] += x.r.wounds;
     steps.push({ side: x.e.tag, name: x.e.c.name, at: x.e.at, foe: x.def.name,
                  character: !!x.e.c.attached, ...x.r, kills, together: !!x.together });
   };
-  const blow = (e, j, opts) => land(shot(e, j, opts));
+  const blow = (e, j, opts, facce = null) => land(shot(e, j, opts), facce);
 
   /* Urto della carica e pestoni si possono dirigere su un personaggio
      unito «solo se nel reggimento ci sono meno di cinque modelli di
@@ -836,11 +841,12 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
     if (!ranIn(e.c) || !e.foes.length) continue;
     const dove = sotto(e);
     if (!dove.length) continue;
-    const n = autoHits(e.c.flags && e.c.flags.impact, e.fronts.reduce((s, v) => s + v, 0));
+    const facce = [];
+    const n = autoHits(e.c.flags && e.c.flags.impact, e.fronts.reduce((s, v) => s + v, 0), facce);
     if (!n) continue;
     const split = spread(n, e.fronts.map((v, k) => dove.includes(k) ? v : 0));
     e.foes.forEach((j, k) => { if (split[k]) blow(e, j, {
-      attacks: split[k], auto: true, strength: e.c.baseS, label: "urto della carica" }); });
+      attacks: split[k], auto: true, strength: e.c.baseS, label: "urto della carica" }, facce); });
   }
 
   /* poi si mena, in ordine di Iniziativa — con dentro il bonus della
@@ -863,7 +869,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
         if (x) shots.push(Object.assign(x, { together: step.together }));
       });
     }
-    shots.forEach(land);
+    shots.forEach(x => land(x));
   }
 
   /* e per ultimi i pestoni: «dopo tutti gli altri attacchi, compresi
@@ -874,11 +880,12 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
     if (!e.foes.length) continue;
     const dove = sotto(e);
     if (!dove.length) continue;
-    const n = autoHits(e.c.flags && e.c.flags.stomp, 1);
+    const facce = [];
+    const n = autoHits(e.c.flags && e.c.flags.stomp, 1, facce);
     if (!n) continue;
     const split = spread(n, e.fronts.map((v, k) => dove.includes(k) ? v : 0));
     e.foes.forEach((j, k) => { if (split[k]) blow(e, j, {
-      attacks: split[k], auto: true, strength: e.c.baseS, label: "pestoni" }); });
+      attacks: split[k], auto: true, strength: e.c.baseS, label: "pestoni" }, facce); });
   }
 
   /* L'overkill di una sfida: le ferite in piu' di quelle che

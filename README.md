@@ -270,15 +270,20 @@ Chi gioca sta in `src/agente.js`, e può essere due cose:
 npm run partita                       # due euristiche, partita commentata
 node tools/partita.mjs --seme 42      # la stessa partita, sempre identica
 node tools/partita.mjs --liste ?      # le liste dell'archivio, numerate
-node tools/partita.mjs --liste 3,9 --scenario bm-rovine
+node tools/partita.mjs --liste 4,9 --scenario bm-rovine
 node tools/partita.mjs --gemini       # due modelli che si affrontano
 node tools/partita.mjs --gemini A     # solo l'esercito A è il modello
 node tools/partita.mjs --html partita.html   # la partita da GUARDARE
+node tools/controlla-partita.mjs partita.html  # e il controllo di quello che è successo
 ```
 
-Con `--html` esce **una pagina sola**, senza dipendenze e senza rete: il tavolo disegnato, una barra per andare avanti e indietro fotogramma per fotogramma, e accanto il registro con i dadi usciti, la pagina del manuale e il perché tattico di chi ha scelto. Si apre con un doppio clic, si manda a un amico, si mette su GitHub Pages — dentro non c'è nessuna chiave e non chiama nessuno.
+All'avvio stampa **quali liste ha preso** — numero, nome, fazione, punti — e avvisa quando i punti non si equivalgono, quando una lista non dice la fazione o quando le sue unità non hanno tipo di truppa o armi. `--liste` vuole due numeri: `--liste 3, 9` con lo spazio va bene, `--liste 3,` si ferma e lo dice (prima diventava «3 contro la lista 0» senza avvisare), e un argomento che non conosce non passa in silenzio.
 
-Per il modello serve una chiave nell'ambiente — `GEMINI_API_KEY`, e `GEMINI_MODEL` se ne vuoi uno diverso da `gemini-2.5-flash`:
+Con `--html` esce **una pagina sola**, senza dipendenze e senza rete: il tavolo disegnato, una barra per andare avanti e indietro fotogramma per fotogramma, e accanto il registro con i dadi usciti, la pagina del manuale e il perché tattico di chi ha scelto. Si apre con un doppio clic, si manda a un amico, si mette su GitHub Pages — dentro non c'è nessuna chiave e non chiama nessuno. I dadi sono tutti, a mucchi (`colpire 4+ · ferire 3+ · armatura 5+`), le unità in mischia hanno il bordo giallo e ⚔, i modelli singoli dicono le ferite che restano (♥3/4), e le unità con lo stesso nome prendono un numero (`Skink Skirmishers 2`). I fotogrammi in cui non succede niente non si tengono, e quando chi gioca **passa** con altre mosse possibili il perché si legge come quello di ogni altra scelta.
+
+`tools/controlla-partita.mjs` rilegge una pagina e cerca quello che una partita giusta non fa mai: dadi che non escono uno su sei, unità una dentro l'altra o fuori dal tavolo, chi cede terreno di zero pollici a mezzo tavolo, chi ripiega ed esce da lontano, chi resta fermo e tira con «ha mosso», fotogrammi doppi. Esce con 1 se trova qualcosa. È nato rileggendo la prima partita fra due modelli, che aveva tutte queste cose insieme.
+
+Per il modello serve una chiave nell'ambiente — `GEMINI_API_KEY`, e `GEMINI_MODEL` se ne vuoi uno diverso da `gemini-3.6-flash`:
 
 ```bash
 npm run prova-chiave                  # una domanda sola: la chiave funziona?
@@ -308,6 +313,10 @@ Una partita sono un centinaio di domande al modello (circa 55 per parte, ~80 mil
 Una partita dura quattro o cinque secondi con l'euristica, e finisce con il verdetto del libro: punti vittoria, margine, e il punto di rottura guardato all'inizio di ogni turno. In fondo stampa **quello che quella partita non ha giocato**, riga per riga: è la lista della spesa del prossimo pezzo di lavoro.
 
 Il turno che l'arbitro gioca è più corto delle sedici caselle di `phases.js` — raduno, cariche, mosse, tiro, mischia — e la differenza è dichiarata: niente magia, niente sotto-fase di comando, niente riforme. Tutto il resto è quello vero: le reazioni alla carica, il tiro con i suoi modificatori, il combattimento **a più di due** con il conto di p. 153, i tre esiti del test di rotta uno per unità, l'inseguimento che travolge, il Panico oltre il quarto, il raduno con le perdite insostenibili.
+
+**Il tavolo non si compenetra.** Chi si muove avanza a passi e si ferma all'ultimo posto libero — prima di un'altra unità, a un pollice da un nemico (p. 118), sul bordo — e se la strada dritta è chiusa prova qualche grado di lato. Chi carica si mette sulla faccia da cui arriva e, se lì c'è già qualcuno, scorre lungo la stessa faccia: quei pollici entrano nel tiro che serve, e una carica senza posto non si offre nemmeno. Chi cede terreno si sposta davvero di 2″ (o si ferma contro chi ha dietro, e lo dice), e chi ha vinto lo segue e resta a contatto; chi ripiega in ordine tira 2D6 e tiene il maggiore, e si muove come chi fugge: attraversa, non si ferma dentro nessuno, esce solo se tocca il bordo. Chi insegue si muove anche lui, e chi carica un nemico già fuggito lo travolge se lo raggiunge. Il Comando del generale vale per chi gli sta entro 12″, stare fermi non conta come movimento per il tiro, e gli schermagliatori non prendono il bonus di ranghi.
+
+**I dadi con il seme** vengono da `D.seeded(seme)` in `dice.js`, uno solo per tutti. Il generatore che c'era prima — un lineare congruenziale scritto a mano in `partita.mjs` e nelle prove — in JavaScript perdeva i bit bassi: una partita intera di 1, 3 e 5, con un sei ogni trecento dadi. Le partite registrate prima di questa correzione non valgono come partite.
 
 ## Installarla
 

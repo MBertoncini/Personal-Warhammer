@@ -14,6 +14,8 @@ import * as AG from '../src/agente.js';
 import * as D from '../src/dice.js';
 import * as PR from '../src/profiles.js';
 import * as CH from '../src/charge.js';
+import { polysOverlap } from '../src/geom.js';
+import { spawnSync } from 'node:child_process';
 
 let fails = 0;
 const ok = (label, cond) => {
@@ -27,7 +29,7 @@ const liste = dati('liste.json');
 const A = liste[3], B = liste[4];       // le due «Strada delle Pietre», 750 punti
 
 /* i dadi con il seme: una prova che tira dadi veri non è una prova */
-const seme = s => { let x = s >>> 0 || 1; D.setSource(n => { x = (x * 1103515245 + 12345) & 0x7fffffff; return x % n; }); };
+const seme = s => D.setSource(D.seeded(s));
 
 /* ================================================================= */
 console.log('il tavolo');
@@ -201,6 +203,230 @@ console.log('\nil modello di linguaggio, senza rete');
      passi.length === 1 && passi[0] > 4000);
 }
 
+
+/* =================================================================
+   Il tavolo che non si compenetra. Sono le prove dei difetti trovati
+   rileggendo la prima partita fra due modelli: ognuna mette i pezzi a
+   mano, fa un gesto e guarda dove sono finiti.
+   ================================================================= */
+const { interni: IN } = AR;
+const uid = (G, n) => G.units.find(u => u.uid === n);
+const metti = (G, u, x, y, rot = u.army === 'A' ? 0 : 180) => { u.placed = true; u.x = x; u.y = y; u.rot = rot; return u; };
+const aContattoDi = (G, u, t) => {
+  const al = CH.alignTo(AR.boxOf(u, G.units), AR.boxOf(t, G.units));
+  u.x = al.x; u.y = al.y; u.rot = al.rot; return al;
+};
+const dentro = (G, a, b) => polysOverlap(AR.cornersOf(a, G.units), AR.cornersOf(b, G.units));
+const nuova = () => { const G = AR.newBattle({ A, B, scenario:'bm-strada' }); G.schierando = false; return G; };
+
+console.log('\ni nomi uguali');
+{
+  const G = nuova();
+  const sk = AR.unitsOf(G, 'A').filter(u => u.baseName === 'Skink Skirmishers');
+  ok('tre unità omonime prendono un numero',
+     sk.map(u => u.name).join('|') === 'Skink Skirmishers 1|Skink Skirmishers 2|Skink Skirmishers 3');
+  ok('chi è unico resta com è', uid(G, 6).name === 'Temple Guard');
+  ok('e il profilo si cerca con il nome del libro',
+     PR.moveInfo({ name:'Orc Boar Boy Mobs 2', baseName:'Orc Boar Boy Mobs', stats:{ M:'-' } }).m === 7);
+}
+
+console.log('\nil bordo del tavolo (pp. 132, 134)');
+{
+  const G = nuova();
+  const tg = metti(G, uid(G, 6), 600, 450);
+  ok('un reggimento al centro è sul tavolo', AR.sulTavolo(G, tg));
+  metti(G, tg, 40, 450);
+  ok('e con un angolo fuori non lo è più', !AR.sulTavolo(G, tg));
+}
+
+console.log('\ncedere terreno e seguire (p. 134)');
+{
+  const G = nuova();
+  const tg = metti(G, uid(G, 6), 600, 500);
+  const bo = metti(G, uid(G, 503), 600, 300);
+  aContattoDi(G, bo, tg);
+  const y0 = tg.y;
+  const fatto = IN.indietreggia(G, tg, [bo], 2, { kind:'give' });
+  ok('chi cede terreno a mezzo tavolo si sposta davvero di 2″',
+     Math.abs((tg.y - y0) - 2 * 25.4) < 1 && G.log.some(r => /cede terreno di 2″/.test(r.text)));
+  ok('e resta girato verso il nemico', tg.rot === 0);
+  IN.seguire(G, [bo], tg, fatto);
+  ok('chi ha vinto lo segue e restano a contatto', AR.ingaggiata(G, tg) && !dentro(G, tg, bo));
+
+  /* un amico subito dietro ferma il passo indietro */
+  const G2 = nuova();
+  const t2 = metti(G2, uid(G2, 6), 600, 500);
+  const sk = metti(G2, uid(G2, 3), 600, 500 + 45 + 31.35 + 10);
+  const b2 = metti(G2, uid(G2, 503), 600, 300);
+  aContattoDi(G2, b2, t2);
+  IN.indietreggia(G2, t2, [b2], 2, { kind:'give' });
+  ok('chi ha un amico dietro si ferma contro di lui, e lo dice',
+     t2.y - 500 < 2 * 25.4 - 1 && !dentro(G2, t2, sk) &&
+     G2.log.some(r => /si ferma contro Skink Skirmishers 1/.test(r.text)));
+}
+
+console.log('\nripiegare in ordine (p. 134)');
+{
+  const G = nuova();
+  const tg = metti(G, uid(G, 6), 600, 450);
+  const bo = metti(G, uid(G, 503), 600, 250);
+  aContattoDi(G, bo, tg);
+  IN.indietreggia(G, tg, [bo], 6, { kind:'fallBack' });
+  ok('a mezzo tavolo chi ripiega resta in gioco (prima usciva sempre)', !tg.dead && AR.sulTavolo(G, tg));
+  const vicino = metti(G, uid(G, 7), 300, G.table.h - 60);
+  const orco = metti(G, uid(G, 505), 300, G.table.h - 300);
+  aContattoDi(G, orco, vicino);
+  IN.indietreggia(G, vicino, [orco], 6, { kind:'fallBack' });
+  ok('vicino al bordo esce dal tavolo', vicino.dead && vicino.fledOff);
+}
+
+console.log('\nil movimento non attraversa nessuno (p. 118)');
+{
+  const G = nuova();
+  const sv = metti(G, uid(G, 1), 600, 760);
+  const bas = metti(G, uid(G, 7), 600, 640);
+  const nem = metti(G, uid(G, 505), 600, 150);
+  const r = AR.apply(G, { id:'marcia', uid: sv.uid, verso: nem.uid });
+  ok('la marcia si fa', r.ok);
+  ok('e chi ha un amico davanti non gli finisce dentro', !dentro(G, sv, bas));
+  ok('e si sposta lo stesso, girandoci intorno', Math.hypot(sv.x - 600, sv.y - 760) > 25);
+
+  const G2 = nuova();
+  const tg = metti(G2, uid(G2, 6), 600, 600);
+  const e2 = metti(G2, uid(G2, 505), 600, 380);
+  AR.apply(G2, { id:'marcia', uid: tg.uid, verso: e2.uid });
+  ok('chi marcia verso un nemico si ferma a un pollice', AR.distanza(G2, tg, e2) >= 0.98 && AR.distanza(G2, tg, e2) < 1.3);
+}
+
+console.log('\nla carica che trova il posto occupato');
+{
+  const G = nuova();
+  const bo = metti(G, uid(G, 503), 600, 400);
+  const tg = metti(G, uid(G, 6), 600, 600);
+  aContattoDi(G, tg, bo);
+  const sv = metti(G, uid(G, 1), 560, 700);
+  const posto = IN.postoAContatto(G, sv, bo);
+  ok('il secondo caricante trova posto sulla stessa faccia', !!posto && !posto.pieno && posto.arc === 'fronte');
+  sv.x = posto.x; sv.y = posto.y; sv.rot = posto.rot;
+  ok('senza entrare in chi c era già', !dentro(G, sv, tg));
+  ok('e a contatto con il bersaglio', AR.distanza(G, sv, bo) < 0.15);
+
+  /* una faccia da 30 mm coperta da un reggimento da 150 non ha posto */
+  const G2 = nuova();
+  const wb = metti(G2, uid(G2, 501), 600, 400);
+  const t2 = metti(G2, uid(G2, 6), 600, 520);
+  aContattoDi(G2, t2, wb);
+  const s2 = metti(G2, uid(G2, 1), 600, 640);
+  G2.casella = 1; G2.army = 'A';
+  const cariche = AR.options(G2).list.filter(x => x.id === 'carica' && x.uid === s2.uid);
+  ok('e una carica senza posto non si offre nemmeno', !cariche.some(x => x.target === wb.uid));
+}
+
+console.log('\nla carica su chi è fuggito (p. 121)');
+{
+  const G = nuova();
+  const sv = metti(G, uid(G, 1), 600, 600);
+  const wb = metti(G, uid(G, 501), 600, 400);
+  const d = CH.declareCharge({ charger: { name: sv.name, box: AR.boxOf(sv, G.units), move: 4 },
+                               target: { name: wb.name, box: AR.boxOf(wb, G.units) } });
+  IN.fuggi(G, wb, sv, 2);
+  D.setSource(() => 5);                                  // tutti sei
+  IN.muoviCarica(G, sv, wb, d);
+  ok('chi la raggiunge lo stesso la travolge', wb.dead &&
+     G.log.some(r => /che fugge.*travolta/.test(r.text)));
+  const G2 = nuova();
+  const s2 = metti(G2, uid(G2, 1), 600, 600);
+  const w2 = metti(G2, uid(G2, 501), 600, 400);
+  const d2 = CH.declareCharge({ charger: { name: s2.name, box: AR.boxOf(s2, G2.units), move: 4 },
+                                target: { name: w2.name, box: AR.boxOf(w2, G2.units) } });
+  IN.fuggi(G2, w2, s2, 12);
+  D.setSource(() => 0);                                  // tutti uno
+  const y0 = s2.y;
+  IN.muoviCarica(G2, s2, w2, d2);
+  ok('chi non la raggiunge fa la carica fallita, e si muove', !w2.dead && s2.y < y0 &&
+     s2.moved.kind === 'failedCharge');
+  D.setSource(D.seeded(1));
+}
+
+console.log('\nstare fermi non è muoversi (p. 138)');
+{
+  const G = nuova();
+  const sk = metti(G, uid(G, 3), 600, 600);
+  metti(G, uid(G, 505), 600, 380);
+  G.casella = 2; G.army = 'A';
+  AR.apply(G, { id:'ferma', uid: sk.uid });
+  G.casella = 3;
+  const tiri = AR.options(G).list.filter(x => x.id === 'tira' && x.uid === sk.uid);
+  ok('chi è rimasto fermo tira senza il −1 del movimento', tiri.length && tiri.every(x => !/ha mosso/.test(x.why)));
+  ok('e l opzione dice la probabilità di colpire', tiri.every(x => /\d+% a tiro/.test(x.why)));
+  sk.moved = { kind:'move', inches: 3 };
+  ok('chi ha mosso invece lo prende',
+     AR.options(G).list.filter(x => x.id === 'tira' && x.uid === sk.uid).every(x => /ha mosso/.test(x.why)));
+}
+
+console.log('\nlo schieramento, la prima fila davanti (p. 115)');
+{
+  const G = AR.newBattle({ A, B, scenario:'bm-strada' });
+  const posti = AR.options(G).list;
+  const primi = posti.filter(x => !/fila/.test(x.dove)), dietro = posti.filter(x => /fila/.test(x.dove));
+  ok('la prima fila di chi sta in basso è la più alta sul tavolo',
+     primi.length && dietro.length && Math.max(...primi.map(x => x.y)) < Math.min(...dietro.map(x => x.y)));
+}
+
+console.log('\nil Comando del generale');
+{
+  const G = nuova();
+  ok('il generale si riconosce dalla lista', G.generale.B === 501 && G.generale.A === 1);
+  metti(G, uid(G, 501), 600, 300);
+  const orco = metti(G, uid(G, 505), 600, 450);
+  const g = IN.comandoDi(G, orco, 5);
+  ok('chi gli sta vicino tira con il suo Comando', g.ld > 5 && /Black Orc Warboss/.test(g.why));
+  metti(G, orco, 600, 880);
+  ok('chi è lontano con il proprio', IN.comandoDi(G, orco, 5).ld === 5);
+  uid(G, 501).fled = true;
+  metti(G, orco, 600, 450);
+  ok('e un generale in fuga non ispira nessuno', IN.comandoDi(G, orco, 5).ld === 5);
+}
+
+console.log('\nla pagina da guardare');
+{
+  const RP = await import('../tools/replay.mjs');
+  const G = nuova();
+  const bas = metti(G, uid(G, 7), 600, 600);
+  bas.wounds = 3;
+  const f1 = RP.fotogramma(G, { AR, army:'A', chi:'Lucertole' });
+  const b = f1.unita.find(u => u.n === 'Bastiladon');
+  ok('un mostro solo porta le ferite prese, non solo «1/1»', b.fp === 3 && b.fw > 3);
+  ok('e il fotogramma dice chi ha giocato', f1.army === 'A' && f1.chi === 'Lucertole');
+  const f2 = RP.fotogramma(G, { AR });
+  ok('due fotogrammi con il tavolo uguale si riconoscono', RP.stessoTavolo(f1, f2));
+  bas.x += 10;
+  ok('e due diversi no', !RP.stessoTavolo(f1, RP.fotogramma(G, { AR })));
+  const pagina = RP.paginaHTML({ meta: { titolo:'t', sotto:'', piede:'', w: G.table.w, h: G.table.h,
+                                         nomi:{ A:'a', B:'b' }, terreno: [], zone: [] },
+                                 frames: [{ ...f1, perche:'<img src=x onerror=alert(1)></script><script>alert(2)',
+                                            testo:[{ t:'<b>x</b>', p:1, d:null, g:[{ w:'colpire', d:[1, 6] }] }] }] });
+  ok('il testo del registro e i perché passano da esc() prima di diventare pagina',
+     /esc\(g\.perche\)/.test(pagina) && /esc\(r\.t\)/.test(pagina) && /esc\(u\.n\)/.test(pagina));
+  ok('e i dadi si mostrano a mucchi', /dadiDi/.test(pagina));
+  ok('un «</script>» in una frase non chiude il blocco dei dati',
+     pagina.split('</script>').length === 2 && !/<img src=x/.test(pagina));
+  const dentroP = JSON.parse(pagina.split('\n').find(l => l.startsWith('const P = ')).slice(10).replace(/;\s*$/, ''));
+  ok('e i dati si rileggono uguali', /<\/script>/.test(dentroP.frames[0].perche));
+}
+
+console.log('\nla riga di comando');
+{
+  const lancia = args => spawnSync(process.execPath, ['tools/partita.mjs', ...args],
+                                   { cwd: new URL('..', import.meta.url), encoding: 'utf8' });
+  const spezzata = lancia(['--liste', '3,', '4', '--breve']);
+  ok('«--liste 3, 4» si legge come «3,4»', spezzata.status === 0 && /B = 4 /.test(spezzata.stdout));
+  const monca = lancia(['--liste', '3,', '--breve']);
+  ok('e «--liste 3,» non diventa la lista 0: si ferma e lo dice',
+     monca.status === 1 && /due numeri/.test(monca.stderr));
+  const ignoto = lancia(['--list', '3,4']);
+  ok('un argomento sconosciuto si dice', ignoto.status === 1 && /--list/.test(ignoto.stderr));
+}
 
 /* ================================================================= */
 console.log('\nquello che questo arbitro non fa, detto');

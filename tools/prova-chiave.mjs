@@ -10,7 +10,7 @@
 import * as AG from '../src/agente.js';
 
 const chiave = process.env.GEMINI_API_KEY || '';
-const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
 if (!chiave){
   console.log('✗  GEMINI_API_KEY non c\'è nell\'ambiente di questo terminale.');
@@ -51,7 +51,7 @@ if (r.errore){
   console.log(`✗  Il modello non ha risposto: ${corto || r.errore.slice(0, 120)}`);
   console.log('   Se è «HTTP 400» la chiave è sbagliata o non abilitata;');
   console.log('   se è «HTTP 404» il nome del modello non esiste — provane un altro con');
-  console.log('   $env:GEMINI_MODEL = "gemini-2.5-flash-lite"');
+  console.log('   $env:GEMINI_MODEL = "gemini-3.5-flash-lite"');
   console.log('   se è «HTTP 429» la quota al minuto è finita: riprova fra un minuto.');
   process.exit(2);
 }

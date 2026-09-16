@@ -29,23 +29,44 @@ const COLORI = {
   wall: "#9b8f7d", monolith: "#6f6a64", pyramid: "#c9b489", treasure: "#d8b24a",
 };
 
-export function fotogramma(S, { AR, testo = [], chi = "", perche = "" }){
+/* Un fotogramma. `army` e' chi ha appena giocato: lo stato dell'arbitro
+   dopo la mossa dice gia' a chi tocca dopo, e durante lo schieramento la
+   barra scriveva l'esercito sbagliato accanto a ogni unita' schierata.
+   `casella` e `turno` sono quelli in cui la mossa e' stata fatta. */
+export function fotogramma(S, { AR, testo = [], chi = "", perche = "", army = null, casella = null, turno = null }){
   return {
-    turno: S.turno, army: S.army,
-    casella: S.schierando ? "schieramento" : (AR.CASELLE[S.casella] || {}).id || "",
+    turno: turno != null ? turno : S.turno, army: army || S.army,
+    casella: casella != null ? casella : S.schierando ? "schieramento" : (AR.CASELLE[S.casella] || {}).id || "",
     chi, perche, testo,
-    unita: S.units.filter(u => u.placed && !u.dead).map(u => {
+    /* i personaggi uniti viaggiano dentro il reggimento: disegnarli a
+       parte vorrebbe dire due rettangoli uno sull'altro */
+    unita: S.units.filter(u => u.placed && !u.dead && AR.unitsOf(S, u.army).includes(u)).map(u => {
       const b = AR.boxOf(u, S.units);
+      const fe = AR.feriteDi ? AR.feriteDi(u) : null;
       return { n: u.name, a: u.army, x: Math.round(b.x), y: Math.round(b.y),
                w: Math.round(b.w), h: Math.round(b.h), r: Math.round(u.rot || 0),
                v: Math.max(0, (u.models || 0) - (u.lost || 0)), m: u.models || 0,
-               f: u.fled ? 1 : 0 };
+               f: u.fled ? 1 : 0,
+               c: AR.ingaggiata(S, u) ? 1 : 0,
+               /* le ferite del modello in piedi, per chi ne ha piu' di una */
+               ...(fe && fe.per > 1 ? { fp: fe.prese, fw: fe.per } : {}) };
     }),
   };
 }
 
+/* Due fotogrammi in fila senza niente da leggere e con il tavolo uguale
+   sono lo stesso fotogramma: il secondo non si tiene. Erano un terzo
+   della partita, e con ▶ sembrava che si fosse fermata. */
+export function stessoTavolo(a, b){
+  return !!a && !!b && JSON.stringify(a.unita) === JSON.stringify(b.unita);
+}
+
 export function paginaHTML({ meta, frames }){
-  const dati = JSON.stringify({ meta, frames });
+  /* il JSON sta dentro <script>: un «</script>» in una frase del modello
+     chiuderebbe il blocco. Il segno di minore scritto con la sua
+     sequenza unicode e' lo stesso carattere per JSON e nessun tag per
+     la pagina. */
+  const dati = JSON.stringify({ meta, frames }).replace(/</g, "\\u003c");
   return `<!doctype html>
 <html lang="it">
 <meta charset="utf-8">
@@ -76,6 +97,9 @@ export function paginaHTML({ meta, frames }){
   .perche{ color:var(--muto); font-style:italic; }
   .pag{ color:var(--muto); font-size:12px; }
   .dadi{ font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; color:var(--muto); }
+  .dadi b{ font-weight:600; font-family:inherit; }
+  .limite{ color:#8a5a1c; }
+  .mischia{ stroke:#f5c542; stroke-width:4; }
   /* il testo sta nelle coordinate del tavolo, che sono millimetri:
      nove pixel qui sarebbero invisibili, ventidue sono un pollice scarso */
   .nome{ font-size:22px; fill:#fff; paint-order:stroke; stroke:rgba(0,0,0,.55); stroke-width:5px;
@@ -112,6 +136,12 @@ const registro = document.getElementById('registro');
 const cursore = document.getElementById('cursore');
 const stato = document.getElementById('stato');
 const MM = 25.4;
+/* il testo del registro e i perché vengono da fuori — i nomi delle
+   liste, le frasi del modello — e non devono diventare HTML */
+const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const dadiDi = r => r.g && r.g.length
+  ? r.g.map(x => '<b>' + esc(x.w) + '</b> ' + x.d.join(' ')).join(' · ')
+  : (r.d || []).join(' ');
 
 /* il terreno non cambia mai: si disegna una volta */
 const fondo = P.meta.terreno.map(t =>
@@ -132,16 +162,19 @@ function disegna(i){
     return '<g transform="translate(' + u.x + ',' + u.y + ') rotate(' + u.r + ')"' +
       (u.f ? ' class="fuga"' : '') + '>' +
       '<rect x="' + (-u.w/2) + '" y="' + (-u.h/2) + '" width="' + u.w + '" height="' + u.h +
-        '" rx="2" fill="' + col + '" fill-opacity=".85" stroke="#2b2620" stroke-width="1"/>' +
+        '" rx="2" fill="' + col + '" fill-opacity=".85"' +
+        (u.c ? ' class="mischia"' : ' stroke="#2b2620" stroke-width="1"') + '/>' +
       /* il fronte: la tacca chiara sul lato che guarda il nemico */
       '<rect x="' + (-u.w/2) + '" y="' + (-u.h/2) + '" width="' + u.w + '" height="3" fill="#fff" fill-opacity=".85"/>' +
       '</g>' +
       '<text class="nome" x="' + u.x + '" y="' + (u.y + 8) + '" text-anchor="middle">' +
-        u.n.replace(/[&<>]/g, '') + ' ' + u.v + '/' + u.m + (u.f ? ' ⚑' : '') + '</text>';
+        esc(u.n) + (u.m > 1 ? ' ' + u.v + '/' + u.m : '') +
+        (u.fw ? ' ♥' + (u.fw - u.fp) + '/' + u.fw : '') + (u.f ? ' ⚑' : '') + (u.c ? ' ⚔' : '') + '</text>';
   }).join('');
   campo.innerHTML = zone + fondo + pezzi;
 
-  stato.textContent = 'Turno ' + f.turno + ' · ' + f.casella + ' · ' + (f.army === 'A' ? P.meta.nomi.A : P.meta.nomi.B);
+  stato.textContent = 'Turno ' + f.turno + ' · ' + f.casella + ' · ha giocato ' +
+    (f.chi || (f.army === 'A' ? P.meta.nomi.A : P.meta.nomi.B)) + ' · ' + (i + 1) + '/' + P.frames.length;
   cursore.value = i;
 
   /* il registro fino a qui, con l'ultimo acceso */
@@ -150,10 +183,10 @@ function disegna(i){
     const g = P.frames[k];
     if (!g.testo.length && !g.perche) continue;
     html.push('<div class="riga' + (k === i ? ' ora' : '') + '">' +
-      (g.perche ? '<div class="perche">' + (g.chi ? g.chi + ': ' : '') + g.perche + '</div>' : '') +
-      g.testo.map(r => '<div>' + r.t +
+      (g.perche ? '<div class="perche">' + (g.chi ? esc(g.chi) + ': ' : '') + esc(g.perche) + '</div>' : '') +
+      g.testo.map(r => '<div' + (r.k === 'limite' ? ' class="limite"' : '') + '>' + esc(r.t) +
         (r.p ? ' <span class="pag">(p. ' + r.p + ')</span>' : '') +
-        (r.d ? ' <span class="dadi">[' + r.d.join(' ') + ']</span>' : '') + '</div>').join('') +
+        ((r.d && r.d.length) || (r.g && r.g.length) ? ' <span class="dadi">[' + dadiDi(r) + ']</span>' : '') + '</div>').join('') +
       '</div>');
   }
   registro.innerHTML = html.join('');

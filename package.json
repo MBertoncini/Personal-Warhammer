@@ -9,6 +9,7 @@
     "start": "python3 -m http.server 8080",
     "icons": "node tools/make-icons.mjs",
     "partita": "node tools/partita.mjs",
+    "controlla": "node tools/controlla-partita.mjs",
     "prova-chiave": "node tools/prova-chiave.mjs"
   },
   "devDependencies": {
