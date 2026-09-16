@@ -16,6 +16,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as PS from '../src/psych.js';
+import * as MG from '../src/magic.js';
 import * as C from '../src/combat.js';
 import * as CH from '../src/charge.js';
 import * as SH from '../src/shoot.js';
@@ -197,6 +198,16 @@ ok('«salvo che stia fuggendo o sia in combattimento»',
 }
 ok('chi e in preda alla Stupidita non tira', SH.canShoot({ stupid: true }).can === false);
 ok('e non carica', CH.canCharge({ stupid: true }).can === false);
+/* e non lancia: il tiro e la carica lo sapevano, la magia no */
+{
+  const dardo = { id:'d1', type:'remaining', range:24 };
+  const dove = { stepId:'remaining', phaseId:'movement' };
+  ok('e non lancia incantesimi',
+     MG.canCast(dardo, { ...dove, stupid: true }).can === false);
+  ok('e lo dice con la sua ragione',
+     /Stupidità/.test(MG.canCast(dardo, { ...dove, stupid: true }).why.join(' ')));
+  ok('mentre chi non e stupido lancia', MG.canCast(dardo, dove).can === true);
+}
 
 /* ================================================================= */
 console.log('\nFrenzy e Impetuous');

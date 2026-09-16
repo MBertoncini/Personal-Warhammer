@@ -484,6 +484,62 @@ console.log('\nil capo dentro il reggimento (p. 209)');
 }
 
 /* ================================================================= */
+console.log('\nil capo che occupa un posto, nell assalto a gruppi (p. 207)');
+{
+  const prof = { M:'4',WS:'3',BS:'3',S:'3',T:'3',W:'1',I:'2',A:'1',Ld:'7' };
+  const capoU = unit('Orc Big Boss', { ...prof, WS:'6', S:'5', T:'4', W:'3', I:'4', A:'4', Ld:'9' }, 1, 1,
+                     { uid: 42, armour: 4 });
+  const mobU = unit('Orc Mob', prof, 20, 5, { uid: 41 });
+  const nemico = C.combatant(unit('Saurus', { ...prof, T:'4' }, 20, 5, { armour: 4 }));
+  const colpiDi = (r, nome) => r.steps.filter(s => s.name === nome && s.label === 'colpi')
+                                      .reduce((n, s) => n + s.attacks, 0);
+
+  /* chi chiama con il reggimento soltanto: il capo diventa una schiera
+     unita da se', in fondo alla parte */
+  const mob = C.combatant(mobU, { joined: [capoU] });
+  const r = C.meleeFight([mob], [nemico]);
+  ok('il capo della lista diventa una schiera unita', r.sides.A.length === 2 && r.sides.A[1].attached === true);
+  ok('in fondo alla parte, cosi le posizioni di chi chiama restano quelle', r.sides.A[0].name === 'Orc Mob');
+  ok('la truppa mena con un posto in meno', colpiDi(r, 'Orc Mob') === 4 * 1 + 5);
+  ok('e il capo con i suoi quattro attacchi', colpiDi(r, 'Orc Big Boss') === 4);
+  ok('nessuno lo colpisce se non ci dirige i colpi', !r.steps.some(s => s.foe === 'Orc Big Boss'));
+
+  /* chi chiama con il capo gia' messo, come il pannello e l'arbitro:
+     non se ne fa un secondo */
+  const eroe = C.combatant(capoU, { attached: true, shielded: true });
+  const r2 = C.meleeFight([mob, eroe], [nemico]);
+  ok('se il capo c e gia non si raddoppia', r2.sides.A.length === 2);
+  ok('ma il posto lo occupa lo stesso', colpiDi(r2, 'Orc Mob') === 9 && colpiDi(r2, 'Orc Big Boss') === 4);
+
+  /* il tavolo dice che il nemico tocca il reggimento: il capo ci sta
+     dentro, e quindi tocca anche lui — prima il pannello lo lasciava
+     fuori dalla mischia senza dirlo */
+  const dichiarato = { ...nemico, vs: ['Orc Mob'] };
+  const r2b = C.meleeFight([mob, eroe], [dichiarato]);
+  ok('chi tocca il reggimento tocca anche il capo che ci sta dentro', colpiDi(r2b, 'Orc Big Boss') === 4);
+  ok('ma non lo colpisce per questo', !r2b.steps.some(s => s.foe === 'Orc Big Boss'));
+
+  /* il tavolo ha visto che il capo non tocca: e' nella mischia e non mena */
+  const lontano = C.combatant(mobU, { joined: [capoU], touching: { models: 3, chars: [] } });
+  const r3 = C.meleeFight([lontano], [nemico]);
+  ok('il capo che non tocca non mena', colpiDi(r3, 'Orc Big Boss') === 0);
+  ok('e i soldati menano con quelli che toccano davvero', colpiDi(r3, 'Orc Mob') === 3 + 3);
+
+  /* due nemici davanti, e il tavolo sa quanti ne toccano ciascuno */
+  const due = [C.combatant(unit('Fanti A', prof, 10, 5, { uid: 51 })),
+               C.combatant(unit('Fanti B', prof, 10, 5, { uid: 52 }))];
+  const misurato = C.combatant(mobU, { touchingVs: { 51: { models: 4, chars: [] }, 52: { models: 1, chars: [] } } });
+  const r4 = C.meleeFight([misurato], due);
+  const su = nome => r4.steps.filter(s => s.name === 'Orc Mob' && s.foe === nome && s.label === 'colpi')
+                             .reduce((n, s) => n + s.attacks, 0);
+  ok('con le basette contate la fila non si divide a meta', su('Fanti A') === 4 + 4 && su('Fanti B') === 1 + 1);
+  const stimato = C.meleeFight([C.combatant(mobU)], due);
+  const su2 = nome => stimato.steps.filter(s => s.name === 'Orc Mob' && s.foe === nome && s.label === 'colpi')
+                                   .reduce((n, s) => n + s.attacks, 0);
+  ok('senza, resta la divisione in parti uguali', su2('Fanti A') === 3 + 3 && su2('Fanti B') === 2 + 2);
+}
+
+/* ================================================================= */
 console.log('\nle regole dei tre eserciti di casa (Tappa 5 bis)');
 {
   const fs = await import('node:fs');

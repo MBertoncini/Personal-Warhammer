@@ -20,7 +20,7 @@
 import { $, esc } from './util.js';
 import { loadDoc, saveDoc } from './store.js';
 import { emit, on } from './bus.js';
-import { askConfirm, say } from './uikit.js';
+import { askConfirm, askPick, say } from './uikit.js';
 import { copyText } from './share.js';
 import { allLists, getList } from './lists.js';
 import { SCENARIOS } from './scenarios.js';
@@ -63,6 +63,10 @@ function normalize(rep){
   rep.table = rep.table || { w:48, h:36, gap:12 };
   rep.scenario = rep.scenario || { id:"open", label:"Battaglia Campale" };
   if (typeof rep.notes !== "string") rep.notes = "";
+  /* «solo il risultato»: un report senza fotografie. Le partite
+     vecchie non hanno il campo e non ne hanno bisogno — con dei turni
+     dentro, la risposta e' comunque no. */
+  rep.noTurns = !!rep.noTurns && !rep.turns.length;
   return rep;
 }
 
@@ -88,7 +92,20 @@ export async function archiveCurrent(){
 /* Una partita giocata altrove: si parte da due liste salvate, cosi' i
    nomi, i modelli e i punti sono gia' quelli giusti e resta da scrivere
    solo quello che e' successo. */
-export async function newFromLists(idA, idB, { title = "" } = {}){
+/* `turns:false` registra una partita di cui si sa solo com'e' finita.
+ *
+ * E' il caso dei tornei: torni a casa con quattro risultati e nessuna
+ * fotografia, e fino a qui l'archivio non sapeva accoglierli — si
+ * apriva una partita e si restava con un turno vuoto in cima che
+ * nessuno avrebbe mai compilato, cioe' una bugia con l'aria di un
+ * lavoro da finire.
+ *
+ * Un risultato senza turni e' un dato completo, non una partita a
+ * meta': dice chi ha giocato cosa, quando, e come e' andata. E' quello
+ * che serve a sapere quali liste reggono, che e' la domanda per cui
+ * uno tiene un archivio di partite.
+ */
+export async function newFromLists(idA, idB, { title = "", turns = true } = {}){
   const la = getList(idA), lb = getList(idB);
   const sc = scenarioDef(state.scenario);
   const rep = normalize({
@@ -110,8 +127,11 @@ export async function newFromLists(idA, idB, { title = "" } = {}){
     log: [],
   });
   rep.meta.pts = rep.scenario.pts || 0;
-  rep.turns.push(blankDeploy(rep));
-  rep.turns.push(BL.blankTurn(rep, { n:1, army:"A" }));
+  rep.noTurns = !turns;
+  if (turns){
+    rep.turns.push(blankDeploy(rep));
+    rep.turns.push(BL.blankTurn(rep, { n:1, army:"A" }));
+  }
   reports.unshift(rep);
   openId = rep.id;
   openTurn = 1;
@@ -126,6 +146,7 @@ function rosterFromList(list, army){
     models: u.models || 1, pts: u.pts || 0, us: u.us || 0,
     baseW: u.baseW, baseH: u.baseH, frontage: u.frontage || 1,
     loose: !!u.loose, maxRange: u.maxRange || 0,
+    magicRange: BL.magicReachOf(u),
     move: u.stats && /^\d+$/.test(String(u.stats.M)) ? +u.stats.M : 0,
     rules: Array.isArray(u.rules) ? u.rules.slice(0, 10) : [],
     weapons: Array.isArray(u.weapons) ? u.weapons.map(w => w.name).slice(0, 6) : [],
@@ -159,6 +180,12 @@ function setPath(obj, path, value){
 }
 
 function addTurn(rep){
+  /* una partita nata «solo il risultato» a cui si aggiunge un turno
+     smette di esserlo, e vuole il suo schieramento davanti */
+  if (rep.noTurns && !rep.turns.length){
+    rep.noTurns = false;
+    rep.turns.push(blankDeploy(rep));
+  }
   const last = [...rep.turns].reverse().find(t => t.kind === "turn");
   const next = last
     ? (last.army === "A" ? { n: last.n, army: "B" } : { n: last.n + 1, army: "A" })
@@ -218,8 +245,12 @@ export function renderReports(){
       <div class="grid3" style="margin-top:8px">
         <label class="field">Esercito A<select id="rp-la">${listOpts(ls)}</select></label>
         <label class="field">Esercito B<select id="rp-lb">${listOpts(ls)}</select></label>
-        <label class="field">&nbsp;<button class="btn primary" id="rp-create">Crea</button></label>
+        <label class="field">&nbsp;<button class="btn primary" id="rp-create">Crea con i turni</button></label>
       </div>
+      <p class="note">«Solo il risultato» registra una partita di cui sai com'è finita e basta: è il caso dei tornei,
+      dove torni a casa con quattro punteggi e nessuna fotografia. Serve a sapere quali liste reggono, ed è un dato
+      completo — non una partita a metà.</p>
+      <button class="btn" id="rp-create-flat">Solo il risultato, senza turni</button>
     </div>
     ${unknownHTML(ls)}
     <div class="ls-split" style="margin-top:10px">
@@ -269,7 +300,10 @@ function sideRow(r){
   return `
     <div class="row u-row ${r.id === openId ? "sel" : ""}" data-open="${r.id}">
       <span class="nm"><b><span class="txt">${esc(r.title)}</span></b>
-        <span class="mono">${esc(r.meta.date || "")} · ${r.turns.filter(t => t.kind === "turn").length} turni · ${esc(r.scenario.label || "")}</span></span>
+        <span class="mono">${esc(r.meta.date || "")} · ${
+          r.turns.filter(t => t.kind === "turn").length
+            ? r.turns.filter(t => t.kind === "turn").length + " turni"
+            : "solo il risultato"} · ${esc(r.scenario.label || "")}</span></span>
       <span class="chip ${key}">${v.A}–${v.B}</span>
     </div>`;
 }
@@ -296,6 +330,13 @@ function detailHTML(rep){
       <label class="field">Giocatore A<input type="text" data-f="meta.playerA" value="${esc(rep.meta.playerA || "")}"></label>
       <label class="field">Giocatore B<input type="text" data-f="meta.playerB" value="${esc(rep.meta.playerB || "")}"></label>
     </div>
+    <label class="field">Chi hai giocato
+      <select data-f="meta.mine">
+        <option value="" ${!rep.meta.mine ? "selected" : ""}>non dichiarato</option>
+        <option value="A" ${rep.meta.mine === "A" ? "selected" : ""}>Esercito A — ${esc(rep.armies.A.name || "A")}</option>
+        <option value="B" ${rep.meta.mine === "B" ? "selected" : ""}>Esercito B — ${esc(rep.armies.B.name || "B")}</option>
+      </select></label>
+    <p class="note">È la riga che il resoconto per l'AI legge per sapere <b>chi commentare</b>: dichiarata, chiede una critica delle tue scelte invece di un resoconto cortese di tutte e due le parti.</p>
     <label class="field">Scenario
       <select data-f="scenario.id">
         ${Object.entries(sc).map(([id, d]) =>
@@ -321,9 +362,15 @@ function detailHTML(rep){
     ${progressHTML(rep)}
 
     <div class="panel-title" style="margin-top:14px">Turni</div>
-    <p class="note">Ogni turno è la situazione <b>a fine turno</b>. Scrivi solo quello che è cambiato: in piedi, perdite e stato si portano avanti da soli, e correggere un numero al turno 2 risistema tutti i turni dopo.</p>
-    <div class="tray">${rep.turns.map((t, i) => turnHTML(rep, t, i)).join("")}</div>
-    <button class="btn tiny" data-addturn="1" style="margin-top:6px">+ Aggiungi turno</button>
+    ${rep.noTurns && !rep.turns.length ? `
+      <p class="note">Questa partita è registrata <b>solo per il risultato</b>: niente fotografie, niente posizioni.
+      È il modo giusto di archiviare un torneo, e il punteggio qui sotto vale come quello di tutte le altre.
+      Se poi vuoi raccontarla turno per turno, il pulsante la apre.</p>
+      <button class="btn tiny" data-addturn="1" style="margin-top:6px">Aggiungi il primo turno</button>`
+    : `
+      <p class="note">Ogni turno è la situazione <b>a fine turno</b>. Scrivi solo quello che è cambiato: in piedi, perdite e stato si portano avanti da soli, e correggere un numero al turno 2 risistema tutti i turni dopo.</p>
+      <div class="tray">${rep.turns.map((t, i) => turnHTML(rep, t, i)).join("")}</div>
+      <button class="btn tiny" data-addturn="1" style="margin-top:6px">+ Aggiungi turno</button>`}
 
     ${scoreHTML(rep, v)}
 
@@ -501,16 +548,63 @@ function wireTop(host, ls){
   $("#rp-new").addEventListener("click", () => {
     const b = $("#rp-new-box"); b.hidden = !b.hidden;
   });
-  const create = $("#rp-create");
-  if (create) create.addEventListener("click", async () => {
+  const make = async turns => {
     const a = $("#rp-la").value, b = $("#rp-lb").value;
     if (!a && !b) return say("Una partita a mano parte da almeno una lista salvata.", { title:"Scegli una lista" });
-    await newFromLists(a, b);
+    await newFromLists(a, b, { turns });
     renderReports();
+  };
+  const flat = $("#rp-create-flat");
+  if (flat) flat.addEventListener("click", () => make(false));
+  const create = $("#rp-create");
+  if (create) create.addEventListener("click", async () => {
+    await make(true);
   });
   host.querySelectorAll("[data-open]").forEach(el => el.addEventListener("click", () => {
     openId = el.dataset.open; openTurn = 0; renderReports();
   }));
+}
+
+/* La domanda che l'esportazione fa una volta sola: **chi hai giocato?**
+ *
+ * Il resoconto per l'AI e' una richiesta di critica, e una critica ha
+ * bisogno di un bersaglio. Senza questa riga chi legge commenta tutti
+ * e due gli eserciti con la stessa cortesia, e meta' di quello che
+ * dice riguarda mosse che non hai fatto tu.
+ *
+ * Si chiede qui e non nella scheda perche' e' li' che serve, e chi
+ * compila la scheda a fine partita ha in testa il punteggio, non
+ * l'esportazione. Risposta ricordata: la seconda volta non chiede.
+ * «Non lo dico» e' una risposta buona — il resoconto esce lo stesso,
+ * con il testo neutro — mentre chiudere la finestra ferma tutto,
+ * perche' e' il gesto di chi ha cambiato idea.
+ *
+ * Torna true se si puo' esportare.
+ */
+async function askWhoPlayed(rep){
+  if (rep.meta.mine === "A" || rep.meta.mine === "B") return true;
+  const nameOf = k => rep.armies[k].name || ("Esercito " + k);
+  const pick = await askPick({
+    title: "Chi hai giocato?",
+    label: "Va davanti al resoconto: l'AI critica le scelte di quell'esercito invece di commentare cortesemente tutti e due.",
+    options: [
+      { id:"A", label:`Esercito A — ${nameOf("A")}` },
+      { id:"B", label:`Esercito B — ${nameOf("B")}` },
+      { id:"",  label:"Non lo dico" },
+    ],
+  });
+  if (pick === null) return false;          // finestra chiusa: niente esportazione
+  if (pick === "A" || pick === "B"){
+    rep.meta.mine = pick;
+    rep.saved = new Date().toISOString();
+    await persist();
+    /* il campo si allinea da solo invece di ridisegnare il pannello:
+       il pulsante che ha appena chiesto deve restare vivo per dire
+       «Copiato ✓», e un render lo butterebbe via mezzo secondo prima */
+    const sel = $("#reports") && $("#reports").querySelector('[data-f="meta.mine"]');
+    if (sel) sel.value = pick;
+  }
+  return true;
 }
 
 function wireDetail(host, rep){
@@ -611,12 +705,17 @@ function wireDetail(host, rep){
     setTimeout(() => { btn.textContent = old; }, 2200);
   };
   const copy = async (btn, text) => flash(btn, await copyText(text) ? "Copiato ✓" : "Non riesco a copiare");
-  host.querySelector("#rp-copy-ai").addEventListener("click", e =>
-    copy(e.currentTarget, BL.reportMarkdown(rep, { prompt: true })));
+  host.querySelector("#rp-copy-ai").addEventListener("click", async e => {
+    const btn = e.currentTarget;
+    if (!await askWhoPlayed(rep)) return;
+    copy(btn, BL.reportMarkdown(rep, { prompt: true }));
+  });
   host.querySelector("#rp-copy-md").addEventListener("click", e =>
     copy(e.currentTarget, BL.reportMarkdown(rep)));
-  host.querySelector("#rp-dl-md").addEventListener("click", () =>
-    download(BL.reportMarkdown(rep, { prompt: true }), BL.fileName(rep, "md"), "text/markdown"));
+  host.querySelector("#rp-dl-md").addEventListener("click", async () => {
+    if (!await askWhoPlayed(rep)) return;
+    download(BL.reportMarkdown(rep, { prompt: true }), BL.fileName(rep, "md"), "text/markdown");
+  });
   host.querySelector("#rp-dl-json").addEventListener("click", () =>
     download(BL.reportJSON(rep), BL.fileName(rep, "json"), "application/json"));
 }

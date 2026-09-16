@@ -47,81 +47,43 @@ regole di casa del progetto e la storia di tutte le decisioni prese:
 
 ---
 
-## Compito 0 — prima di tutto: due rami che vanno riuniti
+## Compito 0 — fatto: i due rami sono riuniti
 
-`main` su GitHub e il ramo `claude/mischia-a-piu-di-due-e-arbitro`
-contengono **due soluzioni diverse allo stesso problema**, scritte in
-parallelo da due sessioni che non si sono viste. Vanno fuse a mano: un
-merge testuale non basta, perché le due versioni riscrivono le stesse
-funzioni con architetture diverse. Comincia da qui, prima di aggiungere
-qualunque cosa.
+`main` e `claude/mischia-a-piu-di-due-e-arbitro` avevano scritto in
+parallelo due soluzioni allo stesso problema. La fusione sta sul ramo
+`claude/fusione-mischia`, e le prove di tutti e due passano. Quello che
+è stato deciso, perché non si rifaccia la stessa strada:
 
-Il conflitto vero è in **`src/combat.js`** (3 blocchi) e **`src/duel.js`**
-(1 blocco); gli altri cinque (`README.md`, `package.json`, `src/lists.js`,
-`src/deploy.js`, `test/movimento.mjs`) sono unioni banali.
-
-**Cosa c'è su `main`** (commit `7d18a95`, «I personaggi menano, e si contano
-i modelli che si toccano davvero»):
-
-- `contact()` torna delle **squadre** (`groups`): la truppa e ogni
-  personaggio unito che sta in prima fila, ognuno con il suo profilo
-  intero, più `strikersOf()` che le trasforma in colpi;
-- un personaggio in prima fila **occupa un posto** dei soldati invece di
-  aggiungerne uno (p. 207);
-- `touching` / `touchingModels`: il numero dei modelli **davvero** a
-  contatto, misurato sul tavolo invece che stimato con «la più stretta
-  delle due prime file» — e il pannello dichiara se il numero è contato o
-  stimato;
-- l'ordine di Iniziativa a gradini fra tutte le squadre, con le ferite
-  applicate a fine gradino.
-
-**Cosa c'è sul ramo** (commit `9d6b11b`):
-
-- `meleeFight(A[], B[])`: l'assalto è fra due **gruppi di unità**, non fra
-  due schiere — il combattimento multiplo di p. 153, con i ranghi che non
-  si sommano, gli stendardi uno per parte, il fianco una volta per unità
-  nemica, il terreno più alto che si annulla;
-- `engagements()` (chi tocca chi, con `vs` dichiarabile), `frontShares()`
-  (la prima fila divisa fra più nemici), `aimAt()` (quanti colpi su chi);
-- i personaggi uniti come **schiere loro** con `attached`/`shielded`: non
-  si colpiscono se non dirigendoci i colpi apposta, le ferite non
-  tracimano, urto e pestoni solo sotto i cinque modelli di truppa (p. 209);
-- `ML.strikeSteps()`: l'ordine di Iniziativa fra N schiere, a scaglioni,
-  con le ferite applicate a fine scaglione (**è la stessa idea dei gradini
-  di `main`**);
-- un test di rotta per ogni unità della parte che perde (p. 154);
-- e sopra, tre cose nuove che non toccano il conflitto: `src/arbitro.js`
-  (l'arbitro senza pagina), `src/agente.js` (euristica + Gemini),
-  `tools/partita.mjs` + `tools/replay.mjs` (una partita intera, commentata
-  e da guardare).
-
-**La fusione che ha senso** — verificala, non fidarti:
-
-1. tieni l'architettura a **gruppi** del ramo (`meleeFight`), perché
-   `strikeSteps` è già la versione a N schiere dei gradini di `main` e
-   perché senza gruppi il combattimento multiplo non è rappresentabile;
-2. porta dentro **`touching`/`touchingModels`** di `main`: è un numero
-   misurato che sostituisce una stima, ed entra in `aimAt()` al posto di
-   `frontShares` quando il tavolo sa dire quanti si toccano;
-3. porta dentro la regola «**il personaggio occupa un posto**» (p. 207),
-   che il ramo non ha: oggi una schiera `attached` aggiunge attacchi senza
-   togliere un modello alla fila;
-4. per «chi incassa le ferite», `main` lo lascia ai giocatori con una nota
-   nel pannello e il ramo applica la regola (p. 209: solo attacchi diretti,
-   niente tracimazione). **Tieni la regola** e lascia la nota: le due cose
-   non si escono.
-5. il pannello (`duel.js`): il ramo ha le parti a gruppi con la tendina che
-   aggiunge un'unità, `main` ha le righe per profilo con il numero
-   misurato. Servono tutte e due: una riga per profilo **dentro** ogni
-   unità del gruppo.
-
-Alla fine devono passare **le prove di tutti e due i rami** — `main` ne ha
-di nuove in `test/dadi.mjs`, `test/liste.mjs`, `test/battle.mjs`; il ramo in
-`test/mischia.mjs`, `test/arbitro.mjs`, `test/tiro.mjs`,
-`test/movimento.mjs`, `test/regole.mjs`, `test/psicologia.mjs`. Il
-`package.json` dei due elenca file di prova diversi: il merge è l'unione.
-
----
+- **l'assalto è a gruppi** (`meleeFight`, dal ramo), con un ordine di
+  Iniziativa solo per tutti (`ML.strikeSteps`);
+- **i personaggi uniti hanno due facce, e servono tutte e due.** La
+  schiera ospite porta l'elenco (`retinue`, da `main`) e con quello sa
+  che un capo in prima fila **occupa un posto** (p. 207) e se il tavolo
+  lo ha visto toccare. Dentro `meleeFight` ogni personaggio dell'elenco
+  diventa una schiera `attached` (dal ramo: ferite sue, colpito solo da
+  chi ci dirige i colpi, urto e pestoni sotto i cinque modelli, p. 209).
+  Se chi chiama l'ha già messa — il pannello e l'arbitro lo fanno — non
+  se ne fa una seconda (`withRetinue`), e quelle aggiunte vanno in fondo
+  alla parte;
+- `contact()` sa tutte e tre le cose: `touching` (misurato), `frontage`
+  (la fetta di fila davanti a un nemico, se si stima) e `withChars`; torna
+  `troop`, i dadi della sola truppa, che è quello che l'assalto tira con
+  il profilo del reggimento;
+- con più nemici davanti, `aimAt()` usa **`touchingVs`** (le basette
+  contro ciascun nemico, per uid) e divide la fila in parti uguali solo
+  quando il tavolo non lo sa dire. Il pannello lo riempie da
+  `ctx.touching`, che torna `null` quando due unità non si toccano
+  affatto — lì vale la stima, non «zero modelli»;
+- **chi tocca il reggimento tocca anche il capo che ci sta dentro**
+  (`engagements`): prima un nemico che dichiarava il solo reggimento
+  lasciava fuori il personaggio, e il pannello non lo faceva menare;
+- la nota del pannello è rimasta, riscritta: la regola di p. 209 la
+  applica l'app, **su chi dirigere i colpi** resta a chi gioca;
+- nell'arbitro, chi **cede terreno** contro il bordo si ferma lì (il
+  libro non lo dice: è dichiarato in `LIMITI`, voce `bordo`), e chi
+  **ripiega in ordine** oltre il bordo esce come chi fugge (pp. 132, 134).
+  Con i dadi della fusione il seme 7 spingeva un Bastiladon sotto il
+  tavolo.
 
 ## Compito 1 — la magia in partita (p. 106 e seguenti)
 

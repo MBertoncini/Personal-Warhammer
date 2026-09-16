@@ -43,7 +43,7 @@
       "x": 996.9499999999999,
       "y": 730.2499999999998,
       "rot": 0,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -57,11 +57,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 996.9499999999999,
-        "y": 781.05,
-        "rot": 0
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": []
@@ -91,7 +87,7 @@
       "x": 256.59999999999997,
       "y": 607.4499999999992,
       "rot": 0,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -105,11 +101,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 256.59999999999997,
-        "y": 810.65,
-        "rot": 0
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": []
@@ -139,7 +131,7 @@
       "x": 400.6500000000001,
       "y": 607.4499999999992,
       "rot": 0,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -153,11 +145,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 400.6500000000001,
-        "y": 810.65,
-        "rot": 0
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": []
@@ -187,7 +175,7 @@
       "x": 723.9,
       "y": 603.2499999999992,
       "rot": 0,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -201,11 +189,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 723.9,
-        "y": 806.4499999999999,
-        "rot": 0
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": []
@@ -235,7 +219,7 @@
       "x": 819.15,
       "y": 730.2499999999998,
       "rot": 0,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -249,11 +233,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 819.15,
-        "y": 774.6999999999999,
-        "rot": 0
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": []
@@ -283,7 +263,7 @@
       "x": 101.6,
       "y": 482.59999999999997,
       "rot": 0,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -297,11 +277,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 100.04999999999998,
-        "y": 785.65,
-        "rot": 0
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": []
@@ -331,7 +307,7 @@
       "x": 908.05,
       "y": 730.2499999999997,
       "rot": 0,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -345,11 +321,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 908.05,
-        "y": 806.4499999999999,
-        "rot": 0
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": []
@@ -379,7 +351,7 @@
       "x": 538.9500000000002,
       "y": 505.8499999999989,
       "rot": 0,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -393,11 +365,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 538.9500000000002,
-        "y": 810.65,
-        "rot": 0
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": []
@@ -523,7 +491,7 @@
       "x": 1149.35,
       "y": 139.7,
       "rot": 180,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -537,11 +505,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 1149.35,
-        "y": 139.7,
-        "rot": 180
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": []
@@ -588,7 +552,7 @@
       "x": 990.5999999999999,
       "y": 114.3,
       "rot": 180,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -602,11 +566,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 990.5999999999999,
-        "y": 114.3,
-        "rot": 180
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": [],
@@ -659,7 +619,7 @@
       "x": 393.9,
       "y": 103.75,
       "rot": 180,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -673,11 +633,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 393.9,
-        "y": 103.75,
-        "rot": 180
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": []
@@ -728,7 +684,7 @@
       "x": 243.7,
       "y": 93.75,
       "rot": 180,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -742,11 +698,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 243.7,
-        "y": 93.75,
-        "rot": 180
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": []
@@ -798,7 +750,7 @@
       "x": 44.449999999999996,
       "y": 133.35,
       "rot": 180,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -812,11 +764,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 44.449999999999996,
-        "y": 133.35,
-        "rot": 180
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": []
@@ -868,7 +816,7 @@
       "x": 107.94999999999999,
       "y": 133.35,
       "rot": 180,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -882,11 +830,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 107.94999999999999,
-        "y": 133.35,
-        "rot": 180
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": []
@@ -938,7 +882,7 @@
       "x": 594.5,
       "y": 133.75,
       "rot": 180,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -952,11 +896,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 594.5,
-        "y": 133.75,
-        "rot": 180
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": []
@@ -1008,7 +948,7 @@
       "x": 647.2,
       "y": 133.75,
       "rot": 180,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -1022,11 +962,7 @@
         "rev": 0
       },
       "fallen": [],
-      "anchor": {
-        "x": 647.2,
-        "y": 133.75,
-        "rot": 180
-      },
+      "anchor": null,
       "wounds": 0,
       "tags": [],
       "counters": []
@@ -1079,11 +1015,29 @@
   "ghost": false,
   "rulers": [],
   "game": {
-    "on": true,
+    "on": false,
     "turn": 1,
     "army": "A",
     "phase": 2,
     "log": [
+      {
+        "t": 1,
+        "army": "A",
+        "phase": "Tiro",
+        "step": "Tiro · Scelta e bersaglio",
+        "type": "note",
+        "text": "Partita chiusa.",
+        "at": 1789508844711
+      },
+      {
+        "t": 1,
+        "army": "A",
+        "phase": "Tiro",
+        "step": "Tiro · Scelta e bersaglio",
+        "type": "note",
+        "text": "Fine del turno 1 — partita chiusa.",
+        "at": 1789508844711
+      },
       {
         "t": 1,
         "army": "A",
@@ -1715,6 +1669,611 @@
         "contacts": [],
         "events": [],
         "note": ""
+      },
+      {
+        "kind": "turn",
+        "n": 1,
+        "army": "A",
+        "at": 1789508844710,
+        "units": [
+          {
+            "uid": 55,
+            "idx": 1,
+            "army": "A",
+            "name": "Warplock Jezzails",
+            "models": 3,
+            "alive": 3,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 39.3,
+            "y": 28.7,
+            "rot": 0,
+            "w": 3,
+            "h": 2,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 3,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva"
+          },
+          {
+            "uid": 56,
+            "idx": 2,
+            "army": "A",
+            "name": "Clanrats",
+            "models": 20,
+            "alive": 20,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 10.1,
+            "y": 23.9,
+            "rot": 0,
+            "w": 4.9,
+            "h": 3.9,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 5,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva"
+          },
+          {
+            "uid": 57,
+            "idx": 3,
+            "army": "A",
+            "name": "Clanrats",
+            "models": 20,
+            "alive": 20,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 15.8,
+            "y": 23.9,
+            "rot": 0,
+            "w": 4.9,
+            "h": 3.9,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 5,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva"
+          },
+          {
+            "uid": 58,
+            "idx": 4,
+            "army": "A",
+            "name": "Clanrats",
+            "models": 20,
+            "alive": 20,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 28.5,
+            "y": 23.7,
+            "rot": 0,
+            "w": 4.9,
+            "h": 3.9,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 5,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva"
+          },
+          {
+            "uid": 59,
+            "idx": 5,
+            "army": "A",
+            "name": "Warlock Engineer",
+            "models": 1,
+            "alive": 1,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 32.3,
+            "y": 28.7,
+            "rot": 0,
+            "w": 1,
+            "h": 1,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 1,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva"
+          },
+          {
+            "uid": 60,
+            "idx": 6,
+            "army": "A",
+            "name": "Rat Ogres",
+            "models": 3,
+            "alive": 3,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 4,
+            "y": 19,
+            "rot": 0,
+            "w": 5.9,
+            "h": 2,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 3,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva"
+          },
+          {
+            "uid": 61,
+            "idx": 7,
+            "army": "A",
+            "name": "Warp Lightning Cannon",
+            "models": 1,
+            "alive": 1,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 35.8,
+            "y": 28.7,
+            "rot": 0,
+            "w": 2,
+            "h": 3.9,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 1,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva"
+          },
+          {
+            "uid": 62,
+            "idx": 8,
+            "army": "A",
+            "name": "Doomwheel",
+            "models": 1,
+            "alive": 1,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 21.2,
+            "y": 19.9,
+            "rot": 0,
+            "w": 2,
+            "h": 3.9,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 1,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva"
+          },
+          {
+            "uid": 63,
+            "idx": 1,
+            "army": "B",
+            "name": "Black Orc Warboss",
+            "models": 1,
+            "alive": 1,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 39,
+            "y": 4.5,
+            "rot": 180,
+            "w": 1.2,
+            "h": 1.2,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 1,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "con Black Orc Mobs",
+            "withUid": 65,
+            "withName": "Black Orc Mobs"
+          },
+          {
+            "uid": 64,
+            "idx": 2,
+            "army": "B",
+            "name": "Night Goblin Bigboss",
+            "models": 1,
+            "alive": 1,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 45.3,
+            "y": 5.5,
+            "rot": 180,
+            "w": 1,
+            "h": 1,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 1,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva"
+          },
+          {
+            "uid": 65,
+            "idx": 3,
+            "army": "B",
+            "name": "Black Orc Mobs",
+            "models": 11,
+            "alive": 11,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 39,
+            "y": 4.5,
+            "rot": 180,
+            "w": 5.9,
+            "h": 3.5,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 5,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva",
+            "chars": [
+              "Black Orc Warboss"
+            ]
+          },
+          {
+            "uid": 66,
+            "idx": 4,
+            "army": "B",
+            "name": "Night Goblin Mobs",
+            "models": 20,
+            "alive": 20,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 15.5,
+            "y": 4.1,
+            "rot": 180,
+            "w": 4.9,
+            "h": 3.9,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 5,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva"
+          },
+          {
+            "uid": 67,
+            "idx": 5,
+            "army": "B",
+            "name": "Orc Mobs",
+            "models": 20,
+            "alive": 20,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 9.6,
+            "y": 3.7,
+            "rot": 180,
+            "w": 5.9,
+            "h": 4.7,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 5,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva"
+          },
+          {
+            "uid": 68,
+            "idx": 6,
+            "army": "B",
+            "name": "Stone Troll Mobs",
+            "models": 1,
+            "alive": 1,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 1.8,
+            "y": 5.3,
+            "rot": 180,
+            "w": 1.6,
+            "h": 1.6,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 1,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva"
+          },
+          {
+            "uid": 69,
+            "idx": 7,
+            "army": "B",
+            "name": "Stone Troll Mobs",
+            "models": 1,
+            "alive": 1,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 4.3,
+            "y": 5.3,
+            "rot": 180,
+            "w": 1.6,
+            "h": 1.6,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 1,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva"
+          },
+          {
+            "uid": 70,
+            "idx": 8,
+            "army": "B",
+            "name": "Stone Troll Mobs",
+            "models": 1,
+            "alive": 1,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 23.4,
+            "y": 5.3,
+            "rot": 180,
+            "w": 1.6,
+            "h": 1.6,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 1,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva"
+          },
+          {
+            "uid": 71,
+            "idx": 9,
+            "army": "B",
+            "name": "Stone Troll Mobs",
+            "models": 1,
+            "alive": 1,
+            "lost": 0,
+            "dLost": 0,
+            "dead": false,
+            "fled": false,
+            "placed": false,
+            "x": 25.5,
+            "y": 5.3,
+            "rot": 180,
+            "w": 1.6,
+            "h": 1.6,
+            "form": {
+              "mode": "ranks",
+              "preset": "block",
+              "label": "Blocco",
+              "front": 1,
+              "gap": 0
+            },
+            "moved": 0,
+            "wounds": 0,
+            "dWounds": 0,
+            "tags": [],
+            "counters": [],
+            "zone": "in riserva"
+          }
+        ],
+        "terrain": [
+          {
+            "tid": 90,
+            "kind": "treasure",
+            "label": "Tesoro",
+            "pass": "open",
+            "los": false,
+            "x": 11.8,
+            "y": 24,
+            "w": 1.6,
+            "h": 1.6,
+            "rot": 0
+          },
+          {
+            "tid": 91,
+            "kind": "treasure",
+            "label": "Tesoro",
+            "pass": "open",
+            "los": false,
+            "x": 36,
+            "y": 12.3,
+            "w": 1.6,
+            "h": 1.6,
+            "rot": 0
+          },
+          {
+            "tid": 95,
+            "kind": "hill",
+            "label": "Collina",
+            "pass": "open",
+            "los": true,
+            "x": 36,
+            "y": 29,
+            "w": 11.8,
+            "h": 5.5,
+            "rot": 0
+          }
+        ],
+        "markers": [],
+        "zones": [],
+        "counters": {
+          "A": [],
+          "B": []
+        },
+        "contacts": [],
+        "objectives": [
+          {
+            "tid": 90,
+            "kind": "treasure",
+            "label": "Tesoro 1",
+            "army": null,
+            "by": "",
+            "contested": false
+          },
+          {
+            "tid": 91,
+            "kind": "treasure",
+            "label": "Tesoro 2",
+            "army": null,
+            "by": "",
+            "contested": false
+          }
+        ],
+        "events": [],
+        "note": ""
       }
     ],
     "meta": {
@@ -1724,6 +2283,7 @@
       "playerA": "",
       "playerB": "",
       "first": "A",
+      "mine": "",
       "pts": 0,
       "rounds": 6
     },
@@ -1731,31 +2291,31 @@
       "rows": [
         {
           "id": "kill",
-          "label": "Unità nemiche distrutte",
+          "label": "Unità nemiche distrutte o fuggite dal tavolo (100%)",
           "auto": "kill",
           "A": 0,
           "B": 0,
           "manual": false
         },
         {
-          "id": "halved",
-          "label": "Unità nemiche ridotte a metà o meno",
-          "auto": "halved",
-          "A": 0,
-          "B": 0,
-          "manual": false
-        },
-        {
           "id": "fled",
-          "label": "Unità nemiche in rotta a fine partita",
+          "label": "Unità nemiche in fuga a fine partita (50%)",
           "auto": "fled",
           "A": 0,
           "B": 0,
           "manual": false
         },
         {
+          "id": "under25",
+          "label": "Unità nemiche sotto un quarto della Forza d'Unità (25%)",
+          "auto": "under25",
+          "A": 0,
+          "B": 0,
+          "manual": false
+        },
+        {
           "id": "general",
-          "label": "Generale nemico ucciso",
+          "label": "Generale nemico ucciso, fuggito o in fuga",
           "auto": null,
           "A": 0,
           "B": 0,
@@ -1763,7 +2323,7 @@
         },
         {
           "id": "bsb",
-          "label": "Portastendardo da battaglia",
+          "label": "Portastendardo da battaglia nemico",
           "auto": null,
           "A": 0,
           "B": 0,
@@ -1771,7 +2331,7 @@
         },
         {
           "id": "banner",
-          "label": "Stendardi catturati",
+          "label": "Stendardi presi come trofeo",
           "auto": null,
           "A": 0,
           "B": 0,
@@ -1779,16 +2339,8 @@
         },
         {
           "id": "objective",
-          "label": "Obiettivi controllati",
-          "auto": null,
-          "A": 0,
-          "B": 0,
-          "manual": false
-        },
-        {
-          "id": "quarter",
-          "label": "Quarti di tavolo",
-          "auto": null,
+          "label": "Obiettivi tenuti a fine turno",
+          "auto": "objective",
           "A": 0,
           "B": 0,
           "manual": false
@@ -1804,16 +2356,14 @@
       ]
     },
     "notes": "",
-    "lastCapture": 1788940401144,
+    "lastCapture": 1789508844711,
     "counters": {
       "A": [],
       "B": []
     },
-    "step": 8
+    "step": 8,
+    "deploying": false
   },
-  "sel": {
-    "type": "unit",
-    "id": 58
-  },
+  "sel": null,
   "extras": null
 }

@@ -220,6 +220,67 @@ export function combatant(u, over = {}){
   const out = Object.assign(c, over);
   if (over.frenzyA == null)
     out.frenzyA = PS.frenzyBonus({ p: out.psych, chargedThisTurn: !!out.charged }).a;
+  /* I personaggi uniti, ognuno con il suo profilo (vedi sotto). Si
+     calcolano dopo le correzioni del pannello perche' «ha caricato» e
+     «e' disordinata» valgono anche per loro. */
+  if (out.retinue == null) out.retinue = retinueOf(over.joined || [], out);
+  return out;
+}
+
+/* ============================================================
+   1b · I PERSONAGGI UNITI
+   Un personaggio dentro un reggimento non e' un modello in piu' del
+   reggimento: e' un profilo diverso nella stessa scatola. Il capo
+   Orco ha quattro Attacchi di Forza 5 dove i suoi ne hanno uno di
+   Forza 3, e per tutte le tappe fin qui l'assalto lo ha ignorato —
+   i personaggi entravano solo nella psicologia e nel bonus dello
+   stendardo, e i loro colpi sparivano.
+
+   Sparivano in un modo che si nota poco e pesa molto: un Big Boss con
+   l'ascia in un mob da venti spostava il risultato dell'assalto di due
+   o tre punti, e il pannello diceva che il mob aveva perso.
+
+   Qui ognuno diventa una **squadra**: un gruppo con i suoi Attacchi,
+   la sua Abilita' Combattimento, la sua Forza, la sua Iniziativa e la
+   sua arma. Mena quando tocca a lui, che non e' quando tocca al
+   reggimento, e le sue ferite si sommano al conto dell'assalto.
+
+   Quello che resta ai giocatori, ed e' scritto nel pannello: **a chi
+   si assegnano le ferite in arrivo**. La Resistenza del personaggio e'
+   diversa da quella dei suoi, ma chi incassa il colpo lo decide il
+   manuale insieme al giocatore che possiede l'unita' — non un conto.
+   ============================================================ */
+export function retinueOf(joined = [], host = null){
+  const out = [];
+  for (const ch of joined || []){
+    if (!ch || ch.dead) continue;
+    const melee = meleeWeapon(ch);
+    const army = armyFor(ch);
+    const read = readRules(ch.rules || [], splitWeaponRules(melee && melee.rules),
+                           melee ? melee.name : "", ch.ruleText || null, army);
+    const baseS = val(ch, "S");
+    const g = {
+      character: true,
+      name: ch.name, ref: ch,
+      ws: val(ch, "WS"), i: val(ch, "I"),
+      a: Math.max(1, val(ch, "A") || 1),
+      baseS, s: melee ? weaponStrength(melee, baseS) : baseS,
+      t: val(ch, "T"), w: Math.max(1, val(ch, "W") || 1),
+      ap: melee ? weaponAP(melee) : 0,
+      weapon: melee ? melee.name : "",
+      flags: read.flags,
+      models: 1,
+      /* la carica e il disordine sono dell'unita' in cui sta: il
+         personaggio e' arrivato con lei */
+      charged: host ? !!host.charged : false,
+      chargeInches: host ? host.chargeInches || 0 : 0,
+      chargeArc: host ? host.chargeArc || "fronte" : "fronte",
+      disordered: host ? !!host.disordered : false,
+      feared: host ? !!host.feared : false,
+    };
+    g.frenzyA = PS.frenzyBonus({ p: PS.psychOf(ch), chargedThisTurn: !!g.charged }).a;
+    out.push(g);
+  }
   return out;
 }
 
@@ -231,23 +292,97 @@ const attacksOf = c => (c.a || 1) + (ranIn(c) && c.flags && c.flags.furiousCharg
                           caricato, o aver inseguito il turno prima */
                        (c.frenzyA || 0);
 
-/* Quanti si toccano davvero: la prima fila e' larga quanto la piu'
-   stretta delle due, e una fila dietro appoggia con un colpo a testa.
-   E' l'ordine di grandezza del tavolo, e nel pannello si corregge.
+/* ------------------------------------------------------------------
+   Quanti menano, e con quanti dadi.
 
-   `frontage` e' la fetta di prima fila che tocca QUESTO nemico: chi ne
-   ha due davanti non mena due volte con tutta la fila, la divide. Senza
-   quel numero vale tutta la fila, che e' il caso di un assalto a due. */
-export function contact(att, def, { frontage = null } = {}){
+   La prima fila e' larga quanto la piu' stretta delle due, e una fila
+   dietro appoggia con un colpo a testa. Quello che mancava sono tre
+   cose che al tavolo si vedono e qui si tiravano a indovinare:
+
+   - **quanti si toccano davvero**. Due reggimenti che si incontrano
+     d'angolo si toccano con tre modelli, non con la larghezza piena, e
+     `touching` e' il conto che il tavolo sa fare guardando le basette.
+     Senza, resta la stima di prima, che e' onesta e generosa.
+   - **la fila divisa fra piu' nemici**. `frontage` e' la fetta di prima
+     fila che tocca QUESTO nemico: chi ne ha due davanti non mena due
+     volte con tutta la fila, la divide. Vale solo per la stima: quando
+     il tavolo ha contato le basette contro questo nemico, la fetta e'
+     gia' dentro il conto.
+   - **i personaggi occupano un posto** (p. 207). Un capo in prima fila
+     non e' un modello in piu': e' uno dei posti della fila, con un
+     profilo diverso. Contarlo in mezzo ai suoi voleva dire dargli un
+     attacco di Forza 3 invece di quattro di Forza 5, e insieme regalare
+     al reggimento un modello che non c'e'. `withChars: false` dice che
+     i personaggi stanno davanti a un altro nemico, e questa fetta di
+     fila e' tutta dei soldati.
+
+   Torna `attacks` — il totale di tutte le squadre —, `troop` — i dadi
+   della sola truppa, che e' quello che il pannello corregge a mano e
+   quello che l'assalto tira con il profilo del reggimento — e l'elenco
+   delle squadre che menano, una per profilo.
+   ------------------------------------------------------------------ */
+export function contact(att, def, { touching = null, frontage = null, withChars = true } = {}){
+  const retinue = att.retinue || [];
+  /* Il conto del tavolo puo' arrivare come opzione o gia' scritto
+     sulla schiera. E' due numeri, non uno: i soldati che toccano e
+     **quali** personaggi toccano, perche' un capo in mezzo a una fila
+     che sfiora il nemico con lo spigolo puo' benissimo non toccare
+     niente, e i suoi quattro attacchi di Forza 5 non li tira. */
+  const raw = touching != null ? touching : att.touching;
+  const seen = raw && typeof raw === "object" ? raw
+             : (+raw > 0 ? { models: +raw, chars: null } : null);
+  const measured = !!seen;
+
+  /* la larghezza a contatto: quella vera se il tavolo la sa dire,
+     altrimenti la piu' stretta delle due prime file — o della fetta
+     che tocca questo nemico, quando i nemici sono piu' d'uno */
   const width = frontage == null ? Math.max(1, att.frontage) : Math.max(0, frontage);
-  const front = width <= 0 ? 0 : Math.max(1, Math.min(width, def.frontage, att.models));
+  const wide = measured
+    ? Math.max(0, Math.min(seen.models, att.frontage, att.models))
+    : width <= 0 ? 0 : Math.max(1, Math.min(width, def.frontage, att.models));
+
+  /* Chi dei personaggi mena. Misurato, sono quelli che il tavolo ha
+     visto toccare; stimato, si suppone che stiano in prima fila —
+     e allora **occupano un posto** dei soldati invece di aggiungerne
+     uno, perche' un capo in una fila da cinque e' uno dei cinque. */
+  const fighting = !withChars ? []
+    : measured
+      ? (seen.chars ? retinue.filter(g => seen.chars.includes(g.ref && g.ref.uid)) : [])
+      : retinue.slice(0, wide);
+  const front = measured ? wide : Math.max(0, wide - fighting.length);
+
   /* Le file d'appoggio: una, oppure due con la lancia che permette di
      combattere in una fila in piu'. Ognuna appoggia con un colpo a
      testa, non con tutti i suoi attacchi. */
   const ranks = att.flags && att.flags.extraRank ? 2 : 1;
   const behind = Math.max(0, att.models - att.frontage);
-  const support = Math.min(front * ranks, behind);
-  return { front, support, ranks, attacks: front * attacksOf(att) + support };
+  const support = wide <= 0 ? 0 : Math.min(wide * ranks, behind);
+
+  const groups = [];
+  const rankA = front * attacksOf(att) + support;
+  if (rankA > 0) groups.push({
+    id:"rank", name: att.name, character:false, models: front,
+    ws: att.ws, i: att.i, s: att.s, baseS: att.baseS, ap: att.ap,
+    flags: att.flags, attacks: rankA, support,
+  });
+  fighting.forEach((g, k) => groups.push({
+    ...g, id:"char" + k, support: 0,
+    attacks: (g.a || 1) + (g.frenzyA || 0) +
+             (g.charged && (g.chargeInches || 0) >= CHARGE_IMPETUS &&
+              g.flags && g.flags.furiousCharge ? 1 : 0),
+  }));
+
+  return {
+    front, wide, support, ranks, groups,
+    inFront: fighting.length,
+    /* i personaggi uniti che NON menano: sta scritto, perche' «e il
+       capo dov'e' finito?» e' la prima domanda che si fa guardando il
+       pannello */
+    outOfContact: retinue.filter(g => !fighting.includes(g)).map(g => g.name),
+    estimated: !measured,
+    troop: rankA,
+    attacks: groups.reduce((n, g) => n + g.attacks, 0),
+  };
 }
 
 /* La prima fila divisa fra i nemici che ha davanti. Il resto della
@@ -299,7 +434,20 @@ export function engagements(A = [], B = []){
     return hit.length ? new Set(hit) : null;
   };
   const wantA = A.map(c => said(c, B)), wantB = B.map(c => said(c, A));
-  const link = (i, j) => (!wantA[i] || wantA[i].has(j)) && (!wantB[j] || wantB[j].has(i));
+  /* Un personaggio unito sta dentro il reggimento: tocca chi tocca lui,
+     a meno di dire altro. Senza questo, il nemico che dichiara «tocco
+     il reggimento» — ed e' quello che il tavolo dichiara, guardando le
+     basette — lasciava il capo fuori dalla mischia, e i suoi quattro
+     attacchi sparivano un'altra volta. */
+  const via = (list, i) => {
+    const c = list[i];
+    return c.attached && c.hostAt != null && c.vs == null && list[c.hostAt] ? c.hostAt : i;
+  };
+  const link = (i0, j0) => {
+    const i = via(A, i0), j = via(B, j0);
+    return (!wantA[i] || wantA[i].has(j) || wantA[i].has(j0)) &&
+           (!wantB[j] || wantB[j].has(i) || wantB[j].has(i0));
+  };
   /* Il contatto e' reciproco, il bersaglio no. Un personaggio unito a
      un reggimento «puo' essere colpito solo dagli attacchi diretti
      contro di lui» (p. 209): sta nella mischia, mena, ma chi ha
@@ -342,7 +490,7 @@ export function fleeBonusOf(u){
 export function strike(att, def, { attacks, auto = false, strength, ap, label = "", round = 1 } = {}){
   /* `forcedAttacks` e' il numero corretto a mano nel pannello: chi
      guarda il tavolo vede quanti si toccano meglio di qualsiasi conto */
-  const n = Math.max(0, attacks ?? att.forcedAttacks ?? contact(att, def).attacks);
+  const n = Math.max(0, attacks ?? att.forcedAttacks ?? contact(att, def).troop);
   const f = att.flags || emptyFlags();
   const notes = [];
 
@@ -439,7 +587,23 @@ export function applyWounds(side, wounds){
 
    Quanti siano lo dice chi combatte con `aimed`; il ripiego e' un
    modello, cioe' quello che al tavolo si fa quasi sempre: il campione
-   che si fa avanti contro l'eroe. */
+   che si fa avanti contro l'eroe.
+
+   E la fetta di fila, quando il tavolo la sa dire, non e' una
+   divisione: e' il conto delle basette che toccano QUEL nemico
+   (`touchingVs`, per uid o per nome). La divisione in parti uguali
+   resta il ripiego di quando si stima. Con un nemico solo vale il
+   conto scritto sulla schiera (`touching`), come nell'assalto a due. */
+const foeKey = f => (f && f.ref && f.ref.uid != null ? f.ref.uid : f && f.name);
+function seenAgainst(c, foe, alone){
+  const per = c.touchingVs;
+  if (per && foe){
+    const k = foeKey(foe);
+    if (per[k] != null) return per[k];
+    if (per[foe.name] != null) return per[foe.name];
+  }
+  return alone ? null : 0;              // 0: «non guardare `touching`», che e' di un nemico solo
+}
 function aimAt(c, foes, side){
   const veri = foes.map((j, k) => ({ j, k })).filter(x => !side[x.j].attached);
   const capi = foes.map((j, k) => ({ j, k })).filter(x =>  side[x.j].attached);
@@ -450,17 +614,23 @@ function aimAt(c, foes, side){
     /* davanti c'e' rimasto solo il capo: allora tutta la fila e' sua */
     const q = frontShares(c.frontage, capi.length);
     capi.forEach((x, i) => {
-      const ct = contact(c, side[x.j], { frontage: q[i] });
-      budget[x.k] = ct.attacks; fronts[x.k] = ct.front;
+      const ct = contact(c, side[x.j], { frontage: q[i], touching: seenAgainst(c, side[x.j], capi.length === 1) });
+      budget[x.k] = ct.troop; fronts[x.k] = ct.front;
     });
     return { budget, fronts };
   }
 
   const q = frontShares(c.frontage, veri.length);
   veri.forEach((x, i) => {
-    const ct = contact(c, side[x.j], { frontage: q[i] });
-    budget[x.k] = ct.attacks; fronts[x.k] = ct.front;
+    /* i personaggi uniti stanno davanti a un nemico solo, il primo: in
+       ogni altra fetta la fila e' tutta dei soldati */
+    const ct = contact(c, side[x.j], { frontage: q[i], withChars: i === 0,
+                                       touching: seenAgainst(c, side[x.j], veri.length === 1) });
+    budget[x.k] = ct.troop; fronts[x.k] = ct.front;
   });
+  /* il numero corretto a mano nel pannello vince su tutto, quando il
+     nemico vero e' uno: e' la stessa domanda, con una risposta migliore */
+  if (veri.length === 1 && c.forcedAttacks != null) budget[veri[0].k] = Math.max(0, +c.forcedAttacks || 0);
   let tolti = 0;
   capi.forEach(x => {
     const n = Math.max(0, Math.round(+c.aimed >= 0 ? +c.aimed : attacksOf(c)));
@@ -519,15 +689,111 @@ const usOf = c => (c.usPer || 1) * (c.models || 0);
 const sideUS = list => list.reduce((s, c) => s + (c.models > 0 ? usOf(c) : 0), 0);
 const asSide = s => (Array.isArray(s) ? s : [s]).filter(Boolean);
 
+/* Da una schiera alle squadre che menano davvero: la truppa e ogni
+   personaggio unito che sta in prima fila. Ognuna e' un profilo intero
+   nella forma che `strike` si aspetta, cosi' non c'e' un secondo
+   percorso per i personaggi — sarebbe il posto dove le regole speciali
+   smettono di valere senza che nessuno se ne accorga.
+
+   Le regole d'esercito e gli effetti a tempo restano quelli dell'unita'
+   ospite: il Waaagh! acceso vale per il capo come per i suoi, mentre
+   l'Odio e il Colpo Mortale sono roba sua e vengono dalle sue righe.
+
+   Serve alla previsione, che non tira dadi e non ha bisogno di dare al
+   capo ferite sue. L'assalto vero fa di piu': vedi `withRetinue`. */
+export function strikersOf(att, def, tag){
+  const c = contact(att, def);
+  return c.groups.map(g => {
+    const forced = g.character ? null : att.forcedAttacks;
+    const n = forced != null ? forced : g.attacks;
+    const who = g.character
+      ? { ...att, name: g.name, ws: g.ws, i: g.i, s: g.s, baseS: g.baseS, ap: g.ap,
+          weapon: g.weapon, models: 1, w: g.w,
+          /* le sue regole, ma l'esercito dell'unita' in cui sta */
+          flags: { ...g.flags, army: (att.flags || {}).army },
+          retinue: [], forcedAttacks: null }
+      : att;
+    return { tag, g: { ...g, attacks: n }, who,
+             label: g.character ? `${g.name} (personaggio)` : "colpi" };
+  });
+}
+
+/* I personaggi uniti nell'assalto vero.
+
+   Le due strade con cui erano arrivati qui erano due meta' della stessa
+   regola. Una li teneva dentro la schiera ospite come squadre
+   (`retinue`), e sapeva che un capo in prima fila occupa un posto dei
+   soldati (p. 207) e che il tavolo puo' dire se tocca davvero; l'altra
+   li faceva schiere loro (`attached`), con ferite loro che non
+   tracimano e che nessuno colpisce se non dirigendoci i colpi (p. 209).
+
+   Qui si tengono tutte e due: la schiera ospite porta l'elenco e toglie
+   i posti, e ogni personaggio dell'elenco diventa una schiera unita.
+   Chi chiama puo' averla gia' messa lui — il pannello e l'arbitro lo
+   fanno, perche' il capo ha le sue caselle — e allora non se ne fa una
+   seconda. Quelle fatte qui vanno in fondo alla parte, cosi' le
+   posizioni di chi chiama restano quelle. */
+const sameUnit = (x, g) => !!x && !!g && (
+  (x.ref && g.ref && (x.ref === g.ref || (x.ref.uid != null && x.ref.uid === g.ref.uid))) ||
+  ((!x.ref || !g.ref) && x.name === g.name));
+function withRetinue(list){
+  const out = list.slice();
+  list.forEach((h, at) => {
+    if (h.attached) return;
+    for (const g of h.retinue || []){
+      const there = list.find(x => x.attached && sameUnit(x, g));
+      if (there){ if (there.hostAt == null) there.hostAt = at; continue; }
+      const ch = combatant(g.ref, {
+        charged: g.charged, chargeInches: g.chargeInches, chargeArc: g.chargeArc,
+        disordered: g.disordered, feared: g.feared,
+      });
+      out.push(clone({ ...ch, name: g.name, attached: true, shielded: true, expanded: true,
+                       hostAt: at, retinue: [] }));
+    }
+  });
+  /* il reggimento che si assottiglia scopre il capo: urto e pestoni lo
+     raggiungono sotto i cinque modelli di truppa (p. 209) */
+  for (const x of out) if (x.attached && x.hostAt != null && x.exposed == null){
+    const h = out[x.hostAt];
+    x.exposed = h.models > 0 && h.models < 5;
+  }
+  return out;
+}
+
+/* Un personaggio che il tavolo ha visto NON toccare il nemico: il
+   conto delle basette dell'ospite lo lascia fuori, e allora e' nella
+   mischia ma non arriva a menare. */
+function outOfReach(c, mine, foes){
+  if (!c.attached || c.hostAt == null) return false;
+  const h = mine[c.hostAt];
+  if (!h || !(h.retinue || []).length) return false;
+  const foe = foes.find(f => !f.attached) || foes[0];
+  if (!foe) return false;
+  const ct = contact(h, foe, { touching: seenAgainst(h, foe, true) });
+  if (ct.estimated) return false;
+  return !ct.groups.some(g => g.character && sameUnit(c, g));
+}
+
 export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
   const startA = asSide(SA), startB = asSide(SB);
-  const A = startA.map(clone), B = startB.map(clone);
+  const A = withRetinue(startA.map(clone)), B = withRetinue(startB.map(clone));
+  /* i modelli e le ferite di partenza, per chi c'era e per i capi
+     aggiunti qui: servono alle perdite e all'overkill */
+  const initA = A.map(c => ({ models: c.models, w: c.w }));
+  const initB = B.map(c => ({ models: c.models, w: c.w }));
   const link = engagements(A, B);
   /* ogni schiera con la sua parte, i nemici che tocca, quanti colpi
      porta su ciascuno e quanta prima fila ci arriva */
-  const mk = (c, at, tag, foes, side) => ({ c, at, tag, foes, side, ...aimAt(c, foes, side) });
-  const all = [...A.map((c, i) => mk(c, i, "A", link.A[i], B)),
-               ...B.map((c, i) => mk(c, i, "B", link.B[i], A))];
+  const mk = (c, at, tag, foes, side, mine) => {
+    const e = { c, at, tag, foes, side, ...aimAt(c, foes, side) };
+    if (outOfReach(c, mine, foes.map(j => side[j]))){
+      e.budget = e.budget.map(() => 0); e.fronts = e.fronts.map(() => 0);
+      c.outOfReach = true;
+    }
+    return e;
+  };
+  const all = [...A.map((c, i) => mk(c, i, "A", link.A[i], B, A)),
+               ...B.map((c, i) => mk(c, i, "B", link.B[i], A, B))];
   A.forEach((c, i) => { c.foes = link.A[i]; });
   B.forEach((c, i) => { c.foes = link.B[i]; });
 
@@ -549,17 +815,10 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
     x.e.c.dealt += x.r.wounds;
     done[x.e.tag] += x.r.wounds;
     steps.push({ side: x.e.tag, name: x.e.c.name, at: x.e.at, foe: x.def.name,
-                 ...x.r, kills, together: !!x.together });
+                 character: !!x.e.c.attached, ...x.r, kills, together: !!x.together });
   };
   const blow = (e, j, opts) => land(shot(e, j, opts));
 
-  /* Gli attacchi che questa schiera porta contro QUESTO nemico. Con
-     uno solo davanti non si dice niente e vale il conto di sempre —
-     compreso il numero corretto a mano nel pannello, che deve
-     continuare a vincere su tutto. Con piu' d'uno la fila si divide. */
-  const part = (e, k) => e.foes.length === 1 && !e.side[e.foes[0]].attached
-    ? {}                                    // un nemico solo: vale il conto di sempre
-    : { attacks: e.budget[k] };
   /* Urto della carica e pestoni si possono dirigere su un personaggio
      unito «solo se nel reggimento ci sono meno di cinque modelli di
      truppa» (p. 209): fuori da quel caso arrivano addosso all'unita',
@@ -586,14 +845,21 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
 
   /* poi si mena, in ordine di Iniziativa — con dentro il bonus della
      carica (p. 146) — salvo chi ha un'arma che decide l'ordine da
-     sola. Un ordine solo per tutti quanti, e non due a due. */
+     sola. Un ordine solo per tutti quanti, e non due a due: la truppa
+     di ciascuna unita' e ogni personaggio unito, che ha la sua
+     Iniziativa e quindi il suo posto in fila. Chi sta sullo stesso
+     scaglione mena insieme, e le ferite dello scaglione si applicano
+     tutte alla fine: e' la regola dei colpi simultanei, ed e' quello
+     che impedisce a un capo di uccidere un modello che nello stesso
+     istante lo stava colpendo. */
   const plan = ML.strikeSteps(all.map(e => e.c));
   for (const step of plan){
     const shots = [];
     for (const at of step.at){
       const e = all[at];
       e.foes.forEach((j, k) => {
-        const x = shot(e, j, { label: "colpi", ...part(e, k) });
+        if (e.budget[k] <= 0) return;       // ingaggiato, ma non arriva
+        const x = shot(e, j, { label: "colpi", attacks: e.budget[k] });
         if (x) shots.push(Object.assign(x, { together: step.together }));
       });
     }
@@ -621,7 +887,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
      che gli restano — e il tetto e' +5 (p. 152). */
   if (challenge){
     for (const e of all){
-      const from = e.tag === "A" ? startB : startA;
+      const from = e.tag === "A" ? initB : initA;
       const left = e.foes.reduce((s, j) =>
         s + ((from[j] || {}).models || 0) * ((from[j] || {}).w || 1), 0);
       e.c.overkill = ML.overkill(e.c.dealt, left).counted;
@@ -647,9 +913,9 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
   }
 
   const order = Object.assign({ steps: plan },
-    A.length === 1 && B.length === 1 ? ML.strikeOrder(A[0], B[0]) : {});
-  const kills = { A: A.map((c, i) => ((startA[i] || {}).models || 0) - c.models),
-                  B: B.map((c, i) => ((startB[i] || {}).models || 0) - c.models) };
+    startA.length === 1 && startB.length === 1 ? ML.strikeOrder(A[0], B[0]) : {});
+  const kills = { A: A.map((c, i) => initA[i].models - c.models),
+                  B: B.map((c, i) => initB[i].models - c.models) };
   const sum = list => list.reduce((s, v) => s + v, 0);
   return { sides: { A, B }, a: A[0], b: B[0], steps, cr, tests, test: tests[0] || null,
            wiped, done, order, round, challenge, kills,
@@ -760,9 +1026,30 @@ export function odds(A, B, n = 500, opts = {}){
   return out;
 }
 
-/* la stessa cosa senza tirare: quante ferite ci si aspetta in media */
+/* La stessa cosa senza tirare: quante ferite ci si aspetta in media.
+   Con un numero di attacchi dichiarato e' un profilo solo; senza, sono
+   tutte le squadre che menano — la truppa e ogni personaggio unito —
+   e le medie si sommano. La riga in cima resta quella della truppa,
+   perche' e' quella che risponde a «con che punteggio colpisco». */
 export function meleeForecast(att, def, attacks){
-  const n = attacks ?? att.forcedAttacks ?? contact(att, def).attacks;
+  const parts = attacks == null && (att.retinue || []).length
+    ? strikersOf(att, def, "A").map(x => ({ x, f: oneForecast(x.who, def, x.g.attacks) }))
+    : [];
+  if (parts.length){
+    const rank = parts.find(p => !p.x.g.character) || parts[0];
+    return {
+      ...rank.f,
+      attacks: parts.reduce((n, p) => n + p.f.attacks, 0),
+      wounds: parts.reduce((n, p) => n + p.f.wounds, 0),
+      kills: parts.reduce((n, p) => n + p.f.kills, 0),
+      groups: parts.map(p => ({ name: p.x.who.name, character: !!p.x.g.character, ...p.f })),
+    };
+  }
+  return oneForecast(att, def, attacks ?? att.forcedAttacks ?? contact(att, def).attacks);
+}
+
+function oneForecast(att, def, n0){
+  const n = n0;
   const f = att.flags || emptyFlags();
   const h = fearful(hitMelee(att.ws, def.ws), att);
   /* Con l'Odio i colpi mancati si ritirano, e la media dei colpi

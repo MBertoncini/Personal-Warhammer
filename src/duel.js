@@ -33,7 +33,13 @@ export const duelOpen = () => !!cur;
    che armatura indossa. Quelle tre righe le sa solo chi guarda il tavolo. */
 function sideOpts(u, foe){
   const joined = x => ctx && ctx.joined ? ctx.joined(x) : [];
-  const c = C.combatant(u, { joined: joined(u) }), f = C.combatant(foe, { joined: joined(foe) });
+  /* Quanti modelli toccano davvero: lo sa il tavolo guardando le
+     basette. Senza, resta la stima della prima fila piu' stretta —
+     onesta e generosa, e il pannello lo dichiara. */
+  const touch = (x, y) => (ctx && ctx.touching ? ctx.touching(x, y) : 0) || 0;
+  const c = C.combatant(u, { joined: joined(u), touching: touch(u, foe) }),
+        f = C.combatant(foe, { joined: joined(foe), touching: touch(foe, u) });
+  const hit = C.contact(c, f);
   /* La Paura in mischia (Tappa 5): chi ci e' dentro contro un nemico
      piu' grosso che la fa tira quando il combattimento viene scelto, e
      se fallisce ha −1 per colpire. Il test lo tira il tavolo, una volta
@@ -48,7 +54,13 @@ function sideOpts(u, foe){
     disrupted: !!(table && table.disrupted) || !!c.disrupted,
     disruptedWhy: table && table.disrupted ? table.disruptedWhy : c.disrupted ? "terreno difficile" : "",
     fear, feared: !!(fear && fear.already && !fear.passed),
-    attacks: C.contact(c, f).attacks,
+    /* Gli attacchi della **truppa**: i personaggi uniti menano per conto
+       loro, con i loro Attacchi e la loro Forza, e sommarli qui
+       vorrebbe dire dare al capo Orco un attacco di Forza 3 invece di
+       quattro di Forza 5. La riga si corregge ancora a mano. */
+    attacks: (hit.groups.find(g => g.id === "rank") || { attacks: 0 }).attacks,
+    contact: hit,
+    touching: touch(u, foe),
     /* dalla schiera e non dall'unita': la salvezza speciale che una
        regola d'esercito fissa (l'Arcane Shield) sta li', e il campo del
        pannello la mostra gia' giusta invece di rimetterla a zero */
@@ -99,7 +111,9 @@ function enter(tag, u, foe){
   const dentro = ctx && ctx.joined ? ctx.joined(u) : [];
   for (const ch of dentro)
     cur[tag].push({ uid: ch.uid, host: u.uid, attached: true,
-                    o: { ...sideOpts(ch, foe), targeted: false } });
+                    /* il conto delle basette e' del reggimento: il capo
+                       lo legge da li', non ne ha uno suo */
+                    o: { ...sideOpts(ch, foe), targeted: false, touching: 0, contact: null } });
 }
 
 /* Chi si puo' aggiungere a una parte: tutto quello che il tavolo ha in
@@ -141,6 +155,8 @@ function sideOf(u, o, tag, { attached = false, host = null } = {}){
     standard: o.standard, charged: o.charged, chargeInches: o.inches,
     flank: o.flank, highGround: ML.highGroundFor(cur.ground, tag), disrupted: !!o.disrupted,
     feared: !!o.feared, joined: ctx && ctx.joined ? ctx.joined(u) : [],
+    /* i modelli a contatto contati sulle basette, quando il tavolo c'e' */
+    touching: o.touching || 0,
   });
   /* lo stendardo da battaglia lo legge il registro delle regole, ma
      resta spuntabile: nelle liste il portastendardo e' un personaggio
@@ -190,6 +206,11 @@ function bothSides(){
       if (quanti) c.aimed = quanti.o.aimed;
     }
     if (vs) c.vs = vs;
+    /* Con piu' nemici davanti la fetta di fila che tocca ciascuno la
+       sa il tavolo, basetta per basetta: senza, `combat.js` divide la
+       fila in parti uguali, che e' la stima. */
+    if (!s.attached && ctx && ctx.touching && foesU.length > 1)
+      c.touchingVs = Object.fromEntries(foesU.map(f => [f.uid, ctx.touching(u, f) || null]));
     return c;
   });
   return [build(rA, "A", uA, uB, rB), build(rB, "B", uB, uA, rA)];
@@ -480,6 +501,47 @@ function oddsHTML(o, names, tint){
     </div>`;
 }
 
+/* Chi mena, e con quanti dadi.
+ *
+ * Una riga per profilo dentro ogni unita' della parte: la truppa, e
+ * ogni personaggio unito con i suoi Attacchi, la sua Forza e la sua
+ * Iniziativa. Fino a qui i personaggi non comparivano affatto —
+ * entravano nella psicologia e nello stendardo, e i loro colpi
+ * sparivano — e un Big Boss in un mob da venti spostava il risultato
+ * dell'assalto di due o tre punti senza lasciare traccia nel pannello.
+ *
+ * E in cima c'e' da dove viene il numero dei modelli a contatto: le
+ * basette contate sul tavolo, o la stima quando il tavolo non c'e'.
+ * Dirlo importa, perche' e' il numero che moltiplica tutto il resto.
+ *
+ * Il capo ha anche un riquadro suo, sotto, con le caselle che sono
+ * sue: qui si legge solo quanto porta e se arriva a menare.
+ */
+function contactHTML(o){
+  const c = o.contact;
+  if (!c) return "";
+  const chars = c.groups.filter(g => g.character);
+  const out = c.outOfContact || [];
+  return `
+    <p class="note">
+      ${c.estimated
+        ? `<b>${c.wide}</b> modelli a contatto <i>stimati</i> — la prima fila più stretta delle due`
+        : `<b>${c.wide}</b> modelli a contatto, contati sulle basette`}${
+        c.support ? ` · ${c.support} d'appoggio dalle file dietro` : ""}${
+        !c.inFront ? "" : c.estimated
+          ? ` · ${c.inFront} ${c.inFront === 1 ? "posto preso da un personaggio" : "posti presi dai personaggi"}`
+          : ` · e ${c.inFront} ${c.inFront === 1 ? "personaggio" : "personaggi"}, contati a parte`}.
+    </p>
+    ${chars.length || out.length ? `<div class="duel-chars">${chars.map(g => `
+      <div class="readout"><span>${esc(g.name)}</span>
+        <b class="mono">${g.attacks} × F${g.s}${g.ap ? ` PA${g.ap}` : ""} · AC${g.ws} · I${g.i}${
+          g.t ? ` · R${g.t}` : ""}</b></div>`).join("")}${out.map(n => `
+      <div class="readout"><span>${esc(n)}</span><b class="dim">non tocca il nemico: non mena</b></div>`).join("")}
+      <p class="note dim">I personaggi menano quando tocca a loro, con la loro Iniziativa, e le loro ferite entrano nel conto dell'assalto.
+      Chi li colpisce lo dice la regola (p. 209): solo chi ci dirige i colpi apposta, e le ferite non tracimano fra capo e
+      reggimento. <b>Su chi dirigere i colpi</b> resta a chi gioca: la casella è nel riquadro del personaggio.</p>` : ""}`;
+}
+
 function controls(tag, u, i, quante){
   const row = cur[tag][i], o = row.o;
   const c = C.combatant(u);
@@ -501,8 +563,9 @@ function controls(tag, u, i, quante){
         nell'altro.</p>` : ""}
       <div class="mono dim">${["WS","S","T","W","I","A","Ld"].map(k => k + " " + (c[k.toLowerCase()] || "–")).join(" · ")}</div>
       <div class="mono dim">${c.models} in piedi · ${c.frontage} di fronte${c.weapon ? " · " + esc(c.weapon) : ""}</div>
+      ${dentro ? "" : contactHTML(o)}
       <div class="grid2">
-        <label class="field">Attacchi<input type="number" min="0" max="400" id="d-att-${tag}" value="${o.attacks}"></label>
+        ${dentro ? `<label class="field">Attacchi<input` : `<label class="field" title="I dadi della truppa: i personaggi uniti menano per conto loro, con i loro numeri">Attacchi della truppa<input`} type="number" min="0" max="400" id="d-att-${tag}" value="${o.attacks}"></label>
         <label class="field">Armatura<select id="d-arm-${tag}">${SAVE_OPTS.map(([v, l]) => `<option value="${v}"${v === o.armour ? " selected" : ""}>${l}</option>`).join("")}</select></label>
         <label class="field">Speciale<select id="d-wrd-${tag}">${SAVE_OPTS.map(([v, l]) => `<option value="${v}"${v === o.ward ? " selected" : ""}>${l}</option>`).join("")}</select></label>
         <label class="field">Rigenera<select id="d-rgn-${tag}">${SAVE_OPTS.map(([v, l]) => `<option value="${v}"${v === o.regen ? " selected" : ""}>${l}</option>`).join("")}</select></label>

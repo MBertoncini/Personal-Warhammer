@@ -41,6 +41,7 @@
 import { MM, inch } from './util.js';
 import { boxCorners, polyDistance, closestPoints } from './geom.js';
 import { arcOfPoly } from './formation.js';
+import { wheelCost } from './movement.js';
 import { sightBlocked, frontCenter } from './tactics.js';
 
 const r1 = v => Math.round(v * 10) / 10;
@@ -451,14 +452,11 @@ const degDiff = (a, b) => {
   return Math.round(d > 180 ? 360 - d : d);
 };
 
-/* Quanto costa girarsi. La ruota fa perno su uno spigolo di fronte:
-   lo spigolo esterno percorre un arco di raggio pari al fronte
-   dell'unita', ed e' quell'arco che si paga in pollici. Un reggimento
-   largo gira caro, ed e' la ragione per cui al tavolo le colonne
-   ruotano e le linee no. */
-export function wheelCost(widthMm, deg){
-  return inch((+widthMm || 0) * Math.abs(deg || 0) * Math.PI / 180);
-}
+/* Quanto costa girarsi. La formula sta in `movement.js`, con il resto
+   del budget di movimento: qui resta il nome, perche' la carica lo
+   usa da sempre e due copie della stessa formula sono due formule che
+   prima o poi dicono numeri diversi. */
+export { wheelCost };
 
 /* ============================================================
    7 · LA REGOLA DEL POLLICE (p. 118)

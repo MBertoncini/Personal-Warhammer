@@ -92,6 +92,35 @@ export const isWizard = (u = {}, prep = {}) =>
 /* La gittata del dissolvimento dipende dal Livello (p. 110). */
 export const dispelRange = level => (+level || 0) >= 3 ? 24 : 18;
 
+/* ------------------------------------------------------------------
+   Fin dove arriva la magia di questo pezzo.
+
+   La gittata di un incantesimo e' scritta nell'incantesimo, e fin qui
+   la si scopriva solo premendo «mira»: sul tavolo i cerchi di portata
+   erano quelli delle armi, e un Bastiladon con il Solar Engine —
+   ventiquattro pollici di raggio — mostrava gli otto del suo
+   giavellotto. Cioe' il numero sbagliato, proprio a chi stava
+   decidendo dove metterlo.
+
+   Qui la gittata torna a essere una proprieta' del **profilo**: entra
+   l'elenco degli incantesimi che quel pezzo puo' lanciare — quelli
+   generati e quelli vincolati alle sue regole — ed esce il piu'
+   lungo, con il nome di chi ce lo porta.
+
+   «self», «mischia» e i vortici non hanno una portata da disegnare e
+   restano fuori: un cerchio da zero pollici non dice niente a nessuno.
+   ------------------------------------------------------------------ */
+export const rangeOf = s => (s && typeof s.range === "number" && s.range > 0) ? s.range : 0;
+
+export function magicRange(spells = []){
+  let best = null;
+  for (const s of spells || []){
+    const r = rangeOf(s);
+    if (r > 0 && (!best || r > best.range)) best = { range: r, name: s.name, type: s.type, id: s.id };
+  }
+  return best;
+}
+
 /* ============================================================
    3 · GENERARE GLI INCANTESIMI (p. 106)
    Tanti D6 quanti il Livello, e i doppioni si ritirano. `dice` sono le
@@ -170,10 +199,15 @@ export function whenOk(type, { stepId = "", phaseId = "" } = {}){
    E una del fiasco: dopo un 8-12 sulla tabella non si lancia piu'
    niente per il resto del turno (p. 109). */
 export function canCast(spell, { fleeing = false, engaged = false, castThisTurn = [], stopped = false,
-                                  stepId = "", phaseId = "", armoured = false } = {}){
+                                  stepId = "", phaseId = "", armoured = false, stupid = false } = {}){
   const why = [];
   if (!spell) return { can: false, why: ["incantesimo sconosciuto"] };
   if (fleeing) why.push("chi fugge non lancia (p. 108)");
+  /* La Stupidita' ferma anche la magia. Il tiro e la carica lo
+     sapevano da una tappa, il lancio no: un Troll in preda alla
+     Stupidita' continuava a lanciare incantesimi come se niente
+     fosse, perche' nessuno aveva mai passato il dato fin qui. */
+  if (stupid) why.push("è in preda alla Stupidità: non lancia incantesimi");
   if (engaged && spell.type !== "assailment" && spell.range !== "self")
     why.push("in combattimento si lanciano solo gli assalti e gli incantesimi «self» (p. 108)");
   if (!engaged && spell.type === "assailment") why.push("un assalto si lancia solo in combattimento (p. 107)");

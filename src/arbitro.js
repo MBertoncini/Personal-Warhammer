@@ -67,6 +67,8 @@ export const LIMITI = [
     why:"chi la raccoglie e chi la rifiuta è una decisione da tavolo, e l'overkill lo conta già `melee.js`" },
   { id:"oggetti",   what:"gli oggetti magici non fanno niente", page:0,
     why:"i cataloghi li scrivono come testo libero: l'app li mostra e non li applica" },
+  { id:"bordo",     what:"chi cede terreno contro il bordo del tavolo si ferma lì", page:134,
+    why:"il libro dice dove si ferma chi cede terreno — un'unità, il terreno, un pollice da un nemico — e del bordo non dice niente" },
   { id:"volo",      what:"chi vola si muove del suo volo ma non sorvola niente", page:0,
     why:"il numero lo dà `profiles.js`; sorvolo e atterraggio vogliono la geometria del volo" },
 ];
@@ -857,7 +859,7 @@ function mischia(S, g){
     } else if (t.outcome === "fallBack" || t.outcome === "give"){
       const nemico = piuVicino(S, u, (t.side === "A" ? g.B : g.A));
       const quanto = t.outcome === "give" ? CH.GIVE_GROUND : roll(2).reduce((s, v) => s + v, 0);
-      indietreggia(S, u, nemico, quanto);
+      indietreggia(S, u, nemico, quanto, { comeFuga: t.outcome === "fallBack" });
       say(S, `${u.name} ${t.outcome === "give" ? "cede terreno" : "ripiega"} di ${quanto}″.`,
           { army: u.army, page: 134 });
     }
@@ -884,13 +886,41 @@ function schieraDi(S, u, { attached = false, host = null } = {}){
   return c;
 }
 
-function indietreggia(S, u, da, pollici){
+/* Cedere terreno e ripiegare in ordine, contro il bordo del tavolo.
+
+   Chi ripiega in ordine «si muove esattamente come un'unita' in fuga»
+   (p. 134), e un'unita' in fuga che tocca il bordo esce dalla partita
+   (p. 132): qui vale lo stesso. Per chi cede terreno il libro elenca
+   dove ci si ferma — un'altra unita', il terreno, un pollice da un
+   nemico — e del bordo non dice niente. L'arbitro sceglie di fermarlo
+   li', che e' l'unica lettura in cui due pollici di passo indietro non
+   buttano fuori un'unita' che il test l'ha passato; ed e' una scelta,
+   non una pagina. Prima non si fermava affatto, e un Bastiladon
+   spinto indietro due volte finiva sotto il tavolo con i troll dietro. */
+const sulTavolo = (S, u) => cornersOf(u, S.units).every(p =>
+  p.x >= 0 && p.y >= 0 && p.x <= S.table.w && p.y <= S.table.h);
+function indietreggia(S, u, da, pollici, { comeFuga = false } = {}){
   if (!da) return;
   const dx = u.x - da.x, dy = u.y - da.y;
   const len = Math.hypot(dx, dy) || 1;
-  u.x += dx / len * pollici * MM;
-  u.y += dy / len * pollici * MM;
-  for (const c of S.units.filter(x => FM.joinedHost(x) === u.uid)){ c.x = u.x; c.y = u.y; }
+  const x0 = u.x, y0 = u.y;
+  const vai = p => { u.x = x0 + dx / len * p * MM; u.y = y0 + dy / len * p * MM; };
+  vai(pollici);
+  if (!sulTavolo(S, u)){
+    if (comeFuga){
+      u.dead = true; u.placed = false; u.fledOff = true;
+      say(S, `${u.name} ripiega oltre il bordo ed esce dal tavolo (pp. 132, 134).`, { army: u.army, page: 134 });
+    } else {
+      /* a decimi di pollice, finche' sta tutta sul tavolo */
+      let p = pollici;
+      while (p > 0 && !sulTavolo(S, u)){ p = Math.max(0, p - 0.1); vai(p); }
+      limite(S, "bordo");
+      say(S, `${u.name} arriva al bordo del tavolo e si ferma dopo ${r1(p)}″.`, { army: u.army, page: 134 });
+    }
+  }
+  for (const c of S.units.filter(x => FM.joinedHost(x) === u.uid)){
+    c.x = u.x; c.y = u.y; c.dead = u.dead; c.placed = u.placed;
+  }
 }
 
 function inseguimento(S, vincitore, fuggito, quantoHaFuggito){

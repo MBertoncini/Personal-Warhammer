@@ -174,5 +174,37 @@ ok('Daemonic Vessel alza Forza e Attacchi, e la perforazione entra nei colpi',
    cv.s === 4 && cv.a === 2 && C.strike(cv, bersaglio, { attacks: 4 }).ap === 1);
 
 /* ================================================================= */
+console.log('\nfin dove arriva la magia di un pezzo');
+{
+  /* Il caso vero: un Bastiladon con il Solar Engine. Il giavellotto
+     arriva a otto pollici, il raggio a ventiquattro, e il cerchio sul
+     tavolo mostrava gli otto — cioe' il numero sbagliato proprio a chi
+     stava decidendo dove metterlo. */
+  const regole = ['Close Order', 'Cold Blooded', 'Solar Radiance', 'Solar Engine'];
+  const vincolati = M.boundFor(regole);
+  ok('la regola dell oggetto porta con se l incantesimo',
+     vincolati.length === 1 && vincolati[0].name === 'Beam of Chotec');
+  ok('e la sua gittata e quella dell incantesimo, non dell arma',
+     MG.magicRange(vincolati).range === 24);
+  ok('senza la regola non c e nessun vincolato', M.boundFor(['Close Order']).length === 0);
+
+  ok('la gittata piu lunga vince fra piu incantesimi',
+     MG.magicRange([{ name:'corto', range:12 }, { name:'lungo', range:30 }]).range === 30);
+  ok('«sé» e «mischia» non sono un cerchio da disegnare',
+     MG.magicRange([{ name:'a', range:'self' }, { name:'b', range:'combat' }]) === null);
+  ok('e nemmeno una lista vuota', MG.magicRange([]) === null);
+
+  /* e il bersaglio fuori portata lo dice con il numero */
+  const sp = vincolati[0];
+  ok('a trenta pollici e fuori gittata', MG.targetCheck(sp, { dist: 30 }).ok === false);
+  ok('e il perche porta i due numeri',
+     /30″ contro 24″/.test(MG.targetCheck(sp, { dist: 30 }).why.join(' ')));
+  ok('a dodici ci arriva', MG.targetCheck(sp, { dist: 12 }).ok === true);
+  ok('ma un dardo magico vuole vedere il bersaglio (p. 107)',
+     MG.targetCheck(sp, { dist: 12, sight: false }).ok === false);
+  ok('e si lancia nella fase di tiro', MG.whenOk(sp.type, { phaseId:'shooting' }).ok === true);
+}
+
+/* ================================================================= */
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

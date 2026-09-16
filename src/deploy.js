@@ -610,6 +610,8 @@ function renderInspector(){
         ${u.us ? `<div class="readout"><span>Unit Strength</span><b>${u.us}</b></div>` : ""}
         ${u.crew ? `<div class="readout"><span>Equipaggio</span><b>${u.crew}</b></div>` : ""}
         ${u.maxRange ? `<div class="readout"><span>Tiro più lungo</span><b>${u.maxRange}″</b></div>` : ""}
+        ${(() => { const r = magicReachOf(u); return r
+          ? `<div class="readout"><span>Magia più lunga</span><b>${r.range}″ · ${esc(r.name)}</b></div>` : ""; })()}
         <div class="readout"><span>Stato</span><b style="color:var(--${st.key === "idle" ? "muted" : st.key})">${st.text}</b></div>
       </div>
       ${movementBlockHTML(u)}
@@ -826,7 +828,12 @@ function wireFormationControls(u, upd){
 function movementBlockHTML(u){
   const b = MV.bandsFor(u);
   const mv = MV.movedFrom(u);
-  const band = mv && b ? MV.bandOf(u, mv.dist) : null;
+  /* Il numero che conta non e' la linea d'aria: e' quello che il
+     Movimento paga davvero, ruota compresa (p. 124). Un reggimento
+     non va in diagonale, e la diagonale che l'app disegnava costava
+     zero pollici di troppo. */
+  const cost = MV.costFrom(u, unitW(u));
+  const band = mv && b ? MV.bandOf(u, cost ? cost.cost : mv.dist) : null;
   return `
     <div class="photo-box movebox">
       <div class="readout"><span>Movimento</span><b>${b
@@ -839,10 +846,22 @@ function movementBlockHTML(u){
                placeholder="${MV.moveOf(u) || "—"}">
       </label>
       ${mv ? `
-        <div class="readout"><span>Mosso dall'ancora</span>
-          <b style="color:${band ? band.color : "var(--ink)"}">${mv.dist.toFixed(1)}″${
-            b ? ` di ${b.move}″` : ""}${mv.turn ? ` · ${mv.turn}°` : ""}</b></div>
-        ${band && band.key !== "none" ? `<p class="note">${esc(band.label)} — spostamento netto fra l'ancora e adesso, non il percorso.</p>` : ""}
+        <div class="readout"><span>Speso dall'ancora</span>
+          <b style="color:${band ? band.color : "var(--ink)"}">${(cost ? cost.cost : mv.dist).toFixed(1)}″${
+            b ? ` di ${b.move}″` : ""}</b></div>
+        ${cost && cost.plan.legs.length ? `
+          <p class="note">${esc(cost.plan.label)}: ${cost.plan.legs.map(l =>
+            /* il numero non si ripete: «3″ all'indietro» dice già i
+               pollici percorsi, e accanto ci va solo quello che
+               costano quando è un altro numero */
+            `${esc(l.label)}${Math.abs(l.cost - l.inches) > 0.05 || l.id === "wheel"
+              ? ` <b>${l.cost.toFixed(1)}″</b>` : ""}`).join(" · ")}${
+            cost.plan.note ? ` — ${esc(cost.plan.note)}` : ""}</p>
+          ${cost.wheel > 0.05 ? `<p class="note dim">Il metro fra l'ancora e adesso dice ${cost.dist.toFixed(1)}″: la differenza è la ruota, che si paga (p. 124).</p>` : ""}
+          ${cost.plans.length > 1 ? `<p class="note dim">Altri modi: ${cost.plans.slice(1).map(p =>
+            `${esc(p.label)} ${p.cost.toFixed(1)}″`).join(" · ")}.</p>` : ""}`
+        : ""}
+        ${band && band.key !== "none" ? `<p class="note">${esc(band.label)} — il conto parte dall'ancora, non dal percorso camminato.</p>` : ""}
         <div class="grid2">
           <button class="btn tiny" id="i-anchor">Riparti da qui</button>
           <button class="btn tiny ghost" id="i-anchor-off">Togli l'ancora</button>
@@ -1528,6 +1547,11 @@ function drawBoard(){
       t.textContent = label;
     };
     if (selUnit.maxRange) ring(selUnit.maxRange, "2 8", .55, `tiro ${selUnit.maxRange}″`);
+    /* e la magia, che e' una gittata come le altre: il Solar Engine di
+       un Bastiladon arriva a ventiquattro pollici mentre il suo
+       giavellotto ne fa otto, e il cerchio mostrava gli otto */
+    const reach = magicReachOf(selUnit);
+    if (reach) ring(reach.range, "6 3 1 3", .6, `${shortName(reach.name)} ${reach.range}″`);
     /* senza ancora i cerchi del movimento restano attorno all'unità:
        meglio di niente, ma è proprio il caso che l'ancora risolve */
     if (!MV.anchorOf(selUnit)){
@@ -1631,6 +1655,24 @@ function drawBoard(){
                                  fill:"var(--accent)", stroke:"var(--paper)", "stroke-width":"2.4",
                                  "paint-order":"stroke", opacity:".95" });
       t.textContent = s2 + (u.tags.length > 3 ? " +" + (u.tags.length - 3) : "");
+    }
+    /* Lo stato dell'unità, in due parole sopra la testa.
+       È il marcatore che al tavolo si appoggia accanto al reggimento:
+       chi è in preda alla Stupidità non si muove, non tira e non
+       lancia per tutto il turno, e finché la cosa viveva solo dentro
+       l'ispettore bisognava selezionare l'unità per scoprirlo — cioè
+       proprio quando avevi già deciso di muoverla.
+       Generico apposta: la Stupidità è la prima riga, non l'unica. */
+    if (state.game.on){
+      const marks = stateMarks(u);
+      if (marks.length){
+        const yb = Math.min(...corners(u).map(p => p[1])) - (EX.woundsOf(u) ? 24 : 6);
+        const t = g(lab, "text", { x:u.x, y:yb, "text-anchor":"middle", "font-size":16,
+                                   "font-weight":"600",
+                                   fill:"var(--warn)", stroke:"var(--paper)", "stroke-width":"2.6",
+                                   "paint-order":"stroke" });
+        t.textContent = marks.map(m => m.text).join(" · ");
+      }
     }
     if (state.game.on && EX.woundsOf(u)){
       const yb = Math.min(...corners(u).map(p => p[1])) - 6;
@@ -1939,11 +1981,48 @@ function drawMoveAid(svg, g, u){
 
   if (!mv || mv.still) return;
 
+  /* quanto e' costato arrivare fin qui: la ruota si paga, e il numero
+     che conta e' quello, non la linea d'aria (p. 124) */
+  const cost = MV.costFrom(u, w);
+  const spent = cost ? cost.cost : mv.dist;
+
   /* la riga fra dov'eri e dove sei, con il numero al centro. Il colore
      è un semaforo, non un arbitro: l'unità si muove lo stesso. */
-  const band = MV.bandOf(u, mv.dist);
+  const band = MV.bandOf(u, spent);
   const c = band.key === "none" ? col : band.color;
-  g(layer, "line", { x1:a.x, y1:a.y, x2:u.x, y2:u.y, stroke:c, "stroke-width":2.6 });
+
+  /* Il percorso che il reggimento farebbe davvero. La linea dritta fra
+     due punti e' una diagonale, e le diagonali al tavolo non esistono:
+     si ruota per puntare e poi si cammina. Disegnare la diagonale
+     mentre il conto dice un altro numero e' il modo piu' rapido di far
+     credere che il conto sia sbagliato. */
+  const legs = cost ? cost.plan.legs : [];
+  const walks = legs.some(l => l.id === "forward") && legs.some(l => l.id === "wheel");
+  if (walks){
+    /* il gomito: dall'ancora si punta verso l'arrivo, e da li' si va
+       dritti. Sono due segmenti, e il secondo e' la corsa vera. */
+    const dx = u.x - a.x, dy = u.y - a.y;
+    const d = Math.hypot(dx, dy) || 1;
+    const nose = (unitD(u) / 2) || 0;
+    const ex = a.x + (dx / d) * Math.min(nose, d * .35);
+    const ey = a.y + (dy / d) * Math.min(nose, d * .35);
+    g(layer, "path", { d:`M ${a.x} ${a.y} L ${ex} ${ey} L ${u.x} ${u.y}`,
+                       stroke:c, "stroke-width":2.6, "stroke-linejoin":"round" });
+    /* l'arco della ruota, attorno all'ancora: e' il pezzo di movimento
+       che si paga senza avanzare di un passo */
+    const wheelIn = legs.filter(l => l.id === "wheel").reduce((s, l) => s + l.cost, 0);
+    if (wheelIn > 0.05){
+      const rr = Math.max(18, w / 2);
+      g(layer, "circle", { cx:a.x, cy:a.y, r:rr, stroke:c, "stroke-width":2,
+                           "stroke-dasharray":"4 4", opacity:.85 });
+      const tw = g(layer, "text", { x:a.x, y:a.y - rr - 6, "text-anchor":"middle",
+                                    "font-size":13, fill:c,
+                                    stroke:"var(--paper)", "stroke-width":"3", "paint-order":"stroke" });
+      tw.textContent = `ruota ${wheelIn.toFixed(1)}″`;
+    }
+  } else {
+    g(layer, "line", { x1:a.x, y1:a.y, x2:u.x, y2:u.y, stroke:c, "stroke-width":2.6 });
+  }
   g(layer, "circle", { cx:u.x, cy:u.y, r:4.5, fill:c, stroke:"none" });
 
   /* il cartellino a metà strada, scostato di lato: in mezzo alla riga
@@ -1952,9 +2031,9 @@ function drawMoveAid(svg, g, u){
   const dx = u.x - a.x, dy = u.y - a.y, len = Math.hypot(dx, dy) || 1;
   const mx = (a.x + u.x) / 2 - (dy / len) * 34;
   const my = (a.y + u.y) / 2 + (dx / len) * 34;
-  const txt = b ? `${mv.dist.toFixed(1)}″ di ${b.move}″` : `${mv.dist.toFixed(1)}″`;
+  const txt = b ? `${spent.toFixed(1)}″ di ${b.move}″` : `${spent.toFixed(1)}″`;
   const sub = b
-    ? (mv.dist <= b.move ? `restano ${(b.move - mv.dist).toFixed(1)}″` : band.label)
+    ? (spent <= b.move ? `restano ${(b.move - spent).toFixed(1)}″` : band.label)
     : (mv.turn ? mv.turn + "° di fronte" : "");
   const wBox = Math.max(96, txt.length * 11 + 26);
   g(layer, "rect", { x:mx - wBox / 2, y:my - 34, width:wBox, height: sub ? 44 : 27, rx:6,
@@ -2084,8 +2163,15 @@ export function shootPlanFor(u){
   const charged = !!(u.moved && u.moved.kind === "charge") || !!u.charged;
   /* La marcia non e' un campo: e' l'ancora di movimento della Tappa 2
      che dice di essere andati oltre il Movimento di profilo. Senza M
-     non si dichiara niente, come sempre. */
-  const marched = !charged && !!mv && !mv.still && move > 0 && mv.dist > move + 0.01;
+     non si dichiara niente, come sempre.
+
+     Il confronto si fa con quello che il movimento e' **costato**,
+     ruota compresa: un reggimento largo che gira di novanta gradi e
+     poi cammina quattro pollici ha marciato, anche se il metro fra
+     l'ancora e adesso ne dice quattro (p. 124). */
+  const spent = MV.costFrom(u, lay.w);
+  const used = spent ? spent.cost : (mv ? mv.dist : 0);
+  const marched = !charged && !!mv && !mv.still && move > 0 && used > move + 0.01;
   return {
     weapon, range, rows, rules, pieces,
     /* tutta sulla collina: tira anche la seconda fila (p. 143) */
@@ -2154,6 +2240,21 @@ const asPiece = u => ({ name:u.name, box: boxOf(u), poly: corners(u), unit:u, us
 const effNow = () => ({ turn: state.game.turn || 1, side: state.game.army || "A",
                         round: state.game.turn || 1, phaseIndex: state.game.step || 0 });
 const psychFor = u => PS.psychOf(u, { joined: attachedOf(u), now: state.game.on ? effNow() : null });
+
+/* I marcatori di stato: quello che, al tavolo, si appoggia accanto al
+   reggimento perche' altrimenti ce se ne dimentica.
+   Uno per riga di regola, e nessuno di questi impedisce niente: sono
+   promemoria con un nome, e il pannello che li ha messi li toglie. */
+function stateMarks(u){
+  if (!u || !u.placed || u.dead || isJoined(u)) return [];
+  const p = psychFor(u);
+  const out = [];
+  if (p.stupid) out.push({ id:"stupid", text:"STUPIDA" });
+  if (u.fled)   out.push({ id:"fled", text:"in fuga" });
+  if (u.disordered) out.push({ id:"disordered", text:"disordinata" });
+  if (p.frenzy) out.push({ id:"frenzy", text:"frenetica" });
+  return out;
+}
 
 /* Un test di Paura per turno: l'esito sta sull'unita', con il turno e la
    parte, cosi' l'annulla lo porta via con il resto. */
@@ -2603,7 +2704,12 @@ async function runFlee(t, from){
    scontro simulato: al contrario il risultato sarebbe gia' li' e i
    cubi diventerebbero un fregio.
    ============================================================ */
-const asDice = (p, need) => (p.dice || []).map(v => ({ value:v, win: need ? v >= need && v > 1 : false }));
+/* `raw` e' la faccia grezza che il cubo deve mostrare, e per un D6 e'
+   il valore stesso. Senza, il vassoio leggeva `undefined`, ripiegava
+   sull'uno e faceva atterrare tutta la raffica sul pallino in mezzo:
+   i numeri erano giusti, le facce dicevano un'altra cosa. */
+const asDice = (p, need) => (p.dice || []).map(v =>
+  ({ raw:v, value:v, win: need ? v >= need && v > 1 : false }));
 
 function shotGroups(r, who, target){
   const out = [];
@@ -2850,7 +2956,87 @@ function failCharge(u, t, why){
   G.dispatch({ type:"note", army:u.army, text: `${u.name} non carica ${t.name}: ${why}.` });
 }
 
+/* Il marcatore della Stupidita'.
+ *
+ * Il test lo tira `runPsych`, e chi lo fallisce si prende l'effetto.
+ * Ma al tavolo la Stupidita' capita anche senza passare di qui: la
+ * si è tirata con i dadi veri, o l'ha causata un incantesimo, o
+ * semplicemente l'app era chiusa. Senza un modo di dirlo a mano,
+ * l'unico stato che l'app conosceva era quello che aveva visto
+ * succedere — ed e' lo stesso principio per cui ogni altro numero
+ * dell'ispettore si corregge.
+ *
+ * Dura fino al proprio prossimo inizio di turno, che e' quanto dice
+ * la regola: attraversa il turno dell'avversario e scade dove si
+ * rifa' il test. Toglierlo e' un gesto solo, e finisce nel registro
+ * come tutto il resto.
+ */
+function markStupid(u, on){
+  if (on) EF.addEffect(u, PS.stupidEffect(effNow()));
+  else EF.removeEffect(u, "stupidity", "Stupidità");
+  G.dispatch({ type:"note", army:u.army,
+    text: on ? `${u.name}: segnata in preda alla Stupidità — ${PS.STUPID_LIMITS.join(", ")}.`
+             : `${u.name}: non è più in preda alla Stupidità.` });
+}
+
+/* Tutti quelli che devono tirarla, uno dopo l'altro. All'inizio del
+   turno il promemoria diceva i nomi e poi toccava cercarli sul tavolo
+   uno per uno: con sei unita' stupide in lista sono sei selezioni e
+   sei pulsanti, ed e' il genere di attrito per cui al tavolo il test
+   si salta. */
+export function stupidityPending(){
+  if (!state.game.on) return [];
+  return state.units.filter(u => {
+    if (u.army !== state.game.army || !u.placed || u.dead || isJoined(u)) return false;
+    const p = psychFor(u);
+    /* chi ci e' gia' dentro il test lo ha fatto, e gli e' andato male:
+       rifarglielo nello stesso turno sarebbe un secondo tiro gratis */
+    if (p.stupid) return false;
+    return PS.stupidityCheck({ p, fleeing: !!u.fled, engaged: engagedNow(u) }).must;
+  });
+}
+
+async function runAllStupidity(){
+  const list = stupidityPending();
+  if (!list.length) return toast("Nessuno deve tirare la Stupidità adesso.");
+  for (const u of list) await runPsychButton(u, "stupidity");
+}
+
+/* Il promemoria della prima casella diventa un pulsante.
+ *
+ * Il registro scriveva già «Da tirare adesso: Stupidità per X, Y, Z»
+ * e poi toccava cercarli sul tavolo uno per uno: con tre unità
+ * stupide sono tre selezioni e tre pulsanti, ed è esattamente il
+ * genere di attrito per cui al tavolo il test si salta — sempre a
+ * favore di chi lo salta. Qui c'è un gesto solo, e i dadi sono gli
+ * stessi di prima. Chi è già in preda alla Stupidità non ricompare
+ * nell'elenco: il test lo ha già fatto e gli è andato male.
+ */
+function stupidityPrompt(){
+  const host = $("#game");
+  if (!host) return;
+  const old = host.querySelector("#g-stupid-all");
+  if (old) old.closest(".stupid-ask").remove();
+  if (!state.game.on || state.game.deploying || state.game.step !== 0) return;
+  const list = stupidityPending();
+  if (!list.length) return;
+
+  const box = document.createElement("div");
+  box.className = "stupid-ask";
+  box.innerHTML = `
+    <p class="note" style="color:var(--warn);margin:0 0 4px">
+      <b>Stupidità</b> da tirare: ${esc(list.map(u => u.name).join(", "))}.
+      Chi fallisce non si muove, non tira e non lancia fino al suo prossimo turno.</p>
+    <button class="btn tiny" id="g-stupid-all" style="width:100%">Tira la Stupidità per tutti (${list.length})</button>`;
+  const anchor = host.querySelector(".stepacts") || host.querySelector(".steps");
+  if (anchor) anchor.after(box); else host.appendChild(box);
+  box.querySelector("#g-stupid-all").addEventListener("click", runAllStupidity);
+}
+
 async function runPsychButton(u, kind){
+  /* il marcatore non tira niente: dice e basta */
+  if (kind === "stupid")   return act("Stupidità", () => markStupid(u, true));
+  if (kind === "unstupid") return act("Stupidità", () => markStupid(u, false));
   if (kind === "stupidity"){
     const c = PS.stupidityCheck({ p: psychFor(u), fleeing: !!u.fled, engaged: engagedNow(u) });
     if (!c.must && c.why) toast(c.why + ": si tira lo stesso, lo decidete voi.");
@@ -2901,6 +3087,11 @@ function psychHTML(u){
     `<button class="btn tiny" data-psych="${id}" title="${esc(title)}">${label}</button>`;
   const buttons = !state.game.on ? "" : [
     p.stupidity ? btn("stupidity", "Stupidità", "Test di Comando all'inizio del turno: se fallisce resta ferma fino al prossimo") : "",
+    /* il marcatore a mano: vale anche per chi la Stupidita' se l'e'
+       presa fuori dall'app, e per chi l'ha tirata con i dadi veri */
+    p.stupid
+      ? `<button class="btn tiny" data-psych="unstupid" title="Toglie il marcatore: l'unità torna a muoversi, tirare e lanciare">Non è più stupida</button>`
+      : (p.stupidity ? `<button class="btn tiny" data-psych="stupid" title="Segna l'unità in preda alla Stupidità fino al suo prossimo turno, senza tirare">Segnala stupida</button>` : ""),
     p.impetuous ? btn("impetuous", "Impetuosa", "Test di Comando senza la Warband: se fallisce deve caricare") : "",
     fearNow.length ? btn("fear", "Paura", fearNow[0].check.why) : "",
     /* il raduno lo tira solo chi sta fuggendo, e sta nella quarta
@@ -3031,26 +3222,94 @@ const castNow = x => {
 const unitByUid = v => state.units.find(o => String(o.uid) === String(v)) || null;
 const spellName = id => ((MAGIC() && MAGIC().spell(id)) || {}).name || id;
 
+/* Gli incantesimi vincolati di un pezzo: quelli che le sue regole
+   nominano, piu' quelli dichiarati a mano.
+
+   La dichiarazione a mano non e' un ripiego: New Recruit esporta le
+   regole dell'unita' base, e l'oggetto che porta l'incantesimo —
+   il Solar Engine di un Bastiladon — in due liste su tre non compare
+   fra le regole. Senza un modo di dirlo, l'unica magia che l'app
+   conosce e' quella che il file si e' ricordato di scrivere. */
+const boundOf = x => {
+  const M = MAGIC();
+  if (!M) return [];
+  const own = M.boundFor((x && x.rules) || []);
+  const hand = (((x && x.magic) || {}).bound || [])
+    .map(id => M.bound.find(b => b.id === id)).filter(Boolean)
+    .filter(b => !own.some(o => o.id === b.id));
+  return [...own, ...hand];
+};
+
 function wizardOf(x){
   const M = MAGIC(), m = (x && x.magic) || {};
   return {
     level: MG.levelOf(x, m), lore: m.lore || "", numbers: m.numbers || [], swaps: m.swaps || [],
     known: M ? MG.knownSpells(M, m.lore, m.numbers || [], m.swaps || []) : [],
-    bound: M ? M.boundFor((x && x.rules) || []) : [],
+    bound: boundOf(x),
     loreObj: M && m.lore ? M.lore(m.lore) : null,
   };
 }
 const castersIn = u => MAGIC() ? [u, ...attachedOf(u)].filter(x =>
-  MG.isWizard(x, x.magic) || MAGIC().boundFor(x.rules || []).length > 0) : [];
+  MG.isWizard(x, x.magic) || boundOf(x).length > 0) : [];
+
+/* Fin dove arriva la magia di quest'unita', e chi ce la porta. E' la
+   riga che il cerchio sul tavolo disegna: la gittata di un incantesimo
+   e' una proprieta' del profilo come la portata di un arco, e finche'
+   la si scopriva solo premendo «mira» il tavolo mostrava il numero
+   sbagliato a chi stava decidendo dove mettere il pezzo. */
+function magicReachOf(u){
+  const M = MAGIC();
+  if (!M || !u) return null;
+  let best = null;
+  for (const x of castersIn(u)){
+    const w = wizardOf(x);
+    const r = MG.magicRange([...w.known, ...w.bound]);
+    if (r && (!best || r.range > best.range)) best = { ...r, who: x.name };
+  }
+  return best;
+}
 
 const rangeTxt = s => s.range === "self" ? "sé" : s.range === "combat" ? "mischia"
   : typeof s.range === "number" ? s.range + "″" : String(s.range);
+
+/* Il menu che dichiara a mano un incantesimo vincolato.
+   Sta fuori dal blocco dei maghi perche' il caso per cui esiste e'
+   proprio quello in cui di maghi non ce ne sono: un Bastiladon senza
+   «Solar Engine» fra le regole non e' un mago e non ha un vincolato,
+   quindi il blocco della magia non si disegnava affatto e il menu
+   restava irraggiungibile esattamente dove serviva. */
+function bindPickHTML(x, already = []){
+  const M = MAGIC();
+  if (!M) return "";
+  const free = M.bound.filter(b => !already.some(o => o.id === b.id));
+  if (!free.length) return "";
+  return `<select data-mg-bind="${x.uid}"
+    title="Un incantesimo vincolato che il file della lista non ha scritto: l'oggetto che lo porta">
+    <option value="">— aggiungi un incantesimo vincolato —</option>
+    ${free.map(b => `<option value="${esc(b.id)}">${esc(b.name)} · ${esc(b.regola || "")} · ${esc(rangeTxt(b))}</option>`).join("")}
+  </select>`;
+}
 
 function magicHTML(u){
   const M = MAGIC();
   if (!M || !u || !u.placed || u.dead || isJoined(u)) return "";
   const casters = castersIn(u);
-  if (!casters.length) return "";
+  /* Nessun mago: resta una riga sola, chiusa. Aprirla e' il gesto di
+     chi sa che quel pezzo una magia ce l'ha e il file non l'ha
+     scritta; lasciarla aperta su ogni reggimento di venti Clanrats
+     sarebbe un pannello che chiede una cosa a cui non c'e' risposta
+     diciannove volte su venti. */
+  if (!casters.length){
+    const pick = bindPickHTML(u, []);
+    return pick ? `
+      <details class="magic-block">
+        <summary class="readout"><span>Magia</span><b>nessun mago</b></summary>
+        <p class="note">New Recruit esporta le regole dell'unità base, e l'oggetto che porta un
+        incantesimo spesso non ci finisce — un Bastiladon con il Solar Engine arriva qui senza
+        niente. Se ce l'ha, dillo: da lì in poi vale come le altre magie, gittata compresa.</p>
+        <div class="chiprow">${pick}</div>
+      </details>` : "";
+  }
   const inPlay = magicState().inPlay.map((e, i) => ({ ...e, i }));
   const line = s => `${esc(s.name)} <span class="dim">· ${MG.TYPE_LABEL[s.type]} · ${s.cv}+${s.cv2 ? "/" + s.cv2 + "+" : ""} · ${esc(rangeTxt(s))}${s.rip ? " · resta in gioco" : ""}${s.bound ? " · vincolato, Potere " + s.potere : ""}</span>`;
 
@@ -3085,8 +3344,14 @@ function magicHTML(u){
       (typeof s.range === "number" && s.type !== "vortex" ? aimButton(u, "spell", x.uid, s.id) : "") +
       `<button class="btn tiny" data-mg-cast="${x.uid}|${s.id}" title="${esc(s.testo || "")}">${
         cs && cs.ids.includes(s.id) ? "Già tentato" : "Lancia"}</button>`;
+    const hand = new Set((((x.magic) || {}).bound) || []);
     const rows = [...w.known, ...w.bound].map(s =>
-      `<div class="readout"><span title="${esc(s.testo || "")}">${line(s)}</span>${btn(s)}</div>`).join("");
+      `<div class="readout"><span title="${esc(s.testo || "")}">${line(s)}</span>${
+        hand.has(s.id) ? `<button class="btn tiny ghost" data-mg-unbind="${x.uid}|${esc(s.id)}"
+          title="Toglie l'incantesimo dichiarato a mano">−</button>` : ""}${btn(s)}</div>`).join("");
+    const pick = bindPickHTML(x, w.bound);
+    if (pick) setup.push(pick);
+
     const mine = inPlay.filter(e => e.caster === x.uid);
     return `<div class="readout"><span>Mago</span><b>${esc(x.name)}${w.level ? " · Livello " + w.level : ""}${
         w.loreObj ? " · " + esc(w.loreObj.label) : ""}</b></div>
@@ -3113,6 +3378,25 @@ function wireMagic(host){
   on("[data-mg-level]", "change", el => {
     const x = unitByUid(el.dataset.mgLevel); if (!x) return;
     act("Livello del mago", () => { x.magic = { ...(x.magic || {}), level: +el.value || 0, numbers: [], swaps: [] }; });
+    renderAll();
+  });
+  on("[data-mg-bind]", "change", el => {
+    const x = unitByUid(el.dataset.mgBind);
+    if (!x || !el.value) return;
+    const id = el.value;
+    act("incantesimo vincolato", () => {
+      const have = ((x.magic || {}).bound) || [];
+      x.magic = { ...(x.magic || {}), bound: have.includes(id) ? have : [...have, id] };
+    });
+    renderAll();
+  });
+  on("[data-mg-unbind]", "click", el => {
+    const [uid, id] = el.dataset.mgUnbind.split("|");
+    const x = unitByUid(uid);
+    if (!x) return;
+    act("incantesimo vincolato", () => {
+      x.magic = { ...(x.magic || {}), bound: (((x.magic) || {}).bound || []).filter(v => v !== id) };
+    });
     renderAll();
   });
   on("[data-mg-lore]", "change", el => {
@@ -3278,7 +3562,8 @@ async function runCast(caster, spellId, preUid = null){
     ? { id: ph[Math.floor(idx / 4)].steps[idx % 4].id, phaseId: ph[Math.floor(idx / 4)].id }
     : G.stepNow();
   const gate = MG.canCast(sp, { fleeing: !!host.fled, engaged: engagedNow(host),
-    castThisTurn: cs ? cs.ids : [], stopped: !!(cs && cs.stop), stepId: step.id, phaseId: step.phaseId });
+    castThisTurn: cs ? cs.ids : [], stopped: !!(cs && cs.stop), stepId: step.id, phaseId: step.phaseId,
+    stupid: psychFor(host).stupid });
 
   /* 1 · il bersaglio */
   let target = null, targetWhy = [];
@@ -4083,6 +4368,7 @@ function updateStat(sc){
 function renderAll(){
   reindex(); syncImportBox(); renderArmies(); renderInspector(); renderTerrainList(); renderMarkerList();
   G.renderGamePanel($("#game"), { esc });
+  stupidityPrompt();
   renderDuel();
   drawBoard(); refreshEditor(); save();
 }
@@ -5543,6 +5829,17 @@ async function bootDeploy(){
         .filter(x => x.army === mine.army && x.placed && !x.dead && !isJoined(x) && effModels(x) > 0)
         .map(x => ({ uid: x.uid, name: x.name, touching: foes.some(f => tocca(x, f)) }))
         .sort((p, q) => (q.touching - p.touching) || p.name.localeCompare(q.name));
+    },
+    /* Quanti modelli toccano davvero il nemico. Il conto degli attacchi
+       partiva da una stima — la prima fila larga quanto la più stretta
+       delle due — e due unità che si incontrano d'angolo si toccano con
+       tre modelli mentre la stima ne dava cinque. Le basette lo sanno,
+       e stanno tutte qui. Due unita' che non si toccano affatto non
+       sono «zero modelli a contatto»: sono un combattimento che il
+       pannello guarda prima della carica, e li' vale la stima. */
+    touching: (u, foe) => {
+      const t = FM.touchingModels(FM.worldCells(u, layoutOf(u)), corners(foe));
+      return t.total > 0 ? t : null;
     },
     /* Fianco, retro e disordine guardando il tavolo, a ogni round (pp.
        101, 152-153). Il bonus e' della parte: conta chiunque del mio

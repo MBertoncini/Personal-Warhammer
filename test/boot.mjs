@@ -959,6 +959,19 @@ ok('e il terreno occupato pure', /\| Terreno \|/.test(md));
 ok('il terreno dello schieramento e datato', /## Terreno allo schieramento/.test(md));
 ok('la legenda spiega le voci nuove',
    /Contatti di basetta/.test(md.slice(0, md.indexOf('## Scheda'))));
+
+/* chi ha giocato: la riga che dice all'AI chi criticare */
+ok('senza dirlo, il resoconto non indovina il lato',
+   /non ti ho detto quale dei due eserciti/i.test(md) && /\| Ho giocato \| non dichiarato \|/.test(md));
+rep.meta.mine = 'A';
+const mdMine = BL.reportMarkdown(rep, { prompt: true });
+ok('dichiarato il lato, chiede una critica delle mie scelte',
+   /\*\*Ho giocato l'Esercito A/.test(mdMine) && /Commenta criticamente le MIE scelte/.test(mdMine));
+ok('e nomina l avversario come metro, non come allievo',
+   /Dall'altra parte c'era/.test(mdMine) && !/non ti ho detto quale/i.test(mdMine));
+ok('la scheda lo scrive accanto agli altri dati',
+   /\| Ho giocato \| Esercito A/.test(mdMine));
+rep.meta.mine = '';
 ok('il JSON si porta dietro tutto',
    /"contacts"/.test(BL.reportJSON(rep)) && /"form"/.test(BL.reportJSON(rep)));
 ok('le unita compaiono con nome e perdite', md.includes(scout.name) && /Perdite/.test(md));
@@ -1651,6 +1664,32 @@ const written = listsMod.getList(copy.id) || listsMod.getList(handList.id);
 const added = written.units[written.units.length - 1];
 ok('l unita entra in lista gia agganciata al catalogo',
    added.name === 'Saurus Warriors' && cat.catEntry(added.catId)?.name === 'Saurus Warriors');
+/* i filtri dell'elenco: quelli che rispondono a «quali liste hanno i
+   Clanrats?» senza aprirle una per una */
+listsMod.renderLists();
+const carteTutte = doc.querySelectorAll('#lists .ls-card').length;
+ok('le liste si vedono come schede, non come righe', carteTutte > 0);
+const q = doc.querySelector('#ls-q');
+q.value = 'saurus';
+q.dispatchEvent(new window.Event('input', { bubbles: true }));
+const carteFiltro = doc.querySelectorAll('#lists .ls-card').length;
+ok('il testo filtra l elenco guardando dentro le unita', carteFiltro < carteTutte);
+q.value = '';
+q.dispatchEvent(new window.Event('input', { bubbles: true }));
+ok('e togliendolo tornano tutte',
+   doc.querySelectorAll('#lists .ls-card').length === carteTutte);
+
+/* una lista esterna: non è tua e non deve comparire nel conto della vetrina */
+const esterna = await listsMod.createList('Quella del vicino', { external: true });
+await listsMod.addUnit(esterna.id, { name: 'Saurus Warriors', models: 30, pts: 300 });
+ok('una lista esterna non si aggancia alla collezione',
+   listsMod.getList(esterna.id).units[0].catId == null);
+ok('e non chiede cosa ti manca',
+   listsMod.coverage(listsMod.getList(esterna.id)).missing === 0 &&
+   listsMod.coverage(listsMod.getList(esterna.id)).external === true);
+listsMod.renderLists();
+ok('nell elenco si riconosce', !!doc.querySelector('#lists .ls-card.ext'));
+
 const unitsBefore = state.units.length;
 doc.querySelector('[data-addunit="B"]').dispatchEvent(new window.Event('click'));
 await answer('Reggimento a mano');
@@ -1728,6 +1767,24 @@ click('#s-close');
 ok('e si chiude', !doc.querySelector('#sync-modal'));
 ok('nessun errore attorno alla sincronia', errors.length === 0);
 window.localStorage.removeItem('tow-sync');
+
+/* Il guscio che va in cache per l'uso senza rete.
+   Un modulo nuovo che nessuno aggiunge a `sw.js` non si vede: l'app
+   funziona finché c'è campo, e al circolo — dove il service worker
+   serve — si apre rotta. Il conto lo fa la prova, che lo sa fare. */
+console.log('\nil guscio per stare senza rete');
+{
+  const root = path.resolve(here, '..');
+  const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+  const inCache = new Set([...sw.matchAll(/"\.\/(src\/[\w.-]+\.js)"/g)].map(m => m[1]));
+  const onDisk = fs.readdirSync(path.join(root, 'src')).filter(f => f.endsWith('.js')).map(f => 'src/' + f);
+  const mancanti = onDisk.filter(f => !inCache.has(f));
+  const fantasmi = [...inCache].filter(f => !onDisk.includes(f));
+  if (mancanti.length) console.log('      mancano: ' + mancanti.join(', '));
+  if (fantasmi.length) console.log('      fantasmi: ' + fantasmi.join(', '));
+  ok('ogni modulo dell app sta nella cache del service worker', mancanti.length === 0);
+  ok('e nella cache non c e niente che non esiste', fantasmi.length === 0);
+}
 
 if (errors.length) console.log('\nerrori:\n  ' + errors.join('\n  '));
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');

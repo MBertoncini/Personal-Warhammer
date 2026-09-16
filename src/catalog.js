@@ -16,7 +16,8 @@
 
 import { $, esc } from './util.js';
 import { BASES, baseById } from './bases.js';
-import { loadDoc, saveDoc, deleteDoc, pickImage, shrinkImage, usage, isPersisted } from './store.js';
+import { loadDoc, saveDoc, deleteDoc, pickImage, shrinkImage, readImage,
+         dataUrlBytes, FULL_MAX_PX, usage, isPersisted } from './store.js';
 import { emit } from './bus.js';
 import { askConfirm, askPick, say } from './uikit.js';
 
@@ -291,11 +292,14 @@ export async function mergeDuplicates(){
       keeper.aliases = [...new Set([...(keeper.aliases || []), ...(other.aliases || [])])];
       if (other.notes && !(keeper.notes || "").includes(other.notes))
         keeper.notes = [keeper.notes, other.notes].filter(Boolean).join(" \u00b7 ");
-      /* la foto si perde solo se non ce n'e' nessuna da salvare */
+      /* la foto si perde solo se non ce n'e' nessuna da salvare, e
+         l'originale segue la sua miniatura invece di restare orfano */
       if (!photos.has(keeper.id) && photos.has(other.id)){
         const data = photos.get(other.id);
         photos.set(keeper.id, data);
         await saveDoc("photo:" + keeper.id, data);
+        const full = await loadDoc(FULL_KEY(other.id), null);
+        if (full) await saveDoc(FULL_KEY(keeper.id), full);
       }
       removed.push(other.id);
     }
@@ -307,6 +311,7 @@ export async function mergeDuplicates(){
   for (const id of removed){
     photos.delete(id);
     await deleteDoc("photo:" + id);
+    await deleteDoc(FULL_KEY(id));
   }
   await persist();
   return { groups: groups.length, removed };
@@ -316,26 +321,94 @@ export async function removeEntry(id){
   entries = entries.filter(e => e.id !== id);
   photos.delete(id);
   await deleteDoc("photo:" + id);
+  await deleteDoc(FULL_KEY(id));
   await persist();
 }
 
+/* ------------------------------------------------------------------
+   Le foto sono due cose, e conviene tenerle separate.
+
+   La **miniatura** ("photo:<id>") e' quella che l'app disegna: sta in
+   memoria per tutte le voci insieme, entra nei tondi del tavolo,
+   viaggia dentro gli SVG esportati e finisce nel repository della
+   Nuvola. 256 px, ~15 KB, e non deve crescere.
+
+   L'**originale** ("photo-full:<id>") non serve a disegnare niente:
+   serve a riguardarsi il mantello che hai passato due sere a
+   sfumare. Si carica solo quando lo apri, non sta in memoria, e non
+   entra in nessuno dei posti dove il peso conta.
+
+   Prima c'era solo la prima, e la seconda veniva buttata via
+   all'import senza dirlo. Adesso la si tiene, e chi non la vuole la
+   spegne — e' una preferenza, non una regola.
+   ------------------------------------------------------------------ */
+const FULL_KEY = id => "photo-full:" + id;
+const FULL_PREF = "tow-foto-piena";
+
+export const fullPhotosOn = () => {
+  try { return localStorage.getItem(FULL_PREF) !== "0"; } catch { return true; }
+};
+export function setFullPhotos(on){
+  try { localStorage.setItem(FULL_PREF, on ? "1" : "0"); } catch { /* e' solo una preferenza */ }
+}
+
+/* L'originale, se c'e'. Asincrona apposta: tenerne venti in memoria
+   per disegnare venti quadratini da 96 px sarebbe il modo piu' veloce
+   di far scattare la quota. */
+export const fullPhoto = id => loadDoc(FULL_KEY(id), null);
+export const hasFullPhoto = id => fullPhoto(id).then(v => !!v);
+
 /* separata da setPhoto perche' il picker non si puo' aprire dai test */
-export async function setPhotoData(id, data){
+export async function setPhotoData(id, data, full = null){
   photos.set(id, data);
   await saveDoc("photo:" + id, data);
+  if (full) await saveDoc(FULL_KEY(id), full);
+  else await deleteDoc(FULL_KEY(id));   // foto nuova, originale vecchio: sarebbe un'altra miniatura
   emit("catalog:changed");
 }
 
 export async function setPhoto(id){
   const f = await pickImage();
   if (!f) return;
-  try { await setPhotoData(id, await shrinkImage(f)); }
-  catch (_) { await say("Non riesco a leggere questa immagine.", { title:"Foto non valida" }); }
+
+  /* Leggere l'immagine e salvarla sono due fallimenti diversi e vanno
+     detti diversi: un JPEG rotto e una quota piena si riparano in due
+     modi opposti, e «foto non valida» davanti a un archivio pieno
+     manda a cercare il problema dalla parte sbagliata. */
+  let thumb = null, full = null;
+  try {
+    thumb = await shrinkImage(f);
+    if (fullPhotosOn()){
+      const img = await readImage(f, { max: FULL_MAX_PX });
+      /* un originale che il tetto ha ridotto alla misura della
+         miniatura non e' un originale: e' un doppione che pesa */
+      if (img && img.data && dataUrlBytes(img.data) > dataUrlBytes(thumb) * 1.5) full = img.data;
+    }
+  } catch (_) {
+    return say("Non riesco a leggere questa immagine.", { title:"Foto non valida" });
+  }
+
+  try { await setPhotoData(id, thumb, full); }
+  catch (_) {
+    /* la miniatura da sola pesa un quarantesimo dell'originale: se
+       l'archivio l'accetta, la foto si salva lo stesso e si perde solo
+       quello che si poteva perdere */
+    if (full){
+      try {
+        await setPhotoData(id, thumb, null);
+        return say("L'originale non ci sta nell'archivio: ho tenuto la miniatura. " +
+                   "Libera spazio, o spegni «foto intere» nella barra.",
+                   { title:"Archivio pieno" });
+      } catch (_){ /* non ci sta nemmeno quella: lo dice la riga sotto */ }
+    }
+    await say("L'archivio non accetta altro: libera spazio e riprova.", { title:"Non riesco a salvarla" });
+  }
 }
 
 export async function clearPhoto(id){
   photos.delete(id);
   await deleteDoc("photo:" + id);
+  await deleteDoc(FULL_KEY(id));
   emit("catalog:changed");
 }
 
@@ -367,6 +440,8 @@ export function renderCatalog(){
       <input type="search" id="cat-q" placeholder="Cerca per nome, fazione o alias\u2026" value="${esc(filter)}">
       <button class="btn primary" id="cat-add">Nuova voce</button>
       ${dups.length ? `<button class="btn" id="cat-merge">Unisci doppioni (${dups.length})</button>` : ""}
+      <label class="dice-anim" title="L'app disegna sempre con la miniatura da 256 px. Con questa accesa tiene da parte anche lo scatto intero, che si apre toccando la foto: pesa, e si spegne qui.">
+        <input type="checkbox" id="cat-full"${fullPhotosOn() ? " checked" : ""}> foto intere</label>
     </div>
     <p class="note" id="cat-usage">${entries.length} voci \u00b7 ${total} miniature in collezione \u00b7 ${done} dipinte${total ? ` (${pct}%)` : ""}</p>
     ${total ? `<div class="paintbar" title="${done} dipinte su ${total}"><span style="width:${pct}%"></span></div>` : ""}
@@ -397,20 +472,83 @@ export function renderCatalog(){
     editing = { ...catEntry(b.dataset.edit) };
     renderCatalog();
   }));
-  host.querySelectorAll("[data-photo]").forEach(b => b.addEventListener("click", async () => {
-    await setPhoto(b.dataset.photo);
+  $("#cat-full").addEventListener("change", e => {
+    setFullPhotos(e.target.checked);
     renderCatalog();
+  });
+
+  /* Toccare la foto faceva una cosa sola: cambiarla. Adesso che
+     l'originale c'e', le cose da fare sono tre, e una di queste —
+     guardarselo — e' il motivo per cui lo si tiene. Su una voce senza
+     foto il menu non serve: si apre il picker e basta. */
+  host.querySelectorAll("[data-photo]").forEach(b => b.addEventListener("click", async () => {
+    const id = b.dataset.photo;
+    if (!photos.has(id)){ await setPhoto(id); return renderCatalog(); }
+    const full = await fullPhoto(id);
+    const pick = await askPick({
+      title: catEntry(id) ? catEntry(id).name : "Foto",
+      label: full ? "L'originale è in archivio." : "Di questa voce c'è solo la miniatura da 256 px.",
+      options: [
+        ...(full ? [{ id:"open", label:"Guarda l'originale" }] : []),
+        { id:"set", label: full ? "Sostituisci la foto" : "Cambia foto" },
+        { id:"del", label:"Togli la foto" },
+      ],
+    });
+    if (pick === "open") return showPhoto(id, full);
+    if (pick === "set"){ await setPhoto(id); return renderCatalog(); }
+    if (pick === "del"){
+      if (!await askConfirm("La miniatura e l'originale spariscono. La voce resta.",
+                            { title:"Togliere la foto?" })) return;
+      await clearPhoto(id);
+      renderCatalog();
+    }
   }));
 
   if (editing) wireEditor();
   showUsage();
 }
 
+/* Il visore. Una foto intera dentro un riquadro da 96 px non si
+   guarda: si apre sopra tutto, si chiude con un tocco o con Esc, e
+   dice quanto pesa — che e' l'informazione che serve a decidere se
+   tenerne venti. */
+function showPhoto(id, data){
+  const e = catEntry(id);
+  const kb = Math.round(dataUrlBytes(data) / 1024);
+  const old = document.getElementById("photoview");
+  if (old) old.remove();
+
+  const box = document.createElement("div");
+  box.id = "photoview";
+  box.className = "photoview";
+  box.innerHTML = `
+    <div class="pv-head">
+      <b>${esc(e ? e.name : "Foto")}</b>
+      <span class="mono">${kb >= 1024 ? (kb / 1024).toFixed(1) + " MB" : kb + " KB"}</span>
+      <span class="spacer"></span>
+      <button class="btn tiny ghost" data-pv="close">Chiudi</button>
+    </div>
+    <img src="${data}" alt="${esc(e ? e.name : "")}">`;
+
+  const close = () => {
+    box.remove();
+    document.removeEventListener("keydown", onKey);
+  };
+  function onKey(ev){ if (ev.key === "Escape") close(); }
+  box.addEventListener("click", ev => {
+    /* dentro l'immagine si resta: chiudere mentre si sta guardando e'
+       il modo piu' rapido di far riaprire tutto da capo */
+    if (ev.target === box || ev.target.closest("[data-pv]")) close();
+  });
+  document.addEventListener("keydown", onKey);
+  document.body.appendChild(box);
+}
+
 function cardHTML(e){
   const p = photos.get(e.id);
   return `
     <div class="cat-card">
-      <button class="cat-photo" data-photo="${e.id}" title="Cambia foto">
+      <button class="cat-photo" data-photo="${e.id}" title="${p ? "Guarda, cambia o togli la foto" : "Carica una foto"}">
         ${p ? `<img src="${p}" alt="">` : `<span class="ph">+ foto</span>`}
       </button>
       <div class="cat-body">

@@ -564,6 +564,38 @@ export function arcSectors(box, len = 60){
   };
 }
 
+/* Chi tocca davvero il nemico, modello per modello.
+ *
+ * Il conto degli attacchi partiva da una stima: la prima fila e' larga
+ * quanto la piu' stretta delle due. E' generosa e quasi sempre giusta
+ * quando due reggimenti si incontrano di fronte — ma due unita' che si
+ * toccano d'angolo, o una fila lunga contro una basetta di mostro, si
+ * toccano con tre modelli e il conto ne dava cinque.
+ *
+ * Il tavolo la risposta ce l'ha: sono le basette che stanno addosso al
+ * poligono nemico, contate una per una. `cells` sono le caselle nel
+ * mondo, come le da' `worldCells`, e ognuna dice gia' se e' un soldato
+ * o un personaggio unito — quindi la risposta e' due risposte, ed e'
+ * importante che restino separate: un capo che sta in mezzo a una fila
+ * che tocca il nemico con lo spigolo puo' benissimo non toccare niente,
+ * e i suoi quattro attacchi di Forza 5 non li tira.
+ *
+ * Contare i modelli non e' contare gli attacchi: un modello che tocca
+ * porta tutti i suoi, ed e' `combat.js` a moltiplicare.
+ */
+export function touchingModels(cells, foePoly, { gap = TOUCH } = {}){
+  const out = { models: 0, chars: [], total: 0 };
+  if (!foePoly || !foePoly.length) return out;
+  for (const c of cells || []){
+    const poly = boxCorners({ x:c.wx, y:c.wy, w:c.w, h:c.h, rot:c.wrot || 0 });
+    if (polyDistance(poly, foePoly) > gap) continue;
+    out.total++;
+    if (c.kind === "char") out.chars.push(c.uid);
+    else out.models++;
+  }
+  return out;
+}
+
 /* units: quelle sul tavolo; boxOf: come si ricava il rettangolo di
    ognuna (lo sa deploy.js, che tiene le formazioni aggiornate) */
 export function contactList(units, boxOf){
