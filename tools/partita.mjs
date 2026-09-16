@@ -13,6 +13,7 @@
  *   node tools/partita.mjs --gemini             se GEMINI_API_KEY è nell'ambiente
  *   node tools/partita.mjs --gemini A           solo l'esercito A è il modello
  *   node tools/partita.mjs --breve              solo il registro, senza i perché
+ *   node tools/partita.mjs --html partita.html  la partita DA GUARDARE: una pagina sola
  *
  * Quello che stampa è pensato per essere LETTO: ogni mossa dice chi ha
  * scelto, perché, e cosa è successo, con la pagina del manuale accanto.
@@ -30,6 +31,7 @@ import * as PR from '../src/profiles.js';
 import * as ARM from '../src/armies.js';
 import * as PREP from '../src/prep.js';
 import { SCENARIOS } from '../src/scenarios.js';
+import { paginaHTML, fotogramma, coloreTerreno } from './replay.mjs';
 
 const qui = path.dirname(fileURLToPath(import.meta.url));
 const dati = f => JSON.parse(fs.readFileSync(path.join(qui, '..', 'dati', f), 'utf8'));
@@ -46,6 +48,10 @@ const seme = +arg('seme', 1) || 1;
 const scenario = arg('scenario', 'bm-strada');
 const breve = !!arg('breve', false);
 const gemini = arg('gemini', false);
+/* --html scrive la partita da guardare: una pagina sola, senza rete e
+   senza chiavi dentro, che si apre con un doppio clic o si pubblica */
+const html = arg('html', false);
+const fileHtml = html === true ? 'partita.html' : html;
 
 /* ---- i dadi, con il seme: la stessa partita si rigioca uguale ---- */
 let s = seme >>> 0 || 1;
@@ -115,6 +121,7 @@ if (sc.desc) console.log(`\n${sc.desc}\n`);
 
 /* ---- e si gioca ---- */
 let visto = 0, casella = '', daScrivere = '';
+const frames = [];
 /* l'intestazione della casella si stampa solo se sotto ci finisce
    qualcosa: un turno in cui nessuno spara non deve lasciare un «TIRO»
    vuoto in mezzo al racconto */
@@ -129,11 +136,15 @@ const esito = await AG.giocaPartita(AR, S, {
       console.log(`  ${nomi[player]}: ${perche}`);
     }
     if (S.log.length > visto) testa();
-    for (const r of S.log.slice(visto)){
+    const righe = S.log.slice(visto);
+    for (const r of righe){
       const pag = r.page ? `  (p. ${r.page})` : '';
       console.log(`    T${r.turno} · ${r.text}${pag}` + (r.dice ? `   [${r.dice.join(' ')}]` : ''));
     }
     visto = S.log.length;
+    if (html) frames.push(fotogramma(S, { AR,
+      testo: righe.map(r => ({ t: r.text, p: r.page || 0, d: r.dice || null })),
+      chi: nomi[player], perche: mossa && mossa.id !== 'avanti' ? perche : '' }));
     if (esito && !esito.ok) console.log(`    ⚠ mossa rifiutata: ${esito.text}`);
   },
 });
@@ -156,6 +167,27 @@ if (S.detto.size){
     const l = AR.LIMITI.find(x => x.id === id);
     if (l) console.log(`  · ${l.what} — ${l.why}${l.page ? ` (p. ${l.page})` : ''}`);
   }
+}
+if (html){
+  /* Il terreno e le zone non cambiano mai durante la partita: stanno
+     nell'intestazione una volta sola, e i fotogrammi portano solo i
+     pezzi che si muovono. */
+  const pagina = paginaHTML({
+    meta: {
+      titolo: `${sc.label} — ${nomi.A} contro ${nomi.B}`,
+      sotto: `${S.punti.A} contro ${S.punti.B} punti · seme ${seme} · ` +
+             `${agenti.A.nome} contro ${agenti.B.nome} · ${esito.winner ? nomi[esito.winner] + ', ' + esito.label : esito.label}`,
+      piede: 'Ogni riga porta la pagina del manuale da cui viene. Quello che questa partita non ha giocato: ' +
+             ([...S.detto].map(id => (AR.LIMITI.find(x => x.id === id) || {}).what).filter(Boolean).join('; ') || 'niente') + '.',
+      w: S.table.w, h: S.table.h, nomi,
+      terreno: S.terrain.map(t => ({ x: t.x, y: t.y, w: t.w, h: t.h, rot: t.rot, colore: coloreTerreno(t.kind) })),
+      zone: [...(S.zones.A || []).map(z => ({ ...z, army:'A' })), ...(S.zones.B || []).map(z => ({ ...z, army:'B' }))],
+    },
+    frames,
+  });
+  fs.writeFileSync(fileHtml, pagina);
+  console.log(`\nLa partita da guardare: ${fileHtml} (${frames.length} fotogrammi, ${Math.round(pagina.length / 1024)} KB)`);
+  console.log('Aprila con un doppio clic, o mettila online: dentro non c\'è nessuna chiave e non chiama nessuno.');
 }
 if (erroriModello.length)
   console.log(`\n⚠  il modello non ha scelto ${erroriModello.length} volte: ${[...new Set(erroriModello)].slice(0, 3).join('; ')}`);

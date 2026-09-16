@@ -261,7 +261,10 @@ node tools/partita.mjs --liste ?      # le liste dell'archivio, numerate
 node tools/partita.mjs --liste 3,9 --scenario bm-rovine
 node tools/partita.mjs --gemini       # due modelli che si affrontano
 node tools/partita.mjs --gemini A     # solo l'esercito A è il modello
+node tools/partita.mjs --html partita.html   # la partita da GUARDARE
 ```
+
+Con `--html` esce **una pagina sola**, senza dipendenze e senza rete: il tavolo disegnato, una barra per andare avanti e indietro fotogramma per fotogramma, e accanto il registro con i dadi usciti, la pagina del manuale e il perché tattico di chi ha scelto. Si apre con un doppio clic, si manda a un amico, si mette su GitHub Pages — dentro non c'è nessuna chiave e non chiama nessuno.
 
 Per il modello serve una chiave nell'ambiente — `GEMINI_API_KEY`, e `GEMINI_MODEL` se ne vuoi uno diverso da `gemini-2.5-flash`:
 
@@ -469,6 +472,7 @@ test/
 tools/
   make-icons.mjs      scrive i PNG del manifest senza dipendenze
   partita.mjs         una partita intera dalla lista al verdetto, commentata
+  replay.mjs          la stessa partita da guardare: una pagina sola, con la barra del tempo
 dati/
   eserciti/           un file per esercito: regole, oggetti, domini
   profili.json        i profili letti sul libro: cavalcature, servitori, liste scritte a mano
