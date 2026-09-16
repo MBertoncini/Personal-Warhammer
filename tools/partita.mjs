@@ -15,6 +15,7 @@
  *   node tools/partita.mjs --gemini --pausa 8000  più lento, per le quote strette
  *   node tools/partita.mjs --breve              solo il registro, senza i perché
  *   node tools/partita.mjs --html partita.html  la partita DA GUARDARE: una pagina sola
+ *   node tools/partita.mjs --archivia           e anche nel diario, dati/partite.json
  *
  * Quello che stampa è pensato per essere LETTO: ogni mossa dice chi ha
  * scelto, perché, e cosa è successo, con la pagina del manuale accanto.
@@ -31,8 +32,10 @@ import * as D from '../src/dice.js';
 import * as PR from '../src/profiles.js';
 import * as ARM from '../src/armies.js';
 import * as PREP from '../src/prep.js';
+import * as CB from '../src/combat.js';
 import { SCENARIOS } from '../src/scenarios.js';
 import { paginaHTML, fotogramma, coloreTerreno, stessoTavolo } from './replay.mjs';
+import * as ARCH from './archivia.mjs';
 
 const qui = path.dirname(fileURLToPath(import.meta.url));
 const dati = f => JSON.parse(fs.readFileSync(path.join(qui, '..', 'dati', f), 'utf8'));
@@ -44,7 +47,7 @@ const dati = f => JSON.parse(fs.readFileSync(path.join(qui, '..', 'dati', f), 'u
    Adesso le parole fino al prossimo «--» si rimettono insieme, e quelle
    che nessuno legge si dicono. */
 const argv = process.argv.slice(2);
-const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste'];
+const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste', 'archivia'];
 const valori = {};
 const ignoti = [];
 for (let i = 0; i < argv.length; i++){
@@ -77,6 +80,11 @@ const html = arg('html', false);
    centinaio */
 const pausa = +arg('pausa', 4500) || 0;
 const fileHtml = html === true ? 'partita.html' : html;
+/* --archivia mette la partita nel diario, in testa a dati/partite.json
+   (o al file che gli si dice): con la Nuvola arriva nella scheda
+   Partite dell'app, marcata come simulata */
+const archivia = arg('archivia', false);
+const fileArchivio = archivia === true ? path.join(qui, '..', 'dati', 'partite.json') : archivia;
 
 /* ---- i dadi, con il seme: la stessa partita si rigioca uguale ---- */
 D.setSource(D.seeded(seme));
@@ -140,34 +148,42 @@ const faz = { A: fazioneDi(A), B: fazioneDi(B) };
 const puntiDi = l => (l.units || []).reduce((s, u) => s + (u.pts || 0), 0);
 console.log(`Liste: A = ${iA} «${A.name}», ${faz.A.nome}, ${puntiDi(A)} pt` +
             `\n       B = ${iB} «${B.name}», ${faz.B.nome}, ${puntiDi(B)} pt`);
+
+/* Gli avvisi non restano in console: finiscono anche in cima alla
+   pagina da guardare. Una partita ha girato con un esercito a
+   caratteristiche zero, la console lo diceva a meta', e la pagina
+   taceva. */
+const avvisi = [];
+const avvisa = testo => { console.log('⚠  ' + testo); avvisi.push(testo); };
+
 for (const t of ['A', 'B']){
   const l = t === 'A' ? A : B;
-  if (faz[t].ignota) console.log(`⚠  ${t}: la lista non dice la fazione e le unità non la fanno capire: la chiamo «${l.name}».`);
-  else if (faz[t].dedotta) console.log(`⚠  ${t}: la lista non dice la fazione; dalle unità sembra ${faz[t].nome}.`);
+  if (faz[t].ignota) avvisa(`${t}: la lista non dice la fazione e le unità non la fanno capire: la chiamo «${l.name}».`);
+  else if (faz[t].dedotta) avvisa(`${t}: la lista «${l.name}» non dice la fazione; dalle unità sembra ${faz[t].nome}.`);
 }
 {
   const pa = puntiDi(A), pb = puntiDi(B);
   if (Math.abs(pa - pb) > 0.1 * Math.max(pa, pb))
-    console.log(`⚠  le due liste non si equivalgono: ${pa} contro ${pb} punti.`);
+    avvisa(`le due liste non si equivalgono: ${pa} contro ${pb} punti.`);
   const pts = (SCENARIOS[scenario] || {}).pts;
   if (pts && (pa > pts * 1.05 || pb > pts * 1.05))
-    console.log(`⚠  lo scenario «${scenario}» è pensato per ${pts} punti.`);
+    avvisa(`lo scenario «${scenario}» è pensato per ${pts} punti.`);
 }
 
 /* ---- si può giocare? ---- */
 for (const [tag, l] of [['A', A], ['B', B]]){
   const p = PREP.playability(l, { split: PR.splitStat });
-  if (!p.can) console.log(`⚠  ${tag} «${l.name}»: ${p.text}\n   La partita si gioca lo stesso, ma quei conti sono finti.\n`);
+  if (!p.can) avvisa(`${tag} «${l.name}»: ${p.text}. La partita si gioca lo stesso, ma quei conti sono finti.`);
   /* Il profilo lo completa la tavola, il tipo di truppa e le armi no:
      una lista scritta a mano senza questi due gioca con fanteria
      regolare al posto di tutto e non spara mai. */
   const senzaTipo = (l.units || []).filter(u => !String(u.troop || '').trim()).map(u => u.name);
   const senzaArmi = (l.units || []).filter(u => !(u.weapons || []).length).map(u => u.name);
   if (senzaTipo.length)
-    console.log(`⚠  ${tag}: ${senzaTipo.length} unità senza tipo di truppa (${[...new Set(senzaTipo)].join(', ')}): ` +
-                'contano come fanteria regolare.');
+    avvisa(`${tag}: ${senzaTipo.length} unità senza tipo di truppa (${[...new Set(senzaTipo)].join(', ')}): ` +
+           'contano come fanteria regolare.');
   if (senzaArmi.length === (l.units || []).length)
-    console.log(`⚠  ${tag}: nessuna unità ha le armi scritte: nessuno sparerà.`);
+    avvisa(`${tag}: nessuna unità ha le armi scritte: nessuno sparerà.`);
 }
 
 /* ---- gli agenti ---- */
@@ -178,7 +194,7 @@ const faiAgente = (tag, nome) => {
   const vuole = gemini === true || gemini === tag;
   if (!vuole) return AG.agenteEuristico({ nome: nome + ' (euristica)' });
   if (!chiave){
-    console.log(`⚠  --gemini chiesto ma GEMINI_API_KEY non c'è: ${nome} gioca con l'euristica.`);
+    avvisa(`--gemini chiesto ma GEMINI_API_KEY non c'è: ${nome} gioca con l'euristica.`);
     return AG.agenteEuristico({ nome: nome + ' (euristica)' });
   }
   return AG.agenteGemini({ apiKey: chiave, model, nome: nome + ' (' + model + ')',
@@ -190,6 +206,20 @@ const nomi = { A: faz.A.nome, B: faz.B.nome };
 if (nomi.A === nomi.B){ nomi.A += ' (A)'; nomi.B += ' (B)'; }
 const S = AR.newBattle({ A, B, scenario, nomi });
 const agenti = { A: faiAgente('A', nomi.A), B: faiAgente('B', nomi.B) };
+const conModello = Object.values(agenti).some(a => !/euristica/.test(a.nome));
+
+/* Il controllo della lista guarda il file; questo guarda il tavolo, che
+   e' quello che si gioca. Un'unita' con Resistenza zero, o senza
+   nessuna Abilita', vuol dire un profilo che sul tavolo non si trova. */
+for (const tag of ['A', 'B']){
+  const zero = AR.unitsOf(S, tag).filter(u => {
+    const c = CB.combatant(u);
+    return !(c.t > 0) || !(c.ws > 0 || c.bs > 0);
+  });
+  if (zero.length)
+    avvisa(`${tag}: ${zero.length} unità giocano senza profilo (${[...new Set(zero.map(u => u.baseName || u.name))].join(', ')}): ` +
+           'Resistenza o Abilità a zero.');
+}
 
 /* ---- l'intestazione ---- */
 const sc = SCENARIOS[scenario];
@@ -197,7 +227,9 @@ console.log('═'.repeat(72));
 console.log(`  ${sc.label} — ${sc.pts || ''} punti, tavolo ${sc.table[0]}×${sc.table[1]}″`);
 console.log(`  ${nomi.A} (${S.punti.A} pt, ${agenti.A.nome})`);
 console.log(`  contro ${nomi.B} (${S.punti.B} pt, ${agenti.B.nome})`);
-console.log(`  seme ${seme}: la stessa partita si rigioca identica`);
+console.log(conModello
+  ? `  seme ${seme}: i dadi sono gli stessi, le scelte del modello no`
+  : `  seme ${seme}: la stessa partita si rigioca identica`);
 console.log('═'.repeat(72));
 if (sc.desc) console.log(`\n${sc.desc}\n`);
 
@@ -208,6 +240,15 @@ const frames = [];
    qualcosa: un turno in cui nessuno spara non deve lasciare un «TIRO»
    vuoto in mezzo al racconto */
 const testa = () => { if (daScrivere){ console.log('\n── ' + daScrivere + ' ──'); daScrivere = ''; } };
+const diario = archivia ? ARCH.registro(S, {
+  liste: { A, B },
+  meta: {
+    event: `Partita simulata: ${agenti.A.nome} contro ${agenti.B.nome}`,
+    playerA: agenti.A.nome, playerB: agenti.B.nome,
+    first: S.primo, pts: sc.pts || 0, rounds: S.rounds,
+    simulata: true, seme,
+  },
+}) : null;
 const esito = await AG.giocaPartita(AR, S, {
   A: agenti.A, B: agenti.B,
   onPasso: ({ player, mossa, perche, esito, opzioni, agente }) => {
@@ -236,6 +277,7 @@ const esito = await AG.giocaPartita(AR, S, {
     visto = S.log.length;
     const rifiutata = esito && !esito.ok && mossa && mossa.id !== 'avanti';
     if (rifiutata) console.log(`    ⚠ mossa rifiutata: ${esito.text}`);
+    if (diario) diario.passo({ chi: nomi[player], perche: detto, righe });
     if (html){
       const testo = righe.map(r => ({ t: r.text, p: r.page || 0, d: r.dice && r.dice.length ? r.dice : null,
                                       ...(r.groups ? { g: r.groups.map(g => ({ w: g.what, d: g.dice })) } : {}),
@@ -267,6 +309,11 @@ if (S.detto.size){
     if (l) console.log(`  · ${l.what} — ${l.why}${l.page ? ` (p. ${l.page})` : ''}`);
   }
 }
+if (erroriModello.length){
+  console.log('');
+  avvisa(`il modello non ha scelto ${erroriModello.length} volte, e al suo posto ha giocato l'euristica: ` +
+         [...new Set(erroriModello)].slice(0, 3).join('; '));
+}
 if (html){
   /* Il terreno e le zone non cambiano mai durante la partita: stanno
      nell'intestazione una volta sola, e i fotogrammi portano solo i
@@ -274,6 +321,7 @@ if (html){
   const pagina = paginaHTML({
     meta: {
       titolo: `${sc.label} — ${nomi.A} contro ${nomi.B}`,
+      avvisi,
       sotto: `${S.punti.A} contro ${S.punti.B} punti · seme ${seme} · ` +
              `${agenti.A.nome} contro ${agenti.B.nome} · ${esito.winner ? nomi[esito.winner] + ', ' + esito.label : esito.label}`,
       piede: 'Ogni riga porta la pagina del manuale da cui viene. Quello che questa partita non ha giocato: ' +
@@ -288,5 +336,20 @@ if (html){
   console.log(`\nLa partita da guardare: ${fileHtml} (${frames.length} fotogrammi, ${Math.round(pagina.length / 1024)} KB)`);
   console.log('Aprila con un doppio clic, o mettila online: dentro non c\'è nessuna chiave e non chiama nessuno.');
 }
-if (erroriModello.length)
-  console.log(`\n⚠  il modello non ha scelto ${erroriModello.length} volte: ${[...new Set(erroriModello)].slice(0, 3).join('; ')}`);
+if (diario){
+  const rep = diario.chiudi({ title: `${sc.label}: ${nomi.A} contro ${nomi.B} (simulata)` });
+  /* il verdetto dell'arbitro e quello che la partita non ha giocato: il
+     punteggio della scheda lo ricalcola l'app dalle fotografie, e le
+     due cose possono non coincidere */
+  const non = [...S.detto].map(id => (AR.LIMITI.find(x => x.id === id) || {}).what).filter(Boolean);
+  rep.notes = [
+    `Partita giocata dall'arbitro dell'app (tools/partita.mjs), seme ${seme}: ${agenti.A.nome} contro ${agenti.B.nome}.`,
+    `Verdetto dell'arbitro: ${esito.winner ? nomi[esito.winner] + ', ' + esito.label : esito.label} — ` +
+      `${nomi.A} ${esito.A} punti vittoria, ${nomi.B} ${esito.B} (${esito.why}).`,
+    avvisi.length ? 'Avvisi: ' + avvisi.join(' · ') : '',
+    non.length ? 'Quello che questa partita non ha giocato: ' + non.join('; ') + '.' : '',
+  ].filter(Boolean).join('\n\n');
+  const quante = ARCH.aggiungi(fileArchivio, rep);
+  console.log(`\nNel diario: ${fileArchivio} (${rep.turns.length} fotografie, ${quante} partite in tutto).`);
+  console.log('Nell\'app arriva con la Nuvola: prima «Salva su GitHub» dall\'app, poi push di questo file, poi «Scarica».');
+}

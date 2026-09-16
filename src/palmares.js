@@ -73,6 +73,9 @@ export function recordOf(name, list = reports){
   if (!key) return out;
   for (const rep of list || []){
     if (!rep || !rep.armies) continue;
+    /* una partita giocata da due modelli (`tools/partita.mjs
+       --archivia`) sta nel diario ma non dice come va la lista */
+    if (rep.meta && rep.meta.simulata) continue;
     for (const side of ["A", "B"]){
       if (normName((rep.armies[side] || {}).name) !== key) continue;
       const foe = side === "A" ? "B" : "A";

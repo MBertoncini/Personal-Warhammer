@@ -113,8 +113,57 @@ c'era:
 - i pestoni contro carri e cavalleria: l'arbitro li tira contro tutti.
 
 **Nei dati**: la lista 9 (Skaven Battle March) non ha né tipo di truppa
-né armi. `partita.mjs` adesso lo dice all'avvio; finché non si
-corregge, gli Skaven giocano da fanteria regolare e non sparano.
+né armi. `partita.mjs` adesso lo dice all'avvio, e in cima alla pagina;
+finché non si corregge, gli Skaven giocano da fanteria regolare e non
+sparano. La lista 12 (Battle march, 862 pt) ha tutto.
+
+## Fatto: la seconda e la terza partita, rilette
+
+- **Liste scritte a mano a caratteristiche zero.** `profileFor` usava
+  `u.army` come fazione, e sul tavolo `army` è «A» o «B»: la tavola dei
+  profili non trovava niente e gli Skaven giocavano con R 0, AC 0, M 0 —
+  zero ferite in tutta la partita, nessun turno Skaven. Il controllo della
+  lista diceva «tutto giocabile» perché guarda il file, non il tavolo.
+  Adesso `partita.mjs` controlla anche il tavolo.
+- **Il raduno** si ritentava finché riusciva (sette volte di fila): un
+  test per unità per turno, e chi fallisce continua a fuggire nelle mosse.
+- **La carica su chi fugge come reazione** spariva: chi caricava non
+  tirava e restava libero di marciare o di ridichiarare. Adesso tira.
+  Chi è già in fuga non «tiene la posizione»: la carica lo insegue.
+- **Tira e tiene** non sparava mai: `charge.js` lo chiama `shoot`,
+  l'arbitro cercava `stand`.
+- **Il Panico** si contava sulla forza di inizio partita, e passato il
+  quarto ogni perdita successiva rifaceva il test. Adesso è il quarto
+  perso nella fase, una volta per fase, come in `shoot.js`.
+- Paura/Terrore/Stupidità, personaggi uniti e magia si dichiarano a fine
+  schieramento quando le liste li toccano.
+- `--archivia` mette la partita nel diario (`tools/archivia.mjs`),
+  marcata `meta.simulata` e fuori dal palmarès.
+
+**Da controllare sul libro**:
+
+- p. 141: il quarto del Panico è sulla Forza d'Unità **d'inizio fase**?
+- se un'unità già in fuga caricata deve fuggire di nuovo (oggi non si
+  muove, e la carica la raggiunge o fallisce);
+- il bonus di ordine chiuso con più unità per parte: oggi se ne contano
+  due («2 ordine di combattimento»);
+- un Bastiladon che ripiega in ordine con un 5 è finito 12,3″ più in là
+  («oltre chi aveva dietro»): il ripiegamento non dovrebbe fermarsi prima?
+- se una carica sul fianco di schermagliatori toglie i ranghi al
+  bersaglio (`disrupted` resta sempre falso).
+
+**Nei dati**: l'export di New Recruit perde le regole d'esercito — Cold
+Blooded dei Lizardmen, Stupidity e Regeneration dei Troll — e ne porta di
+strane (Impact Hits a un Night Goblin Bigboss appiedato). L'arbitro gioca
+quello che trova.
+
+## Compito 0 — la psicologia e i personaggi uniti in partita
+
+Paura, Terrore e Stupidità hanno i test in `psych.js` e l'arbitro non li
+chiama (`LIMITI`, voce `psicologia`); i personaggi non si uniscono mai
+alle unità (voce `personaggi`), e in tutte le partite fra modelli sono
+morti da soli al primo turno. Sono due buchi che pesano sull'esito più
+delle scelte dei modelli.
 
 ## Compito 1 — la magia in partita (p. 106 e seguenti)
 

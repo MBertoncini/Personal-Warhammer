@@ -105,12 +105,17 @@ export function paginaHTML({ meta, frames }){
   .nome{ font-size:22px; fill:#fff; paint-order:stroke; stroke:rgba(0,0,0,.55); stroke-width:5px;
          font-family:system-ui,sans-serif; }
   .fuga{ opacity:.45; }
+  .avvisi{ margin:8px 0 0; padding:8px 12px; border:1px solid #e0b872; background:#fff4dc;
+            border-radius:5px; color:#6b4410; font-size:13px; }
+  .avvisi ul{ margin:4px 0 0; padding-left:18px; }
   footer{ padding:10px 18px; color:var(--muto); font-size:12.5px; border-top:1px solid var(--linea); }
 </style>
 
 <header>
   <h1>${esc(meta.titolo)}</h1>
   <div class="sotto">${esc(meta.sotto)}</div>
+  ${(meta.avvisi || []).length ? `<div class="avvisi"><b>Da sapere prima di guardarla:</b>
+    <ul>${meta.avvisi.map(a => `<li>${esc(a)}</li>`).join("")}</ul></div>` : ""}
 </header>
 
 <div class="schermo">

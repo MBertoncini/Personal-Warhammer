@@ -303,7 +303,8 @@ function sideRow(r){
         <span class="mono">${esc(r.meta.date || "")} · ${
           r.turns.filter(t => t.kind === "turn").length
             ? r.turns.filter(t => t.kind === "turn").length + " turni"
-            : "solo il risultato"} · ${esc(r.scenario.label || "")}</span></span>
+            : "solo il risultato"} · ${esc(r.scenario.label || "")}${
+          r.meta.simulata ? " · simulata, fuori dal palmarès" : ""}</span></span>
       <span class="chip ${key}">${v.A}–${v.B}</span>
     </div>`;
 }

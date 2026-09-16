@@ -44,13 +44,15 @@ PAL.usePalmares([
   partita('Skaven da torneo', 'Ogre pesanti', 600, 900, '2026-03-02'),
   /* un risultato di torneo, senza nessun turno registrato */
   partita('Ogre pesanti', 'Quella del vicino', 1500, 1500, '2026-04-10', 0),
+  /* una partita giocata da due modelli: sta nel diario, non nel palmarès */
+  { ...partita('Skaven da torneo', 'Orchi di casa', 100, 900, '2026-05-01'), meta: { date: '2026-05-01', simulata: true } },
 ]);
 
 /* ================================================================= */
 console.log('il palmares di una lista');
 
 const sk = PAL.recordOf('Skaven da torneo');
-ok('conta le partite giocate', sk.played === 2);
+ok('conta le partite giocate, non quelle simulate', sk.played === 2);
 ok('e come sono andate', sk.won === 1 && sk.lost === 1 && sk.draw === 0);
 ok('con i punti fatti e quelli presi', sk.pts === 1800 && sk.against === 1700);
 ok('la piu recente per prima', sk.games[0].date === '2026-03-02');

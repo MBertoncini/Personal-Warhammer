@@ -48,6 +48,7 @@ import * as PREP from './prep.js';
 import { splitStat, moveInfo } from './profiles.js';
 import { roll, leadershipTest, stat, rankBonus } from './rules.js';
 import { SCENARIOS, geometry } from './scenarios.js';
+import { isWizard } from './magic.js';
 import { troopType, unitStrength } from './troops.js';
 
 /* ============================================================
@@ -79,6 +80,10 @@ export const LIMITI = [
     why:"il test c'è in `charge.js` (`perilAsk`), ma vuole sapere quali modelli hanno attraversato" },
   { id:"ingombro",  what:"chi trova la strada chiusa si ferma o gira un poco, non aggira l'ostacolo", page:122,
     why:"il percorso è una linea con qualche deviazione, non una ricerca di strada" },
+  { id:"psicologia", what:"Paura, Terrore e Stupidità non si tirano", page:0,
+    why:"i test ci sono in `psych.js`, ma l'arbitro non li chiama prima delle cariche né all'inizio del turno" },
+  { id:"personaggi", what:"i personaggi non si uniscono alle unità: stanno in campo e combattono da soli", page:0,
+    why:"unirsi è una scelta di schieramento che l'arbitro non offre ancora" },
   { id:"generale",  what:"il raggio del Comando del generale è preso di 12″, da controllare sul libro", page:0,
     why:"il numero non è stato letto sul manuale in questa sessione" },
 ];
@@ -495,7 +500,10 @@ function daSchierare(S){
 
 /* ---- raduno (p. 117) ---- */
 function opzioniRaduno(S){
-  const fuggono = inCampo(S, S.army).filter(u => u.fled);
+  /* un test per unita' per turno (p. 117): prima chi falliva restava
+     nell'elenco e ritirava finche' non gli riusciva, sette volte di
+     fila, e radunarsi non falliva mai */
+  const fuggono = inCampo(S, S.army).filter(u => u.fled && u.radunoTentato !== chiave(S));
   const list = fuggono.map(u => {
     const lead = PS.rallyLeadership(ldOf(S, u, { zitto: true }), { models: alive(u), start: u.models || 0,
                                                   musician: !!(u.command && u.command.musician) });
@@ -742,6 +750,8 @@ const GESTI = {
   raduna: (S, a) => {
     const u = byUid(S, a.uid);
     if (!u || !u.fled) return no("non sta fuggendo");
+    if (u.radunoTentato === chiave(S)) return no("il test di raduno si tira una volta per turno");
+    u.radunoTentato = chiave(S);
     const dadi = roll(2);
     const res = PS.rallyTest({ ld: ldOf(S, u), dice: dadi, models: alive(u), start: u.models || 0,
                                musician: !!(u.command && u.command.musician) });
@@ -773,9 +783,18 @@ const GESTI = {
     const scelte = (Array.isArray(r) ? r : (r.list || [])).filter(x => x && x.can !== false);
     S.pending = {
       kind:"reazione", charger: u.uid, target: t.uid, dich: d,
-      list: scelte.map(x => ({ id:"reazione", kind: x.id, uid: t.uid, nome: t.name,
+      /* `charge.js` chiama «tira e tiene» `shoot`, l'arbitro e l'agente
+         `stand`: senza tradurre, chi sceglieva di sparare si ritrovava a
+         tenere la posizione e basta */
+      list: scelte.map(x => ({ id:"reazione", kind: x.id === "shoot" ? "stand" : x.id, uid: t.uid, nome: t.name,
                                why: x.why || x.label || x.id, page: 120 })),
     };
+    /* chi sta gia' fuggendo non sceglie niente: prima gli si offriva
+       «tiene la posizione», e il registro diceva che teneva un'unita'
+       in piena fuga */
+    if (t.fled)
+      S.pending.list = [{ id:"reazione", kind:"fleeing", uid: t.uid, nome: t.name,
+                          why:"sta già fuggendo", page:120 }];
     if (!S.pending.list.length)
       S.pending.list = [{ id:"reazione", kind:"hold", uid: t.uid, nome: t.name,
                           why:"tiene la posizione", page:120 }];
@@ -793,7 +812,16 @@ const GESTI = {
       say(S, `${t.name} reagisce fuggendo: ${dadi.join(" + ")} = ${via}″ lontano da ${u.name}.`,
           { dice: dadi, army: t.army, page: 120 });
       fuggi(S, t, u, via);
-      return si("fuga davanti alla carica");
+      /* La carica non finisce qui: chi caricava tira lo stesso, e o
+         raggiunge chi fugge o fa la carica fallita (p. 121). Prima si
+         tornava subito, e chi aveva dichiarato restava libero di
+         marciare altrove o di dichiarare di nuovo sullo stesso bersaglio. */
+      if (u.dead || !onBoard(u)) return si("fuga davanti alla carica");
+      return si(muoviCarica(S, u, t, p.dich));
+    }
+    if (a.kind === "fleeing"){
+      say(S, `${t.name} sta già fuggendo: non reagisce, e la carica la insegue.`, { army: t.army, page: 120 });
+      return si(muoviCarica(S, u, t, p.dich));
     }
     if (a.kind === "stand"){
       const armi = CB.rangedWeapons(t);
@@ -1040,13 +1068,19 @@ function tiro(S, u, t, arma, { standAndShoot = false } = {}){
   if (sagomaOMacchina(u, arma)) limite(S, "sagome");
   const mods = modificatori(S, u, t, d, gittata, { standAndShoot });
   const r = CB.shootRoll(u, t, { weapon: arma, mods: mods.total });
-  perdite(S, t, r.kills, r.left);
+  /* la Forza d'Unita' com'era all'inizio di questa fase: il quarto del
+     Panico si conta su quella, sommando tutti i tiri della fase */
+  const fase = faseDi(S);
+  if (t.faseTiro !== fase){ t.faseTiro = fase; t.usInizioFase = usOf(t); }
   const tutti = mucchi(r);
   say(S, `${u.name} tira su ${t.name} con ${arma.name} da ${d}″: ${r.shots} tiri a ${r.hitNeed}+, ` +
          `${r.hit.hits} ${r.hit.hits === 1 ? "colpo" : "colpi"}, ${r.wounds} ferit${r.wounds === 1 ? "a" : "e"}, ${r.kills} a terra` +
          (mods.list && mods.list.length ? ` [${mods.list.map(m => m.why).join(", ")}]` : "") + ".",
       { dice: tutti.flat, groups: tutti.groups, army: u.army, page: 136 });
-  if (r.kills > 0) panico(S, t, r.kills, `il tiro di ${u.name}`);
+  /* le perdite dopo la riga del tiro: prima il registro diceva «non
+     resta nessuno in piedi» sopra il tiro che li aveva abbattuti */
+  perdite(S, t, r.kills, r.left);
+  if (r.kills > 0) panico(S, t, `il tiro di ${u.name}`);
 }
 
 /* Torna vero se l'unita' e' appena sparita. `zitto` e' per la mischia,
@@ -1067,14 +1101,19 @@ function perdite(S, u, kills, left = null, { zitto = false } = {}){
 
 /* Il Panico oltre un quarto (p. 141): il conto lo fa `psych.js`, il
    test lo tira qui, e chi fallisce fugge. */
-function panico(S, u, persi, why){
+const faseDi = S => `${chiave(S)}:${S.casella}`;
+function panico(S, u, why){
   if (u.dead) return;
-  /* Il quarto perso si conta sulla Forza d'Unita' di partenza (p. 141):
-     e' il conto che il tavolo sbaglia sempre, e qui si fa prima di
-     chiedere a `psych.js` se il test si tira. */
-  const usPrima = unitStrength(u.troop, u.us, u.models, u.models, stat((u.stats || {}).W));
-  const usAdesso = usOf(u);
-  if (usPrima - usAdesso <= usPrima / 4) return;
+  /* Il quarto perso in UNA fase (p. 141), come lo conta `shoot.js`.
+     Prima si confrontava la forza di partenza della partita con quella
+     di adesso: passato il quarto una volta, ogni perdita successiva —
+     anche un solo modello, anche turni dopo — rifaceva il test. E il
+     test si tira una volta per fase, non a ogni raffica. */
+  const fase = faseDi(S);
+  if (u.panicoFatto === fase) return;
+  const conto = SH.panicFromShooting({ us: u.usInizioFase || 0, usLost: (u.usInizioFase || 0) - usOf(u) });
+  if (!conto.must) return;
+  u.panicoFatto = fase;
   const p = PS.psychOf(u, { joined: FM.attachedTo(S.units, u) });
   const c = PS.panicCheck({ cause:"casualties", me: p,
                             fleeing: !!u.fled, engaged: ingaggiata(S, u), sourceName: why });
@@ -1086,9 +1125,10 @@ function panico(S, u, persi, why){
       { dice: dadi, army: u.army, page: PS.PAGE.panicShooting });
   if (!res.passed){
     const da = piuVicino(S, u) || u;
-    const via = roll(2).reduce((s, v) => s + v, 0);
+    const fuga = roll(2);
+    const via = fuga.reduce((s, v) => s + v, 0) + CB.fleeBonusOf(u).mod;
+    say(S, `${u.name} va nel panico e fugge: ${fuga.join(" + ")} = ${via}″.`, { dice: fuga, army: u.army, page: 132 });
     fuggi(S, u, da, via);
-    say(S, `${u.name} va nel panico e fugge di ${via}″.`, { army: u.army, page: 132 });
   }
 }
 
@@ -1355,6 +1395,38 @@ function fineSchieramento(S){
   S.turno = 1;
   for (const u of S.units) u.anchor = null;
   say(S, `Schieramento finito: comincia il turno 1, muove ${S.nomi[S.army]}.`, { page: 115 });
+  limitiDiPartenza(S);
+}
+
+/* I limiti che valgono per tutta la partita si dicono subito, se le
+   liste li toccano: prima si dicevano solo quelli che scattavano, e
+   una partita con un mago e un reggimento di Troll finiva con un piede
+   di pagina che non nominava né la magia né la Stupidità. */
+function limitiDiPartenza(S){
+  const campo = S.units.filter(u => u.placed);
+  if (campo.some(u => isWizard(u))) limite(S, "magia");
+  if (campo.some(u => {
+    const p = PS.psychOf(u);
+    return p.causesFear || p.causesTerror || p.stupidity;
+  })) limite(S, "psicologia");
+  if (campo.some(u => PREP.isCharacter(u))) limite(S, "personaggi");
+}
+
+/* Chi non si e' radunato continua a fuggire nelle mosse (p. 132): il
+   registro lo prometteva e nessuno lo faceva, e un'unita' che falliva
+   il raduno restava ferma dov'era come se niente fosse. Non e' una
+   scelta, e non passa da chi gioca. */
+function continuaAFuggire(S){
+  for (const u of inCampo(S, S.army)){
+    if (!u.fled || u.moved) continue;
+    const da = piuVicino(S, u);
+    if (!da) continue;
+    const dadi = roll(2);
+    const via = dadi.reduce((s, v) => s + v, 0) + CB.fleeBonusOf(u).mod;
+    say(S, `${u.name} non si è radunata e continua a fuggire: ${dadi.join(" + ")} = ${via}″ lontano da ${da.name}.`,
+        { dice: dadi, army: u.army, page: 132 });
+    fuggi(S, u, da, via);
+  }
 }
 
 function passo(S){
@@ -1372,7 +1444,10 @@ function passo(S){
     return "passa";
   }
   S.casella++;
-  if (S.casella < CASELLE.length) return `si passa a: ${CASELLE[S.casella].what}`;
+  if (S.casella < CASELLE.length){
+    if (CASELLE[S.casella].id === "mosse") continuaAFuggire(S);
+    return `si passa a: ${CASELLE[S.casella].what}`;
+  }
 
   /* fine del turno di questa parte */
   S.casella = 0;
@@ -1490,4 +1565,5 @@ export function ultimeRighe(S, n = 12){
 
 /* Per le prove: i pezzi del tavolo che nessuna opzione espone da sola,
    e che vanno provati uno per uno con i pezzi messi a mano. */
-export const interni = { indietreggia, seguire, fuggi, postoAContatto, percorso, comandoDi, ldOf, muoviCarica };
+export const interni = { indietreggia, seguire, fuggi, postoAContatto, percorso, comandoDi, ldOf, muoviCarica,
+                         panico, faseDi, continuaAFuggire };

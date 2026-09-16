@@ -48,7 +48,11 @@ export function profileFor(u){
      il nome del libro a parte */
   const nome = norm(u.baseName || u.name);
   if (!nome) return null;
-  const fazione = norm(u.faction || u.army || "");
+  /* la fazione e' solo `faction`: sul tavolo `army` e' il lato, «A» o
+     «B», e prima faceva da fazione — una lista scritta a mano, che la
+     fazione non la porta, sul tavolo non trovava piu' nessun profilo e
+     giocava con tutte le caratteristiche a zero */
+  const fazione = norm(u.faction || "");
   return TAVOLA.profili.find(p => {
     if (!(p.nomi || []).some(n => norm(n) === nome)) return false;
     if (p.faction && fazione && norm(p.faction) !== fazione) return false;

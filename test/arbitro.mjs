@@ -14,6 +14,7 @@ import * as AG from '../src/agente.js';
 import * as D from '../src/dice.js';
 import * as PR from '../src/profiles.js';
 import * as CH from '../src/charge.js';
+import * as CB from '../src/combat.js';
 import { polysOverlap } from '../src/geom.js';
 import { spawnSync } from 'node:child_process';
 
@@ -415,6 +416,29 @@ console.log('\nla pagina da guardare');
   ok('e i dati si rileggono uguali', /<\/script>/.test(dentroP.frames[0].perche));
 }
 
+console.log('\nla partita nel diario');
+{
+  const ARCH = await import('../tools/archivia.mjs');
+  seme(1);
+  const G = AR.newBattle({ A, B, scenario:'bm-strada' });
+  const diario = ARCH.registro(G, { liste: { A, B }, meta: { simulata: true } });
+  let visti = 0;
+  await AG.giocaPartita(AR, G, {
+    A: AG.agenteEuristico({}), B: AG.agenteEuristico({}),
+    onPasso: ({ perche }) => { diario.passo({ chi: 'x', perche, righe: G.log.slice(visti) }); visti = G.log.length; },
+  });
+  const rep = diario.chiudi({ title: 'prova' });
+  const mezzi = rep.turns.filter(t => t.kind === 'turn');
+  ok('è un report come quelli dell app', rep.format === 'schieramento-old-world/battle-report/1' && rep.title === 'prova');
+  ok('con lo schieramento in testa e le liste', rep.turns[0].kind === 'deploy' &&
+     rep.roster.A.length === A.units.length && rep.armies.B.name === B.name);
+  ok('una fotografia per ogni mezzo turno, senza buchi né doppioni',
+     mezzi.every((t, i) => t.n === Math.floor(i / 2) + 1 && t.army === (i % 2 ? 'B' : 'A')));
+  ok('e in ognuna quello che è successo', mezzi.every(t => t.events.length > 0));
+  ok('il terreno in pollici, come lo scrive il tavolo', rep.terrain.length && rep.terrain.every(t => t.x <= 48 && t.w < 20));
+  ok('e resta marcata come simulata', rep.meta.simulata === true);
+}
+
 console.log('\nla riga di comando');
 {
   const lancia = args => spawnSync(process.execPath, ['tools/partita.mjs', ...args],
@@ -426,6 +450,111 @@ console.log('\nla riga di comando');
      monca.status === 1 && /due numeri/.test(monca.stderr));
   const ignoto = lancia(['--list', '3,4']);
   ok('un argomento sconosciuto si dice', ignoto.status === 1 && /--list/.test(ignoto.stderr));
+}
+
+/* =================================================================
+   I difetti trovati rileggendo la seconda e la terza partita fra due
+   modelli: una lista scritta a mano che giocava a zero, il raduno che
+   non falliva mai, la carica che spariva, il Panico a ogni perdita.
+   ================================================================= */
+console.log('\nuna lista scritta a mano, sul tavolo');
+{
+  const G = AR.newBattle({ A, B: liste[9], scenario:'bm-strada' });
+  const clan = G.units.find(u => u.baseName === 'Clanrats');
+  const c = CB.combatant(clan);
+  ok('la lista non porta profili, e la tavola li completa anche sul tavolo (prima: tutto a zero)',
+     !clan.stats && c.ws === 3 && c.s === 3 && c.t === 3 && c.ld === 4);
+  ok('e sa quanto si muove', PR.moveInfo(clan).m === 5);
+  ok('il lato del tavolo non fa da fazione', !!PR.profileFor({ ...clan, army:'B' }));
+}
+
+console.log('\nil raduno, una volta per turno (p. 117)');
+{
+  const G = nuova();
+  const sk = metti(G, uid(G, 3), 600, 600);
+  metti(G, uid(G, 505), 600, 250);
+  sk.fled = true;
+  G.casella = 0; G.army = 'A';
+  const prima = AR.options(G).list.find(x => x.id === 'raduna' && x.uid === sk.uid);
+  ok('chi fugge può tentare il raduno', !!prima);
+  D.setSource(() => 5);                                  // tutti sei: fallisce
+  AR.apply(G, prima);
+  ok('fallito, resta in fuga', sk.fled);
+  ok('e non si offre di nuovo nello stesso turno',
+     !AR.options(G).list.some(x => x.id === 'raduna' && x.uid === sk.uid));
+  ok('nemmeno a chi lo chiede lo stesso', AR.apply(G, { id:'raduna', uid: sk.uid }).ok === false);
+  D.setSource(() => 0);                                  // tutti uno: fugge di 2″
+  const y0 = sk.y;
+  AR.apply(G, { id:'avanti' });                          // alle cariche
+  AR.apply(G, { id:'avanti' });                          // alle mosse
+  ok('e nelle mosse continua a fuggire, lontano dal nemico (p. 132)',
+     sk.y > y0 && G.log.some(r => /continua a fuggire: 1 \+ 1/.test(r.text)));
+  D.setSource(D.seeded(1));
+}
+
+console.log('\nla carica su chi fugge come reazione (pp. 120-121)');
+{
+  const G = nuova();
+  const sv = metti(G, uid(G, 1), 600, 600);
+  const wb = metti(G, uid(G, 501), 600, 430);
+  G.casella = 1; G.army = 'A';
+  ok('la carica si dichiara', AR.apply(G, { id:'carica', uid: sv.uid, target: wb.uid }).ok);
+  const fuga = AR.options(G).list.find(x => x.kind === 'flee');
+  ok('e chi la subisce può fuggire', !!fuga);
+  D.setSource(() => 0);
+  AR.apply(G, fuga);
+  ok('dopo la fuga chi caricava tira lo stesso (prima la carica spariva)',
+     G.log.some(r => new RegExp(`${sv.name} carica ${wb.name}`).test(r.text)) &&
+     sv.moved && /[cC]harge/.test(sv.moved.kind));
+  ok('e non può né dichiarare di nuovo né marciare altrove',
+     !AR.options(G).list.some(x => x.uid === sv.uid));
+  D.setSource(D.seeded(1));
+
+  const G2 = nuova();
+  const s2 = metti(G2, uid(G2, 1), 600, 600);
+  const w2 = metti(G2, uid(G2, 501), 600, 430);
+  w2.fled = true;
+  G2.casella = 1; G2.army = 'A';
+  AR.apply(G2, { id:'carica', uid: s2.uid, target: w2.uid });
+  const r2 = AR.options(G2).list;
+  ok('chi sta già fuggendo non «tiene la posizione»', r2.length === 1 && r2[0].kind === 'fleeing');
+  AR.apply(G2, r2[0]);
+  ok('e il registro lo dice', G2.log.some(r => /sta già fuggendo/.test(r.text)));
+}
+
+console.log('\ntira e tiene (p. 120)');
+{
+  const G = nuova();
+  const sv = metti(G, uid(G, 1), 600, 600);
+  const ng = metti(G, uid(G, 504), 600, 380);
+  G.casella = 1; G.army = 'A';
+  AR.apply(G, { id:'carica', uid: sv.uid, target: ng.uid });
+  const spara = AR.options(G).list.find(x => x.kind === 'stand');
+  ok('chi ha un arco può scegliere di tirare e tenere', !!spara);
+  AR.apply(G, spara);
+  ok('e lo fa davvero (prima teneva e basta)', G.log.some(r => /tiene e spara/.test(r.text)));
+}
+
+console.log('\nil Panico, un quarto in una fase (p. 141)');
+{
+  const G = nuova();
+  const tg = metti(G, uid(G, 6), 600, 600);
+  metti(G, uid(G, 505), 600, 200);
+  G.casella = 3; G.army = 'B';
+  const test = () => G.log.filter(r => /test di Panico/.test(r.text)).length;
+  tg.faseTiro = IN.faseDi(G); tg.usInizioFase = 15; tg.lost = 1;
+  IN.panico(G, tg, 'prova');
+  ok('un modello su quindici non fa tirare', test() === 0);
+  tg.lost = 5;
+  IN.panico(G, tg, 'prova');
+  ok('cinque sì', test() === 1);
+  IN.panico(G, tg, 'prova');
+  ok('e una volta sola nella stessa fase', test() === 1);
+  tg.fled = false; tg.moved = null; tg.placed = true; tg.x = 600; tg.y = 600;
+  G.army = 'A'; G.turno = 2;
+  tg.faseTiro = IN.faseDi(G); tg.usInizioFase = 10; tg.lost = 6;
+  IN.panico(G, tg, 'prova');
+  ok('in una fase dopo, un altro modello solo non lo rifà (prima: sì, per sempre)', test() === 1);
 }
 
 /* ================================================================= */
