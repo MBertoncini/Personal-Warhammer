@@ -269,6 +269,7 @@ Con `--html` esce **una pagina sola**, senza dipendenze e senza rete: il tavolo 
 Per il modello serve una chiave nell'ambiente — `GEMINI_API_KEY`, e `GEMINI_MODEL` se ne vuoi uno diverso da `gemini-2.5-flash`:
 
 ```bash
+npm run prova-chiave                  # una domanda sola: la chiave funziona?
 GEMINI_API_KEY=... node tools/partita.mjs --gemini
 ```
 
@@ -472,6 +473,7 @@ test/
 tools/
   make-icons.mjs      scrive i PNG del manifest senza dipendenze
   partita.mjs         una partita intera dalla lista al verdetto, commentata
+  prova-chiave.mjs    una domanda sola al modello, per sapere se la chiave funziona
   replay.mjs          la stessa partita da guardare: una pagina sola, con la barra del tempo
 dati/
   eserciti/           un file per esercito: regole, oggetti, domini
