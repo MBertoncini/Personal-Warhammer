@@ -141,9 +141,17 @@ Come si ragiona in questo gioco:
 - un'unità sola contro due nemici perde: si arriva in due sullo stesso bersaglio quando si può.`;
 
 export function agenteGemini({ apiKey, model = "gemini-2.5-flash", fetchFn = null,
-                               nome = "Gemini", riserva = null, onError = null } = {}){
+                               nome = "Gemini", riserva = null, onError = null,
+                               attesa = 0, ritenta = 3, dormi = null } = {}){
   const rete = fetchFn || (typeof fetch === "function" ? fetch : null);
   const fallback = riserva || agenteEuristico({ nome: nome + " (riserva)" });
+  /* Una partita sono un centinaio di domande, e le fa tutte di fila:
+     le quote gratuite contano le richieste al minuto, e senza un passo
+     fra una e l'altra la partita muore di «429, troppe richieste» a
+     meta' del terzo turno. L'attesa e' quel passo; il ritentare e'
+     quello che si fa quando il 429 arriva lo stesso. */
+  const pausa = dormi || (ms => new Promise(r => setTimeout(r, ms)));
+  let ultima = 0;
   return {
     nome, model,
     async scegli(ctx){
@@ -163,7 +171,12 @@ export function agenteGemini({ apiKey, model = "gemini-2.5-flash", fetchFn = nul
         elenco,
       ].join("\n");
       try {
-        const scelto = await chiedi(rete, apiKey, model, testo);
+        if (attesa > 0){
+          const passato = Date.now() - ultima;
+          if (passato < attesa) await pausa(attesa - passato);
+        }
+        const scelto = await conRitenta(() => chiedi(rete, apiKey, model, testo), ritenta, pausa);
+        ultima = Date.now();
         const n = Math.round(+scelto.scelta);
         if (!(n >= 1 && n <= l.length)) throw new Error(`ha risposto ${scelto.scelta}, fuori dall'elenco di ${l.length}`);
         return { scelta: l[n - 1], perche: String(scelto.perche || "").trim() || "(non ha detto perché)" };
@@ -185,6 +198,22 @@ export function descrivi(x){
   const dove = x.dove ? ` ${x.dove}` : "";
   const page = x.page ? ` [p. ${x.page}]` : "";
   return `${x.id}${chi}${contro}${dove} — ${x.why || ""}${page}`;
+}
+
+/* «Troppe richieste» e «il servizio e' occupato» non sono errori di chi
+   gioca: sono il traffico. Si aspetta e si richiede, con l'attesa che
+   raddoppia, e solo dopo si passa la mano all'euristica. */
+async function conRitenta(fn, quante, pausa){
+  let ultimo = null;
+  for (let i = 0; i <= Math.max(0, quante); i++){
+    try { return await fn(); }
+    catch (e){
+      ultimo = e;
+      if (!/HTTP (429|500|502|503|504)/.test(e.message)) throw e;
+      if (i < quante) await pausa(1500 * Math.pow(2, i));
+    }
+  }
+  throw ultimo;
 }
 
 async function chiedi(rete, apiKey, model, testo){

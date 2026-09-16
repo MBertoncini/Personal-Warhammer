@@ -166,6 +166,41 @@ console.log('\nil modello di linguaggio, senza rete');
   const senza = AG.agenteGemini({ apiKey:'' });
   ok('senza chiave gioca l euristica e lo dice', /nessuna chiave/.test((await senza.scegli(ctx)).perche));
 }
+/* il ritmo e il ritentare: una partita fa un centinaio di domande di
+   fila, e le quote gratuite le contano al minuto */
+{
+  const S3 = AR.newBattle({ A, B, scenario:'bm-strada' });
+  const o3 = AR.options(S3);
+  const ctx3 = { opzioni: o3, fotografia: '', registro: '' };
+  let quante = 0;
+  const dueVolte = async () => {
+    quante++;
+    if (quante === 1) return { ok:false, status:429, text: async () => 'quota' };
+    return { ok:true, json: async () => ({ candidates:[{ content:{ parts:[{ text:'{"scelta":1,"perche":"ok"}' }] } }] }) };
+  };
+  const dormite = [];
+  const paziente = AG.agenteGemini({ apiKey:'x', fetchFn: dueVolte, ritenta: 2,
+                                     dormi: ms => { dormite.push(ms); return Promise.resolve(); } });
+  const r4 = await paziente.scegli(ctx3);
+  ok('un 429 non fa perdere la mossa: si aspetta e si richiede',
+     quante === 2 && r4.scelta === o3.list[0] && !r4.errore);
+  ok('e l attesa è dichiarata, non istantanea', dormite.length === 1 && dormite[0] >= 1000);
+
+  let chiamate = 0;
+  const sempre = async () => { chiamate++; return { ok:false, status:400, text: async () => 'chiave finta' }; };
+  const subito = AG.agenteGemini({ apiKey:'x', fetchFn: sempre, ritenta: 3, dormi: () => Promise.resolve() });
+  const r5 = await subito.scegli(ctx3);
+  ok('ma un errore che non è traffico non si ritenta', chiamate === 1 && !!r5.errore);
+
+  const passi = [];
+  const lento = AG.agenteGemini({ apiKey:'x', ritenta: 0, attesa: 5000,
+    fetchFn: async () => ({ ok:true, json: async () => ({ candidates:[{ content:{ parts:[{ text:'{"scelta":1}' }] } }] }) }),
+    dormi: ms => { passi.push(ms); return Promise.resolve(); } });
+  await lento.scegli(ctx3); await lento.scegli(ctx3);
+  ok('fra una domanda e l altra passa il tempo che gli si dice',
+     passi.length === 1 && passi[0] > 4000);
+}
+
 
 /* ================================================================= */
 console.log('\nquello che questo arbitro non fa, detto');

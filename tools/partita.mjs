@@ -12,6 +12,7 @@
  *   node tools/partita.mjs --liste 3,9          per numero (le elenca --liste ?)
  *   node tools/partita.mjs --gemini             se GEMINI_API_KEY è nell'ambiente
  *   node tools/partita.mjs --gemini A           solo l'esercito A è il modello
+ *   node tools/partita.mjs --gemini --pausa 8000  più lento, per le quote strette
  *   node tools/partita.mjs --breve              solo il registro, senza i perché
  *   node tools/partita.mjs --html partita.html  la partita DA GUARDARE: una pagina sola
  *
@@ -51,6 +52,10 @@ const gemini = arg('gemini', false);
 /* --html scrive la partita da guardare: una pagina sola, senza rete e
    senza chiavi dentro, che si apre con un doppio clic o si pubblica */
 const html = arg('html', false);
+/* quanti millisecondi fra una domanda al modello e l'altra: le quote
+   gratuite contano le richieste al minuto, e una partita ne fa un
+   centinaio */
+const pausa = +arg('pausa', 4500) || 0;
 const fileHtml = html === true ? 'partita.html' : html;
 
 /* ---- i dadi, con il seme: la stessa partita si rigioca uguale ---- */
@@ -102,6 +107,7 @@ const faiAgente = (tag, nome) => {
     return AG.agenteEuristico({ nome: nome + ' (euristica)' });
   }
   return AG.agenteGemini({ apiKey: chiave, model, nome: nome + ' (' + model + ')',
+                           attesa: pausa,
                            onError: e => erroriModello.push(e.message) });
 };
 

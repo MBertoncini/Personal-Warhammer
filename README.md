@@ -272,7 +272,7 @@ Per il modello serve una chiave nell'ambiente — `GEMINI_API_KEY`, e `GEMINI_MO
 GEMINI_API_KEY=... node tools/partita.mjs --gemini
 ```
 
-Senza chiave la partita si gioca lo stesso con l'euristica, e lo scrive. Se il modello risponde male — un numero fuori dall'elenco, la rete che cade — **la mossa non viene aggiustata di nascosto**: si gioca quella dell'euristica e nel registro c'è scritto che non l'ha scelta lui.
+Una partita sono un centinaio di domande al modello (circa 55 per parte, ~80 mila token in tutto): fra una e l'altra passano di suo **4,5 secondi**, perché le quote gratuite contano le richieste al minuto — si cambia con `--pausa 8000`, e un «429, troppe richieste» non fa perdere la mossa, si aspetta e si richiede. Senza chiave la partita si gioca lo stesso con l'euristica, e lo scrive. Se il modello risponde male — un numero fuori dall'elenco, la rete che cade — **la mossa non viene aggiustata di nascosto**: si gioca quella dell'euristica e nel registro c'è scritto che non l'ha scelta lui.
 
 **Quello che stampa è pensato per essere letto.** Ogni mossa dice chi ha scelto, perché, e cosa è successo, con la pagina accanto:
 
