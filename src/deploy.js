@@ -2674,6 +2674,10 @@ async function runShot(u, uid){
     if (r.kills > 0) G.setLost(t, (t.lost || 0) + r.kills);
     else G.dispatch({ type:"note", army:u.army,
                       text: `${t.name}: nessuna perdita — ${r.wounds} ferit${r.wounds === 1 ? "a" : "e"} passate` });
+    /* Le ferite che non hanno completato un modello restano segnate
+       sull'unita': su un bersaglio da piu' ferite erano l'intera
+       raffica, e sparivano nel nulla a ogni tiro. */
+    if (r.left != null) G.setWounds(t, r.left);
   });
 
   /* 4 · il Panico. Il conto si fa sulla Forza d'Unita' quando c'e', e
@@ -2735,6 +2739,32 @@ async function runPsych(u, kind, { check = null, foe = null, at = null, forImpet
     if (kind === "fear")
       u.fearTest = { turn: state.game.turn, side: state.game.army, passed: res.passed, vs: foe ? foe.uid : null };
     if (kind === "stupidity" && !res.passed) EF.addEffect(u, PS.stupidEffect(effNow()));
+  });
+  return res;
+}
+
+/* Il raduno (p. 117), che e' la quarta sotto-fase della Strategia e
+   fino a qui si tirava dal pulsante del test di Comando generico —
+   cioe' senza i due modificatori che lo decidono quasi sempre. Chi si
+   raduna si ferma dov'e': la riforma gratis, il divieto di caricare e
+   il «conta come mossa» restano gesti di chi gioca, e il registro li
+   scrive accanto all'esito. */
+async function runRally(u){
+  const lead = unitLd(u);
+  const rolls = await G.askRolls(PS.rallyDice(), `Raduno di ${u.name}`);
+  if (!rolls || !rolls.raduno) return null;
+  const res = PS.rallyTest({ ld: lead.value, dice: rolls.raduno.dice,
+                             models: effModels(u), start: u.models || 0,
+                             musician: !!(u.command && u.command.musician) });
+  act("raduno", () => {
+    if (state.game.on) G.goStep(3);
+    G.dispatch({ type:"rally", unit:u, army:u.army, outcome: res.passed ? "radunata" : "continua a fuggire",
+      text: `${u.name}: ${res.text} — ${res.then}` }, rolls);
+    if (res.passed){
+      u.fled = false;
+      MV.ensureAnchor(u);
+      u.moved = { kind:"rally", inches: 0 };
+    }
   });
   return res;
 }
@@ -2834,6 +2864,7 @@ async function runPsychButton(u, kind){
     if (!list.length) return toast("Nessun nemico a contatto che faccia Paura e sia più grosso.");
     return runPsych(u, "fear", { check: list[0].check, foe: list[0].foe, at: 12 });
   }
+  if (kind === "rally") return runRally(u);
   if (kind === "panic"){
     const cause = await askPick({
       title: `Panico di ${u.name}`, label: "Per quale causa?",
@@ -2854,6 +2885,12 @@ function psychHTML(u){
   const lines = [];
   if (p.stupid) lines.push("In preda alla Stupidità fino al suo prossimo turno: " + PS.STUPID_LIMITS.join(", ") + ".");
   if (p.frenzyLost) lines.push("Ha perso la Frenzy perdendo un round di combattimento.");
+  if (u.fled){
+    const r = PS.rallyLeadership(unitLd(u).value, { models: effModels(u), start: u.models || 0,
+                                                    musician: !!(u.command && u.command.musician) });
+    lines.push("In fuga: si raduna con " + (r.hopeless ? "il doppio uno soltanto" : "Comando " + r.value) +
+               (r.why.length ? " (" + r.why.join("; ") + ")" : "") + " (p. " + PS.PAGE.rally + ").");
+  }
   const ft = fearTested(u);
   if (ft) lines.push("Test di Paura " + (ft.passed ? "passato" : "fallito") + " in questo turno: non se ne tira un altro.");
   const lead = unitLd(u);
@@ -2866,6 +2903,9 @@ function psychHTML(u){
     p.stupidity ? btn("stupidity", "Stupidità", "Test di Comando all'inizio del turno: se fallisce resta ferma fino al prossimo") : "",
     p.impetuous ? btn("impetuous", "Impetuosa", "Test di Comando senza la Warband: se fallisce deve caricare") : "",
     fearNow.length ? btn("fear", "Paura", fearNow[0].check.why) : "",
+    /* il raduno lo tira solo chi sta fuggendo, e sta nella quarta
+       sotto-fase della Strategia (p. 117) */
+    u.fled ? btn("rally", "Raduno", "Test di Comando per fermarsi: sotto metà dei modelli −1, sotto un quarto solo il doppio uno") : "",
     btn("panic", "Panico", "Un test di Panico a mano, scegliendo la causa"),
   ].join("");
   return `
@@ -3300,13 +3340,17 @@ async function runCast(caster, spellId, preUid = null){
   /* I colpi di un incantesimo non tirano per colpire (p. 107): passano
      dalla stessa catena dello scontro con i colpi automatici, e senza
      armatura o rigenerazione quando l'incantesimo lo dice. */
-  let volley = null, kills = 0;
+  let volley = null, kills = 0, toll = null;
   if (final && target && hits && hitCount > 0){
     const def = CB.combatant(target);
     const side = { ...def, armour: hits.noArmour ? 0 : def.armour, regen: hits.noRegen ? 0 : def.regen };
     volley = CB.strike({ name: caster.name }, side, { attacks: hitCount, auto: true, strength: hits.S, ap: hits.AP,
                                                       label: sp.name });
-    kills = CB.applyWounds({ ...side, spill: 0 }, volley.wounds);
+    /* con il resto tenuto da parte: i colpi di un incantesimo su un
+       mostro sparivano uno per uno finche' non ne arrivavano quattro
+       insieme */
+    toll = CB.woundsToll(target, volley.wounds);
+    kills = toll.kills;
   }
 
   act(sp.name, () => {
@@ -3351,6 +3395,7 @@ async function runCast(caster, spellId, preUid = null){
               `${hits.noArmour ? ", senza armatura" : ""} — ${volley.wounds} ferit${volley.wounds === 1 ? "a" : "e"}, ` +
               `${kills} modell${kills === 1 ? "o" : "i"} a terra` }, hitRolls);
       if (kills > 0) G.setLost(target, (target.lost || 0) + kills);
+      if (toll) G.setWounds(target, toll.left);
     }
     const manual = MG.manualOf(sp);
     if (manual) G.logLine(`${sp.name}, a mano: ${manual}.`, { army: caster.army });
@@ -3503,18 +3548,26 @@ async function runBombard(u){
    tre esiti (p. 154), la mossa che l'esito impone (pp. 132-134),
    l'inseguimento con l'unita' travolta (p. 156).
    ============================================================ */
-async function resolveCombat({ a, b, round }){
+async function resolveCombat({ A, B, round }){
   const r = round;
   /* Due strade e non una: o qualcuno ha perso e tira per i nervi, o
      qualcuno non ha piu' nessuno in piedi — e allora non c'e' test da
      fare, c'e' uno sfondamento da tirare (p. 156). La seconda mancava,
      e il pannello scriveva «chi ha vinto sfonda» senza dare il modo di
      farlo. */
-  if (!r || (!r.test && !r.wiped)) return;
+  const tests = r && r.tests ? r.tests : [];
+  if (!r || (!tests.length && !r.wiped)) return;
   const loserTag = r.wiped || r.cr.loser;
   if (!loserTag) return;
-  const loser  = loserTag === "A" ? a : b;
-  const winner = loserTag === "A" ? b : a;
+  /* Le parti, non le due unita': in un combattimento a piu' di due il
+     risultato e' della parte, ma le perdite, i test e le mosse
+     all'indietro sono di ciascuno (p. 153-154). */
+  const losers  = loserTag === "A" ? A : B;
+  const winners = loserTag === "A" ? B : A;
+  const elenco = list => list.map(u => u.name).join(" e ");
+  /* chi era davanti a chi, per l'inseguimento: lo sa la mischia, che
+     ha appena fatto combattere queste stesse unita' */
+  const foesOf = (tag, i) => ((r.sides[tag] || [])[i] || {}).foes || [];
 
   /* 1 · le perdite e il conto, in una casella sola: sono la stessa
      cosa vista da due parti, e separarle vorrebbe dire due annulla per
@@ -3527,77 +3580,120 @@ async function resolveCombat({ a, b, round }){
        giusto e' la differenza fra un registro pulito e uno in cui ogni
        riga porta la nota «questo di solito si fa altrove». */
     if (state.game.on) G.goStep(12);
-    for (const [u, n] of [[a, r.killsA], [b, r.killsB]])
-      if (n > 0) G.setLost(u, (u.lost || 0) + n);
+    for (const [tag, list] of [["A", A], ["B", B]])
+      list.forEach((u, i) => {
+        const n = (r.kills && r.kills[tag] ? r.kills[tag][i] : 0) || 0;
+        if (n > 0) G.setLost(u, (u.lost || 0) + n);
+        /* e le ferite che restano appese, che al round dopo sono gia'
+           addosso: senza, un mostro ferito guarirebbe fra un assalto e
+           l'altro */
+        const c = (r.sides[tag] || [])[i];
+        if (c) G.setWounds(u, c.spill || 0);
+      });
     if (state.game.on) G.goStep(13);
-    G.dispatch({ type:"combatResult", army: winner.army, diff: r.cr.diff,
-      text: winner.name + (r.wiped ? " spazza via " + loser.name : " vince di " + r.cr.diff) +
+    G.dispatch({ type:"combatResult", army: winners[0].army, diff: r.cr.diff,
+      text: elenco(winners) + (r.wiped ? " spazza via " + elenco(losers) : " vince di " + r.cr.diff) +
             (parts ? " (" + parts + ")" : "") });
   });
 
   /* 1 bis · la Frenzy (Tappa 5): «ogni modello che perde un round di
-     combattimento perde subito questa regola». */
-  if (!r.wiped && r.cr.loser && PS.losesFrenzy(psychFor(loser)))
-    act("Frenzy persa", () => {
-      loser.frenzyLost = true;
-      G.logLine(`${loser.name} perde il round e con lui la Frenzy.`, { army: loser.army });
+     combattimento perde subito questa regola». In tre la perdono tutte
+     le unita' della parte che ha perso, non solo quella che menava. */
+  if (!r.wiped && r.cr.loser)
+    for (const loser of losers)
+      if (PS.losesFrenzy(psychFor(loser)))
+        act("Frenzy persa", () => {
+          loser.frenzyLost = true;
+          G.logLine(`${loser.name} perde il round e con lui la Frenzy.`, { army: loser.army });
+        });
+
+  /* 2 · i test. Uno per ogni unita' della parte che ha perso, con lo
+     stesso scarto e tre esiti che possono venire diversi. I dadi sono
+     quelli che il pannello ha appena mostrato cadere nel vassoio:
+     rifarli qui vorrebbe dire scrivere nel registro un tiro diverso da
+     quello che si e' visto. */
+  for (const t of tests){
+    const loser = losers[t.at || 0];
+    if (!loser) continue;
+    act("test di rotta", () => {
+      if (state.game.on) G.goStep(14);
+      G.dispatch({ type:"breakTest", unit: loser, army: loser.army, outcome: t.outcome,
+                   text: loser.name + " perde di " + r.cr.diff + ": " + t.text },
+                 { rotta: { dice: t.dice || [], total: t.natural || 0 } });
+      /* Stubborn e Shieldwall valgono una volta per partita: la spesa sta
+         sull'unita', dentro la stessa azione, cosi' l'annulla la riporta
+         indietro insieme al test (Tappa 5 bis). */
+      if (t.stubborn) EF.spend(loser, "stubborn");
+      if (t.shieldwall) EF.spend(loser, "shieldwall");
     });
+  }
 
-  /* 2 · il test. I dadi sono quelli che il pannello ha appena mostrato
-     cadere nel vassoio: rifarli qui vorrebbe dire scrivere nel
-     registro un tiro diverso da quello che si e' visto. */
-  if (r.test) act("test di rotta", () => {
-    if (state.game.on) G.goStep(14);
-    G.dispatch({ type:"breakTest", unit: loser, army: loser.army, outcome: r.test.outcome,
-                 text: loser.name + " perde di " + r.cr.diff + ": " + r.test.text },
-               { rotta: { dice: r.test.dice || [], total: r.test.natural || 0 } });
-    /* Stubborn e Shieldwall valgono una volta per partita: la spesa sta
-       sull'unita', dentro la stessa azione, cosi' l'annulla la riporta
-       indietro insieme al test (Tappa 5 bis). */
-    if (r.test.stubborn) EF.spend(loser, "stubborn");
-    if (r.test.shieldwall) EF.spend(loser, "shieldwall");
-  });
-
-  /* 3 · la mossa che l'esito impone. Le tre le sa gia' fare la Tappa
-     2: qui cambia solo chi decide quale, e non e' piu' il dito. */
-  const mv = r.test && r.test.move ? await runBackward(loser, r.test.move) : null;
+  /* 3 · la mossa che ogni esito impone. Le tre le sa gia' fare la
+     Tappa 2: qui cambia solo chi decide quale, e non e' piu' il dito. */
+  const mosse = new Map();
+  for (const t of tests){
+    const loser = losers[t.at || 0];
+    if (loser && t.move) mosse.set(loser, await runBackward(loser, t.move));
+  }
   /* chi rompe e fugge dal combattimento manda al Panico gli amici entro
      6″, e chi e' stato spazzato via anche (Tappa 5) */
-  if (r.test && r.test.outcome === "rout") await panicWave("broke", loser);
-  if (r.wiped) await panicWave("destroyed", loser);
+  for (const t of tests)
+    if (t.outcome === "rout" && losers[t.at || 0]) await panicWave("broke", losers[t.at || 0]);
+  if (r.wiped) for (const loser of losers) await panicWave("destroyed", loser);
 
   /* 4 · l'inseguimento. Si insegue chi e' andato in rotta; si sfonda
      quando davanti non e' rimasto nessuno. Raggiunge se copre almeno
-     la distanza che l'altro ha fatto fuggendo. */
-  const wiped = !!r.wiped || loser.dead;
-  if (!wiped && (!r.test || r.test.outcome !== "rout")) return;
-  /* Il nome della richiesta non e' un dettaglio: il motore riconosce i
-     tiri per identificatore, e l'inseguimento e lo sfondamento — che
-     sono lo stesso tiro — nel vocabolario si chiamano in due modi
-     diversi. Chiamarli tutti e due «inseguimento» voleva dire uno
-     sfondamento che non finiva nel registro e non muoveva nessuno,
-     senza nemmeno un errore da leggere. */
-  const wanted = wiped ? "sfondamento" : "inseguimento";
-  const spec = { ...ML.pursuitDice(MV.swiftOf(winner)), id: wanted,
-                 why: wiped ? "quanto sfonda" : "quanto insegue" };
-  const rolls = await G.askRolls([spec], `${wiped ? "Sfondamento" : "Inseguimento"} di ${winner.name}`);
-  if (!rolls || !rolls[wanted]) return;
-  const roll = rolls[wanted].total;
-  const out = ML.pursuitOutcome({ roll, flee: mv ? mv.inches : 0, wiped });
-  const move = CH.pursuitMove(boxOf(winner), asPiece(loser), { roll });
-  act(wiped ? "sfondamento" : "inseguimento", () => {
-    if (state.game.on) G.goStep(15);
-    G.dispatch({ type: wiped ? "overrun" : "pursue", unit: winner, target: loser,
-                 army: winner.army, dice: spec.n, caught: out.caught,
-                 text: winner.name + " " + out.text }, rolls);
-    if (move){
-      MV.ensureAnchor(winner);
-      winner.x = move.to.x; winner.y = move.to.y; winner.rot = move.to.rot;
-      winner.moved = { kind: wiped ? "overrun" : "pursue", inches: move.inches };
+     la distanza che l'altro ha fatto fuggendo. Tira ogni unita' che ha
+     vinto e che ha davanti qualcuno che se n'e' andato: in tre sono
+     tiri diversi, e uno solo non basta. */
+  const andati = new Map();                 // indice del perdente → come se n'e' andato
+  for (const t of tests) if (t.outcome === "rout") andati.set(t.at || 0, "rout");
+  if (r.wiped) losers.forEach((u, i) => andati.set(i, "wiped"));
+  losers.forEach((u, i) => { if (u.dead) andati.set(i, "wiped"); });
+  if (!andati.size) return;
+
+  const winTag = loserTag === "A" ? "B" : "A";
+  for (let k = 0; k < winners.length; k++){
+    const winner = winners[k];
+    if (!winner || winner.dead) continue;
+    /* fra i nemici che aveva davanti, il primo che se n'e' andato */
+    const davanti = foesOf(winTag, k).filter(i => andati.has(i));
+    const target = davanti.length ? davanti[0] : (winners.length === 1 ? [...andati.keys()][0] : null);
+    if (target == null) continue;
+    const loser = losers[target];
+    const wiped = andati.get(target) === "wiped";
+    /* Il nome della richiesta non e' un dettaglio: il motore riconosce i
+       tiri per identificatore, e l'inseguimento e lo sfondamento — che
+       sono lo stesso tiro — nel vocabolario si chiamano in due modi
+       diversi. Chiamarli tutti e due «inseguimento» voleva dire uno
+       sfondamento che non finiva nel registro e non muoveva nessuno,
+       senza nemmeno un errore da leggere. */
+    const wanted = wiped ? "sfondamento" : "inseguimento";
+    const spec = { ...ML.pursuitDice(MV.swiftOf(winner)), id: wanted,
+                   why: wiped ? "quanto sfonda" : "quanto insegue" };
+    const rolls = await G.askRolls([spec], `${wiped ? "Sfondamento" : "Inseguimento"} di ${winner.name}`);
+    if (!rolls || !rolls[wanted]) continue;
+    const roll = rolls[wanted].total;
+    const mv = mosse.get(loser);
+    const out = ML.pursuitOutcome({ roll, flee: mv ? mv.inches : 0, wiped });
+    const move = CH.pursuitMove(boxOf(winner), asPiece(loser), { roll });
+    act(wiped ? "sfondamento" : "inseguimento", () => {
+      if (state.game.on) G.goStep(15);
+      G.dispatch({ type: wiped ? "overrun" : "pursue", unit: winner, target: loser,
+                   army: winner.army, dice: spec.n, caught: out.caught,
+                   text: winner.name + " " + out.text }, rolls);
+      if (move){
+        MV.ensureAnchor(winner);
+        winner.x = move.to.x; winner.y = move.to.y; winner.rot = move.to.rot;
+        winner.moved = { kind: wiped ? "overrun" : "pursue", inches: move.inches };
+      }
+      if (out.caught) G.destroy(loser);
+    });
+    if (out.caught){
+      andati.set(target, "wiped");
+      await panicWave("destroyed", loser);
     }
-    if (out.caught) G.destroy(loser);
-  });
-  if (out.caught) await panicWave("destroyed", loser);
+  }
 }
 
 /* ============================================================
@@ -5430,6 +5526,24 @@ async function bootDeploy(){
     /* la psicologia che lo scontro sente (Tappa 5): i personaggi uniti,
        e la Paura con l'esito del test gia' tirato in questo turno */
     joined: u => attachedOf(u),
+    /* Chi tocca chi, per il combattimento a piu' di due (p. 153): se le
+       basette si toccano lo sa gia' il tavolo, e il pannello non deve
+       chiederlo. */
+    touches: (u, foe) => contactsNow().some(c =>
+      (c.a === u.uid && c.b === foe.uid) || (c.b === u.uid && c.a === foe.uid)),
+    /* Chi si puo' aggiungere alla parte: le unita' di quell'esercito
+       ancora in campo. Quelle che toccano gia' un nemico del pannello
+       vengono per prime e lo dicono — sono quelle che *stanno*
+       combattendo; le altre servono a chiedersi se converrebbe
+       caricare anche con loro. */
+    candidates: (mine, foes) => {
+      const tocca = (x, y) => contactsNow().some(c =>
+        (c.a === x.uid && c.b === y.uid) || (c.b === x.uid && c.a === y.uid));
+      return state.units
+        .filter(x => x.army === mine.army && x.placed && !x.dead && !isJoined(x) && effModels(x) > 0)
+        .map(x => ({ uid: x.uid, name: x.name, touching: foes.some(f => tocca(x, f)) }))
+        .sort((p, q) => (q.touching - p.touching) || p.name.localeCompare(q.name));
+    },
     /* Fianco, retro e disordine guardando il tavolo, a ogni round (pp.
        101, 152-153). Il bonus e' della parte: conta chiunque del mio
        esercito tocchi quel nemico, e fianco e retro si sommano se a
@@ -5481,7 +5595,12 @@ async function bootDeploy(){
                                         when:"combat", tested: fearTested(u), foeName: foe.name }),
     applyLosses: pairs => {
       act("perdite dallo scontro", () => {
-        for (const [u, n] of pairs) if (n > 0) G.setLost(u, (u.lost || 0) + n);
+        for (const [u, n, spill] of pairs){
+          if (n > 0) G.setLost(u, (u.lost || 0) + n);
+          /* le ferite appese: quelle che non hanno completato un
+             modello restano sull'unita' e al round dopo contano */
+          if (spill != null) G.setWounds(u, spill);
+        }
       });
       toast(state.game.on
         ? "Perdite segnate: i reggimenti sul tavolo si sono accorciati."

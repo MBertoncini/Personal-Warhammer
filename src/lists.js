@@ -28,6 +28,7 @@ import { attachSuggest, closeSuggest } from './suggest.js';
 import { emit } from './bus.js';
 import * as PREP from './prep.js';
 import { loadArmies, armiesNow, coverage as armyCoverage } from './armies.js';
+import { loadProfiles, splitStat } from './profiles.js';
 
 const LIST_KEY = "lists:all";
 
@@ -39,6 +40,10 @@ export async function initLists(){
   /* i file d'esercito: se non arrivano non succede niente, la scheda
      lo dice e il resto funziona */
   await loadArmies();
+  /* e i profili che le liste non portano — il Movimento della
+     cavalcatura, che per ventitre' unita' delle liste salvate e' la
+     differenza fra muoversi e non muoversi */
+  await loadProfiles();
 }
 
 const persist = () => saveDoc(LIST_KEY, lists).then(() => emit("lists:changed"));
@@ -479,12 +484,25 @@ function prepHTML(l){
       </div>`;
   }).join("");
 
+  /* Si può giocare? La domanda che l'app non si faceva, e che per una
+     lista scritta a mano fa la differenza fra una partita e trenta
+     pareggi a zero morti (vedi il §4 di `prep.js`). */
+  const play = PREP.playability(l, { split: splitStat });
+
   return `
-    <details class="prep" ${open.length ? "open" : ""}>
+    <details class="prep" ${open.length || !play.can ? "open" : ""}>
       <summary class="panel-title">Scheda di preparazione
-        <span class="chip ${open.length ? "warn" : "ok"}">${open.length ? open.length + " da decidere" : "a posto"}</span>
+        <span class="chip ${!play.can ? "warn" : open.length ? "warn" : "ok"}">${
+          !play.can ? play.bad.length + " senza profilo" : open.length ? open.length + " da decidere" : "a posto"}</span>
       </summary>
       <p class="note">Quello che il file di New Recruit non dice mai. Si compila una volta e resta con la lista.</p>
+      ${!play.can ? `<p class="note" style="color:var(--bad)"><b>Non si può simulare tutta:</b> ${esc(play.text)}.
+        Senza profilo l'app non tira niente e non lo direbbe: i conti verrebbero zero contro zero.
+        Si rimedia reimportando la lista da New Recruit, o aggiungendo il profilo in
+        <code>dati/profili.json</code> con il libro e la pagina accanto.</p>`
+        : play.fixed.length ? `<p class="note">${esc(play.text)} — i numeri che il file non porta
+          (il Movimento della cavalcatura, l'Abilità dei servitori) vengono da
+          <code>dati/profili.json</code>, con libro e pagina.</p>` : ""}
       <div class="prep-grid">
         <label class="field">Generale${pick("general", p.general, "— chi comanda —")}</label>
         <label class="field">Stendardo da battaglia${pick("bsb", p.bsb, "— nessuno —")}</label>

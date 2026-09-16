@@ -26,6 +26,7 @@
 
 import { MM, inch } from './util.js';
 import { CHARGE } from './rules.js';
+import { moveInfo } from './profiles.js';
 
 /* ------------------------------------------------------------------
    L'ancora
@@ -101,14 +102,19 @@ const r1 = n => Math.round(n * 10) / 10;
 export const swiftOf = u =>
   (u && u.rules || []).some(r => /swiftstride|fast cavalry|cavalleria veloce|passo lungo/i.test(r));
 
-/* M dal profilo, se e' un numero. Un profilo che dice «*» o «2D6» non
-   si inventa: senza M non si disegna niente. */
+/* M dal profilo, se e' un numero — e quando il profilo dice «-», dalla
+   cavalcatura, che e' dove il Movimento sta davvero per meta' delle
+   unita' di una lista (vedi `profiles.js`). Un Movimento che si tira,
+   come il 3D6 dei Squig Hopper, non e' un numero e non si inventa:
+   torna 0, e `moveDetail` dice che si tira. */
 export function moveOf(u){
-  if (!u) return 0;
-  if (u.moveOverride != null && +u.moveOverride > 0) return +u.moveOverride;
-  const m = u.stats && String(u.stats.M || "").match(/^\d+$/);
-  return m ? +m[0] : 0;
+  return moveInfo(u).m || 0;
 }
+
+/* lo stesso numero con accanto da dove viene: serve a chi deve
+   scrivere «Movimento 7″ dal cinghiale (Ravening Hordes, p. 29)»
+   invece di mostrare un cerchio senza spiegazione */
+export const moveDetail = moveInfo;
 
 export function bandsFor(u){
   const m = moveOf(u);

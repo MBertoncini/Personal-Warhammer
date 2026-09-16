@@ -156,6 +156,11 @@ Fino a poco fa l'app tirava 2D6 e li **sommava**, che è la regola del Warhammer
 **Scontro simulato.** Accanto a ogni nemico vicino, nell'ispettore, c'è una spada. Apre un pannello con le due schiere a confronto: profili, quanti modelli si toccano, armatura e salvezza speciale, stendardo e stendardo da battaglia, terreno più alto, sfida. Chi ha caricato e da che faccia è arrivato non si spuntano più a mano: li scrive la carica quando va a segno, e con loro i pollici percorsi.
 
 - *Tira i dadi* fa **un assalto** e mostra **ogni faccia uscita**: per colpire, per ferire, per salvare. Si mena in ordine di Iniziativa, e dentro l'Iniziativa c'è il **bonus della carica**: un punto per ogni pollice intero percorso, fino a +3 arrivando di fronte e +4 di fianco o di retro. È la riga che ribalta l'ordine in mezza partita, perché una cavalleria che ha corso sette pollici mena prima di chiunque. L'urto della carica arriva prima di tutto e vuole i suoi tre pollici di corsa; i pestoni arrivano per ultimi, dopo ogni altro attacco. Poi il conto di fine assalto — ferite, ranghi, stendardo, stendardo da battaglia, fianco, retro, terreno più alto, overkill nelle sfide — e il test di rotta.
+- **Il combattimento a più di due** (p. 153). Tre unità che convergono su un reggimento sono il normale di Warhammer, e il motore dell'assalto sapeva rappresentare solo due schiere: adesso entrano due **gruppi**, si mena in un ordine di Iniziativa solo — tutti insieme, non a coppie — e chi ha due nemici davanti divide la sua prima fila fra i due invece di menare due volte con tutta. Il conto di fine assalto è quello della pagina dei combattimenti multipli, dove quattro voci hanno una regola loro: i **ranghi non si sommano** (vale il bonus più alto), gli **stendardi** valgono uno per parte per quanti ne siano, il **fianco** si conta una volta per unità nemica — due unità sullo stesso fianco fanno un punto, una sul fianco e una sul retro ne fanno tre — e il **terreno più alto** lo prende una parte sola, e si annulla se sono in alto tutte e due. L'ordine di combattimento invece si conta per ognuna, come dice il manuale. Il test di rotta lo tira **ogni unità** della parte che perde, con lo stesso scarto, e la Forza d'Unità che decide se il doppio schiaccia è quella delle parti sommate (p. 154). **Nel pannello si aggiunge un'unità per parte con una tendina**, e chi tocca davvero il nemico sul tavolo viene proposto per primo: chi tocca chi lo dice il tavolo, e sotto il risultato si legge chi ha portato cosa.
+- **Il capo dentro il reggimento combatte** (p. 209). Un personaggio unito entra nel pannello con il suo reggimento e mena con i suoi attacchi — prima l'app ne contava la psicologia e non i quattro attacchi, cioè lo faceva parlare e non menare. Non lo si colpisce se non dirigendogli i colpi apposta, e c'è la casella per farlo; l'urto della carica e i pestoni gli arrivano addosso solo se nel reggimento restano meno di cinque modelli di truppa. Le ferite non tracimano né in un verso né nell'altro: il capo ha le sue, il reggimento le sue.
+- **Le ferite restano appese.** Tre ferite passate a un mostro da quattro non sono zero perdite: sono tre ferite che aspettano la quarta. Valgono fra un assalto e l'altro, fra il tiro e la mischia, e le scrive sull'unità chi porta l'esito sul tavolo. Prima evaporavano a ogni tiro e a ogni round — su un bersaglio da più ferite spariva l'intera raffica.
+- **Il raduno** (p. 117) è una regola e non più un test di Comando generico: sotto metà dei modelli di partenza −1, sotto un quarto passa solo il doppio uno, e il musico suona il raduno per +1 fino a 10 (p. 201). Nell'ispettore, per chi sta fuggendo, c'è il pulsante e la riga che dice con che Comando si prova.
+- **L'overkill si ferma a cinque** (p. 152). Il tetto stava nel manuale e la costante lo aspettava dichiarando di non averlo letto: un eroe che fa nove ferite a chi ne aveva una porta cinque punti, non otto.
 - **Il test di rotta ha tre esiti, non due** (p. 154). Si guardano due numeri: il tiro naturale e lo stesso tiro con lo scarto del combattimento addosso. Passano tutti e due e l'unità *cede terreno* di due pollici; passa solo il naturale e *ripiega in ordine*; non passa nemmeno quello ed è *rotta*. Perdere di otto invece che di due non fa scappare di più — la rotta dipende dal tiro naturale — fa ripiegare invece di cedere terreno. Accanto all'esito ci sono le tre probabilità esatte, che sono anche il numero con cui si decide se giocarsi lo *Stubborn*.
 - *Porta l'esito sul tavolo* fa i quattro gesti nell'ordine del manuale: segna le perdite, scrive il risultato e il test nel registro con turno e casella, **sposta chi ha perso** di quanto dice l'esito, e poi chiede il tiro d'inseguimento — o di sfondamento, se davanti non è rimasto nessuno. Chi insegue almeno quanto l'altro ha fuggito lo travolge. Ogni passo è un'azione del motore: si annulla da solo.
 - *Simula 500 assalti* rifà lo stesso conto cinquecento volte e riporta le percentuali. È la risposta alla domanda vera, che non è «com'è andata» ma «conviene?»: un assalto solo non dice niente, cinquecento dicono se caricare è una buona idea.
@@ -237,6 +242,56 @@ Il verdetto (pareggio, vittoria di misura, netta, schiacciante) è **una convenz
 Ci sono anche *Copia il Markdown* senza la richiesta davanti, *Scarica .md* e *Scarica .json* — il JSON è il report intero, per rileggerlo con un programma.
 
 ---
+
+## Una partita giocata dall'app
+
+Fin qui l'app sapeva **calcolare** e non sapeva **applicare**: lo scontro simulato ti diceva quante ferite passavano, il motore ti diceva che casella toccava, e a portare i numeri sui pezzi eri sempre tu. `src/arbitro.js` è l'arbitro che mancava. Tiene lo stato di una partita, sa in che punto del turno si è, dice **quali gesti sono legali adesso**, e quando gliene passi uno tira i dadi, applica le regole e scrive una riga di registro con la pagina del manuale accanto.
+
+Non sa le regole: le sanno `charge.js`, `combat.js`, `melee.js`, `shoot.js`, `psych.js`, `victory.js`, e l'arbitro le chiama. Non decide: le decisioni le prende chi gioca. E dice quello che non fa — le semplificazioni sono elencate in `LIMITI` e finiscono nel registro la prima volta che contano.
+
+Chi gioca sta in `src/agente.js`, e può essere due cose:
+
+- **l'euristica**, sei regole di buon senso da tavolo (si schiera largo, si raduna sempre, si carica solo sopra il cinquanta per cento, chi ha un arco resta fermo, si va addosso a chi è più vicino). Serve a far girare mille partite in qualche secondo e a fare da rete di sicurezza;
+- **un modello di linguaggio**, che legge la fotografia del tavolo, l'elenco numerato delle mosse legali con dentro distanze e probabilità già calcolate, e sceglie — dicendo perché. Non gli si chiede di sapere le regole né di tirare i dadi: sceglie fra mosse che l'arbitro ha già dichiarato legali, e i dadi li tira l'arbitro con il seme.
+
+```bash
+npm run partita                       # due euristiche, partita commentata
+node tools/partita.mjs --seme 42      # la stessa partita, sempre identica
+node tools/partita.mjs --liste ?      # le liste dell'archivio, numerate
+node tools/partita.mjs --liste 3,9 --scenario bm-rovine
+node tools/partita.mjs --gemini       # due modelli che si affrontano
+node tools/partita.mjs --gemini A     # solo l'esercito A è il modello
+```
+
+Per il modello serve una chiave nell'ambiente — `GEMINI_API_KEY`, e `GEMINI_MODEL` se ne vuoi uno diverso da `gemini-2.5-flash`:
+
+```bash
+GEMINI_API_KEY=... node tools/partita.mjs --gemini
+```
+
+Senza chiave la partita si gioca lo stesso con l'euristica, e lo scrive. Se il modello risponde male — un numero fuori dall'elenco, la rete che cade — **la mossa non viene aggiustata di nascosto**: si gioca quella dell'euristica e nel registro c'è scritto che non l'ha scelta lui.
+
+**Quello che stampa è pensato per essere letto.** Ogni mossa dice chi ha scelto, perché, e cosa è successo, con la pagina accanto:
+
+```
+── CARICHE ──
+  Orc and Goblin Tribes: carico Temple Guard con Black Orc Mobs: 4.2″,
+    serve solo muoversi, riesce il 100%, la prende di fianco
+    T3 · Black Orc Mobs dichiara la carica su Temple Guard: a 4.2″.  (p. 119)
+    T3 · Temple Guard tiene la posizione.  (p. 120)
+    T3 · Black Orc Mobs carica Temple Guard e arriva: 5, 3 → 9″ contro 4.2
+         richiesti, e la prende di fianco.  (p. 121)   [5 3]
+
+── MISCHIA ──
+    T3 · Risultato: Temple Guard 2 (1 rango + 1 ordine di combattimento) contro
+         Black Orc Warboss e Night Goblin Bigboss 5 (2 ferite + 2 ordine di
+         combattimento + 1 fianco). Vince di 3.  (p. 153)
+    T3 · Temple Guard: Comando 8, 2D6 = 10 e con lo scarto di 3 fa 13 → va in rotta  (p. 154)
+```
+
+Una partita dura quattro o cinque secondi con l'euristica, e finisce con il verdetto del libro: punti vittoria, margine, e il punto di rottura guardato all'inizio di ogni turno. In fondo stampa **quello che quella partita non ha giocato**, riga per riga: è la lista della spesa del prossimo pezzo di lavoro.
+
+Il turno che l'arbitro gioca è più corto delle sedici caselle di `phases.js` — raduno, cariche, mosse, tiro, mischia — e la differenza è dichiarata: niente magia, niente sotto-fase di comando, niente riforme. Tutto il resto è quello vero: le reazioni alla carica, il tiro con i suoi modificatori, il combattimento **a più di due** con il conto di p. 153, i tre esiti del test di rotta uno per unità, l'inseguimento che travolge, il Panico oltre il quarto, il raduno con le perdite insostenibili.
 
 ## Installarla
 
@@ -371,7 +426,7 @@ src/
   effects.js          le caratteristiche con i modificatori attivi e da dove vengono
   armies.js           i file d'esercito: riconoscere una regola e tradurla in dadi
   battlemarch.js      le due tabelle a D6 di Battle March e il controllo degli obiettivi
-  combat.js           lo scontro simulato e la raffica, senza interfaccia
+  combat.js           lo scontro simulato a gruppi e la raffica, senza interfaccia
   duel.js             il pannello dello scontro: dadi in chiaro e perdite
   formation.js        il posto di ogni modello, personaggi uniti, contatti, terreno occupato
   formeditor.js       la finestra in cui la formazione si disegna a mano
@@ -381,7 +436,8 @@ src/
   phases.js           le sedici caselle del turno: cosa ci si aspetta in ognuna
   engine.js           il motore: azioni, dadi chiesti, regole in ascolto, registro
   charge.js           la carica: dichiararla, allinearla, e le mosse all'indietro
-  melee.js            la mischia: Iniziativa della carica, risultato, test di rotta, inseguimento
+  melee.js            la mischia: Iniziativa della carica, risultato (anche a più di due),
+                      test di rotta, inseguimento
   shoot.js            il tiro: tiratori modello per modello, modificatori, sagome, macchine, Panico
   psych.js            la psicologia: Paura, Terrore, Panico, Stupidità, Frenzy, e chi ne è esente
   magic.js            la magia: generare, lanciare, fiasco, dissolvere, effetti e colpi
@@ -389,6 +445,9 @@ src/
   catalog.js          voci di collezione, foto, pittura, aggancio dei nomi
   lists.js            liste salvate e collegamento unità → catalogo
   prep.js             la scheda di preparazione: quello che il file di New Recruit non dice
+  profiles.js         i profili che la lista non porta: il Movimento della cavalcatura, i servitori
+  arbitro.js          l'arbitro senza pagina: stato, mosse legali, dadi, registro
+  agente.js           chi gioca quando non c'è nessuno: euristica e modello di linguaggio
   matchup.js          disponibilità, confronto, schieramenti salvati
   reports.js          archivio delle partite e scheda Partite
   deploy.js           stato del tavolo, pannelli, campo di battaglia
@@ -403,12 +462,16 @@ test/
   tiro.mjs            tiratori per modello, modificatori, sagome, deviazione, cannone, Panico
   psicologia.mjs      Paura, Terrore, Panico e le sue cause, Stupidità, Frenzy, Warband, il contatore
   magia.mjs           domini, generazione, lancio, fiasco, dissolvimento, effetti che i dadi sentono
+  vittoria.mjs        punti vittoria, verdetto, durata, punto di rottura
+  arbitro.mjs         una partita intera senza pagina, e chi la gioca
   sync.mjs            archivio su GitHub, contro un GitHub finto in memoria
   boot.mjs            la pagina intera: schede, annulla, zoom, partita, report, link
 tools/
   make-icons.mjs      scrive i PNG del manifest senza dipendenze
+  partita.mjs         una partita intera dalla lista al verdetto, commentata
 dati/
   eserciti/           un file per esercito: regole, oggetti, domini
+  profili.json        i profili letti sul libro: cavalcature, servitori, liste scritte a mano
 ```
 
 Le quattro primitive generiche stanno in moduli loro perché non sanno niente del tavolo e non devono saperlo: `extras.js` non ha DOM, `movement.js` non ha stato, `zones.js` risponde a una domanda sola. `uikit.js` c'è perché tre pannelli diversi avevano bisogno delle stesse quattro cose — una finestra, i contatori, le etichette, una fila di scorciatoie — e perché `prompt()` e `confirm()` non si usano più da nessuna parte: sul telefono coprono lo schermo, in un'app installata hanno l'aria di un errore, e proprio dove servono davvero (annotare mentre giochi) erano il gesto sbagliato.
@@ -438,7 +501,7 @@ Prova anche le cose nuove dove si vedono davvero: che i cerchi del movimento res
 - Le anteprime per modello si fermano a 60 per riga; oltre compare `+N`.
 - La sincronia su GitHub la lanci tu (o il salvataggio automatico dopo qualche minuto di calma): non è continua e non fonde due modifiche fatte insieme allo stesso file. Chi salva per secondo sceglie se scaricare prima o passare sopra. Per due fratelli che giocano a turno va bene; per una squadra no.
 - Senza Nuvola i dati restano legati a quel browser: c'è il backup manuale e il link dello schieramento. Il link porta le posizioni, non la collezione: catalogo e foto restano dove sono.
-- La modalità partita **non arbitra**: tiene il conto di turni, caselle e perdite, dice cosa ci si aspetta adesso, e non impedisce niente. Le decisioni restano ai due giocatori, come al tavolo.
+- La modalità partita **non arbitra**: tiene il conto di turni, caselle e perdite, dice cosa ci si aspetta adesso, e non impedisce niente. Le decisioni restano ai due giocatori, come al tavolo. L'arbitro vero c'è ma vive fuori dalla pagina (`src/arbitro.js`, vedi *Una partita giocata dall'app*): gioca un turno più corto — niente magia, niente riforme — e dichiara ogni semplificazione nel registro.
 - Il vassoio dei dadi **non sa cosa stai tirando**: quanti dadi, che dado e che punteggio serve lo dici tu, e i modificatori li fai in testa come al tavolo — con le *Tabelle* aperte accanto. Tira, mostra e scrive quello che è uscito — il resto è ancora una decisione dei giocatori.
 - Il punteggio è **mezzo automatico**, con le voci del libro (p. 286; Battle March p. 27): l'app somma quello che vede sul tavolo — distrutte o fuggite dal tavolo 100%, in fuga a fine partita 50%, sotto un quarto della Forza d'Unità 25% — e gli obiettivi tenuti a ogni fine turno, e lascia a te generale, portastendardo e stendardi presi. Il verdetto è quello del libro: cento punti di scarto per vincere, il doppio per stravincere; in Battle March basta averne di più. Le mappe di schieramento con cerchi e cunei si disegnano ancora a mano.
 - Il *mosso* di un'unità è lo spostamento **netto** fra due fotografie: chi avanza e poi ripiega risulta fermo, e una ruota sul posto risulta zero. Il fronte in gradi c'è, ed è lì che si legge — e il *Fantasma* fa vedere il resto.
@@ -458,7 +521,8 @@ Prova anche le cose nuove dove si vedono davvero: che i cerchi del movimento res
 - Il **costo della ruota** si calcola e si scrive, ma non si scala da un budget di movimento: la carica lo usa per dire quanto serve, il movimento normale no. E il *tira e tieni* apre la reazione senza tirare la raffica, che si tira dal pannello del tiro.
 - La tabella dei **tipi di truppa** (p. 105) ha tredici righe e la colonna della Forza d'Unità è confrontata con le dieci liste salvate: sei tipi su tredici hanno un esempio vero che la conferma. Le celle senza esempio l'app le usa lo stesso e le dichiara — nell'ispettore compare *cella da verificare*. Quando il file della lista dichiara la Forza d'Unità vince il file, sempre.
 - Le due tabelle a D6 di **Battle March** — Terreno Selvaggio e Caso della Guerra — tirano e dicono cos'è uscito, ma l'abbinamento fra la faccia del dado e l'esito **non è confrontato con il libro**: i sei esiti stanno nell'ordine in cui il piano li elenca, e l'app lo scrive ogni volta che tira. Con il libro aperto si corregge cambiando una riga di `battlemarch.js`.
-- Il **profilo diviso** cavaliere/cavalcatura si legge dalle liste importate da adesso in poi: quelle già salvate sono state lette quando il parser teneva solo il primo profilo, e vanno reimportate per avere la riga della cavalcatura.
+- Il **profilo diviso** cavaliere/cavalcatura: il file di New Recruit esporta una riga sola, e per chi va a cavallo quella riga ha il Movimento a «-» — esattamente come sul libro, dove il Movimento è della cavalcatura. Le righe che mancano stanno in `dati/profili.json`, lette sul libro con la pagina accanto: ventitré unità delle liste salvate non sapevano muoversi, e adesso non ne resta nessuna. Quello che quel file **non** recupera è il resto del profilo diviso — un carro mena con i suoi servitori e non con i cinghiali, un Bastiladon con i suoi tre attacchi e non con quelli degli skink: l'app tiene un profilo per modello, e dove quella semplificazione costa qualcosa il file lo scrive in `notaRighe`.
+- Una **lista senza profili** — scritta a mano nella scheda, con nome e punti e niente altro — non si può simulare: era il modo peggiore di sbagliare che questo archivio conoscesse, perché l'app la giocava lo stesso e usciva zero contro zero, cento per cento di pareggi, nessun avviso. Adesso la scheda di preparazione lo dice in rosso, unità per unità, e dove il libro ha quel profilo `dati/profili.json` lo riempie.
 - Il parser legge quello che New Recruit esporta. Se una lista arriva con basette insolite le stima dal tipo di truppa, e le puoi correggere a mano nell'ispettore.
 
 ## Licenza

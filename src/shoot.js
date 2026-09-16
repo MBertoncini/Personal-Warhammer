@@ -72,6 +72,7 @@ export const PAGE = {
   templates:  95,   // le sagome e la deviazione
   machines:  222,   // le macchine da guerra
   misfire:   347,   // le due tabelle del Mancato Colpo (Quick Reference)
+  joined:    209,   // i personaggi dentro il reggimento, e «Occhio, capo!»
 };
 
 /* ============================================================
@@ -760,4 +761,80 @@ export function shotPlan({ shooter = null, target = null, cells = [], pieces = [
     chance: hitChance(need.need, need.again),
     page: PAGE.shooting,
   };
+}
+
+/* ============================================================
+   9 · I PERSONAGGI DENTRO IL REGGIMENTO (p. 209)
+   Un capo unito a un'unita' non lo si colpisce sparando. Il manuale
+   mette tre eccezioni e una scappatoia, e sono quattro righe che
+   cambiano quasi ogni tiro in cui c'e' di mezzo un eroe:
+
+     non lo si puo' colpire, a meno che l'arma permetta di scegliere il
+     modello, la sagoma gli cada sopra, o nel reggimento siano rimasti
+     meno di CINQUE modelli di truppa;
+
+     e quando lo si colpisce c'e' il «Occhio, capo!»: un D6, e solo
+     con un 1 il colpo arriva davvero a lui.
+
+   Sotto i cinque modelli i colpi si distribuiscono: prima uno a
+   testa a tutti quelli dell'unita', poi quello che avanza si divide
+   il piu' equamente possibile fra i personaggi e l'unita'.
+   ============================================================ */
+export const SHIELD_RANKS = 5;          // p. 209: cinque modelli di truppa
+export const LOOK_OUT_NEED = 2;         // 1 = colpito lui, 2+ = colpito un altro
+
+export function canTargetJoined({ rankAndFile = 0, sniper = false, template = false } = {}){
+  const thin = (+rankAndFile || 0) < SHIELD_RANKS;
+  const can = thin || !!sniper || !!template;
+  return {
+    can, thin, sniper: !!sniper, template: !!template, page: PAGE.joined,
+    why: !can ? "dentro il reggimento non lo si può prendere di mira (p. 209)"
+       : thin ? `nel reggimento restano meno di ${SHIELD_RANKS} modelli di truppa`
+       : sniper ? "l'arma permette di scegliere il modello"
+       : "la sagoma gli cade sopra",
+  };
+}
+
+/* «Occhio, capo!»: entra un dado gia' uscito, esce chi lo incassa. */
+export function lookOut(die = 0, { rankAndFile = 0 } = {}){
+  const vale = (+rankAndFile || 0) >= SHIELD_RANKS;
+  const d = Math.max(0, +die || 0);
+  const hit = !vale || d < LOOK_OUT_NEED;
+  return {
+    applies: vale, die: d, hit, page: PAGE.joined,
+    text: !vale ? `meno di ${SHIELD_RANKS} modelli di truppa: nessun «Occhio, capo!», il colpo è suo`
+        : hit ? "«Occhio, capo!»: 1, il colpo arriva a lui"
+              : "«Occhio, capo!»: " + d + ", il colpo se lo prende un altro",
+  };
+}
+
+/* La ripartizione sotto i cinque modelli: uno a testa e poi il resto
+   diviso. Entra il numero di colpi, escono i mucchi — uno per l'unita'
+   e uno per ogni personaggio. */
+export function shareHits(hits = 0, { models = 0, characters = 1 } = {}){
+  const n = Math.max(0, Math.round(+hits || 0));
+  const m = Math.max(0, Math.round(+models || 0));
+  const k = Math.max(0, Math.round(+characters || 0));
+  if (!n) return { unit: 0, chars: Array.from({ length: k }, () => 0), page: PAGE.joined };
+  if (!k) return { unit: n, chars: [], page: PAGE.joined };
+  /* prima all'unita', «finche' ogni modello che contiene ne ha preso
+     uno»: i primi colpi non arrivano al capo, arrivano alla truppa */
+  let unit = Math.min(n, m);
+  const chars = Array.from({ length: k }, () => 0);
+  let resto = n - unit;
+  /* poi il resto, il piu' equamente possibile fra i personaggi e
+     l'unita': l'unita' e' un mucchio solo, ogni personaggio un altro.
+     Il colpo che avanza dalla divisione va all'unita', che e' quello
+     che sceglierebbe chi comanda: «il piu' equamente possibile» lascia
+     la decisione a chi gioca, e fra le due possibili questa e' quella
+     che tiene in piedi il capo. */
+  const mucchi = 1 + k;
+  const base = Math.floor(resto / mucchi);
+  unit += base; chars.forEach((_, i) => { chars[i] += base; });
+  resto -= base * mucchi;
+  for (let i = 0; resto > 0; i++, resto--){
+    if (i % mucchi === 0) unit++;
+    else chars[(i % mucchi) - 1]++;
+  }
+  return { unit, chars, page: PAGE.joined };
 }

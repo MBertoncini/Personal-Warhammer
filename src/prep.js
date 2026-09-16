@@ -155,3 +155,99 @@ export const readiness = l => {
   const open = questions(l).length, done = answered(l).length;
   return { open, done, ready: open === 0 };
 };
+
+/* ============================================================
+   4 · SI PUO' GIOCARE?
+   Il guaio silenzioso, e il piu' brutto che questo archivio conosca.
+   Una lista scritta a mano nella scheda — nome, punti, modelli — non
+   porta profili: `stats` e' nullo su tutte le sue unita'. Data in pasto
+   all'assalto non si rompeva niente. Usciva questo:
+
+     Clanrats → WS 0, S 0, T 0, Ld 0
+     colpire con AC 0 contro AC 0 → 7 (impossibile)
+     assalto contro i Temple Guard → perdite 0 e 0
+
+   Trenta partite simulate, cento per cento di pareggi, nessun morto e
+   nessun avviso. L'app faceva finta invece di dichiarare, che e' il
+   modo peggiore di sbagliare: un numero sbagliato lo si vede, uno zero
+   che scorre in silenzio no.
+
+   Qui il controllo che mancava. Non impedisce niente — l'app propone,
+   non impedisce — ma dice a voce alta cosa non si puo' calcolare, e
+   distingue i due casi che si assomigliano e non sono la stessa cosa:
+
+     PROFILO ASSENTE: l'unita' non ha caratteristiche. Non si puo'
+       tirare niente, e quello che l'app calcolerebbe sarebbe finto.
+
+     PROFILO DIVISO (p. 97): la riga dice «-» perche' il numero sta su
+       un'altra riga — i servitori di una macchina, la cavalcatura di
+       un carro. Quando `dati/profili.json` ha quella riga il numero
+       arriva; quando non ce l'ha, si dice quale manca.
+   ============================================================ */
+
+/* Le caratteristiche senza le quali un'unita' non puo' stare in
+   partita. Il Movimento non e' qui: un'unita' ferma e' inutile ma
+   giocabile, e il suo caso lo racconta `profiles.js`. */
+export const NEEDED = ["WS", "S", "T", "W", "Ld"];
+const NEED_LABEL = {
+  WS:"Abilità Combattimento", BS:"Abilità Balistica", S:"Forza",
+  T:"Resistenza", W:"Ferite", Ld:"Comando", I:"Iniziativa", A:"Attacchi", M:"Movimento",
+};
+
+const numeric = v => /^\d+$/.test(String(v ?? "").trim());
+
+/* Un'unita' sola. `filled` sono le caratteristiche che il profilo
+   diviso ha recuperato da un'altra riga, e vanno dette: chi legge deve
+   sapere che quel 3 viene dal libro e non dal file della lista. */
+export function unitCheck(u, { split = null } = {}){
+  const st = (u && u.stats) || {};
+  const out = { name: (u && u.name) || "", missing: [], filled: [], can: true, why: "", page: 97,
+                /* il file non porta niente: se qualcosa arriva, arriva
+                   tutto dal libro, e va detto chiaro */
+                fromBook: !u || !u.stats || !Object.keys(u.stats).length };
+  for (const k of NEEDED){
+    if (numeric(st[k])) continue;
+    const dal = split ? split(u, k) : null;
+    if (dal != null) out.filled.push(k);
+    else out.missing.push(k);
+  }
+  /* Chi non ha né Abilità Combattimento né Balistica non può colpire
+     nessuno, in nessun modo: è il controllo che la sonda ha messo in
+     cima al riassunto, e che va qui, dove la lista si prepara. */
+  const noSkill = !numeric(st.WS) && !numeric(st.BS) &&
+                  (!split || (split(u, "WS") == null && split(u, "BS") == null));
+  out.can = !out.missing.length && !noSkill;
+  out.why = out.can
+    ? (out.fromBook
+        ? "il file non porta nessun profilo: questo viene dal libro"
+        : out.filled.length
+          ? "profilo diviso: " + out.filled.map(k => NEED_LABEL[k]).join(", ") +
+            " dalla riga della cavalcatura o dei servitori (p. 97)"
+          : "")
+    : out.fromBook && out.missing.length === NEEDED.length
+      ? "il file non porta nessun profilo, e il libro non ne ha uno per lei: non si può tirare niente"
+      : noSkill
+        ? "non ha né Abilità Combattimento né Balistica: non può colpire nessuno"
+        : "manca " + out.missing.map(k => NEED_LABEL[k]).join(", ");
+  return out;
+}
+
+/* La lista intera. Torna sempre, anche quando va tutto bene, perché la
+   riga «tutte giocabili» è essa stessa un'informazione. */
+export function playability(l, { split = null } = {}){
+  const units = (l && l.units) || [];
+  const rows = units.map(u => unitCheck(u, { split }));
+  const bad = rows.filter(r => !r.can);
+  const fixed = rows.filter(r => r.can && (r.filled.length || r.fromBook));
+  return {
+    rows, bad, fixed,
+    can: bad.length === 0,
+    text: bad.length
+      ? bad.length + (bad.length === 1 ? " unità non è giocabile: " : " unità non sono giocabili: ") +
+        bad.map(r => r.name + " (" + r.why + ")").join("; ")
+      : fixed.length
+        ? "tutte giocabili; " + fixed.length +
+          (fixed.length === 1 ? " ha il profilo diviso, completato dal libro" : " hanno il profilo diviso, completato dal libro")
+        : "tutte giocabili",
+  };
+}

@@ -1,0 +1,299 @@
+{
+  "nota": "I profili che il file della lista non porta. New Recruit esporta una riga sola per unità, e per chi va a cavallo — o su un carro, o dietro una macchina da guerra — quella riga ha il Movimento a «-», esattamente come ce l'ha sul libro: il Movimento è della cavalcatura, e la riga della cavalcatura l'export la butta via. Il risultato era che ventitré unità delle liste salvate non sapevano muoversi. Qui ci sono solo i numeri letti sul libro, con il libro e la pagina accanto; le pagine sono quelle stampate.",
+  "profili": [
+    {
+      "nomi": [
+        "Orc Boar Boy Mobs",
+        "Orc Boar Boyz",
+        "Boar Boyz"
+      ],
+      "faction": "Orc and Goblin Tribes",
+      "M": 7,
+      "da": "War Boar",
+      "libro": "Ravening Hordes",
+      "pagina": 29,
+      "nota": "il cavaliere ha «-» anche sul libro: il Movimento è quello del cinghiale"
+    },
+    {
+      "nomi": [
+        "Orc Boar Chariots",
+        "Orc Boar Chariot"
+      ],
+      "faction": "Orc and Goblin Tribes",
+      "M": 7,
+      "da": "War Boars (x2)",
+      "libro": "Ravening Hordes",
+      "pagina": 33,
+      "nota": "il carro non ha Movimento suo: lo tirano i due cinghiali",
+      "righe": [
+        {
+          "chi": "Orc Crew (x2)",
+          "stats": {
+            "WS": 3,
+            "BS": 3,
+            "S": 3,
+            "I": 3,
+            "A": 2,
+            "Ld": 7
+          }
+        },
+        {
+          "chi": "War Boars (x2)",
+          "stats": {
+            "M": 7,
+            "WS": 3,
+            "S": 3,
+            "I": 3,
+            "A": 2
+          }
+        }
+      ],
+      "notaRighe": "La riga del carro ha «-» su Abilità Combattimento, Iniziativa, Attacchi e Comando: quei numeri stanno sulle due righe sotto, e senza di loro l'app faceva combattere il carro con Abilità 0 e Comando 0. L'app tiene un profilo solo per modello e il carro è un modello solo, quindi mena con i servitori: due attacchi, uno a testa. I due cinghiali ne portano altri due, a Forza 3, e quelli non li tira nessuno — è il limite del profilo unico, detto qui invece che taciuto. La Forza resta quella che il file dichiara, 5, che è del carro: i colpi dei servitori sarebbero a 3."
+    },
+    {
+      "nomi": [
+        "Night Goblin Squig Hopper Mobs",
+        "Squig Hoppers",
+        "Night Goblin Squig Hoppers"
+      ],
+      "faction": "Orc and Goblin Tribes",
+      "M": 0,
+      "random": "3D6",
+      "da": "Bounder Squig",
+      "libro": "Ravening Hordes",
+      "pagina": 32,
+      "nota": "non ha un Movimento fisso: si tirano tre D6 e si va per quello che esce"
+    },
+    {
+      "nomi": [
+        "Cold One Riders",
+        "Saurus Cold One Riders"
+      ],
+      "faction": "Lizardmen",
+      "M": 7,
+      "da": "Cold One",
+      "libro": "Legends: Lizardmen",
+      "pagina": 10,
+      "nota": "il cavaliere ha «-»: il Movimento è quello della lucertola"
+    },
+    {
+      "nomi": [
+        "Terradon Riders"
+      ],
+      "faction": "Lizardmen",
+      "M": 2,
+      "fly": 10,
+      "da": "Terradon",
+      "libro": "Legends: Lizardmen",
+      "pagina": 10,
+      "nota": "a terra fa 2″; in volo dieci, ed è quello che fa sempre — Fly (10) sta fra le sue regole speciali"
+    },
+    {
+      "nomi": [
+        "Bastiladon",
+        "Bastiladons"
+      ],
+      "faction": "Lizardmen",
+      "libro": "Legends: Lizardmen",
+      "pagina": 14,
+      "nota": "il bestione ha il Comando «-»: quello è dei tre skink che gli stanno sopra, e senza di loro il Bastiladon tirava i test di rotta con Comando 0",
+      "righe": [
+        {
+          "chi": "Skink Crew (x3)",
+          "stats": {
+            "BS": 3,
+            "Ld": 6
+          }
+        }
+      ],
+      "notaRighe": "Dalla riga dei servitori arrivano l'Abilità Balistica e il Comando, che sulla riga del bestione sono «-». Gli attacchi restano i suoi tre: i tre skink ne porterebbero uno a testa, e l'app tiene un profilo solo per modello."
+    },
+    {
+      "nomi": [
+        "Warp Lightning Cannon"
+      ],
+      "faction": "Skaven",
+      "M": 5,
+      "da": "Engineer & Crew",
+      "libro": "Legends: Skaven",
+      "pagina": 19,
+      "nota": "la macchina non si muove da sola: cammina con i serventi, e non può marciare né caricare né inseguire (p. 197)",
+      "righe": [
+        {
+          "chi": "Engineer & Crew",
+          "stats": {
+            "M": 5,
+            "WS": 3,
+            "BS": 3,
+            "S": 3,
+            "I": 3,
+            "A": 3,
+            "Ld": 6
+          }
+        },
+        {
+          "chi": "Warp Lightning Cannon",
+          "stats": {
+            "T": 6,
+            "W": 4
+          }
+        }
+      ],
+      "notaRighe": "La riga della macchina ha «-» su tutto quello che serve a menare: quei numeri sono dei serventi. Resistenza e Ferite restano quelle della macchina, come le porta il file — il manuale dice che in combattimento valgono quelle dei serventi (p. 197), e quella riga l'app non la gioca ancora. La riga della macchina porta Resistenza 6 e Ferite 4, che servono quando la lista è scritta a mano e non porta nemmeno quelle."
+    },
+    {
+      "nomi": [
+        "Hell Pit Abomination",
+        "Hell Pit Abominations"
+      ],
+      "faction": "Skaven",
+      "M": 0,
+      "random": "3D6",
+      "da": "Hell Pit Abomination",
+      "libro": "Legends: Skaven",
+      "pagina": 18,
+      "nota": "Random Movement: il Movimento è scritto «3D6» sulla sua riga, e si tira ogni volta"
+    },
+    {
+      "nomi": [
+        "Doomwheel"
+      ],
+      "faction": "Skaven",
+      "M": 0,
+      "random": "3D6",
+      "da": "Doomwheel",
+      "libro": "Legends: Skaven",
+      "pagina": 17,
+      "nota": "il Movimento è scritto «3D6» sulla riga della macchina: si tira ogni volta",
+      "righe": [
+        {
+          "chi": "Doomwheel",
+          "stats": {
+            "S": 5,
+            "T": 5,
+            "W": 4
+          }
+        },
+        {
+          "chi": "Warlock (x1)",
+          "stats": {
+            "WS": 3,
+            "BS": 3,
+            "I": 3,
+            "A": 1,
+            "Ld": 7
+          }
+        }
+      ],
+      "notaRighe": "Tre righe sul libro e nessuna completa: la macchina porta Forza, Resistenza e Ferite, il Warlock che ci sta sopra porta tutto il resto. I ratti della terza riga fanno 2D6 attacchi a Forza 2 — attacchi casuali, che l'app non tira."
+    },
+    {
+      "nomi": [
+        "Clanrats",
+        "Clanrat"
+      ],
+      "faction": "Skaven",
+      "M": 5,
+      "libro": "Legends: Skaven",
+      "pagina": 7,
+      "nota": "la lista è scritta a mano e non porta profili: questo è quello del libro",
+      "righe": [
+        {
+          "chi": "Clanrat",
+          "stats": {
+            "M": 5,
+            "WS": 3,
+            "BS": 3,
+            "S": 3,
+            "T": 3,
+            "W": 1,
+            "I": 4,
+            "A": 1,
+            "Ld": 4
+          }
+        }
+      ]
+    },
+    {
+      "nomi": [
+        "Rat Ogres",
+        "Rat Ogre"
+      ],
+      "faction": "Skaven",
+      "M": 6,
+      "libro": "Legends: Skaven",
+      "pagina": 12,
+      "nota": "la lista è scritta a mano e non porta profili: questo è quello del libro",
+      "righe": [
+        {
+          "chi": "Rat Ogre",
+          "stats": {
+            "M": 6,
+            "WS": 4,
+            "BS": 1,
+            "S": 5,
+            "T": 4,
+            "W": 3,
+            "I": 4,
+            "A": 3,
+            "Ld": 5
+          }
+        }
+      ]
+    },
+    {
+      "nomi": [
+        "Warlock Engineer",
+        "Clan Skryre Warlock Engineers"
+      ],
+      "faction": "Skaven",
+      "M": 5,
+      "libro": "Legends: Skaven",
+      "pagina": 4,
+      "nota": "la lista è scritta a mano e non porta profili: questo è quello del libro",
+      "righe": [
+        {
+          "chi": "Warlock Engineer",
+          "stats": {
+            "M": 5,
+            "WS": 3,
+            "BS": 3,
+            "S": 3,
+            "T": 3,
+            "W": 2,
+            "I": 4,
+            "A": 2,
+            "Ld": 5
+          }
+        }
+      ]
+    },
+    {
+      "nomi": [
+        "Warplock Jezzails",
+        "Jezzail Team"
+      ],
+      "faction": "Skaven",
+      "M": 5,
+      "libro": "Legends: Skaven",
+      "pagina": 10,
+      "nota": "la lista è scritta a mano e non porta profili: questo è quello del libro; il profilo è della coppia, gunner e caricatore insieme",
+      "righe": [
+        {
+          "chi": "Jezzail Team",
+          "stats": {
+            "M": 5,
+            "WS": 3,
+            "BS": 3,
+            "S": 3,
+            "T": 3,
+            "W": 2,
+            "I": 3,
+            "A": 2,
+            "Ld": 5
+          }
+        }
+      ]
+    }
+  ]
+}

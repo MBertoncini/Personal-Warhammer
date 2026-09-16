@@ -29,6 +29,8 @@ import { flagsOf } from './effects.js';
 export const PAGE = {
   panicShooting: 141,   // il quarto perso al tiro
   panic: 160,           // le altre cause (pp. 160-161, dal piano)
+  rally: 117,           // il raduno: la quarta sotto-fase della Strategia
+  musician: 201,        // il +1 al raduno del musico
 };
 /* Le regole speciali non hanno una pagina qui: il loro testo sta nella
    lista, ed e' li' che la riga di registro manda a leggerlo. */
@@ -175,6 +177,12 @@ export const KINDS = {
   panic:      { id:"panico",    label:"test di Panico",     psych:true },
   stupidity:  { id:"stupidita", label:"test di Stupidità",  psych:false },
   impetuous:  { id:"impeto",    label:"test di Impetuosità", psych:false },
+  /* Il raduno non e' un test di psicologia — nessuna immunita' lo
+     salta, il sangue freddo non ci tira tre dadi — ma e' un test di
+     Comando come gli altri, e fino a qui non esisteva: chi fuggiva lo
+     tirava dal pulsante generico, senza i due modificatori che lo
+     decidono quasi sempre. */
+  rally:      { id:"raduno",    label:"test di Raduno",     psych:false },
 };
 const kindOf = k => KINDS[k] || { id:"comando", label:"test di Comando", psych:false };
 
@@ -510,3 +518,81 @@ export const HOOKS = [
 ];
 
 const r1 = n => Math.round((+n || 0) * 10) / 10;
+
+/* ============================================================
+   12 · IL RADUNO (p. 117)
+   La quarta sotto-fase della Strategia, e l'unica regola di questo
+   file che mancava del tutto: chi fugge tira per fermarsi, e fino a
+   qui il tavolo lo faceva con il pulsante del test di Comando
+   generico — cioe' senza i due modificatori che decidono quasi ogni
+   raduno, e senza il musico.
+
+   Il test e' un normale test di Comando, con addosso le «perdite
+   insostenibili»:
+
+     sotto META' dei modelli di partenza ......... −1 al Comando
+     sotto UN QUARTO ............................. passa solo con il
+                                                   doppio uno naturale
+
+   e il musico che suona la carica al contrario: +1 al Comando, fino a
+   10 (p. 201, *Steadying Rhythm*). Quello che succede dopo — riforma
+   gratis, niente carica in questo turno, conta come mossa per il tiro
+   — non e' un tiro e sta scritto qui accanto perche' chi arbitra lo
+   deve ricordare.
+   ============================================================ */
+export const RALLY_HALF = 0.5;          // sotto meta': -1
+export const RALLY_QUARTER = 0.25;      // sotto un quarto: solo doppio uno
+export const RALLY_MUSICIAN = 1;        // Steadying Rhythm, fino a Comando 10
+
+/* Quanto vale il Comando di chi prova a radunarsi, e perche'. Entra
+   quanti ne restano e quanti erano; esce il numero con la traccia. */
+export function rallyLeadership(ld, { models = 0, start = 0, musician = false } = {}){
+  const vivi = Math.max(0, Math.round(+models || 0));
+  const inizio = Math.max(0, Math.round(+start || 0));
+  const quota = inizio > 0 ? vivi / inizio : 1;
+  const why = [];
+  let value = Math.max(0, +ld || 0);
+  const hopeless = inizio > 0 && quota < RALLY_QUARTER;
+  if (inizio > 0 && quota < RALLY_HALF && !hopeless){
+    value -= 1;
+    why.push("sotto metà dei modelli di partenza: −1");
+  }
+  if (musician){
+    const prima = value;
+    value = Math.min(LD_CAP, value + RALLY_MUSICIAN);
+    if (value > prima) why.push("il musico suona il raduno: +1 (p. " + PAGE.musician + ")");
+  }
+  return {
+    value: Math.max(0, value), base: +ld || 0, quota, hopeless,
+    why: hopeless
+      ? ["sotto un quarto dei modelli di partenza: si raduna solo con il doppio uno", ...why]
+      : why,
+    page: PAGE.rally,
+  };
+}
+
+/* La richiesta per il vassoio: due dadi, sempre. Anche chi e' sotto un
+   quarto tira — deve poter uscire il doppio uno. */
+export const rallyDice = () => [{ id:"raduno", kind:"d6", n:2, why:"test di Raduno" }];
+
+export function rallyTest({ ld = 0, dice = [], models = 0, start = 0, musician = false } = {}){
+  const lead = rallyLeadership(ld, { models, start, musician });
+  const faces = (dice || []).map(v => +v || 0).slice(0, 2);
+  const total = faces.reduce((s, v) => s + v, 0);
+  const insane = faces.length === 2 && faces[0] === 1 && faces[1] === 1;
+  const passed = insane || (!lead.hopeless && faces.length === 2 && total <= lead.value);
+  return {
+    kind:"rally", label:"test di Raduno", passed, dice: faces, total,
+    target: lead.value, insane, hopeless: lead.hopeless, why: lead.why, page: PAGE.rally,
+    text: (lead.hopeless
+            ? "sotto un quarto dei modelli: solo il doppio uno la ferma — " + faces.join(" + ") + " = " + total
+            : "Comando " + lead.value + (lead.why.length ? " (" + lead.why.join("; ") + ")" : "") +
+              ", " + faces.join(" + ") + " = " + total) +
+          (insane ? ", doppio uno" : "") +
+          " → " + (passed ? "si raduna" : "continua a fuggire"),
+    /* quello che il raduno concede e toglie, e che non e' un tiro */
+    then: passed
+      ? "riforma gratis (p. 125); non può caricare in questo turno e conta come mossa per il tiro"
+      : "continua a fuggire nella fase di movimento (p. 132)",
+  };
+}

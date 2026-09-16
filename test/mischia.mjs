@@ -167,7 +167,14 @@ console.log('\nle sfide');
 
 ok('le ferite in piu di quelle che bastavano contano', ML.overkill(5, 2).counted === 3);
 ok('quelle che bastavano appena non contano niente', ML.overkill(2, 2).counted === 0);
-ok('e il tetto non c e, ma e detto', ML.overkill(9, 1).counted === 8 && ML.overkill(9, 1).daVerificare === true);
+/* il tetto c'e' ed e' cinque (p. 152): la costante era a zero — nessun
+   tetto — con scritto accanto che il numero non era stato letto sul
+   libro. Adesso lo e', e otto punti di overkill ne fanno cinque. */
+ok('l overkill si ferma a cinque, e lo dice',
+   ML.overkill(9, 1).counted === 5 && ML.overkill(9, 1).extra === 8 &&
+   ML.overkill(9, 1).capped === true && ML.overkill(9, 1).daVerificare === false &&
+   /il tetto è \+5/.test(ML.overkill(9, 1).why));
+ok('sotto il tetto si contano tutte', ML.overkill(5, 2).counted === 3);
 ok('una sfida rifiutata resta una riga di registro',
    /rifiutata/.test(ML.challenge({ from:'Grimgor', to:'Kroq-Gar', accepted:false }).text));
 
@@ -229,6 +236,252 @@ for (let i = 0; i < 200 && !visto; i++){
   if (s.cr.A.overkill > 0) visto = true;
 }
 ok('in una sfida l overkill finisce nel risultato', visto);
+
+/* ================================================================= */
+console.log('\nle ferite che restano appese');
+{
+  const prof = { M:'6',WS:'3',BS:'0',S:'5',T:'5',W:'4',I:'2',A:'3',Ld:'8' };
+  const mostro = unit('Bastiladon', prof, 1, 1, { armour: 3 });
+  ok('senza ferite segnate la schiera parte intera', C.combatant(mostro).spill === 0);
+  /* il tavolo segna le ferite sull'unita' (`u.wounds`): la schiera le
+     trovava sempre a zero, ed e' il punto in cui evaporavano */
+  const ferito = { ...mostro, wounds: 3 };
+  ok('le ferite segnate dal tavolo arrivano nella schiera', C.combatant(ferito).spill === 3);
+  const toll = C.woundsToll(ferito, 1);
+  ok('la quarta ferita stende il modello', toll.kills === 1 && toll.left === 0);
+  ok('e la quinta ricomincia ad appendersi',
+     C.woundsToll({ ...mostro, wounds: 3, models: 2 }, 2).left === 1);
+  ok('mentre senza niente addosso tre ferite su quattro non stendono nessuno',
+     C.woundsToll(mostro, 3).kills === 0 && C.woundsToll(mostro, 3).left === 3);
+  /* e dentro un assalto: quello che resta appeso torna sulla schiera,
+     e chi tiene lo stato lo riscrive sull'unita' */
+  const picchiatore = C.combatant(unit('Saurus', { M:'4',WS:'4',BS:'0',S:'4',T:'4',W:'1',I:'2',A:'2',Ld:'8' }, 20, 5));
+  let visto = false;
+  for (let k = 0; k < 60 && !visto; k++){
+    const r = C.meleeFight([picchiatore], [C.combatant(mostro)]);
+    const b = r.sides.B[0];
+    if (b.models > 0 && b.spill > 0) visto = true;
+  }
+  ok('a fine assalto le ferite non completate restano sulla schiera', visto);
+  /* niente si perde per strada: quelle che aveva addosso piu' quelle
+     appena passate fanno i modelli caduti piu' quelle che restano */
+  let quadra = true;
+  for (let k = 0; k < 40; k++){
+    const r = C.meleeFight([picchiatore], [C.combatant({ ...mostro, models: 3, wounds: 3 })]);
+    const b = r.sides.B[0];
+    const caduti = 3 - b.models;
+    if (3 + r.done.A !== caduti * b.w + b.spill) quadra = false;
+  }
+  ok('e il conto quadra: quelle che aveva piu quelle passate fanno i caduti piu il resto', quadra);
+}
+
+/* ================================================================= */
+console.log('\nil combattimento a piu di due (p. 153)');
+{
+  const prof = { M:'4',WS:'3',BS:'3',S:'3',T:'3',W:'1',I:'3',A:'1',Ld:'7' };
+  const reg = (name, models, frontage, extra = {}) => unit(name, prof, models, frontage, extra);
+
+  /* chi mena per primo quando sono in tre: un ordine solo, non due a due */
+  const passi = ML.strikeSteps([{ i: 2, flags: {} }, { i: 5, flags: {} }, { i: 2, flags: {} }]);
+  ok('gli scaglioni vanno dal piu svelto al piu lento',
+     passi.length === 2 && passi[0].i === 5 && passi[0].at[0] === 1);
+  ok('e chi ha la stessa Iniziativa mena insieme',
+     passi[1].at.join(',') === '0,2' && passi[1].together === true);
+  const scavalco = ML.strikeSteps([{ i: 1, flags: {} }, { i: 6, flags: { strikeLast: true } }]);
+  ok('l arma che colpisce per ultima scavalca l Iniziativa anche qui',
+     scavalco.length === 2 && scavalco[0].at[0] === 0 && scavalco[1].at[0] === 1);
+
+  /* la prima fila divisa fra chi si ha davanti */
+  ok('cinque di fila contro due nemici fanno tre e due',
+     C.frontShares(5, 2).join(',') === '3,2');
+  ok('e a chi resta senza modelli davanti non tocca niente',
+     C.frontShares(3, 4).join(',') === '1,1,1,0');
+
+  /* chi tocca chi */
+  const sol = C.combatant(reg('Uno', 20, 5));
+  const due = C.combatant(reg('Due', 10, 5));
+  const tre = C.combatant(reg('Tre', 10, 5));
+  ok('senza contatti dichiarati tutti toccano tutti',
+     JSON.stringify(C.engagements([sol], [due, tre]).A) === '[[0,1]]');
+  ok('e la dichiarazione si legge per nome',
+     JSON.stringify(C.engagements([{ ...sol, vs: ['Tre'] }], [due, tre]).A) === '[[1]]');
+  /* «Niente piu' nemici» (p. 158): restare senza nessuno davanti e' una
+     situazione del manuale, non un errore. Chi ci resta non mena e non
+     viene menato, ma il suo stendardo e i suoi ranghi contano ancora. */
+  ok('e chi resta senza nemici davanti resta senza',
+     JSON.stringify(C.engagements([{ ...sol, vs: ['Tre'] }], [due, tre]).B) === '[[],[0]]');
+  ok('il contatto e reciproco anche se lo dice uno solo',
+     JSON.stringify(C.engagements([sol], [{ ...due, vs: ['Uno'] }, { ...tre, vs: [] }]).B) === '[[0],[0]]');
+  ok('un nome scritto male non fa sparire nessuno dal combattimento',
+     JSON.stringify(C.engagements([{ ...sol, vs: ['Quattro'] }], [due, tre]).A) === '[[0,1]]');
+  ok('la fetta di fila divide gli attacchi, non li raddoppia',
+     C.contact(sol, due, { frontage: 3 }).attacks + C.contact(sol, tre, { frontage: 2 }).attacks
+     === C.contact(sol, due).attacks);
+
+  /* il conto sul gruppo: quattro voci hanno una regola loro */
+  const card = (c, w, foe) => ML.scoreCardOf(c, w, { foe });
+  const largo = card(C.combatant(reg('Largo', 20, 5)), 0, '#0');
+  const corto = card(C.combatant(reg('Corto', 6, 5)), 0, '#0');
+  ok('i ranghi non si sommano: vale il piu alto',
+     ML.sideScore([largo, corto]).rank === ML.combatScore(largo).rank &&
+     ML.combatScore(largo).rank > ML.combatScore(corto).rank);
+  const conStendardo = { ...largo, standard: true }, altroStendardo = { ...corto, standard: true };
+  ok('due stendardi valgono uno',
+     ML.sideScore([conStendardo, altroStendardo]).std === 1);
+  ok('ma lo stendardo da battaglia si somma allo stendardo',
+     ML.sideScore([{ ...conStendardo, battleStandard: true }, altroStendardo]).std === 1 &&
+     ML.sideScore([{ ...conStendardo, battleStandard: true }, altroStendardo]).bsb === 1);
+  ok('l ordine di combattimento invece si conta per ognuna, e il manuale lo dice',
+     ML.sideScore([largo, corto]).order === 2);
+  ok('le ferite si sommano',
+     ML.sideScore([card(C.combatant(reg('A', 5, 5)), 2, '#0'),
+                   card(C.combatant(reg('B', 5, 5)), 3, '#0')]).wounds === 5);
+  /* il fianco: una volta per nemico, non una per chi attacca */
+  const fianco = (nome, foe) => ({ ...card(C.combatant(reg(nome, 5, 5), { flank: 'flank' }), 0, foe),
+                                   flank: 'flank' });
+  ok('due unita sullo stesso fianco valgono un punto solo',
+     ML.sideScore([fianco('X', '#0'), fianco('Y', '#0')]).flank === 1);
+  ok('ma sul fianco di due nemici diversi valgono due',
+     ML.sideScore([fianco('X', '#0'), fianco('Y', '#1')]).flank === 2);
+  ok('e fianco e retro sullo stesso nemico si sommano',
+     ML.sideScore([fianco('X', '#0'),
+                   { ...card(C.combatant(reg('Y', 5, 5)), 0, '#0'), flank: 'rear' }]).flank === 3);
+  /* il terreno piu' alto: uno solo, e se sono in alto tutti e due si annulla */
+  const alto = { ...largo, highGround: true };
+  ok('il terreno piu alto lo prende una parte sola',
+     ML.sideScore([alto, { ...corto, highGround: true }], [largo]).ground === 1);
+  ok('e se sono in alto tutte e due si annulla',
+     ML.sideScore([alto], [{ ...corto, highGround: true }]).ground === 0 &&
+     ML.sideScore([alto], [{ ...corto, highGround: true }]).groundTied === true);
+  ok('con una unita per parte il conto del gruppo e quello di sempre',
+     ML.sideScore([largo], [corto]).total === ML.combatScore(largo, corto).total);
+  ok('e il musico rompe la parita anche quando ce l ha una sola del gruppo (p. 201)',
+     ML.combatResult([largo, { ...corto, musician: true }], [largo, corto]).tie === 'A' &&
+     ML.combatResult([largo, corto], [largo, corto]).tie === '');
+
+  /* l'assalto vero, in tre */
+  const orchi = C.combatant(reg('Orc Mob', 20, 5), { charged: true, chargeInches: 5 });
+  const lupi  = C.combatant(unit('Wolf Riders', { ...prof, I:'4' }, 5, 5), { charged: true, chargeInches: 6, flank: 'flank' });
+  const saurus = C.combatant(unit('Saurus', { ...prof, T:'4', WS:'4' }, 20, 5,
+                                  { armour: 4, command: { standard: true } }));
+  const tre1 = C.meleeFight([orchi, lupi], [saurus]);
+  ok('in tre si mena in un ordine solo, dal piu svelto al piu lento',
+     tre1.order.steps.map(s => s.at.join('')).join('|') === '1|0|2');
+  ok('e chi e in mezzo a due nemici divide la sua fila',
+     (() => { const suoi = tre1.steps.filter(s => s.side === 'B' && s.label === 'colpi');
+       return suoi.length === 2 && suoi.reduce((s, x) => s + x.attacks, 0) ===
+              C.contact(saurus, orchi).attacks; })());
+  ok('le perdite si segnano unita per unita, e il totale le somma',
+     tre1.kills.A.length === 2 && tre1.killsA === tre1.kills.A[0] + tre1.kills.A[1]);
+  ok('e ogni colpo dice da chi parte e dove arriva',
+     tre1.steps.every(s => s.name && s.foe && s.at != null));
+
+  /* il test di rotta lo tira ogni unita' della parte che perde */
+  const guardia3 = () => C.combatant(unit('Guardia', { ...prof, WS:'5', S:'5', A:'2' }, 20, 5, { armour: 3 }));
+  let inTre = null;
+  for (let k = 0; k < 200 && !inTre; k++){
+    const r = C.meleeFight([C.combatant(reg('Leva A', 10, 5)), C.combatant(reg('Leva B', 10, 5))], [guardia3()]);
+    if (r.cr.loser === 'A' && r.tests.length === 2) inTre = r;
+  }
+  ok('ogni unita della parte che perde tira il suo test, con il suo nome',
+     !!inTre && inTre.tests.every(t => t.side === 'A') &&
+     inTre.tests[0].name !== inTre.tests[1].name);
+  let morti = true;
+  for (let k = 0; k < 60; k++){
+    const r = C.meleeFight([C.combatant(reg('Viva', 10, 5)),
+                            { ...C.combatant(reg('Morta', 10, 5)), models: 0 }], [guardia3()]);
+    if (r.tests.some(t => t.name === 'Morta') || r.steps.some(s => s.name === 'Morta' || s.foe === 'Morta'))
+      morti = false;
+  }
+  ok('chi non ha piu nessuno in piedi non mena e non tira il test', morti);
+  ok('la parte e finita solo quando sono finite tutte le sue unita',
+     C.meleeFight([{ ...C.combatant(reg('Viva', 5, 5)) }, { ...C.combatant(reg('Morta', 5, 5)), models: 0 }],
+                  [C.combatant(reg('Nemico', 5, 5))]).wiped === '');
+
+  /* l'urto della carica si tira una volta e si divide: un D6 per ogni
+     nemico davanti sarebbe un urto moltiplicato */
+  const carro = unit('Carro', { M:'8',WS:'3',BS:'0',S:'5',T:'5',W:'4',I:'3',A:'3',Ld:'7' }, 1, 1,
+                     { armour: 4, rules: ['Impact Hits (D6+1)'] });
+  let urtiOk = true;
+  for (let k = 0; k < 60; k++){
+    const r = C.meleeFight([C.combatant(carro, { charged: true, chargeInches: 8 })],
+                           [C.combatant(reg('Fanti A', 10, 5)), C.combatant(reg('Fanti B', 10, 5))]);
+    const urti = r.steps.filter(s => s.label === 'urto della carica')
+                        .reduce((s, x) => s + x.attacks, 0);
+    if (urti < 2 || urti > 7) urtiOk = false;
+  }
+  ok('l urto contro due nemici resta un D6+1, diviso fra i due', urtiOk);
+
+  /* e l'assalto a due, chiamato come sempre, torna quello di sempre */
+  const a2 = C.meleeRound(C.combatant(reg('Uno', 20, 5)), C.combatant(reg('Due', 20, 5)));
+  ok('un assalto a due torna le due schiere e un test solo',
+     a2.a && a2.b && !Array.isArray(a2.a) && (a2.test === null || a2.test === a2.tests[0]));
+}
+
+/* ================================================================= */
+console.log('\nil capo dentro il reggimento (p. 209)');
+{
+  const prof = { M:'4',WS:'3',BS:'3',S:'3',T:'3',W:'1',I:'3',A:'1',Ld:'7' };
+  const regg = C.combatant(unit('Orc Mob', prof, 20, 5));
+  const eroe = C.combatant(unit('Orc Big Boss', { ...prof, WS:'6', S:'5', T:'4', W:'3', A:'4', Ld:'9' }, 1, 1,
+                                { armour: 4 }), { attached: true, shielded: true });
+  const nemico = C.combatant(unit('Saurus', { ...prof, T:'4' }, 20, 5, { armour: 4 }));
+
+  /* mena: era gia' cosi', ed e' la meta' che funzionava */
+  const r = C.meleeFight([regg, eroe], [nemico]);
+  ok('il capo unito mena insieme al reggimento',
+     r.steps.some(s => s.name === 'Orc Big Boss' && s.label === 'colpi'));
+  ok('ma nessuno lo colpisce, se non ci dirige i colpi apposta',
+     !r.steps.some(s => s.foe === 'Orc Big Boss'));
+  ok('e infatti non prende ferite', r.sides.A[1].models === 1 && r.sides.A[1].spill === 0);
+
+  /* e quando il nemico ce li dirige, muore come tutti */
+  const mirato = C.combatant(unit('Saurus', { ...prof, T:'4' }, 20, 5, { armour: 4 }));
+  mirato.vs = ['Orc Big Boss'];
+  let colpito = false;
+  for (let k = 0; k < 40 && !colpito; k++){
+    const r2 = C.meleeFight([regg, eroe], [mirato]);
+    if (r2.steps.some(s => s.foe === 'Orc Big Boss')) colpito = true;
+  }
+  ok('chi dirige i colpi sul capo lo colpisce', colpito);
+
+  /* il conto: il capo porta le sue ferite e la sua Forza d Unita,
+     non un secondo bonus di ranghi ne un secondo stendardo */
+  const card = ML.scoreCardOf(eroe, 2);
+  ok('il capo unito non porta ranghi', ML.combatScore(card).rank === 0);
+  ok('ne ordine di combattimento', card.combatOrder === false);
+  ok('ne il fianco del reggimento',
+     ML.scoreCardOf({ ...eroe, flank: 'flank' }, 0).flank === '');
+  ok('ma porta le sue ferite', ML.combatScore(card).wounds === 2);
+  ok('e lo stendardo da battaglia resta suo (p. 152)',
+     ML.scoreCardOf({ ...eroe, flags: { ...eroe.flags, battleStandard: true } }, 0).battleStandard === true);
+  const conCapo = ML.sideScore([ML.scoreCardOf(regg, 0, { foe: '#0' }), ML.scoreCardOf(eroe, 0, { foe: '#0' })]);
+  const senza = ML.sideScore([ML.scoreCardOf(regg, 0, { foe: '#0' })]);
+  ok('e la parte non guadagna punti solo perche il capo e li',
+     conCapo.total === senza.total);
+  ok('la sua Forza d Unita invece si somma a quella del reggimento (p. 207)',
+     conCapo.us === senza.us + eroe.usPer * 1);
+
+  /* urto e pestoni non arrivano al capo, salvo reggimento ridotto */
+  const carro = C.combatant(unit('Carro', { M:'8',WS:'3',BS:'0',S:'5',T:'5',W:'4',I:'3',A:'3',Ld:'7' }, 1, 1,
+                                 { rules: ['Impact Hits (D6+1)', 'Stomp Attacks (D3)'] }),
+                            { charged: true, chargeInches: 8 });
+  carro.vs = ['Orc Big Boss', 'Orc Mob'];
+  let urtoSulCapo = false;
+  for (let k = 0; k < 40; k++){
+    const r3 = C.meleeFight([regg, eroe], [carro]);
+    if (r3.steps.some(s => s.foe === 'Orc Big Boss' &&
+                           (s.label === 'urto della carica' || s.label === 'pestoni'))) urtoSulCapo = true;
+  }
+  ok('urto e pestoni non si dirigono sul capo con il reggimento intero', !urtoSulCapo);
+  let urtoScoperto = false;
+  const scoperto = { ...eroe, exposed: true };
+  for (let k = 0; k < 40 && !urtoScoperto; k++){
+    const r4 = C.meleeFight([regg, scoperto], [carro]);
+    if (r4.steps.some(s => s.foe === 'Orc Big Boss' && s.label === 'urto della carica')) urtoScoperto = true;
+  }
+  ok('ma con meno di cinque modelli di truppa si (p. 209)', urtoScoperto);
+}
 
 /* ================================================================= */
 console.log('\nle regole dei tre eserciti di casa (Tappa 5 bis)');

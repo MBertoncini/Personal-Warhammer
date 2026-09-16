@@ -42,6 +42,8 @@ export const PAGE = {
   chargeI:     146,   // il bonus di Iniziativa della carica
   ranks:       105,   // quanti ranghi concede il tipo di truppa
   disorder:    128,   // carica disordinata e disordine da terreno
+  result:      152,   // le voci del risultato del combattimento
+  multiple:    153,   // il risultato quando le unita' sono piu' di due
   breakTest:   154,   // il test di rotta a tre esiti
   pursuit:     156,   // inseguimento, sfondamento, unita' travolta
 };
@@ -114,6 +116,30 @@ export function strikeOrder(a = {}, b = {}){
   const sa = speedOf(a), sb = speedOf(b);
   const cmp = (sa.rank - sb.rank) || (sa.i - sb.i);
   return { a: sa, b: sb, first: cmp > 0 ? "A" : cmp < 0 ? "B" : "", together: cmp === 0 };
+}
+
+/* Lo stesso ordine quando le schiere sono piu' di due, che e' il caso
+   normale del tavolo: tre unita' che convergono su un reggimento non
+   si menano a coppie, si menano tutte nello stesso ordine di
+   Iniziativa. Gli scaglioni escono gia' raggruppati — stesso gradino e
+   stessa Iniziativa vuol dire *insieme*, e insieme vuol dire che si
+   guardano addosso lo stato di prima dello scaglione, non quello che
+   il vicino ha appena fatto.
+
+   Entra un elenco di schiere, esce un elenco di scaglioni con dentro
+   le loro posizioni: cosi' la prova si scrive con tre numeri e chi
+   chiama tiene i suoi oggetti. A parita' di tutto l'ordine e' quello
+   di partenza, che e' l'unico stabile. */
+export function strikeSteps(list = []){
+  const seen = list.map((c, at) => ({ at, speed: speedOf(c || {}) }));
+  seen.sort((x, y) => (y.speed.rank - x.speed.rank) || (y.speed.i - x.speed.i) || (x.at - y.at));
+  const steps = [];
+  for (const e of seen){
+    const last = steps[steps.length - 1];
+    if (last && last.rank === e.speed.rank && last.i === e.speed.i){ last.at.push(e.at); last.speed.push(e.speed); }
+    else steps.push({ rank: e.speed.rank, i: e.speed.i, at: [e.at], speed: [e.speed] });
+  }
+  return steps.map(s => ({ ...s, together: s.at.length > 1 }));
 }
 
 /* ============================================================
@@ -198,17 +224,94 @@ export function combatScore(me = {}, foe = {}){
            flankDenied: me.flank && me.flankDenied ? me.flankDenied : "" };
 }
 
+/* ============================================================
+   3 bis · IL CONTO QUANDO LE UNITA' SONO PIU' DI DUE (p. 153)
+   «E' possibile, anzi e' molto probabile, che piu' di due unita'
+   finiscano ingaggiate nello stesso combattimento»: sono le prime
+   parole della pagina, e fino a qui l'app non sapeva rappresentarlo.
+   Il conto non e' la somma delle schede — quattro voci hanno una
+   regola loro, e sono esattamente le quattro che il manuale elenca:
+
+     RANGHI — non si sommano: vale il bonus piu' alto, uno solo.
+     STENDARDI — uno solo per parte, per quanti ne abbia il gruppo.
+       Lo stendardo da battaglia invece conta come sempre, perche' gli
+       eserciti ne hanno uno.
+     FIANCO E RETRO — una volta per ogni unita' nemica: due unita' sul
+       fianco dello stesso reggimento valgono un punto, ma una sul
+       fianco e una sul retro valgono tutti e due.
+     TERRENO PIU' ALTO — una sola unita' per parte lo reclama, e se ne
+       stanno in alto tutte e due le parti si annulla.
+
+   Tutto il resto — ferite, ordine di combattimento, punti che vengono
+   dalle regole speciali — si somma: «a meno che non sia detto
+   altrimenti, questi altri bonus si contano sempre», e l'esempio del
+   manuale e' proprio l'ordine di combattimento contato due volte.
+
+   `foe` sulla scheda e' chi quell'unita' ha davanti: serve solo al
+   fianco, che e' l'unica voce che si conta per nemico e non per parte.
+   ============================================================ */
+export function sideScore(cards = [], foes = []){
+  const list = (Array.isArray(cards) ? cards : [cards]).filter(Boolean);
+  const other = (Array.isArray(foes) ? foes : [foes]).filter(Boolean);
+  if (!list.length) return combatScore({}, {});
+  /* la scheda di ognuno per intero: il pannello deve poter dire da
+     quale unita' viene ogni punto, non solo il totale */
+  const each = list.map(c => ({ ...combatScore(c, {}), name: c.name || "" }));
+
+  const wounds = each.reduce((s, e) => s + e.wounds, 0);
+  /* i ranghi: il piu' alto, non la somma */
+  const best = each.reduce((w, e) => e.rank > w.rank ? e : w, each[0]);
+  const rank = best.rank;
+  const order = each.reduce((s, e) => s + e.order, 0);
+  const std = each.some(e => e.std) ? 1 : 0;
+  const bsb = each.some(e => e.bsb) ? 1 : 0;
+  /* il fianco una volta per nemico: si raccoglie per chi lo subisce,
+     e i due archi si sommano fra loro come in un assalto a due */
+  const arcs = new Map();
+  list.forEach((c, i) => {
+    if (each[i].flank <= 0) return;
+    const key = c.foe == null ? "" : String(c.foe);
+    const got = arcs.get(key) || { flank: false, rear: false };
+    if (c.flank === "flank" || c.flank === "both") got.flank = true;
+    if (c.flank === "rear"  || c.flank === "both") got.rear  = true;
+    arcs.set(key, got);
+  });
+  let flank = 0;
+  for (const got of arcs.values()) flank += (got.flank ? 1 : 0) + (got.rear ? 2 : 0);
+  /* il terreno piu' alto: uno solo, e se lo reclamano tutte e due le
+     parti si annulla */
+  const mine = list.some(c => c.highGround), theirs = other.some(c => c.highGround);
+  const ground = mine && !theirs ? 1 : 0;
+  const over = each.reduce((s, e) => s + e.overkill, 0);
+  const rule = each.reduce((s, e) => s + e.rule, 0);
+  const us = list.reduce((s, c) => s + (+c.us || 0), 0);
+  const out = OUTNUMBER_COUNTS && us > other.reduce((s, c) => s + (+c.us || 0), 0) ? 1 : 0;
+
+  const got = { wounds, rank, order, std, bsb, flank, ground, overkill: over, rule, out };
+  const parts = RESULT_PARTS.filter(p => got[p.id] > 0).map(p => ({ ...p, v: got[p.id] }));
+  const denied = list.find(c => c.flank && c.flankDenied);
+  return { ...got, parts, total: Object.values(got).reduce((s, v) => s + v, 0),
+           rankCapped: best.rankCapped, disrupted: best.disrupted,
+           flankDenied: denied ? denied.flankDenied : "",
+           units: each, count: list.length, us,
+           groundTied: mine && theirs, page: PAGE.multiple };
+}
+
 /* Il conto delle due parti insieme, con la parita' rotta dal musico:
    il musico non aggiunge un punto, decide un pareggio. Sta nel file
-   della lista come profilo di comando. */
+   della lista come profilo di comando — e in un gruppo basta che ce
+   l'abbia una delle unita' (p. 201). */
 export function combatResult(a = {}, b = {}){
-  const A = combatScore(a, b), B = combatScore(b, a);
+  const as = (Array.isArray(a) ? a : [a]).filter(Boolean);
+  const bs = (Array.isArray(b) ? b : [b]).filter(Boolean);
+  const A = sideScore(as, bs), B = sideScore(bs, as);
   const diff = Math.abs(A.total - B.total);
   let loser = A.total === B.total ? "" : (A.total > B.total ? "B" : "A");
   let tie = "";
-  if (!loser && !!a.musician !== !!b.musician){
-    tie = a.musician ? "A" : "B";
-    loser = a.musician ? "B" : "A";
+  const drum = { A: as.some(c => c.musician), B: bs.some(c => c.musician) };
+  if (!loser && drum.A !== drum.B){
+    tie = drum.A ? "A" : "B";
+    loser = drum.A ? "B" : "A";
   }
   return { A, B, diff, loser, tie, winner: loser ? (loser === "A" ? "B" : "A") : "" };
 }
@@ -257,7 +360,12 @@ export const BREAK = {
 
    Questo e' l'unico punto di questo file dedotto da una regola
    speciale invece che letto sulla pagina del test: porta
-   `daVerificare` e si spegne cambiando una costante. */
+   `daVerificare` e si spegne cambiando una costante.
+
+   I due numeri sono quelli delle PARTI, non delle singole unita': «dove
+   piu' unita' sono ingaggiate nello stesso combattimento devi sommare
+   la Forza d'Unita' di ciascuna per avere quella della tua parte»
+   (p. 154), e si contano a fine fase, sui modelli rimasti in piedi. */
 export const CRUSHING_BLOCKS_FALLBACK = true;
 export const crushingUS = (winner = 0, loser = 0) => (+winner || 0) > 2 * (+loser || 0);
 
@@ -402,12 +510,13 @@ export function pursuitOutcome({ roll = 0, flee = 0, wiped = false, canPursue = 
    ragione per cui una sfida vinta bene ribalta un assalto perso.
    ============================================================ */
 
-/* Il tetto: il piano nomina l'overkill senza dire se il manuale gliene
-   metta uno. Qui non ce n'e', la riga e' una sola e chi trova il tetto
-   la cambia in un punto. `daVerificare` dice che questo numero non e'
-   stato letto sul libro — la stessa onesta' della tabella dei tipi di
-   truppa. */
-export const OVERKILL_CAP = 0;          // 0 = nessun tetto
+/* Il tetto c'e', ed e' cinque. La riga stava a p. 152, in fondo alla
+   colonna dell'overkill: «per ogni ferita in eccesso puoi reclamare un
+   punto di risultato del combattimento, fino a un massimo di +5». Qui
+   la costante era a zero — nessun tetto — con scritto accanto che il
+   numero non era stato letto sul libro: adesso lo e', e un eroe che ne
+   fa nove a uno che ne aveva una ne porta cinque, non otto. */
+export const OVERKILL_CAP = 5;          // p. 152; 0 = nessun tetto
 
 export function overkill(wounds = 0, left = 1, { cap = OVERKILL_CAP } = {}){
   const need = Math.max(0, Math.round(+left || 0));
@@ -415,11 +524,13 @@ export function overkill(wounds = 0, left = 1, { cap = OVERKILL_CAP } = {}){
   const extra = Math.max(0, done - need);
   const counted = cap > 0 ? Math.min(extra, cap) : extra;
   return {
-    wounds: done, need, extra, counted, cap,
+    wounds: done, need, extra, counted, cap, capped: cap > 0 && extra > cap,
     daVerificare: cap === 0,
     nota: cap === 0 ? "se il manuale mette un tetto all'overkill va scritto in OVERKILL_CAP" : "",
+    page: PAGE.result,
     why: counted
-      ? counted + " di overkill: " + done + " ferite su " + need + " che bastavano"
+      ? counted + " di overkill: " + done + " ferite su " + need + " che bastavano" +
+        (cap > 0 && extra > cap ? ", e il tetto è +" + cap : "")
       : "",
   };
 }
@@ -476,17 +587,29 @@ export function inCombatOrder(c = {}){
   return Math.ceil(models / front) <= front;
 }
 
-export function scoreCardOf(c = {}, wounds = 0){
+/* `foe` e' chi questa schiera ha davanti, e serve a una voce sola: il
+   fianco, che in un combattimento a piu' di due si conta una volta per
+   unita' nemica e non una volta per unita' che attacca (p. 153). In un
+   assalto a due resta vuoto e non cambia niente. */
+export function scoreCardOf(c = {}, wounds = 0, { foe = "" } = {}){
+  /* Un personaggio unito a un reggimento non e' un'unita' in piu' nel
+     conto: sta dentro i ranghi di qualcun altro (p. 207). Porta le sue
+     ferite, la sua Forza d'Unita' e lo stendardo da battaglia se e' lui
+     a reggerlo; ranghi, stendardo, ordine di combattimento, fianco e
+     terreno piu' alto sono del reggimento che lo ospita, e contarglieli
+     una seconda volta vorrebbe dire due volte lo stesso punto. */
+  const dentro = !!c.attached;
   return {
-    combatOrder: inCombatOrder(c),
+    combatOrder: !dentro && inCombatOrder(c),
+    foe, name: c.name || "", attached: dentro,
     wounds,
     models: c.models || 0, frontage: c.frontage || 1,
-    maxRank: c.troop ? c.troop.maxRank : 2,
+    maxRank: dentro ? 0 : (c.troop ? c.troop.maxRank : 2),
     perRank: c.troop ? c.troop.perRank : 5,
-    standard: !!c.standard, battleStandard: !!(c.flags && c.flags.battleStandard),
-    flank: c.flank || "", highGround: !!c.highGround,
+    standard: !dentro && !!c.standard, battleStandard: !!(c.flags && c.flags.battleStandard),
+    flank: dentro ? "" : (c.flank || ""), highGround: !dentro && !!c.highGround,
     overkill: c.overkill || 0, disrupted: !!c.disrupted,
-    musician: !!c.musician, us: (c.usPer || 1) * (c.models || 0),
+    musician: !dentro && !!c.musician, us: (c.usPer || 1) * (c.models || 0),
     ruleBonus: +((c.eff || {}).combatResult) || 0,
   };
 }

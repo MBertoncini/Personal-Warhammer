@@ -398,6 +398,41 @@ ok('e la risposta si vede', PREP.answered(fresh)[0].value === 'Black Orc Warboss
 PREP.setUnitPrep(fresh, 0, { weapon:'Great Weapon' });
 ok('l arma scelta resta scritta', PREP.prepOf(fresh).units[0].weapon === 'Great Weapon');
 ok('e non cancella le altre risposte', PREP.prepOf(fresh).general != null);
+/* Il guaio silenzioso: una lista senza profili non si può giocare, e
+   l'app la giocava lo stesso — zero contro zero, cento per cento di
+   pareggi, nessun avviso. */
+{
+  const PR = await import('../src/profiles.js');
+  const vuota = { name:'a mano', units:[{ name:'Clanrats', models:20 }, { name:'Rat Ogres', models:3 }] };
+  const nudo = PREP.playability(vuota);
+  ok('senza profilo e senza libro la lista non e giocabile',
+     nudo.can === false && nudo.bad.length === 2);
+  ok('e lo dice con il nome di chi manca',
+     /Clanrats/.test(nudo.text) && /nessun profilo/.test(nudo.text));
+  ok('chi non ha ne Abilita Combattimento ne Balistica non puo colpire nessuno',
+     PREP.unitCheck({ name:'x', stats:{ WS:'-', BS:'-', S:'3', T:'3', W:'1', Ld:'5' } }).can === false);
+  ok('un profilo pieno passa',
+     PREP.unitCheck({ name:'Saurus', stats:{ M:'4',WS:'3',BS:'0',S:'4',T:'4',W:'1',I:'1',A:'2',Ld:'8' } }).can === true);
+  ok('e l Abilita Balistica 0 e un numero, non un buco',
+     PREP.unitCheck({ name:'Saurus', stats:{ M:'4',WS:'3',BS:'0',S:'4',T:'4',W:'1',I:'1',A:'2',Ld:'8' } }).missing.length === 0);
+
+  /* con la tavola dei profili il libro riempie i buchi, e viene detto */
+  const fs2 = await import('node:fs');
+  PR.useProfiles(JSON.parse(fs2.readFileSync(new URL('../dati/profili.json', import.meta.url), 'utf8')));
+  const conLibro = PREP.playability(vuota, { split: PR.splitStat });
+  ok('con il libro la stessa lista diventa giocabile', conLibro.can === true);
+  ok('e si dice da dove vengono i numeri', /dal libro/.test(conLibro.text));
+
+  /* il carro: la riga dice «-» perche' i numeri stanno sulle righe sotto */
+  const carro = { name:'Orc Boar Chariots', faction:'Orc and Goblin Tribes',
+                  stats:{ M:'-',WS:'-',BS:'-',S:'5',T:'5',W:'4',I:'-',A:'-',Ld:'-' } };
+  const c = PREP.unitCheck(carro, { split: PR.splitStat });
+  ok('il profilo diviso di un carro si completa', c.can === true && c.filled.includes('WS') && c.filled.includes('Ld'));
+  ok('e viene detto che quei numeri vengono da un altra riga', /profilo diviso/.test(c.why));
+  ok('senza la tavola lo stesso carro non e giocabile', PREP.unitCheck(carro).can === false);
+  PR.useProfiles(null);
+}
+
 ok('e non chiede piu quale arma impugna quell unita',
    !PREP.questions(fresh).some(q => q.id === 'weapon' && q.unit === 0));
 ok('la scheda dice a che punto e',

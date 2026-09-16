@@ -688,7 +688,15 @@ textarea{
   position:sticky;top:-12px;margin:-12px -14px 0;padding:12px 14px 8px;
   background:var(--panel);border-bottom:1px solid var(--line);z-index:1;
 }
-.duel-sides{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.duel-sides{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;}
+/* una parte e' una colonna di unita': in un combattimento a piu' di due
+   ognuna ha le sue caselle, e la tendina che ne aggiunge una sta in fondo */
+.duel-group{display:flex;flex-direction:column;gap:8px;min-width:0;}
+.duel-group > .field.inline{font-size:11px;}
+.duel-side .army-head .spacer{flex:1;}
+/* un capo dentro il reggimento: la sua riga sta rientrata, perche' non
+   e' un'unita' accanto all'altra ma un modello dentro i suoi ranghi */
+.duel-joined{margin-left:10px;border-left:2px solid var(--accent);}
 .duel-side{
   display:flex;flex-direction:column;gap:6px;min-width:0;
   border:1px solid var(--line);border-radius:var(--r);padding:9px;background:var(--panel-2);

@@ -21,6 +21,7 @@ import { hitMelee, woundOn, saveOn, pool, roll, chance, expected, rankBonus,
 import { readRules, splitWeaponRules, emptyFlags } from './rulebook.js';
 import { troopType, usPerModel } from './troops.js';
 import { flagsOf, spent, val } from './effects.js';
+import { woundsOf } from './extras.js';
 import { armyFor, meleeBoosts, fleeBonus } from './armies.js';
 import * as ML from './melee.js';
 import * as SH from './shoot.js';
@@ -146,7 +147,12 @@ export function combatant(u, over = {}){
     flank: ch ? ML.arcToFlank(ch.arc) : "",
     disordered: !!u.disordered, disrupted: !!u.disrupted,
     highGround: !!u.highGround, overkill: 0,
-    spill: 0,
+    /* Le ferite gia' incassate e non ancora diventate un modello a
+       terra. Erano sempre zero: un Bastiladon ferito nel round 2
+       arrivava al round 3 intero, e le tre ferite passate dal tiro
+       sparivano nel nulla. Adesso le porta il tavolo (`u.wounds`) e la
+       schiera le trova gia' addosso. */
+    spill: woundsOf(u),
   };
   /* La Forza dell'arma vale per i colpi che si tirano. Le ferite d'urto
      e i pestoni usano la Forza NON modificata del modello — lo dice il
@@ -227,9 +233,14 @@ const attacksOf = c => (c.a || 1) + (ranIn(c) && c.flags && c.flags.furiousCharg
 
 /* Quanti si toccano davvero: la prima fila e' larga quanto la piu'
    stretta delle due, e una fila dietro appoggia con un colpo a testa.
-   E' l'ordine di grandezza del tavolo, e nel pannello si corregge. */
-export function contact(att, def){
-  const front = Math.max(1, Math.min(att.frontage, def.frontage, att.models));
+   E' l'ordine di grandezza del tavolo, e nel pannello si corregge.
+
+   `frontage` e' la fetta di prima fila che tocca QUESTO nemico: chi ne
+   ha due davanti non mena due volte con tutta la fila, la divide. Senza
+   quel numero vale tutta la fila, che e' il caso di un assalto a due. */
+export function contact(att, def, { frontage = null } = {}){
+  const width = frontage == null ? Math.max(1, att.frontage) : Math.max(0, frontage);
+  const front = width <= 0 ? 0 : Math.max(1, Math.min(width, def.frontage, att.models));
   /* Le file d'appoggio: una, oppure due con la lancia che permette di
      combattere in una fila in piu'. Ognuna appoggia con un colpo a
      testa, non con tutti i suoi attacchi. */
@@ -237,6 +248,68 @@ export function contact(att, def){
   const behind = Math.max(0, att.models - att.frontage);
   const support = Math.min(front * ranks, behind);
   return { front, support, ranks, attacks: front * attacksOf(att) + support };
+}
+
+/* La prima fila divisa fra i nemici che ha davanti. Il resto della
+   divisione va ai primi dichiarati, che sono quelli piu' al centro; a
+   chi resta senza un modello davanti non tocca niente, e allora non
+   mena — e' ingaggiato, ma non arriva. */
+export function frontShares(frontage, n){
+  const w = Math.max(0, Math.floor(+frontage || 0)), k = Math.max(1, n | 0);
+  const base = Math.floor(w / k), extra = w - base * k;
+  return Array.from({ length: k }, (_, i) => base + (i < extra ? 1 : 0));
+}
+
+/* Un mucchio di colpi automatici — l'urto della carica, i pestoni —
+   diviso come le file: si tira una volta sola e poi si spartisce, che
+   e' il contrario di tirare un D6 per ogni nemico davanti. */
+function spread(n, shares){
+  const tot = shares.reduce((s, v) => s + v, 0);
+  const out = shares.map(() => 0);
+  if (n <= 0 || !out.length) return out;
+  if (tot <= 0){ out[0] = n; return out; }
+  let left = n;
+  shares.forEach((v, i) => { const q = Math.floor(n * v / tot); out[i] = q; left -= q; });
+  for (let i = 0; left > 0; i = (i + 1) % out.length){ if (shares[i] > 0){ out[i]++; left--; } }
+  return out;
+}
+
+/* Chi tocca chi. Una schiera lo dichiara con `vs` — i nomi o le
+   posizioni dei nemici che ha davanti — e chi non dichiara niente non
+   pone condizioni: tocca chiunque non l'abbia esclusa. In un assalto a
+   due nessuno dichiara niente e il risultato e' quello di sempre.
+
+   Il contatto e' reciproco per costruzione: la coppia c'e' se tutte e
+   due le parti la ammettono, e una parte che tace ammette tutto. Cosi'
+   «io tocco te» basta a legarci quando tu non hai detto niente, e due
+   dichiarazioni che si contraddicono non inventano un contatto che
+   nessuna delle due afferma.
+
+   Una dichiarazione che non trova nessuno vale come nessuna
+   dichiarazione: un nome scritto male non deve far sparire un'unita'
+   dal combattimento in silenzio. Restare senza nemici davanti, invece,
+   si puo': e' l'unita' che il manuale chiama fuori dal combattimento
+   quando i modelli caduti le tolgono il contatto (p. 158). */
+export function engagements(A = [], B = []){
+  const said = (c, others) => {
+    if (c.vs == null) return null;
+    const want = [].concat(c.vs);
+    const hit = others.map((_, i) => i).filter(i =>
+      want.includes(i) || want.includes(others[i].name) || want.includes(others[i].ref));
+    return hit.length ? new Set(hit) : null;
+  };
+  const wantA = A.map(c => said(c, B)), wantB = B.map(c => said(c, A));
+  const link = (i, j) => (!wantA[i] || wantA[i].has(j)) && (!wantB[j] || wantB[j].has(i));
+  /* Il contatto e' reciproco, il bersaglio no. Un personaggio unito a
+     un reggimento «puo' essere colpito solo dagli attacchi diretti
+     contro di lui» (p. 209): sta nella mischia, mena, ma chi ha
+     davanti lo colpisce solo se lo dice. Per questo le due direzioni si
+     calcolano separate — chi mena chi, non chi tocca chi. */
+  const mirato = (want, at, foe) => !foe.shielded || (want && want.has(at));
+  return {
+    A: A.map((_, i) => B.map((_, j) => j).filter(j => link(i, j) && mirato(wantA[i], j, B[j]))),
+    B: B.map((_, j) => A.map((_, i) => i).filter(i => link(i, j) && mirato(wantB[j], i, A[i]))),
+  };
 }
 
 /* Le regole d'esercito di una schiera in questo momento: quelle del
@@ -352,83 +425,240 @@ export function applyWounds(side, wounds){
   return kills;
 }
 
+/* Quanti colpi porta una schiera su ciascuno di quelli che ha davanti,
+   e quanta prima fila ci arriva.
+
+   Due casi diversi, e confonderli e' l'errore da cui viene questa
+   funzione. Fra due REGGIMENTI la prima fila si divide: chi ne tocca
+   due non mena due volte con tutta la fila. Un PERSONAGGIO UNITO
+   invece non sta accanto al reggimento, sta *dentro*: non si prende una
+   fetta di fronte, si prende dei colpi che qualcuno decide di dirigere
+   su di lui (p. 209), e quei colpi escono dal mucchio destinato al
+   reggimento che lo ospita — i modelli che menano al capo non stanno
+   menando alla truppa.
+
+   Quanti siano lo dice chi combatte con `aimed`; il ripiego e' un
+   modello, cioe' quello che al tavolo si fa quasi sempre: il campione
+   che si fa avanti contro l'eroe. */
+function aimAt(c, foes, side){
+  const veri = foes.map((j, k) => ({ j, k })).filter(x => !side[x.j].attached);
+  const capi = foes.map((j, k) => ({ j, k })).filter(x =>  side[x.j].attached);
+  const budget = foes.map(() => 0), fronts = foes.map(() => 0);
+  if (!foes.length) return { budget, fronts };
+
+  if (!veri.length){
+    /* davanti c'e' rimasto solo il capo: allora tutta la fila e' sua */
+    const q = frontShares(c.frontage, capi.length);
+    capi.forEach((x, i) => {
+      const ct = contact(c, side[x.j], { frontage: q[i] });
+      budget[x.k] = ct.attacks; fronts[x.k] = ct.front;
+    });
+    return { budget, fronts };
+  }
+
+  const q = frontShares(c.frontage, veri.length);
+  veri.forEach((x, i) => {
+    const ct = contact(c, side[x.j], { frontage: q[i] });
+    budget[x.k] = ct.attacks; fronts[x.k] = ct.front;
+  });
+  let tolti = 0;
+  capi.forEach(x => {
+    const n = Math.max(0, Math.round(+c.aimed >= 0 ? +c.aimed : attacksOf(c)));
+    budget[x.k] = n; fronts[x.k] = n ? 1 : 0;
+    tolti += n;
+  });
+  /* i colpi diretti sul capo li perde il reggimento che lo ospita, che
+     e' il primo dei nemici veri */
+  if (tolti) budget[veri[0].k] = Math.max(0, budget[veri[0].k] - tolti);
+  return { budget, fronts };
+}
+
+/* Dalle ferite di un colpo ai modelli a terra, per chi tiene lo stato
+   del tavolo. Torna i modelli caduti E le ferite che restano appese:
+   chiamarla e buttare via il secondo numero e' il modo di far
+   evaporare le ferite, che e' quello che facevano il tiro e la magia —
+   tre ferite su un mostro da quattro sparivano senza lasciare traccia.
+
+   `carried` serve a dire «queste le ho gia' contate io»: senza, si
+   parte da quelle che l'unita' ha addosso. */
+export function woundsToll(u, wounds, { carried = null } = {}){
+  const c = combatant(u);
+  const side = { ...c, spill: carried == null ? c.spill : Math.max(0, carried) };
+  const kills = applyWounds(side, wounds);
+  return { kills, left: side.spill, perModel: c.w, models: side.models };
+}
+
 /* ============================================================
-   3 · UN ASSALTO INTERO
+   3 · UN ASSALTO INTERO, CON QUANTE UNITA' CI SONO DAVVERO
    L'ordine e' quello del manuale, e la Tappa 3 ne ha cambiati due
    pezzi: in cima l'urto della carica vuole i suoi tre pollici, in
    fondo i pestoni arrivano dopo tutti gli altri attacchi — prima
    stavano insieme all'urto, cioe' pestavano modelli che dopo
    sarebbero caduti comunque.
+
+   E da qui l'assalto non e' piu' fra due schiere ma fra due GRUPPI.
+   `meleeRound(A, B)` prendeva due unita' e basta, e non era una
+   semplificazione innocua: tre unita' che convergono su un reggimento
+   sono il normale di Warhammer, non l'eccezione, e in una partita da
+   750 punti sono decine di cariche che non si possono rappresentare.
+   Adesso entrano due elenchi, si mena in un ordine di Iniziativa solo
+   — tutti insieme, non a coppie — e il conto di fine assalto e' quello
+   della pagina dei combattimenti multipli (p. 153): i ranghi non si
+   sommano, gli stendardi nemmeno, il fianco si conta per nemico.
+
+   Un'unita' sola per parte resta scritta com'era: stessa firma, stessi
+   dadi nello stesso ordine, stesso oggetto di ritorno.
    ============================================================ */
-const clone = c => ({ ...c, spill: 0 });
+/* Il clone di un assalto: le ferite appese se le porta dietro. Prima
+   qui c'era `spill: 0`, ed e' il punto esatto in cui le ferite
+   evaporavano fra un round e l'altro. */
+const clone = c => ({ ...c, spill: c.spill || 0, dealt: 0 });
 const usOf = c => (c.usPer || 1) * (c.models || 0);
+/* la Forza d'Unita' di una PARTE: la somma di chi e' ancora in piedi
+   (p. 154), ed e' quella che decide se il doppio schiaccia */
+const sideUS = list => list.reduce((s, c) => s + (c.models > 0 ? usOf(c) : 0), 0);
+const asSide = s => (Array.isArray(s) ? s : [s]).filter(Boolean);
 
-export function meleeRound(A, B, { round = 1, challenge = false } = {}){
-  const a = clone(A), b = clone(B);
+export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
+  const startA = asSide(SA), startB = asSide(SB);
+  const A = startA.map(clone), B = startB.map(clone);
+  const link = engagements(A, B);
+  /* ogni schiera con la sua parte, i nemici che tocca, quanti colpi
+     porta su ciascuno e quanta prima fila ci arriva */
+  const mk = (c, at, tag, foes, side) => ({ c, at, tag, foes, side, ...aimAt(c, foes, side) });
+  const all = [...A.map((c, i) => mk(c, i, "A", link.A[i], B)),
+               ...B.map((c, i) => mk(c, i, "B", link.B[i], A))];
+  A.forEach((c, i) => { c.foes = link.A[i]; });
+  B.forEach((c, i) => { c.foes = link.B[i]; });
+
   const steps = [];
-  const done = { A: 0, B: 0 };          // ferite inflitte da ciascuno
+  const done = { A: 0, B: 0 };          // ferite inflitte da ciascuna parte
 
-  const blow = (att, def, tag, opts) => {
-    if (def.models <= 0 || att.models <= 0) return;
-    const r = strike(att, def, { round, ...opts });
-    const kills = applyWounds(def, r.wounds);
-    done[tag] += r.wounds;
-    steps.push({ side: tag, name: att.name, ...r, kills });
+  /* Calcolare e applicare sono due gesti separati, e devono restarlo:
+     chi mena nello stesso scaglione si guarda addosso lo stato di
+     PRIMA dello scaglione, altrimenti chi e' scritto per primo
+     nell'elenco toglierebbe i colpi a chi mena insieme a lui. */
+  const shot = (e, j, opts) => {
+    const def = e.side[j];
+    if (!def || def.models <= 0 || e.c.models <= 0) return null;
+    return { e, def, r: strike(e.c, def, { round, ...opts }) };
   };
-  const pair = [[a, b, "A"], [b, a, "B"]];
+  const land = x => {
+    if (!x) return;
+    const kills = applyWounds(x.def, x.r.wounds);
+    x.e.c.dealt += x.r.wounds;
+    done[x.e.tag] += x.r.wounds;
+    steps.push({ side: x.e.tag, name: x.e.c.name, at: x.e.at, foe: x.def.name,
+                 ...x.r, kills, together: !!x.together });
+  };
+  const blow = (e, j, opts) => land(shot(e, j, opts));
+
+  /* Gli attacchi che questa schiera porta contro QUESTO nemico. Con
+     uno solo davanti non si dice niente e vale il conto di sempre —
+     compreso il numero corretto a mano nel pannello, che deve
+     continuare a vincere su tutto. Con piu' d'uno la fila si divide. */
+  const part = (e, k) => e.foes.length === 1 && !e.side[e.foes[0]].attached
+    ? {}                                    // un nemico solo: vale il conto di sempre
+    : { attacks: e.budget[k] };
+  /* Urto della carica e pestoni si possono dirigere su un personaggio
+     unito «solo se nel reggimento ci sono meno di cinque modelli di
+     truppa» (p. 209): fuori da quel caso arrivano addosso all'unita',
+     non a chi ci sta dentro. */
+  const sotto = e => e.foes.map((j, k) => k).filter(k => {
+    const f = e.side[e.foes[k]];
+    return !f.shielded || f.exposed;
+  });
 
   /* prima l'urto della carica, che arriva addosso senza tirare per
-     colpire, e solo da chi ha corso almeno tre pollici */
-  for (const [att, def, tag] of pair){
-    if (!ranIn(att)) continue;
-    const n = autoHits(att.flags && att.flags.impact, contact(att, def).front);
-    if (n) blow(att, def, tag, { attacks: n, auto: true, strength: att.baseS,
-                                 label: "urto della carica" });
+     colpire, e solo da chi ha corso almeno tre pollici. Quanti colpi
+     siano si tira una volta sola e poi si spartisce fra chi si ha
+     davanti: un D6 per ogni nemico sarebbe un urto moltiplicato. */
+  for (const e of all){
+    if (!ranIn(e.c) || !e.foes.length) continue;
+    const dove = sotto(e);
+    if (!dove.length) continue;
+    const n = autoHits(e.c.flags && e.c.flags.impact, e.fronts.reduce((s, v) => s + v, 0));
+    if (!n) continue;
+    const split = spread(n, e.fronts.map((v, k) => dove.includes(k) ? v : 0));
+    e.foes.forEach((j, k) => { if (split[k]) blow(e, j, {
+      attacks: split[k], auto: true, strength: e.c.baseS, label: "urto della carica" }); });
   }
 
   /* poi si mena, in ordine di Iniziativa — con dentro il bonus della
-     carica (p. 146), che e' la novita' della Tappa 3 — salvo chi ha
-     un'arma che decide l'ordine da sola. */
-  const order = ML.strikeOrder(a, b);
-  if (order.together){
-    const ra = strike(a, b, { label: "colpi", round }), rb = strike(b, a, { label: "colpi", round });
-    const ka = applyWounds(b, ra.wounds), kb = applyWounds(a, rb.wounds);
-    done.A += ra.wounds; done.B += rb.wounds;
-    steps.push({ side: "A", name: a.name, ...ra, kills: ka, together: true });
-    steps.push({ side: "B", name: b.name, ...rb, kills: kb, together: true });
-  } else {
-    const first  = order.first === "A" ? [a, b, "A"] : [b, a, "B"];
-    const second = order.first === "A" ? [b, a, "B"] : [a, b, "A"];
-    blow(first[0],  first[1],  first[2],  { label: "colpi" });
-    blow(second[0], second[1], second[2], { label: "colpi" });
+     carica (p. 146) — salvo chi ha un'arma che decide l'ordine da
+     sola. Un ordine solo per tutti quanti, e non due a due. */
+  const plan = ML.strikeSteps(all.map(e => e.c));
+  for (const step of plan){
+    const shots = [];
+    for (const at of step.at){
+      const e = all[at];
+      e.foes.forEach((j, k) => {
+        const x = shot(e, j, { label: "colpi", ...part(e, k) });
+        if (x) shots.push(Object.assign(x, { together: step.together }));
+      });
+    }
+    shots.forEach(land);
   }
 
   /* e per ultimi i pestoni: «dopo tutti gli altri attacchi, compresi
      quelli a Iniziativa 1», dice il testo della regola. Non vogliono la
      carica — basta essere a contatto — e usano anche loro la Forza non
      modificata del modello. */
-  for (const [att, def, tag] of pair){
-    const n = autoHits(att.flags && att.flags.stomp, 1);
-    if (n) blow(att, def, tag, { attacks: n, auto: true, strength: att.baseS,
-                                 label: "pestoni" });
+  for (const e of all){
+    if (!e.foes.length) continue;
+    const dove = sotto(e);
+    if (!dove.length) continue;
+    const n = autoHits(e.c.flags && e.c.flags.stomp, 1);
+    if (!n) continue;
+    const split = spread(n, e.fronts.map((v, k) => dove.includes(k) ? v : 0));
+    e.foes.forEach((j, k) => { if (split[k]) blow(e, j, {
+      attacks: split[k], auto: true, strength: e.c.baseS, label: "pestoni" }); });
   }
 
   /* L'overkill di una sfida: le ferite in piu' di quelle che
      sarebbero bastate non si perdono, contano nel risultato. Si
      misurano sulle ferite che l'avversario aveva PRIMA, non su quelle
-     che gli restano. */
+     che gli restano — e il tetto e' +5 (p. 152). */
   if (challenge){
-    a.overkill = ML.overkill(done.A, (B.models || 0) * (B.w || 1)).counted;
-    b.overkill = ML.overkill(done.B, (A.models || 0) * (A.w || 1)).counted;
+    for (const e of all){
+      const from = e.tag === "A" ? startB : startA;
+      const left = e.foes.reduce((s, j) =>
+        s + ((from[j] || {}).models || 0) * ((from[j] || {}).w || 1), 0);
+      e.c.overkill = ML.overkill(e.c.dealt, left).counted;
+    }
   }
 
-  const cr = resolution(a, b, done);
-  const wiped = a.models <= 0 ? "A" : b.models <= 0 ? "B" : "";
-  const test = wiped || !cr.loser ? null
-    : breakFor(cr.loser === "A" ? a : b, cr.loser === "A" ? b : a, cr.diff, cr.loser);
-  return { a, b, steps, cr, test, wiped, done, order, round, challenge,
-           killsA: A.models - a.models, killsB: B.models - b.models };
+  const cr = resolution(A, B, done);
+  /* una parte e' finita quando non e' rimasto in piedi nessuno, in
+     nessuna delle sue unita' */
+  const gone = list => list.length > 0 && list.every(c => c.models <= 0);
+  const wiped = gone(A) ? "A" : gone(B) ? "B" : "";
+  /* Il test di rotta lo tira OGNI unita' della parte che ha perso, una
+     per una e con lo stesso scarto: «ciascuna unita' appartenente alla
+     parte perdente deve fare un test di rotta» (p. 154). */
+  const tests = [];
+  if (cr.loser && !wiped){
+    const losers = cr.loser === "A" ? A : B;
+    const winners = (cr.loser === "A" ? B : A).filter(c => c.models > 0);
+    const us = { win: sideUS(winners), lose: sideUS(losers) };
+    losers.forEach((c, i) => {
+      if (c.models > 0) tests.push({ ...breakFor(c, winners, cr.diff, cr.loser, us), at: i });
+    });
+  }
+
+  const order = Object.assign({ steps: plan },
+    A.length === 1 && B.length === 1 ? ML.strikeOrder(A[0], B[0]) : {});
+  const kills = { A: A.map((c, i) => ((startA[i] || {}).models || 0) - c.models),
+                  B: B.map((c, i) => ((startB[i] || {}).models || 0) - c.models) };
+  const sum = list => list.reduce((s, v) => s + v, 0);
+  return { sides: { A, B }, a: A[0], b: B[0], steps, cr, tests, test: tests[0] || null,
+           wiped, done, order, round, challenge, kills,
+           killsA: sum(kills.A), killsB: sum(kills.B) };
 }
+
+/* L'assalto fra due sole schiere, che e' il nome con cui mezza app lo
+   chiama: la stessa cosa con un'unita' per parte. */
+export function meleeRound(A, B, opts = {}){ return meleeFight(A, B, opts); }
 
 /* Il test di rotta di chi ha perso. Tre esiti invece di due (p. 154), e
    due regole speciali che lo saltano in due modi diversi.
@@ -445,22 +675,27 @@ export function meleeRound(A, B, { round = 1, challenge = false } = {}){
    e quindi NON dallo scarto del combattimento. Perdere di otto invece
    che di due non fa scappare di piu': fa ripiegare invece di cedere
    terreno. E' tutto il senso dei tre esiti. */
-function breakFor(side, winner, diff, tag){
+function breakFor(side, winners, diff, tag, us = null){
   const f = side.flags || {};
-  const crushed = ML.crushingUS(usOf(winner), usOf(side));
+  const won = Array.isArray(winners) ? winners : [winners];
+  /* Le due Forze d'Unita' sono quelle delle PARTI, sommate (p. 154):
+     chi chiama le porta gia' fatte, e quando non lo fa — un assalto a
+     due chiamato da fuori — si ricavano dalle due schiere. */
+  const crushed = ML.crushingUS(us ? us.win : won.reduce((s, w) => s + usOf(w), 0),
+                                us ? us.lose : usOf(side));
   /* Il Terrore (Tappa 5): se fra chi ha vinto c'e' chi lo fa, chi ha
      perso ha −1 al Comando nel test. Il −1 entra anche nelle
      probabilita', cosi' il numero che il pannello mostra e' quello con
      cui si tira davvero. */
-  const terror = PS.terrorBreakMod({ winners: [winner.psych], loser: side.psych || {} });
+  const terror = PS.terrorBreakMod({ winners: won.map(w => w.psych), loser: side.psych || {} });
   const ldMod = terror.mod;
   /* Shieldwall (Tappa 5 bis): una volta per partita, nel turno in cui e'
-     stata caricata. «E' stata caricata» qui e' «chi ha vinto ha
-     caricato», che in un assalto a due e' la stessa cosa; l'ordine
-     chiuso lo dice il tavolo, lo scudo in uso lo guarda chi gioca. */
-  const shieldwall = !!f.shieldwall && !side.shieldwallUsed && !!winner.charged && !side.loose;
+     stata caricata. «E' stata caricata» qui e' «qualcuno di quelli che
+     hanno vinto ha caricato»; l'ordine chiuso lo dice il tavolo, lo
+     scudo in uso lo guarda chi gioca. */
+  const shieldwall = !!f.shieldwall && !side.shieldwallUsed && won.some(w => !!w.charged) && !side.loose;
   const chances = ML.breakChances(side.ld, diff, { crushed, ldMod, shieldwall });
-  const base = { side: tag, chances, crushed, terror: terror.why };
+  const base = { side: tag, name: side.name || "", chances, crushed, terror: terror.why };
   if (f.unbreakable)
     return { ...base, ...ML.breakOutcome({ ld: side.ld, diff, unbreakable: true }) };
   if (f.stubborn && !side.stubbornUsed && chances.rout > chances.give)
@@ -473,12 +708,25 @@ function breakFor(side, winner, diff, tag){
    al resto del combattimento: qui resta la traduzione da schiera a
    scheda, che e' l'unica cosa che sa di `combat.js`. */
 export function resolution(a, b, done){
-  const ca = ML.scoreCardOf(a, done.A), cb = ML.scoreCardOf(b, done.B);
-  /* Impervious Defence e' una regola di chi viene preso di fianco, ma
-     toglie il punto a chi lo prende: si scrive sulla scheda dell'altro. */
-  if (b.flags && b.flags.impervious && ca.flank) ca.flankDenied = "Impervious Defence";
-  if (a.flags && a.flags.impervious && cb.flank) cb.flankDenied = "Impervious Defence";
-  return ML.combatResult(ca, cb);
+  const A = Array.isArray(a) ? a : [a], B = Array.isArray(b) ? b : [b];
+  /* Le ferite di ciascuno: l'assalto le scrive sulla schiera mentre le
+     infligge, e chi chiama da fuori con due sole schiere passa ancora i
+     due totali. */
+  const cards = (side, other, tag) => side.map(c => {
+    const hurt = c.dealt != null ? c.dealt : (side.length === 1 && done ? done[tag] || 0 : 0);
+    /* chi ha davanti: serve al fianco, che si conta una volta per
+       nemico e non una per attaccante (p. 153). Senza contatti
+       dichiarati e' il primo dell'altra parte, che in un assalto a due
+       e' l'unico. */
+    const at = c.foes && c.foes.length ? c.foes[0] : 0;
+    const foe = other[at];
+    const card = ML.scoreCardOf(c, hurt, { foe: "#" + at });
+    /* Impervious Defence e' una regola di chi viene preso di fianco, ma
+       toglie il punto a chi lo prende: si scrive sulla scheda dell'altro. */
+    if (foe && foe.flags && foe.flags.impervious && card.flank) card.flankDenied = "Impervious Defence";
+    return card;
+  });
+  return ML.combatResult(cards(A, B, "A"), cards(B, A, "B"));
 }
 
 /* ============================================================
@@ -497,11 +745,13 @@ export function odds(A, B, n = 500, opts = {}){
                 killsA: 0, killsB: 0, wipeA: 0, wipeB: 0 };
   const key = { give: "give", fallBack: "fall", rout: "rout" };
   for (let k = 0; k < n; k++){
-    const r = meleeRound(A, B, opts);
+    const r = meleeFight(A, B, opts);
     if (r.cr.winner === "A") out.winA++;
     else if (r.cr.winner === "B") out.winB++;
     else out.draw++;
-    if (r.test) out[key[r.test.outcome] + r.test.side]++;
+    /* con piu' unita' per parte i test sono piu' d'uno, e contarne uno
+       solo perderebbe per strada proprio le unita' in piu' */
+    for (const t of r.tests) out[key[t.outcome] + t.side]++;
     out.killsA += r.killsA; out.killsB += r.killsB;
     if (r.wiped === "A") out.wipeA++;
     if (r.wiped === "B") out.wipeB++;
@@ -583,7 +833,11 @@ export function shootForecast(shooter, target, { weapon, mods = 0, shots } = {})
   return { shots: n, hitNeed: need, hitAgain: aim.again, hitThen: aim.then || 0, hitRaw: aim.raw || need,
            bs, strength: S, ap: AP, poisoned: f.poisoned,
            woundNeed: wNeed, saveNeed: sNeed, wardNeed: kNeed, regenNeed: rNeed,
-           wounds, kills: wounds / t.w, targetW: t.w };
+           wounds, kills: wounds / t.w, targetW: t.w,
+           /* le ferite che il bersaglio si porta gia' addosso: tre
+              ferite passate a un mostro da quattro non sono zero
+              perdite, sono tre ferite che aspettano la quarta */
+           carried: t.spill || 0, targetModels: t.models };
 }
 
 /* e la stessa raffica tirata sul serio */
@@ -623,5 +877,11 @@ export function shootRoll(shooter, target, opts){
   const left = through - ward.hits;
   const regen = pool(left, f.regenNeed);
   const wounds = left - regen.hits;
-  return { ...f, notes, hit, follow, wound, save, ward, regen, wounds, kills: Math.floor(wounds / f.targetW) };
+  /* Dalle ferite ai modelli a terra, tenendo il resto. Prima era un
+     `Math.floor` e basta: il resto spariva, e con un bersaglio da piu'
+     ferite sparivano intere raffiche. */
+  const tot = (f.carried || 0) + wounds;
+  const kills = Math.max(0, Math.min(f.targetModels || 0, Math.floor(tot / f.targetW)));
+  return { ...f, notes, hit, follow, wound, save, ward, regen, wounds,
+           kills, left: tot - kills * f.targetW };
 }

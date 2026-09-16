@@ -27,6 +27,8 @@
 /* ============================================================
    1 · LE CARATTERISTICHE
    ============================================================ */
+import { splitStat } from './profiles.js';
+
 export const CHARS = ["M","WS","BS","S","T","W","I","A","Ld"];
 export const CHAR_LABEL = {
   M:"Movimento", WS:"Abilita' Combattimento", BS:"Abilita' Balistica",
@@ -79,7 +81,14 @@ export function baseOf(u, key){
   if (DERIVED.includes(key)) return +((u || {})[key]) || 0;
   const who = whoOwns(u, key);
   const p = profileOf(u, who) || profileOf(u, "rider") || {};
-  return num(p[key]);
+  if (/^\d+$/.test(String(p[key] ?? "").trim())) return num(p[key]);
+  /* Il profilo diviso (p. 97). Quando la riga dell'unita' dice «-» il
+     numero non manca: sta su un'altra riga — i servitori, la
+     cavalcatura — e il file della lista quella riga non la porta. Senza
+     questo un Orc Boar Chariot combatteva con Abilita' Combattimento 0
+     e Comando 0, e nessuno lo diceva. */
+  const dal = splitStat(u, key);
+  return dal != null ? dal : num(p[key]);
 }
 
 /* ============================================================

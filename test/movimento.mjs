@@ -374,5 +374,46 @@ console.log('\nla riga che si legge prima di dichiarare');
   ok('quello dietro resta in fondo con il suo perche', rows[1].can === false);
 }
 
+/* ================================================================= */
+console.log('\nil Movimento che il file della lista non porta');
+{
+  const fs = await import('node:fs');
+  const PR = await import('../src/profiles.js');
+  const MV = await import('../src/movement.js');
+  PR.useProfiles(JSON.parse(fs.readFileSync(new URL('../dati/profili.json', import.meta.url), 'utf8')));
+
+  const boar = { name:'Orc Boar Boy Mobs', faction:'Orc and Goblin Tribes',
+                 stats:{ M:'-', WS:'3', S:'3', T:'4', W:'1', I:'3', A:'1', Ld:'6' }, rules:['Swiftstride'] };
+  ok('il cavaliere con M «-» prende il Movimento della cavalcatura', MV.moveOf(boar) === 7);
+  ok('e dice da dove viene, con libro e pagina',
+     /War Boar/.test(MV.moveDetail(boar).why) && MV.moveDetail(boar).page === 29);
+  ok('con il Movimento tornano anche le soglie', MV.bandsFor(boar).march === 14);
+
+  const terra = { name:'Terradon Riders', faction:'Lizardmen',
+                  stats:{ M:'-', WS:'2', S:'3', T:'3', W:'2', I:'4', A:'1', Ld:'5' },
+                  rules:['Fly (10)', 'Skirmishers'] };
+  ok('chi vola si muove volando', MV.moveOf(terra) === 10 && MV.moveDetail(terra).fly === 10);
+
+  const squig = { name:'Night Goblin Squig Hopper Mobs', faction:'Orc and Goblin Tribes',
+                  stats:{ M:'-' }, rules:[] };
+  ok('un Movimento che si tira non e un numero, e viene detto',
+     MV.moveOf(squig) === 0 && MV.moveDetail(squig).random === '3D6' &&
+     /si tira/.test(MV.moveDetail(squig).why));
+
+  const ignoto = { name:'Qualcosa che non c e', stats:{ M:'-' }, rules:[] };
+  ok('e chi non c e sul libro resta senza, dicendolo',
+     MV.moveOf(ignoto) === 0 && /correggilo a mano/.test(MV.moveDetail(ignoto).why));
+  ok('la correzione a mano vince su tutto', MV.moveOf({ ...boar, moveOverride: 4 }) === 4);
+
+  /* sulle liste vere: erano ventitre' a non sapersi muovere */
+  const liste = JSON.parse(fs.readFileSync(new URL('../dati/liste.json', import.meta.url), 'utf8'));
+  const tutte = liste.flatMap(l => l.units);
+  const senza = tutte.filter(u => !MV.moveOf(u) && !MV.moveDetail(u).random);
+  ok('nelle liste salvate non resta piu nessuna unita senza Movimento', senza.length === 0);
+  ok('e prima erano ventitre',
+     tutte.filter(u => !/^[0-9]/.test(String((u.stats || {}).M || ""))).length === 23);
+  PR.useProfiles(null);
+}
+
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

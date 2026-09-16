@@ -377,6 +377,56 @@ ok('e ferisce piu di chi non ce l ha',
    conRitiro.wounds > C.shootForecast({ ...arcieri, stats: { ...arcieri.stats, BS:'5' } },
                                       bersaglio, { weapon: arco, mods: -3 }).wounds);
 
+/* Le ferite che non completano un modello non spariscono: su un
+   bersaglio da piu' ferite erano l'intera raffica, e ogni tiro
+   ricominciava da zero. */
+const mostro = { name:'Bastiladon', stats:{ M:'6',WS:'3',BS:'0',S:'5',T:'5',W:'4',I:'2',A:'3',Ld:'8' },
+                 models:1, frontage:1, weapons:[], rules:[], lost:0, armour:3 };
+{
+  const f = C.shootForecast(arcieri, mostro, { weapon: arco, mods: 0 });
+  ok('la previsione dice quante ne ha gia addosso', f.carried === 0 && f.targetW === 4);
+  ok('e con tre segnate le vede', C.shootForecast(arcieri, { ...mostro, wounds: 3 }, { weapon: arco, mods: 0 }).carried === 3);
+  let resto = false, morto = false;
+  for (let k = 0; k < 80 && !(resto && morto); k++){
+    const r = C.shootRoll(arcieri, mostro, { weapon: arco, mods: 0 });
+    if (r.wounds > 0 && r.wounds < 4){ resto = r.left === r.wounds && r.kills === 0; }
+    const r2 = C.shootRoll(arcieri, { ...mostro, wounds: 3 }, { weapon: arco, mods: 0 });
+    if (r2.wounds >= 1) morto = r2.kills === 1;
+  }
+  ok('tre ferite su un mostro da quattro restano segnate, non svaniscono', resto);
+  ok('e con tre gia addosso la prima che passa lo stende', morto);
+  ok('i modelli a terra non superano mai quelli in campo',
+     C.shootRoll(arcieri, { ...mostro, wounds: 3 }, { weapon: arco, mods: 0 }).kills <= 1);
+}
+
+/* ================================================================= */
+console.log('\ni personaggi dentro il reggimento (p. 209)');
+
+/* Sparare a un capo unito non si puo', salvo tre eccezioni; e quando
+   si puo' c'e' il «Occhio, capo!». */
+ok('dentro il reggimento non lo si prende di mira',
+   SH.canTargetJoined({ rankAndFile: 10 }).can === false);
+ok('sotto i cinque modelli di truppa si',
+   SH.canTargetJoined({ rankAndFile: 4 }).can === true &&
+   SH.canTargetJoined({ rankAndFile: 4 }).thin === true);
+ok('e con un arma che sceglie il modello anche',
+   SH.canTargetJoined({ rankAndFile: 10, sniper: true }).can === true);
+ok('come con la sagoma addosso',
+   SH.canTargetJoined({ rankAndFile: 10, template: true }).can === true);
+ok('l Occhio capo salva con 2 o piu', SH.lookOut(2, { rankAndFile: 10 }).hit === false);
+ok('e con l 1 il colpo e suo', SH.lookOut(1, { rankAndFile: 10 }).hit === true);
+ok('sotto i cinque modelli non c e nessuno a coprirlo',
+   SH.lookOut(6, { rankAndFile: 3 }).applies === false && SH.lookOut(6, { rankAndFile: 3 }).hit === true);
+/* e la ripartizione sotto i cinque: prima l'unita', poi il resto diviso */
+ok('prima un colpo a testa alla truppa',
+   JSON.stringify(SH.shareHits(3, { models: 3, characters: 1 })).includes('"unit":3'));
+ok('poi il resto si divide fra capo e unita',
+   SH.shareHits(9, { models: 3, characters: 1 }).unit === 6 &&
+   SH.shareHits(9, { models: 3, characters: 1 }).chars[0] === 3);
+ok('e con due capi i mucchi sono tre',
+   SH.shareHits(9, { models: 2, characters: 2 }).chars.join(',') === '2,2');
+ok('senza nessun capo va tutto all unita', SH.shareHits(7, { models: 5, characters: 0 }).unit === 7);
+
 /* ================================================================= */
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

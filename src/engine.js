@@ -111,7 +111,11 @@ export const ACTIONS = {
   rally:   { label:"raduno",
              moments:["onRally"],
              needs: () => [d6("raduno", 2, "test di Comando per radunarsi")],
-             line: (a, r) => nm(a.unit) + " prova a radunarsi: " + readRolls(r) },
+             /* l'esito lo porta chi tira, con i due modificatori delle
+                perdite insostenibili gia' addosso (p. 117): qui si
+                scrive la riga, non si decide niente */
+             line: (a, r) => nm(a.unit) + " prova a radunarsi: " + readRolls(r) +
+                             (a.outcome ? " — " + nm(a.outcome) : "") },
 
   declareCharge:  { label:"dichiarazione di carica",
                     moments:["onDeclareCharge"],

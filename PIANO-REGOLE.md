@@ -513,7 +513,21 @@ Per ogni fase: cosa l'app può fare da sola, e cosa resta ai giocatori.
   stendardo, stendardo da battaglia, fianco +1, retro +2, terreno più
   alto +1, *overkill* nelle sfide.~~ Fatto. Ne mancavano tre, e ce
   n'era una di troppo: la superiorità numerica, che questo elenco non
-  nomina perché nel manuale non c'è.
+  nomina perché nel manuale non c'è. L'overkill ha anche un tetto, +5,
+  ed era l'ultimo numero di questo capitolo che l'app non aveva letto
+  sul libro (p. 152).
+- ~~**Il combattimento a più di due** (p. 153).~~ Fatto: l'assalto non
+  è più fra due schiere ma fra due gruppi. I ranghi non si sommano
+  (vale il più alto), gli stendardi valgono uno per parte, il fianco si
+  conta una volta per unità nemica, il terreno più alto lo prende una
+  parte sola e si annulla in parità; l'ordine di combattimento invece
+  si conta per ognuna, e il manuale lo dice con l'esempio. Il test di
+  rotta lo tira ogni unità della parte che perde, e la Forza d'Unità
+  che decide se il doppio schiaccia è quella delle parti sommate
+  (p. 154). Chi ha più nemici davanti divide la sua prima fila fra
+  loro, e i colpi automatici — urto e pestoni — si tirano una volta
+  sola e si spartiscono. Restano ai giocatori i contatti: chi tocca chi
+  lo dice il tavolo con `vs`, e senza dichiarazione si toccano tutti.
 - ~~**Test di rotta a tre esiti** (p. 154)~~: fatto, ed è stato il
   cambio di regola vero. Si confronta il tiro naturale e il tiro
   modificato con il Comando, e ne escono *cede terreno*, *ripiega in
@@ -521,6 +535,13 @@ Per ogni fase: cosa l'app può fare da sola, e cosa resta ai giocatori.
   già fare.
 - ~~Inseguimento, sfondamento, unità travolta.~~ Fatto; resta fuori il
   test di trattenuta di chi preferirebbe non inseguire.
+
+- ~~**Il raduno** (p. 117).~~ Fatto: era l'unica regola della
+  psicologia che mancava del tutto, e si tirava con il pulsante del
+  test di Comando generico — cioè senza i due modificatori che lo
+  decidono quasi sempre. Sotto metà dei modelli di partenza −1, sotto
+  un quarto passa solo il doppio uno, e il musico vale +1 fino a 10
+  (p. 201). Nell'ispettore il pulsante compare per chi sta fuggendo.
 
 ### Psicologia
 ~~Panico (pp. 160-161) con le sue quattro cause ricorrenti — perdite oltre
@@ -1531,3 +1552,52 @@ il giorno in cui la prima tappa parte:
   manuale.
 - **Il tavolo.** Se le miniature stanno mezzo pollice più in là di come
   le disegna l'app, hanno ragione le miniature.
+
+## 13 · L'arbitro, e due macchine che giocano
+
+Le prime dodici sezioni di questo piano davano per scontato che davanti
+all'app ci fosse qualcuno. Una domanda arrivata dopo — *«si può far
+giocare due modelli di linguaggio dalla lista al verdetto?»* — ha
+mostrato che la distanza da lì era più corta di quanto sembrasse, e che
+era fatta di quattro lavori ben definiti:
+
+1. ~~**la mischia a più di due**~~ — fatta: `meleeRound(A, B)` prendeva
+   due schiere, adesso `meleeFight` prende due gruppi, e il conto è
+   quello di p. 153;
+2. ~~**lo stato con le sue azioni**~~ — fatto: `arbitro.js` tiene il
+   tavolo, elenca le mosse legali e le applica;
+3. ~~**le ferite che persistono**~~ — fatte: `spill` non si azzera più
+   fra un round e l'altro, e il tiro e la magia non buttano via il resto;
+4. ~~**le ferite dei personaggi**~~ — fatte, ed erano una decisione e
+   non un conto: si colpiscono solo dirigendoci i colpi (p. 209), le
+   ferite non tracimano, l'urto vuole meno di cinque modelli di truppa.
+
+E tre cose che bloccavano tutto il resto:
+
+- ~~**il Movimento che le liste non portano**~~: ventitré unità su
+  centosette non sapevano muoversi, perché il Movimento di chi va a
+  cavallo sta sulla riga della cavalcatura e l'export la butta via.
+  `dati/profili.json` porta quelle righe, lette sul libro con la pagina
+  accanto;
+- ~~**le liste che non si possono giocare**~~: una lista scritta a mano
+  non ha profili, e l'app la giocava lo stesso — zero contro zero, cento
+  per cento di pareggi, nessun avviso. Adesso `prep.js` lo dichiara;
+- ~~**il raduno**~~, che è nella sezione della psicologia.
+
+### Cosa resta
+
+- **La magia in partita.** `magic.js` sa generare, lanciare, dissolvere
+  e far male; quello che manca è la lista degli incantesimi scelti prima
+  della battaglia, che un file di New Recruit non porta. È la voce più
+  grossa che l'arbitro dichiara e non gioca.
+- **Le manovre.** Riforme, giri sul posto, ruote pagate dal budget di
+  movimento: `charge.js` le calcola già, l'arbitro non le offre.
+- **Le sfide**, che sono una decisione e non un conto: l'overkill lo
+  conta già `melee.js`, chi la lancia e chi la rifiuta no.
+- **Il volo**, le **sagome** e le **macchine da guerra**, che vogliono
+  la posizione modello per modello.
+
+Nessuna di queste è un buco silenzioso: stanno in `LIMITI` dentro
+`arbitro.js`, e ognuna esce nel registro della partita la prima volta
+che conta qualcosa. Una partita giocata da un arbitro che tace non
+insegna niente.

@@ -327,8 +327,12 @@ ok('tirati i dadi si vedono le facce', duelHost.querySelectorAll('.die').length 
 ok('e il conto di fine assalto', /Risoluzione/.test(duelHost.textContent));
 ok('in venticinque assalti qualcuno cade sempre', !!applyBtn);
 
-const defender = state.units.find(u => u.army === 'B' &&
-  new RegExp(u.name.slice(0, 6)).test(duelHost.textContent));
+/* chi sia il difensore lo dice l'intestazione della seconda parte, non
+   il testo del pannello: da quando c'e' la tendina che aggiunge un'unita'
+   al combattimento, nel pannello compaiono i nomi di tutto l'esercito */
+const headB = duelHost.querySelectorAll('.duel-group')[1].querySelector('.army-head b').textContent;
+const defender = state.units.find(u => u.army === 'B' && u.name === headB);
+ok('il pannello dice chi e il difensore', !!defender);
 const lostBefore = (attacker.lost || 0) + (defender ? defender.lost || 0 : 0);
 applyBtn.dispatchEvent(new window.Event('click'));
 const lostAfter = (attacker.lost || 0) + (defender ? defender.lost || 0 : 0);
@@ -363,9 +367,71 @@ history.undo();
   });
   Dx.openDuel(lupo, preda);
   ok('a contatto sul fianco lo scontro lo sa senza carica (p. 152)',
-     duelHost.querySelector('#d-flk-A').value === 'flank');
-  ok('e chi e preso di fianco colpisce di fronte', duelHost.querySelector('#d-flk-B').value === '');
+     duelHost.querySelector('#d-flk-A0').value === 'flank');
+  ok('e chi e preso di fianco colpisce di fronte', duelHost.querySelector('#d-flk-B0').value === '');
   ok('e il pannello dice da dove lo ha visto', /Dal tavolo/.test(duelHost.textContent));
+  Dx.closeDuel();
+  history.undo();
+}
+/* La terza unita' nel pannello (p. 153): il combattimento a piu' di due
+   e' il normale del tavolo, e il pannello lo apriva a coppie. */
+{
+  const Dx = await import('../src/duel.js');
+  const preda = state.units.find(u => u.army === 'B' && u.placed && !u.dead && deploy.effModels(u) > 4);
+  const primo = state.units.find(u => u.army === 'A' && u.placed && !u.dead && deploy.effModels(u) > 4);
+  Dx.openDuel(primo, preda);
+  const add = duelHost.querySelector('#d-add-A');
+  ok('il pannello propone chi aggiungere alla parte', !!add && add.options.length > 1);
+  const altro = state.units.find(u => u.army === 'A' && u.uid !== primo.uid &&
+                                 [...add.options].some(o => +o.value === u.uid));
+  add.value = String(altro.uid);
+  add.dispatchEvent(new window.Event('change'));
+  ok('aggiunta, la parte ha due unita e il pannello tre schiere',
+     duelHost.querySelectorAll('.duel-side').length === 3);
+  ok('e la previsione parla di tutte e due',
+     duelHost.textContent.includes(altro.name));
+  duelHost.querySelector('#d-roll').dispatchEvent(new window.Event('click'));
+  await settle(20);
+  const teste = [...duelHost.querySelectorAll('.duel-step .dl-head b')].map(x => x.textContent);
+  ok('menano tutte e due, e ogni mucchio di dadi dice di chi e',
+     teste.includes(primo.name) && teste.includes(altro.name));
+  ok('il conto di fine assalto dice chi ha portato cosa',
+     /il fianco una volta per unità nemica/.test(duelHost.textContent));
+  duelHost.querySelector('#d-drop-A1').dispatchEvent(new window.Event('click'));
+  ok('e la si toglie dal combattimento con una crocetta',
+     duelHost.querySelectorAll('.duel-side').length === 2);
+  Dx.closeDuel();
+}
+/* Il capo dentro il reggimento entra nel combattimento con lui (p. 209):
+   prima il pannello ne contava la psicologia e non i suoi attacchi. */
+{
+  const Dx = await import('../src/duel.js');
+  const FMx = await import('../src/formation.js');
+  const regg = state.units.find(u => u.army === 'A' && u.placed && !u.dead && deploy.effModels(u) > 4);
+  const capo = state.units.find(u => u.army === 'A' && !u.dead && u.uid !== regg.uid && FMx.canJoin(u));
+  const preda = state.units.find(u => u.army === 'B' && u.placed && !u.dead && deploy.effModels(u) > 4);
+  deploy.act('unisci il capo', () => { capo.join = { host: regg.uid }; capo.placed = false; });
+  Dx.openDuel(regg, preda);
+  const teste = [...duelHost.querySelectorAll('.duel-side .army-head b')].map(x => x.textContent);
+  ok('il capo unito entra nel pannello con il suo reggimento', teste.includes(capo.name));
+  ok('e la sua riga dice dove sta', /Dentro/.test(duelHost.textContent));
+  ok('senza che nessuno lo possa colpire', !!duelHost.querySelector('#d-tgt-A1'));
+  duelHost.querySelector('#d-roll').dispatchEvent(new window.Event('click'));
+  await settle(20);
+  const bersagli = [...duelHost.querySelectorAll('.duel-step .dl-head span')].map(x => x.textContent);
+  ok('il capo mena', [...duelHost.querySelectorAll('.duel-step .dl-head b')].map(x => x.textContent).includes(capo.name));
+  ok('e nessuno mena a lui', !bersagli.some(t => t.includes('su ' + capo.name)));
+  /* finche' non glieli si dirige */
+  duelHost.querySelector('#d-tgt-A1').checked = true;
+  duelHost.querySelector('#d-tgt-A1').dispatchEvent(new window.Event('change'));
+  let visto = false;
+  for (let k = 0; k < 10 && !visto; k++){
+    duelHost.querySelector('#d-roll').dispatchEvent(new window.Event('click'));
+    await settle(20);
+    visto = [...duelHost.querySelectorAll('.duel-step .dl-head span')]
+      .some(x => x.textContent.includes('su ' + capo.name));
+  }
+  ok('spuntata la casella, i nemici ce li dirigono', visto);
   Dx.closeDuel();
   history.undo();
 }
@@ -1301,6 +1367,32 @@ console.log('\nla psicologia al tavolo (Tappa 5)');
      !!doc.querySelector('#inspector [data-psych="stupidity"]') &&
      !!doc.querySelector('#inspector [data-psych="panic"]'));
 
+const FMx2 = await import('../src/formation.js');
+/* Il raduno (p. 117): il pulsante c'è solo per chi sta fuggendo, e
+   l'ispettore dice con che Comando si prova — i due modificatori delle
+   perdite insostenibili compresi. Il tiro vero lo provano i moduli. */
+{
+  const fuggiasco = state.units.find(u => u.army === 'A' && u.placed && !u.dead && !FMx2.joinedHost(u));
+  state.sel = { type:'unit', id: fuggiasco.uid };
+  deploy.renderAll();
+  ok('chi non fugge non ha il pulsante del raduno',
+     !doc.querySelector('#inspector [data-psych="rally"]'));
+  deploy.act('in fuga', () => { fuggiasco.fled = true; });
+  deploy.renderAll();
+  ok('chi fugge ce l ha', !!doc.querySelector('#inspector [data-psych="rally"]'));
+  ok('e l ispettore dice con che Comando si raduna',
+     /si raduna con/.test(doc.querySelector('#inspector').textContent));
+  if (fuggiasco.models > 2){
+    deploy.act('mezza unita', () => { fuggiasco.lost = Math.ceil(fuggiasco.models * 0.6); });
+    deploy.renderAll();
+    ok('e sotto meta dei modelli il Comando cala, e lo dice',
+       /sotto metà dei modelli/.test(doc.querySelector('#inspector').textContent));
+    history.undo();
+  }
+  history.undo();                       // e l'unità torna a non fuggire
+  deploy.renderAll();
+}
+
   deploy.act('stupidita di prova', () => {
     EFm.addEffect(by(aId), { id: 'stupidity', from: 'Stupidità', flags: { stupid: true },
                              until: 'ownTurn', at: { turn: state.game.turn, side: by(aId).army } });
@@ -1545,6 +1637,14 @@ ok('scegliendo si scrive il nome per intero', addName.value === 'Saurus Warriors
 ok('e viene dietro la basetta che quel tipo ha in collezione',
    doc.querySelector('#ls-add-base').value === '30x30');
 ok('la tendina si chiude appena scelto', !doc.querySelector('.suggest'));
+/* Una lista scritta a mano non porta profili, e senza profili non si
+   può simulare: la scheda lo dice in chiaro invece di far uscire zero
+   contro zero (vedi il §4 di prep.js). */
+ok('una lista senza profili dice che non si può simulare',
+   /Non si può simulare/.test(doc.querySelector('#lists').textContent));
+ok('e dice quale unità e perché',
+   /Orc Boyz/.test(doc.querySelector('#lists').textContent) &&
+   /nessun profilo/.test(doc.querySelector('#lists').textContent));
 click('#ls-add-unit');
 await settle(60);
 const written = listsMod.getList(copy.id) || listsMod.getList(handList.id);

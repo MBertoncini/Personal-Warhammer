@@ -295,5 +295,30 @@ ok('alla dichiarazione delle cariche ricorda chi deve caricare e chi tira',
    })());
 ok('nelle altre caselle tace', PS.reminders(9, [{ name: 'Trolls', p: stupido }]) === '');
 
+/* ================================================================= */
+console.log('\nil raduno (p. 117)');
+ok('un test di Comando come gli altri, e si passa uguagliando',
+   PS.rallyTest({ ld: 7, dice: [4, 3], models: 20, start: 20 }).passed === true);
+ok('e sopra il Comando si continua a fuggire',
+   PS.rallyTest({ ld: 7, dice: [5, 4], models: 20, start: 20 }).passed === false);
+ok('sotto meta dei modelli il Comando cala di uno',
+   PS.rallyLeadership(7, { models: 9, start: 20 }).value === 6 &&
+   /sotto metà/.test(PS.rallyLeadership(7, { models: 9, start: 20 }).why.join(' ')));
+ok('sotto un quarto passa solo il doppio uno',
+   PS.rallyTest({ ld: 9, dice: [1, 2], models: 4, start: 20 }).passed === false &&
+   PS.rallyTest({ ld: 9, dice: [1, 1], models: 4, start: 20 }).passed === true);
+ok('e lo dice invece di far finta che sia un test come un altro',
+   PS.rallyTest({ ld: 9, dice: [2, 2], models: 4, start: 20 }).hopeless === true);
+ok('il musico suona il raduno e da un punto (p. 201)',
+   PS.rallyLeadership(7, { models: 20, start: 20, musician: true }).value === 8);
+ok('ma non oltre dieci',
+   PS.rallyLeadership(10, { models: 20, start: 20, musician: true }).value === 10);
+ok('il doppio uno passa comunque',
+   PS.rallyTest({ ld: 4, dice: [1, 1], models: 20, start: 20 }).passed === true);
+ok('si tirano due dadi', PS.rallyDice()[0].n === 2 && PS.rallyDice()[0].id === 'raduno');
+ok('e quello che il raduno concede sta scritto accanto',
+   /riforma gratis/.test(PS.rallyTest({ ld: 9, dice: [2, 2], models: 20, start: 20 }).then) &&
+   /non può caricare/.test(PS.rallyTest({ ld: 9, dice: [2, 2], models: 20, start: 20 }).then));
+
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);
