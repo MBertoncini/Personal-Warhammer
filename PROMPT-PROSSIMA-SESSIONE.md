@@ -200,9 +200,71 @@ sopravvive a un ricaricamento — se serve, `S` va reso serializzabile
 (`detto` è un `Set`, il terreno ha funzioni `contains`). Prove in
 `test/boot.mjs`, sezione «la sfida contro l'AI».
 
-Da fare, se la si usa davvero: salvare la sfida finita nel diario delle
-Partite (come `tools/archivia.mjs`), e scegliere un bersaglio o un posto
-cliccando sul tavolo invece che nell'elenco.
+Da fare: salvare la sfida finita nel diario **dall'app** — oggi la
+salva `tools/archivia-registro.mjs`, che rilegge il testo di *Copia il
+registro* e ne fa una voce di `dati/partite.json` (perdite, cadute,
+fughe, i capi che un reggimento travolto si porta via), ma senza le
+posizioni, che il registro non scrive. Nella scheda lo stato c'è: basta
+chiamare `BL.turnRecord` a ogni passaggio di mano come fa
+`tools/archivia.mjs`. E scegliere un bersaglio o un posto cliccando sul
+tavolo invece che nell'elenco.
+
+## Quello che è uscito dalla prima sfida vera (Michele contro Gemini)
+
+`dati/partite.json`, *La Strada delle Pietre: Michele (Lizardmen) contro
+Gemini (Orchi)*. Quattro round, e cinque cose che l'arbitro sbaglia o
+non fa. Sono tutte **verificate nel codice**, non dedotte dal registro:
+
+1. **Il personaggio unito fa il test di rotta per conto suo.**
+   `combat.js` mette le schiere `attached` nell'elenco dei perdenti
+   (`meleeFight`, la riga `losers.forEach`), e l'arbitro le tratta come
+   unità. Nella partita: la Temple Guard si gioca lo Stubborn e ripiega
+   in ordine, il suo Saurus Scar-Veteran — il generale — tira da solo,
+   va in rotta e se ne va dal tavolo. Un capo unito sta dentro il
+   reggimento (p. 207): non tira un test suo e non scappa da solo.
+   `scoreCardOf` lo sa già (`const dentro = !!c.attached`), il test no.
+   È questo che ha portato i Lizardmen sotto il punto di rottura.
+2. **Il punteggio si conta sempre con il formato del Core Rulebook.**
+   `arbitro.js`, `punteggio()`: `VC.formatFor(S.scenario)` riceve la
+   *stringa* dello scenario, e `formatFor` guarda `scenario.group` —
+   vuole l'oggetto, che è `S.sc`. Ogni partita Battle March finisce
+   giudicata con lo scarto di 100 punti invece che «vince chi ne ha di
+   più» (Battle March p. 27): 382 a 337 è uscito «pareggio», ed è una
+   vittoria. Stessa radice: `S.rounds` è 6 fisso (Battle March ne vuole
+   5), e gli obiettivi di `victory.js` (`objectivePoints`, i tre tesori
+   di questo tavolo) l'arbitro non li conta mai. Da guardare anche il
+   §10 di `arbitro.js`, che nel suo commento dice «un esercito sotto il
+   punto di rottura ha perso comunque» e poi non lo applica.
+3. **Si spara addosso a chi è già in mischia.** `opzioniTiro` guarda se
+   è ingaggiato **chi tira**, mai chi è bersagliato: al turno 2 gli
+   Skink Skirmishers 3 hanno tirato sui Black Orc Mobs che la Temple
+   Guard aveva addosso.
+4. **La marcia fallita conta come marcia.** `mossa()` scrive
+   `u.moved = { kind:"march" }` anche quando il test di Comando è
+   andato male e l'unità ha mosso di un movimento solo. `SH.canShoot`
+   blocca chi ha marciato: il Bastiladon, che al turno 3 aveva fallito
+   il test, non ha potuto sparare.
+5. **Il Panico esiste solo per il tiro.** `psych.js` ha tutte e quattro
+   le cause (`PANIC_CAUSES`) e `panicAround` per chiamarle in blocco;
+   lo usa solo `deploy.js`. L'arbitro chiama `panico()` dopo un tiro e
+   basta: in questa partita nessuno ha tirato il Panico, nemmeno con i
+   Black Orc Mobs travolti e tre unità Skink distrutte.
+
+**Da controllare sul libro**, che non è stato:
+
+- si può tirare dopo una carica fallita? (p. 121) `canShoot` non sa che
+  cosa sia un `failedCharge`, e al turno 2 gli Skink Skirmishers 3 hanno
+  caricato a vuoto e poi tirato;
+- chi insegue e arriva addosso a un'unità nuova (p. 156): l'arbitro lo
+  fa fermare a contatto e non succede altro — niente carica, niente
+  combattimento al turno dopo;
+- un tiro che non può andare a segno viene offerto e tirato lo stesso:
+  il giavellotto del Bastiladon è uscito due volte «1 tiri a 7+».
+
+**Nei dati**: le liste 3 e 4 si chiamano tutte e due *La Strada delle
+Pietre*, e `palmares.js` tiene il record **per nome di lista**: una
+partita fra loro due si conta due volte, una vinta e una persa. Vanno
+rinominate.
 
 ## Compito 1 — fatto: la magia in partita (pp. 106-111)
 

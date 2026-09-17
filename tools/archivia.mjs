@@ -23,8 +23,10 @@ import { MM } from '../src/util.js';
 import * as BL from '../src/battlelog.js';
 import { TERRAIN } from '../src/terrain.js';
 
-/* lo stato del tavolo come lo tiene la pagina, preso dall'arbitro */
-function statoDi(S, { liste, gioco }){
+/* lo stato del tavolo come lo tiene la pagina, preso dall'arbitro.
+   Lo usa anche `archivia-registro.mjs`, che di partita ha solo il
+   registro scritto: la forma dello stato e' la stessa. */
+export function statoDi(S, { liste, gioco }){
   const sc = S.sc || {};
   const idx = { A: 0, B: 0 };
   return {

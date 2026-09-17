@@ -235,6 +235,15 @@ Nella scheda **Matchup**, con le due liste scelte, *Gioca contro l'AI* chiede co
 
 La sfida **vive nella scheda del browser**: ricaricando la pagina si ricomincia.
 
+**Una sfida finita, nel diario.** L'app non la salva da sola: quello che resta quando hai finito è il registro, che *Copia il registro* mette negli appunti. `tools/archivia-registro.mjs` prende quel testo e ne fa una voce di `dati/partite.json`, nella stessa forma di ogni altra partita:
+
+```bash
+node tools/archivia-registro.mjs partita.txt --liste 3,4          # cosa ne capisce, senza scrivere
+node tools/archivia-registro.mjs partita.txt --liste 3,4 --mia A --tu Michele --archivia
+```
+
+Dal registro si leggono le perdite mezzo turno per mezzo turno, chi è caduto, chi è scappato e chi si è radunato — e i capi che un reggimento **travolto** si è portato via, che il registro non nomina (p. 207). Il punteggio non lo copia: lo rifà `battlelog.js` dal ruolino, ed è il modo in cui la ricostruzione si controlla da sola — se i punti non tornano con quelli che l'arbitro aveva scritto, qualcosa non è stato letto. Quello che **non** c'è sono le posizioni: la sfida non salva il tavolo, e le fotografie hanno le coordinate a zero. Sta scritto nelle note della partita, perché un tavolo inventato è peggio di un tavolo assente. Se il registro nomina unità che le due liste non hanno, lo strumento si ferma invece di archiviare una partita finta.
+
 ### 6. Partite
 
 La scheda **Partite** è il diario. Ci si arriva in due modi.
