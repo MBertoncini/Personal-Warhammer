@@ -66,8 +66,14 @@ export function makeMagic(doc){
      Of Lustria». Si confrontano con le regole dell'unita'. */
   const graftsFor = (rules = []) => grafts.filter(g => (rules || []).some(r => norm(r) === norm(g.regola)));
   const boundFor = (rules = []) => bound.filter(b => (rules || []).some(r => norm(r) === norm(b.regola)));
+  /* La scheda del mago sul libro, dal nome dell'unita'. Serve perche' il
+     file di New Recruit non dice ne' il Livello ne' i domini fra cui si
+     sceglie — e i Night Goblin Oddnob delle liste salvate non portano
+     nemmeno la regola «Lore of Mork», che sul libro c'e'. */
+  const wizards = d.maghi || [];
+  const wizardBook = u => wizards.find(w => (w.nomi || []).some(n => norm(n) === norm(u && u.name))) || null;
 
-  return { ok: !!doc, lores, grafts, bound, types, all, lore, spell, graftsFor, boundFor,
+  return { ok: !!doc, lores, grafts, bound, types, all, lore, spell, graftsFor, boundFor, wizards, wizardBook,
            type: t => types[t] || { label: t, casella: "", bersaglio: "" } };
 }
 
@@ -436,3 +442,59 @@ export function cancelled(spell, effects = []){
    salvezza a 2+. */
 export const skipOn = (spell, unit = {}) =>
   !!(spell && spell.effetto && spell.effetto.soloConArmatura && !(+unit.armour > 0));
+
+/* ============================================================
+   8 · QUELLO CHE SERVE A CHI DECIDE
+   L'arbitro offre un incantesimo come offre una carica: con dentro gia'
+   quanto serve e che probabilita' ha. I conti sono sui trentasei esiti
+   dei due dadi, e seguono le regole di sopra — il doppio 6 che lancia
+   sempre, il doppio 1 che va sulla tabella, dove un 8-12 lancia lo
+   stesso (p. 109).
+   ============================================================ */
+const FACES = [1, 2, 3, 4, 5, 6];
+const PAIRS = FACES.flatMap(a => FACES.map(b => [a, b]));
+/* sulla tabella del fiasco, quanti dei 36 esiti lanciano (o dissolvono)
+   lo stesso: 8-9 e 10-12, cioe' 5 + 10 = 15 */
+const TABLE_STILL = PAIRS.filter(([a, b]) => a + b >= 8).length / 36;
+
+export function castOdds({ level = 0, cv = 0, mod = 0, cvUp = 0, bound = false, power = 0 } = {}){
+  let cast = 0, perfect = 0, miscast = 0;
+  for (const dice of PAIRS){
+    const r = castResult({ dice, level, cv, mod, cvUp, bound, power });
+    if (r.miscast){ miscast++; continue; }
+    if (r.cast) cast++;
+    if (r.perfect) perfect++;
+  }
+  return { cast: (cast + miscast * TABLE_STILL) / 36, perfect: perfect / 36, miscast: miscast / 36 };
+}
+
+/* `against` e' il risultato di lancio da superare. Il surclassato va
+   sulla stessa tabella, e un 8-12 dissolve (p. 110); un incantesimo
+   vincolato non surclassa nessuno (p. 109). */
+export function dispelOdds({ level = 0, fated = false, against = 0, bound = false } = {}){
+  let ok = 0, outclassed = 0;
+  for (const dice of PAIRS){
+    const r = dispelResult({ dice, level, fated, castTotal: against });
+    if (r.outclassed && !bound){ outclassed++; ok += TABLE_STILL; continue; }
+    if (r.dispelled || (r.outclassed && bound && r.total > against)) ok++;
+  }
+  return { dispel: ok / 36, outclassed: outclassed / 36 };
+}
+
+/* Quanti colpi porta in media un «2D3», un «D6+1», un «3». */
+export function diceMean(spec){
+  if (!spec) return 0;
+  return (spec.n || 0) * ((spec.die || 0) + 1) / 2 + (spec.plus || 0);
+}
+
+/* Un incantesimo che l'app sa applicare da sola: colpi con i dadi scritti,
+   o modifiche e bandierine che `effects.js` sa leggere. Tutti gli altri —
+   i vortici, i trasporti, le sagome, le linee — sono testo da leggere, e
+   un arbitro che li offrisse farebbe tirare un lancio che non cambia
+   niente sul tavolo. */
+export function applies(spell){
+  const e = spell && spell.effetto;
+  if (!e) return false;
+  if (e.colpi) return !!parseDice(e.colpi.dadi);
+  return !!(e.modifiche || e.modificheDado || e.flag);
+}

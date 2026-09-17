@@ -39,7 +39,7 @@ regole di casa del progetto e la storia di tutte le decisioni prese:
   `deploy.js` (la pagina), `store.js`/`sync.js` (i dati) e `agente.js` (il
   modello di linguaggio). Entrano numeri, escono numeri con la traccia di
   come sono venuti.
-- **Prove per tutto.** `npm test` (~1550 asserzioni, ~2 minuti). Ogni regola
+- **Prove per tutto.** `npm test` (~1800 asserzioni, un minuto o due). Ogni regola
   nuova porta le sue prove nel file della sua fase, con etichette in
   italiano che si leggono come frasi.
 - **L'italiano nei commenti e nell'interfaccia**, l'inglese solo nei nomi
@@ -165,46 +165,58 @@ alle unità (voce `personaggi`), e in tutte le partite fra modelli sono
 morti da soli al primo turno. Sono due buchi che pesano sull'esito più
 delle scelte dei modelli.
 
-## Compito 1 — la magia in partita (p. 106 e seguenti)
+## Compito 1 — fatto: la magia in partita (pp. 106-111)
 
-È la voce più grossa che l'arbitro dichiara e non gioca, e l'unica che
-cambia davvero come finiscono le battaglie.
+L'arbitro la gioca. Quello che è stato deciso, perché non si rifaccia la
+stessa strada:
 
-Quello che **c'è già** in `src/magic.js`: i domini con i loro incantesimi
-(`dati/magia/`), la generazione, il tiro di lancio con l'invocazione
-perfetta e il fiasco, il dissolvimento, gli effetti a tempo che
-`effects.js` applica ai profili, e i colpi che un incantesimo infligge
-(già passati per la catena di `combat.js`). Nel tavolo vero (`deploy.js`)
-la fase di magia si gioca già a mano.
+- **gli incantesimi li tira l'arbitro** prima dello schieramento (p. 106),
+  in una fase `S.preparando` in cui chi gioca sceglie il dominio e poi se
+  scambiare un incantesimo con la firma. La scheda di preparazione vince
+  quando c'è: `prep.units[i]` con `level`, `lore` e `spellIds` (id, non
+  testo). `armyFrom` la attacca all'unità come `u.prepara`;
+- **quello che il file non dice sta sul libro**: `dati/magia/domini.json`
+  ha la voce `maghi` — Livello di base, domini fra cui scegliere, regole
+  «Lore of …», libro e pagina — per i sei maghi che le liste salvate
+  schierano (`M.wizardBook(u)`). Il Livello comprato come opzione il file
+  non lo scrive: vale quello di base, ed è il limite `livello`. Il
+  Warlock Engineer è mago solo se l'ha pagato, e senza scheda non lancia;
+- **non esiste una riserva di dadi del vento** in questa edizione: ogni
+  tentativo tira 2D6, un incantesimo una volta per turno, la sorte una
+  volta per turno, il fiasco chiude lanci o dissolvimenti del turno.
+  `S.magia` ricorda solo questo;
+- **la magia sta dove la mette il libro**: una casella `congiura` in
+  testa al turno (potenziamenti e maledizioni), i dardi dentro il `tiro`,
+  gli assalti dentro la `mischia`. Il **dissolvimento** è un
+  `S.pending` di tipo `dissolvi` per l'altro giocatore, e l'assalto di
+  chi non è di turno è un `S.pending` di tipo `assalto` che si apre quando
+  si sceglie `combatti`. Con una domanda in sospeso `apply` accetta solo
+  le risposte a quella (`SOSPESI`);
+- **si offre solo quello che l'app sa applicare** (`MG.applies`: colpi con
+  i dadi, modifiche, bandierine): 23 incantesimi su 56 del manuale base.
+  Gli altri sono il limite `amano`. Le probabilità le fanno
+  `MG.castOdds` e `MG.dispelOdds` sui 36 esiti, con la tabella del
+  fiasco dentro;
+- gli effetti scadono in `passo()` con `EF.sweepExpired`, e il Movimento
+  dell'arbitro sente le modifiche (`movimento()`), come `noMarch` e
+  `noCharge`;
+- limiti nuovi in `LIMITI`: `domini` (dati non caricati), `amano`,
+  `livello`, `assalti` (si lanciano prima che si meni, e le loro ferite
+  non entrano nel risultato), `armatura` (la pelle callosa degli Skink
+  Priest: p. 111 alla lettera li fermerebbe, e non si applica finché una
+  FAQ non lo chiarisce).
 
-Quello che **manca** perché l'arbitro possa giocarla:
+Quello che **resta** della magia: i 33 incantesimi che sono testo
+(vortici, trasporti, sagome, linee — vogliono la geometria del
+Compito 4), gli assalti al passo d'Iniziativa del mago (p. 158), la
+scheda di preparazione nella pagina che chieda `level`, `lore` e
+`spellIds` invece del testo libero di oggi (`prep.js`, `lists.js`), e le
+schede `maghi` degli eserciti che le liste salvate non schierano ancora.
 
-1. **Gli incantesimi generati.** Un file New Recruit dice il dominio e il
-   livello, non quali incantesimi sono usciti (si tirano prima dello
-   schieramento, p. 106). `prep.js` li chiede già come domanda aperta e li
-   salva come testo libero in `prep.units[i].spells`: servono come **id**,
-   non come frase. Due strade, scegli e dichiara: farli tirare all'arbitro
-   a inizio partita (è la regola), oppure leggerli dalla scheda quando ci
-   sono.
-2. **La riserva di dadi del vento di magia.** Guarda sul manuale come si
-   generano i dadi di potere e di dissolvimento in questa edizione, e
-   mettili nello stato dell'arbitro come una risorsa per turno.
-3. **La casella nel turno.** `CASELLE` in `arbitro.js` oggi ha cinque
-   voci; la magia ne aggiunge una (e la Congiurazione nella Strategia, se
-   decidi di giocarla). Ogni casella nuova vuole le sue `options()` — «chi
-   lancia cosa su chi» — e il suo `apply()`.
-4. **Le scelte da offrire a chi gioca.** Un incantesimo è una mossa come
-   una carica: `{ id:"lancia", uid, spell, target, dadi }` con dentro già
-   calcolato quanto serve per lanciarlo e che probabilità c'è, come fa
-   `opzioniCarica`. Poi il dissolvimento tocca **all'altro giocatore**:
-   l'arbitro sa già passare la scelta all'avversario (guarda come è fatta
-   la reazione alla carica, `S.pending`).
-5. Togli `magia` da `LIMITI` quando è fatta, e aggiungi i limiti nuovi che
-   restano (gli oggetti magici, per esempio, restano fuori).
-
-Prove: `test/magia.mjs` per le regole, `test/arbitro.mjs` per la partita —
-lì basta una partita con due maghi che finisca e in cui il registro porti
-almeno un lancio e un dissolvimento.
+Prove: `test/magia.mjs` (probabilità, schede dei maghi) e
+`test/arbitro.mjs` (un lancio con i dadi scelti, il dissolvimento, un
+effetto che scade al turno giusto, e tre partite fra uno Skink Priest e
+un Night Goblin Oddnob sulle liste 1 e 2).
 
 ## Compito 2 — le manovre (p. 125)
 
@@ -240,7 +252,8 @@ mezzo, e oggi il movimento è una linea retta.
   scrivere il codice che le fa passare — nel senso: scrivi la prova con il
   numero che il libro dice, e guarda che sia rossa.
 - `npm run partita` per vedere l'arbitro giocare; `--html partita.html` per
-  guardarla; `--seme N` per rigiocare identica quella che ha sbagliato.
+  guardarla; `--seme N` per rigiocare identica quella che ha sbagliato;
+  `--liste 1,2 --scenario bm-monolite` per una partita con due maghi.
 - Per provare l'app vera serve un server: `python -m http.server 8123` e poi
   **`http://127.0.0.2:8123`** — non `localhost`, che tiene in cache i moduli
   vecchi e ti fa impazzire per un'ora.

@@ -17,6 +17,9 @@ import * as CH from '../src/charge.js';
 import * as CB from '../src/combat.js';
 import { polysOverlap } from '../src/geom.js';
 import { spawnSync } from 'node:child_process';
+import * as MG from '../src/magic.js';
+import * as EF from '../src/effects.js';
+import { MM } from '../src/util.js';
 
 let fails = 0;
 const ok = (label, cond) => {
@@ -31,6 +34,10 @@ const A = liste[3], B = liste[4];       // le due «Strada delle Pietre», 750 p
 
 /* i dadi con il seme: una prova che tira dadi veri non è una prova */
 const seme = s => D.setSource(D.seeded(s));
+/* le caselle per nome: il turno dell'arbitro cresce (la congiurazione
+   e' arrivata in testa), e un indice scritto a mano smette di voler dire
+   quello che diceva */
+const casella = id => AR.CASELLE.findIndex(c => c.id === id);
 
 /* ================================================================= */
 console.log('il tavolo');
@@ -118,7 +125,7 @@ console.log('\nil combattimento a più di due, in partita');
   const g = AR.gruppiInMischia(G);
   ok('due che ne toccano una sola fanno un gruppo solo',
      g.length === 1 && g[0].A.length === 1 && g[0].B.length === 2);
-  G.schierando = false; G.casella = 4; G.army = 'B';
+  G.schierando = false; G.casella = AR.CASELLE.findIndex(c => c.id === 'mischia'); G.army = 'B';
   const opts = AR.options(G);
   ok('e il combattimento si offre come uno', opts.list.filter(x => x.id === 'combatti').length === 1);
   const r = AR.apply(G, opts.list[0]);
@@ -127,6 +134,148 @@ console.log('\nil combattimento a più di due, in partita');
      G.log.some(x => /Risultato:/.test(x.text) && x.page === 153));
   ok('una volta sola per turno', !AR.options(G).list.some(x => x.id === 'combatti'));
 }
+
+/* ================================================================= */
+console.log('\nla magia in partita (pp. 106-111)');
+const M = MG.makeMagic(dati('magia/domini.json'));
+/* le due liste del Monolite: uno Skink Priest contro un Night Goblin
+   Oddnob. Il file non dice il Livello di nessuno dei due, e il libro sì */
+const L1 = liste[1], L2 = liste[2];
+const conScheda = (l, units) => ({ ...l, prep: { general: null, bsb: null, note: '', units } });
+{
+  seme(1);
+  const G = AR.newBattle({ A: L1, B: L2, scenario: 'bm-monolite', magia: M });
+  const prete = G.units.find(u => u.name === 'Skink Priest');
+  const nob = G.units.find(u => u.name === 'Night Goblin Oddnob');
+  ok('i due maghi li riconosce il libro, con il Livello di base',
+     prete.mago.level === 1 && nob.mago.level === 3 && /Legends: Lizardmen, p\. 4/.test(prete.mago.da));
+  ok('e il Livello che il file non dice è un limite dichiarato', G.log.some(r => /\[limite\] il Livello/.test(r.text)));
+  const o = AR.options(G);
+  ok('prima di schierare si sceglie il dominio, e sceglie chi schiera quel mago',
+     o.fase === 'Incantesimi' && o.player === 'A' && o.list.every(x => x.id === 'dominio') &&
+     o.list.map(x => x.lore).join() === 'battle,elementalism,illusion');
+  ok('ogni dominio dice quanti incantesimi l app gioca davvero', o.list.every(x => /ne gioca \d su 7/.test(x.why)));
+  AR.apply(G, o.list[0]);
+  ok('scelto il dominio, gli incantesimi si tirano: uno per Livello',
+     prete.mago.lore === 'battle' && prete.mago.known.length === 1 &&
+     G.log.some(r => /Skink Priest, Livello 1 .* Battle Magic: \d/.test(r.text) && r.page === 106));
+  /* finché ci sono maghi da preparare non si schiera nessuno */
+  let passi = 0;
+  while (G.preparando && passi++ < 10){ const oo = AR.options(G); AR.apply(G, oo.list[0]); }
+  ok('poi il Night Goblin, e solo dopo si schiera',
+     nob.mago.known.length === 3 && AR.options(G).fase === 'Schieramento');
+  ok('senza Lore of Mork nel file, gli innesti li porta la scheda del libro', nob.mago.regole.includes('Lore of Mork'));
+}
+{
+  /* la scheda di preparazione vince sul libro: Livello, dominio, e gli
+     incantesimi già tirati quando li porta come id */
+  const A = conScheda(L1, { 1: { level: 2, lore: 'battle', spellIds: ['fireball', 'oakenShield'] } });
+  const G = AR.newBattle({ A, B: L2, scenario: 'bm-monolite', magia: M });
+  const prete = G.units.find(u => u.name === 'Skink Priest');
+  ok('Livello e incantesimi dalla scheda, senza tirare niente',
+     prete.mago.level === 2 && prete.mago.known.join() === 'fireball,oakenShield' &&
+     /scheda/.test(prete.mago.da));
+  const B = conScheda(L2, { 1: { lore: 'illusion' } });
+  const H = AR.newBattle({ A: L1, B, scenario: 'bm-monolite', magia: M });
+  ok('con il dominio scritto nella scheda non si chiede, si tira',
+     H.units.find(u => u.name === 'Night Goblin Oddnob').mago.known.length === 3);
+}
+{
+  const G = AR.newBattle({ A: liste[12], B: L2, scenario: 'bm-monolite', magia: M });
+  const w = G.units.find(u => u.name === 'Warlock Engineer');
+  ok('un Warlock Engineer senza scheda non è un mago, e lo si dice',
+     !(w.mago && w.mago.level) && G.log.some(r => /Warlock Engineer: il libro lo fa mago solo con un'opzione/.test(r.text)));
+  MG.useMagic(null);
+  /* senza i dati del libro, un mago si riconosce solo da quello che
+     dice la scheda: qui il Livello */
+  const H = AR.newBattle({ A: conScheda(L1, { 1: { level: 2 } }), B: L2, scenario: 'bm-monolite' });
+  ok('senza i domini caricati la magia non si gioca, e lo dice',
+     !H.preparando && H.log.some(r => /\[limite\] la magia non si gioca/.test(r.text)) &&
+     !H.units.some(u => u.mago));
+  ok('e «la fase di magia non si gioca» non è più fra i limiti', !AR.LIMITI.some(l => l.id === 'magia'));
+}
+{
+  /* Un lancio intero con i dadi scelti: Fireball su una mob a dodici
+     pollici, il Night Goblin prova a dissolverlo e non ce la fa. */
+  const A = conScheda(L1, { 1: { level: 2, lore: 'battle', spellIds: ['fireball', 'oakenShield'] } });
+  const B = conScheda(L2, { 1: { lore: 'illusion', spellIds: ['miasmicMirage'] } });
+  const G = AR.newBattle({ A, B, scenario: 'bm-monolite', magia: M });
+  ok('con gli incantesimi dalla scheda non c è niente da preparare', !G.preparando);
+  const prete = G.units.find(u => u.name === 'Skink Priest');
+  const mob = G.units.find(u => u.name === 'Night Goblin Mobs');
+  const nob = G.units.find(u => u.name === 'Night Goblin Oddnob');
+  for (const u of [prete, mob, nob]) u.placed = true;
+  prete.x = 600; prete.y = 900; prete.rot = 0;
+  mob.x = 600; mob.y = 900 - 12 * MM; mob.rot = 180;
+  nob.x = 700; nob.y = 900 - 12 * MM; nob.rot = 180;
+  G.schierando = false; G.army = 'A'; G.turno = 1;
+  G.casella = AR.CASELLE.findIndex(c => c.id === 'tiro');
+  const o = AR.options(G);
+  const fuoco = o.list.find(x => x.id === 'lancia' && x.spell === 'fireball' && x.target === mob.uid);
+  ok('nel tiro la Fireball si offre, con la probabilità e le perdite attese',
+     !!fuoco && fuoco.chance > 0.7 && fuoco.chance < 0.75 && /≈ \d/.test(fuoco.why) && /riesce il 7\d%/.test(fuoco.why));
+  ok('un potenziamento nel tiro non si offre (p. 108)', !o.list.some(x => x.spell === 'oakenShield'));
+
+  /* i dadi: 4 e 5 per il lancio, 1 e 2 per il dissolvimento, 3 e 3 per
+     i colpi; poi quelli che servono al tiro per ferire */
+  const coda = [4, 5, 1, 2, 3, 3];
+  D.setSource(n => (coda.length ? coda.shift() : 4) - 1);
+  const r = AR.apply(G, fuoco);
+  ok('lanciata con 11: 4 + 5 + 2 di Livello',
+     r.ok && G.log.some(x => /lancio 4 \+ 5 \+ 2 di Livello = 11 contro 8\+ — lanciato/.test(x.text)));
+  const d = AR.options(G);
+  ok('e il dissolvimento tocca all altro giocatore, subito', d.player === 'B' && d.fase === 'Magia');
+  ok('con il suo mago, la sorte e il lasciar perdere',
+     d.list.some(x => x.id === 'dissolvi' && x.uid === nob.uid) && d.list.some(x => x.fato) &&
+     d.list.some(x => x.id === 'lascia'));
+  ok('mentre si aspetta la risposta non si fa altro',
+     AR.apply(G, { id:'tira', uid: prete.uid, target: mob.uid }).ok === false);
+  const persi = mob.lost || 0;
+  AR.apply(G, d.list.find(x => x.id === 'dissolvi' && x.uid === nob.uid));
+  ok('1 + 2 + 3 non supera 11: tiene (p. 110)',
+     G.log.some(x => /Night Goblin Oddnob contro Fireball: dissolvimento 1 \+ 2 \+ 3 di Livello = 6 contro 11 — tiene/.test(x.text)));
+  ok('e i colpi arrivano: 3 + 3 = 6, senza tirare per colpire',
+     G.log.some(x => /Fireball: 2D6 → 3 \+ 3 = 6 colpi/.test(x.text)) &&
+     G.log.some(x => /Night Goblin Mobs: 6 colpi a Forza 4/.test(x.text)));
+  ok('e i goblin caduti restano caduti', (mob.lost || 0) > persi);
+  ok('la domanda è chiusa', !G.pending && AR.options(G).player === 'A');
+  ok('e la Fireball non si offre una seconda volta nello stesso turno',
+     !AR.options(G).list.some(x => x.spell === 'fireball'));
+
+  /* la maledizione del Night Goblin, nel suo turno: un effetto a tempo
+     che l'arbitro mette e poi toglie */
+  G.army = 'B'; G.casella = AR.CASELLE.findIndex(c => c.id === 'congiura');
+  const mm = AR.options(G).list.find(x => x.spell === 'miasmicMirage' && x.target === prete.uid);
+  ok('in congiurazione la maledizione si offre sullo Skink Priest', !!mm);
+  coda.push(6, 5);
+  AR.apply(G, mm);
+  ok('il dissolvimento tocca ad A', AR.options(G).player === 'A');
+  AR.apply(G, { id:'lascia' });
+  ok('lasciata passare, lo Skink Priest ha il −2 al Movimento e non marcia',
+     EF.statOf(prete, 'M').value === 4 && EF.flagsOf(prete).flags.noMarch);
+  /* fine turno di B, inizio del turno 2 di A: «fino al tuo prossimo
+     inizio turno» vuol dire che tiene ancora, e scade quando torna B */
+  G.casella = AR.CASELLE.length - 1; G.primo = 'A';
+  AR.apply(G, { id:'avanti' });
+  ok('al turno di A il Miasmic Mirage è ancora lì', G.army === 'A' && EF.flagsOf(prete).flags.noMarch);
+  G.casella = AR.CASELLE.length - 1;
+  AR.apply(G, { id:'avanti' });
+  ok('e quando torna B, finisce', G.army === 'B' && !EF.flagsOf(prete).flags.noMarch &&
+     G.log.some(x => /finisce Miasmic Mirage/.test(x.text)));
+}
+{
+  /* e una partita intera con due maghi, giocata dall'euristica */
+  for (const s of [1, 2, 3]){
+    seme(s);
+    const G = AR.newBattle({ A: L1, B: L2, scenario: 'bm-monolite', magia: M });
+    await AG.giocaPartita(AR, G, { A: AG.agenteEuristico({}), B: AG.agenteEuristico({}) });
+    ok(`seme ${s}: la partita con due maghi finisce`, G.finita && !!G.esito);
+    ok(`seme ${s}: nessuna mossa rifiutata`, !G.log.some(r => /rifiutat/.test(r.text)));
+    ok(`seme ${s}: il registro porta almeno un lancio`, G.log.some(r => / lancia .*: lancio /.test(r.text)));
+    if (s > 1) ok(`seme ${s}: e almeno un dissolvimento`, G.log.some(r => /contro .*: dissolvimento/.test(r.text)));
+  }
+}
+
 
 /* ================================================================= */
 console.log('\nla fotografia che si mette davanti a chi gioca');
@@ -318,7 +467,7 @@ console.log('\nla carica che trova il posto occupato');
   const t2 = metti(G2, uid(G2, 6), 600, 520);
   aContattoDi(G2, t2, wb);
   const s2 = metti(G2, uid(G2, 1), 600, 640);
-  G2.casella = 1; G2.army = 'A';
+  G2.casella = casella('cariche'); G2.army = 'A';
   const cariche = AR.options(G2).list.filter(x => x.id === 'carica' && x.uid === s2.uid);
   ok('e una carica senza posto non si offre nemmeno', !cariche.some(x => x.target === wb.uid));
 }
@@ -354,9 +503,9 @@ console.log('\nstare fermi non è muoversi (p. 138)');
   const G = nuova();
   const sk = metti(G, uid(G, 3), 600, 600);
   metti(G, uid(G, 505), 600, 380);
-  G.casella = 2; G.army = 'A';
+  G.casella = casella('mosse'); G.army = 'A';
   AR.apply(G, { id:'ferma', uid: sk.uid });
-  G.casella = 3;
+  G.casella = casella('tiro');
   const tiri = AR.options(G).list.filter(x => x.id === 'tira' && x.uid === sk.uid);
   ok('chi è rimasto fermo tira senza il −1 del movimento', tiri.length && tiri.every(x => !/ha mosso/.test(x.why)));
   ok('e l opzione dice la probabilità di colpire', tiri.every(x => /\d+% a tiro/.test(x.why)));
@@ -474,7 +623,7 @@ console.log('\nil raduno, una volta per turno (p. 117)');
   const sk = metti(G, uid(G, 3), 600, 600);
   metti(G, uid(G, 505), 600, 250);
   sk.fled = true;
-  G.casella = 0; G.army = 'A';
+  G.casella = casella('raduno'); G.army = 'A';
   const prima = AR.options(G).list.find(x => x.id === 'raduna' && x.uid === sk.uid);
   ok('chi fugge può tentare il raduno', !!prima);
   D.setSource(() => 5);                                  // tutti sei: fallisce
@@ -497,7 +646,7 @@ console.log('\nla carica su chi fugge come reazione (pp. 120-121)');
   const G = nuova();
   const sv = metti(G, uid(G, 1), 600, 600);
   const wb = metti(G, uid(G, 501), 600, 430);
-  G.casella = 1; G.army = 'A';
+  G.casella = casella('cariche'); G.army = 'A';
   ok('la carica si dichiara', AR.apply(G, { id:'carica', uid: sv.uid, target: wb.uid }).ok);
   const fuga = AR.options(G).list.find(x => x.kind === 'flee');
   ok('e chi la subisce può fuggire', !!fuga);
@@ -514,7 +663,7 @@ console.log('\nla carica su chi fugge come reazione (pp. 120-121)');
   const s2 = metti(G2, uid(G2, 1), 600, 600);
   const w2 = metti(G2, uid(G2, 501), 600, 430);
   w2.fled = true;
-  G2.casella = 1; G2.army = 'A';
+  G2.casella = casella('cariche'); G2.army = 'A';
   AR.apply(G2, { id:'carica', uid: s2.uid, target: w2.uid });
   const r2 = AR.options(G2).list;
   ok('chi sta già fuggendo non «tiene la posizione»', r2.length === 1 && r2[0].kind === 'fleeing');
@@ -527,7 +676,7 @@ console.log('\ntira e tiene (p. 120)');
   const G = nuova();
   const sv = metti(G, uid(G, 1), 600, 600);
   const ng = metti(G, uid(G, 504), 600, 380);
-  G.casella = 1; G.army = 'A';
+  G.casella = casella('cariche'); G.army = 'A';
   AR.apply(G, { id:'carica', uid: sv.uid, target: ng.uid });
   const spara = AR.options(G).list.find(x => x.kind === 'stand');
   ok('chi ha un arco può scegliere di tirare e tenere', !!spara);
@@ -540,7 +689,7 @@ console.log('\nil Panico, un quarto in una fase (p. 141)');
   const G = nuova();
   const tg = metti(G, uid(G, 6), 600, 600);
   metti(G, uid(G, 505), 600, 200);
-  G.casella = 3; G.army = 'B';
+  G.casella = casella('tiro'); G.army = 'B';
   const test = () => G.log.filter(r => /test di Panico/.test(r.text)).length;
   tg.faseTiro = IN.faseDi(G); tg.usInizioFase = 15; tg.lost = 1;
   IN.panico(G, tg, 'prova');

@@ -33,6 +33,7 @@ import * as PR from '../src/profiles.js';
 import * as ARM from '../src/armies.js';
 import * as PREP from '../src/prep.js';
 import * as CB from '../src/combat.js';
+import * as MG from '../src/magic.js';
 import { SCENARIOS } from '../src/scenarios.js';
 import { paginaHTML, fotogramma, coloreTerreno, stessoTavolo } from './replay.mjs';
 import * as ARCH from './archivia.mjs';
@@ -93,6 +94,8 @@ D.setSource(D.seeded(seme));
 PR.useProfiles(dati('profili.json'));
 const idx = dati(path.join('eserciti', 'indice.json'));
 ARM.useArmies(ARM.makeArmies((idx.file || []).map(f => dati(path.join('eserciti', f)))));
+/* i domini e le schede dei maghi: senza, la magia non si gioca */
+const magia = MG.useMagic(MG.makeMagic(dati(path.join('magia', 'domini.json'))));
 
 /* ---- le due liste ---- */
 const liste = dati('liste.json');
@@ -204,7 +207,7 @@ const faiAgente = (tag, nome) => {
 
 const nomi = { A: faz.A.nome, B: faz.B.nome };
 if (nomi.A === nomi.B){ nomi.A += ' (A)'; nomi.B += ' (B)'; }
-const S = AR.newBattle({ A, B, scenario, nomi });
+const S = AR.newBattle({ A, B, scenario, nomi, magia });
 const agenti = { A: faiAgente('A', nomi.A), B: faiAgente('B', nomi.B) };
 const conModello = Object.values(agenti).some(a => !/euristica/.test(a.nome));
 
@@ -254,7 +257,8 @@ const esito = await AG.giocaPartita(AR, S, {
   onPasso: ({ player, mossa, perche, esito, opzioni, agente }) => {
     /* la casella e il turno sono quelli in cui la mossa e' stata
        scelta: dopo la mossa l'arbitro puo' essere gia' andato avanti */
-    const c = opzioni.fase === 'Schieramento' ? 'schieramento' : (opzioni.casella || '');
+    const c = opzioni.fase === 'Incantesimi' ? 'incantesimi'
+            : opzioni.fase === 'Schieramento' ? 'schieramento' : (opzioni.casella || '');
     if (c !== casella){ casella = c; if (!breve) daScrivere = casella.toUpperCase(); }
     /* Passare quando c'era altro da fare e' una scelta, e si scrive col
        suo perche'. Prima il registro taceva: interi turni di movimento

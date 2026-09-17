@@ -46,6 +46,44 @@ export function agenteEuristico({ nome = "euristica" } = {}){
         return { scelta: scelto, perche: `la metto ${scelto.dove}: uno schieramento largo non si fa prendere di fianco` };
       }
 
+      /* INCANTESIMI, PRIMA DI SCHIERARE: il dominio con piu'
+         incantesimi che l'app sa giocare, e lo scambio con la firma
+         solo se si lascia uno che resterebbe sul libro. */
+      if (primo("dominio")){
+        const quanti = x => +((/ne gioca (\d+) su 7/.exec(x.why) || [])[1] || 0);
+        const d = l.filter(x => x.id === "dominio").sort((a, b) => quanti(b) - quanti(a))[0];
+        return { scelta: d, perche: `${d.nome} studia ${d.contro}: ${d.why}` };
+      }
+      if (primo("tieni")){
+        const s = l.find(x => x.id === "scambia" && /da leggere sul libro\)/.test(x.why.split(" e prende ")[0]) &&
+                              !/da leggere sul libro\)/.test(x.why.split(" e prende ")[1] || ""));
+        return s
+          ? { scelta: s, perche: `${s.nome} ${s.why}: meglio un incantesimo che si gioca` }
+          : { scelta: primo("tieni"), perche: `${primo("tieni").nome} tiene quello che è uscito` };
+      }
+
+      /* DISSOLVERE: si prova sempre, perche' al tavolo si fa cosi' — la
+         sorte non costa niente e un mago rischia il surclassamento una
+         volta su trentasei. Con chi ce l'ha piu' alta; a parita', il
+         mago, che la sorte e' meglio tenerla per dopo. */
+      if (primo("dissolvi")){
+        const d = l.filter(x => x.id === "dissolvi" && x.chance > 0)
+          .sort((a, b) => (b.chance - a.chance) || ((a.fato ? 1 : 0) - (b.fato ? 1 : 0)))[0];
+        if (d) return { scelta: d, perche: `provo a dissolvere ${d.contro} con ${d.nome}: ${d.why}` };
+        return { scelta: primo("lascia"), perche: "nessun dissolvimento ha una possibilità" };
+      }
+
+      /* LANCIARE: l'incantesimo che fa piu' male, se riesce almeno una
+         volta su due. Un assalto di chi non e' di turno si lancia con la
+         stessa regola, e altrimenti si combatte. */
+      const lanci = l.filter(x => x.id === "lancia" && x.chance >= 0.5);
+      if (lanci.length){
+        const x = lanci[0];
+        return { scelta: x, perche: `${x.nome} lancia: ${x.why}` };
+      }
+      if (primo("lascia"))
+        return { scelta: primo("lascia"), perche: primo("lascia").why };
+
       /* RADUNO: sempre. Non provarci non ha mai senso. */
       if (primo("raduna")){
         const r = primo("raduna");
@@ -140,7 +178,9 @@ Come si ragiona in questo gioco:
 - le unità da tiro non vanno mandate in mischia, e chi spara dopo aver mosso colpisce peggio;
 - un'unità sola contro due nemici perde: si arriva in due sullo stesso bersaglio quando si può;
 - la mossa «passa» chiude la fase: le unità che non hanno ancora agito in questa fase restano come sono;
-- un tiro con una probabilità bassa di colpire vale poco: meglio avvicinarsi o cambiare bersaglio.`;
+- un tiro con una probabilità bassa di colpire vale poco: meglio avvicinarsi o cambiare bersaglio;
+- la magia: ogni incantesimo si tenta una volta per turno, e l'avversario prova a dissolverlo subito;
+  quando dissolvi tu, la sorte si usa una volta sola per turno, e un mago che fa doppio 1 rischia la tabella del fiasco.`;
 
 export function agenteGemini({ apiKey, model = "gemini-3.6-flash", fetchFn = null,
                                nome = "Gemini", riserva = null, onError = null,

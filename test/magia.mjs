@@ -206,5 +206,53 @@ console.log('\nfin dove arriva la magia di un pezzo');
 }
 
 /* ================================================================= */
+console.log('\nquello che serve all arbitro per offrire un incantesimo');
+{
+  /* Livello 2 contro 8+: servono 6 o piu' su due dadi, 26 esiti su 36;
+     il doppio 1 e' fuori, e ci rientra una volta su tre abbondante
+     dalla tabella del fiasco (8-12, 15 esiti su 36) */
+  const o = MG.castOdds({ level: 2, cv: 8 });
+  ok('Livello 2 contro 8+: lancia 26 volte su 36, più il fiasco che lancia lo stesso',
+     Math.abs(o.cast - (26 + 15 / 36) / 36) < 1e-9);
+  ok('il doppio 1 è il fiasco, una volta su 36', Math.abs(o.miscast - 1 / 36) < 1e-9);
+  ok('contro un 20+ lanciano solo il doppio 6 e il fiasco che va bene', Math.abs(MG.castOdds({ level: 1, cv: 20 }).cast - (1 + 15 / 36) / 36) < 1e-9);
+  ok('un vincolato non ha fiasco', MG.castOdds({ bound: true, power: 2, cv: 9 }).miscast === 0);
+
+  /* la sorte contro un 9: serve PIU' di 9 (p. 110), cioe' 10, 11 o 12 */
+  const f = MG.dispelOdds({ fated: true, against: 9 });
+  ok('la sorte contro un 9 dissolve 6 volte su 36, e non surclassa mai',
+     Math.abs(f.dispel - 6 / 36) < 1e-9 && f.outclassed === 0);
+  const w = MG.dispelOdds({ level: 3, against: 9 });
+  ok('un Livello 3 contro un 9 dissolve con 7 o più, e il doppio 1 lo manda sulla tabella',
+     Math.abs(w.outclassed - 1 / 36) < 1e-9 && Math.abs(w.dispel - (21 + 15 / 36) / 36) < 1e-9);
+  ok('il doppio 6 slega anche contro un 20', Math.abs(MG.dispelOdds({ fated: true, against: 20 }).dispel - 1 / 36) < 1e-9);
+
+  ok('in media 2D3 fa 4 colpi, D6+1 ne fa 4 e mezzo, 3 ne fa 3',
+     MG.diceMean(MG.parseDice('2D3')) === 4 && MG.diceMean(MG.parseDice('D6+1')) === 4.5 &&
+     MG.diceMean(MG.parseDice('3')) === 3);
+
+  ok('Fireball e Word of Pain l app li applica', MG.applies(M.spell('fireball')) && MG.applies(M.spell('wordOfPain')));
+  ok('un vortice e un trasporto no: sono testo da leggere',
+     !MG.applies(M.spell('pillarOfFire')) && !MG.applies(M.spell('arcaneUrgency')));
+  ok('e nemmeno un dardo che è una linea di 5D6 pollici', !MG.applies(M.spell('gazeOfGork')));
+}
+
+console.log('\ni maghi del libro, che il file non descrive');
+{
+  const nob = M.wizardBook({ name: 'Night Goblin Oddnob' });
+  ok('un Night Goblin Oddnob è Livello 3, Illusion o Waaagh! (Ravening Hordes, p. 18)',
+     nob && nob.livello === 3 && nob.domini.join() === 'illusion,waaagh' && nob.page === 18);
+  ok('e porta Lore of Mork, che la lista salvata non scrive', nob.regole.includes('Lore of Mork'));
+  const prete = M.wizardBook({ name: 'Skink Priest' });
+  ok('uno Skink Priest è Livello 1 (Legends: Lizardmen, p. 4), e il Livello 2 è un opzione',
+     prete.livello === 1 && /Livello 2/.test(prete.opzione) && prete.page === 4);
+  ok('lo Slann si trova anche al plurale del file', M.wizardBook({ name: 'Slann Mage-Priests' }).livello === 4);
+  ok('un Warlock Engineer è mago solo se l ha pagato', M.wizardBook({ name: 'Warlock Engineer' }).livello === 0);
+  ok('ogni dominio nominato esiste', M.wizards.every(w => w.domini.every(d => M.lore(d))));
+  ok('ogni scheda dice libro e pagina', M.wizards.every(w => w.libro && w.page > 0));
+  ok('e chi non è nel libro non è un mago per sbaglio', M.wizardBook({ name: 'Saurus Warriors' }) === null);
+}
+
+/* ================================================================= */
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

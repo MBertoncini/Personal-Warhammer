@@ -45,10 +45,11 @@ import * as SH from './shoot.js';
 import * as PS from './psych.js';
 import * as VC from './victory.js';
 import * as PREP from './prep.js';
+import * as MG from './magic.js';
+import * as EF from './effects.js';
 import { splitStat, moveInfo } from './profiles.js';
-import { roll, leadershipTest, stat, rankBonus } from './rules.js';
+import { roll, d3, leadershipTest, stat, rankBonus, woundOn, saveOn, chance as chanceOf } from './rules.js';
 import { SCENARIOS, geometry } from './scenarios.js';
-import { isWizard } from './magic.js';
 import { troopType, unitStrength } from './troops.js';
 
 /* ============================================================
@@ -58,8 +59,16 @@ import { troopType, unitStrength } from './troops.js';
    lavoro futuro, non una scusa.
    ============================================================ */
 export const LIMITI = [
-  { id:"magia",     what:"la fase di magia non si gioca", page:106,
-    why:"generare e lanciare ci sono in `magic.js`, ma servono gli incantesimi scelti prima della partita, e una lista non li porta" },
+  { id:"domini",    what:"la magia non si gioca in questa partita", page:106,
+    why:"i domini (`dati/magia/domini.json`) non sono stati passati all'arbitro: chi lo usa li carica con `useMagic` o li dà a `newBattle`" },
+  { id:"amano",     what:"gli incantesimi che l'app non sa applicare non si offrono", page:107,
+    why:"vortici, trasporti, sagome e linee sono testo da leggere: l'arbitro offre solo quelli che portano colpi con i loro dadi, modifiche o bandierine, e un mago che conosce solo gli altri non lancia" },
+  { id:"livello",   what:"il Livello di un mago è quello di base del suo libro", page:106,
+    why:"il file di New Recruit non scrive il Livello comprato come opzione: se la scheda di preparazione non lo dice, un Livello pagato in più non si vede" },
+  { id:"assalti",   what:"gli assalti si lanciano prima che il combattimento cominci", page:158,
+    why:"il libro li vuole al passo d'Iniziativa del mago; e le loro ferite tolgono modelli ma non entrano nel risultato del combattimento, che `meleeFight` conta da sé" },
+  { id:"armatura",  what:"un mago con armatura lancia lo stesso", page:111,
+    why:"la pelle callosa degli Skink Priest conta come armatura leggera, e letto alla lettera il libro toglierebbe loro il lancio: finché una FAQ non lo chiarisce il divieto non si applica" },
   { id:"sagome",    what:"le sagome e le macchine da guerra sparano come un'arma normale", page:222,
     why:"deviazione e «sotto in parte» stanno in `shoot.js` e vogliono la posizione modello per modello" },
   { id:"riforma",   what:"nessuno si riforma né gira sul posto per scelta", page:125,
@@ -89,10 +98,14 @@ export const LIMITI = [
 ];
 
 /* Le caselle del turno che questo arbitro gioca. Sono meno delle
-   sedici di `phases.js`, e la differenza e' dichiarata: qui non c'e'
-   la magia, non c'e' la sotto-fase di comando, e le mosse restanti
-   sono un passo solo. */
+   sedici di `phases.js`, e la differenza e' dichiarata: non c'e' la
+   sotto-fase di comando, e le mosse restanti sono un passo solo. La
+   magia non ha una casella per se': il libro la sparge nel turno
+   (p. 108), e qui sta dove lui la mette — la congiurazione per
+   potenziamenti e maledizioni, il tiro per i dardi, la mischia per gli
+   assalti. */
 export const CASELLE = [
+  { id:"congiura", fase:"Strategia",    page:108, what:"i maghi lanciano potenziamenti e maledizioni" },
   { id:"raduno",  fase:"Strategia",     page:117, what:"chi fugge prova a fermarsi" },
   { id:"cariche", fase:"Movimento",     page:118, what:"si dichiarano le cariche, e chi le subisce reagisce" },
   { id:"mosse",   fase:"Movimento",     page:122, what:"chi non ha caricato avanza, marcia o resta fermo" },
@@ -142,6 +155,9 @@ export function armyFrom(lista, army, from = 0){
      registro in cui non si capisce chi ha sparato: le omonime prendono
      un numero. Il nome del libro resta in `baseName`, che e' quello con
      cui si cercano i profili. */
+  /* le risposte della scheda di preparazione (`prep.js`) viaggiano con
+     l'unita': e' li' che stanno il Livello e il dominio di un mago */
+  const prep = PREP.prepOf(lista).units || {};
   const quante = new Map();
   for (const p of lista.units || []) quante.set(p.name, (quante.get(p.name) || 0) + 1);
   const visti = new Map();
@@ -154,11 +170,14 @@ export function armyFrom(lista, army, from = 0){
       x: 0, y: 0, rot: army === "A" ? 0 : 180,
       placed: false, lost: 0, dead: false, fled: false, wounds: 0,
       fallen: [], effects: [], anchor: null,
+      prepara: prep[i] || null,
     };
   });
 }
 
-export function newBattle({ A, B, scenario = "bm-strada", nomi = null } = {}){
+/* `magia` e' quello che torna `makeMagic`: senza, vale quello che
+   `loadMagic` o `useMagic` hanno lasciato in memoria. */
+export function newBattle({ A, B, scenario = "bm-strada", nomi = null, magia = null } = {}){
   const sc = SCENARIOS[scenario] || SCENARIOS["bm-strada"];
   const [tw, th] = sc.table;
   const W = tw * MM, H = th * MM;
@@ -190,6 +209,11 @@ export function newBattle({ A, B, scenario = "bm-strada", nomi = null } = {}){
     turno: 1, army: "A", casella: 0, schierando: true, primo: "A",
     rounds: 6, finita: false, esito: null,
     log: [], detto: new Set(), pending: null,
+    /* la magia che si ricorda fra un gesto e l'altro: chi ha gia'
+       tentato la sorte in questo turno, e chi dopo un fiasco non lancia
+       o non dissolve piu' (pp. 109-110) */
+    magia: { M: null, fato: {}, stop: {} },
+    preparando: false,
   };
   S.usStart.A = totalUS(S, "A");
   S.usStart.B = totalUS(S, "B");
@@ -202,6 +226,9 @@ export function newBattle({ A, B, scenario = "bm-strada", nomi = null } = {}){
     return i != null && (l.units || [])[i] ? from + i + 1 : null;
   };
   S.generale = { A: genDi(A, 0), B: genDi(B, 500) };
+  const M = magia || MG.magicNow();
+  S.magia.M = M && M.ok ? M : null;
+  preparaMaghi(S);
   return S;
 }
 
@@ -455,6 +482,12 @@ export function postiPer(S, u){
 export function options(S){
   if (S.finita) return { player: null, fase: "finita", what: "la partita è finita", list: [] };
 
+  /* prima dello schieramento si generano gli incantesimi (p. 106) */
+  if (S.preparando){
+    const o = opzioniPreparazione(S);
+    if (o) return o;
+  }
+
   if (S.schierando){
     const prossima = daSchierare(S);
     if (!prossima) return { player: S.army, fase: "Schieramento", what: "tutti schierati", list: [{ id:"avanti", why:"si comincia" }] };
@@ -479,6 +512,24 @@ export function options(S){
              list: S.pending.list };
   }
 
+  /* un incantesimo appena lanciato: il dissolvimento tocca all'altra
+     parte, subito (p. 110) */
+  if (S.pending && S.pending.kind === "dissolvi"){
+    const l = S.pending.lancio;
+    const sp = S.magia.M.spell(l.spell), w = byUid(S, l.caster);
+    return { ...base, player: altro(l.army), fase: "Magia", page: 110,
+             what: `${w.name} ha lanciato ${sp.name} con ${l.total}: lo si prova a dissolvere?`,
+             list: S.pending.list };
+  }
+  /* un combattimento sta per cominciare: i maghi di chi non e' di turno
+     possono lanciare i loro assalti (p. 108) */
+  if (S.pending && S.pending.kind === "assalto"){
+    return { ...base, player: altro(S.army), fase: "Corpo a corpo", page: 158,
+             what: "prima che si meni: i tuoi maghi lanciano un assalto?", list: S.pending.list };
+  }
+
+  if (c.id === "congiura") return { ...base, list: [...opzioniLancio(S, ["enchantment", "hex"]),
+                                                   avanti("nessun altro incantesimo")] };
   if (c.id === "raduno")  return { ...base, list: opzioniRaduno(S) };
   if (c.id === "cariche") return { ...base, list: opzioniCarica(S) };
   if (c.id === "mosse")   return { ...base, list: opzioniMossa(S) };
@@ -489,6 +540,7 @@ export function options(S){
 
 const byUid = (S, uid) => S.units.find(u => u.uid === uid) || null;
 const avanti = why => ({ id:"avanti", why });
+const altro = army => army === "A" ? "B" : "A";
 
 function daSchierare(S){
   /* chi ha rinunciato — perche' nella zona non c'era piu' posto — non
@@ -522,8 +574,9 @@ function opzioniCarica(S){
     /* chi ha gia' fatto qualcosa in questo turno non dichiara cariche:
        ci e' andata male una volta e basta */
     if (u.fled || u.charged || u.moved || ingaggiata(S, u)) continue;
-    const mv = moveInfo(u);
-    const move = mv.m || (mv.random ? tiraRandom(S, u, mv) : 0);
+    /* Miasmic Mirage, Earthen Ramparts: chi ce l'ha addosso non carica */
+    if (bandiera(u, "noCharge")) continue;
+    const { move } = movimento(S, u);
     if (!move) continue;
     for (const t of nemiciDi(S, u)){
       const d = CH.declareCharge({
@@ -559,8 +612,7 @@ function opzioniMossa(S){
   const out = [];
   for (const u of inCampo(S, S.army)){
     if (u.fled || u.charged || ingaggiata(S, u) || u.moved) continue;
-    const mv = moveInfo(u);
-    const move = mv.m || (mv.random ? tiraRandom(S, u, mv) : 0);
+    const { mv, move } = movimento(S, u);
     if (!move){ continue; }
     const t = piuVicino(S, u);
     if (!t) continue;
@@ -574,7 +626,7 @@ function opzioniMossa(S){
     out.push({ id:"avanza", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
                why: `${move}″ verso ${t.name}, che è a ${d}″` + (mv.why ? ` (${mv.why})` : ""),
                page: 122 });
-    out.push({ id:"marcia", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
+    if (!bandiera(u, "noMarch")) out.push({ id:"marcia", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
                why: `${move * 2}″ verso ${t.name}` +
                     (d <= CH.MARCH_WATCH ? `, ma a ${CH.MARCH_WATCH}″ da un nemico serve un test di Comando (p. 123)` : ""),
                page: 123 });
@@ -611,6 +663,7 @@ function opzioniTiro(S){
                  attesa: f.kills, page: 136 });
     }
   }
+  out.push(...opzioniLancio(S, ["missile"]));
   out.sort((a, b) => b.attesa - a.attesa);
   return [...out, avanti("nessun altro tiro")];
 }
@@ -625,7 +678,9 @@ function opzioniMischia(S){
     .filter(x => !fatto(S, x.g));
   if (!gruppi.length) return [avanti("nessun combattimento da risolvere")];
   const nomi = l => l.map(u => u.name).join(" e ");
-  return [...gruppi.map(x => ({ id:"combatti", gruppo: x.i, nome: nomi(x.g.A), contro: nomi(x.g.B),
+  const assalti = gruppi.flatMap(x => opzioniLancio(S, ["assailment"], { gruppo: x.g }));
+  return [...assalti,
+          ...gruppi.map(x => ({ id:"combatti", gruppo: x.i, nome: nomi(x.g.A), contro: nomi(x.g.B),
                                 why: `${nomi(x.g.A)} contro ${nomi(x.g.B)}`, page: 144 })),
           avanti("rimanda i combattimenti")];
 }
@@ -671,6 +726,20 @@ function ldOf(S, u, { zitto = false } = {}){
 /* Il Movimento che si tira (3D6 dei Squig Hopper, del Doomwheel): si
    tira una volta per turno e resta scritto, cosi' la stessa unita' non
    ha due Movimenti diversi nella stessa fase. */
+/* Il Movimento che vale adesso: quello del profilo, con sopra le
+   maledizioni e i potenziamenti che lo toccano (Storm Call, Miasmic
+   Mirage). `moveInfo` legge il file e basta; la differenza la sa
+   `effects.js`. */
+function movimento(S, u){
+  const mv = moveInfo(u);
+  const base = mv.m || (mv.random ? tiraRandom(S, u, mv) : 0);
+  if (!base) return { mv, move: 0 };
+  const m = EF.statOf(u, "M");
+  const delta = m.mods.reduce((t, x) => t + (x.delta || 0), 0);
+  return { mv, move: Math.max(0, base + delta), delta };
+}
+const bandiera = (u, k) => !!EF.flagsOf(u).flags[k];
+
 function tiraRandom(S, u, mv){
   const key = S.turno + ":" + S.army;
   if (u.randomMove && u.randomMove.key === key) return u.randomMove.n;
@@ -721,13 +790,27 @@ export function apply(S, a){
   if (!a || !a.id) return no("nessun gesto");
   const f = GESTI[a.id];
   if (!f) return no(`gesto sconosciuto: ${a.id}`);
+  /* con una domanda in sospeso si risponde a quella e basta */
+  const attesi = S.pending ? SOSPESI[S.pending.kind] : null;
+  if (attesi && !attesi.includes(a.id)) return no(`prima si risponde alla domanda in sospeso (${S.pending.kind})`);
   return f(S, a);
 }
+const SOSPESI = { dissolvi: ["dissolvi", "lascia", "avanti"], assalto: ["lancia", "lascia", "avanti"] };
 const no = why => ({ ok: false, text: why });
 const si = text => ({ ok: true, text });
 
 const GESTI = {
-  avanti: (S) => si(passo(S)),
+  /* «avanti» con un dissolvimento o un assalto in sospeso vuol dire
+     «non faccio niente»: la partita non salta la domanda, la chiude */
+  avanti: (S) => (S.pending && (S.pending.kind === "dissolvi" || S.pending.kind === "assalto"))
+    ? GESTI.lascia(S) : si(passo(S)),
+
+  dominio: (S, a) => sceltaDominio(S, a),
+  tieni:   (S, a) => tieniIncantesimi(S, a),
+  scambia: (S, a) => scambiaIncantesimo(S, a),
+  lancia:  (S, a) => lancia(S, a),
+  dissolvi:(S, a) => dissolvi(S, a),
+  lascia:  (S) => lascia(S),
 
   schiera: (S, a) => {
     const u = byUid(S, a.uid);
@@ -767,8 +850,8 @@ const GESTI = {
   carica: (S, a) => {
     const u = byUid(S, a.uid), t = byUid(S, a.target);
     if (!u || !t || !onBoard(u) || !onBoard(t)) return no("unità non in campo");
-    const mv = moveInfo(u);
-    const move = mv.m || (mv.random ? tiraRandom(S, u, mv) : 0);
+    if (bandiera(u, "noCharge")) return no("un incantesimo le impedisce di caricare");
+    const { move } = movimento(S, u);
     const d = CH.declareCharge({
       charger: { name: u.name, box: boxOf(u, S.units), move, swift: MV.swiftOf(u), loose: !!u.loose },
       target:  { name: t.name, box: boxOf(t, S.units) },
@@ -863,7 +946,8 @@ const GESTI = {
   combatti: (S, a) => {
     const g = gruppiInMischia(S)[a.gruppo || 0];
     if (!g) return no("nessun combattimento");
-    return si(mischia(S, g));
+    if (fatto(S, g)) return no("questo combattimento si è già risolto in questo turno");
+    return si(avviaCombattimento(S, [...g.A, ...g.B].map(u => u.uid)));
   },
 };
 
@@ -872,10 +956,10 @@ function mossa(S, a, marcia){
   const u = byUid(S, a.uid), t = byUid(S, a.verso);
   if (!u || !t) return no("unità sconosciuta");
   if (u.moved) return no("si è già mossa");
-  const mv = moveInfo(u);
-  const move = mv.m || (mv.random ? tiraRandom(S, u, mv) : 0);
+  const { move } = movimento(S, u);
   if (!move) return no("non sa di quanto si muove: il profilo non porta il Movimento");
   let quanti = move;
+  if (marcia && bandiera(u, "noMarch")) return no("un incantesimo le impedisce di marciare");
   if (marcia){
     /* Marcia sotto gli occhi del nemico: test di Comando (p. 123). */
     const vicino = nemiciDi(S, u).some(e => distanza(S, u, e) <= CH.MARCH_WATCH);
@@ -1130,6 +1214,530 @@ function panico(S, u, why){
     say(S, `${u.name} va nel panico e fugge: ${fuga.join(" + ")} = ${via}″.`, { dice: fuga, army: u.army, page: 132 });
     fuggi(S, u, da, via);
   }
+}
+
+/* ============================================================
+   7 bis · LA MAGIA (pp. 106-111)
+   Le regole le sa `magic.js`; qui c'e' quello che sa il tavolo — chi e'
+   a quanti pollici, chi combatte con chi — e i tre momenti in cui la
+   magia chiede una decisione a chi gioca:
+
+     PRIMA DELLO SCHIERAMENTO si sceglie il dominio, se il file non lo
+     dice, e si generano gli incantesimi. Un file di New Recruit dice il
+     dominio a volte, il Livello quasi mai, gli incantesimi usciti mai:
+     si tirano qui, che e' quello che la regola chiede (p. 106). Se la
+     scheda di preparazione li porta come id (`spellIds`), vince lei.
+     Poi ognuno puo' scambiarne uno con la firma del dominio.
+
+     NEL TURNO un incantesimo e' una mossa come una carica: chi lancia
+     cosa su chi, con la probabilita' gia' fatta.
+
+     SUBITO DOPO il dissolvimento tocca all'altra parte (p. 110), come la
+     reazione alla carica tocca a chi la subisce: e' una domanda in
+     sospeso (`S.pending`) con il giocatore giusto.
+
+   Questa edizione non ha una riserva di dadi del vento: ogni tentativo
+   tira i suoi 2D6, e il limite e' uno per incantesimo per turno, la
+   sorte una volta per turno, e il fiasco che chiude il resto (pp. 108-
+   110). Chi cercasse i dadi di potere, qui non li trova per questo.
+   ============================================================ */
+const magico = S => S.magia && S.magia.M;
+const ospite = (S, u) => byUid(S, FM.joinedHost(u)) || u;
+const pct = x => Math.round(x * 100) + "%";
+
+/* ---- chi e' un mago, e cosa sa ---- */
+function preparaMaghi(S){
+  const M = magico(S);
+  if (!M){
+    if (S.units.some(u => MG.isWizard(u, u.prepara || {}))) limite(S, "domini");
+    return;
+  }
+  for (const u of S.units){
+    const pr = u.prepara || {};
+    const libro = M.wizardBook(u);
+    const regole = [...(u.rules || []), ...((libro && libro.regole) || [])];
+    const dalFile = MG.levelOf(u, pr);
+    const level = dalFile || (libro ? libro.livello : 0);
+    const vincolati = M.boundFor(u.rules || []).filter(MG.applies).map(b => b.id);
+    if (!level && libro && !dalFile){
+      /* il Warlock Engineer e' un mago solo se l'ha pagato, e il file
+         non lo dice: senza la scheda, non lo si fa lanciare */
+      limite(S, "livello");
+      say(S, `${u.name}: il libro lo fa mago solo con un'opzione (${libro.opzione}), e né la lista né la scheda la portano — non lancia.`,
+          { army: u.army, page: libro.page });
+    }
+    if (!level && !vincolati.length) continue;
+    const da = pr.level ? "dalla scheda di preparazione"
+             : dalFile ? "dalle regole della lista"
+             : `dal libro (${libro.libro}, p. ${libro.page})`;
+    const domini = (pr.lore ? [pr.lore] : ((libro && libro.domini) || []))
+      .map(k => M.lore(k)).filter(Boolean).map(l => l.id);
+    u.mago = { level, da, regole, domini, vincolati, lore: null, known: [], fase: "pronto",
+               cast: null, bound: null };
+    if (!level) continue;
+    if (!dalFile && libro && libro.opzione) limite(S, "livello");
+    if (domini.length === 1) u.mago.lore = domini[0];
+    const ids = (pr.spellIds || []).map(id => M.spell(id)).filter(Boolean).map(sp => sp.id);
+    if (ids.length && u.mago.lore){
+      u.mago.known = ids;
+      say(S, `${u.name}, Livello ${level} (${da}): conosce ${ids.map(id => M.spell(id).name).join(", ")}, dalla scheda.`,
+          { army: u.army, page: MG.PAGE.generation });
+      continue;
+    }
+    if (!domini.length){
+      say(S, `${u.name} è un mago di Livello ${level}, ma nessuno dice di che dominio: non lancia.`,
+          { army: u.army, page: MG.PAGE.generation });
+      u.mago.level = 0;
+      continue;
+    }
+    u.mago.fase = u.mago.lore ? "genera" : "dominio";
+  }
+  S.preparando = S.units.some(u => u.mago && u.mago.fase !== "pronto");
+  /* chi ha il dominio gia' deciso genera subito, nell'ordine della lista */
+  for (const u of S.units) if (u.mago && u.mago.fase === "genera") genera(S, u);
+}
+
+function genera(S, u){
+  const M = magico(S), m = u.mago;
+  const l = M.lore(m.lore);
+  const dadi = roll(m.level);
+  let res = MG.generateSpells({ level: m.level, dice: dadi });
+  /* i doppioni si ritirano finche' servono; il tetto c'e' per una
+     sorgente di dadi finta che torna sempre la stessa faccia, e con i
+     dadi veri non si tocca mai */
+  for (let giri = 0; res.need > 0 && giri < 100; giri++){
+    dadi.push(...roll(res.need));
+    res = MG.generateSpells({ level: m.level, dice: dadi });
+  }
+  m.known = MG.knownSpells(M, m.lore, res.numbers).map(sp => sp.id);
+  say(S, `${u.name}, Livello ${m.level} (${m.da}), ${l.name}: ${dadi.join(", ")}` +
+         (res.rerolled.length ? ` (doppioni ritirati: ${res.rerolled.join(", ")})` : "") +
+         ` → ${m.known.map(id => M.spell(id).name).join(", ")}.`,
+      { dice: dadi, army: u.army, page: MG.PAGE.generation });
+  const scambi = MG.swapOptions(M, m.lore, m.regole).filter(sp => !m.known.includes(sp.id));
+  m.fase = scambi.length ? "scambio" : "pronto";
+  if (m.fase === "pronto") fineGenerazione(S, u);
+}
+
+function fineGenerazione(S, u){
+  const M = magico(S), m = u.mago;
+  const muti = m.known.filter(id => !MG.applies(M.spell(id)));
+  if (muti.length){
+    limite(S, "amano");
+    say(S, `${u.name}: ${muti.map(id => M.spell(id).name).join(", ")} ` +
+           `${muti.length === 1 ? "resta" : "restano"} da leggere sul libro, e l'arbitro non ${muti.length === 1 ? "lo" : "li"} offre.`,
+        { army: u.army, page: MG.PAGE.categories });
+  }
+  if (!S.units.some(x => x.mago && x.mago.fase !== "pronto")){
+    S.preparando = false;
+    say(S, "Gli incantesimi sono generati: si schiera.", { page: MG.PAGE.generation });
+  }
+}
+
+const daPreparare = S => S.units.find(u => u.mago && u.mago.fase !== "pronto" && u.mago.fase !== "genera") || null;
+
+function opzioniPreparazione(S){
+  const u = daPreparare(S);
+  if (!u){ S.preparando = false; return null; }
+  const M = magico(S), m = u.mago;
+  const base = { player: u.army, fase: "Incantesimi", page: MG.PAGE.generation, unit: u.uid };
+  if (m.fase === "dominio"){
+    return { ...base, what: `${S.nomi[u.army]}: di che dominio è ${u.name} (Livello ${m.level})?`,
+      list: m.domini.map(id => {
+        const l = M.lore(id);
+        const buoni = l.spells.filter(MG.applies);
+        const firma = l.spells.find(sp => sp.n === 0);
+        return { id:"dominio", uid: u.uid, lore: id, nome: u.name, contro: l.label || l.name,
+                 why: `${l.name}: l'app ne gioca ${buoni.length} su 7 (${buoni.map(sp => sp.name).join(", ") || "nessuno"})` +
+                      (firma ? `; la firma è ${firma.name}` : ""),
+                 page: MG.PAGE.generation };
+      }) };
+  }
+  const nome = id => M.spell(id).name;
+  const scambi = MG.swapOptions(M, m.lore, m.regole).filter(sp => !m.known.includes(sp.id));
+  return { ...base, what: `${u.name} conosce ${m.known.map(nome).join(", ")}: ne scambia uno?`,
+    list: [
+      { id:"tieni", uid: u.uid, nome: u.name, why: `tiene ${m.known.map(id => descriviSpell(M.spell(id))).join("; ")}`,
+        page: MG.PAGE.generation },
+      ...m.known.flatMap(out => scambi.map(into => ({
+        id:"scambia", uid: u.uid, out, into: into.id, nome: u.name,
+        why: `lascia ${descriviSpell(M.spell(out))} e prende ${descriviSpell(into)}`,
+        page: MG.PAGE.generation }))),
+    ] };
+}
+
+/* un incantesimo in una riga, per chi deve scegliere */
+function descriviSpell(sp){
+  const e = sp.effetto || {};
+  const cosa = e.colpi ? `${e.colpi.dadi} colpi a Forza ${e.colpi.S}` + (e.colpi.AP ? `, perforazione ${e.colpi.AP}` : "")
+             : sp.testo || "";
+  return `${sp.name} (${MG.TYPE_LABEL[sp.type]}, ${sp.cv}+${typeof sp.range === "number" ? ", " + sp.range + "″" : ""}` +
+         `${MG.applies(sp) ? "" : ", da leggere sul libro"}): ${cosa}`;
+}
+
+function sceltaDominio(S, a){
+  const u = byUid(S, a.uid);
+  if (!u || !u.mago || u.mago.fase !== "dominio") return no("non c'è un dominio da scegliere");
+  if (!u.mago.domini.includes(a.lore)) return no(`${u.name} non può scegliere quel dominio`);
+  u.mago.lore = a.lore;
+  say(S, `${u.name} sceglie ${magico(S).lore(a.lore).name}.`, { army: u.army, page: MG.PAGE.generation });
+  genera(S, u);
+  return si("dominio scelto");
+}
+function tieniIncantesimi(S, a){
+  const u = byUid(S, a && a.uid) || daPreparare(S);
+  if (!u || !u.mago || u.mago.fase !== "scambio") return no("non c'è niente da tenere");
+  u.mago.fase = "pronto";
+  fineGenerazione(S, u);
+  return si("incantesimi tenuti");
+}
+function scambiaIncantesimo(S, a){
+  const u = byUid(S, a.uid);
+  if (!u || !u.mago || u.mago.fase !== "scambio") return no("non c'è niente da scambiare");
+  const M = magico(S), m = u.mago;
+  const lecito = MG.swapOptions(M, m.lore, m.regole).some(sp => sp.id === a.into);
+  if (!m.known.includes(a.out) || !lecito) return no("scambio non concesso (p. 106)");
+  m.known = m.known.map(id => id === a.out ? a.into : id);
+  say(S, `${u.name} lascia ${M.spell(a.out).name} e prende ${M.spell(a.into).name}.`,
+      { army: u.army, page: MG.PAGE.generation });
+  m.fase = "pronto";
+  fineGenerazione(S, u);
+  return si("scambio fatto");
+}
+
+/* ---- chi puo' lanciare cosa, adesso ---- */
+const maghiDi = (S, army) => S.units.filter(u => u.army === army && u.mago && !u.dead &&
+                                                   onBoard(ospite(S, u)) &&
+                                                   (u.mago.level > 0 || u.mago.vincolati.length));
+const castKey = S => chiave(S);
+const giaLanciati = (S, u) => (u.mago.cast && u.mago.cast.key === castKey(S)) ? u.mago.cast.ids : [];
+const fermo = (S, army, cosa) => S.magia.stop[cosa + ":" + army] === castKey(S);
+const casellaOra = S => (CASELLE[S.casella] || {}).id || "";
+
+function nelArco(S, host, t){
+  if (t === host) return true;
+  return FM.arcOfPoly(cornersOf(t, S.units), boxOf(host, S.units)).has.includes("fronte");
+}
+
+/* Quanto male fanno in media i colpi di un incantesimo su quel
+   bersaglio: la stessa catena di `combat.js`, senza il tiro per colpire
+   (p. 107). */
+function attesaColpi(sp, t){
+  const h = sp.effetto.colpi;
+  const n = MG.diceMean(MG.parseDice(h.dadi));
+  const d = CB.combatant(t);
+  const ferisce = chanceOf(woundOn(h.S, d.t));
+  const arm = h.noArmour ? 0 : chanceOf(saveOn(d.armour, h.AP || 0));
+  const ward = chanceOf(saveOn(d.ward, 0));
+  const rig = h.noRegen ? 0 : chanceOf(saveOn(d.regen, 0));
+  return n * ferisce * (1 - arm) * (1 - ward) * (1 - rig) / Math.max(1, d.w);
+}
+
+function opzioniLancio(S, tipi, { army = S.army, gruppo = null } = {}){
+  const M = magico(S);
+  if (!M) return [];
+  const out = [];
+  if (fermo(S, army, "lancio")) return out;
+  for (const u of maghiDi(S, army)){
+    const host = ospite(S, u), m = u.mago;
+    if (gruppo && ![...gruppo.A, ...gruppo.B].includes(host)) continue;
+    const ids = [...(m.level > 0 ? m.known : []), ...m.vincolati];
+    for (const id of ids){
+      const sp = M.spell(id);
+      if (!sp || !tipi.includes(sp.type) || !MG.applies(sp)) continue;
+      if (sp.bound && m.bound === castKey(S) + ":" + casellaOra(S)) continue;
+      const engaged = ingaggiata(S, host);
+      const gate = MG.canCast(sp, { fleeing: !!host.fled, engaged, castThisTurn: giaLanciati(S, u),
+                                    stepId: MG.CAST_STEP[sp.type] });
+      if (!gate.can) continue;
+      const odds = MG.castOdds({ level: m.level, cv: sp.cv, bound: !!sp.bound, power: sp.potere || 0 });
+      const chi = sp.bound ? `Potere ${sp.potere || 0}` : `Livello ${m.level}`;
+      for (const b of bersagli(S, u, host, sp, gruppo)){
+        const attesa = sp.effetto.colpi && b.t ? attesaColpi(sp, b.t) : 0;
+        out.push({ id:"lancia", uid: u.uid, spell: sp.id, target: b.t ? b.t.uid : null,
+                   nome: u.name, contro: b.t ? b.t.name : "",
+                   why: `${sp.name} (${MG.TYPE_LABEL[sp.type]}, ${sp.cv}+)` +
+                        (b.t ? ` su ${b.t.name}` : "") + (b.dist ? ` a ${b.dist}″` : "") +
+                        `: con ${chi} riesce il ${pct(odds.cast)}` +
+                        (odds.miscast ? `, fiasco il ${pct(odds.miscast)}` : "") +
+                        (attesa ? `, ≈ ${attesa.toFixed(1)} perdite` : `; ${sp.testo || MG.manualOf(sp)}`),
+                   chance: odds.cast, attesa: attesa * odds.cast, page: sp.page || MG.PAGE.casting });
+      }
+    }
+  }
+  return out.sort((a, b) => (b.attesa - a.attesa) || (b.chance - a.chance));
+}
+
+/* I bersagli legali (p. 108): nell'arco del mago, entro gittata, non in
+   combattimento; i dardi vogliono la vista, gli assalti un nemico con
+   cui si combatte. Il mago unito misura dal reggimento che lo ospita. */
+function bersagli(S, u, host, sp, gruppo){
+  if (sp.range === "self") return [{ t: host, dist: 0 }];
+  if (sp.type === "assailment"){
+    const nemici = contatti(S).filter(c => (c.a === host.uid || c.b === host.uid) &&
+                                           (c.a === host.uid ? c.bArmy : c.aArmy) !== host.army)
+      .map(c => byUid(S, c.a === host.uid ? c.b : c.a)).filter(t => t && onBoard(t));
+    return [...new Set(nemici)].filter(t => !gruppo || [...gruppo.A, ...gruppo.B].includes(t))
+      .map(t => ({ t, dist: 0 }));
+  }
+  const amici = sp.type === "enchantment" || sp.type === "conveyance";
+  const pool = amici ? inCampo(S, host.army) : nemiciDi(S, host);
+  const out = [];
+  for (const t of pool){
+    const dist = t === host ? 0 : distanza(S, host, t);
+    const check = MG.targetCheck(sp, { dist, inArc: nelArco(S, host, t), engaged: ingaggiata(S, t),
+                                       friendly: amici, sight: !vistaTagliata(S, host, t) });
+    if (check.ok) out.push({ t, dist });
+  }
+  return out;
+}
+
+/* ---- il lancio (pp. 108-109) ---- */
+function lancia(S, a){
+  const M = magico(S);
+  if (!M) return no("la magia non è caricata");
+  const u = byUid(S, a.uid), sp = M.spell(a.spell);
+  if (!u || !u.mago || !sp) return no("mago o incantesimo sconosciuto");
+  /* l'assalto di chi non e' di turno chiude la sua domanda: dopo il
+     lancio, e il suo dissolvimento, si torna al combattimento */
+  const sospeso = S.pending && S.pending.kind === "assalto" ? S.pending : null;
+  if (sospeso) S.pending = null;
+  const m = u.mago;
+  const sa = [...(m.level > 0 ? m.known : []), ...m.vincolati];
+  if (!sa.includes(sp.id)) return no(`${u.name} non conosce ${sp.name}`);
+  /* si ricontrolla tutto: chi sceglie puo' aver passato una mossa
+     vecchia, e l'arbitro non la applica di nascosto */
+  const lecite = opzioniLancio(S, [sp.type], { army: u.army });
+  const mossa = lecite.find(x => x.uid === u.uid && x.spell === sp.id && x.target === (a.target ?? null));
+  if (!mossa){ S.pending = sospeso || S.pending; return no(`${sp.name} non si può lanciare adesso su quel bersaglio`); }
+  const host = ospite(S, u);
+  const t = a.target != null ? byUid(S, a.target) : null;
+
+  const ids = giaLanciati(S, u);
+  m.cast = { key: castKey(S), ids: [...ids, sp.id] };
+  if (sp.bound) m.bound = castKey(S) + ":" + casellaOra(S);
+  if (sp.type === "assailment") limite(S, "assalti");
+  if (u.armour > 0 && !sp.bound) limite(S, "armatura");
+
+  const dadi = roll(2);
+  let res = MG.castResult({ dice: dadi, level: m.level, cv: sp.cv, cv2: sp.cv2 || 0,
+                            bound: !!sp.bound, power: sp.potere || 0 });
+  say(S, `${u.name} lancia ${sp.name}${t && t !== host ? " su " + t.name : ""}: ${res.text}.`,
+      { dice: dadi, army: u.army, page: MG.PAGE.casting });
+  if (res.miscast){
+    const fd = roll(2);
+    const mis = MG.miscastRead(fd[0] + fd[1]);
+    say(S, `${u.name}, fiasco — ${fd.join(" + ")} = ${mis.total}: ${mis.label}, ${mis.text}.`,
+        { dice: fd, army: u.army, page: MG.PAGE.miscast });
+    colpiDelFiasco(S, u, mis);
+    if (mis.stop) S.magia.stop["lancio:" + u.army] = castKey(S);
+    if (mis.cast) res = { ...res, cast: true, perfect: !!mis.perfect, total: mis.atValue ? sp.cv : res.total };
+  }
+  if (!res.cast) return si(continua(S, a.dopo) || `${sp.name} non lanciato`);
+
+  const lancio = { caster: u.uid, spell: sp.id, target: t ? t.uid : null, total: res.total,
+                   perfect: !!res.perfect, army: u.army, dopo: a.dopo || null };
+  if (res.perfect) return si(risolvi(S, lancio));
+  const list = opzioniDissolvi(S, lancio);
+  if (list.length === 1){
+    say(S, `${S.nomi[altro(u.army)]} non può provare a dissolvere ${sp.name}: ` +
+           `nessun mago a portata, e la sorte è già stata tentata in questo turno.`,
+        { army: altro(u.army), page: MG.PAGE.dispel });
+    return si(risolvi(S, lancio));
+  }
+  S.pending = { kind:"dissolvi", lancio, list };
+  return si(`${sp.name} lanciato con ${res.total}: tocca a ${S.nomi[altro(u.army)]} dissolverlo`);
+}
+
+/* Il fiasco con i colpi: la sagoma centrata sul mago prende almeno lui.
+   Chi altro ci sta sotto vuole la posizione modello per modello, e
+   quella resta fra i limiti delle sagome. */
+function colpiDelFiasco(S, u, row){
+  if (!row.hit) return;
+  if (row.hit.template) limite(S, "sagome");
+  colpisci(S, u, { S: row.hit.S, AP: row.hit.AP }, 1, `${row.label}`, { panico: false });
+}
+
+/* ---- il dissolvimento (p. 110) ---- */
+function opzioniDissolvi(S, l){
+  const M = magico(S), sp = M.spell(l.spell), w = byUid(S, l.caster);
+  const lui = altro(l.army), da = ospite(S, w);
+  const out = [];
+  if (!fermo(S, lui, "dissolvi")){
+    for (const d of maghiDi(S, lui)){
+      if (!(d.mago.level > 0)) continue;
+      const h = ospite(S, d);
+      if (h.fled || ingaggiata(S, h)) continue;
+      const dist = distanza(S, h, da);
+      if (dist > MG.dispelRange(d.mago.level) + 1e-6) continue;
+      const odds = MG.dispelOdds({ level: d.mago.level, against: l.total, bound: !!sp.bound });
+      out.push({ id:"dissolvi", uid: d.uid, nome: d.name, contro: sp.name,
+                 why: `Livello ${d.mago.level} a ${dist}″ (portata ${MG.dispelRange(d.mago.level)}″): ` +
+                      `supera ${l.total} il ${pct(odds.dispel)}` +
+                      (odds.outclassed ? `, surclassato il ${pct(odds.outclassed)}` : ""),
+                 chance: odds.dispel, page: MG.PAGE.dispel });
+    }
+    if (S.magia.fato[lui] !== castKey(S)){
+      const odds = MG.dispelOdds({ fated: true, against: l.total });
+      out.push({ id:"dissolvi", fato: true, nome: "la sorte", contro: sp.name,
+                 why: `affidato alla sorte, una volta per turno: supera ${l.total} il ${pct(odds.dispel)}, senza rischi`,
+                 chance: odds.dispel, page: MG.PAGE.dispel });
+    }
+  }
+  out.sort((a, b) => b.chance - a.chance);
+  return [...out, { id:"lascia", why: `non si prova: ${sp.name} passa`, page: MG.PAGE.dispel }];
+}
+
+function dissolvi(S, a){
+  const p = S.pending;
+  if (!p || p.kind !== "dissolvi") return no("non c'è niente da dissolvere");
+  const scelta = p.list.find(x => x.id === "dissolvi" && (a.fato ? x.fato : x.uid === a.uid));
+  if (!scelta) return no("quel dissolvimento non si può tentare");
+  const l = p.lancio, sp = magico(S).spell(l.spell);
+  const lui = altro(l.army);
+  S.pending = null;
+  const d = a.fato ? null : byUid(S, a.uid);
+  if (a.fato) S.magia.fato[lui] = castKey(S);
+  const dadi = roll(2);
+  let res = MG.dispelResult({ dice: dadi, level: d ? d.mago.level : 0, fated: !!a.fato, castTotal: l.total });
+  /* un incantesimo vincolato non surclassa nessuno (p. 109) */
+  if (sp.bound && res.outclassed) res = { ...res, outclassed: false, dispelled: res.total > res.against };
+  say(S, `${d ? d.name : "La sorte"} contro ${sp.name}: ${res.text}.`,
+      { dice: dadi, army: lui, page: MG.PAGE.dispel });
+  if (res.outclassed){
+    const fd = roll(2);
+    const out = MG.miscastRead(fd[0] + fd[1], { dispel: true });
+    say(S, `${d.name} è surclassato — ${fd.join(" + ")} = ${out.total}: ${out.label}, ${out.text}.`,
+        { dice: fd, army: lui, page: MG.PAGE.dispel });
+    colpiDelFiasco(S, d, out);
+    if (out.stop) S.magia.stop["dissolvi:" + lui] = castKey(S);
+    if (out.dispelled) res = { ...res, dispelled: true };
+  }
+  if (res.dispelled){
+    say(S, `${sp.name} è dissolto e non fa niente.`, { army: lui, page: MG.PAGE.dispel });
+    return si(continua(S, l.dopo) || "dissolto");
+  }
+  return si(risolvi(S, l));
+}
+
+function lascia(S){
+  const p = S.pending;
+  if (!p) return no("non c'è niente da lasciare");
+  S.pending = null;
+  if (p.kind === "dissolvi") return si(risolvi(S, p.lancio));
+  if (p.kind === "assalto"){
+    const g = gruppoCon(S, p.uids);
+    return si(g ? mischia(S, g) : "il combattimento non c'è più");
+  }
+  S.pending = p;
+  return no("questa domanda non si lascia");
+}
+
+/* ---- l'effetto (p. 111) ---- */
+function risolvi(S, l){
+  const M = magico(S), sp = M.spell(l.spell);
+  const w = byUid(S, l.caster), host = ospite(S, w);
+  const t = l.target != null ? byUid(S, l.target) : null;
+  const e = sp.effetto || {};
+  let testo = `${sp.name} fa effetto`;
+
+  if (e.colpi && t && !t.dead){
+    const spec = MG.parseDice(e.colpi.dadi);
+    const dadi = spec.n ? (spec.die === 3 ? Array.from({ length: spec.n }, () => d3()) : roll(spec.n)) : [];
+    const quanti = MG.diceTotal(spec, dadi);
+    say(S, `${sp.name}: ${e.colpi.dadi}${dadi.length ? " → " + dadi.join(" + ") + (spec.plus ? " + " + spec.plus : "") : ""} = ${quanti} colpi.`,
+        { dice: dadi, army: w.army, page: sp.page || MG.PAGE.resolution });
+    colpisci(S, t, e.colpi, quanti, sp.name, { panico: sp.type !== "assailment", da: w });
+    testo = `${sp.name}: ${quanti} colpi su ${t.name}`;
+  }
+
+  const rolled = e.modificheDado ? d3() : 0;
+  const eff = MG.effectOf(sp, { at: { turn: S.turno, side: S.army }, rolled, casterName: w.name });
+  if (eff){
+    const chi = sp.range === "self"
+      ? (MG.selfAndUnit(sp) && host !== w ? [w, host] : [w])
+      : t ? [t] : [];
+    const presi = [];
+    for (const x of chi){
+      if (MG.skipOn(sp, { armour: EF.val(x, "armour") })){
+        say(S, `${sp.name}: ${x.name} non ha armatura da peggiorare.`, { army: w.army, page: sp.page || 0 });
+        continue;
+      }
+      for (const id of MG.cancelled(sp, EF.effectsOf(x))) EF.removeEffect(x, id);
+      EF.addEffect(x, eff);
+      presi.push(x.name);
+    }
+    if (presi.length){
+      const mods = Object.entries(eff.mods).map(([k, v]) =>
+        typeof v === "object" ? `${EF.DERIVED_LABEL[k] || k} ${v.best || v.set}+` : `${v > 0 ? "+" + v : "−" + Math.abs(v)} ${EF.CHAR_LABEL[k] || EF.DERIVED_LABEL[k] || k}`);
+      const flags = Object.entries(eff.flags).map(([k, v]) => k === "ap" ? `+${v} perforazione` : FLAG_LABEL[k] || k);
+      const fino = eff.until === "ownTurn" ? "fino al prossimo inizio turno di chi l'ha lanciato"
+                 : eff.until === "turn" ? "fino alla fine del turno" : "finché resta in gioco";
+      say(S, `${sp.name} su ${presi.join(" e ")}: ${[...mods, ...flags].join(", ")}` +
+             (rolled ? ` (D3 = ${rolled})` : "") + `, ${fino}.`,
+          { dice: rolled ? [rolled] : null, army: w.army, page: sp.page || MG.PAGE.resolution });
+      testo = `${sp.name} su ${presi.join(" e ")}`;
+    }
+  }
+  const aMano = MG.manualOf(sp);
+  if (aMano) say(S, `${sp.name}, da leggere sul libro: ${aMano}. L'arbitro non lo applica.`,
+                 { army: w.army, page: sp.page || 0, kind: "limite" });
+  return continua(S, l.dopo) || testo;
+}
+const FLAG_LABEL = { noMarch: "non marcia", noCharge: "non carica", frenzy: "Frenesia", hatred: "Odio" };
+
+/* I colpi che non tirano per colpire: un incantesimo, un fiasco. La
+   catena e' quella dello scontro, con i colpi automatici, e le ferite
+   che non fanno un modello restano appese. */
+function colpisci(S, t, h, quanti, fonte, { panico: conPanico = true, da = null } = {}){
+  if (!t || t.dead || !(quanti > 0)) return 0;
+  const def = CB.combatant(t);
+  const side = { ...def, armour: h.noArmour ? 0 : def.armour, regen: h.noRegen ? 0 : def.regen };
+  const v = CB.strike({ name: fonte }, side, { attacks: quanti, auto: true, strength: h.S, ap: h.AP || 0, label: fonte });
+  const toll = CB.woundsToll(t, v.wounds);
+  perdite(S, t, toll.kills, toll.left);
+  say(S, `${t.name}: ${quanti} colp${quanti === 1 ? "o" : "i"} a Forza ${h.S}` +
+         (h.AP ? `, perforazione ${h.AP}` : "") + (h.noArmour ? ", senza armatura" : "") +
+         ` — ${v.wounds} ferit${v.wounds === 1 ? "a" : "e"}, ${toll.kills} a terra.`,
+      { dice: v.wound.dice, army: da ? da.army : t.army, page: MG.PAGE.resolution });
+  if (conPanico && toll.kills > 0 && !t.dead) panico(S, t, toll.kills, fonte);
+  return toll.kills;
+}
+
+/* ---- i combattimenti che aspettano un assalto ---- */
+function gruppoCon(S, uids){
+  return gruppiInMischia(S).find(g => [...g.A, ...g.B].some(u => uids.includes(u.uid))) || null;
+}
+function avviaCombattimento(S, uids){
+  const g = gruppoCon(S, uids);
+  if (!g || fatto(S, g)) return "il combattimento non c'è più";
+  const dopo = { kind: "combatti", uids };
+  const assalti = opzioniLancio(S, ["assailment"], { army: altro(S.army), gruppo: g })
+    .map(x => ({ ...x, dopo }));
+  if (assalti.length){
+    S.pending = { kind: "assalto", uids,
+                  list: [...assalti, { id:"lascia", why: "nessun assalto: si combatte", page: 158 }] };
+    return `${S.nomi[altro(S.army)]} può lanciare un assalto prima che si meni`;
+  }
+  return mischia(S, g);
+}
+/* dopo un incantesimo lanciato dentro un combattimento, il
+   combattimento: con un'altra occasione di lanciare, se ne restano */
+function continua(S, dopo){
+  if (!dopo || S.pending) return "";
+  if (dopo.kind === "combatti") return avviaCombattimento(S, dopo.uids);
+  return "";
+}
+
+/* i maghi, per la fotografia */
+function rigaMago(S, u){
+  const M = magico(S), m = u.mago;
+  if (!M || !m) return "";
+  const sa = [...(m.level > 0 ? m.known : []), ...m.vincolati].map(id => M.spell(id)).filter(Boolean);
+  if (!sa.length) return "";
+  const chi = m.level > 0 ? `mago di Livello ${m.level}${m.lore ? ", " + M.lore(m.lore).name : ""}` : "incantesimo vincolato";
+  return `      ${u.name}, ${chi}: ${sa.map(sp => sp.name + (MG.applies(sp) ? ` (${MG.TYPE_LABEL[sp.type]} ${sp.cv}+)` : " (da libro)")).join(", ")}` +
+         (giaLanciati(S, u).length ? ` — già tentati in questo turno: ${giaLanciati(S, u).map(id => M.spell(id).name).join(", ")}` : "");
 }
 
 /* ============================================================
@@ -1404,7 +2012,8 @@ function fineSchieramento(S){
    di pagina che non nominava né la magia né la Stupidità. */
 function limitiDiPartenza(S){
   const campo = S.units.filter(u => u.placed);
-  if (campo.some(u => isWizard(u))) limite(S, "magia");
+  /* la magia si gioca: quando i domini mancano l'ha gia' detto
+     `preparaMaghi`, con il limite «domini» */
   if (campo.some(u => {
     const p = PS.psychOf(u);
     return p.causesFear || p.causesTerror || p.stupidity;
@@ -1430,6 +2039,14 @@ function continuaAFuggire(S){
 }
 
 function passo(S){
+  /* «avanti» mentre si generano gli incantesimi: si tiene quello che e'
+     uscito, o si prende il primo dominio dell'elenco — e lo si scrive */
+  if (S.preparando){
+    const u = daPreparare(S);
+    if (u && u.mago.fase === "dominio"){ sceltaDominio(S, { uid: u.uid, lore: u.mago.domini[0] }); return "dominio preso d'ufficio"; }
+    if (u){ tieniIncantesimi(S, { uid: u.uid }); return "incantesimi tenuti"; }
+    S.preparando = false;
+  }
   if (S.schierando){
     /* «avanti» durante lo schieramento vuol dire «questa non la
        schiero»: si passa all'altro, e se nessuno ha piu' niente si
@@ -1459,6 +2076,12 @@ function passo(S){
     S.army = S.army === "A" ? "B" : "A";
   }
   if (S.turno > S.rounds){ fine(S, "sono finiti i turni"); return "partita finita"; }
+  /* gli effetti degli incantesimi scadono quando il libro lo dice: a
+     fine turno, o al prossimo inizio turno di chi li ha lanciati */
+  for (const u of S.units){
+    for (const e of EF.sweepExpired(u, { turn: S.turno, side: S.army }))
+      say(S, `${u.name}: finisce ${e.from}.`, { army: u.army, page: e.page || MG.PAGE.resolution });
+  }
   /* il punto di rottura si guarda adesso, che e' l'inizio di un turno */
   if (controllaFine(S, { inizioTurno: true })) return "partita finita";
   say(S, `Turno ${S.turno}: muove ${S.nomi[S.army]}.`, { page: 114 });
@@ -1538,11 +2161,15 @@ export function fotografia(S, { per = null } = {}){
     const mv = moveInfo(u);
     const c = CB.combatant(u);
     const vicino = piuVicino(S, u);
+    const effetti = EF.effectsOf(u).map(e => e.from);
+    const maghi = [u, ...FM.attachedTo(S.units, u)].map(x => rigaMago(S, x)).filter(Boolean);
     return `  · ${u.name} — ${alive(u)}/${u.models} modelli, ${u.pts || 0} pt, ` +
       `M ${mv.m || "?"}, WS ${c.ws}, S ${c.s}, T ${c.t}, Ld ${c.ld}` +
       (u.fled ? ", IN FUGA" : "") +
       (ingaggiata(S, u) ? ", in mischia" : "") +
-      (vicino ? `, nemico più vicino ${vicino.name} a ${distanza(S, u, vicino)}″` : "");
+      (vicino ? `, nemico più vicino ${vicino.name} a ${distanza(S, u, vicino)}″` : "") +
+      (effetti.length ? `, sotto l'effetto di ${effetti.join(", ")}` : "") +
+      (maghi.length ? "\n" + maghi.join("\n") : "");
   };
   const mie = inCampo(S, io), sue = inCampo(S, lui);
   const fuori = S.units.filter(u => u.army === io && !u.dead && !u.placed && !isJoined(u));

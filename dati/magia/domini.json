@@ -274,5 +274,29 @@
       "libro": "Legends: Lizardmen", "pdfPage": 15,
       "effetto": { "colpi": { "dadi": "3D3", "S": 5, "AP": 2, "flaming": true } },
       "testo": "3D3 colpi a Forza 5, perforazione 2, infuocati" }
+  ],
+  "notaMaghi": "I maghi che le liste salvate schierano, letti sulla loro scheda del libro: il Livello di base e i domini fra cui si sceglie. Il file di New Recruit non porta ne' l'uno ne' l'altro, e spesso nemmeno la regola «Lore of …». Il Livello comprato come opzione (`opzione`) il file non lo dice: quando la scheda di preparazione non lo scrive vale quello di base, e l'arbitro lo dichiara. Le pagine sono quelle stampate, che in questi libri coincidono con l'indice di PyMuPDF.",
+  "maghi": [
+    { "nomi": ["Orc Weirdnob"], "livello": 3, "domini": ["battle", "elementalism", "waaagh"],
+      "regole": ["Lore of Gork"], "libro": "Ravening Hordes", "page": 14, "opzione": "Livello 4, +30 punti" },
+    { "nomi": ["Orc Weirdboy"], "livello": 1, "domini": ["battle", "elementalism", "waaagh"],
+      "regole": ["Lore of Gork"], "libro": "Ravening Hordes", "page": 14, "opzione": "Livello 2, +30 punti" },
+    { "nomi": ["Goblin Oddnob"], "livello": 3, "domini": ["elementalism", "waaagh"],
+      "regole": ["Lore of Mork"], "libro": "Ravening Hordes", "page": 16, "opzione": "Livello 4, +30 punti" },
+    { "nomi": ["Goblin Oddgit"], "livello": 1, "domini": ["elementalism", "waaagh"],
+      "regole": ["Lore of Mork"], "libro": "Ravening Hordes", "page": 16, "opzione": "Livello 2, +30 punti" },
+    { "nomi": ["Night Goblin Oddnob"], "livello": 3, "domini": ["illusion", "waaagh"],
+      "regole": ["Lore of Mork"], "libro": "Ravening Hordes", "page": 18, "opzione": "Livello 4, +30 punti" },
+    { "nomi": ["Night Goblin Oddgit"], "livello": 1, "domini": ["illusion", "waaagh"],
+      "regole": ["Lore of Mork"], "libro": "Ravening Hordes", "page": 18, "opzione": "Livello 2, +30 punti" },
+    { "nomi": ["Skink Priest"], "livello": 1, "domini": ["battle", "elementalism", "illusion"],
+      "regole": ["Lore Of Lustria"], "libro": "Legends: Lizardmen", "page": 4, "opzione": "Livello 2, +30 punti",
+      "armatura": "la scheda gli da' la pelle callosa, che conta come armatura leggera, e p. 111 toglie il lancio a chi porta armatura: l'app non lo applica finche' non si trova una FAQ" },
+    { "nomi": ["Slann Mage-Priest", "Slann Mage-Priests"], "livello": 4,
+      "domini": ["battle", "elementalism", "high", "illusion", "necromancy"],
+      "regole": ["Lore Of Lustria"], "libro": "Legends: Lizardmen", "page": 3 },
+    { "nomi": ["Warlock Engineer"], "livello": 0, "domini": ["battle", "elementalism"],
+      "regole": ["Lore of the Horned Rat"], "libro": "Legends: Skaven", "page": 4,
+      "opzione": "Livello 1 per 40 punti o Livello 2 per 70: senza, non e' un mago" }
   ]
 }

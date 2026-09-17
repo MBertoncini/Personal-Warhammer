@@ -1683,12 +1683,41 @@ E tre cose che bloccavano tutto il resto:
   per cento di pareggi, nessun avviso. Adesso `prep.js` lo dichiara;
 - ~~**il raduno**~~, che è nella sezione della psicologia.
 
+E una quinta, che era la voce più grossa di quelle che l'arbitro
+dichiarava e non giocava:
+
+5. ~~**la magia in partita**~~ — fatta. Tre decisioni, perché si
+   rifacciano solo se si trova di meglio:
+   - **gli incantesimi li tira l'arbitro**, prima dello schieramento,
+     che è la regola (p. 106); la scheda di preparazione vince quando li
+     porta come id (`spellIds`), e con loro `level` e `lore`. Quello che
+     il file non dice — il Livello, i domini fra cui scegliere, la regola
+     «Lore of …» che i Night Goblin delle liste salvate non portano — sta
+     in `dati/magia/domini.json` alla voce `maghi`, letto sulla scheda di
+     ogni mago con libro e pagina. Il Livello comprato come opzione il
+     file non lo dice: vale quello di base, e il registro lo dichiara;
+   - **non c'è una riserva di dadi del vento.** Il piano la dava per
+     scontata; il libro (pp. 108-110) non ce l'ha: ogni tentativo tira i
+     suoi 2D6, un incantesimo si tenta una volta per turno, la sorte una
+     volta per turno, e il fiasco chiude il resto. Lo stato dell'arbitro
+     ricorda solo questo (`S.magia`);
+   - **la magia non ha una casella sua**: sta dove il libro la mette —
+     una casella di congiurazione prima del raduno, i dardi nel tiro, gli
+     assalti in mischia. Il dissolvimento è una domanda in sospeso per
+     l'altro giocatore, come la reazione alla carica, e così l'assalto di
+     chi non è di turno prima che si meni. L'arbitro offre **solo** gli
+     incantesimi che sa applicare (colpi, modifiche, bandierine): gli
+     altri sono testo, e un lancio che non cambia niente sul tavolo è un
+     dado tirato per finta.
+
 ### Cosa resta
 
-- **La magia in partita.** `magic.js` sa generare, lanciare, dissolvere
-  e far male; quello che manca è la lista degli incantesimi scelti prima
-  della battaglia, che un file di New Recruit non porta. È la voce più
-  grossa che l'arbitro dichiara e non gioca.
+- **La magia che resta testo.** Vortici, trasporti, sagome, linee: un
+  trentatré dei cinquantasei incantesimi del manuale base: l'arbitro ne
+  gioca ventitré. Vogliono la geometria delle sagome
+  (la stessa del punto qui sotto) e il movimento fuori turno. Con loro
+  gli assalti al passo d'Iniziativa del mago (p. 158), che oggi si
+  lanciano prima che si meni, e le ferite degli assalti nel risultato.
 - **Le manovre.** Riforme, giri sul posto, ruote pagate dal budget di
   movimento: `charge.js` le calcola già, l'arbitro non le offre.
 - **Le sfide**, che sono una decisione e non un conto: l'overkill lo
