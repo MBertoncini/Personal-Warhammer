@@ -39,7 +39,7 @@ regole di casa del progetto e la storia di tutte le decisioni prese:
   `deploy.js` (la pagina), `store.js`/`sync.js` (i dati) e `agente.js` (il
   modello di linguaggio). Entrano numeri, escono numeri con la traccia di
   come sono venuti.
-- **Prove per tutto.** `npm test` (~1800 asserzioni, un minuto o due). Ogni regola
+- **Prove per tutto.** `npm test` (~1850 asserzioni, un minuto o due). Ogni regola
   nuova porta le sue prove nel file della sua fase, con etichette in
   italiano che si leggono come frasi.
 - **L'italiano nei commenti e nell'interfaccia**, l'inglese solo nei nomi
@@ -99,8 +99,8 @@ trova queste anomalie da solo — fallo girare su ogni partita nuova.
 **Da controllare sul libro**, perché in quella sessione il manuale non
 c'era:
 
-- il raggio del Comando del generale, preso di **12″**
-  (`RAGGIO_GENERALE` in `arbitro.js`, dichiarato in `LIMITI`);
+- ~~il raggio del Comando del generale~~ — letto: 12″, e 18″ se il
+  generale è un Large Target (p. 202). `RAGGIO_GENERALE_GRANDE`;
 - la carica su un bersaglio fuggito: chi lo raggiunge lo travolge,
   chi non lo raggiunge fa la carica fallita (p. 121?). Manca la
   ridirezione (in `LIMITI`);
@@ -157,13 +157,52 @@ Blooded dei Lizardmen, Stupidity e Regeneration dei Troll — e ne porta di
 strane (Impact Hits a un Night Goblin Bigboss appiedato). L'arbitro gioca
 quello che trova.
 
-## Compito 0 — la psicologia e i personaggi uniti in partita
+## Compito 0 — fatto: la psicologia e i personaggi uniti in partita
 
-Paura, Terrore e Stupidità hanno i test in `psych.js` e l'arbitro non li
-chiama (`LIMITI`, voce `psicologia`); i personaggi non si uniscono mai
-alle unità (voce `personaggi`), e in tutte le partite fra modelli sono
-morti da soli al primo turno. Sono due buchi che pesano sull'esito più
-delle scelte dei modelli.
+Quello che è stato deciso, perché non si rifaccia la stessa strada:
+
+- **ci si unisce dove lo dice p. 207**: allo schieramento (`unisci`) e
+  nelle mosse restanti (`unisciti`), e si esce prima che il reggimento si
+  muova (`separa`). `daSchierare` mette in campo prima i reggimenti e poi
+  i personaggi, perché un capo schierato per primo non avrebbe nessuno
+  con cui stare. Il genere (fanteria con fanteria, cavalleria con
+  cavalleria) è una lettura dell'app: limite `genere`;
+- **un reggimento con un capo**: Comando più alto fra i modelli
+  (`ldProprio`, p. 97), passo del più lento (`movimento`, p. 208), Forza
+  d'Unità sommata (`usConCapi`, p. 207). Se fugge fuori dal tavolo o è
+  travolto, il capo va con lui (`posa`); se cade in combattimento, il capo
+  resta da solo (`perdite` lo stacca). Il punteggio conta anche i capi;
+- **Paura** (p. 168): prima di dichiarare (`carica`) e quando il
+  combattimento viene scelto (`mischia`), una volta per turno
+  (`u.paura`). La probabilità di passarla entra nella carica offerta
+  (`passaIl`). In mischia la bandierina `feared` di `combat.js` vale
+  contro tutti i nemici: limite `pauramischia`;
+- **Terrore** (p. 179): alla dichiarazione, e chi fallisce ha una sola
+  reazione, la fuga. `reactions` non leggeva `canFlee`: adesso l'arbitro
+  le passa `noFlee` e `mustHold`, e un'unità immune non fugge più;
+- **Stupidità**: in `inizioTurno`, con il testo che le liste portano
+  (`psych.js`), che **non è quello di p. 178** del Core Rulebook — là si
+  muove in avanti e non marcia né carica. Limite `stupidita`. Chi è
+  stupido non muove, non carica, non tira, non lancia, non dissolve;
+- limiti ancora aperti: `frenesia` (l'obbligo di caricare non è
+  imposto), `solitari` (la protezione dei 3″ e la schivata, p. 206).
+
+## Fatto: la sfida sul tavolo, tu contro l'AI
+
+`src/controai.js`, dalla scheda Matchup (*Sfida l'AI sul tavolo*) al
+pannello **Sfida** del tavolo. L'arbitro tiene la partita, `deploy.js`
+la mostra (`mostraSfida`: le unità dell'arbitro diventano quelle del
+tavolo; `state.sfida` blocca i trascinamenti e non si salva), le tue
+mosse sono i pulsanti delle opzioni dell'arbitro, quelle dell'altro le
+sceglie `agenteGemini`. La chiave sta in `localStorage`
+(`tow-gemini-key`), mai nei backup. La partita vive nella scheda: non
+sopravvive a un ricaricamento — se serve, `S` va reso serializzabile
+(`detto` è un `Set`, il terreno ha funzioni `contains`). Prove in
+`test/boot.mjs`, sezione «la sfida contro l'AI».
+
+Da fare, se la si usa davvero: salvare la sfida finita nel diario delle
+Partite (come `tools/archivia.mjs`), e scegliere un bersaglio o un posto
+cliccando sul tavolo invece che nell'elenco.
 
 ## Compito 1 — fatto: la magia in partita (pp. 106-111)
 
@@ -218,7 +257,7 @@ Prove: `test/magia.mjs` (probabilità, schede dei maghi) e
 effetto che scade al turno giusto, e tre partite fra uno Skink Priest e
 un Night Goblin Oddnob sulle liste 1 e 2).
 
-## Compito 2 — le manovre (p. 125)
+## Compito 2 — le manovre (p. 125) — il prossimo
 
 L'arbitro oggi sa avanzare, marciare, caricare e stare fermo. Il manuale ha
 anche riforme, giri sul posto e ruote pagate dal budget di movimento —

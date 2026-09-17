@@ -1252,3 +1252,28 @@ details.magic-block > summary{cursor:pointer;list-style:none;}
 details.magic-block > summary::-webkit-details-marker{display:none;}
 details.magic-block > summary::after{content:"+";margin-left:6px;color:var(--muted);}
 details.magic-block[open] > summary::after{content:"\2212";}
+
+/* la sfida contro l'AI: le mosse sono pulsanti larghi con il perché
+   sotto, perché si sceglie leggendo e non indovinando un'etichetta */
+.sf-testa{display:flex;flex-direction:column;gap:3px;margin-bottom:8px;}
+.sf-testa .mono{font-size:11px;color:var(--muted);}
+.sf-scelta{margin:6px 0 10px;}
+.sf-cosa{font-weight:600;margin-bottom:6px;}
+.sf-mosse{display:flex;flex-direction:column;gap:4px;max-height:46vh;overflow:auto;}
+.sf-mossa{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;
+  white-space:normal;height:auto;padding:6px 8px;}
+.sf-mossa small{color:var(--muted);font-size:11px;line-height:1.3;}
+.sf-pensa{color:var(--muted);font-style:italic;margin:10px 0;}
+.sf-ai{margin:8px 0;padding:6px 8px;border-left:3px solid var(--line-strong);background:var(--panel-2);border-radius:var(--r);font-size:12px;}
+.sf-ai .dim{color:var(--muted);font-size:11px;}
+.sf-ai blockquote{margin:4px 0 0;font-style:italic;}
+.sf-registro{list-style:none;margin:0 0 8px;padding:0;max-height:34vh;overflow:auto;font-size:12px;}
+.sf-riga{display:flex;gap:6px;align-items:baseline;padding:2px 0;border-bottom:1px solid var(--line);}
+.sf-riga .sf-t{font-weight:700;min-width:2.2em;}
+.sf-riga .dim, .sf-testa .dim{color:var(--muted);}
+.sf-limite{color:var(--muted);}
+.sf-imp{margin-top:12px;}
+.sf-imp > summary{cursor:pointer;list-style:none;}
+.sf-err{font-size:11px;color:var(--muted);margin:6px 0;}
+.note.warn{border-left:3px solid var(--warn);padding-left:6px;}
+label.field.inline{flex-direction:row;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-size:12px;}

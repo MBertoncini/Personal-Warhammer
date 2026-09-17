@@ -89,12 +89,16 @@ export const LIMITI = [
     why:"il test c'è in `charge.js` (`perilAsk`), ma vuole sapere quali modelli hanno attraversato" },
   { id:"ingombro",  what:"chi trova la strada chiusa si ferma o gira un poco, non aggira l'ostacolo", page:122,
     why:"il percorso è una linea con qualche deviazione, non una ricerca di strada" },
-  { id:"psicologia", what:"Paura, Terrore e Stupidità non si tirano", page:0,
-    why:"i test ci sono in `psych.js`, ma l'arbitro non li chiama prima delle cariche né all'inizio del turno" },
-  { id:"personaggi", what:"i personaggi non si uniscono alle unità: stanno in campo e combattono da soli", page:0,
-    why:"unirsi è una scelta di schieramento che l'arbitro non offre ancora" },
-  { id:"generale",  what:"il raggio del Comando del generale è preso di 12″, da controllare sul libro", page:0,
-    why:"il numero non è stato letto sul manuale in questa sessione" },
+  { id:"stupidita", what:"la Stupidità è quella del testo che la lista porta", page:178,
+    why:"ferma, niente tiro né magia, e se caricata tiene la posizione; il Core Rulebook a p. 178 ne stampa un'altra versione — si muove in avanti nelle mosse obbligate, non marcia e non carica — e l'arbitro gioca quella della lista, che è la più recente" },
+  { id:"frenesia",  what:"chi è frenetico o impetuoso non è obbligato a caricare", page:170,
+    why:"`psych.js` sa l'obbligo (`mustCharge`), ma l'arbitro lascia la carica a chi gioca" },
+  { id:"genere",    what:"un personaggio a piedi entra solo nella fanteria, uno a cavallo solo nella cavalleria", page:207,
+    why:"il libro dice che ci si unisce «salvo che il tipo di truppa lo impedisca» senza fare l'elenco: questa è la lettura dell'app" },
+  { id:"solitari",  what:"un personaggio da solo si bersaglia sempre, e non schiva l'inseguimento", page:206,
+    why:"la protezione dei 3″ da un reggimento amico e la schivata vogliono il conto dei modelli vicini, che l'arbitro non fa" },
+  { id:"pauramischia", what:"chi fallisce la Paura in un combattimento con più nemici ha −1 per colpire contro tutti", page:168,
+    why:"il libro lo toglie solo a chi dirige i colpi contro chi fa Paura, e la schiera di `combat.js` ha una bandierina sola" },
 ];
 
 /* Le caselle del turno che questo arbitro gioca. Sono meno delle
@@ -235,18 +239,20 @@ export function newBattle({ A, B, scenario = "bm-strada", nomi = null, magia = n
 /* Il Comando del generale: chi gli sta entro il raggio usa il suo
    valore invece del proprio, se e' piu' alto. Prima l'arbitro non lo
    applicava affatto, e un reggimento a sei pollici dal suo Warboss
-   tirava i test di rotta con il proprio Comando 6. Il raggio non e'
-   stato letto sul libro in questa sessione: sta in una costante sola,
-   ed e' dichiarato fra i limiti (`generale`). Il generale in fuga non
-   ispira nessuno. */
+   tirava i test di rotta con il proprio Comando 6. Il raggio e' quello
+   di p. 202: 12″ per il generale, qualunque sia il suo Comando, e 18″
+   se e' un Large Target. Il generale in fuga non ispira nessuno. */
 export const RAGGIO_GENERALE = 12;
+/* e 18″ se il generale e' un Large Target o ne cavalca uno (p. 202) */
+export const RAGGIO_GENERALE_GRANDE = 18;
+const grande = u => ((u && u.rules) || []).some(r => /^large target/i.test(String(r)));
 function comandoGenerale(S, u){
   const g = byUid(S, (S.generale || {})[u.army]);
   if (!g || g === u || g.dead || g.fled) return null;
   const host = isJoined(g) ? byUid(S, FM.joinedHost(g)) : g;
   if (!host || !onBoard(host)) return null;
   const d = host === u ? 0 : distanza(S, u, host);
-  if (d > RAGGIO_GENERALE) return null;
+  if (d > (grande(g) ? RAGGIO_GENERALE_GRANDE : RAGGIO_GENERALE)) return null;
   const c = CB.combatant(g);
   const ld = +(c.ldBase != null ? c.ldBase : c.ld) || 0;
   return ld ? { ld, nome: g.name, d } : null;
@@ -256,7 +262,6 @@ function comandoGenerale(S, u){
 function comandoDi(S, u, proprio, { zitto = false } = {}){
   const g = comandoGenerale(S, u);
   if (!g || g.ld <= proprio) return { ld: proprio, why: "" };
-  if (!zitto) limite(S, "generale");
   return { ld: g.ld, why: `Comando ${g.ld} di ${g.nome}, a ${g.d}″` };
 }
 
@@ -288,6 +293,29 @@ function limite(S, id){
 /* ============================================================
    3 · CHI E' DOVE
    ============================================================ */
+/* I personaggi uniti a un reggimento (p. 207), e chi puo' unirsi a chi. */
+export const capiDi = (S, u) => FM.attachedTo(S.units, u);
+const GENERE = { regularInfantry:"fanteria", heavyInfantry:"fanteria", monstrousInfantry:"fanteria",
+                 lightCavalry:"cavalleria", heavyCavalry:"cavalleria", monstrousCavalry:"cavalleria" };
+const genere = u => GENERE[troopType(u.troop).id] || "";
+const indomito = u => ((u && u.rules) || []).some(r => /^unbreakable/i.test(String(r)));
+/* Un personaggio che puo' unirsi: fanteria o cavalleria, un modello
+   solo, e non gia' dentro qualcuno (p. 206). I carri e i mostri
+   cavalcati no: la loro formazione e' quella della cavalcatura. */
+export const puoUnirsi = (S, c) => PREP.isCharacter(c) && !!genere(c) && (c.models || 1) === 1 &&
+                                   !c.dead && !isJoined(c);
+/* Chi lo puo' ospitare: un reggimento amico dello stesso genere, che
+   non sia a sua volta un personaggio (p. 207: due personaggi non fanno
+   un'unita'), e con l'Unbreakable uguale (p. 179). */
+function puoOspitare(S, c, h){
+  if (h === c || h.army !== c.army || h.dead || !onBoard(h) || isJoined(h)) return false;
+  if (PREP.isCharacter(h) || genere(h) !== genere(c)) return false;
+  return indomito(h) === indomito(c);
+}
+/* La Forza d'Unita' con i personaggi dentro (p. 207): e' quella che la
+   Paura confronta. */
+export const usConCapi = (S, u) => usOf(u) + capiDi(S, u).reduce((t, c) => t + usOf(c), 0);
+
 export const unitsOf = (S, army) => S.units.filter(u => u.army === army && !u.dead && !isJoined(u));
 export const inCampo = (S, army) => unitsOf(S, army).filter(onBoard);
 export const nemiciDi = (S, u) => inCampo(S, u.army === "A" ? "B" : "A");
@@ -418,11 +446,16 @@ function percorso(S, u, verso, pollici, { rot = u.rot || 0, ignora = [], unPolli
   return { ...best, pollici: r1(inch(best.mm)) };
 }
 
-/* sposta il pezzo, e con lui i personaggi che ci stanno dentro */
+/* sposta il pezzo, e con lui i personaggi che ci stanno dentro. Chi
+   fugge fugge con loro (p. 207), e se il reggimento esce dal tavolo o
+   viene travolto escono anche loro: sono i casi in cui `u.dead` arriva
+   da una fuga. Un reggimento abbattuto nel combattimento invece lascia
+   i suoi capi in piedi, e li stacca prima (`perdite`). */
 function posa(S, u, x, y, rot = u.rot){
   u.x = x; u.y = y; u.rot = rot;
-  for (const c of S.units.filter(o => FM.joinedHost(o) === u.uid)){
-    c.x = x; c.y = y; c.rot = rot; c.dead = u.dead; c.placed = u.placed; c.fled = u.fled;
+  for (const c of S.units.filter(o => FM.joinedHost(o) === u.uid && !o.dead)){
+    c.x = x; c.y = y; c.rot = rot; c.placed = u.placed; c.fled = u.fled;
+    if (u.dead){ c.dead = true; c.fledOff = u.fledOff; }
   }
 }
 
@@ -471,6 +504,38 @@ export function postiPer(S, u){
   return out;
 }
 
+/* Dove un personaggio si puo' unire (p. 207): allo schieramento ogni
+   reggimento amico gia' in campo; nelle mosse restanti quelli che
+   raggiunge. Il reggimento con il capo dentro si allarga: se cosi' non
+   ci sta piu', l'unione non si offre. */
+function entraSenzaUrtare(S, c, h){
+  const prima = c.join;
+  c.join = { host: h.uid };
+  const box = boxOf(h, S.units);
+  c.join = prima;
+  return !ingombro(S, h, box, { unPollice: false, ignora: [c.uid] });
+}
+export function opzioniUnione(S, c, { pollici = null } = {}){
+  if (!puoUnirsi(S, c)) return [];
+  const out = [];
+  for (const h of inCampo(S, c.army)){
+    if (!puoOspitare(S, c, h)) continue;
+    if (pollici != null){
+      if (h.fled || ingaggiata(S, h) || h.unito === chiave(S)) continue;
+      const d = distanza(S, c, h);
+      if (d > pollici + 1e-6) continue;
+    }
+    if (!entraSenzaUrtare(S, c, h)) continue;
+    const dentro = capiDi(S, h);
+    out.push({ id: pollici != null ? "unisciti" : "unisci", uid: c.uid, host: h.uid, nome: c.name, contro: h.name,
+               why: `entra in ${h.name} (${alive(h)} modelli${dentro.length ? ", con " + dentro.map(x => x.name).join(" e ") : ""}): ` +
+                    `ne porta la Forza d'Unità a ${usConCapi(S, h) + usOf(c)}, e con lui il reggimento usa il Comando più alto (p. 97)` +
+                    (pollici != null ? `; da lì il reggimento non si muove più in questo turno` : ""),
+               page: 207 });
+  }
+  return out.sort((a, b) => alive(byUid(S, b.host)) - alive(byUid(S, a.host)));
+}
+
 /* ============================================================
    5 · LE MOSSE LEGALI, ADESSO
    Torna sempre la stessa forma: di chi e' il turno, cosa sta
@@ -491,7 +556,7 @@ export function options(S){
   if (S.schierando){
     const prossima = daSchierare(S);
     if (!prossima) return { player: S.army, fase: "Schieramento", what: "tutti schierati", list: [{ id:"avanti", why:"si comincia" }] };
-    const posti = postiPer(S, prossima);
+    const posti = [...opzioniUnione(S, prossima), ...postiPer(S, prossima)];
     return {
       player: S.army, fase: "Schieramento", page: 115,
       what: `${S.nomi[S.army]} schiera ${prossima.name} (${alive(prossima)} modelli, ${prossima.pts || 0} pt)`,
@@ -547,7 +612,10 @@ function daSchierare(S){
      torna a chiedere: resta fuori dal tavolo, e a fine partita vale
      quello che vale */
   const mie = unitsOf(S, S.army).filter(u => !u.placed && !isJoined(u) && !u.rinuncia);
-  return mie[0] || null;
+  /* i personaggi che possono unirsi vengono dopo i reggimenti: al
+     tavolo ci si unisce «essendo messi con l'unita'» (p. 207), e un
+     capo schierato per primo non avrebbe nessuno con cui stare */
+  return mie.find(u => !puoUnirsi(S, u)) || mie[0] || null;
 }
 
 /* ---- raduno (p. 117) ---- */
@@ -568,6 +636,40 @@ function opzioniRaduno(S){
 }
 
 /* ---- cariche (p. 118) ---- */
+/* La Paura di chi carica (p. 168): un test per turno, contro un nemico
+   che la fa ed e' piu' grosso. */
+function pauraDi(S, u, t, when){
+  const me = PS.psychOf(u, { joined: capiDi(S, u) });
+  const foe = PS.psychOf(t, { joined: capiDi(S, t) });
+  const tested = u.paura && u.paura.key === chiave(S) ? u.paura : null;
+  return PS.fearCheck({ me, foe, meUS: usConCapi(S, u), foeUS: usConCapi(S, t), when, tested, foeName: t.name });
+}
+/* La probabilita' di passare un test di Comando: 2D6 (3D6 tenendo i
+   due minori con Cold Blooded) contro il Comando, e il doppio uno
+   passa sempre. */
+export function passaIl(ld, cold = false){
+  const f = [1, 2, 3, 4, 5, 6];
+  let si = 0, n = 0;
+  for (const a of f) for (const b of f) for (const c of (cold ? f : [0])){
+    const k = cold ? [a, b, c].sort((x, y) => x - y).slice(0, 2) : [a, b];
+    n++;
+    if (k[0] + k[1] <= ld || (k[0] === 1 && k[1] === 1)) si++;
+  }
+  return si / n;
+}
+/* Il test psicologico tirato davvero, con la sua riga di registro. */
+function testPsico(S, u, kind, p, perche, page){
+  const auto = PS.autoPass(kind, p);
+  if (auto.auto){
+    say(S, `${u.name}, ${PS.KINDS[kind].label} (${perche}): ${auto.why}.`, { army: u.army, page });
+    return { passed: true, auto: true };
+  }
+  const dadi = roll(PS.coldDice(kind, p) ? 3 : 2);
+  const res = PS.psychTest({ kind, ld: ldOf(S, u), dice: dadi, p });
+  say(S, `${u.name}, ${PS.KINDS[kind].label} (${perche}): ${res.text}.`, { dice: dadi, army: u.army, page });
+  return res;
+}
+
 function opzioniCarica(S){
   const out = [];
   for (const u of inCampo(S, S.army)){
@@ -575,10 +677,14 @@ function opzioniCarica(S){
        ci e' andata male una volta e basta */
     if (u.fled || u.charged || u.moved || ingaggiata(S, u)) continue;
     /* Miasmic Mirage, Earthen Ramparts: chi ce l'ha addosso non carica */
-    if (bandiera(u, "noCharge")) continue;
+    if (bandiera(u, "noCharge") || stupida(S, u) || u.unito === chiave(S)) continue;
     const { move } = movimento(S, u);
     if (!move) continue;
+    const pu = PS.psychOf(u, { joined: capiDi(S, u) });
+    if (pu.anyFrenzy || pu.impetuous) limite(S, "frenesia");
     for (const t of nemiciDi(S, u)){
+      const paura = pauraDi(S, u, t, "charge");
+      if (paura.already && !paura.passed) continue;
       const d = CH.declareCharge({
         charger: { name: u.name, box: boxOf(u, S.units), move, swift: MV.swiftOf(u), loose: !!u.loose },
         target:  { name: t.name, box: boxOf(t, S.units) },
@@ -594,12 +700,22 @@ function opzioniCarica(S){
       if (!posto || posto.pieno) continue;
       const extra = r1(posto.extra || 0);
       const need = Math.max(0, r1(d.need + extra));
-      const chance = extra ? CH.chargeChance(need, MV.swiftOf(u)) : d.chance;
+      let chance = extra ? CH.chargeChance(need, MV.swiftOf(u)) : d.chance;
       if (chance <= 0) continue;
+      /* la Paura prima di dichiarare: entra nella probabilita' */
+      let nota = "";
+      if (paura.must && !paura.auto){
+        const ok = passaIl(ldOf(S, u, { zitto: true }), PS.coldDice("fear", pu));
+        chance *= ok;
+        nota = `; prima un test di Paura (${paura.why}), che passa il ${Math.round(ok * 100)}%` +
+               ` — se fallisce resta ferma (p. 168)`;
+      }
+      const pt = PS.psychOf(t, { joined: capiDi(S, t) });
+      if (pu.causesTerror && !pt.immuneTerror) nota += `; fa Terrore: ${t.name} tira, e se fallisce deve fuggire (p. 179)`;
       out.push({ id:"carica", uid: u.uid, target: t.uid, nome: u.name, contro: t.name,
                  why: `${d.dist}″, ${need ? "serve " + need + "″ di tiro" : "ci arriva camminando"}` +
                       (extra ? ` (${extra}″ per trovare posto sulla faccia)` : "") +
-                      `, riesce il ${Math.round(chance * 100)}%, la prende di ${d.side}`,
+                      `, riesce il ${Math.round(chance * 100)}%, la prende di ${d.side}` + nota,
                  chance, page: 119 });
     }
   }
@@ -612,8 +728,11 @@ function opzioniMossa(S){
   const out = [];
   for (const u of inCampo(S, S.army)){
     if (u.fled || u.charged || ingaggiata(S, u) || u.moved) continue;
+    if (u.unito === chiave(S) || stupida(S, u)) continue;
     const { mv, move } = movimento(S, u);
     if (!move){ continue; }
+    /* un personaggio da solo puo' invece unirsi a chi raggiunge */
+    if (puoUnirsi(S, u)) out.push(...opzioniUnione(S, u, { pollici: move }));
     const t = piuVicino(S, u);
     if (!t) continue;
     const d = distanza(S, u, t);
@@ -632,14 +751,43 @@ function opzioniMossa(S){
                page: 123 });
     out.push({ id:"ferma", uid: u.uid, nome: u.name, why: "resta dov'è: chi non muove spara meglio", page: 138 });
   }
+  /* i capi escono prima che il reggimento si muova (p. 207): in fondo
+     all'elenco, perche' e' la mossa che si fa di rado */
+  for (const c of S.units.filter(x => x.army === S.army && isJoined(x) && !x.dead && !x.moved)){
+    const h = byUid(S, FM.joinedHost(c));
+    if (!h || !onBoard(h) || h.moved || h.fled || ingaggiata(S, h) || h.unito === chiave(S) || stupida(S, h)) continue;
+    if (postoFuori(S, c, h)) out.push({ id:"separa", uid: c.uid, nome: c.name, contro: h.name,
+      why: `esce da ${h.name} e resta da solo accanto al reggimento; da solo si bersaglia e combatte per conto suo`, page: 207 });
+  }
   return [...out, avanti("basta mosse: chi non si è ancora mosso resta dov'è")];
+}
+
+/* Il posto accanto al reggimento per un capo che esce: a destra del
+   fronte, o a sinistra, a mezzo pollice. */
+function postoFuori(S, c, h){
+  const prima = c.join;
+  c.join = null;
+  const bh = boxOf(h, S.units), bc = boxOf(c, S.units);
+  c.join = prima;
+  const a = (h.rot || 0) * Math.PI / 180;
+  const rx = Math.cos(a), ry = Math.sin(a);
+  for (const segno of [1, -1]){
+    const off = segno * (bh.w / 2 + bc.w / 2 + MM / 2);
+    const fx = -Math.sin(a) * (-(bh.h - bc.h) / 2), fy = Math.cos(a) * (-(bh.h - bc.h) / 2);
+    const box = { ...bc, x: h.x + rx * off + fx, y: h.y + ry * off + fy, rot: h.rot || 0 };
+    c.join = null;
+    const blocco = ingombro(S, c, box, { ignora: [h.uid] });
+    c.join = prima;
+    if (!blocco) return box;
+  }
+  return null;
 }
 
 /* ---- tiro (p. 136) ---- */
 function opzioniTiro(S){
   const out = [];
   for (const u of inCampo(S, S.army)){
-    if (u.fled || ingaggiata(S, u) || u.shot) continue;
+    if (u.fled || ingaggiata(S, u) || u.shot || stupida(S, u)) continue;
     const armi = CB.rangedWeapons(u);
     if (!armi.length) continue;
     const gate = SH.canShoot({ charged: !!u.charged, marched: !!(u.moved && u.moved.kind === "march"),
@@ -717,10 +865,21 @@ export function gruppiInMischia(S){
    6 · I NUMERI CHE SERVONO A DECIDERE
    ============================================================ */
 function ldOf(S, u, { zitto = false } = {}){
-  const p = PS.psychOf(u, { joined: FM.attachedTo(S.units, u) });
-  const c = CB.combatant(u);
-  const base = comandoDi(S, u, +(c.ldBase || c.ld) || 0, { zitto }).ld;
+  const p = PS.psychOf(u, { joined: capiDi(S, u) });
+  const base = comandoDi(S, u, ldProprio(S, u).ld, { zitto }).ld;
   return PS.leadershipOf(base, p, { fleeing: !!u.fled }).value;
+}
+/* Il Comando piu' alto fra i modelli dell'unita', capi compresi (p. 97):
+   «warriors naturally look to the most steadfast of their number». */
+function ldProprio(S, u){
+  const c = CB.combatant(u);
+  let ld = +(c.ldBase != null ? c.ldBase : c.ld) || 0, chi = "";
+  for (const x of capiDi(S, u)){
+    const k = CB.combatant(x);
+    const v = +(k.ldBase != null ? k.ldBase : k.ld) || 0;
+    if (v > ld){ ld = v; chi = x.name; }
+  }
+  return { ld, chi };
 }
 
 /* Il Movimento che si tira (3D6 dei Squig Hopper, del Doomwheel): si
@@ -731,6 +890,17 @@ function ldOf(S, u, { zitto = false } = {}){
    Mirage). `moveInfo` legge il file e basta; la differenza la sa
    `effects.js`. */
 function movimento(S, u){
+  /* con un capo dentro si va al passo del piu' lento (p. 208) */
+  const capi = capiDi(S, u);
+  if (capi.length){
+    const tutti = [movimentoSolo(S, u), ...capi.map(c => movimentoSolo(S, c))];
+    const lento = tutti.filter(x => x.move > 0).sort((a, b) => a.move - b.move)[0] || tutti[0];
+    return lento === tutti[0] ? lento
+      : { ...lento, mv: { ...tutti[0].mv, why: `al passo di ${capi[tutti.indexOf(lento) - 1].name} (p. 208)` } };
+  }
+  return movimentoSolo(S, u);
+}
+function movimentoSolo(S, u){
   const mv = moveInfo(u);
   const base = mv.m || (mv.random ? tiraRandom(S, u, mv) : 0);
   if (!base) return { mv, move: 0 };
@@ -739,6 +909,8 @@ function movimento(S, u){
   return { mv, move: Math.max(0, base + delta), delta };
 }
 const bandiera = (u, k) => !!EF.flagsOf(u).flags[k];
+/* In preda alla Stupidita': il reggimento, o quello in cui il capo sta. */
+const stupida = (S, u) => bandiera(isJoined(u) ? (byUid(S, FM.joinedHost(u)) || u) : u, "stupid");
 
 function tiraRandom(S, u, mv){
   const key = S.turno + ":" + S.army;
@@ -795,6 +967,14 @@ export function apply(S, a){
   if (attesi && !attesi.includes(a.id)) return no(`prima si risponde alla domanda in sospeso (${S.pending.kind})`);
   return f(S, a);
 }
+/* si alterna, e chi ha finito lascia continuare l'altro */
+function alterna(S){
+  S.army = S.army === "A" ? "B" : "A";
+  if (!daSchierare(S)){
+    S.army = S.army === "A" ? "B" : "A";
+    if (!daSchierare(S)) fineSchieramento(S);
+  }
+}
 const SOSPESI = { dissolvi: ["dissolvi", "lascia", "avanti"], assalto: ["lancia", "lascia", "avanti"] };
 const no = why => ({ ok: false, text: why });
 const si = text => ({ ok: true, text });
@@ -821,13 +1001,56 @@ const GESTI = {
     for (const c of S.units.filter(x => FM.joinedHost(x) === u.uid)){
       c.x = u.x; c.y = u.y; c.rot = u.rot; c.placed = true;
     }
-    /* si alterna, e chi ha finito lascia continuare l'altro */
-    S.army = S.army === "A" ? "B" : "A";
-    if (!daSchierare(S)){
-      S.army = S.army === "A" ? "B" : "A";
-      if (!daSchierare(S)) fineSchieramento(S);
-    }
+    alterna(S);
     return si(`${u.name} schierata`);
+  },
+
+  /* Unirsi allo schieramento: il capo si mette con il reggimento, ed e'
+     la sua mossa di schieramento (p. 207). */
+  unisci: (S, a) => {
+    const c = byUid(S, a.uid), h = byUid(S, a.host);
+    if (!S.schierando || !c || c.placed) return no("si unisce allo schieramento solo chi è ancora da schierare");
+    if (!opzioniUnione(S, c).some(x => x.host === a.host)) return no(`${c ? c.name : "?"} non può unirsi a quell'unità`);
+    c.join = { host: h.uid };
+    c.placed = true;
+    posa(S, h, h.x, h.y, h.rot);
+    limite(S, "genere");
+    say(S, `${c.name} si schiera dentro ${h.name} (p. 207).`, { army: c.army, page: 207 });
+    alterna(S);
+    return si(`${c.name} unito a ${h.name}`);
+  },
+  /* Unirsi nelle mosse restanti: il capo raggiunge il reggimento, che da
+     li' non si muove piu' in questo turno (p. 207). */
+  unisciti: (S, a) => {
+    const c = byUid(S, a.uid), h = byUid(S, a.host);
+    if (!c || !h || c.moved) return no("questo personaggio non può muoversi adesso");
+    const { move } = movimento(S, c);
+    if (!opzioniUnione(S, c, { pollici: move }).some(x => x.host === a.host))
+      return no(`${c.name} non raggiunge ${h ? h.name : "quell'unità"}`);
+    const d = distanza(S, c, h);
+    c.join = { host: h.uid };
+    c.moved = { kind: "move", inches: d };
+    h.unito = chiave(S);
+    posa(S, h, h.x, h.y, h.rot);
+    limite(S, "genere");
+    say(S, `${c.name} percorre ${d}″ e si unisce a ${h.name}` +
+           (h.moved ? "" : `, che da qui non si muove più in questo turno`) + " (p. 207).",
+        { army: c.army, page: 207 });
+    return si(`${c.name} unito a ${h.name}`);
+  },
+  separa: (S, a) => {
+    const c = byUid(S, a.uid);
+    const h = c && byUid(S, FM.joinedHost(c));
+    if (!c || !h || c.moved) return no("non è unito a nessuno, o si è già mosso");
+    if (h.moved || h.unito === chiave(S)) return no("si esce da un reggimento prima che si muova (p. 207)");
+    const box = postoFuori(S, c, h);
+    if (!box) return no("accanto al reggimento non c'è posto");
+    c.join = null;
+    c.x = box.x; c.y = box.y; c.rot = box.rot;
+    c.moved = { kind: "move", inches: r1(inch(Math.hypot(box.x - h.x, box.y - h.y))) };
+    say(S, `${c.name} esce da ${h.name} e resta da solo (p. 207).`, { army: c.army, page: 207 });
+    limite(S, "solitari");
+    return si(`${c.name} da solo`);
   },
 
   raduna: (S, a) => {
@@ -851,6 +1074,8 @@ const GESTI = {
     const u = byUid(S, a.uid), t = byUid(S, a.target);
     if (!u || !t || !onBoard(u) || !onBoard(t)) return no("unità non in campo");
     if (bandiera(u, "noCharge")) return no("un incantesimo le impedisce di caricare");
+    if (stupida(S, u)) return no("è in preda alla Stupidità: non carica");
+    if (u.moved || u.charged) return no("si è già mossa in questo turno");
     const { move } = movimento(S, u);
     const d = CH.declareCharge({
       charger: { name: u.name, box: boxOf(u, S.units), move, swift: MV.swiftOf(u), loose: !!u.loose },
@@ -858,10 +1083,29 @@ const GESTI = {
       pieces: S.terrain,
     });
     if (!d || !d.can) return no(`carica impossibile: ${d ? d.why : "?"}`);
+    /* la Paura si tira prima di dichiarare (p. 168) */
+    const paura = pauraDi(S, u, t, "charge");
+    if (paura.already && !paura.passed) return no("ha già fallito la Paura in questo turno");
+    if (paura.must){
+      const pu = PS.psychOf(u, { joined: capiDi(S, u) });
+      const res = testPsico(S, u, "fear", pu, paura.why, 168);
+      if (!res.auto) u.paura = { key: chiave(S), passed: res.passed };
+      if (!res.passed){
+        u.moved = { kind: "failedCharge", inches: 0 };
+        say(S, `${u.name} non carica ${t.name}: resta ferma, ed è una carica fallita (p. 168).`,
+            { army: u.army, page: 168 });
+        return si("la Paura la ferma");
+      }
+    }
     say(S, `${u.name} dichiara la carica su ${t.name}: ${d.why}.`, { army: u.army, page: 119 });
     /* la reazione tocca a chi la subisce, e viene prima del tiro */
+    /* Chi non puo' fuggire lo dice `psych.js`. Prima gli si passava un
+       `canFlee` che `reactions` non legge, e un reggimento Immune to
+       Psychology sceglieva la fuga come chiunque. */
+    const pt = PS.psychOf(t, { joined: capiDi(S, t) });
+    const puo = PS.canFleeReaction(pt);
     const r = CH.reactions({ dist: d.dist, chargerMove: move, shots: CB.shooters(t),
-                             canFlee: PS.canFleeReaction(PS.psychOf(t, { joined: FM.attachedTo(S.units, t) })),
+                             noFlee: puo.can ? "" : puo.why, mustHold: puo.hold ? puo.why : "",
                              fleeing: !!t.fled, engaged: ingaggiata(S, t) });
     const scelte = (Array.isArray(r) ? r : (r.list || [])).filter(x => x && x.can !== false);
     S.pending = {
@@ -881,6 +1125,17 @@ const GESTI = {
     if (!S.pending.list.length)
       S.pending.list = [{ id:"reazione", kind:"hold", uid: t.uid, nome: t.name,
                           why:"tiene la posizione", page:120 }];
+    /* il Terrore: il bersaglio tira subito, e se fallisce deve fuggire
+       (p. 179). Chi non puo' fuggire non tira nemmeno. */
+    const pu = PS.psychOf(u, { joined: capiDi(S, u) });
+    const terrore = PS.terrorCheck({ charger: pu, target: pt, chargerName: u.name,
+                                     canFlee: puo.can && !t.fled && !ingaggiata(S, t) });
+    if (terrore.must){
+      const res = testPsico(S, t, "terror", pt, terrore.why, 179);
+      if (!res.passed)
+        S.pending.list = [{ id:"reazione", kind:"flee", uid: t.uid, nome: t.name,
+                            why:"ha fallito il Terrore: deve fuggire (p. 179)", page:179 }];
+    }
     return si(`carica dichiarata su ${t.name}`);
   },
 
@@ -936,6 +1191,7 @@ const GESTI = {
     const u = byUid(S, a.uid), t = byUid(S, a.target);
     if (!u || !t) return no("unità sconosciuta");
     if (u.shot) return no("ha già tirato in questo turno");
+    if (stupida(S, u)) return no("è in preda alla Stupidità: non tira");
     const armi = CB.rangedWeapons(u);
     if (!armi.length) return no("non ha armi da tiro");
     tiro(S, u, t, armi[0], {});
@@ -956,6 +1212,8 @@ function mossa(S, a, marcia){
   const u = byUid(S, a.uid), t = byUid(S, a.verso);
   if (!u || !t) return no("unità sconosciuta");
   if (u.moved) return no("si è già mossa");
+  if (u.unito === chiave(S)) return no("un personaggio le si è unito: non si muove più in questo turno (p. 207)");
+  if (stupida(S, u)) return no("è in preda alla Stupidità: non si muove");
   const { move } = movimento(S, u);
   if (!move) return no("non sa di quanto si muove: il profilo non porta il Movimento");
   let quanti = move;
@@ -1143,7 +1401,11 @@ function modificatori(S, u, t, d, gittata, { standAndShoot = false } = {}){
 const RE_SAGOMA = /template|sagoma|cannon|cannone|stone ?thrower|lanciapietre|catapult|mortar|mortaio|lightning|fulmine|flame|fiamm|breath|soffio/i;
 function sagomaOMacchina(u, arma){
   if (troopType(u.troop).id === "warMachine") return true;
-  return RE_SAGOMA.test(arma.name || "") || (arma.rules || []).some(r => RE_SAGOMA.test(String(r)));
+  /* le regole dell'arma, nel file della lista, sono una stringa sola
+     («Multiple Wounds (D3), Poisoned Attacks»): prima la si trattava da
+     elenco, e il primo arco con una regola faceva cadere la partita */
+  const regole = Array.isArray(arma.rules) ? arma.rules.join(", ") : String(arma.rules || "");
+  return RE_SAGOMA.test(arma.name || "") || RE_SAGOMA.test(regole);
 }
 function tiro(S, u, t, arma, { standAndShoot = false } = {}){
   const d = distanza(S, u, t);
@@ -1174,6 +1436,11 @@ function perdite(S, u, kills, left = null, { zitto = false } = {}){
   if (kills > 0){
     u.lost = Math.min(u.models, (u.lost || 0) + kills);
     if (alive(u) <= 0){
+      /* i capi restano in piedi, da soli, dove stava il reggimento */
+      for (const c of capiDi(S, u)){
+        c.join = null;
+        say(S, `${c.name} resta da solo: il suo reggimento non c'è più.`, { army: c.army, page: 206 });
+      }
       u.dead = true; u.placed = false; sparita = true;
       posa(S, u, u.x, u.y);
       if (!zitto) say(S, `${u.name}: non resta nessuno in piedi.`, { army: u.army });
@@ -1267,9 +1534,12 @@ function preparaMaghi(S){
           { army: u.army, page: libro.page });
     }
     if (!level && !vincolati.length) continue;
+    /* un pezzo con il solo incantesimo vincolato — il Bastiladon con il
+       Solar Engine — non ha Livello, e nemmeno una scheda da mago */
     const da = pr.level ? "dalla scheda di preparazione"
              : dalFile ? "dalle regole della lista"
-             : `dal libro (${libro.libro}, p. ${libro.page})`;
+             : libro ? `dal libro (${libro.libro}, p. ${libro.page})`
+             : "un incantesimo vincolato, senza Livello";
     const domini = (pr.lore ? [pr.lore] : ((libro && libro.domini) || []))
       .map(k => M.lore(k)).filter(Boolean).map(l => l.id);
     u.mago = { level, da, regole, domini, vincolati, lore: null, known: [], fase: "pronto",
@@ -1448,7 +1718,7 @@ function opzioniLancio(S, tipi, { army = S.army, gruppo = null } = {}){
       if (sp.bound && m.bound === castKey(S) + ":" + casellaOra(S)) continue;
       const engaged = ingaggiata(S, host);
       const gate = MG.canCast(sp, { fleeing: !!host.fled, engaged, castThisTurn: giaLanciati(S, u),
-                                    stepId: MG.CAST_STEP[sp.type] });
+                                    stepId: MG.CAST_STEP[sp.type], stupid: stupida(S, u) });
       if (!gate.can) continue;
       const odds = MG.castOdds({ level: m.level, cv: sp.cv, bound: !!sp.bound, power: sp.potere || 0 });
       const chi = sp.bound ? `Potere ${sp.potere || 0}` : `Livello ${m.level}`;
@@ -1567,7 +1837,7 @@ function opzioniDissolvi(S, l){
     for (const d of maghiDi(S, lui)){
       if (!(d.mago.level > 0)) continue;
       const h = ospite(S, d);
-      if (h.fled || ingaggiata(S, h)) continue;
+      if (h.fled || ingaggiata(S, h) || stupida(S, d)) continue;
       const dist = distanza(S, h, da);
       if (dist > MG.dispelRange(d.mago.level) + 1e-6) continue;
       const odds = MG.dispelOdds({ level: d.mago.level, against: l.total, bound: !!sp.bound });
@@ -1749,12 +2019,37 @@ function rigaMago(S, u){
    ============================================================ */
 function mischia(S, g){
   for (const u of [...g.A, ...g.B]) u.fought = chiave(S);
-  const A = g.A.map(u => schieraDi(S, u)), B = g.B.map(u => schieraDi(S, u));
+  /* La Paura quando il combattimento viene scelto: chi tocca un nemico
+     che la fa ed e' piu' grosso tira, una volta per turno, e se
+     fallisce ha −1 per colpire (p. 168). */
+  const impauriti = new Set();
+  for (const [miei, loro] of [[g.A, g.B], [g.B, g.A]]){
+    for (const u of miei){
+      if (!onBoard(u)) continue;
+      const davanti = aContatto(S, u, loro);
+      const chi = davanti.find(t => { const f = pauraDi(S, u, t, "combat"); return f.must || (f.already && !f.passed); });
+      if (!chi) continue;
+      const f = pauraDi(S, u, chi, "combat");
+      let passata = f.already ? f.passed : true;
+      if (f.must){
+        const res = testPsico(S, u, "fear", PS.psychOf(u, { joined: capiDi(S, u) }), f.why, 168);
+        if (!res.auto) u.paura = { key: chiave(S), passed: res.passed };
+        passata = res.passed;
+      }
+      if (!passata){
+        impauriti.add(u.uid);
+        if (davanti.length > 1) limite(S, "pauramischia");
+        say(S, `${u.name} ha paura di ${chi.name}: −1 per colpire (p. 168).`, { army: u.army, page: 168 });
+      }
+    }
+  }
+  const A = g.A.map(u => schieraDi(S, u, { feared: impauriti.has(u.uid) }));
+  const B = g.B.map(u => schieraDi(S, u, { feared: impauriti.has(u.uid) }));
   /* i personaggi uniti entrano nel gruppo come schiere loro (p. 209) */
   for (const [lista, sorgente] of [[A, g.A], [B, g.B]]){
     for (const u of sorgente)
       for (const c of FM.attachedTo(S.units, u))
-        lista.push(schieraDi(S, c, { attached: true, host: u }));
+        lista.push(schieraDi(S, c, { attached: true, host: u, feared: impauriti.has(u.uid) }));
   }
   const round = (S.turno * 2) + (S.army === "A" ? 0 : 1);
   const r = CB.meleeFight(A, B, { round });
@@ -1854,11 +2149,14 @@ function aContatto(S, u, loro){
 
 /* La schiera che combatte, con addosso quello che il tavolo sa: chi ha
    caricato e da che faccia, il terreno, i personaggi uniti. */
-function schieraDi(S, u, { attached = false, host = null } = {}){
-  const c = CB.combatant(u, { joined: FM.attachedTo(S.units, u) });
-  /* il test di rotta si tira con il Comando del generale, se e' vicino:
-     si rifa' il conto della Warband sopra il valore nuovo */
-  const gen = comandoDi(S, attached && host ? host : u, +(c.ldBase || c.ld) || 0);
+function schieraDi(S, u, { attached = false, host = null, feared = false } = {}){
+  const c = CB.combatant(u, { joined: FM.attachedTo(S.units, u), feared });
+  /* il test di rotta si tira con il Comando piu' alto fra i modelli
+     (p. 97) o con quello del generale, se e' vicino: si rifa' il conto
+     della Warband sopra il valore nuovo */
+  const proprio = attached ? { ld: +(c.ldBase || c.ld) || 0, chi: "" } : ldProprio(S, u);
+  const gen = comandoDi(S, attached && host ? host : u, proprio.ld);
+  if (!gen.why && proprio.chi) gen.why = `Comando ${proprio.ld} di ${proprio.chi}, che ci sta dentro (p. 97)`;
   if (gen.why){
     const ranks = c.disrupted ? 0 : rankBonus(c.models, c.frontage,
       c.troop ? c.troop.maxRank : 2, c.troop ? c.troop.perRank : 5);
@@ -2004,6 +2302,26 @@ function fineSchieramento(S){
   for (const u of S.units) u.anchor = null;
   say(S, `Schieramento finito: comincia il turno 1, muove ${S.nomi[S.army]}.`, { page: 115 });
   limitiDiPartenza(S);
+  inizioTurno(S);
+}
+
+/* La sotto-fase d'inizio turno: il test di Stupidita' di chi ce l'ha,
+   salvo che fugga o combatta. Chi fallisce ci resta fino al suo
+   prossimo inizio di turno, che e' dove l'effetto scade e il test si
+   rifa'. Non e' una scelta: l'arbitro lo tira da solo. */
+function inizioTurno(S){
+  for (const u of inCampo(S, S.army)){
+    const p = PS.psychOf(u, { joined: capiDi(S, u) });
+    const c = PS.stupidityCheck({ p, fleeing: !!u.fled, engaged: ingaggiata(S, u) });
+    if (!c.must) continue;
+    limite(S, "stupidita");
+    const res = testPsico(S, u, "stupidity", p, "all'inizio del turno", 178);
+    if (!res.passed){
+      EF.addEffect(u, PS.stupidEffect({ turn: S.turno, side: S.army }));
+      say(S, `${u.name} è in preda alla Stupidità: fino al suo prossimo turno non si muove, non tira, non lancia, e se caricata tiene la posizione.`,
+          { army: u.army, page: 178 });
+    }
+  }
 }
 
 /* I limiti che valgono per tutta la partita si dicono subito, se le
@@ -2014,11 +2332,8 @@ function limitiDiPartenza(S){
   const campo = S.units.filter(u => u.placed);
   /* la magia si gioca: quando i domini mancano l'ha gia' detto
      `preparaMaghi`, con il limite «domini» */
-  if (campo.some(u => {
-    const p = PS.psychOf(u);
-    return p.causesFear || p.causesTerror || p.stupidity;
-  })) limite(S, "psicologia");
-  if (campo.some(u => PREP.isCharacter(u))) limite(S, "personaggi");
+  if (campo.some(u => { const p = PS.psychOf(u); return p.frenzy || p.impetuous; })) limite(S, "frenesia");
+  if (campo.some(u => puoUnirsi(S, u))) limite(S, "solitari");
 }
 
 /* Chi non si e' radunato continua a fuggire nelle mosse (p. 132): il
@@ -2068,7 +2383,7 @@ function passo(S){
 
   /* fine del turno di questa parte */
   S.casella = 0;
-  for (const u of S.units){ u.moved = null; u.shot = false; u.charged = null; }
+  for (const u of S.units){ u.moved = null; u.shot = false; u.charged = null; u.unito = null; }
   if (S.army !== S.primo){
     S.turno++;
     S.army = S.primo;
@@ -2085,6 +2400,7 @@ function passo(S){
   /* il punto di rottura si guarda adesso, che e' l'inizio di un turno */
   if (controllaFine(S, { inizioTurno: true })) return "partita finita";
   say(S, `Turno ${S.turno}: muove ${S.nomi[S.army]}.`, { page: 114 });
+  inizioTurno(S);
   return `turno ${S.turno}, tocca a ${S.nomi[S.army]}`;
 }
 
@@ -2096,7 +2412,9 @@ function passo(S){
    d'Unita' di partenza ha perso comunque.
    ============================================================ */
 export function punteggio(S){
-  const conta = army => S.units.filter(u => u.army === army && !isJoined(u)).reduce((s, u) => {
+  /* i capi uniti contano per conto loro: il loro valore in punti c'e'
+     anche quando stanno dentro un reggimento */
+  const conta = army => S.units.filter(u => u.army === army).reduce((s, u) => {
     const share = VC.strengthShare({ models: u.models || 0, alive: alive(u),
                                      woundsPer: 1, woundsLost: 0 });
     return s + VC.unitVP({ pts: u.pts || 0, dead: !!u.dead, fledOff: !!u.fledOff,
@@ -2169,6 +2487,7 @@ export function fotografia(S, { per = null } = {}){
       (ingaggiata(S, u) ? ", in mischia" : "") +
       (vicino ? `, nemico più vicino ${vicino.name} a ${distanza(S, u, vicino)}″` : "") +
       (effetti.length ? `, sotto l'effetto di ${effetti.join(", ")}` : "") +
+      (capiDi(S, u).length ? `, con dentro ${capiDi(S, u).map(c => `${c.name} (Ld ${CB.combatant(c).ld})`).join(" e ")}` : "") +
       (maghi.length ? "\n" + maghi.join("\n") : "");
   };
   const mie = inCampo(S, io), sue = inCampo(S, lui);
@@ -2193,4 +2512,4 @@ export function ultimeRighe(S, n = 12){
 /* Per le prove: i pezzi del tavolo che nessuna opzione espone da sola,
    e che vanno provati uno per uno con i pezzi messi a mano. */
 export const interni = { indietreggia, seguire, fuggi, postoAContatto, percorso, comandoDi, ldOf, muoviCarica,
-                         panico, faseDi, continuaAFuggire };
+                         panico, faseDi, continuaAFuggire, perdite, pauraDi, inizioTurno, ldProprio, movimento };

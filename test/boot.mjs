@@ -1772,6 +1772,54 @@ window.localStorage.removeItem('tow-sync');
    Un modulo nuovo che nessuno aggiunge a `sw.js` non si vede: l'app
    funziona finché c'è campo, e al circolo — dove il service worker
    serve — si apre rotta. Il conto lo fa la prova, che lo sa fare. */
+console.log('\nla sfida contro l\'AI');
+{
+  const CA = await import('../src/controai.js');
+  const DP = await import('../src/deploy.js');
+  const liste = JSON.parse(fs.readFileSync(path.join(root, 'dati', 'liste.json'), 'utf8'));
+  const [la, lb] = [liste[1], liste[2]];
+  ok('lo scenario si prende dal nome delle liste di Battle March',
+     CA.scenarioPer(la, lb) === 'bm-monolite' && CA.scenarioPer(la, lb, 'bm-strada') === 'bm-strada');
+  ok('e l arbitro sa giocare solo gli scenari con un tavolo e uno schieramento',
+     CA.scenariGiocabili().every(s => s.id) && CA.scenariGiocabili().some(s => s.id === 'bm-strada'));
+  window.localStorage.removeItem('tow-gemini-key');
+  CA.startSfida({ listA: la, listB: lb, mia: 'A' });
+  await settle(80);
+  ok('la sfida porta sul tavolo le due liste e lo scenario',
+     DP.state.sfida === true && DP.state.scenario === 'bm-monolite' &&
+     DP.state.units.length === la.units.length + lb.units.length);
+  ok('senza chiave gioca l euristica, e il pannello lo dice',
+     /l'euristica/.test(doc.querySelector('#sfida .sf-testa').textContent));
+  let clic = 0;
+  for (let i = 0; i < 40 && !/Turno 2/.test(doc.querySelector('#sfida .sf-testa').textContent); i++){
+    const b = [...doc.querySelectorAll('#sfida .sf-mossa')].find(x => !x.classList.contains('ghost')) ||
+              doc.querySelector('#sfida .sf-mossa');
+    if (!b){ await settle(30); continue; }
+    b.dispatchEvent(new window.Event('click'));
+    clic++;
+    await settle(30);
+  }
+  ok('le mosse si scelgono con un clic, e la partita arriva al secondo turno',
+     clic > 5 && /Turno 2/.test(doc.querySelector('#sfida .sf-testa').textContent));
+  ok('il tavolo mostra dove l arbitro ha messo i pezzi',
+     DP.state.units.filter(u => u.placed).length >= 10);
+  ok('il registro scorre nel pannello', doc.querySelectorAll('#sfida .sf-riga').length > 10);
+  /* un pezzo non si trascina: lo muove l'arbitro */
+  const u = DP.state.units.find(x => x.placed && !x.join);
+  const prima = [u.x, u.y];
+  const g = doc.querySelector(`[data-uid="${u.uid}"]`);
+  if (g){
+    g.dispatchEvent(new window.MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 10, clientY: 10 }));
+    doc.querySelector('#board').dispatchEvent(new window.MouseEvent('pointermove', { bubbles: true, clientX: 200, clientY: 200 }));
+    doc.querySelector('#board').dispatchEvent(new window.MouseEvent('pointerup', { bubbles: true, clientX: 200, clientY: 200 }));
+  }
+  ok('nella sfida i pezzi non si trascinano', u.x === prima[0] && u.y === prima[1]);
+  doc.querySelector('#sf-basta').dispatchEvent(new window.Event('click'));
+  await settle(30);
+  ok('abbandonata, il tavolo torna libero', DP.state.sfida === false && !CA.inCorso());
+  ok('nessun errore nella sfida', errors.length === 0);
+}
+
 console.log('\nil guscio per stare senza rete');
 {
   const root = path.resolve(here, '..');

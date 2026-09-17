@@ -1710,6 +1710,19 @@ dichiarava e non giocava:
      altri sono testo, e un lancio che non cambia niente sul tavolo è un
      dado tirato per finta.
 
+E una sesta, che pesava sull'esito più delle scelte dei modelli:
+
+6. ~~**la psicologia e i personaggi uniti**~~ — fatti. Paura, Terrore e
+   Stupidità si tirano (pp. 168, 178-179); i personaggi si uniscono allo
+   schieramento o nelle mosse restanti ed escono prima che il reggimento
+   si muova (p. 207), e il reggimento usa il loro Comando (p. 97) e il
+   loro passo (p. 208). La Stupidità che si gioca è quella del testo delle
+   liste, non quella di p. 178, e lo si dichiara.
+
+E l'arbitro è sceso sul tavolo: la **Sfida** della scheda Matchup fa
+giocare una persona contro il modello di linguaggio, con l'arbitro in
+mezzo (`controai.js`).
+
 ### Cosa resta
 
 - **La magia che resta testo.** Vortici, trasporti, sagome, linee: un

@@ -16,6 +16,7 @@ import { initSync } from './syncui.js';
 import { openDiceBox } from './dicebox.js';
 import { toggleCharts, openCharts } from './charts.js';
 import { on } from './bus.js';
+import { renderSfida } from './controai.js';
 import { askConfirm, say } from './uikit.js';
 
 /* ---------- app installabile e utilizzabile senza rete ----------
@@ -64,6 +65,7 @@ document.querySelectorAll("[data-tab]").forEach(b =>
    bisognava scorrere oltre venti unità. Adesso se ne vede una per volta
    e il pannello non scorre quasi mai. */
 function showSide(name){
+  if (name === "sfida") renderSfida();
   for (const b of document.querySelectorAll("[data-side]"))
     b.classList.toggle("on", b.dataset.side === name);
   for (const s of document.querySelectorAll("[data-sec]"))
@@ -98,6 +100,8 @@ placeInspector();
 /* il pannello della partita, sul tavolo, manda qui chi vuole vedere il
    diario delle battaglie: cambiare scheda non e' affare suo */
 on("tab:show", name => showTab(name));
+/* la sfida parte dal Matchup e si gioca sul tavolo, con il suo pannello */
+on("sfida:show", () => { showTab("deploy"); showSide("sfida"); });
 
 /* ---------- il catalogo cambia: prima si ri-aggancia, poi si ridisegna ----------
    Una foto aggiunta adesso, o due voci appena fuse, devono arrivare a liste e
@@ -169,6 +173,7 @@ $("#file-backup").addEventListener("change", async e => {
   /* un link condiviso porta sempre al tavolo, qualunque scheda fosse
      aperta l'ultima volta */
   showTab(boot && boot.shared ? "deploy" : (localStorage.getItem("tow-tab") || "deploy"));
+  renderSfida();
   initSync();
   registerWorker();
 })();

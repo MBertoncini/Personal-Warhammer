@@ -93,7 +93,7 @@ let uidSeq = 1, tidSeq = 1, midSeq = 1, zidSeq = 1;
 /* Modelli ancora in piedi: fuori partita sono tutti, in partita sono
    quelli che restano. Il reggimento si accorcia da dietro, come al tavolo. */
 const liveModels = u => Math.max(1, (u.models || 1) - (u.lost || 0));
-const effModels = u => (state.game.on ? liveModels(u) : (u.models || 1));
+const effModels = u => (state.game.on || state.sfida ? liveModels(u) : (u.models || 1));
 
 /* ---- personaggi uniti alle unita' ----
    Un personaggio agganciato non e' piu' un pezzo suo: sta dentro il
@@ -235,8 +235,11 @@ function unitStatus(u, sc){
   for (const t of impassable()) if (polysOverlap(pts, corners(t))) return { key:"bad", text:"su " + TERRAIN[t.kind].label.toLowerCase() };
   for (const o of state.units)
     if (o !== u && o.placed && !isJoined(o) && polysOverlap(pts, corners(o))) return { key:"bad", text:"sovrapposta" };
+  /* nella sfida l'arbitro sa gia' dove si schiera: dopo, uscire dalla
+     zona e' giocare, e l'avviso sarebbe rumore */
   const zs = zonesFor(u.army, sc);
-  if (zs.length && !pts.every(p => zs.some(z => inRect(p, z)))) return { key:"warn", text:"fuori zona" };
+  if (!state.sfida && zs.length && !pts.every(p => zs.some(z => inRect(p, z))))
+    return { key:"warn", text:"fuori zona" };
   return { key:"ok", text:"schierata" };
 }
 
@@ -4696,6 +4699,13 @@ svgEl.addEventListener("pointerdown", e => {
     obj = state.terrain.find(x => x.tid === +host.dataset.tid);
     state.sel = { type:"terr", id:obj.tid }; what = TERRAIN[obj.kind].label.toLowerCase();
   }
+  /* Nella sfida contro l'AI i pezzi li muove l'arbitro: un trascinamento
+     qui sposterebbe il disegno e non la partita, e le due cose smettono
+     di dire la stessa cosa. Il clic seleziona e basta. */
+  if (state.sfida){
+    renderArmies(); renderInspector(); renderTerrainList(); drawBoard();
+    return;
+  }
   /* Il tasto destro non trascina: seleziona e basta, e il menu lo apre
      l'evento contextmenu subito dopo. Ci si ricorda QUALE pezzo era,
      perché con il puntatore catturato quell'evento arriva etichettato
@@ -5751,6 +5761,42 @@ function applySnapshot(s){
 }
 
 /* carica una lista salvata dentro un esercito del tavolo */
+/* ============================================================
+   LA SFIDA CONTRO L'AI (`controai.js`)
+   L'arbitro tiene la partita; il tavolo la mostra. Qui c'e' solo il
+   passaggio: le unita' dell'arbitro diventano quelle del tavolo — sono
+   gia' della stessa forma, perche' tutte e due partono dalla lista — e
+   lo scenario e' quello della partita. `state.sfida` non si salva: una
+   pagina ricaricata non ha piu' l'arbitro, e il tavolo torna libero.
+   ============================================================ */
+function mostraSfida(S, { nuova = false } = {}){
+  if (nuova){
+    state.units = [];
+    state.markers = []; state.rulers = []; state.sel = null;
+    setScenario(S.scenario, false, { render:false });
+    state.armies.A.name = S.nomi.A; state.armies.B.name = S.nomi.B;
+    history.reset();
+  }
+  state.sfida = true;
+  state.units = S.units.map(u => {
+    const c = { ...u, effects: (u.effects || []).map(e => ({ ...e })), join: u.join ? { ...u.join } : null };
+    delete c.mago; delete c.prepara;
+    FM.ensureFormation(c);
+    return c;
+  });
+  uidSeq = Math.max(uidSeq, ...state.units.map(u => u.uid + 1));
+  layCache.clear();
+  if (nuova) view.fit();
+  renderAll();
+}
+function chiudiSfida(){ state.sfida = false; renderAll(); }
+/* il pezzo di cui si parla, acceso sul tavolo */
+function evidenzia(uid){
+  const u = state.units.find(x => x.uid === uid);
+  state.sel = u ? { type:"unit", id:u.uid } : null;
+  drawBoard(); renderInspector();
+}
+
 function loadArmyFromList(list, armyId){
   history.push("carica " + (list.name || "lista"));
   state.units = state.units.filter(u => u.army !== armyId);
@@ -5930,6 +5976,7 @@ function refreshLinks(){
   if (healLinks()) save();
 }
 
+export { mostraSfida, chiudiSfida, evidenzia };
 export { state, renderAll, bootDeploy, loadArmyFromList, snapshot, applySnapshot,
          setScenario, refreshLinks, history, view, act, toast, effModels,
          /* esposte perché sono geometria pura e vanno provate: dove

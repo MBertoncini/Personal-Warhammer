@@ -38,6 +38,14 @@ export function agenteEuristico({ nome = "euristica" } = {}){
       const l = opzioni.list;
       const primo = id => l.find(x => x.id === id);
 
+      /* I CAPI stanno dentro un reggimento: da soli muoiono al primo
+         turno, e dentro danno il loro Comando a tutti (p. 97). Il
+         reggimento piu' grosso, che l'arbitro mette in cima. */
+      if (primo("unisci")){
+        const u = primo("unisci");
+        return { scelta: u, perche: `${u.nome} si schiera dentro ${u.contro}: ${u.why}` };
+      }
+
       /* SCHIERAMENTO: si sparpaglia invece di ammucchiarsi in un
          angolo, che e' il modo piu' rapido di perdere una partita. */
       if (primo("schiera")){

@@ -19,12 +19,13 @@ import { allLists, getList } from './lists.js';
 import { loadDoc, saveDoc } from './store.js';
 import { emit } from './bus.js';
 import { askText, askConfirm } from './uikit.js';
-import { snapshot, applySnapshot, loadArmyFromList, renderAll, history } from './deploy.js';
+import { snapshot, applySnapshot, loadArmyFromList, renderAll, history, state as board } from './deploy.js';
+import { startSfida, scenariGiocabili, scenarioPer, inCorso } from './controai.js';
 
 const MU_KEY = "matchup:current";
 const DEP_KEY = "deployments:all";
 
-let mu = { listA: null, listB: null, mine: "A", note: "" };
+let mu = { listA: null, listB: null, mine: "A", note: "", sfidaMia: "A", sfidaScenario: "" };
 let deployments = [];
 
 export async function initMatchup(){
@@ -188,6 +189,30 @@ function compareHTML(){
     </div>`;
 }
 
+/* Tu contro l'AI: con quale esercito giochi, e dove. Lo scenario di
+   partenza e' quello del tavolo se l'arbitro lo sa giocare, altrimenti
+   quello dei punti delle due liste. */
+function sfidaHTML(){
+  const A = getList(mu.listA), B = getList(mu.listB);
+  const sc = scenarioPer(A, B, mu.sfidaScenario, board.scenario);
+  return `
+    <div class="panel-title" style="margin-top:16px">Gioca contro l'AI</div>
+    <p class="note">L'arbitro tiene la partita e muove i pezzi sul tavolo; tu scegli le mosse del tuo esercito
+      fra quelle che il regolamento permette, e l'altro lo gioca Gemini — o l'euristica, se non hai una chiave.</p>
+    <div class="grid2">
+      <label class="field">Giochi con
+        <select id="mu-sfida-mia">
+          <option value="A" ${mu.sfidaMia !== "B" ? "selected" : ""}>A · ${esc(A.name)}</option>
+          <option value="B" ${mu.sfidaMia === "B" ? "selected" : ""}>B · ${esc(B.name)}</option>
+        </select></label>
+      <label class="field">Scenario
+        <select id="mu-sfida-sc">
+          ${scenariGiocabili().map(s => `<option value="${s.id}" ${s.id === sc ? "selected" : ""}>${esc(s.label)}${s.pts ? ` · ${s.pts} pt` : ""}</option>`).join("")}
+        </select></label>
+    </div>
+    <button class="btn primary" id="mu-sfida" style="margin-top:6px;width:100%">Sfida l'AI sul tavolo</button>`;
+}
+
 export function renderMatchup(){
   const host = $("#matchup");
   if (!host) return;
@@ -242,6 +267,8 @@ export function renderMatchup(){
         <button class="btn" id="mu-link">Copia il link del tavolo</button>
       </div>`}
 
+    ${mu.listA && mu.listB ? sfidaHTML() : ""}
+
     <div class="panel-title" style="margin-top:16px">Schieramenti salvati</div>
     <div class="tray">
       ${deployments.length ? deployments.map(d => `
@@ -264,6 +291,16 @@ export function renderMatchup(){
     if (mu.listA) loadArmyFromList(getList(mu.listA), "A");
     if (mu.listB) loadArmyFromList(getList(mu.listB), "B");
     document.querySelector('[data-tab="deploy"]').click();
+  });
+  const sf = $("#mu-sfida");
+  if (sf) sf.addEventListener("click", async () => {
+    if (inCorso() && !await askConfirm("C'è già una sfida in corso: la abbandono e ne comincio un'altra?",
+                                      { title:"Nuova sfida?" })) return;
+    mu.sfidaMia = $("#mu-sfida-mia").value;
+    mu.sfidaScenario = $("#mu-sfida-sc").value;
+    await persist();
+    startSfida({ listA: getList(mu.listA), listB: getList(mu.listB), mia: mu.sfidaMia, scenario: mu.sfidaScenario });
+    emit("sfida:show");
   });
   const sv = $("#mu-save");
   if (sv) sv.addEventListener("click", async () => {

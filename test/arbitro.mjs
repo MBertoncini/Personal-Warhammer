@@ -718,5 +718,224 @@ ok('i limiti sono dichiarati uno per uno', AR.LIMITI.length >= 5 && AR.LIMITI.ev
 }
 
 /* ================================================================= */
+console.log('\ni personaggi che si uniscono (pp. 206-208)');
+{
+  /* dadi fissi: `sei` fa uscire sempre la stessa faccia */
+  const sempre = f => D.setSource(() => f - 1);
+  const G = AR.newBattle({ A, B, scenario:'bm-strada' });
+  /* i reggimenti di A in campo, i personaggi ancora fuori */
+  let x = 150;
+  for (const u of AR.unitsOf(G, 'A')) if (!AR.puoUnirsi(G, u)){ metti(G, u, x, 650); x += 180; }
+  G.army = 'A';
+  const o = AR.options(G);
+  const vet = uid(G, 1), chief = uid(G, 2), tg = uid(G, 6), sk = uid(G, 3);
+  ok('allo schieramento i personaggi vengono dopo i reggimenti', o.unit === vet.uid);
+  ok('e possono entrare in un reggimento già in campo',
+     o.list.some(x => x.id === 'unisci' && x.host === tg.uid) && o.list.some(x => x.id === 'schiera'));
+  ok('solo in chi è del loro genere: la fanteria, non il Bastiladon',
+     !o.list.some(x => x.id === 'unisci' && x.host === 7));
+  ok('il reggimento più grosso viene prima', o.list[0].host === tg.uid);
+  AR.apply(G, o.list.find(x => x.id === 'unisci' && x.host === tg.uid));
+  ok('unito: sta dentro la Temple Guard e ha la sua posizione', AR.capiDi(G, tg).includes(vet) && vet.x === tg.x && vet.placed);
+  ok('e non è più un pezzo in campo per conto suo', !AR.inCampo(G, 'A').includes(vet));
+  ok('lo schieramento alterna come sempre', AR.options(G).player === 'B');
+  ok('la Forza d Unità del reggimento conta anche lui (p. 207)', AR.usConCapi(G, tg) === AR.usOf(tg) + AR.usOf(vet));
+
+  /* il Comando piu' alto (p. 97) e il passo del piu' lento (p. 208) */
+  G.schierando = false; G.generale = { A: null, B: null };
+  metti(G, chief, sk.x, sk.y); chief.join = { host: sk.uid };
+  ok('gli Skink con lo Skink Chief dentro usano il suo Comando 6, non il loro 5',
+     AR.interni.ldProprio(G, sk).ld === 6 && AR.interni.ldOf(G, sk) === 6);
+  const H = AR.newBattle({ A, B, scenario:'bm-strada' }); H.schierando = false;
+  const hs = metti(H, uid(H, 3), 600, 600), hv = metti(H, uid(H, 1), 600, 600);
+  ok('da soli gli Skink muovono 6″', AR.interni.movimento(H, hs).move === 6);
+  hv.join = { host: hs.uid };
+  const m = AR.interni.movimento(H, hs);
+  ok('con il Saurus dentro vanno al suo passo, 4″ (p. 208)', m.move === 4 && /p\. 208/.test(m.mv.why));
+
+  /* il reggimento abbattuto lascia il capo in piedi */
+  metti(H, uid(H, 505), 600, 200);
+  const fatto = AR.interni.perdite(H, hs, 10);
+  ok('gli Skink cadono tutti', fatto && hs.dead);
+  ok('e il Saurus resta, da solo, in campo', !hv.dead && hv.join === null && AR.inCampo(H, 'A').includes(hv));
+  ok('e il registro lo dice', H.log.some(r => /resta da solo/.test(r.text)));
+
+  /* il reggimento che fugge fuori dal tavolo si porta via il capo */
+  const K = nuova();
+  const kt = metti(K, uid(K, 6), 600, 60), kv = metti(K, uid(K, 1), 600, 60);
+  kv.join = { host: kt.uid };
+  const nemico = metti(K, uid(K, 505), 600, 400);
+  sempre(6);
+  AR.interni.fuggi(K, kt, nemico, 12);
+  ok('chi fugge dal tavolo porta via anche il capo (p. 207)', kt.dead && kv.dead && kv.fledOff);
+  ok('e il punteggio conta anche il capo', AR.punteggio(K).B >= (kt.pts || 0) + (kv.pts || 0));
+  seme(1);
+}
+{
+  /* unirsi e separarsi nelle mosse restanti (p. 207) */
+  const G = nuova();
+  const sk = metti(G, uid(G, 3), 600, 700), ch = metti(G, uid(G, 2), 600, 700 + 4 * MM);
+  metti(G, uid(G, 505), 600, 150);
+  G.army = 'A'; G.casella = casella('mosse');
+  let o = AR.options(G);
+  const unione = o.list.find(x => x.id === 'unisciti' && x.uid === ch.uid && x.host === sk.uid);
+  ok('lo Skink Chief a 4″ può raggiungere gli Skink e unirsi', !!unione && /non si muove più/.test(unione.why));
+  AR.apply(G, unione);
+  ok('unito', AR.capiDi(G, sk).includes(ch) && ch.x === sk.x);
+  o = AR.options(G);
+  ok('e gli Skink da lì non si muovono più in questo turno',
+     !o.list.some(x => x.uid === sk.uid && /avanza|marcia/.test(x.id)) &&
+     AR.apply(G, { id:'avanza', uid: sk.uid, verso: 505 }).ok === false);
+  ok('ma non contano come mossi, per il tiro', !sk.moved);
+
+  const H = nuova();
+  const hs = metti(H, uid(H, 3), 600, 700), hc = metti(H, uid(H, 2), 600, 700);
+  hc.join = { host: hs.uid };
+  metti(H, uid(H, 505), 600, 150);
+  H.army = 'A'; H.casella = casella('mosse');
+  const sep = AR.options(H).list.find(x => x.id === 'separa' && x.uid === hc.uid);
+  ok('un capo può uscire dal reggimento prima che si muova', !!sep);
+  AR.apply(H, sep);
+  ok('esce, e sta accanto senza sovrapporsi', hc.join === null && !dentro(H, hc, hs) && AR.inCampo(H, 'A').includes(hc));
+  ok('e il reggimento si muove ancora', AR.options(H).list.some(x => x.id === 'avanza' && x.uid === hs.uid));
+}
+
+console.log('\nla Paura (p. 168)');
+{
+  const G = nuova();
+  G.generale = { A: null, B: null };
+  const sk = metti(G, uid(G, 3), 600, 600);
+  sk.lost = 8;                                   // due Skink: Forza d'Unità 2
+  const troll = metti(G, uid(G, 506), 600, 600 - 5 * MM);
+  G.army = 'A'; G.casella = casella('cariche');
+  const opz = AR.options(G).list.find(x => x.id === 'carica' && x.uid === sk.uid && x.target === troll.uid);
+  ok('caricare un Troll più grosso vuole un test di Paura, e la probabilità lo dice',
+     !!opz && /test di Paura/.test(opz.why));
+  D.setSource(() => 5);                           // sei e sei: 12 contro Comando 5
+  const r = AR.apply(G, opz);
+  ok('fallito: gli Skink non caricano e restano fermi', r.ok && !G.pending && sk.moved && sk.moved.kind === 'failedCharge');
+  ok('e il registro porta il test e la pagina',
+     G.log.some(x => /test di Paura/.test(x.text) && x.page === 168) &&
+     G.log.some(x => /resta ferma, ed è una carica fallita/.test(x.text)));
+  ok('un test per turno: non si riprova', AR.apply(G, opz).ok === false);
+
+  /* chi fa Terrore non teme la Paura: il Bastiladon non tira */
+  const H = nuova();
+  const bas = metti(H, uid(H, 7), 600, 600);
+  metti(H, uid(H, 506), 600, 600 - 5 * MM);
+  ok('chi fa Terrore non ha Paura di un Troll',
+     AR.interni.pauraDi(H, bas, uid(H, 506), 'charge').must === false);
+  ok('e un Troll non teme chi è più piccolo',
+     AR.interni.pauraDi(H, uid(H, 506), metti(H, uid(H, 3), 300, 300), 'charge').must === false);
+
+  /* in mischia: chi ha paura colpisce peggio */
+  const K = nuova();
+  K.generale = { A: null, B: null };
+  const ks = metti(K, uid(K, 3), 600, 600); ks.lost = 8;
+  const kt = metti(K, uid(K, 506), 600, 400);
+  aContattoDi(K, kt, ks);
+  K.army = 'B'; K.casella = casella('mischia');
+  D.setSource(() => 5);
+  const c = AR.options(K).list.find(x => x.id === 'combatti');
+  AR.apply(K, c);
+  ok('in combattimento gli Skink tirano la Paura, e fallendo hanno −1 per colpire',
+     K.log.some(x => /Skink Skirmishers 1, test di Paura/.test(x.text)) &&
+     K.log.some(x => /ha paura di Stone Troll Mobs 1: −1 per colpire/.test(x.text)));
+  seme(1);
+}
+
+console.log('\nil Terrore (p. 179)');
+{
+  const G = nuova();
+  G.generale = { A: null, B: null };
+  const bas = metti(G, uid(G, 7), 600, 600);
+  /* 50 mm di mezzo Bastiladon, 60 di mezzi Orchi, e tre pollici fra loro */
+  const orchi = metti(G, uid(G, 505), 600, 600 - 110 - 3 * MM);
+  G.army = 'A'; G.casella = casella('cariche');
+  const opz = AR.options(G).list.find(x => x.id === 'carica' && x.uid === bas.uid && x.target === orchi.uid);
+  ok('la carica del Bastiladon dice che fa Terrore', !!opz && /fa Terrore/.test(opz.why));
+  D.setSource(() => 5);
+  AR.apply(G, opz);
+  const re = AR.options(G);
+  ok('gli Orchi falliscono il Terrore: l unica reazione è fuggire',
+     re.player === 'B' && re.list.length === 1 && re.list[0].kind === 'flee' &&
+     G.log.some(x => /test di Terrore/.test(x.text) && x.page === 179));
+  seme(1);
+
+  /* chi non può fuggire non tira, e non gli si offre la fuga */
+  const H = nuova();
+  const hb = metti(H, uid(H, 7), 600, 600 - 110 - 3 * MM, 180);
+  const ho = metti(H, uid(H, 505), 600, 600, 0);
+  H.army = 'B'; H.casella = casella('cariche');
+  const c = AR.options(H).list.find(x => x.id === 'carica' && x.uid === ho.uid && x.target === hb.uid);
+  ok('gli Orchi possono caricare il Bastiladon', !!c);
+  AR.apply(H, c);
+  ok('e un Bastiladon Immune to Psychology non può scegliere la fuga',
+     !AR.options(H).list.some(x => x.kind === 'flee'));
+}
+
+console.log('\nla Stupidità (testo della lista, p. 178)');
+{
+  const G = nuova();
+  const troll = metti(G, uid(G, 506), 600, 300);
+  troll.rules = [...troll.rules, 'Stupidity'];
+  metti(G, uid(G, 3), 600, 700);
+  G.army = 'B'; G.casella = 0;
+  D.setSource(() => 5);
+  AR.interni.inizioTurno(G);
+  ok('all inizio del turno il Troll tira, e fallisce',
+     G.log.some(x => /Stone Troll Mobs 1, test di Stupidità/.test(x.text) && x.page === 178) &&
+     EF.flagsOf(troll).flags.stupid);
+  ok('e si dichiara quale testo si gioca', G.log.some(x => /\[limite\] la Stupidità è quella del testo/.test(x.text)));
+  G.casella = casella('mosse');
+  ok('stupido: non si muove', !AR.options(G).list.some(x => x.uid === troll.uid));
+  G.casella = casella('cariche');
+  ok('e non carica', !AR.options(G).list.some(x => x.uid === troll.uid));
+  seme(1);
+}
+
+console.log('\nle liste grandi');
+{
+  /* la lista 10 schiera un Bastiladon con il Solar Engine: niente
+     Livello, niente scheda da mago, e newBattle cadeva. E le regole
+     delle armi sono una stringa: il primo arco con una regola faceva
+     cadere il tiro. Nessuna prova le aveva mai messe in campo. */
+  const M2 = MG.makeMagic(dati('magia/domini.json'));
+  let G = null, errore = '';
+  try { G = AR.newBattle({ A: liste[10], B: liste[11], scenario:'bm-strada', magia: M2 }); }
+  catch (e){ errore = e.message; }
+  ok('la partita fra le liste grandi si prepara', !!G && !errore);
+  const bas = G && G.units.find(u => u.mago && u.mago.level === 0 && u.mago.vincolati.includes('beamOfChotec'));
+  ok('e il Bastiladon porta il Beam of Chotec, senza Livello', !!bas);
+  seme(6);
+  G = AR.newBattle({ A: liste[10], B: liste[11], scenario:'bm-strada', magia: M2 });
+  try { await AG.giocaPartita(AR, G, { A: AG.agenteEuristico({}), B: AG.agenteEuristico({}) }); }
+  catch (e){ errore = e.message; }
+  ok('e si gioca fino in fondo', G.finita && !errore);
+  const H = AR.newBattle({ A: liste[10], B: liste[11], scenario:'bm-strada', magia: M2 });
+  H.schierando = false; H.preparando = false;
+  const hb = H.units.find(u => u.mago && u.mago.vincolati.includes('beamOfChotec'));
+  metti(H, hb, 600, 700);
+  const bersaglio = metti(H, H.units.find(u => u.army === 'B' && u.models > 5), 600, 250);
+  H.army = 'A'; H.casella = casella('tiro');
+  ok('e nel tiro il Beam of Chotec si offre, con il Potere al posto del Livello',
+     AR.options(H).list.some(x => x.id === 'lancia' && x.spell === 'beamOfChotec' && x.target === bersaglio.uid && /Potere 2/.test(x.why)));
+}
+
+console.log('\nil Comando del generale (p. 202)');
+{
+  const G = nuova();
+  const sk = metti(G, uid(G, 3), 600, 600);
+  const vet = metti(G, uid(G, 1), 600, 600 - 15 * MM);
+  G.generale = { A: vet.uid, B: null };
+  ok('a 15″ il generale non arriva: 12″', AR.interni.comandoDi(G, sk, 5).ld === 5);
+  vet.rules = [...vet.rules, 'Large Target'];
+  ok('se è un Large Target arriva a 18″', AR.interni.comandoDi(G, sk, 5).ld === 8 && AR.RAGGIO_GENERALE_GRANDE === 18);
+  ok('e il raggio non è più fra i limiti da verificare', !AR.LIMITI.some(l => l.id === 'generale'));
+  ok('la psicologia e i personaggi non sono più limiti',
+     !AR.LIMITI.some(l => l.id === 'psicologia' || l.id === 'personaggi'));
+}
+
+/* ================================================================= */
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);
