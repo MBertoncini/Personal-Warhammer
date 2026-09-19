@@ -1360,12 +1360,14 @@ function muoviCarica(S, u, t, d){
        travolto: e' la stessa regola dell'inseguimento (p. 156), e il
        caricante finisce dove quello stava. */
     const p = muoviVerso(S, u, t, out.reach, { ignora: [t.uid], unPollice: false });
+    const usT = usConCapi(S, t);
     t.dead = true; t.placed = false;
     posa(S, t, t.x, t.y);
     u.moved = { kind:"charge", inches: p.pollici };
     say(S, `${u.name} carica ${t.name} che fugge: ${dadi.join(", ")} → ${out.reach}″ contro ${serve} richiesti. ` +
            `La raggiunge, e ${t.name} è travolta e distrutta.`,
         { dice: dadi, army: u.army, page: 121 });
+    ondaPanico(S, t, "destroyed", usT);
     return "carica su chi fugge";
   }
   /* E adesso a contatto davvero. Muovere «verso» il bersaglio e
@@ -1400,6 +1402,8 @@ function fuggi(S, u, da, pollici){
   while (ingombro(S, u, at(mm), { unPollice: false, bordo: false }) && dentroTavolo(S, boxCorners(at(mm))))
     mm += PASSO;
   const b = at(mm);
+  const passati = attraversati(S, u, at, mm);
+  const usPrima = usConCapi(S, u);
   u.fled = true;
   u.charged = null;
   u.moved = { kind:"flee", inches: pollici };
@@ -1411,6 +1415,11 @@ function fuggi(S, u, da, pollici){
   } else if (mm > pollici * MM + 0.5)
     say(S, `${u.name} non può fermarsi addosso a un'altra unità: fugge fino a ${r1(inch(mm))}″.`,
         { army: u.army, page: 133 });
+  /* prima si muove chi fugge, poi il Panico di chi ha attraversato
+     (p. 161); e uscire dal tavolo «counts as having been destroyed»
+     (p. 132), cioe' manda al Panico gli amici dove e' uscito */
+  for (const o of passati) testPanico(S, o, "fledThrough", { fonte: u });
+  if (u.fledOff) ondaPanico(S, u, "destroyed", usPrima);
 }
 
 /* ---- il tiro ---- */
@@ -1447,7 +1456,7 @@ function tiro(S, u, t, arma, { standAndShoot = false } = {}){
   /* la Forza d'Unita' com'era all'inizio di questa fase: il quarto del
      Panico si conta su quella, sommando tutti i tiri della fase */
   const fase = faseDi(S);
-  if (t.faseTiro !== fase){ t.faseTiro = fase; t.usInizioFase = usOf(t); }
+  inizioFase(S, t);
   const tutti = mucchi(r);
   say(S, `${u.name} tira su ${t.name} con ${arma.name} da ${d}″: ${r.shots} tiri a ${r.hitNeed}+, ` +
          `${r.hit.hits} ${r.hit.hits === 1 ? "colpo" : "colpi"}, ${r.wounds} ferit${r.wounds === 1 ? "a" : "e"}, ${r.kills} a terra` +
@@ -1456,7 +1465,7 @@ function tiro(S, u, t, arma, { standAndShoot = false } = {}){
   /* le perdite dopo la riga del tiro: prima il registro diceva «non
      resta nessuno in piedi» sopra il tiro che li aveva abbattuti */
   perdite(S, t, r.kills, r.left);
-  if (r.kills > 0) panico(S, t, `il tiro di ${u.name}`);
+  if (r.kills > 0) panico(S, t, `il tiro di ${u.name}`, u);
 }
 
 /* Torna vero se l'unita' e' appena sparita. `zitto` e' per la mischia,
@@ -1464,6 +1473,7 @@ function tiro(S, u, t, arma, { standAndShoot = false } = {}){
 function perdite(S, u, kills, left = null, { zitto = false } = {}){
   let sparita = false;
   if (kills > 0){
+    const prima = usConCapi(S, u);
     u.lost = Math.min(u.models, (u.lost || 0) + kills);
     if (alive(u) <= 0){
       /* i capi restano in piedi, da soli, dove stava il reggimento */
@@ -1474,6 +1484,7 @@ function perdite(S, u, kills, left = null, { zitto = false } = {}){
       u.dead = true; u.placed = false; sparita = true;
       posa(S, u, u.x, u.y);
       if (!zitto) say(S, `${u.name}: non resta nessuno in piedi.`, { army: u.army });
+      ondaPanico(S, u, "destroyed", prima);
     }
   }
   if (left != null) u.wounds = left;
@@ -1483,34 +1494,93 @@ function perdite(S, u, kills, left = null, { zitto = false } = {}){
 /* Il Panico oltre un quarto (p. 141): il conto lo fa `psych.js`, il
    test lo tira qui, e chi fallisce fugge. */
 const faseDi = S => `${chiave(S)}:${S.casella}`;
-function panico(S, u, why){
-  if (u.dead) return;
-  /* Il quarto perso in UNA fase (p. 141), come lo conta `shoot.js`.
-     Prima si confrontava la forza di partenza della partita con quella
-     di adesso: passato il quarto una volta, ogni perdita successiva —
-     anche un solo modello, anche turni dopo — rifaceva il test. E il
-     test si tira una volta per fase, non a ogni raffica. */
+/* La Forza d'Unita' d'inizio fase, fotografata la prima volta che in
+   questa fase qualcuno la tocca: e' il numero da cui si conta il
+   quarto perso (p. 160). Prima la scattava solo il tiro, e i colpi
+   degli incantesimi non mandavano al Panico nessuno. */
+function inizioFase(S, u){
   const fase = faseDi(S);
-  if (u.panicoFatto === fase) return;
+  if (u.faseTiro !== fase){ u.faseTiro = fase; u.usInizioFase = usOf(u); }
+}
+
+/* Il quarto perso in UNA fase (pp. 141, 160), come lo conta `shoot.js`.
+   Prima si confrontava la forza di partenza della partita con quella
+   di adesso: passato il quarto una volta, ogni perdita successiva —
+   anche un solo modello, anche turni dopo — rifaceva il test. `da` e'
+   il nemico che ha fatto le perdite: chi fallisce fugge da lui. */
+function panico(S, u, why, da = null){
+  if (u.dead) return;
   const conto = SH.panicFromShooting({ us: u.usInizioFase || 0, usLost: (u.usInizioFase || 0) - usOf(u) });
   if (!conto.must) return;
-  u.panicoFatto = fase;
+  testPanico(S, u, "casualties", { perche: why, da });
+}
+
+/* Un test di Panico, per qualunque causa (pp. 160-161). Uno per fase,
+   anche se le cause sono piu' d'una; non lo fa chi sta caricando, chi
+   e' in combattimento e chi fugge gia'. Chi fallisce ripiega in ordine
+   se ha ancora piu' della meta' dei modelli d'inizio battaglia, e
+   altrimenti fugge — prima fuggiva sempre —, lontano da chi ha fatto le
+   perdite o, se la causa e' un amico, dal nemico piu' vicino che non
+   stia fuggendo. */
+function testPanico(S, u, causa, { perche = "", da = null, fonte = null, dist = 0, fonteUS = null } = {}){
+  if (!u || u.dead || !onBoard(u) || isJoined(u)) return;
+  const fase = faseDi(S);
+  if (u.panicoFatto === fase) return;
   const p = PS.psychOf(u, { joined: FM.attachedTo(S.units, u) });
-  const c = PS.panicCheck({ cause:"casualties", me: p,
-                            fleeing: !!u.fled, engaged: ingaggiata(S, u), sourceName: why });
+  const c = PS.panicCheck({ cause: causa, me: p, dist, sourceUS: fonteUS,
+                            source: fonte ? PS.psychOf(fonte) : null,
+                            fleeing: !!u.fled, engaged: ingaggiata(S, u),
+                            sourceName: perche || (fonte ? fonte.name : "") });
   if (!c || !c.must) return;
+  u.panicoFatto = fase;
   if (c.auto){ say(S, `${u.name}: niente Panico — ${c.autoWhy}.`, { army: u.army, page: c.page }); return; }
   const dadi = roll(PS.coldDice("panic", p) ? 3 : 2);
   const res = PS.psychTest({ kind:"panic", ld: ldOf(S, u), dice: dadi, p });
-  say(S, `${u.name}, test di Panico (${c.why}): ${res.text}.`,
-      { dice: dadi, army: u.army, page: PS.PAGE.panicShooting });
-  if (!res.passed){
-    const da = piuVicino(S, u) || u;
-    const fuga = roll(2);
-    const via = fuga.reduce((s, v) => s + v, 0) + CB.fleeBonusOf(u).mod;
-    say(S, `${u.name} va nel panico e fugge: ${fuga.join(" + ")} = ${via}″.`, { dice: fuga, army: u.army, page: 132 });
-    fuggi(S, u, da, via);
+  say(S, `${u.name}, test di Panico (${c.why}): ${res.text}.`, { dice: dadi, army: u.army, page: c.page });
+  if (res.passed) return;
+  const nemico = (da && !da.dead && da.army !== u.army ? da : null) ||
+                 piuVicino(S, u, nemiciDi(S, u).filter(e => !e.fled)) || piuVicino(S, u);
+  if (!nemico) return;
+  const esito = PS.panicFail({ alive: alive(u), start: u.models || 0 });
+  if (esito.outcome === "fallBack"){
+    const dd = roll(2);
+    const quanto = Math.max(...dd);
+    say(S, `${u.name} va nel panico e ripiega in ordine lontano da ${nemico.name} (${esito.why}): ` +
+           `${dd.join(", ")}, si tiene il maggiore.`, { dice: dd, army: u.army, page: esito.page });
+    indietreggia(S, u, [nemico], quanto, { kind: "fallBack" });
+    return;
   }
+  const fuga = roll(2);
+  const via = fuga.reduce((t, v) => t + v, 0) + CB.fleeBonusOf(u).mod;
+  say(S, `${u.name} va nel panico e fugge da ${nemico.name} (${esito.why}): ${fuga.join(" + ")} = ${via}″.`,
+      { dice: fuga, army: u.army, page: 132 });
+  fuggi(S, u, nemico, via);
+}
+
+/* Gli amici entro 6″ di chi e' stato distrutto o ha perso un
+   combattimento (p. 161). `usFonte` e' la sua Forza d'Unita' quando e'
+   successo: sotto 5 non spaventa nessuno. La fonte resta dov'era,
+   perche' il libro vuole che si misuri da li'. */
+function ondaPanico(S, fonte, causa, usFonte){
+  if (!fonte || (+usFonte || 0) < PS.PANIC_SOURCE_US) return;
+  for (const f of inCampo(S, fonte.army)){
+    if (f === fonte) continue;
+    const d = distanza(S, fonte, f);
+    if (d > PS.PANIC_RANGE) continue;
+    testPanico(S, f, causa, { fonte, dist: d, fonteUS: usFonte });
+  }
+}
+
+/* Chi fugge o ripiega passa attraverso gli amici che ha sul percorso,
+   e ognuno di loro fa il Panico (p. 161). Si guarda il percorso a
+   passi, dal punto di partenza a quello d'arrivo. */
+function attraversati(S, u, at, mm){
+  const amici = inCampo(S, u.army).filter(o => o !== u);
+  const presi = new Set();
+  for (let s = 0; s <= mm; s += PASSO)
+    for (const o of amici)
+      if (!presi.has(o) && polysOverlap(boxCorners(at(s)), cornersOf(o, S.units))) presi.add(o);
+  return [...presi];
 }
 
 /* ============================================================
@@ -1995,12 +2065,13 @@ function colpisci(S, t, h, quanti, fonte, { panico: conPanico = true, da = null 
   const side = { ...def, armour: h.noArmour ? 0 : def.armour, regen: h.noRegen ? 0 : def.regen };
   const v = CB.strike({ name: fonte }, side, { attacks: quanti, auto: true, strength: h.S, ap: h.AP || 0, label: fonte });
   const toll = CB.woundsToll(t, v.wounds);
+  inizioFase(S, t);
   perdite(S, t, toll.kills, toll.left);
   say(S, `${t.name}: ${quanti} colp${quanti === 1 ? "o" : "i"} a Forza ${h.S}` +
          (h.AP ? `, perforazione ${h.AP}` : "") + (h.noArmour ? ", senza armatura" : "") +
          ` — ${v.wounds} ferit${v.wounds === 1 ? "a" : "e"}, ${toll.kills} a terra.`,
       { dice: v.wound.dice, army: da ? da.army : t.army, page: MG.PAGE.resolution });
-  if (conPanico && toll.kills > 0 && !t.dead) panico(S, t, toll.kills, fonte);
+  if (conPanico && toll.kills > 0 && !t.dead) panico(S, t, fonte, da);
   return toll.kills;
 }
 
@@ -2123,6 +2194,9 @@ function mischia(S, g){
     if (!u || !onBoard(u)) continue;
     const loro = (t.side === "A" ? g.B : g.A).filter(onBoard);
     say(S, `${u.name}: ${t.text}` + (c.ldGen ? ` [${c.ldGen}]` : ""), { dice: t.dice, army: u.army, page: t.page });
+    /* chi perde e rompe, o ripiega in ordine, manda al Panico gli
+       amici entro 6″ (p. 161): si misura prima che si muova */
+    if (t.outcome === "rout" || t.outcome === "fallBack") ondaPanico(S, u, "broke", usConCapi(S, u));
     if (t.outcome === "rout"){
       const vincitore = piuVicino(S, u, loro) || loro[0];
       const dadi = roll(2);
@@ -2245,12 +2319,18 @@ function indietreggia(S, u, nemici, pollici, { kind = "give" } = {}){
   while (ingombro(S, u, at(mm), { unPollice: false, bordo: false }) && dentroTavolo(S, boxCorners(at(mm))))
     mm += PASSO;
   const b = at(mm);
+  const passati = attraversati(S, u, at, mm);
+  const usPrima = usConCapi(S, u);
   posa(S, u, b.x, b.y, u.rot);
+  /* chi ripiega in ordine attraversando un amico lo manda al Panico
+     come chi fugge (p. 161) */
+  for (const o of passati) testPanico(S, o, "fledThrough", { fonte: u });
   if (!dentroTavolo(S, boxCorners(b))){
     u.dead = true; u.placed = false; u.fledOff = true;
     posa(S, u, u.x, u.y, u.rot);
     say(S, `${u.name} ripiega di ${r1(inch(mm))}″, oltre il bordo, ed esce dal tavolo (pp. 132, 134).`,
         { army: u.army, page: 134 });
+    ondaPanico(S, u, "destroyed", usPrima);
     return null;
   }
   say(S, `${u.name} ripiega di ${r1(inch(mm))}″` +
@@ -2304,9 +2384,11 @@ function inseguimento(S, vincitore, fuggito, quantoHaFuggito){
                 : `${vincitore.name} ${out.text}.`,
       { dice: dadi, army: vincitore.army, page: ML.PAGE.pursuit });
   if (out.caught && !uscita){
+    const usF = usConCapi(S, fuggito);
     fuggito.dead = true; fuggito.placed = false;
     posa(S, fuggito, fuggito.x, fuggito.y);
     say(S, `${fuggito.name} è travolta e distrutta.`, { army: fuggito.army, page: ML.PAGE.pursuit });
+    ondaPanico(S, fuggito, "destroyed", usF);
   }
   /* il passo di chi insegue: verso dove l'altro e' andato, fermandosi
      a contatto con un nemico nuovo se lo incontra */
@@ -2526,7 +2608,7 @@ export function fine(S, why, { rotto = null } = {}){
   S.esito = { ...p, why };
   say(S, `Partita finita (${why}). ${S.nomi.A} ${p.A} punti vittoria, ${S.nomi.B} ${p.B}. ` +
          (p.winner ? `${S.nomi[p.winner]} vince: ${p.label}.` : `${p.label}.`),
-      { page: VC.PAGE ? VC.PAGE.victory || 292 : 292 });
+      { page: p.page || 292 });
   return S.esito;
 }
 
@@ -2619,4 +2701,5 @@ export function ultimeRighe(S, n = 12){
 /* Per le prove: i pezzi del tavolo che nessuna opzione espone da sola,
    e che vanno provati uno per uno con i pezzi messi a mano. */
 export const interni = { indietreggia, seguire, fuggi, postoAContatto, percorso, comandoDi, ldOf, muoviCarica,
-                         panico, faseDi, continuaAFuggire, perdite, pauraDi, inizioTurno, ldProprio, movimento };
+                         panico, faseDi, continuaAFuggire, perdite, pauraDi, inizioTurno, ldProprio, movimento,
+                         testPanico, ondaPanico };

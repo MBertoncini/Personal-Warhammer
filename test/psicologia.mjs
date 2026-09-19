@@ -171,6 +171,21 @@ ok('Ignore Goblin Panic: per i Goblin niente',
 ok('ma per gli Orchi si',
    PS.panicCheck({ cause: 'fledThrough', me: prof(['Ignore Goblin Panic']),
                    source: PS.psychOf({ name: 'Orc Mob', rules: [] }) }).must);
+/* letto a p. 160: «a unit is not required to make a Panic test if it
+   is engaged in combat», per ogni causa; e chi fallisce non fugge
+   sempre */
+ok('chi e in combattimento non tira, qualunque sia la causa (p. 160)',
+   !PS.panicCheck({ cause: 'casualties', me: gob, engaged: true }).must &&
+   !PS.panicCheck({ cause: 'destroyed', me: gob, dist: 2, engaged: true }).must &&
+   !PS.panicCheck({ cause: 'destroyed', me: gob, dist: 2, engaged: true }).daVerificare);
+ok('e nemmeno chi sta caricando', !PS.panicCheck({ cause: 'destroyed', me: gob, dist: 2, charging: true }).must);
+ok('un amico sotto i 5 di Forza d Unita non manda al Panico nessuno',
+   !PS.panicCheck({ cause: 'destroyed', me: gob, dist: 2, sourceUS: 4 }).must &&
+   PS.panicCheck({ cause: 'broke', me: gob, dist: 2, sourceUS: 5 }).must);
+ok('chi fallisce con piu della meta dei modelli d inizio battaglia ripiega in ordine',
+   PS.panicFail({ alive: 11, start: 20 }).outcome === 'fallBack');
+ok('con la meta o meno fugge', PS.panicFail({ alive: 10, start: 20 }).outcome === 'flee' &&
+   PS.panicFail({ alive: 10, start: 20 }).page === 160);
 {
   const w = PS.panicAround({ cause: 'destroyed', source: gob, friends: [
     { name: 'vicini', p: gob, dist: 3 }, { name: 'lontani', p: gob, dist: 9 },

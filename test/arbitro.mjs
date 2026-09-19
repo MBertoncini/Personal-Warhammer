@@ -751,6 +751,58 @@ console.log('\nil Panico, un quarto in una fase (p. 141)');
   ok('in una fase dopo, un altro modello solo non lo rifà (prima: sì, per sempre)', test() === 1);
 }
 
+/* Il Panico c'era solo per il tiro: nella sfida Michele contro Gemini
+   nessuno lo ha tirato, nemmeno con i Black Orc travolti e tre unita'
+   di Skink distrutte. Le altre tre cause sono a p. 161, e chi fallisce
+   non fugge sempre (p. 160). */
+console.log('\nil Panico per gli amici (pp. 160-161)');
+{
+  const G = nuova();
+  G.casella = casella('tiro'); G.army = 'B';
+  const nemico = metti(G, uid(G, 505), 600, 200);
+  const tg = metti(G, uid(G, 6), 600, 600);
+  const sk = metti(G, uid(G, 3), 800, 600);
+  const lontani = metti(G, uid(G, 4), 1150, 800);
+  const righe = nome => G.log.filter(r => r.text.startsWith(nome + ', test di Panico'));
+  ok('la prova parte con gli Skink vicini e gli altri lontani',
+     AR.distanza(G, tg, sk) <= 6 && AR.distanza(G, tg, lontani) > 6);
+  D.setSource(() => 5);                                   // tutti sei: il test fallisce
+  IN.perdite(G, tg, tg.models);
+  ok('un amico distrutto entro 6″ manda al Panico (p. 161)',
+     righe(sk.name).length === 1 && /distrutta/.test(righe(sk.name)[0].text));
+  ok('chi sta oltre i 6″ no', righe(lontani.name).length === 0);
+  ok('con più della metà dei modelli, chi fallisce ripiega in ordine (p. 160)',
+     !sk.fled && G.log.some(r => r.text.startsWith(sk.name + ' va nel panico e ripiega in ordine')));
+  IN.testPanico(G, sk, 'destroyed', { dist: 2, fonteUS: 10 });
+  ok('e il Panico si tira una volta per fase', righe(sk.name).length === 1);
+
+  G.casella = casella('mischia');
+  sk.lost = Math.ceil(sk.models / 2);
+  IN.testPanico(G, sk, 'destroyed', { dist: 2, fonteUS: 10 });
+  ok('con la metà o meno, fugge', sk.fled && G.log.some(r => r.text.startsWith(sk.name + ' va nel panico e fugge')));
+  ok('e fugge dal nemico, non dall amico che è caduto', G.log.some(r => r.text.includes(`fugge da ${nemico.name}`)));
+
+  const G2 = nuova();
+  G2.casella = casella('tiro'); G2.army = 'B';
+  const n2 = metti(G2, uid(G2, 505), 600, 200);
+  const tg2 = metti(G2, uid(G2, 6), 600, 600);
+  const dietro = metti(G2, uid(G2, 3), 600, 780);
+  IN.fuggi(G2, tg2, n2, 12);
+  ok('chi fugge attraverso un amico lo manda al Panico',
+     G2.log.some(r => r.text.startsWith(dietro.name + ', test di Panico') && /attraversata/.test(r.text)));
+  const G3 = nuova();
+  G3.casella = casella('tiro'); G3.army = 'B';
+  metti(G3, uid(G3, 505), 600, 200);
+  const capo = metti(G3, uid(G3, 1), 600, 600);
+  const accanto = metti(G3, uid(G3, 3), 750, 600);
+  const panici = () => G3.log.filter(r => r.text.startsWith(accanto.name + ', test di Panico')).length;
+  IN.ondaPanico(G3, capo, 'destroyed', 1);
+  ok('un amico sotto i 5 di Forza d Unità non spaventa nessuno', AR.distanza(G3, capo, accanto) <= 6 && panici() === 0);
+  IN.ondaPanico(G3, capo, 'destroyed', 5);
+  ok('dal 5 in su sì', panici() === 1);
+  D.setSource(D.seeded(1));
+}
+
 /* ================================================================= */
 console.log('\nquello che questo arbitro non fa, detto');
 ok('i limiti sono dichiarati uno per uno', AR.LIMITI.length >= 5 && AR.LIMITI.every(l => l.what && l.why));

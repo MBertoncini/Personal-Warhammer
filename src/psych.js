@@ -28,7 +28,7 @@ import { flagsOf } from './effects.js';
 
 export const PAGE = {
   panicShooting: 141,   // il quarto perso al tiro
-  panic: 160,           // le altre cause (pp. 160-161, dal piano)
+  panic: 160,           // le altre cause, e chi fallisce (pp. 160-161)
   rally: 117,           // il raduno: la quarta sotto-fase della Strategia
   musician: 201,        // il +1 al raduno del musico
 };
@@ -351,41 +351,49 @@ export function terrorBreakMod({ winners = [], loser = {} } = {}){
 }
 
 /* ============================================================
-   7 · IL PANICO
-   Quattro cause. La prima — un quarto della Forza d'Unita' perso al
-   tiro — la conta `shoot.js` dalla Tappa 4. Le altre tre sono misure:
-   un'unita' amica distrutta entro 6″, un'unita' amica che rompe e
-   fugge dal combattimento entro 6″, un'unita' amica in fuga che ti
-   passa attraverso. I 6″ vengono dal testo di *Ignore Panic*, che
-   nomina le tre cause per esenzione.
+   7 · IL PANICO (pp. 160-161)
+   Quattro cause. La prima — un quarto della Forza d'Unita' perso in una
+   fase che non sia quella di combattimento — la conta `shoot.js` dalla
+   Tappa 4. Le altre tre sono misure: un'unita' amica con Forza d'Unita'
+   5 o piu' distrutta entro 6″ (anche uscita dal tavolo fuggendo,
+   p. 132), un'unita' amica con Forza d'Unita' 5 o piu' che perde un
+   combattimento e rompe **o ripiega in ordine** entro 6″ — «amidst the
+   clamour of battle, friendly units are seldom able to tell the
+   difference» —, un'unita' amica in fuga o in ripiegamento che ti
+   passa attraverso.
 
-   Quello che il testo delle liste non dice, e che qui e' dichiarato
-   invece di preso in prestito:
+   Questa parte era scritta sul testo di *Ignore Panic* e su un
+   riassunto, con due righe «da verificare»: chi e' in combattimento e
+   chi fallisce. Col libro aperto tutte e due sono cambiate.
    ============================================================ */
 export const PANIC_RANGE = 6;
-/* chi sta gia' fuggendo non ha dove scappare di piu' */
+/* chi manda al Panico gli amici: un'unita' con Forza d'Unita' 5 o piu'
+   (p. 161). Un personaggio solo che cade non spaventa nessuno. */
+export const PANIC_SOURCE_US = 5;
+/* p. 160, «a unit is not required to make a Panic test if»: sta
+   caricando, e' in combattimento, sta gia' fuggendo. Per ogni causa:
+   prima il combattimento esentava da tutto salvo le perdite pesanti. */
 export const PANIC_SKIP_FLEEING = true;
-/* chi e' in combattimento non tira il Panico per gli altri */
 export const PANIC_SKIP_ENGAGED = true;
-/* chi fallisce fugge, lontano da quello che lo ha causato */
-export const PANIC_FAIL = "flee";
-export const PANIC_DA_VERIFICARE = { engaged: true, fail: true };
 
 export const PANIC_CAUSES = {
   casualties:  { id:"casualties",  label:"più di un quarto perso",          page: PAGE.panicShooting },
   destroyed:   { id:"destroyed",   label:"unità amica distrutta entro 6″",  page: PAGE.panic, range:true },
-  broke:       { id:"broke",       label:"unità amica in rotta entro 6″",   page: PAGE.panic, range:true },
+  broke:       { id:"broke",       label:"unità amica sconfitta in combattimento entro 6″", page: PAGE.panic, range:true },
   fledThrough: { id:"fledThrough", label:"attraversata da un'unità amica in fuga", page: PAGE.panic },
 };
 
 export function panicCheck({ cause = "destroyed", me = {}, source = null, dist = 0,
-                             fleeing = false, engaged = false, sourceName = "" } = {}){
+                             fleeing = false, engaged = false, charging = false,
+                             sourceUS = null, sourceName = "" } = {}){
   const c = PANIC_CAUSES[cause] || PANIC_CAUSES.destroyed;
   const src = sourceName || (source && source.name) || "";
   const base = { cause: c.id, label: c.label, page: c.page };
   if (fleeing && PANIC_SKIP_FLEEING) return { ...base, must:false, why:"sta già fuggendo" };
-  if (engaged && PANIC_SKIP_ENGAGED && c.id !== "casualties")
-    return { ...base, must:false, why:"è in combattimento (da verificare)", daVerificare:true };
+  if (engaged && PANIC_SKIP_ENGAGED) return { ...base, must:false, why:"è in combattimento (p. 160)" };
+  if (charging) return { ...base, must:false, why:"sta caricando (p. 160)" };
+  if (c.range && sourceUS != null && (+sourceUS || 0) < PANIC_SOURCE_US)
+    return { ...base, must:false, why: (src || "quell'unità") + " ha Forza d'Unità " + (+sourceUS || 0) + ": ne serve 5 (p. 161)" };
   if (c.range && (+dist || 0) > PANIC_RANGE)
     return { ...base, must:false, why: "a " + r1(dist) + "″: oltre i 6″" };
   if (source && c.id !== "casualties"){
@@ -401,15 +409,27 @@ export function panicCheck({ cause = "destroyed", me = {}, source = null, dist =
   };
 }
 
+/* Chi fallisce il Panico (p. 160): se ha ancora piu' della meta' dei
+   modelli con cui ha cominciato la battaglia ripiega in ordine
+   (p. 134), altrimenti fugge (p. 132). Prima fuggiva sempre. */
+export function panicFail({ alive = 0, start = 0 } = {}){
+  const a = +alive || 0, s = +start || 0;
+  return a * 2 > s
+    ? { outcome:"fallBack", label:"ripiega in ordine", page: PAGE.panic,
+        why:`restano ${a} modelli su ${s}: più della metà, ripiega in ordine` }
+    : { outcome:"flee", label:"fugge", page: PAGE.panic,
+        why:`restano ${a} modelli su ${s}: la metà o meno, fugge` };
+}
+
 /* Tutti quelli che una stessa cosa manda al Panico, in un colpo. Entra
    l'elenco degli amici con la distanza gia' misurata: la geometria la
    sa il tavolo, qui si decide solo chi tira e chi no — e chi no lo
    dice, perche' «perche' quello non ha tirato?» e' la domanda che si
    fa sempre. */
-export function panicAround({ cause = "destroyed", source = null, friends = [] } = {}){
+export function panicAround({ cause = "destroyed", source = null, friends = [], sourceUS = null } = {}){
   const tests = [], spared = [];
   for (const f of friends || []){
-    const chk = panicCheck({ cause, me: f.p || {}, source, dist: f.dist,
+    const chk = panicCheck({ cause, me: f.p || {}, source, dist: f.dist, sourceUS,
                              fleeing: !!f.fleeing, engaged: !!f.engaged });
     (chk.must ? tests : spared).push({ ...f, check: chk });
   }

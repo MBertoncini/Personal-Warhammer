@@ -239,11 +239,19 @@ Quattro sono chiuse, con il libro aperto e le prove rosse prima:
    elects to not move the unit at all» (p. 123), e chi ha marciato non
    tira (p. 137). Il Bastiladon non poteva sparare. C'è la prova, e un
    commento in `mossa()` perché non lo si «corregga».
-5. **Il Panico esiste solo per il tiro.** `psych.js` ha tutte e quattro
-   le cause (`PANIC_CAUSES`) e `panicAround` per chiamarle in blocco;
-   lo usa solo `deploy.js`. L'arbitro chiama `panico()` dopo un tiro e
-   basta: in questa partita nessuno ha tirato il Panico, nemmeno con i
-   Black Orc Mobs travolti e tre unità Skink distrutte.
+5. ~~**Il Panico esiste solo per il tiro.**~~ Fatto, e letto sul libro
+   (pp. 160-161), che diceva più del piano: chi fallisce **ripiega in
+   ordine** se ha ancora più di metà dei modelli d'inizio battaglia, e
+   fugge solo sotto (`PS.panicFail`); chi è in combattimento non tira per
+   nessuna causa; la fonte deve avere Forza d'Unità 5 o più; anche chi
+   ripiega in ordine dopo una sconfitta manda al Panico, e chi esce dal
+   tavolo fuggendo «counts as having been destroyed» (p. 132).
+   Nell'arbitro: `testPanico` (uno per fase), `ondaPanico` (gli amici
+   entro 6″), `attraversati` (chi fugge o ripiega passando sugli amici).
+   Il pannello del tavolo propone l'esito del libro e fugge dal nemico —
+   prima fuggiva dall'amico caduto. Anche i colpi degli incantesimi
+   adesso contano per il quarto perso (`inizioFase`); prima `colpisci`
+   chiamava `panico` con gli argomenti scambiati.
 
 Le partite archiviate prima di queste correzioni hanno il verdetto con
 le regole vecchie: la sfida di Michele era una vittoria dei Lizardmen

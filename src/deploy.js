@@ -2906,8 +2906,8 @@ async function runRally(u){
 }
 
 /* Il Panico: chi e' esente lo dice `psych.js`, il test lo tira
-   `runPsych`, e chi fallisce fugge — dopo averlo chiesto, perche' quella
-   conseguenza e' dichiarata da verificare. */
+   `runPsych`, e chi fallisce ripiega in ordine o fugge come dice p. 160
+   — dopo averlo chiesto, perche' al tavolo l'ultima parola e' vostra. */
 async function runPanic(u, cause, { source = null, why = "", at = null, check = null } = {}){
   const c = check || PS.panicCheck({ cause, me: psychFor(u), source: source ? psychFor(source) : null,
                                      fleeing: !!u.fled, engaged: engagedNow(u),
@@ -2922,17 +2922,27 @@ async function runPanic(u, cause, { source = null, why = "", at = null, check = 
 }
 
 async function panicFlee(u, source){
+  /* p. 160: con piu' della meta' dei modelli d'inizio battaglia si
+     ripiega in ordine, altrimenti si fugge. Prima fuggiva sempre, e la
+     regola era dichiarata da verificare. */
+  const esito = PS.panicFail({ alive: effModels(u), start: u.models || 0 });
+  const opzioni = [{ id:"flee", label:"Fugge" }, { id:"fallBack", label:"Ripiega in ordine" },
+                   { id:"stay", label:"Resta dov'è" }];
   const pick = await askPick({
     title: `${u.name} fallisce il Panico`,
-    label: "Chi fallisce il Panico fugge, lontano da quello che lo ha causato. " +
-           "La regola è dichiarata da verificare sul manuale: decidete voi.",
-    options: [{ id:"flee", label:"Fugge" }, { id:"stay", label:"Resta dov'è" }],
+    label: `Il libro dice: ${esito.why} (p. ${esito.page}).`,
+    options: [opzioni.find(o => o.id === esito.outcome), ...opzioni.filter(o => o.id !== esito.outcome)],
   });
   if (!pick) return;
-  if (pick !== "flee")
+  if (pick === "stay")
     return act("Panico", () => G.logLine(`${u.name}: fallito il Panico, resta dov'è per scelta dei giocatori.`, { army: u.army }));
-  const near = nearFoes(u)[0];
-  const from = source || (near && near.unit) || null;
+  if (pick === "fallBack") return runBackward(u, "fallBack");
+  /* si fugge dal nemico che ha fatto le perdite, e se il Panico viene
+     da un amico — distrutto, sconfitto, o che ti passa attraverso —
+     dal nemico piu' vicino che non stia fuggendo (p. 161). Prima si
+     fuggiva dall'amico. */
+  const near = nearFoes(u).find(f => !f.unit.fled) || nearFoes(u)[0];
+  const from = (source && source.army !== u.army ? source : null) || (near && near.unit) || null;
   if (!from) return toast("Serve qualcosa da cui fuggire: la direzione si misura da lì.");
   return runFlee(u, from);
 }
@@ -2941,12 +2951,12 @@ async function panicFlee(u, source){
    gli amici entro 6″ di chi e' stato distrutto o e' andato in rotta.
    Chi non tira lo dice, perche' «e quelli perche' no?» e' la domanda
    che al tavolo si fa sempre. */
-async function panicWave(cause, source){
+async function panicWave(cause, source, { sourceUS = null } = {}){
   if (!state.game.on || !source) return;
   const sp = psychFor(source);
   const friends = friendsNear(source, PS.PANIC_RANGE).map(f => ({
     ...f, p: psychFor(f.unit), fleeing: !!f.unit.fled, engaged: engagedNow(f.unit) }));
-  const { tests, spared } = PS.panicAround({ cause, source: { ...sp, name: source.name }, friends });
+  const { tests, spared } = PS.panicAround({ cause, source: { ...sp, name: source.name }, friends, sourceUS });
   if (spared.length)
     act("niente Panico", () => {
       for (const s of spared)
@@ -3950,10 +3960,13 @@ async function resolveCombat({ A, B, round }){
     const loser = losers[t.at || 0];
     if (loser && t.move) mosse.set(loser, await runBackward(loser, t.move));
   }
-  /* chi rompe e fugge dal combattimento manda al Panico gli amici entro
-     6″, e chi e' stato spazzato via anche (Tappa 5) */
+  /* chi perde e rompe manda al Panico gli amici entro 6″, e chi e'
+     stato spazzato via anche (Tappa 5). Anche chi ripiega in ordine:
+     «friendly units are seldom able to tell the difference» (p. 161),
+     e solo se ha Forza d'Unita' 5 o piu'. */
   for (const t of tests)
-    if (t.outcome === "rout" && losers[t.at || 0]) await panicWave("broke", losers[t.at || 0]);
+    if ((t.outcome === "rout" || t.outcome === "fallBack") && losers[t.at || 0])
+      await panicWave("broke", losers[t.at || 0], { sourceUS: usOf(losers[t.at || 0]) });
   if (r.wiped) for (const loser of losers) await panicWave("destroyed", loser);
 
   /* 4 · l'inseguimento. Si insegue chi e' andato in rotta; si sfonda
