@@ -406,6 +406,20 @@
     "notes": ""
   },
   {
+    "id": "cmu8ebc4u8xca",
+    "name": "Grey Seer",
+    "faction": "Skaven",
+    "baseId": "25x25",
+    "baseW": 25,
+    "baseH": 25,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "grey seer"
+    ],
+    "notes": ""
+  },
+  {
     "id": "cmtt5ynmxl3z4",
     "name": "Hell Pit Abomination",
     "faction": "Skaven",
