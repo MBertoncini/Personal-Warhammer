@@ -112,10 +112,9 @@ c'era:
   ripiega in ordine. Sul libro è una scelta: andrebbe offerta come mossa;
 - i pestoni contro carri e cavalleria: l'arbitro li tira contro tutti.
 
-**Nei dati**: la lista 9 (Skaven Battle March) non ha né tipo di truppa
-né armi. `partita.mjs` adesso lo dice all'avvio, e in cima alla pagina;
-finché non si corregge, gli Skaven giocano da fanteria regolare e non
-sparano. La lista 12 (Battle march, 862 pt) ha tutto.
+**Nei dati**: la lista *Skaven Battle March*, che non aveva né tipo di
+truppa né armi, Michele l'ha tolta (2026-09-19). `partita.mjs` continua
+a dire all'avvio se una lista è in quello stato.
 
 ## Fatto: la seconda e la terza partita, rilette
 
@@ -274,13 +273,11 @@ solo; se Michele lo vuole, si corregge a mano la voce.
 
 **Nei dati**: le liste 3 e 4 si chiamano tutte e due *La Strada delle
 Pietre*, e `palmares.js` tiene il record **per nome di lista**: una
-partita fra loro due si conta due volte, una vinta e una persa. Adesso
-c'è *Rinomina* (vedi sotto), ma i nomi doppi in `dati/liste.json` sono
-ancora lì, e sono sei coppie: *Il Guado di Sangue*, *Il Monolite nella
-Palude*, *La Strada delle Pietre*, *Le Rovine di Xhotl*, *Tutto*,
-*Battle march*. Le rinomina Michele dall'app, non una sessione: sono
-sue, e la scelta «le partite restano sue / riparte da zero» è una
-domanda a cui sa rispondere solo lui.
+partita fra loro due si conta due volte, una vinta e una persa. Fatto:
+con *Rinomina* Michele ha dato a ogni lista l'esercito nel nome (*La
+Strada delle Pietre LIZ*, *… O&G*, *Tutto SKA*…), e ne ha tolte due. Le
+partite vecchie nel diario portano ancora i nomi di prima: il palmarès
+le ritrova solo se, rinominando, si è scelto «restano sue».
 
 ## Fatto: i personaggi montati e le liste che si rinominano
 
@@ -312,7 +309,7 @@ di **cavalleria** mena ancora con la sola riga del cavaliere.
 
 ## Fatto: la Battle march Skaven di Michele entra nelle prove
 
-La lista `lmu8eb7xh723p` (Grey Seer sulla campana, Hell Pit Abomination,
+La lista `lmu8eb7xh723p`, oggi *Tutto SKA* (Grey Seer sulla campana, Hell Pit Abomination,
 Warp Lightning Cannon) aveva fatto diventare rossa la suite: dieci
 regole sconosciute e un'unità in più senza Movimento. Le sei regole
 d'unità stanno in `dati/eserciti/skaven.json` (testo della lista, niente

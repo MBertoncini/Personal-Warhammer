@@ -30,7 +30,12 @@ const ok = (label, cond) => {
 const dati = f => JSON.parse(fs.readFileSync(new URL('../dati/' + f, import.meta.url), 'utf8'));
 PR.useProfiles(dati('profili.json'));
 const liste = dati('liste.json');
-const A = liste[3], B = liste[4];       // le due «Strada delle Pietre», 750 punti
+/* per id, non per posizione: le liste dell'archivio si rinominano e si
+   cancellano, e un indice scritto a mano smette di voler dire quello
+   che diceva (il 2026-09-19 ne sono sparite due, e mezzo file puntava
+   alle liste sbagliate) */
+const lista = id => liste.find(l => l.id === id);
+const A = lista('lmtl5sa4300nt'), B = lista('lmtl5sn694u6w');   // «La Strada delle Pietre», 750 punti
 
 /* i dadi con il seme: una prova che tira dadi veri non è una prova */
 const seme = s => D.setSource(D.seeded(s));
@@ -140,7 +145,7 @@ console.log('\nla magia in partita (pp. 106-111)');
 const M = MG.makeMagic(dati('magia/domini.json'));
 /* le due liste del Monolite: uno Skink Priest contro un Night Goblin
    Oddnob. Il file non dice il Livello di nessuno dei due, e il libro sì */
-const L1 = liste[1], L2 = liste[2];
+const L1 = lista('lmtl5rgsd5g06'), L2 = lista('lmtl5ruzktzvb');   // «Il Monolite nella Palude»
 const conScheda = (l, units) => ({ ...l, prep: { general: null, bsb: null, note: '', units } });
 {
   seme(1);
@@ -181,7 +186,7 @@ const conScheda = (l, units) => ({ ...l, prep: { general: null, bsb: null, note:
      H.units.find(u => u.name === 'Night Goblin Oddnob').mago.known.length === 3);
 }
 {
-  const G = AR.newBattle({ A: liste[12], B: L2, scenario: 'bm-monolite', magia: M });
+  const G = AR.newBattle({ A: lista('lmtwtadkn4x50'), B: L2, scenario: 'bm-monolite', magia: M });
   const w = G.units.find(u => u.name === 'Warlock Engineer');
   ok('un Warlock Engineer senza scheda non è un mago, e lo si dice',
      !(w.mago && w.mago.level) && G.log.some(r => /Warlock Engineer: il libro lo fa mago solo con un'opzione/.test(r.text)));
@@ -653,7 +658,15 @@ console.log('\nla riga di comando');
    ================================================================= */
 console.log('\nuna lista scritta a mano, sul tavolo');
 {
-  const G = AR.newBattle({ A, B: liste[9], scenario:'bm-strada' });
+  /* la lista *Skaven Battle March* dell'archivio, scritta a mano con
+     nome, modelli e punti e nient'altro: l'archivio non ce l'ha piu', e
+     il caso resta qui */
+  const aMano = { id:'aMano', name:'Skaven Battle March', byHand:true,
+    info:{ catalogue:'', forceName:'scritta a mano', limit:0 },
+    units:[{ name:'Clanrats', models:20, crew:0, baseId:'25x25', baseW:25, baseH:25, frontage:5,
+             loose:false, pts:90, us:0, troop:'', unitSize:'', stats:null, rules:[], weapons:[],
+             maxRange:0, slot:'', faction:'' }] };
+  const G = AR.newBattle({ A, B: aMano, scenario:'bm-strada' });
   const clan = G.units.find(u => u.baseName === 'Clanrats');
   const c = CB.combatant(clan);
   ok('la lista non porta profili, e la tavola li completa anche sul tavolo (prima: tutto a zero)',
@@ -999,17 +1012,17 @@ console.log('\nle liste grandi');
      cadere il tiro. Nessuna prova le aveva mai messe in campo. */
   const M2 = MG.makeMagic(dati('magia/domini.json'));
   let G = null, errore = '';
-  try { G = AR.newBattle({ A: liste[10], B: liste[11], scenario:'bm-strada', magia: M2 }); }
+  try { G = AR.newBattle({ A: lista('lmttwt1fp4uep'), B: lista('lmttwuhu0z27k'), scenario:'bm-strada', magia: M2 }); }
   catch (e){ errore = e.message; }
   ok('la partita fra le liste grandi si prepara', !!G && !errore);
   const bas = G && G.units.find(u => u.mago && u.mago.level === 0 && u.mago.vincolati.includes('beamOfChotec'));
   ok('e il Bastiladon porta il Beam of Chotec, senza Livello', !!bas);
   seme(6);
-  G = AR.newBattle({ A: liste[10], B: liste[11], scenario:'bm-strada', magia: M2 });
+  G = AR.newBattle({ A: lista('lmttwt1fp4uep'), B: lista('lmttwuhu0z27k'), scenario:'bm-strada', magia: M2 });
   try { await AG.giocaPartita(AR, G, { A: AG.agenteEuristico({}), B: AG.agenteEuristico({}) }); }
   catch (e){ errore = e.message; }
   ok('e si gioca fino in fondo', G.finita && !errore);
-  const H = AR.newBattle({ A: liste[10], B: liste[11], scenario:'bm-strada', magia: M2 });
+  const H = AR.newBattle({ A: lista('lmttwt1fp4uep'), B: lista('lmttwuhu0z27k'), scenario:'bm-strada', magia: M2 });
   H.schierando = false; H.preparando = false;
   const hb = H.units.find(u => u.mago && u.mago.vincolati.includes('beamOfChotec'));
   metti(H, hb, 600, 700);

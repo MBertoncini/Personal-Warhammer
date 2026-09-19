@@ -411,11 +411,12 @@ console.log('\nil Movimento che il file della lista non porta');
   const tutte = liste.flatMap(l => l.units);
   const senza = tutte.filter(u => !MV.moveOf(u) && !MV.moveDetail(u).random);
   ok('nelle liste salvate non resta piu nessuna unita senza Movimento', senza.length === 0);
-  /* erano ventitre' quando il file e' nato; poi sono arrivate liste
-     nuove (la Warp Lightning Cannon della Battle march Skaven), e il
-     numero puo' solo crescere: la prova e' che siano tutte coperte */
-  ok('e prima erano almeno ventitre',
-     tutte.filter(u => !/^[0-9]/.test(String((u.stats || {}).M || ""))).length >= 23);
+  /* erano ventitre' quando il file e' nato; poi le liste sono
+     cambiate — arrivate, rinominate, cancellate — e il numero con loro.
+     Quello che conta e' che ce ne siano ancora, cioe' che la prova
+     sopra stia misurando il lavoro di `profili.json` e non il vuoto */
+  ok('e senza il file dei profili ce ne sarebbero',
+     tutte.filter(u => !/^[0-9]/.test(String((u.stats || {}).M || ""))).length > 0);
   PR.useProfiles(null);
 }
 
