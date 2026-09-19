@@ -350,7 +350,7 @@ Una partita sono un centinaio di domande al modello (circa 55 per parte, ~80 mil
     T3 · Temple Guard: Comando 8, 2D6 = 10 e con lo scarto di 3 fa 13 → va in rotta  (p. 154)
 ```
 
-Una partita dura quattro o cinque secondi con l'euristica, e finisce con il verdetto del libro: punti vittoria, margine, e il punto di rottura guardato all'inizio di ogni turno. In fondo stampa **quello che quella partita non ha giocato**, riga per riga: è la lista della spesa del prossimo pezzo di lavoro.
+Una partita dura quattro o cinque secondi con l'euristica, e finisce con il verdetto del libro: cinque round in Battle March e sei nel Core Rulebook, i punti vittoria con i bonus del generale, dello stendardo da battaglia e degli obiettivi tenuti a fine turno, e il margine del formato — in Battle March vince chi ne ha di più (p. 27), nel Core ne servono cento. Il punto di rottura è la durata di uno scenario del Core Rulebook (p. 291), non di tutte le partite, e si chiede con `durata: "breakpoint"`. In fondo stampa **quello che quella partita non ha giocato**, riga per riga: è la lista della spesa del prossimo pezzo di lavoro.
 
 Il turno che l'arbitro gioca è più corto delle sedici caselle di `phases.js` — congiurazione, raduno, cariche, mosse, tiro, mischia — e la differenza è dichiarata: niente sotto-fase di comando, niente riforme. Tutto il resto è quello vero: le reazioni alla carica, il tiro con i suoi modificatori, il combattimento **a più di due** con il conto di p. 153, i tre esiti del test di rotta uno per unità, l'inseguimento che travolge, il Panico oltre il quarto, il raduno con le perdite insostenibili.
 

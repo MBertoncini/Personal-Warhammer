@@ -212,54 +212,57 @@ tavolo invece che nell'elenco.
 ## Quello che è uscito dalla prima sfida vera (Michele contro Gemini)
 
 `dati/partite.json`, *La Strada delle Pietre: Michele (Lizardmen) contro
-Gemini (Orchi)*. Quattro round, e cinque cose che l'arbitro sbaglia o
-non fa. Sono tutte **verificate nel codice**, non dedotte dal registro:
+Gemini (Orchi)*. Quattro round, e cinque cose che sembravano sbagliate.
+Quattro sono chiuse, con il libro aperto e le prove rosse prima:
 
-1. **Il personaggio unito fa il test di rotta per conto suo.**
-   `combat.js` mette le schiere `attached` nell'elenco dei perdenti
-   (`meleeFight`, la riga `losers.forEach`), e l'arbitro le tratta come
-   unità. Nella partita: la Temple Guard si gioca lo Stubborn e ripiega
-   in ordine, il suo Saurus Scar-Veteran — il generale — tira da solo,
-   va in rotta e se ne va dal tavolo. Un capo unito sta dentro il
-   reggimento (p. 207): non tira un test suo e non scappa da solo.
-   `scoreCardOf` lo sa già (`const dentro = !!c.attached`), il test no.
-   È questo che ha portato i Lizardmen sotto il punto di rottura.
-2. **Il punteggio si conta sempre con il formato del Core Rulebook.**
-   `arbitro.js`, `punteggio()`: `VC.formatFor(S.scenario)` riceve la
-   *stringa* dello scenario, e `formatFor` guarda `scenario.group` —
-   vuole l'oggetto, che è `S.sc`. Ogni partita Battle March finisce
-   giudicata con lo scarto di 100 punti invece che «vince chi ne ha di
-   più» (Battle March p. 27): 382 a 337 è uscito «pareggio», ed è una
-   vittoria. Stessa radice: `S.rounds` è 6 fisso (Battle March ne vuole
-   5), e gli obiettivi di `victory.js` (`objectivePoints`, i tre tesori
-   di questo tavolo) l'arbitro non li conta mai. Da guardare anche il
-   §10 di `arbitro.js`, che nel suo commento dice «un esercito sotto il
-   punto di rottura ha perso comunque» e poi non lo applica.
-3. **Si spara addosso a chi è già in mischia.** `opzioniTiro` guarda se
-   è ingaggiato **chi tira**, mai chi è bersagliato: al turno 2 gli
-   Skink Skirmishers 3 hanno tirato sui Black Orc Mobs che la Temple
-   Guard aveva addosso.
-4. **La marcia fallita conta come marcia.** `mossa()` scrive
-   `u.moved = { kind:"march" }` anche quando il test di Comando è
-   andato male e l'unità ha mosso di un movimento solo. `SH.canShoot`
-   blocca chi ha marciato: il Bastiladon, che al turno 3 aveva fallito
-   il test, non ha potuto sparare.
+1. ~~**Il personaggio unito fa il test di rotta per conto suo.**~~
+   Fatto: in `meleeFight` il test lo tira il reggimento (p. 207), e il
+   capo solo se del reggimento non resta nessuno. `combatant()` adesso
+   dà al reggimento il Comando più alto fra i modelli (p. 97) anche
+   fuori dall'arbitro — il pannello tirava col Comando della truppa.
+   Prove in `test/mischia.mjs`.
+2. ~~**Il punteggio si conta sempre con il formato del Core Rulebook.**~~
+   Fatto: `S.formato` dallo scenario, cinque round in Battle March (p. 27),
+   sei nel Core; il generale e lo stendardo da battaglia persi valgono i
+   loro bonus (`S.bsb`, da `PREP.guessBsb`); tesori e landmark si contano a
+   fine di ogni turno di giocatore (`obiettivi`, `S.fineTurni`, con
+   `objectiveHolder`) e stanno nella fotografia per chi gioca. **Il punto
+   di rottura non è una regola di tutte le partite**: sul Core Rulebook
+   è la durata di uno scenario (p. 291, «There is no turn limit…»), e in
+   Battle March non c'è. Adesso vale solo con `newBattle({ durata:
+   "breakpoint" })`, e chi si rompe perde con vittoria schiacciante. Gli
+   stendardi presi come trofeo restano fuori: limite `trofei`.
+3. ~~**Si spara addosso a chi è già in mischia.**~~ Fatto: p. 143.
+4. ~~**La marcia fallita conta come marcia.**~~ **Non era un errore**: «if
+   a unit attempts an Enemy Sighted test in order to march and fails, it
+   is considered to have marched, even if its controlling player then
+   elects to not move the unit at all» (p. 123), e chi ha marciato non
+   tira (p. 137). Il Bastiladon non poteva sparare. C'è la prova, e un
+   commento in `mossa()` perché non lo si «corregga».
 5. **Il Panico esiste solo per il tiro.** `psych.js` ha tutte e quattro
    le cause (`PANIC_CAUSES`) e `panicAround` per chiamarle in blocco;
    lo usa solo `deploy.js`. L'arbitro chiama `panico()` dopo un tiro e
    basta: in questa partita nessuno ha tirato il Panico, nemmeno con i
    Black Orc Mobs travolti e tre unità Skink distrutte.
 
-**Da controllare sul libro**, che non è stato:
+Le partite archiviate prima di queste correzioni hanno il verdetto con
+le regole vecchie: la sfida di Michele era una vittoria dei Lizardmen
+(382 a 337), e nel diario è un pareggio. Il diario non si riscrive da
+solo; se Michele lo vuole, si corregge a mano la voce.
 
-- si può tirare dopo una carica fallita? (p. 121) `canShoot` non sa che
-  cosa sia un `failedCharge`, e al turno 2 gli Skink Skirmishers 3 hanno
-  caricato a vuoto e poi tirato;
+**Da controllare sul libro**:
+
+- si può tirare dopo una carica fallita? p. 137 dice «a unit cannot
+  shoot if it charged or marched during the preceding Movement phase»,
+  e una carica fallita è una carica dichiarata che si muove: la lettura
+  più probabile è che non tiri, ma `canShoot` non sa che cosa sia un
+  `failedCharge`. Al turno 2 gli Skink Skirmishers 3 hanno caricato a
+  vuoto e poi tirato;
 - chi insegue e arriva addosso a un'unità nuova (p. 156): l'arbitro lo
   fa fermare a contatto e non succede altro — niente carica, niente
   combattimento al turno dopo;
-- un tiro che non può andare a segno viene offerto e tirato lo stesso:
-  il giavellotto del Bastiladon è uscito due volte «1 tiri a 7+».
+- ~~un tiro a 7+~~: è una regola (p. 139, il 6 e poi un altro dado), e il
+  giavellotto del Bastiladon lo tirava giusto.
 
 **Nei dati**: le liste 3 e 4 si chiamano tutte e due *La Strada delle
 Pietre*, e `palmares.js` tiene il record **per nome di lista**: una

@@ -525,6 +525,33 @@ console.log('\nil capo che occupa un posto, nell assalto a gruppi (p. 207)');
   ok('il capo che non tocca non mena', colpiDi(r3, 'Orc Big Boss') === 0);
   ok('e i soldati menano con quelli che toccano davvero', colpiDi(r3, 'Orc Mob') === 3 + 3);
 
+  /* Il capo unito sta dentro il reggimento (p. 207): se la parte
+     perde, il test di rotta lo tira il reggimento, e lui va dove va il
+     reggimento. Nella sfida Michele contro Gemini la Temple Guard
+     ripiegava in ordine con lo Stubborn e il suo Scar-Veteran — il
+     generale — tirava da solo, rompeva e lasciava il tavolo. */
+  const ogre = C.combatant(unit('Ogri', { ...prof, WS:'4', S:'5', T:'5', W:'3', A:'4', Ld:'8' }, 12, 4));
+  let perse = 0, soloIlReggimento = true;
+  for (let i = 0; i < 40; i++){
+    const rr = C.meleeFight([C.combatant(mobU, { joined: [capoU] })], [ogre]);
+    if (rr.cr.loser !== 'A' || rr.wiped) continue;
+    perse++;
+    if (rr.tests.some(t => rr.sides.A[t.at].attached)) soloIlReggimento = false;
+  }
+  ok('quando la parte perde, il capo unito non tira un test suo', perse > 0 && soloIlReggimento);
+  ok('e il reggimento lo tira con il Comando del capo (p. 97)',
+     C.combatant(mobU, { joined: [capoU] }).ld === 9 && C.combatant(mobU).ld === 7);
+  /* ma se del reggimento non resta nessuno, il capo e' di nuovo
+     un'unita' da sola, e il test lo tira lui */
+  const pochi = unit('Orc Mob', prof, 1, 1, { uid: 41 });
+  let tiraLui = false;
+  for (let i = 0; i < 60 && !tiraLui; i++){
+    const rr = C.meleeFight([C.combatant(pochi, { joined: [capoU] })], [ogre]);
+    if (rr.cr.loser === 'A' && rr.sides.A[0].models <= 0 && rr.sides.A[1].models > 0)
+      tiraLui = rr.tests.some(t => rr.sides.A[t.at].attached);
+  }
+  ok('se il reggimento non c e piu, il capo il test lo tira', tiraLui);
+
   /* due nemici davanti, e il tavolo sa quanti ne toccano ciascuno */
   const due = [C.combatant(unit('Fanti A', prof, 10, 5, { uid: 51 })),
                C.combatant(unit('Fanti B', prof, 10, 5, { uid: 52 }))];

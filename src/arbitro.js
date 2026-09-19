@@ -35,7 +35,7 @@
  */
 
 import { MM, inch } from './util.js';
-import { boxCorners, polyDistance, polysOverlap, pointInRect } from './geom.js';
+import { boxCorners, polyDistance, polysOverlap, pointInRect, distPointToBox } from './geom.js';
 import * as FM from './formation.js';
 import * as MV from './movement.js';
 import * as CH from './charge.js';
@@ -51,6 +51,8 @@ import { splitStat, moveInfo } from './profiles.js';
 import { roll, d3, leadershipTest, stat, rankBonus, woundOn, saveOn, chance as chanceOf } from './rules.js';
 import { SCENARIOS, geometry } from './scenarios.js';
 import { troopType, unitStrength } from './troops.js';
+import { TERRAIN } from './terrain.js';
+import { objectiveHolder, OBJECTIVE_RANGE } from './battlemarch.js';
 
 /* ============================================================
    0 · QUELLO CHE QUESTO ARBITRO NON FA
@@ -77,6 +79,8 @@ export const LIMITI = [
     why:"chi la raccoglie e chi la rifiuta è una decisione da tavolo, e l'overkill lo conta già `melee.js`" },
   { id:"oggetti",   what:"gli oggetti magici non fanno niente", page:0,
     why:"i cataloghi li scrivono come testo libero: l'app li mostra e non li applica" },
+  { id:"trofei",    what:"gli stendardi presi come trofeo non contano nel punteggio", page:200,
+    why:"il bonus c'è (25 punti in Battle March, 50 nel Core Rulebook), ma l'arbitro non segna chi ha preso lo stendardo di un'unità travolta" },
   { id:"bordo",     what:"chi cede terreno contro il bordo del tavolo si ferma lì", page:134,
     why:"il libro dice dove si ferma chi cede terreno — un'unità, il terreno, un pollice da un nemico — e del bordo non dice niente" },
   { id:"volo",      what:"chi vola si muove del suo volo ma non sorvola niente", page:0,
@@ -181,8 +185,14 @@ export function armyFrom(lista, army, from = 0){
 
 /* `magia` e' quello che torna `makeMagic`: senza, vale quello che
    `loadMagic` o `useMagic` hanno lasciato in memoria. */
-export function newBattle({ A, B, scenario = "bm-strada", nomi = null, magia = null } = {}){
+/* `durata` e' una di `VC.LENGTHS`: senza, quella del formato dello
+   scenario — cinque round in Battle March (p. 27), sei nel Core
+   Rulebook (p. 286). Il punto di rottura va chiesto: e' la durata di
+   uno scenario (p. 291), non una regola di tutte le partite. */
+export function newBattle({ A, B, scenario = "bm-strada", nomi = null, magia = null, durata = null } = {}){
   const sc = SCENARIOS[scenario] || SCENARIOS["bm-strada"];
+  const formato = VC.formatFor(sc);
+  const lunga = durata === "breakpoint" || durata === "fixed" || durata === "bm" ? durata : VC.defaultLength(formato);
   const [tw, th] = sc.table;
   const W = tw * MM, H = th * MM;
   const geo = geometry(sc.deploy, W, H, (sc.gap || 6) * MM);
@@ -211,7 +221,10 @@ export function newBattle({ A, B, scenario = "bm-strada", nomi = null, magia = n
              B: (B.units || []).reduce((s, u) => s + (u.pts || 0), 0) },
     usStart: { A: 0, B: 0 },
     turno: 1, army: "A", casella: 0, schierando: true, primo: "A",
-    rounds: 6, finita: false, esito: null,
+    formato, durata: lunga, rounds: VC.roundsFor(lunga) || null, finita: false, esito: null,
+    /* chi teneva gli obiettivi alla fine di ogni turno di giocatore:
+       e' la forma che `VC.objectivePoints` somma */
+    fineTurni: [],
     log: [], detto: new Set(), pending: null,
     /* la magia che si ricorda fra un gesto e l'altro: chi ha gia'
        tentato la sorte in questo turno, e chi dopo un fiasco non lancia
@@ -230,6 +243,14 @@ export function newBattle({ A, B, scenario = "bm-strada", nomi = null, magia = n
     return i != null && (l.units || [])[i] ? from + i + 1 : null;
   };
   S.generale = { A: genDi(A, 0), B: genDi(B, 500) };
+  /* chi porta lo stendardo da battaglia: serve al punteggio, perche'
+     perderlo vale punti all'altro (Battle March p. 27, p. 286) */
+  const bsbDi = (l, from) => {
+    const p = PREP.prepOf(l);
+    const i = p.bsb != null ? p.bsb : PREP.guessBsb(l);
+    return i != null && (l.units || [])[i] ? from + i + 1 : null;
+  };
+  S.bsb = { A: bsbDi(A, 0), B: bsbDi(B, 500) };
   const M = magia || MG.magicNow();
   S.magia.M = M && M.ok ? M : null;
   preparaMaghi(S);
@@ -796,6 +817,11 @@ function opzioniTiro(S){
     const arma = armi[0];
     const gittata = stat(arma.range);
     for (const t of nemiciDi(S, u)){
+      /* «units cannot shoot at enemy units that are engaged in combat»
+         (p. 143): si guardava se era ingaggiato chi tira, mai chi e'
+         bersagliato, e gli Skink tiravano sui Black Orc che la Temple
+         Guard aveva addosso */
+      if (ingaggiata(S, t)) continue;
       const d = distanza(S, u, t);
       if (d > gittata) continue;
       if (vistaTagliata(S, u, t)) continue;
@@ -1237,6 +1263,10 @@ function mossa(S, a, marcia){
      da bordo a bordo, e intanto il centro andava dritto dentro chi
      stava in mezzo. */
   const p = muoviVerso(S, u, t, quanti);
+  /* anche con il test fallito e' una marcia: «it is considered to have
+     marched, even if its controlling player then elects to not move the
+     unit at all» (p. 123). Quindi non tira. Sembrava un errore, e lo
+     era solo per chi non aveva il libro aperto. */
   u.moved = { kind: marcia ? "march" : "move", inches: p.pollici };
   say(S, `${u.name} ${marcia ? "marcia" : "avanza"} di ${p.pollici}″ verso ${t.name}` +
          (p.stop && p.pollici < quanti - 0.05 ? `, e si ferma: c'è ${p.stop.perche}` : "") + ".",
@@ -2381,7 +2411,9 @@ function passo(S){
     return `si passa a: ${CASELLE[S.casella].what}`;
   }
 
-  /* fine del turno di questa parte */
+  /* fine del turno di questa parte: si guarda chi tiene gli
+     obiettivi (Battle March p. 27, «at the end of each player's turn») */
+  segnaObiettivi(S);
   S.casella = 0;
   for (const u of S.units){ u.moved = null; u.shot = false; u.charged = null; u.unito = null; }
   if (S.army !== S.primo){
@@ -2390,7 +2422,7 @@ function passo(S){
   } else {
     S.army = S.army === "A" ? "B" : "A";
   }
-  if (S.turno > S.rounds){ fine(S, "sono finiti i turni"); return "partita finita"; }
+  if (S.rounds && S.turno > S.rounds){ fine(S, "sono finiti i turni"); return "partita finita"; }
   /* gli effetti degli incantesimi scadono quando il libro lo dice: a
      fine turno, o al prossimo inizio turno di chi li ha lanciati */
   for (const u of S.units){
@@ -2405,13 +2437,57 @@ function passo(S){
 }
 
 /* ============================================================
-   10 · CHI HA VINTO (p. 292)
-   I punti vittoria li conta `victory.js`, che sa la tabella del
-   margine. Qui si raccolgono le unita' perse e si guarda anche il
-   punto di rottura: un esercito sotto un quarto della sua Forza
-   d'Unita' di partenza ha perso comunque.
+   10 · CHI HA VINTO
+   I punti vittoria li conta `victory.js`, che sa il formato: nel Core
+   Rulebook servono 100 punti di scarto (p. 286), in Battle March vince
+   chi ne ha di piu' (p. 27). Il formato si legge dallo scenario — la
+   stringa `S.scenario` non ha il gruppo, e per mesi ogni partita
+   Battle March e' stata giudicata con lo scarto del Core Rulebook.
+
+   Sopra i punti delle unita', i bonus del formato: il generale nemico
+   caduto, fuggito dal tavolo o in fuga a fine partita, e lo stesso per
+   chi porta lo stendardo da battaglia; e gli obiettivi tenuti a fine
+   turno. Gli stendardi presi come trofeo l'arbitro non li conta: non
+   sa ancora chi li ha presi (limite `trofei`).
    ============================================================ */
+const OBIETTIVI = { treasure: "treasure", landmark: "landmark", monolith: "landmark" };
+
+/* Chi tiene ogni obiettivo adesso (Battle March p. 25): la regola sta
+   in `battlemarch.js`, qui si misura. Come nel diario, la distanza va
+   dal bordo del pezzo al bordo dell'unita', e la Forza d'Unita' conta
+   i capi che ci stanno dentro. */
+export function obiettivi(S){
+  const pezzi = (S.sc.terrain || []).filter(t => OBIETTIVI[t.kind]);
+  return pezzi.map(t => {
+    const raggio = ((t.w ?? (TERRAIN[t.kind] || {}).w ?? 0) * MM) / 2;
+    const vicini = [];
+    for (const u of [...inCampo(S, "A"), ...inCampo(S, "B")]){
+      const d = Math.max(0, distPointToBox([t.x * MM, t.y * MM], boxOf(u, S.units)) - raggio) / MM;
+      if (d > OBJECTIVE_RANGE + 0.01) continue;
+      vicini.push({ uid: u.uid, name: u.name, army: u.army, us: usConCapi(S, u), dist: r1(d),
+                    fleeing: !!u.fled, stupid: stupida(S, u) });
+    }
+    const h = objectiveHolder(vicini);
+    return { kind: OBIETTIVI[t.kind], army: h.held ? h.army : null, by: h.held ? h.by.name : "" };
+  });
+}
+
+function segnaObiettivi(S){
+  const oggi = obiettivi(S);
+  if (!oggi.length) return;
+  S.fineTurni.push({ kind: "turn", n: S.turno, army: S.army, objectives: oggi });
+  const b = VC.bonuses(S.formato);
+  for (const o of oggi){
+    const v = o.kind === "landmark" ? b.landmark : b.treasure;
+    if (o.army && v)
+      say(S, `${o.by} tiene ${o.kind === "landmark" ? "il landmark" : "un tesoro"}: ` +
+             `${v} punti vittoria a ${S.nomi[o.army]}.`, { army: o.army, page: 27 });
+  }
+}
+
 export function punteggio(S){
+  const formato = S.formato || VC.formatFor(S.sc);
+  const b = VC.bonuses(formato);
   /* i capi uniti contano per conto loro: il loro valore in punti c'e'
      anche quando stanno dentro un reggimento */
   const conta = army => S.units.filter(u => u.army === army).reduce((s, u) => {
@@ -2420,18 +2496,33 @@ export function punteggio(S){
     return s + VC.unitVP({ pts: u.pts || 0, dead: !!u.dead, fledOff: !!u.fledOff,
                            fleeing: !!u.fled, share }).vp;
   }, 0);
+  const perso = uid => { const u = uid != null ? byUid(S, uid) : null;
+                         return !!u && (u.dead || u.fledOff || u.fled); };
+  const bonus = army => {
+    const lui = army === "A" ? "B" : "A";
+    return (perso((S.generale || {})[lui]) ? b.general : 0) +
+           (perso((S.bsb || {})[lui]) ? b.bsb : 0);
+  };
+  const ob = VC.objectivePoints(S.fineTurni || [], formato);
   /* i punti che ho fatto sono quelli che l'altro ha perso */
-  const A = conta("B"), B = conta("A");
-  return { A, B, ...VC.victory(A, B, VC.formatFor(S.scenario)) };
+  const A = conta("B") + bonus("A") + ob.A, B = conta("A") + bonus("B") + ob.B;
+  return { A, B, formato, obiettivi: ob, ...VC.victory(A, B, formato) };
 }
 
 export function rotto(S, army){
   return VC.broken(totalUS(S, army), S.usStart[army]);
 }
 
-export function fine(S, why){
+export function fine(S, why, { rotto = null } = {}){
   S.finita = true;
-  const p = punteggio(S);
+  let p = punteggio(S);
+  /* p. 291: «if the game ends with one army having broken, the
+     unbroken army achieves a crushing victory» — i punti restano
+     scritti, ma il verdetto non lo decidono loro */
+  if (rotto){
+    const vince = rotto === "A" ? "B" : "A";
+    p = { ...p, winner: vince, level: "crushing", label: "vittoria schiacciante", page: VC.PAGE.breakpoint };
+  }
   S.esito = { ...p, why };
   say(S, `Partita finita (${why}). ${S.nomi.A} ${p.A} punti vittoria, ${S.nomi.B} ${p.B}. ` +
          (p.winner ? `${S.nomi[p.winner]} vince: ${p.label}.` : `${p.label}.`),
@@ -2449,17 +2540,26 @@ export function controllaFine(S, { inizioTurno = false } = {}){
     const fuori = unitsOf(S, army).filter(u => !u.dead && !u.placed).length;
     if (!inCampo(S, army).length && !fuori)
       return fine(S, `${S.nomi[army]} non ha più nessuno in campo`);
-    /* Il punto di rottura si guarda ALL'INIZIO DI UN TURNO (p. 291),
-       non appena ci si scende: un esercito che scende sotto durante la
-       fase di combattimento finisce il suo combattimento, e la partita
-       si ferma dopo. Guardarlo a ogni gesto chiudeva la partita in
-       mezzo a una mischia, lasciando i combattimenti degli altri a
-       metà. */
-    if (inizioTurno){
-      const r = rotto(S, army);
-      if (r && r.broken)
-        return fine(S, `${S.nomi[army]} è sotto il punto di rottura: ` +
-                       `Forza d'Unità ${r.usNow} contro le ${r.bp} che servivano (p. ${r.page})`);
+  }
+  /* Il punto di rottura esiste solo nella durata che lo chiede
+     (p. 291): in Battle March e nei sei round del Core Rulebook si
+     gioca fino in fondo, e contano i punti. Prima valeva per tutte le
+     partite, e la sfida Michele contro Gemini e' finita cosi' su un
+     tavolo che non lo prevedeva.
+
+     Si guarda ALL'INIZIO DI UN TURNO, non appena ci si scende: un
+     esercito che scende sotto durante la fase di combattimento finisce
+     il suo combattimento, e la partita si ferma dopo. Se si rompono
+     tutti e due nello stesso momento, decidono i punti vittoria. */
+  if (inizioTurno && S.durata === "breakpoint"){
+    const r = { A: rotto(S, "A"), B: rotto(S, "B") };
+    const giu = ["A", "B"].filter(x => r[x] && r[x].broken);
+    if (giu.length === 2) return fine(S, "tutti e due gli eserciti sono sotto il punto di rottura");
+    if (giu.length === 1){
+      const x = giu[0];
+      return fine(S, `${S.nomi[x]} è sotto il punto di rottura: ` +
+                     `Forza d'Unità ${r[x].usNow} contro le ${r[x].bp} che servivano (p. ${r[x].page})`,
+                  { rotto: x });
     }
   }
   return null;
@@ -2492,13 +2592,20 @@ export function fotografia(S, { per = null } = {}){
   };
   const mie = inCampo(S, io), sue = inCampo(S, lui);
   const fuori = S.units.filter(u => u.army === io && !u.dead && !u.placed && !isJoined(u));
+  const pv = punteggio(S), bn = VC.bonuses(pv.formato);
+  const ob = bn.treasure || bn.landmark ? obiettivi(S) : [];
   return [
-    `Turno ${S.turno} di ${S.rounds}. Tavolo ${S.table.wIn}×${S.table.hIn}″, scenario «${S.sc.label}».`,
+    (S.rounds ? `Turno ${S.turno} di ${S.rounds}.` : `Turno ${S.turno}: si gioca fino al punto di rottura.`) +
+      ` Tavolo ${S.table.wIn}×${S.table.hIn}″, scenario «${S.sc.label}».`,
     `Tu sei ${S.nomi[io]} (${S.punti[io]} punti). L'avversario è ${S.nomi[lui]} (${S.punti[lui]}).`,
     `Le tue unità in campo:`, ...mie.map(riga),
     fuori.length ? `Ancora da schierare: ${fuori.map(u => u.name).join(", ")}.` : "",
     `Le sue unità in campo:`, ...sue.map(riga),
-    `Punti vittoria adesso: tu ${punteggio(S)[io]}, lui ${punteggio(S)[lui]}.`,
+    `Punti vittoria adesso: tu ${pv[io]}, lui ${pv[lui]}` +
+      (pv.formato === "bm" ? " (in Battle March vince chi ne ha di più)." : " (servono 100 punti di scarto)."),
+    ob.length ? `Obiettivi: ` + ob.map(o => (o.kind === "landmark" ? "landmark " : "tesoro ") +
+      (o.army ? `tenuto da ${o.by} (${o.army === io ? "tuo" : "suo"})` : "libero")).join("; ") +
+      `. Chi ne tiene uno alla fine del suo turno prende ${bn.treasure} punti per un tesoro, ${bn.landmark} per il landmark.` : "",
   ].filter(Boolean).join("\n");
 }
 

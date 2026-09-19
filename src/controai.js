@@ -253,7 +253,7 @@ export function renderSfida(){
   const fase = S.finita ? "Partita finita"
              : S.preparando ? "Incantesimi, prima di schierare"
              : S.schierando ? "Schieramento"
-             : `Turno ${S.turno} di ${S.rounds} · ${(AR.CASELLE[S.casella] || {}).fase || ""}`;
+             : `Turno ${S.turno}${S.rounds ? " di " + S.rounds : ""} · ${(AR.CASELLE[S.casella] || {}).fase || ""}`;
   host.innerHTML = `
     <div class="sf-testa">
       <div><b style="color:var(--army${p.mia})">Tu: ${esc(S.nomi[p.mia])}</b>

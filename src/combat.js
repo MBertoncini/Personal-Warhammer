@@ -221,6 +221,15 @@ export function combatant(u, over = {}){
      ricalcola dopo le correzioni del pannello, perche' «ha caricato» e'
      una casella che si spunta. La Paura fallita toglie uno al tiro per
      colpire, e quella la dice il tavolo con `over.feared`. */
+  /* Un'unita' usa il Comando piu' alto fra i suoi modelli (p. 97), e
+     un capo unito e' uno dei suoi modelli. Serve da quando il capo non
+     tira piu' un test di rotta suo: lo tira il reggimento, con il suo
+     Comando. L'arbitro lo faceva gia' (`ldProprio`), il pannello no. */
+  for (const ch of over.joined || []){
+    if (!ch || ch.dead) continue;
+    const l = val(ch, "Ld");
+    if (l > c.ld){ c.ld = l; c.ldFrom = ch.name; }
+  }
   c.psych = PS.psychOf(u, { joined: over.joined || [] });
   const ranks = c.disrupted ? 0 : rankBonus(c.models, c.frontage,
     c.troop ? c.troop.maxRank : 2, c.troop ? c.troop.perRank : 5);
@@ -984,7 +993,16 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
     const winners = (cr.loser === "A" ? B : A).filter(c => c.models > 0);
     const us = { win: sideUS(winners), lose: sideUS(losers) };
     losers.forEach((c, i) => {
-      if (c.models > 0) tests.push({ ...breakFor(c, winners, cr.diff, cr.loser, us), at: i });
+      if (c.models <= 0) return;
+      /* Il capo unito sta dentro il reggimento (p. 207): il test lo
+         tira il reggimento, con il Comando piu' alto fra i modelli, e
+         il capo va dove va lui. Prima lo tirava anche il capo, da solo,
+         e un generale poteva rompere e lasciare il tavolo mentre la
+         sua Temple Guard ripiegava in ordine. Se del reggimento non
+         resta nessuno, il capo e' di nuovo un'unita' e tira per se'. */
+      const host = c.attached && c.hostAt != null ? losers[c.hostAt] : null;
+      if (host && host.models > 0) return;
+      tests.push({ ...breakFor(c, winners, cr.diff, cr.loser, us), at: i });
     });
   }
 

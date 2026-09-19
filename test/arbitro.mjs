@@ -265,15 +265,27 @@ const conScheda = (l, units) => ({ ...l, prep: { general: null, bsb: null, note:
 }
 {
   /* e una partita intera con due maghi, giocata dall'euristica */
+  /* Quello che l'arbitro garantisce e' che gli incantesimi si offrano;
+     se poi si lanciano lo decide chi gioca, e come va la partita. Col
+     seme 1 lo Skink Priest cade al secondo turno senza aver scelto la
+     sua maledizione, e da quando Battle March dura cinque round (e
+     nessuno tira piu' dentro una mischia) il lancio del terzo turno
+     dell'Oddnob non arriva: il lancio vero si chiede alle tre partite
+     insieme. */
+  let lanci = 0;
   for (const s of [1, 2, 3]){
     seme(s);
     const G = AR.newBattle({ A: L1, B: L2, scenario: 'bm-monolite', magia: M });
-    await AG.giocaPartita(AR, G, { A: AG.agenteEuristico({}), B: AG.agenteEuristico({}) });
+    let offerti = 0;
+    await AG.giocaPartita(AR, G, { A: AG.agenteEuristico({}), B: AG.agenteEuristico({}),
+      onPasso: ({ opzioni }) => { offerti += opzioni.list.filter(x => x.id === 'lancia').length; } });
     ok(`seme ${s}: la partita con due maghi finisce`, G.finita && !!G.esito);
     ok(`seme ${s}: nessuna mossa rifiutata`, !G.log.some(r => /rifiutat/.test(r.text)));
-    ok(`seme ${s}: il registro porta almeno un lancio`, G.log.some(r => / lancia .*: lancio /.test(r.text)));
+    ok(`seme ${s}: gli incantesimi si offrono`, offerti > 0);
+    if (G.log.some(r => / lancia .*: lancio /.test(r.text))) lanci++;
     if (s > 1) ok(`seme ${s}: e almeno un dissolvimento`, G.log.some(r => /contro .*: dissolvimento/.test(r.text)));
   }
+  ok('e nelle tre partite qualcuno lancia davvero', lanci >= 2);
 }
 
 
@@ -512,6 +524,39 @@ console.log('\nstare fermi non è muoversi (p. 138)');
   sk.moved = { kind:'move', inches: 3 };
   ok('chi ha mosso invece lo prende',
      AR.options(G).list.filter(x => x.id === 'tira' && x.uid === sk.uid).every(x => /ha mosso/.test(x.why)));
+}
+
+console.log('\nnon si tira dentro una mischia (p. 143)');
+{
+  const G = nuova();
+  const sk = metti(G, uid(G, 3), 600, 600);
+  const bersaglio = metti(G, uid(G, 505), 600, 380);
+  G.casella = casella('tiro'); G.army = 'A';
+  const suLui = () => AR.options(G).list.some(x => x.id === 'tira' && x.uid === sk.uid && x.target === bersaglio.uid);
+  ok('un nemico libero si bersaglia', suLui());
+  const tg = metti(G, uid(G, 6), 0, 0);
+  aContattoDi(G, tg, bersaglio);
+  ok('uno che ha addosso la Temple Guard no', AR.ingaggiata(G, bersaglio) && !suLui());
+}
+
+/* La sfida Michele contro Gemini lo aveva preso per un errore: il
+   Bastiladon fallisce il test, avanza di un movimento solo, e poi non
+   spara. E' il libro: chi tenta la marcia e fallisce «is considered to
+   have marched, even if its controlling player then elects to not move
+   the unit at all» (p. 123), e chi ha marciato non tira (p. 137). */
+console.log('\nla marcia fallita è una marcia (p. 123)');
+{
+  const G = nuova();
+  const sk = metti(G, uid(G, 3), 600, 600);
+  metti(G, uid(G, 505), 600, 380);
+  G.casella = casella('mosse'); G.army = 'A';
+  D.setSource(() => 5);                                  // dodici: il test fallisce
+  AR.apply(G, { id:'marcia', uid: sk.uid, verso: 505 });
+  D.setSource(D.seeded(1));
+  ok('fallito il test, conta come marcia', sk.moved && sk.moved.kind === 'march' &&
+     G.log.some(r => /niente marcia/.test(r.text)));
+  G.casella = casella('tiro');
+  ok('e chi ha marciato non tira (p. 137)', !AR.options(G).list.some(x => x.id === 'tira' && x.uid === sk.uid));
 }
 
 console.log('\nlo schieramento, la prima fila davanti (p. 115)');
@@ -934,6 +979,55 @@ console.log('\nil Comando del generale (p. 202)');
   ok('e il raggio non è più fra i limiti da verificare', !AR.LIMITI.some(l => l.id === 'generale'));
   ok('la psicologia e i personaggi non sono più limiti',
      !AR.LIMITI.some(l => l.id === 'psicologia' || l.id === 'personaggi'));
+}
+
+/* La prima sfida vera (Michele contro Gemini) e' finita 382 a 337 e
+   l'arbitro l'ha chiamata pareggio: contava con lo scarto di 100 punti
+   del Core Rulebook su un tavolo di Battle March, dove vince chi ne ha
+   di piu' (p. 27), e il tesoro tenuto a fine turno non lo contava mai. */
+console.log('\nil punteggio di Battle March (Battle March p. 27)');
+{
+  const G = nuova();
+  ok('Battle March dura cinque round', G.rounds === 5 && G.formato === 'bm');
+  ok('la Battaglia Campale del Core Rulebook sei', AR.newBattle({ A, B, scenario:'open' }).rounds === 6);
+
+  const piccola = AR.unitsOf(G, 'B').filter(u => u.uid !== G.generale.B && u.pts > 0)
+    .sort((x, y) => x.pts - y.pts)[0];
+  piccola.dead = true;
+  const p = AR.punteggio(G);
+  ok('vince chi ha piu punti, anche di poco', p.winner === 'A' && p.A === piccola.pts && piccola.pts < 100);
+
+  const gen = uid(G, G.generale.B);
+  gen.dead = true;
+  ok('il generale nemico caduto vale 50 punti in piu (The King is Dead)',
+     AR.punteggio(G).A === piccola.pts + gen.pts + 50);
+
+  const tesoro = G.sc.terrain.find(t => t.kind === 'treasure');
+  const grossa = AR.unitsOf(G, 'A').filter(u => AR.usConCapi(G, u) >= 5)[0];
+  metti(G, grossa, tesoro.x * MM, tesoro.y * MM);
+  ok('chi ci sta sopra tiene il tesoro',
+     AR.obiettivi(G).some(o => o.kind === 'treasure' && o.army === 'A'));
+  const prima = AR.punteggio(G).A;
+  G.army = 'A'; G.casella = AR.CASELLE.length - 1;
+  AR.apply(G, { id:'avanti' });
+  ok('e a fine turno il tesoro vale 10 punti',
+     G.fineTurni.length === 1 && AR.punteggio(G).A === prima + 10);
+
+  /* il punto di rottura e' uno scenario del Core Rulebook (p. 291),
+     non una regola di tutte le partite: in Battle March non c'e' */
+  AR.unitsOf(G, 'B').forEach(u => { u.dead = true; });
+  const viva = G.units.find(u => u.army === 'B' && u.pts > 0);
+  viva.dead = false;
+  ok('in Battle March nessuno si rompe', AR.controllaFine(G, { inizioTurno: true }) === null && !G.finita);
+
+  const R = AR.newBattle({ A, B, scenario:'bm-strada', durata:'breakpoint' });
+  R.schierando = false;
+  ok('con la durata del punto di rottura non ci sono round', !R.rounds);
+  R.units.filter(u => u.army === 'B').forEach(u => { u.dead = true; });
+  R.units.find(u => u.army === 'B' && u.pts > 0).dead = false;
+  const e = AR.controllaFine(R, { inizioTurno: true });
+  ok('e chi si rompe perde con vittoria schiacciante dell altro (p. 291)',
+     !!e && e.winner === 'A' && e.level === 'crushing');
 }
 
 /* ================================================================= */
