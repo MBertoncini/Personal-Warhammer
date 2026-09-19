@@ -39,7 +39,7 @@ regole di casa del progetto e la storia di tutte le decisioni prese:
   `deploy.js` (la pagina), `store.js`/`sync.js` (i dati) e `agente.js` (il
   modello di linguaggio). Entrano numeri, escono numeri con la traccia di
   come sono venuti.
-- **Prove per tutto.** `npm test` (~1850 asserzioni, un minuto o due). Ogni regola
+- **Prove per tutto.** `npm test` (~2000 asserzioni, un minuto o due). Ogni regola
   nuova porta le sue prove nel file della sua fase, con etichette in
   italiano che si leggono come frasi.
 - **L'italiano nei commenti e nell'interfaccia**, l'inglese solo nei nomi
@@ -379,16 +379,63 @@ Prove: `test/magia.mjs` (probabilità, schede dei maghi) e
 effetto che scade al turno giusto, e tre partite fra uno Skink Priest e
 un Night Goblin Oddnob sulle liste 1 e 2).
 
-## Compito 2 — le manovre (p. 125) — il prossimo
+## Compito 2 — fatto: le manovre (pp. 124-125)
 
-L'arbitro oggi sa avanzare, marciare, caricare e stare fermo. Il manuale ha
-anche riforme, giri sul posto e ruote pagate dal budget di movimento —
-`charge.js` le calcola già (`MANOEUVRES`, `wheelCost`, `moveAllowance`) e
-nessuno le offre. Sono tre o quattro mosse nuove in `opzioniMossa`, e
-cambiano parecchio il gioco: un reggimento che si gira invece di avanzare è
-metà della tattica di questo gioco.
+Letto sul libro (pp. 123-125, 185, 195, 205). Quello che è stato deciso,
+perché non si rifaccia la stessa strada:
 
-## Compito 3 — le sfide (p. 210)
+- **la ruota si paga** in `avanza` e `marcia` (`pianoRuota`): quanto
+  cammina il modello esterno, cioè il fronte per l'angolo. Chi non ce la
+  fa ruota quanto può e non avanza, e l'opzione lo dice prima. Si ruota
+  **una volta, all'inizio, sul centro**, poi si va dritti: il libro la fa
+  sullo spigolo e lascia alternare ruote e passi (limite `ruota`). Se
+  girarsi farebbe entrare il pezzo in un vicino non si gira, e con il
+  nemico nella metà davanti si va dritti con tutto il movimento
+  (`avanzaRuotando`). La carica fallita e l'inseguimento girano ancora
+  gratis (`muoviVerso`): lo dice il libro (pp. 121, 156);
+- **chi non manovra** (`sciolta`): gli schermagliatori (p. 185) e il
+  personaggio da solo, che è sempre in formazione sciolta (p. 205). I
+  Lumbering hanno 90° gratis se non marciano (p. 195), presi prima di
+  muoversi invece che dopo;
+- le mosse nuove, in `opzioniManovra` e applicate da `manovra`: `gira`
+  (¼ o ½ del Movimento, i ranghi diventano file — una Temple Guard 5×3
+  diventa 3×5, in colonna — e poi dritti con il resto), `riforma` (sul
+  centro, tiene il fronte, tutto il movimento; conta come mossa per il
+  tiro, p. 139), `indietro` (metà, solo se un nemico davanti ti può
+  caricare: `portataCarica`), `lato` (metà, per mettersi davanti al
+  nemico), `riordina` (±5 in prima fila, il fronte più largo e il più
+  stretto che resta in ordine di combattimento; la prima fila resta
+  ferma). Una manovra per movimento: chi l'ha fatta ha `moved`;
+- **la riforma si offre solo a chi non riesce a girarsi ruotando**: al
+  primo giro l'euristica faceva riformare i Troll, che con due pollici di
+  ruota avrebbero camminato. L'euristica la sceglie quando c'è;
+- la fotografia per il modello dice com'è schierata un'unità (`5×3`) e
+  se il nemico più vicino sta sul fianco o alle spalle; il prompt dice
+  quanto costa girarsi;
+- due difetti trovati strada facendo: `percorso` si fermava all'ultimo
+  quarto di pollice intero (1,94″ diventavano 1,75), e i capi di un
+  reggimento caduto restavano tutti nel centro, uno sopra l'altro
+  (`affianca`). `controlla-partita` lo ha trovato col seme 77.
+
+Prove in `test/arbitro.mjs`, sezioni «le manovre» e «i capi di un
+reggimento caduto». La prova magica del seme 3 chiedeva un dissolvimento
+a ogni partita: con la ruota pagata l'Oddnob fa 8 contro 9 e non lancia,
+e adesso il dissolvimento si chiede alle tre partite insieme.
+
+**Resta**, dichiarato in `LIMITI` (`ruota`, `manovre`): più ruote nello
+stesso movimento, la ruota sullo spigolo, il resto del movimento dopo un
+riordino, la riforma che cambia la formazione, il riposizionamento del
+gruppo di comando dopo un giro (p. 198). **Nei dati**: il parser legge
+**Open Order** come formazione sciolta (`parser.js`, `loose`), e i
+Warplock Jezzails e gli Squig si girano gratis, vedono a 360° e danno −1
+a chi li bersaglia. Il libro (p. 183) li vuole in ranghi, con un giro
+rapido di 90° dopo essersi mossi (salvo marcia, carica, fuga). Serve un
+campo `formation` distinto da `loose`, e tocca tiro, archi e manovre.
+Già che ci si è: il −1 al tiro contro gli schermagliatori `shoot.js` lo
+dà a ogni unità `loose`, e p. 185 lo dà solo a quelle fatte tutte di
+modelli con Forza d'Unità 1.
+
+## Compito 3 — le sfide (p. 210) — il prossimo
 
 `melee.js` conta già l'overkill (con il tetto di +5 trovato sul libro). Chi
 lancia la sfida, chi la raccoglie e chi la rifiuta sono **decisioni**: sono

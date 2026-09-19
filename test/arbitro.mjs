@@ -276,8 +276,10 @@ const conScheda = (l, units) => ({ ...l, prep: { general: null, bsb: null, note:
      sua maledizione, e da quando Battle March dura cinque round (e
      nessuno tira piu' dentro una mischia) il lancio del terzo turno
      dell'Oddnob non arriva: il lancio vero si chiede alle tre partite
-     insieme. */
-  let lanci = 0;
+     insieme. Cosi' anche il dissolvimento: da quando la ruota si paga
+     (p. 124) col seme 3 l'Oddnob fa 8 contro 9, e non c'e' niente da
+     dissolvere. */
+  let lanci = 0, dissolti = 0;
   for (const s of [1, 2, 3]){
     seme(s);
     const G = AR.newBattle({ A: L1, B: L2, scenario: 'bm-monolite', magia: M });
@@ -288,9 +290,10 @@ const conScheda = (l, units) => ({ ...l, prep: { general: null, bsb: null, note:
     ok(`seme ${s}: nessuna mossa rifiutata`, !G.log.some(r => /rifiutat/.test(r.text)));
     ok(`seme ${s}: gli incantesimi si offrono`, offerti > 0);
     if (G.log.some(r => / lancia .*: lancio /.test(r.text))) lanci++;
-    if (s > 1) ok(`seme ${s}: e almeno un dissolvimento`, G.log.some(r => /contro .*: dissolvimento/.test(r.text)));
+    if (G.log.some(r => /contro .*: dissolvimento/.test(r.text))) dissolti++;
   }
   ok('e nelle tre partite qualcuno lancia davvero', lanci >= 2);
+  ok('e qualcuno prova a dissolvere', dissolti >= 1);
 }
 
 
@@ -817,6 +820,151 @@ console.log('\nil Panico per gli amici (pp. 160-161)');
 }
 
 /* ================================================================= */
+/* Le manovre, con il libro aperto alle pp. 124-125. Fino a qui chi
+   avanzava si girava verso il nemico gratis, e chi aveva il nemico sul
+   fianco non aveva altro modo di guardarlo. Le misure sono quelle dei
+   pezzi veri: la Temple Guard è cinque per tre su basette da 30 mm,
+   cioè un fronte di 150 mm, e Movimento 4. */
+console.log('\nle manovre (pp. 124-125)');
+{
+  const inMosse = G => { G.casella = casella('mosse'); G.army = 'A'; return G; };
+  const verso = (G, u, gradi, mm) => {
+    const a = gradi * Math.PI / 180;
+    return metti(G, uid(G, 505), u.x + Math.sin(a) * mm, u.y - Math.cos(a) * mm);
+  };
+  const spostato = (u, x, y) => Math.hypot(u.x - x, u.y - y) / MM;
+  const quasi = (a, b, tol = 0.1) => Math.abs(a - b) <= tol;
+
+  /* la ruota costa quanto cammina il modello esterno (p. 124):
+     150 mm per 20° sono 2,06″, e ne restano 1,94 per andare avanti */
+  {
+    const G = inMosse(nuova());
+    const tg = metti(G, uid(G, 6), 600, 600);
+    const orc = verso(G, tg, 20, 400);
+    const av = AR.options(G).list.find(x => x.id === 'avanza' && x.uid === tg.uid);
+    ok('l avanzata dice quanto costa la ruota', av && /ruota di 20°/.test(av.why) && /2\.1″/.test(av.why));
+    AR.apply(G, { id:'avanza', uid: tg.uid, verso: orc.uid });
+    ok('e la paga: gira di 20° e avanza di quello che resta',
+       quasi(tg.rot, 20, 0.5) && quasi(spostato(tg, 600, 600), 1.94));
+    ok('il registro scrive la ruota con la pagina', G.log.some(r => /ruota di 20°/.test(r.text) && r.page === 124));
+    ok('e dichiara quello che della ruota semplifica', G.log.some(r => /\[limite\]/.test(r.text) && /ruota/.test(r.text)));
+  }
+  /* a 45° la ruota costerebbe 4,6″: con 4 se ne fanno 38,8, e basta */
+  {
+    const G = inMosse(nuova());
+    const tg = metti(G, uid(G, 6), 600, 600);
+    const orc = verso(G, tg, 45, 400);
+    AR.apply(G, { id:'avanza', uid: tg.uid, verso: orc.uid });
+    ok('chi non ha abbastanza Movimento ruota quanto può e non avanza',
+       quasi(tg.rot, 38.8, 0.3) && spostato(tg, 600, 600) < 0.05);
+  }
+  /* marciando si ruota (p. 123), e la ruota si paga sul doppio */
+  {
+    const G = inMosse(nuova());
+    const tg = metti(G, uid(G, 6), 600, 600);
+    const orc = verso(G, tg, 20, 400);
+    AR.apply(G, { id:'marcia', uid: tg.uid, verso: orc.uid });
+    ok('chi marcia paga la ruota sugli otto pollici', quasi(spostato(tg, 600, 600), 5.94));
+  }
+  /* gli schermagliatori non ruotano: ogni modello va dove vuole (p. 185) */
+  {
+    const G = inMosse(nuova());
+    const sk = metti(G, uid(G, 3), 600, 600);
+    const orc = verso(G, sk, 45, 450);
+    AR.apply(G, { id:'avanza', uid: sk.uid, verso: orc.uid });
+    ok('gli schermagliatori si girano senza pagare', quasi(sk.rot, 45, 0.5) && quasi(spostato(sk, 600, 600), 6));
+    G.casella = casella('mosse');
+    const loro = AR.options(G).list.filter(x => x.uid === sk.uid);
+    ok('e non hanno manovre da scegliere', !loro.some(x => /gira|riforma|riordina|indietro|lato/.test(x.id)));
+  }
+  /* Lumbering (p. 195): dopo essersi mosso, un pivot fino a 90° gratis */
+  {
+    const G = inMosse(nuova());
+    const bas = metti(G, uid(G, 7), 600, 600);
+    let orc = verso(G, bas, 60, 400);
+    AR.apply(G, { id:'avanza', uid: bas.uid, verso: orc.uid });
+    ok('il Bastiladon si gira di 60° senza pagarli', quasi(bas.rot, 60, 0.5) && quasi(spostato(bas, 600, 600), 4));
+    const G2 = inMosse(nuova());
+    const b2 = metti(G2, uid(G2, 7), 600, 600);
+    orc = verso(G2, b2, 120, 400);
+    AR.apply(G2, { id:'avanza', uid: b2.uid, verso: orc.uid });
+    ok('e di 120° paga solo i 30 oltre i novanta', quasi(spostato(b2, 600, 600), 2.76));
+  }
+  /* il giro (p. 124): un quarto del Movimento ogni 90°, e i modelli
+     girano sul posto — i ranghi diventano file */
+  {
+    const G = inMosse(nuova());
+    const tg = metti(G, uid(G, 6), 600, 600);
+    const orc = metti(G, uid(G, 505), 900, 600);
+    const o = AR.options(G).list;
+    const gi = o.find(x => x.id === 'gira' && x.uid === tg.uid);
+    ok('con il nemico sul fianco si offre il giro', gi && gi.gradi === 90 && /p\. 124/.test(gi.why + gi.page));
+    ok('e dice che il fronte diventa di tre, in colonna', gi && /da 5 a 3/.test(gi.why) && /colonna/.test(gi.why));
+    ok('e anche la riforma', o.some(x => x.id === 'riforma' && x.uid === tg.uid));
+    ok('la fotografia dice com è schierata e che il nemico è sul fianco',
+       /Temple Guard — 15\/15 modelli, 5×3,.*Orc Mobs a [\d.]+″ sul fianco/.test(AR.fotografia(G)));
+    const sc = await AG.agenteEuristico({}).scegli({ opzioni: AR.options(G), stato: G });
+    ok('l euristica, con il nemico sul fianco, si riforma', sc.scelta && sc.scelta.id === 'riforma');
+    AR.apply(G, gi);
+    ok('girata: guarda il fianco, tre di fronte', tg.rot === 90 && tg.frontage === 3);
+    ok('e con i tre quarti che restano va avanti dritta', quasi(tg.x - 600, 3 * MM, 3) && quasi(tg.y, 600, 1));
+    ok('una manovra sola per movimento', !AR.options(G).list.some(x => x.uid === tg.uid && x.id !== 'avanti'));
+    ok('davanti al nemico il giro non si offre',
+       !AR.options(inMosse((() => { const H = nuova(); metti(H, uid(H, 6), 600, 600); verso(H, uid(H, 6), 0, 400); return H; })()))
+         .list.some(x => x.id === 'gira'));
+  }
+  /* la riforma (p. 125): tutto il movimento, gira sul centro, tiene i ranghi */
+  {
+    const G = inMosse(nuova());
+    const tg = metti(G, uid(G, 6), 600, 600);
+    const orc = metti(G, uid(G, 505), 900, 600);
+    AR.apply(G, { id:'riforma', uid: tg.uid, verso: orc.uid });
+    ok('riformata: guarda il nemico, con lo stesso fronte, senza muoversi',
+       quasi(tg.rot, 90, 0.5) && tg.frontage === 5 && spostato(tg, 600, 600) < 0.05);
+    ok('e per il tiro conta come mossa (p. 139)', tg.moved && tg.moved.kind === 'reform');
+  }
+  /* indietro, a metà Movimento (p. 125): quando il nemico ti arriva addosso */
+  {
+    const G = inMosse(nuova());
+    const tg = metti(G, uid(G, 6), 600, 600);
+    const orc = metti(G, uid(G, 505), 600, 600 - 45 - 60 - 8 * MM);
+    const ind = AR.options(G).list.find(x => x.id === 'indietro' && x.uid === tg.uid);
+    ok('con un nemico a portata di carica si offre il passo indietro', ind && /10″/.test(ind.why));
+    AR.apply(G, ind);
+    ok('e si fanno 2″ all indietro, sempre girati verso di lui',
+       quasi(tg.y - 600, 2 * MM, 1) && tg.rot === 0 && quasi(tg.x, 600, 0.5));
+    const H = inMosse(nuova());
+    metti(H, uid(H, 6), 600, 600);
+    metti(H, uid(H, 505), 600, 600 - 45 - 60 - 20 * MM);
+    ok('lontano dalle cariche no', !AR.options(H).list.some(x => x.id === 'indietro'));
+  }
+  /* di lato, a metà Movimento (p. 125): per mettersi davanti */
+  {
+    const G = inMosse(nuova());
+    const tg = metti(G, uid(G, 6), 600, 600);
+    metti(G, uid(G, 505), 600 + 1.5 * MM, 600 - 45 - 60 - 10 * MM);
+    const la = AR.options(G).list.find(x => x.id === 'lato' && x.uid === tg.uid);
+    ok('con il nemico spostato di lato si offre il passo laterale', !!la);
+    AR.apply(G, la);
+    ok('e ci si mette davanti, senza girarsi', quasi(tg.x - 600, 1.5 * MM, 1) && quasi(tg.y, 600, 0.5) && tg.rot === 0);
+  }
+  /* riordinare le file (p. 125): fino a cinque modelli in più o in meno */
+  {
+    const G = inMosse(nuova());
+    const tg = metti(G, uid(G, 6), 600, 600);
+    verso(G, tg, 0, 500);
+    const ri = AR.options(G).list.filter(x => x.id === 'riordina' && x.uid === tg.uid);
+    ok('si offre di allargare il fronte a dieci e di stringerlo a quattro',
+       ri.some(x => x.fronte === 10) && ri.some(x => x.fronte === 4));
+    ok('e dice cosa succede al bonus di ranghi', ri.length && ri.every(x => /ranghi/.test(x.why)));
+    AR.apply(G, ri.find(x => x.fronte === 10));
+    /* la prima fila resta dov'era (Fig 125.2): dietro si ricompone il resto */
+    ok('riordinata: dieci di fronte, con la prima fila dov era',
+       tg.frontage === 10 && quasi(tg.y - AR.boxOf(tg, G.units).h / 2, 600 - 45, 0.5) &&
+       tg.moved && tg.moved.kind === 'redress');
+  }
+}
+
 console.log('\nquello che questo arbitro non fa, detto');
 ok('i limiti sono dichiarati uno per uno', AR.LIMITI.length >= 5 && AR.LIMITI.every(l => l.what && l.why));
 {
@@ -908,6 +1056,22 @@ console.log('\ni personaggi che si uniscono (pp. 206-208)');
   AR.apply(H, sep);
   ok('esce, e sta accanto senza sovrapporsi', hc.join === null && !dentro(H, hc, hs) && AR.inCampo(H, 'A').includes(hc));
   ok('e il reggimento si muove ancora', AR.options(H).list.some(x => x.id === 'avanza' && x.uid === hs.uid));
+}
+
+/* Un reggimento con due capi dentro cade: i capi restavano tutti nel
+   centro, uno sopra l'altro, e il primo che provava a girarsi non aveva
+   posto (il seme 77 lo ha trovato, una volta che la ruota si paga). */
+console.log('\ni capi di un reggimento caduto');
+{
+  const G = nuova();
+  const nm = metti(G, uid(G, 504), 600, 300);
+  const wb = uid(G, 501), bb = uid(G, 502);
+  wb.join = { host: nm.uid }; bb.join = { host: nm.uid };
+  wb.placed = bb.placed = true;
+  IN.perdite(G, nm, 20);
+  ok('restano in piedi, ognuno al suo posto, senza sovrapporsi',
+     nm.dead && !wb.dead && !bb.dead && !wb.join && !bb.join && !dentro(G, wb, bb));
+  ok('e dove stava la prima fila', Math.abs(wb.y - bb.y) < 1 && Math.abs(wb.y - 300) < 60);
 }
 
 console.log('\nla Paura (p. 168)');

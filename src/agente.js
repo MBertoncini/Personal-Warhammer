@@ -120,6 +120,13 @@ export function agenteEuristico({ nome = "euristica" } = {}){
           : "tengo la posizione: fuggire regala il campo" };
       }
 
+      /* MANOVRE: chi ha il nemico sul fianco o alle spalle, o non riesce
+         a girarsi verso di lui ruotando, si riforma a guardarlo. Costa
+         tutto il movimento ma tiene i ranghi; il giro di 90° costerebbe
+         meno e farebbe del reggimento una colonna (p. 124). */
+      const rif = l.find(x => x.id === "riforma");
+      if (rif) return { scelta: rif, perche: `${rif.nome} ${rif.why}` };
+
       /* MOSSE: si va addosso al nemico. Chi ha un'arma da tiro e ce
          l'ha già a tiro resta fermo, perché chi muove tira peggio. */
       const avanza = l.filter(x => x.id === "avanza");
@@ -187,6 +194,9 @@ Come si ragiona in questo gioco:
 - un'unità sola contro due nemici perde: si arriva in due sullo stesso bersaglio quando si può;
 - la mossa «passa» chiude la fase: le unità che non hanno ancora agito in questa fase restano come sono;
 - un tiro con una probabilità bassa di colpire vale poco: meglio avvicinarsi o cambiare bersaglio;
+- girarsi costa: la ruota si paga con il movimento, e una manovra sola per turno. Il giro di 90° costa poco ma
+  fa di un reggimento largo una colonna senza bonus di ranghi; la riforma lo gira intero e costa tutto il movimento;
+  un passo indietro o di lato si fa a metà del Movimento;
 - la magia: ogni incantesimo si tenta una volta per turno, e l'avversario prova a dissolverlo subito;
   quando dissolvi tu, la sorte si usa una volta sola per turno, e un mago che fa doppio 1 rischia la tabella del fiasco.`;
 

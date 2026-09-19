@@ -1719,6 +1719,23 @@ E una sesta, che pesava sull'esito più delle scelte dei modelli:
    loro passo (p. 208). La Stupidità che si gioca è quella del testo delle
    liste, non quella di p. 178, e lo si dichiara.
 
+E una settima, che cambiava la forma di ogni turno:
+
+7. ~~**le manovre**~~ — fatte (pp. 124-125). La ruota si paga quanto
+   cammina il modello esterno, e chi non ce la fa ruota quanto può e non
+   avanza; gli schermagliatori e i personaggi soli non pagano (pp. 185,
+   205), i Lumbering hanno 90° gratis se non marciano (p. 195). Il giro
+   costa un quarto o metà del Movimento e fa dei ranghi file; la
+   riforma gira sul centro, tiene il fronte e costa tutto; indietro e di
+   lato si va a metà; il riordino sposta fino a cinque modelli in prima
+   fila. Una manovra per movimento. Le decisioni prese, perché si
+   rifacciano solo se si trova di meglio: la ruota si fa **una volta,
+   all'inizio, sul centro** (il libro la fa sullo spigolo e lascia
+   alternarla con i passi: limite `ruota`); la riforma si offre **solo a
+   chi non riesce a girarsi ruotando**, perché a un Troll da una basetta
+   una ruota di 70° costa due pollici e fermarsi sarebbe sempre peggio;
+   dopo il riordino il resto non si cammina (limite `manovre`).
+
 E l'arbitro è sceso sul tavolo: la **Sfida** della scheda Matchup fa
 giocare una persona contro il modello di linguaggio, con l'arbitro in
 mezzo (`controai.js`).
@@ -1731,12 +1748,14 @@ mezzo (`controai.js`).
   (la stessa del punto qui sotto) e il movimento fuori turno. Con loro
   gli assalti al passo d'Iniziativa del mago (p. 158), che oggi si
   lanciano prima che si meni, e le ferite degli assalti nel risultato.
-- **Le manovre.** Riforme, giri sul posto, ruote pagate dal budget di
-  movimento: `charge.js` le calcola già, l'arbitro non le offre.
 - **Le sfide**, che sono una decisione e non un conto: l'overkill lo
   conta già `melee.js`, chi la lancia e chi la rifiuta no.
 - **Il volo**, le **sagome** e le **macchine da guerra**, che vogliono
   la posizione modello per modello.
+- **L'Open Order** (p. 183), che il parser legge come formazione
+  sciolta: i Warplock Jezzails e gli Squig si girano gratis e vedono a
+  360°, e il libro li vuole in ranghi, con un giro rapido di 90° dopo
+  essersi mossi e senza il −1 al tiro di chi li bersaglia.
 
 Nessuna di queste è un buco silenzioso: stanno in `LIMITI` dentro
 `arbitro.js`, e ognuna esce nel registro della partita la prima volta

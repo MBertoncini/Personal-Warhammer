@@ -73,8 +73,10 @@ export const LIMITI = [
     why:"la pelle callosa degli Skink Priest conta come armatura leggera, e letto alla lettera il libro toglierebbe loro il lancio: finché una FAQ non lo chiarisce il divieto non si applica" },
   { id:"sagome",    what:"le sagome e le macchine da guerra sparano come un'arma normale", page:222,
     why:"deviazione e «sotto in parte» stanno in `shoot.js` e vogliono la posizione modello per modello" },
-  { id:"riforma",   what:"nessuno si riforma né gira sul posto per scelta", page:125,
-    why:"le manovre ci sono in `charge.js`; qui si avanza, si marcia, si carica e ci si ferma" },
+  { id:"ruota",     what:"la ruota si paga giusta, ma si fa una volta sola, all'inizio, e sul centro", page:124,
+    why:"il libro la fa girare su uno spigolo del fronte e lascia alternare ruote e passi avanti: l'arbitro conta quanto cammina il modello esterno, gira il pezzo sul posto e poi va dritto. Il giro libero dei Lumbering (p. 195) si fa prima di muovere invece che dopo" },
+  { id:"manovre",   what:"chi riordina le file o si riforma non usa il resto del movimento, e la riforma tiene il fronte che aveva", page:125,
+    why:"il riordino costa metà del Movimento e l'altra metà si potrebbe camminare; la riforma può anche cambiare la formazione. Dopo un giro si va solo dritti" },
   { id:"sfida",     what:"nessuno lancia sfide", page:210,
     why:"chi la raccoglie e chi la rifiuta è una decisione da tavolo, e l'overkill lo conta già `melee.js`" },
   { id:"oggetti",   what:"gli oggetti magici non fanno niente", page:0,
@@ -116,7 +118,7 @@ export const CASELLE = [
   { id:"congiura", fase:"Strategia",    page:108, what:"i maghi lanciano potenziamenti e maledizioni" },
   { id:"raduno",  fase:"Strategia",     page:117, what:"chi fugge prova a fermarsi" },
   { id:"cariche", fase:"Movimento",     page:118, what:"si dichiarano le cariche, e chi le subisce reagisce" },
-  { id:"mosse",   fase:"Movimento",     page:122, what:"chi non ha caricato avanza, marcia o resta fermo" },
+  { id:"mosse",   fase:"Movimento",     page:122, what:"chi non ha caricato avanza, marcia, manovra o resta fermo" },
   { id:"tiro",    fase:"Tiro",          page:136, what:"chi ha un'arma da tiro sceglie un bersaglio" },
   { id:"mischia", fase:"Corpo a corpo", page:144, what:"ogni combattimento si risolve, con il test di rotta e l'inseguimento" },
 ];
@@ -438,12 +440,15 @@ function percorso(S, u, verso, pollici, { rot = u.rot || 0, ignora = [], unPolli
   const prova = ang => {
     const cx = Math.cos(ang), cy = Math.sin(ang);
     const at = s => ({ x: u.x + cx * s, y: u.y + cy * s, w: lay.w, h: lay.h, rot });
+    /* l'ultimo passo arriva fino in fondo: prima il ciclo si fermava
+       all'ultimo quarto di pollice intero, e 1,94″ diventavano 1,75 */
     let fatto = 0, stop = null;
-    for (let s = PASSO; s <= max + 0.01; s += PASSO){
-      const b = at(Math.min(s, max));
-      const blocco = ingombro(S, u, b, opts);
+    for (let s = PASSO; max > 0.01; s += PASSO){
+      const q = Math.min(s, max);
+      const blocco = ingombro(S, u, at(q), opts);
       if (blocco){ stop = blocco; break; }
-      fatto = Math.min(s, max);
+      fatto = q;
+      if (q >= max) break;
     }
     /* l'ultimo quarto di pollice si rifinisce, per arrivare a filo */
     if (stop){
@@ -760,16 +765,23 @@ function opzioniMossa(S){
     /* a un pollice dal nemico piu' vicino non si avanza verso di lui:
        il pollice (p. 118) ferma il pezzo prima di partire */
     if (d <= 1.05){
+      /* girarsi o riordinarsi sul posto invece si puo' */
+      out.push(...opzioniManovra(S, u, t, move).filter(x => x.id !== "lato"));
       out.push({ id:"ferma", uid: u.uid, nome: u.name, why: `resta dov'è: ${t.name} è a ${d}″`, page: 122 });
       continue;
     }
+    /* la ruota si paga (p. 124), e la dice l'opzione: un reggimento
+       che deve girarsi di 45° per guardare il nemico non avanza affatto */
+    const rotT = versoDi(t.x - u.x, t.y - u.y);
+    const pa = pianoRuota(S, u, rotT, move), pm = pianoRuota(S, u, rotT, move * 2, { marcia: true });
     out.push({ id:"avanza", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
-               why: `${move}″ verso ${t.name}, che è a ${d}″` + (mv.why ? ` (${mv.why})` : ""),
-               page: 122 });
+               why: `${t.name} è a ${d}″: ${testoRuota(pa, move)}` + (mv.why ? ` (${mv.why})` : ""),
+               page: pa.costo ? 124 : 122 });
     if (!bandiera(u, "noMarch")) out.push({ id:"marcia", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
-               why: `${move * 2}″ verso ${t.name}` +
+               why: `${t.name} è a ${d}″: ${testoRuota(pm, move * 2, "marcia")}` +
                     (d <= CH.MARCH_WATCH ? `, ma a ${CH.MARCH_WATCH}″ da un nemico serve un test di Comando (p. 123)` : ""),
                page: 123 });
+    out.push(...opzioniManovra(S, u, t, move));
     out.push({ id:"ferma", uid: u.uid, nome: u.name, why: "resta dov'è: chi non muove spara meglio", page: 138 });
   }
   /* i capi escono prima che il reggimento si muova (p. 207): in fondo
@@ -802,6 +814,294 @@ function postoFuori(S, c, h){
     if (!blocco) return box;
   }
   return null;
+}
+
+/* ---- le manovre (pp. 124-125) ----
+   Fino a qui chi avanzava si girava verso il nemico gratis, e chi aveva
+   il nemico sul fianco non aveva altro modo di guardarlo che avanzare
+   di sbieco. Il libro ha sei manovre, una per movimento, e la ruota
+   che si paga quanto cammina il modello esterno: un reggimento largo
+   che deve girarsi di 45° non avanza affatto. Qui ci sono tutte e sei,
+   e ognuna dice che cosa costa prima di sceglierla. `charge.js` le
+   elenca con le loro pagine (`MANOEUVRES`), `movement.js` sa quanto
+   costa la ruota (`wheelCost`) e il giro (`TURN_COST`). */
+
+/* Chi non manovra affatto: gli schermagliatori, i cui modelli vanno
+   dove vogliono «without penalty» (p. 185), e il personaggio da solo,
+   che e' sempre in formazione sciolta (p. 205). Per loro girarsi non
+   costa niente, e un giro o un riordino non vogliono dire niente. */
+const sciolta = u => !!u.loose ||
+  (PREP.isCharacter(u) && !!genere(u) && !isJoined(u) && (u.models || 1) === 1);
+
+/* di quanto girarsi per passare da una direzione all'altra, con il
+   segno (positivo in senso orario, cioe' verso destra), fra -180 e 180 */
+const giroDi = (da, a) => ((((a || 0) - (da || 0)) % 360) + 540) % 360 - 180;
+const colonna = (n, f) => Math.ceil(n / Math.max(1, f)) > f;
+
+/* La ruota verso `rot` pagata con `budget` pollici. Costa quanto
+   cammina il modello esterno (p. 124), cioe' il fronte per l'angolo in
+   radianti; chi non ce la fa ruota quanto puo' e non avanza. I Lumbering
+   hanno 90° gratis dopo essersi mossi, se non hanno marciato (p. 195). */
+function pianoRuota(S, u, rot, budget, { marcia = false } = {}){
+  const da = u.rot || 0, giro = giroDi(da, rot), ampio = Math.abs(giro);
+  const piano = { rot, giro, costo: 0, intera: 0, resta: budget, libero: 0, parziale: false, sciolta: false };
+  if (ampio < 0.5) return { ...piano, rot: da, giro: 0 };
+  if (sciolta(u)) return { ...piano, sciolta: true };
+  const libero = !marcia && FM.isLumbering(u) ? Math.min(90, ampio) : 0;
+  const w = boxOf(u, S.units).w;
+  const intera = CH.wheelCost(w, ampio - libero);
+  if (intera <= budget + 1e-9) return { ...piano, libero, costo: intera, intera, resta: budget - intera };
+  const fatti = libero + budget * MM / (w * Math.PI / 180);
+  return { ...piano, libero, costo: budget, intera, resta: 0, parziale: true,
+           giro: Math.sign(giro) * fatti, rot: ((da + Math.sign(giro) * fatti) % 360 + 360) % 360 };
+}
+
+/* La ruota in parole, per l'opzione: «ruota di 20°, che costa 2.1″
+   (p. 124), e avanza di 1.9″». */
+function testoRuota(pr, pollici, verbo = "avanza"){
+  const g = Math.round(Math.abs(pr.giro));
+  if (!g) return `${verbo} di ${r1(pollici)}″`;
+  if (pr.sciolta) return `${verbo} di ${r1(pollici)}″ girandosi di ${g}° senza costo (formazione sciolta, pp. 185, 205)`;
+  if (pr.parziale) return `ruota di ${g}° e non ${verbo}: girarsi del tutto costerebbe ${r1(pr.intera)}″ (p. 124)`;
+  const libero = Math.round(pr.libero);
+  if (!pr.costo) return `si gira di ${g}° senza costo (Lumbering, p. 195) e ${verbo} di ${r1(pollici)}″`;
+  return `ruota di ${g}°` +
+    (libero ? `, ${libero} liberi (Lumbering, p. 195) e ${g - libero} che costano ${r1(pr.costo)}″ (p. 124)`
+            : `, che costa ${r1(pr.costo)}″ (p. 124)`) + `, e ${verbo} di ${r1(pr.resta)}″`;
+}
+
+/* Il giro sul posto (p. 124): i modelli dei ranghi completi girano
+   dove stanno, e quelli del rango incompleto vanno in fondo. Di 90° i
+   ranghi diventano file: una Temple Guard cinque per tre si ritrova
+   tre per cinque, in colonna. Torna null se girata non ci sta. */
+function giroSulPosto(S, u, gradi){
+  const lay = layoutOf(u, S.units);
+  const fronte = Math.abs(gradi) === 90 ? Math.max(1, Math.floor(lay.slots.length / lay.front)) : lay.front;
+  const rot = (((u.rot || 0) + gradi) % 360 + 360) % 360;
+  const box = conFronte(S, u, fronte, b => ({ ...b, rot }));
+  if (ingombro(S, u, box, { unPollice: false })) return null;
+  return { rot, fronte, box };
+}
+/* la scatola che l'unita' avrebbe con un altro fronte, senza toccarla */
+function conFronte(S, u, fronte, poi = b => b){
+  const prima = u.frontage;
+  u.frontage = fronte;
+  const box = poi(boxOf(u, S.units));
+  u.frontage = prima;
+  return box;
+}
+/* Il riordino tiene ferma la prima fila (p. 125, Fig 125.1-2): i
+   modelli si aggiungono ai lati o si tolgono, e dietro si ricompone il
+   resto. Il centro quindi si sposta di mezza differenza di profondita'. */
+function centroRiordinato(S, u, fronte){
+  const h0 = boxOf(u, S.units).h, h1 = conFronte(S, u, fronte).h;
+  const v = (h1 - h0) / 2, a = (u.rot || 0) * Math.PI / 180;
+  return { x: u.x - Math.sin(a) * v, y: u.y + Math.cos(a) * v };
+}
+
+/* La portata di carica di un nemico, per sapere se conviene un passo
+   indietro: il suo Movimento piu' sei, piu' tre con il passo lungo
+   (p. 121, p. 178). Chi tira il Movimento non ha una portata sola, e
+   il dado non si tira per una domanda. */
+function portataCarica(S, e){
+  const passi = [e, ...capiDi(S, e)].map(x => {
+    const m = moveInfo(x).m;
+    if (!m) return 0;
+    return Math.max(0, m + EF.statOf(x, "M").mods.reduce((t, k) => t + (k.delta || 0), 0));
+  }).filter(m => m > 0);
+  return passi.length ? CH.chargeBands(Math.min(...passi), MV.swiftOf(e)).max : 0;
+}
+
+function opzioniManovra(S, u, t, move){
+  if (sciolta(u) || !move) return [];
+  const out = [];
+  const bu = boxOf(u, S.units), lay = layoutOf(u, S.units);
+  const n = lay.slots.length, f0 = lay.front;
+  const tt = troopType(u.troop);
+  const ranghi = f => rankBonus(n, f, tt.maxRank, tt.perRank);
+  const d = distanza(S, u, t);
+  const arco = FM.arcOfPoly(cornersOf(t, S.units), bu).arc;
+  const a = (u.rot || 0) * Math.PI / 180;
+  /* dove sta il nemico rispetto al fronte: positivo a destra */
+  const lx = (t.x - u.x) * Math.cos(a) + (t.y - u.y) * Math.sin(a);
+  const base = { uid: u.uid, verso: t.uid, nome: u.name, contro: t.name };
+
+  /* il giro (p. 124): per chi ha il nemico sul fianco o alle spalle */
+  if (arco !== "fronte"){
+    const gradi = arco === "retro" ? 180 : (lx >= 0 ? 90 : -90);
+    const g = giroSulPosto(S, u, gradi);
+    if (g){
+      const costo = move * MV.TURN_COST[Math.abs(gradi)];
+      const cambio = g.fronte !== f0
+        ? `; il fronte passa da ${f0} a ${g.fronte}` + (colonna(n, g.fronte) ? ", in colonna" : "") +
+          `, bonus di ranghi +${ranghi(f0)} → +${ranghi(g.fronte)}` : "";
+      out.push({ id:"gira", ...base, gradi, dove: gradi === 180 ? "180°" : `90° a ${gradi > 0 ? "destra" : "sinistra"}`,
+        why: `${t.name} le sta ${arco === "retro" ? "alle spalle" : "sul fianco"}, a ${d}″: gira di ` +
+             `${Math.abs(gradi)}°${gradi === 180 ? "" : gradi > 0 ? " a destra" : " a sinistra"} ` +
+             `(${r1(costo)}″, ${Math.abs(gradi) === 90 ? "un quarto" : "metà"} del Movimento, p. 124)${cambio}, ` +
+             `e fa dritta i ${r1(move - costo)}″ che restano`,
+        page: 124 });
+    }
+  }
+
+  /* la riforma (p. 125): girarsi del tutto senza perdere i ranghi, per
+     chi non ci riesce ruotando — e costa tutto il movimento. A chi la
+     ruota se la puo' permettere non si offre: un Troll che si gira di
+     70° con due pollici e poi cammina non ha motivo di stare fermo */
+  const rotT = versoDi(t.x - u.x, t.y - u.y);
+  const giro = Math.round(Math.abs(giroDi(u.rot, rotT)));
+  if (giro >= 1 && pianoRuota(S, u, rotT, move).parziale &&
+      !ingombro(S, u, { ...bu, rot: rotT }, { unPollice: false })){
+    out.push({ id:"riforma", ...base,
+      why: `si gira sul centro verso ${t.name} (${giro}°) tenendo il fronte di ${f0}` +
+           (ranghi(f0) ? ` e il bonus di ranghi +${ranghi(f0)}` : "") + `: costa tutto il movimento e non avanza (p. 125)`,
+      page: 125 });
+  }
+
+  /* indietro (p. 125), a meta' Movimento e sempre girati verso il
+     nemico: si offre solo a chi ha davanti qualcuno che lo puo' caricare */
+  const m2 = move / 2;
+  const minaccia = nemiciDi(S, u).filter(e => !e.fled)
+    .map(e => ({ e, d: distanza(S, u, e), portata: portataCarica(S, e) }))
+    .filter(x => x.portata && x.d <= x.portata && FM.arcOfPoly(cornersOf(x.e, S.units), bu).arc === "fronte")
+    .sort((p, q) => p.d - q.d)[0];
+  if (minaccia){
+    const { e, d: de, portata } = minaccia;
+    out.push({ id:"indietro", uid: u.uid, verso: e.uid, nome: u.name, contro: e.name,
+      why: `indietro di ${r1(m2)}″ (metà del Movimento, p. 125), sempre girata verso ${e.name}: ` +
+           `è a ${de}″ e in carica arriva a ${portata}″` + (de + m2 > portata ? ", e ne esce" : ", e resta a portata"),
+      page: 125 });
+  }
+
+  /* di lato (p. 125), a meta' Movimento: per mettersi davanti al nemico
+     che si ha di fronte ma spostato. Sotto il mezzo pollice non si
+     offre: e' la misura dell'app, non del libro */
+  if (arco === "fronte" && Math.abs(lx) > MM / 2){
+    const quanto = r1(Math.min(m2, Math.abs(lx) / MM));
+    out.push({ id:"lato", ...base, segno: lx > 0 ? 1 : -1, pollici: quanto, dove: lx > 0 ? "a destra" : "a sinistra",
+      why: `di lato di ${quanto}″ a ${lx > 0 ? "destra" : "sinistra"}, per mettersi davanti a ${t.name} ` +
+           `(di lato si va a metà: al massimo ${r1(m2)}″, p. 125)`,
+      page: 125 });
+  }
+
+  /* riordinare le file (p. 125): fino a cinque modelli in piu' o in
+     meno in prima fila. Si offre il fronte piu' largo, e il piu' stretto
+     che resta in ordine di combattimento: una colonna la si fa girando */
+  if (n > 1 && ensureRanks(u)){
+    const larga = Math.min(f0 + 5, n);
+    let stretta = 0;
+    for (let f = Math.max(1, f0 - 5); f < f0; f++) if (!colonna(n, f)){ stretta = f; break; }
+    for (const f of [larga, stretta]){
+      if (!f || f === f0) continue;
+      const c = centroRiordinato(S, u, f);
+      if (ingombro(S, u, conFronte(S, u, f, b => ({ ...b, ...c })), { unPollice: false })) continue;
+      out.push({ id:"riordina", uid: u.uid, nome: u.name, fronte: f, dove: `${f} di fronte`,
+        why: `riordina le file: fronte da ${f0} a ${f} (${Math.ceil(n / f)} ranghi), ` +
+             `bonus di ranghi +${ranghi(f0)} → +${ranghi(f)}; costa metà del Movimento e resta dov'è (p. 125)`,
+        page: 125 });
+    }
+  }
+  return out;
+}
+const ensureRanks = u => FM.ensureFormation(u).mode === "ranks";
+
+/* Le manovre applicate. Una sola per movimento (p. 124): chi l'ha
+   fatta ha `moved`, e non ne sceglie un'altra. */
+function manovra(S, a){
+  const u = byUid(S, a.uid);
+  if (!u) return no("unità sconosciuta");
+  if (u.moved) return no("si è già mossa: una manovra sola per movimento (p. 124)");
+  if (!onBoard(u) || u.fled || u.charged || ingaggiata(S, u)) return no("non può manovrare adesso");
+  if (u.unito === chiave(S)) return no("un personaggio le si è unito: non si muove più in questo turno (p. 207)");
+  if (stupida(S, u)) return no("è in preda alla Stupidità: non si muove");
+  if (sciolta(u)) return no("in formazione sciolta non si manovra: ogni modello va dove vuole (p. 185)");
+  const { move } = movimento(S, u);
+  if (!move) return no("non sa di quanto si muove: il profilo non porta il Movimento");
+  const r = (u.rot || 0) * Math.PI / 180;
+  const avanti = [Math.sin(r), -Math.cos(r)], destra = [Math.cos(r), Math.sin(r)];
+  const dritto = (dir, pollici) => {
+    const p = percorso(S, u, [u.x + dir[0] * pollici * MM, u.y + dir[1] * pollici * MM], pollici,
+                       { rot: u.rot || 0, devia: false });
+    posa(S, u, p.x, p.y, u.rot);
+    return p;
+  };
+  const fermo = (p, quanti) => p.stop && p.pollici < quanti - 0.05 ? `, e si ferma: c'è ${p.stop.perche}` : "";
+  const f0 = layoutOf(u, S.units).front;
+
+  if (a.id === "gira"){
+    const gradi = +a.gradi;
+    if (![90, -90, 180].includes(gradi)) return no("si gira di 90° o di 180° (p. 124)");
+    const g = giroSulPosto(S, u, gradi);
+    if (!g) return no("girata non ci sta: toccherebbe un'altra unità o il bordo");
+    const costo = move * MV.TURN_COST[Math.abs(gradi)];
+    u.frontage = g.fronte;
+    posa(S, u, u.x, u.y, g.rot);
+    const ra = g.rot * Math.PI / 180, resta = move - costo;
+    let p = { pollici: 0, stop: null };
+    if (resta > 0.01){
+      p = percorso(S, u, [u.x + Math.sin(ra) * resta * MM, u.y - Math.cos(ra) * resta * MM], resta,
+                   { rot: g.rot, devia: false });
+      posa(S, u, p.x, p.y, g.rot);
+    }
+    u.moved = { kind: "turn", inches: p.pollici };
+    limite(S, "manovre");
+    say(S, `${u.name} gira di ${Math.abs(gradi)}°${gradi === 180 ? "" : gradi > 0 ? " a destra" : " a sinistra"} ` +
+           `(${r1(costo)}″)` + (g.fronte !== f0 ? `: il fronte passa da ${f0} a ${g.fronte}` : "") +
+           (p.pollici ? `, e avanza dritta di ${p.pollici}″` : "") + fermo(p, resta) + ".",
+        { army: u.army, page: 124 });
+    return si("girata");
+  }
+
+  if (a.id === "riforma"){
+    const t = byUid(S, a.verso);
+    if (!t) return no("verso chi?");
+    const rot = versoDi(t.x - u.x, t.y - u.y);
+    if (ingombro(S, u, { ...boxOf(u, S.units), rot }, { unPollice: false }))
+      return no("riformata non ci sta: toccherebbe un'altra unità o il bordo");
+    const giro = Math.round(Math.abs(giroDi(u.rot, rot)));
+    posa(S, u, u.x, u.y, rot);
+    /* conta come mossa, anche per il tiro (p. 139: «including rallying and reforming») */
+    u.moved = { kind: "reform", inches: 0 };
+    limite(S, "manovre");
+    say(S, `${u.name} si riforma e si gira di ${giro}° verso ${t.name}, con il fronte di ${f0}: tutto il movimento.`,
+        { army: u.army, page: 125 });
+    return si("riformata");
+  }
+
+  if (a.id === "indietro"){
+    const quanti = move / 2;
+    const p = dritto([-avanti[0], -avanti[1]], quanti);
+    u.moved = { kind: "back", inches: p.pollici };
+    say(S, `${u.name} arretra di ${p.pollici}″, sempre girata verso il nemico (metà del Movimento)` +
+           fermo(p, quanti) + ".", { army: u.army, page: 125 });
+    return si("indietro");
+  }
+
+  if (a.id === "lato"){
+    const segno = +a.segno > 0 ? 1 : -1;
+    const quanti = Math.min(move / 2, +a.pollici > 0 ? +a.pollici : move / 2);
+    const p = dritto([destra[0] * segno, destra[1] * segno], quanti);
+    u.moved = { kind: "side", inches: p.pollici };
+    say(S, `${u.name} si sposta di lato di ${p.pollici}″ a ${segno > 0 ? "destra" : "sinistra"} (metà del Movimento)` +
+           fermo(p, quanti) + ".", { army: u.army, page: 125 });
+    return si("di lato");
+  }
+
+  if (a.id === "riordina"){
+    const n = layoutOf(u, S.units).slots.length, f = Math.round(+a.fronte);
+    if (!ensureRanks(u) || !(f >= 1 && f <= n) || f === f0 || Math.abs(f - f0) > 5)
+      return no("si tolgono o si aggiungono fino a cinque modelli alla prima fila (p. 125)");
+    const c = centroRiordinato(S, u, f);
+    if (ingombro(S, u, conFronte(S, u, f, b => ({ ...b, ...c })), { unPollice: false }))
+      return no("riordinata non ci sta: toccherebbe un'altra unità o il bordo");
+    u.frontage = f;
+    posa(S, u, c.x, c.y, u.rot);
+    u.moved = { kind: "redress", inches: 0 };
+    limite(S, "manovre");
+    say(S, `${u.name} riordina le file: da ${f0} a ${f} di fronte (metà del Movimento).`, { army: u.army, page: 125 });
+    return si("riordinata");
+  }
+  return no(`manovra sconosciuta: ${a.id}`);
 }
 
 /* ---- tiro (p. 136) ---- */
@@ -1202,6 +1502,11 @@ const GESTI = {
 
   avanza: (S, a) => mossa(S, a, false),
   marcia: (S, a) => mossa(S, a, true),
+  gira:     (S, a) => manovra(S, a),
+  riforma:  (S, a) => manovra(S, a),
+  indietro: (S, a) => manovra(S, a),
+  lato:     (S, a) => manovra(S, a),
+  riordina: (S, a) => manovra(S, a),
   /* Stare fermi non e' muoversi: prima «resta ferma» scriveva una mossa
      sull'unita', e il tiro la contava come mossa. Il modello sceglieva
      di stare fermo per tirare meglio e tirava peggio, per quattro turni. */
@@ -1262,29 +1567,75 @@ function mossa(S, a, marcia){
      guarda il percorso: prima si fermava a «distanza meno uno» misurata
      da bordo a bordo, e intanto il centro andava dritto dentro chi
      stava in mezzo. */
-  const p = muoviVerso(S, u, t, quanti);
+  /* La ruota si paga (p. 124): prima si girava gratis verso il nemico,
+     e un reggimento largo cinque basette si voltava di 45° e faceva
+     ancora tutto il suo Movimento. Anche chi fallisce il test di marcia
+     ha marciato, e non ha il giro libero dei Lumbering. */
+  const pr = pianoRuota(S, u, versoDi(t.x - u.x, t.y - u.y), quanti, { marcia });
+  const p = avanzaRuotando(S, u, t, pr, quanti);
   /* anche con il test fallito e' una marcia: «it is considered to have
      marched, even if its controlling player then elects to not move the
      unit at all» (p. 123). Quindi non tira. Sembrava un errore, e lo
      era solo per chi non aveva il libro aperto. */
   u.moved = { kind: marcia ? "march" : "move", inches: p.pollici };
-  say(S, `${u.name} ${marcia ? "marcia" : "avanza"} di ${p.pollici}″ verso ${t.name}` +
-         (p.stop && p.pollici < quanti - 0.05 ? `, e si ferma: c'è ${p.stop.perche}` : "") + ".",
-      { army: u.army, page: marcia ? 123 : 122 });
+  const verbo = marcia ? "marcia" : "avanza";
+  const g = Math.round(Math.abs(p.giro));
+  const ruota = !g ? ""
+    : pr.sciolta ? `si gira di ${g}° senza costo (formazione sciolta) e `
+    : pr.costo ? `ruota di ${g}° (${pr.libero ? `${Math.round(pr.libero)} liberi, Lumbering p. 195, e ` : ""}${r1(pr.costo)}″) e `
+    : `si gira di ${g}° senza costo (Lumbering, p. 195) e `;
+  say(S, `${u.name} ${ruota}` +
+         (p.bloccata ? `non ha posto per girarsi: ` : "") +
+         (pr.parziale && !p.pollici ? `non ${verbo}: girarsi del tutto costerebbe ${r1(pr.intera)}″, verso ${t.name}`
+                                    : `${verbo} di ${p.pollici}″ ${p.bloccata ? "dritta" : "verso " + t.name}`) +
+         (p.stop && p.pollici < p.voluti - 0.05 ? `, e si ferma: c'è ${p.stop.perche}` : "") + ".",
+      { army: u.army, page: pr.costo && g ? 124 : marcia ? 123 : 122 });
   return si("mossa");
 }
 
-/* Verso il nemico, girandosi a guardarlo. La ruota costa movimento e
-   qui non si conta — sta fra i limiti dichiarati — ma girarsi non puo'
-   far entrare il pezzo in un vicino: se succederebbe, si viaggia con la
-   rotazione di prima. */
+/* Chi gli sta gia' addosso — un posto che l'arbitro non dovrebbe piu'
+   produrre — non gli impedisce di girarsi: e' la stessa indulgenza di
+   `percorso`, che altrimenti lo inchioderebbe li' per sempre. */
+const giaAddosso = (S, u) => {
+  const mio = cornersOf(u, S.units);
+  return S.units.filter(o => o !== u && onBoard(o) && !isJoined(o) && polysOverlap(mio, cornersOf(o, S.units)))
+    .map(o => o.uid);
+};
+
+/* La ruota e poi la corsa. Girarsi non puo' far entrare il pezzo in un
+   vicino: se succederebbe non si gira, e chi ha il nemico nella meta'
+   davanti va dritto con tutto il movimento — come una fila che avanza
+   accanto a un'altra. */
+function avanzaRuotando(S, u, t, pr, quanti){
+  const da = u.rot || 0;
+  let rot = pr.rot, resta = pr.resta, bloccata = false;
+  if (Math.abs(giroDi(da, rot)) > 0.5 &&
+      ingombro(S, u, { ...boxOf(u, S.units), rot }, { unPollice: false, ignora: giaAddosso(S, u) })){
+    rot = da; bloccata = true;
+    resta = Math.abs(giroDi(da, versoDi(t.x - u.x, t.y - u.y))) <= 90 ? quanti : 0;
+  }
+  if (!bloccata && Math.abs(pr.giro) >= 0.5 && !pr.sciolta) limite(S, "ruota");
+  let p = { x: u.x, y: u.y, mm: 0, pollici: 0, stop: null };
+  if (resta > 0.01){
+    const a = rot * Math.PI / 180;
+    const meta = bloccata ? [u.x + Math.sin(a) * resta * MM, u.y - Math.cos(a) * resta * MM] : [t.x, t.y];
+    p = percorso(S, u, meta, resta, { rot, devia: !bloccata });
+    if (p.stop && p.pollici < resta - 0.05) limite(S, "ingombro");
+  }
+  posa(S, u, p.x, p.y, rot);
+  return { ...p, bloccata, voluti: resta, giro: bloccata ? 0 : pr.giro };
+}
+
+/* Verso il nemico, girandosi a guardarlo: e' il passo della carica
+   fallita, che va «wheeling as required» (p. 121), e dell'inseguimento,
+   che gira sul centro (p. 156). Qui la rotazione non si paga. Girarsi
+   non puo' far entrare il pezzo in un vicino: se succederebbe, si
+   viaggia con la rotazione di prima. */
 function muoviVerso(S, u, t, pollici, { ignora = [], unPollice = true } = {}){
   const dx = t.x - u.x, dy = t.y - u.y;
   let rot = versoDi(dx, dy);
-  if (Math.abs(((rot - (u.rot || 0)) % 360 + 540) % 360 - 180) > 0.5){
-    limite(S, "riforma");
-    if (ingombro(S, u, { ...boxOf(u, S.units), rot }, { ignora, unPollice: false })) rot = u.rot || 0;
-  }
+  if (Math.abs(giroDi(u.rot, rot)) > 0.5 &&
+      ingombro(S, u, { ...boxOf(u, S.units), rot }, { ignora, unPollice: false })) rot = u.rot || 0;
   const p = percorso(S, u, [t.x, t.y], pollici, { rot, ignora, unPollice });
   if (p.stop && p.pollici < pollici - 0.05) limite(S, "ingombro");
   posa(S, u, p.x, p.y, rot);
@@ -1476,7 +1827,10 @@ function perdite(S, u, kills, left = null, { zitto = false } = {}){
     const prima = usConCapi(S, u);
     u.lost = Math.min(u.models, (u.lost || 0) + kills);
     if (alive(u) <= 0){
-      /* i capi restano in piedi, da soli, dove stava il reggimento */
+      /* i capi restano in piedi, da soli, dove stava il reggimento: ognuno
+         al suo posto nella fila. Prima restavano tutti nel centro, uno
+         sopra l'altro, e li separava solo il primo passo che facevano */
+      affianca(u, capiDi(S, u), layoutOf(u, S.units));
       for (const c of capiDi(S, u)){
         c.join = null;
         say(S, `${c.name} resta da solo: il suo reggimento non c'è più.`, { army: c.army, page: 206 });
@@ -1489,6 +1843,24 @@ function perdite(S, u, kills, left = null, { zitto = false } = {}){
   }
   if (left != null) u.wounds = left;
   return sparita;
+}
+
+/* I capi di un reggimento caduto, ognuno al suo posto nella fila e
+   accostati con le loro basette vere: la fila del reggimento ha il passo
+   delle sue, e un Warboss da 30 mm fra i Night Goblin da 25 sporgeva sul
+   vicino. */
+function affianca(u, capi, lay){
+  const a = (u.rot || 0) * Math.PI / 180, cs = Math.cos(a), sn = Math.sin(a);
+  const posti = lay.slots.filter(sl => sl.kind === "char").sort((p, q) => p.x - q.x);
+  let destra = -Infinity;
+  for (const sl of posti){
+    const c = capi.find(x => x.uid === sl.uid);
+    if (!c) continue;
+    const w = c.baseW || sl.w || 0;
+    const lx = Math.max(sl.x, destra + w / 2);
+    destra = lx + w / 2;
+    c.x = u.x + lx * cs - sl.y * sn; c.y = u.y + lx * sn + sl.y * cs;
+  }
 }
 
 /* Il Panico oltre un quarto (p. 141): il conto lo fa `psych.js`, il
@@ -2663,11 +3035,17 @@ export function fotografia(S, { per = null } = {}){
     const vicino = piuVicino(S, u);
     const effetti = EF.effectsOf(u).map(e => e.from);
     const maghi = [u, ...FM.attachedTo(S.units, u)].map(x => rigaMago(S, x)).filter(Boolean);
-    return `  · ${u.name} — ${alive(u)}/${u.models} modelli, ${u.pts || 0} pt, ` +
+    /* com'e' schierata e dove ha il nemico: con le manovre, un nemico
+       sul fianco e' una decisione, e chi sceglie deve vederlo */
+    const lay = layoutOf(u, S.units);
+    const forma = sciolta(u) ? ", in formazione sciolta" : alive(u) > 1 ? `, ${lay.front}×${lay.ranks}` : "";
+    const dove = vicino && !sciolta(u) ? FM.arcOfPoly(cornersOf(vicino, S.units), boxOf(u, S.units)).arc : "";
+    const lato = { fianco: " sul fianco", retro: " alle spalle" }[dove] || "";
+    return `  · ${u.name} — ${alive(u)}/${u.models} modelli${forma}, ${u.pts || 0} pt, ` +
       `M ${mv.m || "?"}, WS ${c.ws}, S ${c.s}, T ${c.t}, Ld ${c.ld}` +
       (u.fled ? ", IN FUGA" : "") +
       (ingaggiata(S, u) ? ", in mischia" : "") +
-      (vicino ? `, nemico più vicino ${vicino.name} a ${distanza(S, u, vicino)}″` : "") +
+      (vicino ? `, nemico più vicino ${vicino.name} a ${distanza(S, u, vicino)}″${lato}` : "") +
       (effetti.length ? `, sotto l'effetto di ${effetti.join(", ")}` : "") +
       (capiDi(S, u).length ? `, con dentro ${capiDi(S, u).map(c => `${c.name} (Ld ${CB.combatant(c).ld})`).join(" e ")}` : "") +
       (maghi.length ? "\n" + maghi.join("\n") : "");
