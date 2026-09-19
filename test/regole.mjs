@@ -298,7 +298,7 @@ ok('e effects.js lo applica senza sapere che viene da un army book',
    EF.val(boar, 'S') === 4 && EF.val(boar, 'S', { who:'mount' }) === 4);
 
 const sk = A.find('Skaven');
-ok('gli Skaven hanno cinque regole del libro, due delle unita salvate e la campana', coverage(sk).total === 8);
+ok('gli Skaven hanno cinque regole del libro, due delle unita salvate, la campana e sei del Grey Seer e dell Abominio', coverage(sk).total === 14);
 ok('e quattro oggetti a uso singolo', sk.items.length === 4 && sk.items.every(i => i.once));
 ok('la Scurry Away e esprimibile e si applica', applies(sk.rules.find(r => r.id === 'scurryAway')));
 ok('le Teeming Masses no, e lo dice',

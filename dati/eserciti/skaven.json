@@ -82,6 +82,60 @@
       "when": "list",
       "what": "i Packmaster stanno nelle file di dietro, e i Rat Ogre o i Ratti Giganti davanti",
       "perche": "e' la posizione dei modelli nelle file: si sistema nell'editor di formazione"
+    },
+    {
+      "id": "blessingsOfTheHornedRat",
+      "name": "Blessings Of The Horned Rat",
+      "nomi": ["Blessings Of The Horned Rat", "Blessings of the Horned Rat"],
+      "testo": "lista",
+      "when": "always",
+      "what": "salvezza speciale 5+ contro le ferite degli attacchi nemici non magici; contro quelli magici non vale, e l'app la conta sempre",
+      "set": { "ward": 5 }
+    },
+    {
+      "id": "scurryingMasses",
+      "name": "Scurrying Masses",
+      "nomi": ["Scurrying Masses"],
+      "testo": "lista",
+      "when": "leadership",
+      "what": "entro 3 pollici da un'unita' amica il Comando del modello sale del bonus di ranghi di quell'unita', fino a 10",
+      "perche": "e' una misura di distanza piu' il bonus di ranghi di un'altra unita': il Comando dei test non la conta ancora"
+    },
+    {
+      "id": "draggedAlong",
+      "name": "Dragged Along",
+      "nomi": ["Dragged Along"],
+      "testo": "lista",
+      "when": "always",
+      "what": "se comincia il movimento entro 1 pollice da un'unita' amica di fanteria, non in fuga e di dieci modelli o piu', puo' usare il Movimento di quell'unita'",
+      "perche": "dipende da chi gli sta vicino all'inizio del movimento: il Movimento si corregge a mano nell'ispettore"
+    },
+    {
+      "id": "abominableAttacks",
+      "name": "Abominable Attacks",
+      "nomi": ["Abominable Attacks"],
+      "testo": "lista",
+      "when": "melee",
+      "what": "al posto degli attacchi l'Abominio puo' nutrirsi (un modello a contatto: se colpito, D3 ferite senza armatura) o travolgere (sagoma piccola sul bersaglio, un colpo con la sua Forza e PA -2 a chi ci sta sotto, amici compresi)",
+      "perche": "e' un attacco alternativo che si sceglie: il conto dell'assalto usa gli attacchi del profilo, e le due alternative si tirano dal vassoio"
+    },
+    {
+      "id": "tooHorribleToDie",
+      "name": "Too Horrible To Die",
+      "nomi": ["Too Horrible To Die"],
+      "testo": "lista",
+      "when": "melee",
+      "what": "la prima volta che perde l'ultima Ferita si tira un D6: 1-3 muore, 4-5 al suo posto uno sciame di ratti da un modello entro 3 pollici, 6 si rialza con D3 Ferite",
+      "perche": "succede quando il modello muore e mette in campo un'unita' nuova: lo risolvete voi"
+    },
+    {
+      "id": "timber",
+      "name": "Timmm-Berrr!",
+      "nomi": ["Timmm-Berrr!", "Timmm-Berrr"],
+      "testo": "lista",
+      "when": "melee",
+      "what": "quando cade, crolla da un lato scelto da uno spareggio e chi gli sta a contatto da quella parte subisce D6 colpi con la sua Forza e PA -1",
+      "perche": "succede quando il modello muore, e da che lato cade lo decide uno spareggio: lo risolvete voi"
     }
   ],
   "items": [

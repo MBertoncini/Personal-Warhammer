@@ -204,6 +204,16 @@ export const ELSEWHERE = [
     why:"vincolo sui personaggi che si uniscono e sul Generale: si rispetta schierando" },
   { re:/^counter charge/i,
     why:"è una reazione alla carica di cavalleria, carri e mostri: il pannello offre tenere, tirare e fuggire, e questa la muovete voi" },
+  /* Le tre che ha portato l'Hell Pit Abomination. La terza e' la piu'
+     insidiosa: la riga degli Attacchi dice «D6+1», e il profilo la
+     legge come il primo numero che trova — 6 — senza tirare niente.
+     Finche' la mischia non tira gli attacchi, lo si dice. */
+  { re:/^magic resistance/i,
+    why:"toglie dal tiro di lancio degli incantesimi nemici che bersagliano l'unità: né il pannello né l'arbitro la sottraggono ancora" },
+  { re:/^random movement/i,
+    why:"riguarda il movimento: il Movimento si tira, e l'ispettore lo dice" },
+  { re:/^random attacks/i,
+    why:"gli Attacchi si tirano a ogni assalto, e il conto non li tira: legge il primo numero della riga («D6+1» vale 6). Correggili a mano nel pannello" },
 ];
 
 /* ============================================================

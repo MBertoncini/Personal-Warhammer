@@ -263,8 +263,60 @@ non fa. Sono tutte **verificate nel codice**, non dedotte dal registro:
 
 **Nei dati**: le liste 3 e 4 si chiamano tutte e due *La Strada delle
 Pietre*, e `palmares.js` tiene il record **per nome di lista**: una
-partita fra loro due si conta due volte, una vinta e una persa. Vanno
-rinominate.
+partita fra loro due si conta due volte, una vinta e una persa. Adesso
+c'è *Rinomina* (vedi sotto), ma i nomi doppi in `dati/liste.json` sono
+ancora lì, e sono sei coppie: *Il Guado di Sangue*, *Il Monolite nella
+Palude*, *La Strada delle Pietre*, *Le Rovine di Xhotl*, *Tutto*,
+*Battle march*. Le rinomina Michele dall'app, non una sessione: sono
+sue, e la scelta «le partite restano sue / riparte da zero» è una
+domanda a cui sa rispondere solo lui.
+
+## Fatto: i personaggi montati e le liste che si rinominano
+
+`src/mounts.js` e `dati/cavalcature.json`, prove in
+`test/cavalcature.mjs`. Quello che è stato deciso:
+
+- **tre generi, come il Core Rulebook alle pp. 204-205**: `cavalcatura`
+  (tipo di truppa e Movimento della bestia, R e F solo se la riga dice
+  «(+1)»), `mostro` (R e F migliorate come scrive la riga), `carro` (le
+  Ferite si sommano, si ferisce sulla R più alta). L'armatura è sempre
+  la migliore delle due;
+- la tendina **propone e non impedisce**: in cima le cavalcature che il
+  libro concede a quel personaggio, sotto le altre dell'esercito;
+- **in mischia ogni riga della bestia mena con i suoi numeri**
+  (`mountStrikers` in `combat.js`), l'urto e i pestoni con la Forza della
+  bestia; le righe della bestia non si colpiscono e non tirano la rotta;
+- **i file di New Recruit già montati** si riconoscono dalla `firma` e si
+  montano senza sommare i punti due volte; nelle liste vecchie compare
+  *sembra su … — Applica*;
+- **Lumbering** (p. 195): carri pesanti, mostri e colossi non entrano
+  nei reggimenti e non ne ospitano;
+- **Rinomina** chiede cosa fare del palmarès se la lista ha già giocato,
+  e se lo tiene si porta dietro i nomi di prima (`palmares.js`).
+
+Limiti dichiarati nel README (*Limiti noti*, profilo diviso): la coda
+della viverna, il Venom surge dell'Arachnarok, le armi a scelta, la
+speciale 5+ della campana contata anche contro la magia. Un reggimento
+di **cavalleria** mena ancora con la sola riga del cavaliere.
+
+## Fatto: la Battle march Skaven di Michele entra nelle prove
+
+La lista `lmu8eb7xh723p` (Grey Seer sulla campana, Hell Pit Abomination,
+Warp Lightning Cannon) aveva fatto diventare rossa la suite: dieci
+regole sconosciute e un'unità in più senza Movimento. Le sei regole
+d'unità stanno in `dati/eserciti/skaven.json` (testo della lista, niente
+pagina: il libro non è stato aperto), le tre universali nell'`ELSEWHERE`
+di `rulebook.js`. **Da fare**, in ordine di quanto pesano:
+
+- **Random Attacks**: la riga «A: D6+1» viene letta da `effects.js` come
+  6, senza tirare niente. `rulebook.js` lo dichiara, ma è un numero
+  sbagliato che entra nei dadi. La mischia dovrebbe tirare gli attacchi
+  a ogni assalto (`contact()` / `attacksOf` in `combat.js`: oggi non
+  hanno il generatore in mano) e la previsione usare la distribuzione;
+- **Magic Resistance**: `castResult` ha già il posto (`mod`), nessuno ce
+  la mette — né il pannello né l'arbitro;
+- Blessings of the Horned Rat vale solo contro gli attacchi non magici,
+  e l'app la conta sempre (come la speciale della campana).
 
 ## Compito 1 — fatto: la magia in partita (pp. 106-111)
 
