@@ -12,11 +12,14 @@
  * **Come si aggancia una lista a una partita.** Il report si porta
  * dietro il nome dei due eserciti, non l'identificativo delle liste:
  * è nato per essere letto, e un id non lo legge nessuno. Quindi
- * l'aggancio è per nome, normalizzato. È una scelta, non un
- * ripiego — una lista rinominata perde il suo passato, ed è meglio di
- * un aggancio invisibile che sopravvive al fatto che quella lista
- * adesso è un'altra cosa. Chi vuole tenere il passato duplica invece
- * di rinominare.
+ * l'aggancio è per nome, normalizzato.
+ *
+ * Una lista rinominata si porta dietro i nomi che ha avuto
+ * (`formerNames`), se chi la rinomina lo vuole: correggere un refuso o
+ * dare un nome migliore non cambia la lista, e perdere tre partite per
+ * una lettera sarebbe punire chi tiene in ordine l'archivio. Chi invece
+ * la rinomina perché adesso è un'altra cosa sceglie di ripartire da
+ * zero, e le partite restano nel diario col nome di allora.
  *
  * Il modulo legge l'archivio delle partite dalla sua chiave e non
  * importa `reports.js`: quello importa `lists.js`, e un giro di import
@@ -67,17 +70,19 @@ const EMPTY = () => ({ played: 0, won: 0, lost: 0, draw: 0, pts: 0, against: 0, 
    lista», non «come sono andato io». Una lista che ho prestato a un
    amico che ha vinto ha vinto.
    ------------------------------------------------------------------ */
+/* `name` è un nome, o l'elenco dei nomi che la lista ha avuto: quello
+   di adesso e quelli di prima. */
 export function recordOf(name, list = reports){
-  const key = normName(name);
+  const keys = new Set([].concat(name || []).map(normName).filter(Boolean));
   const out = EMPTY();
-  if (!key) return out;
+  if (!keys.size) return out;
   for (const rep of list || []){
     if (!rep || !rep.armies) continue;
     /* una partita giocata da due modelli (`tools/partita.mjs
        --archivia`) sta nel diario ma non dice come va la lista */
     if (rep.meta && rep.meta.simulata) continue;
     for (const side of ["A", "B"]){
-      if (normName((rep.armies[side] || {}).name) !== key) continue;
+      if (!keys.has(normName((rep.armies[side] || {}).name))) continue;
       const foe = side === "A" ? "B" : "A";
       const sc = scoreOf(rep);
       const mine = sc[side], theirs = sc[foe];
@@ -109,11 +114,15 @@ function scoreOf(rep){
   };
 }
 
+/* I nomi di una lista: quello di adesso e quelli che si è portata dietro
+   rinominandola. */
+export const namesOf = l => [l && l.name, ...((l && l.formerNames) || [])].filter(Boolean);
+
 /* Il record di tutte le liste passate, in una mappa per id: è quello
    che serve a disegnare l'elenco senza rifare il giro per ognuna. */
 export function recordsFor(lists = []){
   const map = new Map();
-  for (const l of lists || []) map.set(l.id, recordOf(l.name));
+  for (const l of lists || []) map.set(l.id, recordOf(namesOf(l)));
   return map;
 }
 

@@ -26,6 +26,7 @@ import { armyFor, meleeBoosts, fleeBonus } from './armies.js';
 import * as ML from './melee.js';
 import * as SH from './shoot.js';
 import * as PS from './psych.js';
+import { attackRows } from './mounts.js';
 
 /* ============================================================
    1 · DALL'UNITA' DEL TAVOLO ALLA SCHIERA CHE COMBATTE
@@ -33,8 +34,10 @@ import * as PS from './psych.js';
 
 /* l'arma da mischia e' quella senza gittata; fra piu' d'una si tiene
    quella che perfora di piu', che e' quella che si userebbe */
+/* le armi marcate `di` sono della cavalcatura (le corna dello Stegadon,
+   gli artigli del Carnosauro): le tira la sua riga, non il cavaliere */
 export function meleeWeapon(u){
-  const list = (u.weapons || []).filter(w => !(stat(w.range) > 0));
+  const list = (u.weapons || []).filter(w => !(stat(w.range) > 0) && !w.di);
   if (!list.length) return null;
   return list.reduce((best, w) => weaponAP(w) > weaponAP(best) ? w : best, list[0]);
 }
@@ -164,6 +167,10 @@ export function combatant(u, over = {}){
      prima che la lancia la alzi di due punti. */
   c.baseS = c.s;
   if (melee) c.s = weaponStrength(melee, c.s);
+  /* Sul mostro e sul carro l'urto e i pestoni usano la Forza della
+     bestia, non quella del cavaliere (pp. 204-205): il Grey Seer ha
+     Forza 3, la campana 5. */
+  c.autoS = (u.mount && +u.mount.forzaUrto) || 0;
 
   /* Le regole: quelle dell'unita' e quelle dell'arma che sta davvero
      impugnando. Le seconde stavano nel file da sempre, lette e mai
@@ -286,6 +293,47 @@ export function retinueOf(joined = [], host = null){
     out.push(g);
   }
   return out;
+}
+
+/* ============================================================
+   1c · LA CAVALCATURA DEL PERSONAGGIO
+   Un Grey Seer sulla Screaming Bell mena con i suoi due attacchi, e
+   accanto a lui il Rat Ogre dell'equipaggio ne porta tre di Forza 5:
+   «il personaggio e la cavalcatura usano ciascuno la propria Abilita',
+   Forza, Iniziativa e i propri Attacchi, e le proprie armi» (p. 204).
+   Ogni riga della cavalcatura diventa una schiera che mena al suo
+   passo d'Iniziativa, con la carica e il disordine del modello. Non si
+   colpisce e non incassa niente: i colpi nemici vanno sull'Abilita' del
+   personaggio e le ferite sul modello intero, che e' la schiera ospite.
+   ============================================================ */
+export function mountStrikers(c){
+  const u = c && c.ref;
+  if (!u) return [];
+  const rows = attackRows(u);
+  if (!rows.length) return [];
+  const army = armyFor(u);
+  return rows.map(r => {
+    const w = r.arma;
+    const read = readRules(r.regole || [], splitWeaponRules(w && w.rules), w ? w.name : "", null, army);
+    const flags = { ...read.flags, army: (c.flags || {}).army };
+    /* la Frenzy del modello (quella della Plague Furnace) da' un
+       attacco in piu' a ciascuno dell'equipaggio; la carica furiosa
+       della bestia — «solo il Ripperdactyl» — vuole i suoi tre pollici */
+    const extra = (c.frenzyA || 0) + (ranIn(c) && flags.furiousCharge ? 1 : 0);
+    /* la riga della bestia passa dagli effetti a tempo, come il
+       cavaliere: la Carica delle Zanne e' un effetto «della
+       cavalcatura», e senza questo lo si vedeva scritto e non pesava */
+    const mv = (k, raw) => (r.beast ? val(u, k, { who: "mount" }) || raw : raw);
+    const S = mv("S", r.s);
+    return {
+      ...c, name: `${r.chi} (${c.name})`, mountRow: r.chi,
+      ws: mv("WS", r.ws), i: mv("I", r.i),
+      a: r.a * r.n + extra * r.n,
+      baseS: S, s: w ? weaponStrength(w, S) : S,
+      ap: w ? weaponAP(w) : 0, weapon: w ? w.name : "",
+      flags, retinue: [], frenzyA: 0, forcedAttacks: null, attached: false,
+    };
+  });
 }
 
 /* Gli attacchi che questo modello porta adesso: la caratteristica del
@@ -801,6 +849,22 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
   A.forEach((c, i) => { c.foes = link.A[i]; });
   B.forEach((c, i) => { c.foes = link.B[i]; });
 
+  /* Le righe della cavalcatura (§1c) menano accanto al loro cavaliere:
+     stessi nemici, tutti i loro attacchi sul primo che il cavaliere
+     raggiunge. Non stanno in A o in B — non si colpiscono, non tirano
+     il test di rotta, non hanno Forza d'Unita' loro: sono il modello
+     che le ospita, visto nel momento in cui mena. */
+  for (const e of all.slice()){
+    const rows = mountStrikers(e.c);
+    if (!rows.length) continue;
+    const k = e.budget.findIndex(v => v > 0);
+    if (k < 0) continue;
+    for (const m of rows){
+      const budget = e.budget.map((_, i) => (i === k ? m.a : 0));
+      all.push({ ...e, c: m, host: e, budget, fronts: e.fronts.slice() });
+    }
+  }
+
   const steps = [];
   const done = { A: 0, B: 0 };          // ferite inflitte da ciascuna parte
 
@@ -810,17 +874,21 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
      nell'elenco toglierebbe i colpi a chi mena insieme a lui. */
   const shot = (e, j, opts) => {
     const def = e.side[j];
-    if (!def || def.models <= 0 || e.c.models <= 0) return null;
+    /* la bestia smette di menare quando cade il cavaliere: il modello
+       intero esce dal gioco (p. 204) */
+    const me = e.host ? e.host.c : e.c;
+    if (!def || def.models <= 0 || me.models <= 0) return null;
     return { e, def, r: strike(e.c, def, { round, ...opts }) };
   };
   const land = (x, facce = null) => {
     if (!x) return;
     if (facce && facce.length) x.r.autoDice = facce;
     const kills = applyWounds(x.def, x.r.wounds);
-    x.e.c.dealt += x.r.wounds;
+    (x.e.host ? x.e.host.c : x.e.c).dealt += x.r.wounds;
     done[x.e.tag] += x.r.wounds;
     steps.push({ side: x.e.tag, name: x.e.c.name, at: x.e.at, foe: x.def.name,
-                 character: !!x.e.c.attached, ...x.r, kills, together: !!x.together });
+                 character: !!x.e.c.attached, mount: !!x.e.host,
+                 ...x.r, kills, together: !!x.together });
   };
   const blow = (e, j, opts, facce = null) => land(shot(e, j, opts), facce);
 
@@ -838,7 +906,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
      siano si tira una volta sola e poi si spartisce fra chi si ha
      davanti: un D6 per ogni nemico sarebbe un urto moltiplicato. */
   for (const e of all){
-    if (!ranIn(e.c) || !e.foes.length) continue;
+    if (e.host || !ranIn(e.c) || !e.foes.length) continue;
     const dove = sotto(e);
     if (!dove.length) continue;
     const facce = [];
@@ -846,7 +914,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
     if (!n) continue;
     const split = spread(n, e.fronts.map((v, k) => dove.includes(k) ? v : 0));
     e.foes.forEach((j, k) => { if (split[k]) blow(e, j, {
-      attacks: split[k], auto: true, strength: e.c.baseS, label: "urto della carica" }, facce); });
+      attacks: split[k], auto: true, strength: e.c.autoS || e.c.baseS, label: "urto della carica" }, facce); });
   }
 
   /* poi si mena, in ordine di Iniziativa — con dentro il bonus della
@@ -877,7 +945,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
      carica — basta essere a contatto — e usano anche loro la Forza non
      modificata del modello. */
   for (const e of all){
-    if (!e.foes.length) continue;
+    if (e.host || !e.foes.length) continue;
     const dove = sotto(e);
     if (!dove.length) continue;
     const facce = [];
@@ -885,7 +953,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
     if (!n) continue;
     const split = spread(n, e.fronts.map((v, k) => dove.includes(k) ? v : 0));
     e.foes.forEach((j, k) => { if (split[k]) blow(e, j, {
-      attacks: split[k], auto: true, strength: e.c.baseS, label: "pestoni" }, facce); });
+      attacks: split[k], auto: true, strength: e.c.autoS || e.c.baseS, label: "pestoni" }, facce); });
   }
 
   /* L'overkill di una sfida: le ferite in piu' di quelle che
@@ -894,6 +962,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
      che gli restano — e il tetto e' +5 (p. 152). */
   if (challenge){
     for (const e of all){
+      if (e.host) continue;
       const from = e.tag === "A" ? initB : initA;
       const left = e.foes.reduce((s, j) =>
         s + ((from[j] || {}).models || 0) * ((from[j] || {}).w || 1), 0);
@@ -1042,6 +1111,14 @@ export function meleeForecast(att, def, attacks){
   const parts = attacks == null && (att.retinue || []).length
     ? strikersOf(att, def, "A").map(x => ({ x, f: oneForecast(x.who, def, x.g.attacks) }))
     : [];
+  /* e le righe della cavalcatura, che menano accanto al cavaliere */
+  const rows = attacks == null ? mountStrikers(att) : [];
+  if (rows.length && !parts.length){
+    const n = att.forcedAttacks ?? contact(att, def).troop;
+    parts.push({ x: { who: att, g: { character: false, attacks: n } }, f: oneForecast(att, def, n) });
+  }
+  for (const m of rows)
+    parts.push({ x: { who: m, g: { character: false, mount: true, attacks: m.a } }, f: oneForecast(m, def, m.a) });
   if (parts.length){
     const rank = parts.find(p => !p.x.g.character) || parts[0];
     return {
@@ -1049,7 +1126,7 @@ export function meleeForecast(att, def, attacks){
       attacks: parts.reduce((n, p) => n + p.f.attacks, 0),
       wounds: parts.reduce((n, p) => n + p.f.wounds, 0),
       kills: parts.reduce((n, p) => n + p.f.kills, 0),
-      groups: parts.map(p => ({ name: p.x.who.name, character: !!p.x.g.character, ...p.f })),
+      groups: parts.map(p => ({ name: p.x.who.name, character: !!p.x.g.character, mount: !!p.x.g.mount, ...p.f })),
     };
   }
   return oneForecast(att, def, attacks ?? att.forcedAttacks ?? contact(att, def).attacks);

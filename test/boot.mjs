@@ -621,10 +621,29 @@ deploy.renderAll();
 /* Il file della lista non chiama «character» tutto quello che al tavolo
    entra in un reggimento: il boss senza slot, il pezzo comprato a
    parte. La regola che tiene e' quanti modelli sono. */
-const lone = state.units.find(u => u.army === 'A' && (u.models || 1) === 1 &&
-                                   !FM.isCharacter(u) && !FM.joinedHost(u));
+const isLone = u => u.army === 'A' && (u.models || 1) === 1 && !u.dead &&
+                    !FM.isCharacter(u) && !FM.joinedHost(u) && !FM.isLumbering(u);
+/* il tavolo d'esempio ha solo carri e mostri da un modello: la bestia da
+   compagnia la si mette a mano, come al circolo */
+if (!state.units.some(isLone)){
+  const src = state.units.find(u => u.army === 'A' && (u.models || 1) === 1 && !u.dead);
+  state.units.push({ ...JSON.parse(JSON.stringify(src)), uid: 9001, name: 'Bestia da compagnia',
+                     troop: 'Monstrous infantry', slot: 'Special', character: false, join: null });
+  deploy.renderAll();
+}
+const lone = state.units.find(isLone);
 const bigA = state.units.find(u => u.army === 'A' && u.models > 1 && !FM.joinedHost(u));
 ok('c e un pezzo da un modello solo che il roster non chiama personaggio', !!lone && !!bigA);
+/* ma un carro pesante o un mostro no, anche da un modello solo: sono
+   Lumbering, e non si uniscono a nessuno (p. 195) */
+const lumber = state.units.find(u => u.army === 'A' && (u.models || 1) === 1 && FM.isLumbering(u) && !u.dead);
+if (lumber && bigA){
+  ok('un pezzo Lumbering non entra in un reggimento',
+     !FM.joinCandidates(state.units, bigA).some(c => c.uid === lumber.uid));
+  ok('e la tendina vuota dice perche',
+     FM.joinRefusals(state.units, bigA).some(r => r.uid === lumber.uid && /Lumbering/.test(r.why)));
+  ok('e non ospita nessuno', !FM.canHost(state.units, lumber));
+}
 if (lone && bigA){
   ok('si puo unire lo stesso a un reggimento',
      FM.joinCandidates(state.units, bigA).some(c => c.uid === lone.uid));

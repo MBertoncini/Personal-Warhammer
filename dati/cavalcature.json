@@ -1,0 +1,444 @@
+{
+  "nota": "Le cavalcature dei personaggi, lette sui libri con la pagina accanto (pagine stampate). Tre generi, perché il Core Rulebook ne fa tre (pp. 204-205): «cavalcatura» (cavalleria leggera, pesante o mostruosa: il personaggio prende il tipo di truppa della bestia e ne usa il Movimento), «mostro» (creatura mostruosa o colosso: il profilo diviso, la Resistenza e le Ferite migliorate come scrive la riga), «carro» (carro leggero o pesante, e i colossi con la regola Howdah: le Ferite del personaggio si sommano a quelle del carro, e contro di lui si ferisce sulla Resistenza più alta). In tutti e tre si colpisce sull'Abilità di Combattimento del personaggio, e l'armatura è la migliore delle due. `righe` sono le righe del profilo che menano: ognuna tira i suoi attacchi con la sua Abilità, la sua Forza e la sua Iniziativa. `regole` valgono per tutto il modello (p. 204: «salvo dove indicato, le regole di un elemento valgono anche per l'altro»); quelle che il libro scrive «solo per la bestia» stanno sulla riga. `firma` serve a riconoscere un personaggio che il file di New Recruit ha esportato già montato ma con la basetta e il tipo di truppa del cavaliere: ogni voce è un gruppo di nomi (regole, armi o profili) che devono esserci tutti.",
+  "cavalcature": [
+    {
+      "id": "screaming-bell",
+      "nome": "Screaming Bell",
+      "faction": "Skaven",
+      "libro": "Legends: Skaven",
+      "pagina": 15,
+      "genere": "carro",
+      "troop": "Heavy chariot",
+      "base": [60, 100],
+      "punti": 185,
+      "cavalieri": ["Grey Seer"],
+      "M": 2, "T": 6, "W": 5, "forzaUrto": 5,
+      "armatura": 4,
+      "speciale": 5,
+      "regole": ["Blessings of the Horned Rat", "Dragged Along", "Impact Hits (D6+1)", "Large Target",
+                 "Magic Resistance (-3)", "Scurrying Masses", "Stubborn", "Terror", "Tolling the Bell"],
+      "righe": [
+        { "chi": "Screaming Bell", "stats": { "M": "2", "WS": "-", "BS": "-", "S": "5", "T": "6", "W": "5", "I": "-", "A": "-", "Ld": "-" } },
+        { "chi": "Rat Ogre Crew", "n": 1,
+          "stats": { "M": "-", "WS": "3", "BS": "0", "S": "5", "T": "-", "W": "-", "I": "4", "A": "3", "Ld": "5" },
+          "arma": { "name": "Hand weapon", "S": "S", "ap": "-", "rules": "" },
+          "regole": ["Armour Bane (2)"] }
+      ],
+      "armi": [],
+      "firma": [["Tolling the Bell"], ["Screaming Bell"], ["Blessings of the Horned Rat"]],
+      "nota": "La salvezza speciale 5+ (Blessings of the Horned Rat) vale contro gli attacchi non magici: l'app la conta sempre, e contro un incantesimo va tolta a mano. Il suono della campana (Tolling the Bell, 2D6 nella sotto-fase di comando) si tira dal vassoio e si applica a mano."
+    },
+    {
+      "id": "plague-furnace",
+      "nome": "Plague Furnace",
+      "faction": "Skaven",
+      "libro": "Legends: Skaven",
+      "pagina": 16,
+      "genere": "carro",
+      "troop": "Heavy chariot",
+      "base": [60, 100],
+      "punti": 170,
+      "cavalieri": ["Plague Priest"],
+      "M": 2, "T": 6, "W": 5, "forzaUrto": 5,
+      "armatura": 4,
+      "regole": ["Dragged Along", "Fear", "Frenzy", "Great Censer", "Impact Hits (D3+1)", "Large Target",
+                 "Magic Resistance (-1)", "Scurrying Masses", "Stomp Attacks (D3+1)"],
+      "righe": [
+        { "chi": "Plague Furnace", "stats": { "M": "2", "WS": "-", "BS": "-", "S": "5", "T": "6", "W": "5", "I": "-", "A": "-", "Ld": "-" } },
+        { "chi": "Plague Monk Crew", "n": 3,
+          "stats": { "M": "-", "WS": "3", "BS": "0", "S": "3", "T": "-", "W": "-", "I": "3", "A": "2", "Ld": "5" },
+          "arma": { "name": "Hand weapon", "S": "S", "ap": "-", "rules": "" },
+          "regole": ["Poisoned Attacks"] }
+      ],
+      "armi": [
+        { "name": "Billowing Death", "range": "N/A", "S": "2", "ap": "N/A", "rules": "Breath Weapon, Magical Attacks" }
+      ],
+      "firma": [["Great Censer"], ["Plague Furnace"]],
+      "nota": "Il Great Censer dà perforazione -2 ai pestoni e -1 alla Resistenza dei nemici entro 3″, e il soffio (Billowing Death) ferisce sempre col 6 senza armatura: tutti e tre si giocano a mano."
+    },
+    {
+      "id": "cold-one",
+      "nome": "Cold One",
+      "faction": "Lizardmen",
+      "libro": "Legends: Lizardmen",
+      "pagina": 5,
+      "genere": "cavalcatura",
+      "troop": "Heavy cavalry",
+      "base": [30, 60],
+      "punti": 18,
+      "cavalieri": ["Saurus Oldblood", "Saurus Scar-Veteran"],
+      "M": 7,
+      "armaturaPiu": 1,
+      "regole": ["Armoured Hide (1)", "Fear", "Stupidity", "Swiftstride"],
+      "righe": [
+        { "chi": "Cold One", "n": 1,
+          "stats": { "M": "7", "WS": "3", "BS": "-", "S": "4", "T": "-", "W": "-", "I": "2", "A": "2", "Ld": "-" },
+          "arma": { "name": "Claws and teeth", "S": "S", "ap": "-", "rules": "" },
+          "regole": ["Armour Bane (1)"] }
+      ],
+      "armi": [],
+      "firma": [["Cold One"], ["Armour Bane (1, Cold One only)"]]
+    },
+    {
+      "id": "carnosaur",
+      "nome": "Carnosaur",
+      "faction": "Lizardmen",
+      "libro": "Legends: Lizardmen",
+      "pagina": 12,
+      "genere": "mostro",
+      "troop": "Behemoth",
+      "base": [50, 100],
+      "punti": 170,
+      "cavalieri": ["Saurus Oldblood", "Saurus Scar-Veteran"],
+      "M": 7, "piuT": 1, "piuW": 4, "forzaUrto": 7,
+      "armatura": 5,
+      "regole": ["Blood Frenzy", "Close Order", "Cold Blooded", "Large Target", "Stomp Attacks (2)", "Swiftstride", "Terror"],
+      "righe": [
+        { "chi": "Carnosaur", "n": 1,
+          "stats": { "M": "7", "WS": "3", "BS": "0", "S": "7", "T": "-", "W": "-", "I": "2", "A": "4", "Ld": "-" },
+          "arma": { "name": "Slashing talons", "S": "S", "ap": "-3", "rules": "" } }
+      ],
+      "armi": [
+        { "name": "Slashing talons", "range": "Combat", "S": "S", "ap": "-3", "rules": "Multiple Wounds (D3)" }
+      ],
+      "firma": [["Slashing talons"], ["Blood Frenzy"], ["Carnosaur"]],
+      "nota": "La pelle squamosa vale armatura pesante (5+). Le Ferite Multiple (D3) degli artigli valgono solo contro i mostri, e la Blood Frenzy si accende quando il Carnosauro (non il cavaliere) ferisce: tutte e due a mano."
+    },
+    {
+      "id": "terradon",
+      "nome": "Terradon",
+      "faction": "Lizardmen",
+      "libro": "Legends: Lizardmen",
+      "pagina": 5,
+      "genere": "cavalcatura",
+      "troop": "Monstrous cavalry",
+      "base": [40, 40],
+      "punti": 30,
+      "cavalieri": ["Skink Chief"],
+      "M": 2, "piuT": 1, "piuW": 1,
+      "armaturaPiu": 1,
+      "regole": ["Armoured Hide (1)", "Drop Rocks", "Fear", "Fly (10)", "Swiftstride"],
+      "righe": [
+        { "chi": "Terradon", "n": 1,
+          "stats": { "M": "2", "WS": "3", "BS": "-", "S": "4", "T": "-", "W": "-", "I": "2", "A": "1", "Ld": "-" },
+          "arma": { "name": "Claws and teeth", "S": "S", "ap": "-", "rules": "" } }
+      ],
+      "armi": [],
+      "firma": [["Drop Rocks"], ["Terradon"]]
+    },
+    {
+      "id": "ripperdactyl",
+      "nome": "Ripperdactyl",
+      "faction": "Lizardmen",
+      "libro": "Legends: Lizardmen",
+      "pagina": 5,
+      "genere": "cavalcatura",
+      "troop": "Monstrous cavalry",
+      "base": [40, 40],
+      "punti": 35,
+      "cavalieri": ["Skink Chief"],
+      "M": 2, "piuT": 1, "piuW": 1,
+      "armaturaPiu": 1,
+      "regole": ["Armoured Hide (1)", "Fear", "Fly (9)", "Impetuous", "Swiftstride", "Toad Rage"],
+      "righe": [
+        { "chi": "Ripperdactyl", "n": 1,
+          "stats": { "M": "2", "WS": "3", "BS": "-", "S": "4", "T": "-", "W": "-", "I": "2", "A": "2", "Ld": "-" },
+          "arma": { "name": "Claws and teeth", "S": "S", "ap": "-", "rules": "" },
+          "regole": ["Cleaving Blow", "Furious Charge"] }
+      ],
+      "armi": [],
+      "firma": [["Toad Rage"], ["Ripperdactyl"]]
+    },
+    {
+      "id": "stegadon",
+      "nome": "Stegadon",
+      "faction": "Lizardmen",
+      "libro": "Legends: Lizardmen",
+      "pagina": 13,
+      "genere": "carro",
+      "troop": "Behemoth",
+      "base": [60, 100],
+      "punti": 215,
+      "cavalieri": ["Skink Chief"],
+      "M": 6, "T": 6, "W": 5, "forzaUrto": 5,
+      "armatura": 4,
+      "regole": ["Close Order", "Cold Blooded", "Howdah", "Immune to Psychology", "Impact Hits (D3+1)",
+                 "Large Target", "Stomp Attacks (D3+2)", "Stubborn", "Terror"],
+      "righe": [
+        { "chi": "Stegadon", "n": 1,
+          "stats": { "M": "6", "WS": "3", "BS": "-", "S": "5", "T": "6", "W": "5", "I": "2", "A": "4", "Ld": "-" },
+          "arma": { "name": "Great horns", "S": "S", "ap": "-3", "rules": "" } },
+        { "chi": "Skink Crew", "n": 5,
+          "stats": { "M": "-", "WS": "2", "BS": "3", "S": "3", "T": "-", "W": "-", "I": "4", "A": "1", "Ld": "6" },
+          "arma": { "name": "Hand weapon", "S": "S", "ap": "-", "rules": "" } }
+      ],
+      "armi": [
+        { "name": "Great horns", "range": "Combat", "S": "S", "ap": "-3", "rules": "" },
+        { "name": "Giant bow", "range": "36\"", "S": "5", "ap": "-2", "rules": "Multiple Wounds (D3), Poisoned Attacks" },
+        { "name": "Javelin", "range": "12\"", "S": "S", "ap": "-", "rules": "Move & Shoot, Quick Shot, Poisoned Attacks" }
+      ],
+      "firma": [["Great horns"], ["Howdah (Lizardmen)"], ["Stegadon"]],
+      "nota": "Con la regola Howdah lo Stegadon conta come un carro e non come un mostro cavalcato (p. 13): le Ferite del personaggio si sommano alle sue. Il giant bow si può cambiare gratis con le giant blowpipes (18″, F3, Multiple Shots 2D6): si corregge l'arma a mano."
+    },
+    {
+      "id": "ancient-stegadon",
+      "nome": "Ancient Stegadon",
+      "faction": "Lizardmen",
+      "libro": "Legends: Lizardmen",
+      "pagina": 13,
+      "genere": "carro",
+      "troop": "Behemoth",
+      "base": [60, 100],
+      "punti": 230,
+      "cavalieri": ["Skink Priest"],
+      "M": 6, "T": 6, "W": 5, "forzaUrto": 6,
+      "armatura": 4,
+      "regole": ["Close Order", "Cold Blooded", "Howdah", "Immune to Psychology", "Impact Hits (D3+1)",
+                 "Large Target", "Stomp Attacks (D3+2)", "Stubborn", "Terror"],
+      "righe": [
+        { "chi": "Ancient Stegadon", "n": 1,
+          "stats": { "M": "6", "WS": "4", "BS": "-", "S": "6", "T": "6", "W": "5", "I": "1", "A": "3", "Ld": "-" },
+          "arma": { "name": "Great horns", "S": "S", "ap": "-3", "rules": "" } },
+        { "chi": "Skink Crew", "n": 5,
+          "stats": { "M": "-", "WS": "2", "BS": "3", "S": "3", "T": "-", "W": "-", "I": "4", "A": "1", "Ld": "6" },
+          "arma": { "name": "Hand weapon", "S": "S", "ap": "-", "rules": "" } }
+      ],
+      "armi": [
+        { "name": "Great horns", "range": "Combat", "S": "S", "ap": "-3", "rules": "" },
+        { "name": "Giant bow", "range": "36\"", "S": "5", "ap": "-2", "rules": "Multiple Wounds (D3), Poisoned Attacks" },
+        { "name": "Javelin", "range": "12\"", "S": "S", "ap": "-", "rules": "Move & Shoot, Quick Shot, Poisoned Attacks" }
+      ],
+      "firma": [["Great horns"], ["Howdah (Lizardmen)"], ["Ancient Stegadon"]],
+      "nota": "Con la regola Howdah conta come un carro (p. 13): le Ferite del personaggio si sommano alle sue. Il giant bow si può cambiare gratis con le giant blowpipes, o con l'Engine of the Gods (voce a parte)."
+    },
+    {
+      "id": "engine-of-the-gods",
+      "nome": "Ancient Stegadon con Engine of the Gods",
+      "faction": "Lizardmen",
+      "libro": "Legends: Lizardmen",
+      "pagina": 13,
+      "genere": "carro",
+      "troop": "Behemoth",
+      "base": [60, 100],
+      "punti": 255,
+      "cavalieri": ["Skink Priest"],
+      "M": 6, "T": 6, "W": 5, "forzaUrto": 6,
+      "armatura": 4,
+      "regole": ["Close Order", "Cold Blooded", "Howdah", "Immune to Psychology", "Impact Hits (D3+1)",
+                 "Large Target", "Stomp Attacks (D3+2)", "Stubborn", "Terror", "Engine of the Gods"],
+      "righe": [
+        { "chi": "Ancient Stegadon", "n": 1,
+          "stats": { "M": "6", "WS": "4", "BS": "-", "S": "6", "T": "6", "W": "5", "I": "1", "A": "3", "Ld": "-" },
+          "arma": { "name": "Great horns", "S": "S", "ap": "-3", "rules": "" } },
+        { "chi": "Skink Crew", "n": 5,
+          "stats": { "M": "-", "WS": "2", "BS": "3", "S": "3", "T": "-", "W": "-", "I": "4", "A": "1", "Ld": "6" },
+          "arma": { "name": "Hand weapon", "S": "S", "ap": "-", "rules": "" } }
+      ],
+      "armi": [
+        { "name": "Great horns", "range": "Combat", "S": "S", "ap": "-3", "rules": "" },
+        { "name": "Javelin", "range": "12\"", "S": "S", "ap": "-", "rules": "Move & Shoot, Quick Shot, Poisoned Attacks" }
+      ],
+      "firma": [["Engine of the Gods"]],
+      "nota": "L'Engine of the Gods prende il posto del giant bow (+25 punti). Porta l'incantesimo vincolato Burning Alignment (dardo magico, lancio 8+, 15″, 2D6 colpi di Forza 4 infuocati, Power Level 3) e, con due Engine nell'esercito, +1 al lancio dei maghi entro 6″: l'incantesimo si dichiara dal blocco Magia, il resto a mano."
+    },
+    {
+      "id": "war-boar",
+      "nome": "War Boar",
+      "faction": "Orc and Goblin Tribes",
+      "libro": "Ravening Hordes",
+      "pagina": 19,
+      "genere": "cavalcatura",
+      "troop": "Heavy cavalry",
+      "base": [30, 60],
+      "punti": 16,
+      "cavalieri": ["Orc Warboss", "Black Orc Warboss", "Orc Bigboss", "Black Orc Bigboss", "Orc Weirdnob", "Orc Weirdboy"],
+      "M": 7,
+      "armaturaPiu": 1,
+      "regole": ["Armoured Hide (1)", "Counter Charge", "Swiftstride", "Tusker Charge"],
+      "righe": [
+        { "chi": "War Boar", "n": 1,
+          "stats": { "M": "7", "WS": "3", "BS": "-", "S": "3", "T": "-", "W": "-", "I": "3", "A": "1", "Ld": "-" },
+          "arma": { "name": "Tusks", "S": "S", "ap": "-", "rules": "" } }
+      ],
+      "armi": [],
+      "firma": [["War Boar"]]
+    },
+    {
+      "id": "giant-wolf",
+      "nome": "Giant Wolf",
+      "faction": "Orc and Goblin Tribes",
+      "libro": "Ravening Hordes",
+      "pagina": 19,
+      "genere": "cavalcatura",
+      "troop": "Light cavalry",
+      "base": [25, 50],
+      "punti": 10,
+      "cavalieri": ["Goblin Warboss", "Goblin Bigboss", "Goblin Oddnob", "Goblin Oddgit"],
+      "M": 9,
+      "regole": ["Chariot Runners", "Fast Cavalry", "Fire & Flee", "Swiftstride"],
+      "righe": [
+        { "chi": "Giant Wolf", "n": 1,
+          "stats": { "M": "9", "WS": "3", "BS": "-", "S": "3", "T": "-", "W": "-", "I": "3", "A": "1", "Ld": "-" },
+          "arma": { "name": "Claws and fangs", "S": "S", "ap": "-", "rules": "" } }
+      ],
+      "armi": [],
+      "firma": [["Giant Wolf"], ["Chariot Runners"]]
+    },
+    {
+      "id": "gigantic-spider",
+      "nome": "Gigantic Spider",
+      "faction": "Orc and Goblin Tribes",
+      "libro": "Ravening Hordes",
+      "pagina": 20,
+      "genere": "cavalcatura",
+      "troop": "Light cavalry",
+      "base": [50, 50],
+      "punti": 35,
+      "cavalieri": ["Goblin Warboss", "Goblin Bigboss"],
+      "M": 7, "piuW": 1,
+      "armaturaPiu": 1,
+      "regole": ["Armoured Hide (1)", "Fast Cavalry", "Swiftstride"],
+      "righe": [
+        { "chi": "Gigantic Spider", "n": 1,
+          "stats": { "M": "7", "WS": "4", "BS": "-", "S": "4", "T": "-", "W": "-", "I": "4", "A": "3", "Ld": "-" },
+          "arma": { "name": "Claws and fangs", "S": "S", "ap": "-", "rules": "" },
+          "regole": ["Poisoned Attacks"] }
+      ],
+      "armi": [],
+      "firma": [["Gigantic Spider"]]
+    },
+    {
+      "id": "giant-cave-squig",
+      "nome": "Giant Cave Squig",
+      "faction": "Orc and Goblin Tribes",
+      "libro": "Ravening Hordes",
+      "pagina": 20,
+      "genere": "cavalcatura",
+      "troop": "Monstrous cavalry",
+      "base": [50, 50],
+      "punti": 25,
+      "cavalieri": ["Night Goblin Warboss", "Night Goblin Bigboss"],
+      "M": 0, "random": "3D6", "piuW": 1, "forzaUrto": 5,
+      "armaturaPiu": 1,
+      "regole": ["Armoured Hide (1)", "Hatred (Dwarfs)", "Impact Hits (D3)", "Loner", "Random Movement"],
+      "righe": [
+        { "chi": "Giant Cave Squig", "n": 1,
+          "stats": { "M": "3D6", "WS": "4", "BS": "-", "S": "5", "T": "-", "W": "-", "I": "3", "A": "3", "Ld": "-" },
+          "arma": { "name": "Massive Gob", "S": "S", "ap": "-1", "rules": "Armour Bane (1), Killing Blow" } }
+      ],
+      "armi": [
+        { "name": "Massive Gob", "range": "Combat", "S": "S", "ap": "-1", "rules": "Armour Bane (1), Killing Blow" }
+      ],
+      "firma": [["Massive Gob"], ["Giant Cave Squig"]]
+    },
+    {
+      "id": "orc-boar-chariot",
+      "nome": "Orc Boar Chariot",
+      "faction": "Orc and Goblin Tribes",
+      "libro": "Ravening Hordes",
+      "pagina": 33,
+      "genere": "carro",
+      "troop": "Heavy chariot",
+      "base": [50, 100],
+      "punti": 90,
+      "cavalieri": ["Orc Warboss", "Black Orc Warboss", "Orc Bigboss", "Black Orc Bigboss"],
+      "M": 7, "T": 5, "W": 4, "forzaUrto": 5,
+      "armatura": 4,
+      "regole": ["Choppas", "Close Order", "First Charge", "Ignore Goblin Panic", "Impact Hits (D6+1)",
+                 "Impetuous", "Tusker Charge", "Warband"],
+      "righe": [
+        { "chi": "Chariot", "stats": { "M": "-", "WS": "-", "BS": "-", "S": "5", "T": "5", "W": "4", "I": "-", "A": "-", "Ld": "-" } },
+        { "chi": "Orc Crew", "n": 2,
+          "stats": { "M": "-", "WS": "3", "BS": "3", "S": "3", "T": "-", "W": "-", "I": "3", "A": "1", "Ld": "7" },
+          "arma": { "name": "Hand weapon", "S": "S", "ap": "-", "rules": "" } },
+        { "chi": "War Boars", "n": 2,
+          "stats": { "M": "7", "WS": "3", "BS": "-", "S": "3", "T": "-", "W": "-", "I": "3", "A": "1", "Ld": "-" },
+          "arma": { "name": "Tusks", "S": "S", "ap": "-", "rules": "" } }
+      ],
+      "armi": [],
+      "firma": [["Orc Boar Chariot"], ["Tusker Charge", "Impact Hits (D6+1)"]]
+    },
+    {
+      "id": "goblin-wolf-chariot",
+      "nome": "Goblin Wolf Chariot",
+      "faction": "Orc and Goblin Tribes",
+      "libro": "Ravening Hordes",
+      "pagina": 34,
+      "genere": "carro",
+      "troop": "Light chariot",
+      "base": [50, 100],
+      "punti": 53,
+      "cavalieri": ["Goblin Warboss", "Goblin Bigboss", "Goblin Oddnob", "Goblin Oddgit"],
+      "M": 9, "T": 4, "W": 3, "forzaUrto": 5,
+      "armatura": 5,
+      "regole": ["Fear of Elves", "Impact Hits (D3+1)", "Impetuous", "Open Order", "Swiftstride", "Warband"],
+      "righe": [
+        { "chi": "Chariot", "stats": { "M": "-", "WS": "-", "BS": "-", "S": "5", "T": "4", "W": "3", "I": "-", "A": "-", "Ld": "-" } },
+        { "chi": "Goblin Crew", "n": 3,
+          "stats": { "M": "-", "WS": "2", "BS": "3", "S": "3", "T": "-", "W": "-", "I": "3", "A": "1", "Ld": "6" },
+          "arma": { "name": "Hand weapon", "S": "S", "ap": "-", "rules": "" } },
+        { "chi": "Giant Wolves", "n": 2,
+          "stats": { "M": "9", "WS": "3", "BS": "-", "S": "3", "T": "-", "W": "-", "I": "3", "A": "1", "Ld": "-" },
+          "arma": { "name": "Claws and fangs", "S": "S", "ap": "-", "rules": "" } }
+      ],
+      "armi": [],
+      "firma": [["Goblin Wolf Chariot"], ["Giant Wolves"]]
+    },
+    {
+      "id": "wyvern",
+      "nome": "Wyvern",
+      "faction": "Orc and Goblin Tribes",
+      "libro": "Ravening Hordes",
+      "pagina": 35,
+      "genere": "mostro",
+      "troop": "Monstrous creature",
+      "base": [50, 100],
+      "punti": 130,
+      "cavalieri": ["Orc Warboss", "Black Orc Warboss", "Orc Weirdnob"],
+      "M": 4, "piuT": 1, "piuW": 4, "forzaUrto": 6,
+      "armatura": 5,
+      "regole": ["Close Order", "Fly (9)", "Large Target", "Stomp Attacks (D3)", "Swiftstride", "Terror"],
+      "righe": [
+        { "chi": "Wyvern", "n": 1,
+          "stats": { "M": "4", "WS": "5", "BS": "-", "S": "6", "T": "-", "W": "-", "I": "3", "A": "3", "Ld": "-" },
+          "arma": { "name": "Wicked claws", "S": "S", "ap": "-2", "rules": "" } }
+      ],
+      "armi": [
+        { "name": "Wicked claws", "range": "Combat", "S": "S", "ap": "-2", "rules": "" },
+        { "name": "Venomous tail", "range": "Combat", "S": "S", "ap": "-", "rules": "Poisoned Attacks, Strike First" }
+      ],
+      "firma": [["Wicked claws"], ["Venomous tail"], ["Wyvern"]],
+      "nota": "La pelle squamosa vale armatura pesante (5+). Uno dei tre attacchi va fatto con la coda velenosa (avvelenata, colpisce per prima): l'app li tira tutti con gli artigli."
+    },
+    {
+      "id": "arachnarok-spider",
+      "nome": "Arachnarok Spider",
+      "faction": "Orc and Goblin Tribes",
+      "libro": "Ravening Hordes",
+      "pagina": 36,
+      "genere": "carro",
+      "troop": "Behemoth",
+      "base": [100, 150],
+      "punti": 310,
+      "cavalieri": ["Goblin Oddnob"],
+      "M": 7, "T": 6, "W": 7, "forzaUrto": 5,
+      "armatura": 4,
+      "regole": ["Close Order", "Howdah", "Immune to Psychology", "Large Target", "Move through Cover",
+                 "Stomp Attacks (D6)", "Stubborn", "Swiftstride", "Terror"],
+      "righe": [
+        { "chi": "Arachnarok Spider", "n": 1,
+          "stats": { "M": "7", "WS": "4", "BS": "-", "S": "5", "T": "6", "W": "7", "I": "4", "A": "6", "Ld": "-" },
+          "arma": { "name": "Poisonous fangs", "S": "S", "ap": "-", "rules": "" },
+          "regole": ["Poisoned Attacks"] },
+        { "chi": "Goblin Crew", "n": 8,
+          "stats": { "M": "-", "WS": "2", "BS": "3", "S": "3", "T": "-", "W": "-", "I": "3", "A": "1", "Ld": "7" },
+          "arma": { "name": "Hand weapon", "S": "S", "ap": "-", "rules": "" } }
+      ],
+      "armi": [
+        { "name": "Venom surge", "range": "Combat", "S": "S", "ap": "-2", "rules": "Multiple Wounds (D6), Poisoned Attacks, Strike First" }
+      ],
+      "firma": [["Venom surge"], ["Arachnarok Spider"]],
+      "nota": "Con la regola Howdah conta come un carro (p. 36): il personaggio entra nell'equipaggio e le sue Ferite si sommano a quelle del ragno. Il Venom surge (uno degli attacchi, a scelta) e lo spidersilk lobber si giocano a mano."
+    }
+  ]
+}

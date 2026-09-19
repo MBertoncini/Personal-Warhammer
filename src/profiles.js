@@ -118,6 +118,17 @@ export function moveInfo(u){
              from: p ? p.da || "" : "", book: p ? p.libro || "" : "", page: p ? p.pagina || 0 : 0,
              why: `vola di ${fly}″` + (p && p.libro ? ` (${p.libro}, p. ${p.pagina})` : "") };
 
+  /* la cavalcatura montata dalla scheda della lista (`mounts.js`): il
+     Movimento e' il suo, e il libro da cui viene lo sa lei */
+  const cav = u.mountId && u.mount ? u.mount : null;
+  if (cav && cav.random)
+    return { ...nulla, random: cav.random, from: cav.name || "", book: cav.libro || "", page: cav.pagina || 0,
+             why: `il Movimento è ${cav.random}: si tira (${cav.name}` +
+                  (cav.libro ? `, ${cav.libro} p. ${cav.pagina})` : ")") };
+  if (dal && cav)
+    return { ...nulla, m: +dal[0], from: cav.name || "", book: cav.libro || "", page: cav.pagina || 0,
+             why: `Movimento ${dal[0]}″ da ${cav.name}` + (cav.libro ? ` (${cav.libro}, p. ${cav.pagina})` : "") };
+
   if (dal) return { ...nulla, m: +dal[0] };
 
   if (p){

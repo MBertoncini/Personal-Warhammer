@@ -26,6 +26,7 @@
 import { MM, inch } from './util.js';
 import { boxCorners, polyDistance, closestPoints, toLocal } from './geom.js';
 import { TERRAIN } from './terrain.js';
+import { troopType } from './troops.js';
 
 /* mezzo pollice fra una base e l'altra: la spaziatura degli
    schermagliatori che l'app usava gia' prima che le formazioni
@@ -290,12 +291,23 @@ export const hostsAnyone = (units, u) =>
    che tiene e' un'altra: un modello solo ci sta, un reggimento no.
    Questa guarda la forma del pezzo; chi ci sta gia' dentro o chi ci
    tiene dentro qualcun altro lo filtrano i candidati. */
-export const canJoin = u => !u.dead && (isCharacter(u) || (u.models || 1) === 1);
+/* Lumbering (p. 195): il carro pesante, la creatura mostruosa e il
+   colosso «non si uniscono a un'unita' e nessun personaggio si unisce a
+   loro». Sono un modello solo come il capo a piedi, e per questo la
+   regola del modello solo li lasciava entrare in un reggimento: il Grey
+   Seer sulla Screaming Bell finiva dentro i Clanrats. La regola sta nel
+   tipo di truppa, e la spunta «e' un personaggio» non la cambia — un
+   personaggio sul carro resta sul carro (p. 205). */
+const LUMBERING = ["heavyChariot", "monstrousCreature", "behemoth"];
+export const isLumbering = u => LUMBERING.includes(troopType(u && u.troop).id);
+const LUMBER_WHY = "è un carro pesante o un mostro: non si unisce e non ospita (Lumbering, p. 195)";
+
+export const canJoin = u => !u.dead && !isLumbering(u) && (isCharacter(u) || (u.models || 1) === 1);
 
 /* Chi lo puo' ospitare: chiunque non sia gia' dentro a qualcun altro.
    Un pezzo dentro un pezzo dentro un pezzo non e' una cosa che
    succede al tavolo, e qui non si puo' costruire. */
-export const canHost = (units, u) => !u.dead && hostUnit(units, u) == null;
+export const canHost = (units, u) => !u.dead && !isLumbering(u) && hostUnit(units, u) == null;
 
 /* i candidati all'aggancio dentro `host`, in ordine di lista */
 export const joinCandidates = (units, host) =>
@@ -319,6 +331,7 @@ export function joinRefusals(units, host){
     if (c.uid === host.uid || c.army !== host.army) continue;
     if (!(isCharacter(c) || (c.models || 1) === 1)) continue;   // un reggimento non ci sta, e si sa
     if (c.dead){ out.push({ uid:c.uid, name:c.name, why:"è eliminata" }); continue; }
+    if (isLumbering(c)){ out.push({ uid:c.uid, name:c.name, why:LUMBER_WHY }); continue; }
     const h = hostUnit(units, c);
     if (h){
       if (h.uid !== host.uid)                                   // chi e' gia' dentro QUESTO non manca
@@ -337,6 +350,7 @@ export function hostRefusals(units, ch){
   for (const c of units || []){
     if (c.uid === ch.uid || c.army !== ch.army) continue;
     if (c.dead){ out.push({ uid:c.uid, name:c.name, why:"è eliminata" }); continue; }
+    if (isLumbering(c)){ out.push({ uid:c.uid, name:c.name, why:LUMBER_WHY }); continue; }
     const h = hostUnit(units, c);
     if (h) out.push({ uid:c.uid, name:c.name, why:`è già dentro ${h.name}` });
   }

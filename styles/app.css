@@ -1035,6 +1035,10 @@ textarea{
 .uedit input[type=text]{flex:1 1 140px;min-width:110px;}
 .uedit input[type=number]{width:72px;}
 .uedit select{flex:0 1 190px;}
+/* la cavalcatura del personaggio, sotto la riga dei campi */
+.umount{grid-column:1/-1;display:flex;gap:6px 8px;flex-wrap:wrap;align-items:center;min-width:0;}
+.umount .field.inline{display:flex;gap:6px;align-items:center;margin:0;flex:1 1 260px;min-width:0;max-width:100%;}
+.umount select{flex:1 1 200px;min-width:0;}
 
 /* --- il catalogo che si propone mentre si scrive un nome ---
    Sta appesa al corpo della pagina e non al campo: le righe delle

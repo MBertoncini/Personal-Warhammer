@@ -537,6 +537,20 @@ function renderMarkerList(){
    Quando c'e' la cavalcatura ci sono due righe, perche' il Movimento
    e' della bestia e la Forza e' di chi ci sta sopra, e meta' delle
    regole d'esercito parla a una sola delle due. */
+/* Da dove vengono i numeri del modello intero, in una riga: il genere
+   della cavalcatura decide come si sommano (pp. 204-205). */
+function mountNote(u){
+  const m = u.mount || {}, f = u.foot || {}, rider = f.stats || {};
+  const book = m.libro ? ` (${m.libro}${m.pagina ? ", p. " + m.pagina : ""})` : "";
+  const how = m.genere === "carro"
+    ? `carro: le Ferite del personaggio (${rider.W || "?"}) si sommano a quelle del carro, si ferisce sulla Resistenza più alta, e l'armatura è la migliore delle due (p. 205)`
+    : m.genere === "mostro"
+      ? `mostro cavalcato: Resistenza e Ferite migliorate come dice la riga della bestia, armatura la migliore delle due (p. 204)`
+      : `cavalcatura: il Movimento è della bestia, e Resistenza e Ferite salgono solo se la sua riga lo dice (p. 204)`;
+  return `Su ${m.name}${book} — ${how}. Si colpisce sull'Abilità del personaggio; ogni riga con Attacchi mena da sé.` +
+         (m.nota ? " " + m.nota : "");
+}
+
 function statsBlockHTML(u){
   if (!u.stats) return "";
   const keys = EF.CHARS;
@@ -554,12 +568,21 @@ function statsBlockHTML(u){
   /* la larghezza della prima colonna va dichiarata nella riga di
      intestazione: con `table-layout:fixed` sono i primi td a decidere,
      e una `width` messa piu' sotto non la guarda nessuno */
+  /* La cavalcatura scelta nella lista (`mounts.js`) porta tutte le righe
+     del libro — il carro, l'equipaggio, le bestie — e la prima riga e'
+     il modello intero: Movimento della bestia, Resistenza e Ferite gia'
+     sommate o migliorate come dice il genere della cavalcatura. */
+  const righe = u.mountId && mount && Array.isArray(mount.righe) && mount.righe.length ? mount.righe : null;
+  const raw = v => (v == null || v === "" ? "-" : esc(String(v)));
   return `<table class="stats"><thead><tr>${mount ? `<th class="who"></th>` : ""}${keys.map(k => `<th>${k}</th>`).join("")}</tr></thead>
     <tbody>
-      <tr>${mount ? `<th class="who">cavaliere</th>` : ""}${keys.map(cell).join("")}</tr>
-      ${mount ? `<tr class="mount-row"><th class="who">${esc(mount.name || "cavalcatura")}</th>${
+      <tr>${mount ? `<th class="who">${righe ? "modello" : "cavaliere"}</th>` : ""}${keys.map(cell).join("")}</tr>
+      ${righe ? righe.map(r => `<tr class="mount-row"><th class="who" title="${esc(r.chi)}${(+r.n || 1) > 1 ? " ×" + r.n : ""}">${esc(r.chi)}${(+r.n || 1) > 1 ? " ×" + r.n : ""}</th>${
+        keys.map(k => `<td>${raw((r.stats || {})[k])}</td>`).join("")}</tr>`).join("")
+      : mount ? `<tr class="mount-row"><th class="who">${esc(mount.name || "cavalcatura")}</th>${
         keys.map(k => `<td>${EF.statOf(u, k, { who:"mount" }).value || "-"}</td>`).join("")}</tr>` : ""}
     </tbody></table>
+    ${righe ? `<p class="note">${esc(mountNote(u))}</p>` : ""}
     ${changed.length ? `<p class="note stat-why">${changed.map(k => esc(EF.explain(u, k))).join(" · ")}</p>` : ""}
     <p class="note">${esc(troop.unknown ? "tipo di truppa non riconosciuto" : troop.label)} · Forza d'Unità ${
       unitStrength(u.troop, u.us, u.models, alive, stat((u.stats || {}).W))}${troop.unknown ? "" : troop.daVerificare ? " (tabella p. 105, cella da verificare)" : ""}</p>`;
@@ -775,11 +798,15 @@ function formationBlockHTML(u){
         <div class="readout"><span>Unita a</span><b>${esc(shortName(host.name))}</b></div>
         <button class="btn tiny" id="i-leave" style="width:100%">Sgancia dal reggimento</button>` : ""}
       ${chars.length ? `<div class="readout"><span>Personaggi dentro</span><b>${chars.map(c => esc(shortName(c.name))).join(", ")}</b></div>` : ""}
-      ${host ? "" : FM.canJoin(u) ? (chars.length
+      ${!host && !chars.length && FM.isLumbering(u)
+        ? `<p class="note">Non entra in un reggimento e nessuno entra in lei: carri pesanti, creature mostruose e colossi sono Lumbering (p. 195)${
+            u.mountId ? `, e un personaggio sul carro o sul mostro prende la formazione della cavalcatura (p. 205)` : ""}.</p>`
+        : ""}
+      ${host || FM.isLumbering(u) ? "" : FM.canJoin(u) ? (chars.length
         ? `<p class="note">Sgancia ${chars.map(c => esc(shortName(c.name))).join(", ")} e poi potrai unire questa a un reggimento: dentro un reggimento non ci va un pezzo che ne contiene un altro.</p>`
         : pick("i-host", "Unisci questa a un reggimento", hosts,
                "Nessun reggimento disponibile in questo esercito." + why(FM.hostRefusals(state.units, u)))) : ""}
-      ${host || (!free.length && FM.canJoin(u) && !chars.length) ? ""
+      ${host || FM.isLumbering(u) || (!free.length && FM.canJoin(u) && !chars.length) ? ""
         : pick("i-join", "Unisci un personaggio o un modello singolo", free,
                "Nessun pezzo libero da unire: dentro un reggimento ci vanno i personaggi e le unità da un modello solo." + why(FM.joinRefusals(state.units, u)))}
     </div>`;

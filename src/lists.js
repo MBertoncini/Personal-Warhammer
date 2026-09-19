@@ -18,7 +18,7 @@
 import { $, esc } from './util.js';
 import { parseAny, parseRoster } from './parser.js';
 import { BASES, baseById, defaultFrontage } from './bases.js';
-import { askText, askConfirm, say } from './uikit.js';
+import { askText, askConfirm, askPick, say } from './uikit.js';
 import {
   catalogAll, catEntry, matchUnitName, candidatesFor,
   linkAlias, photoFor, upsertEntry, normalize, paintedOf,
@@ -30,6 +30,7 @@ import * as PREP from './prep.js';
 import { loadArmies, armiesNow, coverage as armyCoverage } from './armies.js';
 import { loadProfiles, splitStat } from './profiles.js';
 import * as PAL from './palmares.js';
+import * as MT from './mounts.js';
 
 const LIST_KEY = "lists:all";
 
@@ -49,6 +50,9 @@ export async function initLists(){
      cavalcatura, che per ventitre' unita' delle liste salvate e' la
      differenza fra muoversi e non muoversi */
   await loadProfiles();
+  /* e le cavalcature dei personaggi: senza, la tendina non compare e
+     il resto funziona */
+  await MT.loadMounts();
   /* il palmarès: quante partite ha fatto ogni lista e come sono
      andate. Senza, il filtro «quelle che hanno vinto» non esiste. */
   await PAL.initPalmares();
@@ -82,6 +86,13 @@ export async function importListText(text, { external = false } = {}){
        non e' tua non te ne manca nessuna */
     units: r.units.map(u => ({ ...u, catId: external ? null : matchUnitName(u.name) })),
   };
+  /* Il personaggio montato che il file esporta con la basetta e il tipo
+     di truppa del cavaliere: si riconosce dalla firma della cavalcatura
+     e si monta, senza sommare i punti che il file conta gia'. */
+  for (const u of list.units){
+    const m = MT.guessMount(u, r.catalogue);
+    if (m) MT.mountUnit(u, m, { fromFile: true });
+  }
   lists.push(list);
   await persist();
   openId = list.id;
@@ -180,6 +191,9 @@ export async function duplicateList(id){
   const copy = JSON.parse(JSON.stringify(l));
   copy.id = newId();
   copy.name = l.name + " (variante)";
+  /* la variante e' un'altra lista: le partite dell'originale restano
+     all'originale, altrimenti si conterebbero due volte */
+  copy.formerNames = [];
   copy.imported = new Date().toISOString();
   lists.push(copy);
   await persist();
@@ -193,9 +207,41 @@ export async function removeList(id){
   await persist();
 }
 
-export async function renameList(id, name){
+/* Rinominare. `keepPast` porta con sé le partite giocate con i nomi di
+   prima (vedi `palmares.js`); senza, la lista riparte da zero e le
+   partite restano nel diario col nome che avevano. */
+export async function renameList(id, name, { keepPast = true } = {}){
   const l = getList(id);
-  if (l) { l.name = name; await persist(); }
+  const next = String(name || "").trim();
+  if (!l || !next) return null;
+  if (keepPast){
+    const was = PAL.namesOf(l);
+    l.formerNames = [...new Set(was.filter(n => PAL.normName(n) !== PAL.normName(next)))];
+  } else l.formerNames = [];
+  l.name = next;
+  await persist();
+  return l;
+}
+
+/* ============================================================
+   1c · LA CAVALCATURA DI UN PERSONAGGIO
+   `mountId` vuoto rimette il personaggio a piedi. `fromFile` e' il
+   personaggio che il file di New Recruit ha gia' montato e pagato: si
+   sistemano basetta, tipo di truppa e profilo, e i punti restano quelli.
+   ============================================================ */
+export async function setMount(listId, i, mountId, { fromFile = false } = {}){
+  const l = getList(listId);
+  const u = l && l.units[i];
+  if (!u) return null;
+  if (!mountId) MT.dismountUnit(u);
+  else {
+    const m = MT.mountById(mountId);
+    if (!m) return null;
+    MT.mountUnit(u, m, { fromFile });
+  }
+  recount(l);
+  await persist();
+  return u;
 }
 
 /* ============================================================
@@ -458,6 +504,44 @@ export function renderLists(){
     renderLists();
   }));
 
+  /* rinominare: le partite giocate col nome di prima restano alla lista
+     se chi rinomina lo vuole — correggere un refuso non cambia la lista,
+     cambiarne la natura sì, e lo sa solo chi la rinomina */
+  host.querySelectorAll("[data-ren]").forEach(b => b.addEventListener("click", async () => {
+    const l = getList(b.dataset.ren);
+    if (!l) return;
+    const n = await askText({ title:"Rinomina la lista", label:"Il nome con cui compare nell'elenco, sul tavolo e nel diario delle partite.",
+                              value: l.name, placeholder:"Come si chiama" });
+    if (n === null || !n.trim() || n.trim() === l.name) return;
+    /* Senza partite non c'e' niente da portarsi dietro, e tenere il nome
+       vecchio sarebbe un aggancio invisibile: «Tutto» e' il nome di due
+       liste, e quella rinominata finirebbe per pescare le partite
+       dell'altra. */
+    const rec = PAL.recordOf(PAL.namesOf(l));
+    let keepPast = false;
+    if (rec.played){
+      const pick = await askPick({ title:"E le partite già giocate?",
+        label:`«${l.name}» ha ${PAL.recordText(rec)}. Il palmarès si aggancia per nome: col nome nuovo, le partite di prima restano sue o la lista riparte da zero? Nel diario non cambia niente in nessuno dei due casi.`,
+        options:[{ id:"keep", label:"Restano sue" }, { id:"fresh", label:"Riparte da zero" }] });
+      if (!pick) return;
+      keepPast = pick === "keep";
+    }
+    await renameList(l.id, n, { keepPast });
+    renderLists();
+  }));
+
+  /* la cavalcatura: la tendina, e il pulsante del file gia' montato */
+  host.querySelectorAll("[data-mount]").forEach(sel => sel.addEventListener("change", async () => {
+    const [id, i] = sel.dataset.mount.split("|");
+    await setMount(id, +i, sel.value || null);
+    renderLists();
+  }));
+  host.querySelectorAll("[data-mguess]").forEach(b => b.addEventListener("click", async () => {
+    const [id, i, mid] = b.dataset.mguess.split("|");
+    await setMount(id, +i, mid, { fromFile: true });
+    renderLists();
+  }));
+
   host.querySelectorAll("[data-urm]").forEach(b => b.addEventListener("click", async () => {
     const [id, i] = b.dataset.urm.split("|");
     await removeUnit(id, +i);
@@ -567,7 +651,7 @@ function listRowHTML(l){
             : c.unlinked ? `${c.unlinked} da agganciare`
             : c.missing ? `mancano ${c.missing}`
             : c.toPaint ? `${c.toPaint} da dipingere` : "completa";
-  const rec = PAL.recordOf(l.name);
+  const rec = PAL.recordOf(PAL.namesOf(l));
   const faces = ext ? [] : facesOf(l);
   /* La scheda è due righe e non tre colonne: il nome di una lista è
      lungo («Il Monolite nella Giungla») e la fazione pure, e messi in
@@ -624,7 +708,7 @@ export function filterLists(all = lists, v = view){
     if (v.mine === "mine" && l.external) return false;
     if (v.mine === "ext" && !l.external) return false;
     if (v.outcome){
-      const r = PAL.recordOf(l.name);
+      const r = PAL.recordOf(PAL.namesOf(l));
       if (v.outcome === "won" && !r.won) return false;
       if (v.outcome === "lost" && !r.lost) return false;
       if (v.outcome === "played" && !r.played) return false;
@@ -742,11 +826,10 @@ function prepHTML(l){
 /* Il palmarès della lista: com'è andata, partita per partita.
    Sta nella scheda della lista e non solo nel diario perché la domanda
    «questa lista come va?» ci si fa guardando la lista, non scorrendo
-   le partite. L'aggancio è per nome: una lista rinominata perde il suo
-   passato, ed è meglio di un aggancio invisibile che sopravvive al
-   fatto che quella lista adesso è un'altra cosa. */
+   le partite. L'aggancio è per nome — quello di adesso e quelli che la
+   lista si è portata dietro rinominandola. */
 function palmaresHTML(l){
-  const r = PAL.recordOf(l.name);
+  const r = PAL.recordOf(PAL.namesOf(l));
   if (!r.played) return `<p class="note dim">Mai giocata. Le partite si segnano nella scheda <b>Partite</b>, e da lì tornano qui.</p>`;
   const row = g => `
     <div class="readout"><span>${esc(g.date || "senza data")} \u00b7 contro ${esc(g.foe || "?")}${
@@ -761,12 +844,56 @@ function palmaresHTML(l){
     </div>`;
 }
 
+/* ------------------------------------------------------------------
+   La cavalcatura, sotto ogni personaggio.
+   Prima quelle che il libro gli concede, poi le altre del suo esercito:
+   l'app propone, non impedisce, e chi sceglie fuori dal libro lo legge
+   scritto nel gruppo. Il personaggio che il file ha esportato gia'
+   montato — con le corna dello Stegadon fra le armi ma la basetta da
+   25 mm — ha il suo pulsante: un clic e basetta, tipo di truppa e
+   profilo tornano quelli veri, senza pagare la bestia due volte.
+   ------------------------------------------------------------------ */
+function mountHTML(l, u, i){
+  if (!MT.mountsNow() || !(PREP.isCharacter(u) || u.mountId)) return "";
+  const faction = u.faction || (l.info && l.info.catalogue) || "";
+  const { book, other } = MT.mountOptions(u, faction);
+  const guess = !u.mountId ? MT.guessMount(u, faction) : null;
+  /* uno Slann o un Warlock Engineer non montano niente: una tendina di
+     cavalcature che il libro non gli da' sarebbe solo rumore sotto ogni
+     personaggio. Compare quando il libro ne concede almeno una, quando
+     il file ne lascia intravedere una, o quando ce n'e' gia' una. */
+  if (!book.length && !guess && !u.mountId) return "";
+  const opt = m => `<option value="${esc(m.id)}"${m.id === u.mountId ? " selected" : ""}>${
+    esc(m.nome)} \u00b7 +${m.punti} pt \u00b7 ${esc(m.genere)} (${esc(m.libro)}, p. ${m.pagina})</option>`;
+  const known = [...book, ...other].some(m => m.id === u.mountId);
+  const cur = u.mountId && !known ? MT.mountById(u.mountId) : null;
+  const who = esc(u.baseName || u.name);
+  return `
+    <div class="umount">
+      <label class="field inline">Cavalcatura
+        <select data-mount="${l.id}|${i}">
+          <option value="">a piedi</option>
+          ${cur ? opt(cur) : ""}
+          ${book.length ? `<optgroup label="Dal libro, per ${who}">${book.map(opt).join("")}</optgroup>` : ""}
+          ${other.length ? `<optgroup label="Altre${faction ? " dell'esercito" : ""} (il libro non le dà a ${who})">${other.map(opt).join("")}</optgroup>` : ""}
+        </select>
+      </label>
+      ${u.mountId ? `<span class="note dim">${u.mountFromFile
+          ? "i punti della bestia erano già nel file"
+          : "+" + (u.mountPts || 0) + " pt della bestia"}</span>` : ""}
+      ${guess ? `<span class="chip warn" title="Il file porta ${esc((guess.firma || []).map(g => g.join(" + ")).join(" / "))} ma la basetta e il tipo di truppa del cavaliere">sembra su ${esc(guess.nome)}</span>
+        <button class="btn tiny" data-mguess="${l.id}|${i}|${esc(guess.id)}" title="Basetta, tipo di truppa e profilo della cavalcatura; i punti restano quelli del file">Applica</button>` : ""}
+    </div>`;
+}
+
 function detailHTML(l){
   if (!l) return `<p class="empty">Lista non trovata.</p>`;
   const cat = catalogAll();
   return `
     <div class="panel-title">${esc(l.name)}
+      <button class="btn tiny ghost" data-ren="${l.id}" title="Rinomina la lista">Rinomina</button>
       <button class="btn tiny ghost" data-del="${l.id}" style="color:var(--bad);float:right">Elimina</button></div>
+    ${(l.formerNames || []).length ? `<p class="note dim">Prima si chiamava ${(l.formerNames || []).map(n => "«" + esc(n) + "»").join(", ")}: le partite giocate con quei nomi restano sue.</p>` : ""}
     <p class="note">${esc([l.info?.catalogue, l.info?.forceName,
       l.info?.limit ? "limite " + l.info.limit + " pt" : ""].filter(Boolean).join(" \u00b7 "))}</p>
     <label class="dice-anim" title="Una lista esterna non è in vetrina: non si confronta con la collezione e non chiede cosa ti manca">
@@ -786,7 +913,8 @@ function detailHTML(l){
         <div class="row u-row">
           <span class="nm">
             <b><span class="txt">${esc(u.name)}</span></b>
-            <span class="mono">${u.models} modelli \u00b7 ${u.pts} pt</span>
+            <span class="mono">${u.models} modelli \u00b7 ${u.pts} pt${
+              u.mountId ? " \u00b7 " + esc(MT.mountLabel(u)) : ""}</span>
           </span>
           ${e
             ? `<span class="chip ${u.models > (+e.owned || 0) ? "bad" : "ok"}">${u.models}/${e.owned}</span>`
@@ -810,6 +938,7 @@ function detailHTML(l){
             </select>
             <button class="btn tiny ghost" data-urm="${l.id}|${i}" title="Togli dalla lista" style="color:var(--bad)">×</button>
           </div>
+          ${mountHTML(l, u, i)}
         </div>`;
       }).join("")}
     </div>

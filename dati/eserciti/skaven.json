@@ -66,6 +66,15 @@
       "perche": "e' la ripartizione dei colpi fra due profili nella stessa unita': il conto non separa i Rat Ogre dai Packmaster"
     },
     {
+      "id": "tollingTheBell",
+      "name": "Tolling the Bell",
+      "nomi": ["Tolling the Bell", "Tolling The Bell"],
+      "page": 15,
+      "when": "command",
+      "what": "la Screaming Bell si suona nella sotto-fase di comando: 2D6 sulla tabella di p. 15 — col 2 D3 colpi di Forza 4 (PA -2) a ogni unita' entro il suo Comando, amica o nemica; da 3 a 11 un effetto fino al prossimo inizio turno sulle unita' entro 18 pollici (Comando -1 ai nemici, Paura, +1 al lancio, Immune to Psychology, un Attacco in piu' agli Skaven); col 12 i nemici entro 18 pollici fanno un test di Comando o prendono D6 colpi di Forza 4 senza armatura",
+      "perche": "e' una tabella con effetti a distanza su piu' unita': i 2D6 si tirano dal vassoio e l'effetto si mette a mano, come effetto a tempo o come marcatore"
+    },
+    {
       "id": "leaderOfThePack",
       "name": "Leader Of The Pack",
       "nomi": ["Leader Of The Pack"],
