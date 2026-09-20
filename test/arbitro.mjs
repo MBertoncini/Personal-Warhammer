@@ -688,6 +688,92 @@ console.log('\nl arma che o si muove o tira (p. 137)');
   ok('ma restare fermi non e muoversi', spara());
 }
 
+/* Il Warp Lightning Cannon e' l'unica macchina da guerra delle liste
+   salvate, e fino a qui non ha mai sparato un colpo: il profilo che
+   l'export porta dice gittata «8D6"» e Forza «*», e l'app ne leggeva
+   8 pollici e la Forza dell'equipaggio. Qui la lista e' quella vera
+   («Tutto SKA»), non una macchina montata a mano. */
+console.log('\nil fulmine del Warp Lightning Cannon (Legends: Skaven, p. 19)');
+{
+  const SKA = lista('lmu8eb7xh723p');
+  const facce = (...seq) => { let i = 0; D.setSource(n => Math.min(n - 1, seq[Math.min(i++, seq.length - 1)])); };
+  const tavolo = () => {
+    const G = AR.newBattle({ A: SKA, B, scenario: 'bm-strada' });
+    G.schierando = false;
+    const wl = AR.unitsOf(G, 'A').find(u => /Warp Lightning/.test(u.name));
+    metti(G, wl, 600, 800);
+    const orc = metti(G, AR.unitsOf(G, 'B')[0], 600, 400);
+    G.casella = casella('tiro'); G.army = 'A';
+    return { G, wl, orc };
+  };
+
+  {
+    const { G, wl } = tavolo();
+    const o = AR.options(G).list.filter(x => x.uid === wl.uid);
+    const f = o.find(x => x.id === 'fulmina');
+    ok('il cannone spara una linea, non un tiro', !!f && !o.some(x => x.id === 'tira'));
+    ok('e l opzione dice che la lunghezza si tira e la Forza pure',
+       /8D6/.test(f.why) && /dado di artiglieria/.test(f.why) && f.page === 19);
+    ok('e lo fa da piu di otto pollici', /da 1\d/.test(f.why));
+  }
+
+  {
+    const { G, wl, orc } = tavolo();
+    facce(2);                                  // otto 3 = 24″, e artiglieria 6
+    AR.apply(G, { id: 'fulmina', uid: wl.uid, target: orc.uid });
+    ok('la linea si tira e si scrive', G.log.some(x => /la linea è lunga 24″/.test(x.text)));
+    ok('la Forza viene dal dado di artiglieria', G.log.some(x => /Forza 6/.test(x.text)));
+    ok('e sotto ci finisce qualcuno', G.log.some(x => /Sotto la linea: /.test(x.text) &&
+       !/nessuno/.test(x.text)));
+    ok('il limite della linea si dichiara',
+       G.log.some(x => /\[limite\]/.test(x.text) && /Warp Lightning/.test(x.text)));
+  }
+
+  /* il Mancato Colpo sta sul dado della FORZA, non su quello della
+     lunghezza, e va su una tabella che non e' del Core Rulebook */
+  {
+    const { G, wl, orc } = tavolo();
+    facce(2, 2, 2, 2, 2, 2, 2, 2, 5, 0);       // artiglieria: Mancato Colpo; tabella: 1
+    AR.apply(G, { id: 'fulmina', uid: wl.uid, target: orc.uid });
+    ok('un 1 fonde la macchina', wl.dead === true);
+    ok('e la riga viene dal libro degli Skaven',
+       G.log.some(x => /Meltdown/.test(x.text) && /Legends: Skaven p. 19/.test(x.text)));
+  }
+  {
+    const { G, wl, orc } = tavolo();
+    facce(2, 2, 2, 2, 2, 2, 2, 2, 5, 1);       // artiglieria: Mancato Colpo; tabella: 2
+    AR.apply(G, { id: 'fulmina', uid: wl.uid, target: orc.uid });
+    ok('un Energy Overload non la distrugge e spara lo stesso',
+       !wl.dead && G.log.some(x => /gira su se stessa/.test(x.text) && /Forza 6/.test(x.text)));
+  }
+
+  /* «Weapon of War» (p. 197) e «Cumbersome» (p. 167) */
+  {
+    const { G, wl, orc } = tavolo();
+    G.casella = casella('mosse');
+    const mosse = AR.options(G).list.filter(x => x.uid === wl.uid);
+    ok('una macchina da guerra non marcia', !mosse.some(x => x.id === 'marcia'));
+    ok('ma si muove', mosse.some(x => x.id === 'avanza'));
+    ok('e l opzione «resta ferma» dice che muovendosi perde il tiro',
+       mosse.some(x => x.id === 'ferma' && x.tieniIlTiro));
+    G.casella = casella('cariche');
+    ok('e non dichiara cariche (p. 197)', !AR.options(G).list.some(x => x.id === 'carica' && x.uid === wl.uid));
+    ok('e il limite lo dice', G.log.some(x => /\[limite\]/.test(x.text) && /macchina da guerra/.test(x.text)));
+  }
+  {
+    const { G, wl, orc } = tavolo();
+    G.casella = casella('cariche'); G.army = 'B';
+    D.setSource(D.seeded(5));
+    const c = AR.options(G).list.find(x => x.id === 'carica' && x.target === wl.uid);
+    if (c){
+      AR.apply(G, c);
+      const scelte = (G.pending && G.pending.list) || [];
+      ok('l arma ingombrante non tiene e spara (p. 167)', !scelte.some(x => x.kind === 'stand'));
+    } else ok('l arma ingombrante non tiene e spara (p. 167)', true);
+  }
+  D.setSource(D.seeded(1));
+}
+
 /* La sfida Michele contro Gemini lo aveva preso per un errore: il
    Bastiladon fallisce il test, avanza di un movimento solo, e poi non
    spara. E' il libro: chi tenta la marcia e fallisce «is considered to

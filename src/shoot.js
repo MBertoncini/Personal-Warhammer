@@ -73,6 +73,8 @@ export const PAGE = {
   machines:  222,   // le macchine da guerra
   misfire:   347,   // le due tabelle del Mancato Colpo (Quick Reference)
   joined:    209,   // i personaggi dentro il reggimento, e «Occhio, capo!»
+  cumber:    167,   // «Cumbersome»: niente «tira e tieni»
+  weapons:   175,   // le regole d'arma del tiro, in ordine alfabetico
 };
 
 /* ============================================================
@@ -84,19 +86,27 @@ export const PAGE = {
    ============================================================ */
 export function canShoot({ charged = false, marched = false, engaged = false,
                            fleeing = false, moved = false, weaponFlags = null,
-                           stupid = false } = {}){
+                           stupid = false, standAndShoot = false } = {}){
   const why = [];
+  const f = weaponFlags || {};
   if (engaged) why.push("e' a contatto di basetta");
   if (fleeing) why.push("sta fuggendo");
   /* la Stupidita' in cui si e' caduti all'inizio del turno: «non tira e
      non lancia incantesimi» fino al proprio turno successivo */
   if (stupid) why.push("e' in preda alla Stupidita'");
   if (charged) why.push("ha caricato in questo turno");
-  if (marched) why.push("ha marciato");
+  /* «Move & Shoot» e' esattamente il permesso di tirare dopo aver
+     marciato (p. 175), e il divieto della marcia lo scavalcava: la
+     regola era letta e non serviva a niente. */
+  if (marched && !f.moveAndShoot) why.push("ha marciato");
   /* Il divieto che non viene dall'unita' ma dall'arma: un jezzail o un
      cannone a spalla o si muove o spara, e lo dice il suo profilo. */
-  const f = weaponFlags || {};
   if (moved && f.moveOrShoot) why.push("l'arma e' «o si muove o tira»");
+  /* «Cumbersome» (p. 167): un'arma troppo ingombrante non si alza in
+     faccia a chi carica. Era dichiarata da verificare — «cosa
+     impedisce esattamente» — e il libro lo dice in una riga sola. */
+  if (standAndShoot && f.cumbersome && !f.quickShot)
+    why.push("l'arma e' ingombrante: non si usa per «tira e tieni» (p. " + PAGE.cumber + ")");
   return { can: !why.length, why, page: PAGE.who };
 }
 
@@ -252,6 +262,7 @@ export function shooterCap({ models = 1, lost = 0, frontage = 1, loose = false,
 export const MODS = [
   { id:"long",          v:-1, why:"lunga gittata" },
   { id:"moved",         v:-1, why:"ha mosso" },
+  { id:"ponderous",     v:-2, why:"ha mosso, e l'arma è ingombrante" },
   { id:"standAndShoot", v:-1, why:"tira e tiene" },
   { id:"soft",          v:-1, why:"copertura leggera" },
   { id:"hard",          v:-2, why:"copertura pesante" },
@@ -268,7 +279,10 @@ export function shootMods({ long = false, moved = false, cover = "",
   /* «Move & Shoot» e' l'arma che il movimento non disturba: toglie
      questo -1 e nient'altro. Il nome lo dice per intero, ed e' una
      delle poche regole d'arma su cui non c'e' niente da verificare. */
-  if (moved && !f.moveAndShoot) list.push({ ...MOD.moved });
+  /* «Quick Shot» toglie questo -1, «Ponderous» lo raddoppia (p. 175):
+     erano tutte e due dichiarate da verificare, e adesso sono lette. */
+  if (moved && !f.moveAndShoot && !f.quickShot)
+    list.push({ ...(f.ponderous ? MOD.ponderous : MOD.moved) });
   if (standAndShoot) list.push({ ...MOD.standAndShoot });
   if (cover === "soft") list.push({ ...MOD.soft });
   if (cover === "hard") list.push({ ...MOD.hard });
@@ -603,17 +617,38 @@ const MF = {
   tipped:    "Guasto: la carica fa cilecca e rovescia la macchina. L'equipaggio perde subito una Ferita, la macchina non tira in questo turno e non tira fino alla fine del round successivo.",
   pffft:     "Pffft: la miccia si è spenta. La macchina non tira in questo turno.",
 };
+/* La terza tabella non e' del Core Rulebook: e' del Warp Lightning
+   Cannon, l'unica macchina da guerra che le liste salvate schierino
+   davvero (Legends: Skaven, p. 19). Le sue tre righe hanno la stessa
+   forma delle altre due — 1 distrutta, 2-4 guasto, 5-6 il tiro salta —
+   e il guasto e' l'unico dei tre che spara lo stesso. */
+const WL = {
+  meltdown: "Meltdown: la macchina e il suo equipaggio esplodono in una palla di fuoco verde. Non tira in questo turno: è distrutta e si toglie subito dal gioco.",
+  overload: "Energy Overload: energie incontrollabili fanno girare la macchina su se stessa prima che spari. Il cannone spara con Forza 6 in una direzione a caso, tirata con il dado di deviazione.",
+  fzzzt:    "Fzzzt: con uno stridio acuto l'energia si dissipa senza fare niente. La macchina non tira in questo turno.",
+};
+
 export const MISFIRE = {
   page: PAGE.misfire,
   daVerificare: false,
-  nota: "Le due tabelle di p. 347: con 1 la macchina è distrutta, con 2-4 si guasta e perde una Ferita, con 5-6 salta il tiro.",
+  nota: "Le due tabelle di p. 347: con 1 la macchina è distrutta, con 2-4 si guasta e perde una Ferita, con 5-6 salta il tiro. La terza è del Warp Lightning Cannon (Legends: Skaven, p. 19).",
   cannon: [MF.destroyed, MF.tipped, MF.tipped, MF.tipped, MF.pffft, MF.pffft],
   stone:  [MF.destroyed, MF.stuck,  MF.stuck,  MF.stuck,  MF.twang, MF.twang],
+  warpLightning: [WL.meltdown, WL.overload, WL.overload, WL.overload, WL.fzzzt, WL.fzzzt],
 };
 
 export const MISFIRE_KINDS = {
   cannon: "Polvere nera",
   stone:  "Lanciapietre",
+  warpLightning: "Warp Lightning",
+};
+
+/* Ogni tabella con il suo libro e la sua pagina: prima ce n'era una
+   sola per tutte, e andava bene finche' venivano tutte dal Core. */
+export const MISFIRE_WHERE = {
+  cannon:        { book: "", page: PAGE.misfire },
+  stone:         { book: "", page: PAGE.misfire },
+  warpLightning: { book: "Legends: Skaven", page: 19 },
 };
 
 export function misfireRead(kind, face){
@@ -621,12 +656,14 @@ export function misfireRead(kind, face){
   const i = clamp((face | 0) - 1, 0, 5);
   const what = table[i] || "";
   const label = (MISFIRE_KINDS[kind] || kind).toLowerCase();
+  const where = MISFIRE_WHERE[kind] || { book: "", page: MISFIRE.page };
+  const dove = (where.book ? where.book + " " : "") + "p. " + where.page;
   return {
-    kind, face: i + 1, what, page: MISFIRE.page,
+    kind, face: i + 1, what, page: where.page, book: where.book,
     known: !!what,
     text: what
-      ? `Mancato Colpo (${label}, ${i + 1}): ${what} (p. ${MISFIRE.page})`
-      : `Mancato Colpo, faccia ${i + 1}: la riga sta nella tabella del ${label}, p. ${MISFIRE.page}.`,
+      ? `Mancato Colpo (${label}, ${i + 1}): ${what} (${dove})`
+      : `Mancato Colpo, faccia ${i + 1}: la riga sta nella tabella del ${label}, ${dove}.`,
   };
 }
 
@@ -696,9 +733,12 @@ export const SHOOTING_RULES = [
     what:"piu' di un tiro per modello",
     on: (f, name) => { f.multipleShots = Math.max(f.multipleShots || 0, num(name, 2)); } },
 
+  /* «Quick Shot» non da' tiri in piu': questo file lo diceva, con un
+     «da verificare» accanto, e il libro (p. 175) dice un'altra cosa —
+     niente -1 per aver mosso, e «tira e tieni» a qualunque distanza. */
   { id:"quickShot", re:/^quick shot/i,
-    what:"un tiro in piu' per modello",
-    daVerificare:"quanti tiri in piu', e a che condizioni",
+    what:"niente -1 per aver mosso, e si puo' «tira e tieni» a qualunque distanza",
+    page:175,
     on: f => { f.quickShot = true; } },
 
   { id:"volleyFire", re:/^volley fire/i,
@@ -706,20 +746,22 @@ export const SHOOTING_RULES = [
     on: f => { f.volleyFire = true; } },
 
   { id:"multipleWounds", re:/^multiple wounds/i,
-    what:"ogni ferita che passa ne conta piu' di una",
+    what:"ogni ferita non salvata ne vale X su UN modello, e l'eccesso non passa al vicino",
+    page:175,
     on: (f, name) => { f.multipleWounds = name; } },
 
-  /* Queste due stanno sui profili delle armi skaven e dicono tutte e
-     due qualcosa sul quando si tira, non sul quanto: senza il testo
-     del libro l'app le nomina e si ferma li'. */
+  /* Queste due stavano qui con «arma ingombrante» e «arma lenta da
+     usare» e un «da verificare» accanto, che era onesto e inutile.
+     Aperto il libro dicono due cose precise, e tutte e due si
+     applicano. */
   { id:"cumbersome", re:/^cumbersome/i,
-    what:"arma ingombrante",
-    daVerificare:"cosa impedisce esattamente",
+    what:"non si puo' usare per la reazione «tira e tieni» a una carica",
+    page:167,
     on: f => { f.cumbersome = true; } },
 
   { id:"ponderous", re:/^ponderous/i,
-    what:"arma lenta da usare",
-    daVerificare:"cosa impedisce esattamente",
+    what:"chi ha mosso ha -2 per colpire invece di -1",
+    page:175,
     on: f => { f.ponderous = true; } },
 ];
 
@@ -755,8 +797,11 @@ export function readShooting(names = [], texts = null){
    indovinerebbe su ogni giavellotto di ogni lista. */
 export function shotsPerModel(flags = {}){
   const n = Math.max(1, flags.multipleShots || 1);
-  return { n, quickShot: !!flags.quickShot,
-           nota: flags.quickShot ? "«Quick Shot» non e' contato: manca quanti tiri in piu' fa." : "" };
+  /* Qui c'era una nota che diceva «"Quick Shot" non e' contato: manca
+     quanti tiri in piu' fa». Non ne fa nessuno: il libro (p. 175) gli
+     da' il -1 tolto e il «tira e tieni» a qualunque distanza, e i tiri
+     in piu' erano un'invenzione del nome. */
+  return { n, quickShot: !!flags.quickShot, nota: "" };
 }
 
 /* ============================================================
@@ -964,6 +1009,36 @@ export function rangeBand(weapon){
    non e' un vezzo — il «Crunch» del cannone si ferma sulla prima
    creatura mostruosa che trova, e senza l'ordine non si sa quale sia.
    ============================================================ */
+/* Le armi che sparano una LINEA invece di una sagoma. Nei libri in
+   casa ce n'e' una, ed e' l'unica macchina da guerra che le liste
+   salvate schierino davvero: il Warp Lightning Cannon degli Skaven.
+   «Draw a straight line, 8D6" in length, from the model's base edge.
+   Any model (friend or foe) whose base falls under this line suffers a
+   hit, the Strength of which is determined by rolling an Artillery
+   dice» (Legends: Skaven, p. 19).
+
+   Il profilo che l'export di New Recruit porta dice tutto e non dice
+   niente: gittata «8D6"», Forza «*». Il primo e' una lunghezza da
+   tirare e `stat()` ne leggeva 8; la seconda e' un dado di artiglieria
+   e `weaponStrength` ci metteva la Forza dell'equipaggio, che e' 3.
+   Un cannone da otto pollici e Forza 3. */
+export const LINE_SHOTS = [
+  { re:/^lightning strike$/i, id:"warpLightning", nome:"Warp Lightning",
+    strength:"artillery", misfire:"warpLightning", friendly:true,
+    book:"Legends: Skaven", page:19 },
+];
+
+export function lineShotOf(weapon){
+  if (!weapon) return null;
+  const regole = rulesText(weapon).split(/\s*,\s*/).map(x => x.trim());
+  const row = LINE_SHOTS.find(r => regole.some(x => r.re.test(x)));
+  if (!row) return null;
+  return { ...row, banda: rangeBand(weapon), why:
+    `${row.nome}: una linea lunga ${rangeBand(weapon).rolled || "?"}″ dal bordo della basetta, ` +
+    `Forza dal dado di artiglieria, e sotto ci finisce chi c'è — amico o nemico ` +
+    `(${row.book} p. ${row.page})` };
+}
+
 export function lineUnder(cells = [], from = null, to = null){
   if (!from || !to) return { cells: [], page: PAGE.machines };
   const out = [];

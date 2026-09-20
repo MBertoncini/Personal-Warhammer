@@ -539,10 +539,18 @@ function boostsOf(att){
 /* Quanto in piu' fugge un'unita' del tavolo, e perche': la Scurry Away
    degli Skaven. Sta qui perche' qui si sa trovare l'esercito di
    un'unita'; il tiro lo fa chi muove i pezzi. */
+/* «Weapon of War» (p. 197): una macchina da guerra ha −1 al tiro di
+   fuga, al minimo 1. Non e' una regola d'esercito e non passa da
+   `armies.js`: viene dal tipo di truppa, e per questo si somma qui. */
+export const WAR_MACHINE_FLEE = -1;
+
 export function fleeBonusOf(u){
   const army = armyFor(u);
-  if (!army) return { mod: 0, why: "" };
-  return fleeBonus(readRules((u && u.rules) || [], [], "", null, army).flags.army);
+  const base = army ? fleeBonus(readRules((u && u.rules) || [], [], "", null, army).flags.army)
+                    : { mod: 0, why: "" };
+  if (troopType(u && u.troop).id !== "warMachine") return base;
+  return { mod: (base.mod || 0) + WAR_MACHINE_FLEE,
+           why: [base.why, "macchina da guerra: −1 al tiro di fuga (p. 197)"].filter(Boolean).join(", ") };
 }
 
 /* ============================================================

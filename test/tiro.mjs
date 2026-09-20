@@ -399,16 +399,31 @@ ok('«Move & Shoot» e letta', lette.flags.moveAndShoot === true);
 ok('la salva alza il tetto delle file', lette.flags.volleyFire === true);
 ok('quello che non si conosce resta in elenco',
    lette.unknown.length === 1 && lette.unknown[0].name === 'Grugnito Feroce');
-/* la salva non e' piu' incerta: il libro la scrive a p. 180 */
-ok('e l incerta lo dichiara',
-   lette.applied.filter(a => a.daVerificare).length === 1);
+/* Adesso nessuna regola d'arma del tiro e' «da verificare»: la salva
+   sta a p. 180, e le tre che restavano — «Quick Shot», «Cumbersome»,
+   «Ponderous» — sono lette a pp. 167 e 175. */
+ok('nessuna regola d arma resta da verificare',
+   SH.SHOOTING_RULES.every(r => !r.daVerificare));
+ok('«Cumbersome» vieta il tira e tieni (p. 167)',
+   SH.canShoot({ standAndShoot: true, weaponFlags: SH.readShooting(['Cumbersome']).flags }).can === false &&
+   SH.canShoot({ weaponFlags: SH.readShooting(['Cumbersome']).flags }).can === true);
+ok('«Move & Shoot» tira anche dopo aver marciato (p. 175)',
+   SH.canShoot({ marched: true, weaponFlags: SH.readShooting(['Move & Shoot']).flags }).can === true &&
+   SH.canShoot({ marched: true }).can === false);
+ok('«Ponderous» raddoppia il -1 di chi ha mosso (p. 175)',
+   SH.shootMods({ moved: true, weaponFlags: SH.readShooting(['Ponderous']).flags }).total === -2);
+ok('e «Quick Shot» lo toglie', 
+   SH.shootMods({ moved: true, weaponFlags: SH.readShooting(['Quick Shot']).flags }).total === 0);
 ok('«Multiple Shots (2)» legge il numero',
    SH.readShooting(['Multiple Shots (2)']).flags.multipleShots === 2);
 ok('e diventa due tiri per modello',
    SH.shotsPerModel(SH.readShooting(['Multiple Shots (2)']).flags).n === 2);
-ok('«Quick Shot» non viene contato a naso',
+/* «Quick Shot» non da' tiri in piu': il nome lo faceva pensare, il
+   libro (p. 175) dice un'altra cosa. */
+ok('«Quick Shot» non aggiunge tiri',
    SH.shotsPerModel(SH.readShooting(['Quick Shot']).flags).n === 1);
-ok('e lo dice', SH.shotsPerModel(SH.readShooting(['Quick Shot']).flags).nota !== '');
+ok('e non ha piu' + "'" + ' niente da dichiarare',
+   SH.shotsPerModel(SH.readShooting(['Quick Shot']).flags).nota === '');
 
 /* ================================================================= */
 console.log('\nil vecchio conto continua a tornare');

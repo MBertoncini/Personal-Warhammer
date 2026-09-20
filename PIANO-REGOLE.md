@@ -1807,11 +1807,41 @@ e non sapeva giocare:
      che spara a dodici pollici; «8D6"» è una gittata che si tira, e
      ne tornava 8.
 
-   Strada facendo, un difetto vecchio: **«Move or Shoot» non arrivava
-   a `canShoot`**. È un divieto dell'arma e non dell'unità, e
-   l'arbitro passava solo quelli dell'unità: i Warplock Jezzails
-   marciavano e sparavano nello stesso turno, con «ha mosso» scritto
-   accanto.
+   E poi il **Warp Lightning Cannon**, che è l'unica macchina da
+   guerra delle liste salvate e non aveva mai sparato un colpo in
+   nessuna partita. La sua non è una sagoma: è una **linea** lunga
+   8D6″ tirata dal bordo della basetta, e ogni modello che ci finisce
+   sotto — amico o nemico — prende un colpo di Forza pari a un dado di
+   artiglieria (Legends: Skaven, p. 19). Il Mancato Colpo va su una
+   terza tabella, che non è del Core Rulebook.
+
+   Per arrivare a sparare gli servivano quattro regole che l'app non
+   aveva o aveva lette male, e sono la parte di questo lavoro che si
+   sente di più in una partita qualunque:
+
+   - **«Weapon of War»** (p. 197), che è il tipo di truppa e non
+     un'arma: una macchina da guerra non marcia, non dichiara cariche,
+     non insegue, e ha −1 al tiro di fuga. L'arbitro la faceva
+     marciare al primo turno e caricare al secondo;
+   - **«Move or Shoot»** (p. 174), che è un divieto dell'ARMA e non
+     dell'unità, e non arrivava a `canShoot`: i Warplock Jezzails
+     marciavano e sparavano nello stesso turno, con «ha mosso» scritto
+     accanto. E l'euristica non sapeva restare ferma per sparare —
+     il commento lo prometteva e il codice non lo faceva —: adesso
+     l'opzione «resta ferma» porta un campo suo quando muoversi
+     costerebbe il tiro, perché l'elenco delle mosse non porta le armi;
+   - **«Cumbersome»** (p. 167), che qui era dichiarata da verificare
+     con un onesto «cosa impedisce esattamente», e dice una cosa sola:
+     quell'arma non si usa per il *tira e tieni*;
+   - **«Ponderous»** e **«Quick Shot»** (p. 175), anche loro da
+     verificare: la prima raddoppia il −1 di chi ha mosso, la seconda
+     lo toglie e lascia sparare a chi carica da qualunque distanza.
+     Questo file diceva che «Quick Shot» desse *tiri in più*, che era
+     un'invenzione del nome.
+
+   E l'euristica non conosceva i due gesti nuovi: cercava `tira` e
+   basta, e la macchina restava ferma tutta la partita con la sua
+   opzione in elenco e nessuno che la prendesse.
 
 E l'arbitro è sceso sul tavolo: la **Sfida** della scheda Matchup fa
 giocare una persona contro il modello di linguaggio, con l'arbitro in
@@ -1834,7 +1864,13 @@ mezzo (`controai.js`).
   linea che attraversa il tavolo — `SH.lineUnder` la sa già dare — più
   il tetto di un colpo per rango o per fila e le due cose che la
   fermano di colpo.
-- **«Multiple Wounds»**, che l'app legge e non tira.
+- **«Multiple Wounds»**, che l'app legge e non tira: ogni ferita non
+  salvata ne vale X su un modello solo, e l'eccesso non passa al
+  vicino (p. 175) — per questo non si può sommare e dividere, si deve
+  scorrere ferita per ferita.
+- Il **profilo diviso** di una macchina da guerra (p. 97): Resistenza
+  e Ferite dell'equipaggio in combattimento, quelle della macchina
+  fuori, e il modello che se ne va se uno dei due arriva a zero.
 - **I campioni d'unità**, che il libro lascia sfidare e l'app no,
   perché il file dice solo che il gruppo di comando c'è; e quello che
   il ritiro non toglie — il passo e la Forza d'Unità.

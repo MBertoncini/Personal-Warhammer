@@ -129,6 +129,14 @@ export function agenteEuristico({ nome = "euristica" } = {}){
 
       /* MOSSE: si va addosso al nemico. Chi ha un'arma da tiro e ce
          l'ha già a tiro resta fermo, perché chi muove tira peggio. */
+      /* Chi ha gia' il nemico a tiro e un'arma che «o si muove o tira»
+         resta fermo: il commento qui sopra lo prometteva da sempre e il
+         codice non lo faceva — il Warp Lightning Cannon avanzava di
+         cinque pollici a ogni turno e non ha mai sparato in nessuna
+         partita. Il conto lo fa l'arbitro, che le armi le ha in mano. */
+      const tieniIlTiro = l.find(x => x.id === "ferma" && x.tieniIlTiro);
+      if (tieniIlTiro) return { scelta: tieniIlTiro, perche: `${tieniIlTiro.nome} ${tieniIlTiro.why}` };
+
       const avanza = l.filter(x => x.id === "avanza");
       if (avanza.length){
         const a = avanza[0];
@@ -140,8 +148,13 @@ export function agenteEuristico({ nome = "euristica" } = {}){
         return { scelta: a, perche: `${a.nome} avanza su ${a.contro}: ${a.why}` };
       }
 
-      /* TIRO: il bersaglio su cui ci si aspetta di far male di più. */
-      const tiri = l.filter(x => x.id === "tira");
+      /* TIRO: il bersaglio su cui ci si aspetta di far male di più.
+         Le macchine da guerra hanno un gesto loro — «bombarda» per la
+         sagoma, «fulmina» per la linea — e questo filtro cercava solo
+         «tira»: la macchina restava ferma tutta la partita con la sua
+         opzione in elenco e nessuno che la prendesse. Tutte e tre
+         portano `attesa`, e l'arbitro le ha già messe in ordine. */
+      const tiri = l.filter(x => x.id === "tira" || x.id === "bombarda" || x.id === "fulmina");
       if (tiri.length){
         const t = tiri[0];
         return { scelta: t, perche: `${t.nome} tira su ${t.contro}: ${t.why}` };

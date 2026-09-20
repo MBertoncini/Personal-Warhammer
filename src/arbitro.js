@@ -35,7 +35,7 @@
  */
 
 import { MM, inch } from './util.js';
-import { boxCorners, polyDistance, polysOverlap, pointInRect, distPointToBox } from './geom.js';
+import { boxCorners, polyDistance, polysOverlap, pointInRect, distPointToBox, boxRadius } from './geom.js';
 import * as FM from './formation.js';
 import * as MV from './movement.js';
 import * as CH from './charge.js';
@@ -53,7 +53,7 @@ import { roll, d3, leadershipTest, stat, rankBonus, woundOn, saveOn, chance as c
    `rules.js`, che riesporta solo i cubi: la deviazione e' un gesto
    suo — una direzione piu' una distanza — e `dice.js` lo tira gia'
    intero, con il Mancato Colpo dentro (p. 95). */
-import { scatter as deviazione } from './dice.js';
+import { scatter as deviazione, rollDice } from './dice.js';
 import { SCENARIOS, geometry } from './scenarios.js';
 import { troopType, unitStrength } from './troops.js';
 import { TERRAIN } from './terrain.js';
@@ -80,6 +80,10 @@ export const LIMITI = [
     why:"la Bombardata sceglie un punto, devia e guarda chi resta sotto, e quella si gioca (pp. 224-226); la palla di cannone vuole la linea che rimbalza con il «Crunch», e le altre tre vogliono ognuna la sua procedura" },
   { id:"bombardata", what:"un'arma a Bombardata di cui i libri in casa non dicono la sagoma non spara", page:224,
     why:"quale sagoma usa sta nelle Note del profilo, e l'export di New Recruit le butta via: fra la sagoma da tre pollici e quella da cinque ce ne sono due di diametro, e sceglierne una a caso vuol dire sbagliare in silenzio" },
+  { id:"macchina", what:"una macchina da guerra non marcia, non carica e non insegue, e si gira gratis", page:197,
+    why:"«Weapon of War» (p. 197) le toglie la marcia, la dichiarazione di carica e l'inseguimento, e le lascia il giro libero in qualunque momento del suo turno; quello che l'arbitro non le dà è il giro che NON conta come essersi mossa, e il profilo diviso macchina/equipaggio (p. 97), che l'app tiene in una riga sola" },
+  { id:"fulmine",   what:"la linea del Warp Lightning Cannon si punta su un nemico che si vede, e l'Energy Overload la rigira senza ritirarne la lunghezza", page:19,
+    why:"il libro dice «draw a straight line, 8D6\" in length, from the model's base edge» e non dice né che serva la linea di vista né che il guasto ritiri la lunghezza (Legends: Skaven, p. 19): l'arbitro mira a un nemico che vede, e sul guasto tiene la linea già tirata e le cambia direzione" },
   { id:"indiretto", what:"la Bombardata si spara sempre a vista", page:225,
     why:"il tiro indiretto non chiede la linea di vista e devia di meno — l'Artiglieria meno l'Abilità Balistica dell'equipaggio — ed è una scelta che si dichiara prima di sparare: l'arbitro non la offre" },
   { id:"ferite",    what:"«Multiple Wounds» non moltiplica le ferite", page:224,
@@ -749,6 +753,8 @@ function opzioniCarica(S){
     /* chi ha gia' fatto qualcosa in questo turno non dichiara cariche:
        ci e' andata male una volta e basta */
     if (u.fled || u.charged || u.moved || ingaggiata(S, u)) continue;
+    /* una macchina da guerra non dichiara cariche (p. 197) */
+    if (macchina(u)){ limite(S, "macchina"); continue; }
     /* Miasmic Mirage, Earthen Ramparts: chi ce l'ha addosso non carica */
     if (bandiera(u, "noCharge") || stupida(S, u) || u.unito === chiave(S)) continue;
     const { move } = movimento(S, u);
@@ -824,12 +830,12 @@ function opzioniMossa(S){
     out.push({ id:"avanza", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
                why: `${t.name} è a ${d}″: ${testoRuota(pa, move)}` + (mv.why ? ` (${mv.why})` : ""),
                page: pa.costo ? 124 : 122 });
-    if (!bandiera(u, "noMarch")) out.push({ id:"marcia", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
+    if (!bandiera(u, "noMarch") && !macchina(u)) out.push({ id:"marcia", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
                why: `${t.name} è a ${d}″: ${testoRuota(pm, move * 2, "marcia")}` +
                     (d <= CH.MARCH_WATCH ? `, ma a ${CH.MARCH_WATCH}″ da un nemico serve un test di Comando (p. 123)` : ""),
                page: 123 });
     out.push(...opzioniManovra(S, u, t, move));
-    out.push({ id:"ferma", uid: u.uid, nome: u.name, why: "resta dov'è: chi non muove spara meglio", page: 138 });
+    out.push({ id:"ferma", uid: u.uid, nome: u.name, ...restareFermo(S, u, d), page: 138 });
   }
   /* i capi escono prima che il reggimento si muova (p. 207): in fondo
      all'elenco, perche' e' la mossa che si fa di rado */
@@ -877,8 +883,19 @@ function postoFuori(S, c, h){
    dove vogliono «without penalty» (p. 185), e il personaggio da solo,
    che e' sempre in formazione sciolta (p. 205). Per loro girarsi non
    costa niente, e un giro o un riordino non vogliono dire niente. */
-const sciolta = u => !!u.loose ||
+const sciolta = u => !!u.loose || macchina(u) ||
   (PREP.isCharacter(u) && !!genere(u) && !isJoined(u) && (u.models || 1) === 1);
+
+/* «Weapon of War» (p. 197), il tipo di truppa e non una regola
+   d'arma: una macchina da guerra NON marcia, NON dichiara cariche e
+   NON insegue; ha −1 al tiro di fuga; e in cambio «can pivot freely at
+   any time during its turn», e girarsi non conta come essersi mossa.
+   L'arbitro non ne sapeva niente, e nella partita fra i due Skaven il
+   Warp Lightning Cannon marciava al primo turno e caricava al secondo:
+   due mosse che il libro non gli lascia fare, e per colpa delle quali
+   non ha mai sparato un colpo in nessuna partita. */
+const macchina = u => troopType(u && u.troop).id === "warMachine";
+export const FUGA_MACCHINA = -1;        // p. 197, al minimo 1
 
 /* di quanto girarsi per passare da una direzione all'altra, con il
    segno (positivo in senso orario, cioe' verso destra), fra -180 e 180 */
@@ -889,6 +906,27 @@ const colonna = (n, f) => Math.ceil(n / Math.max(1, f)) > f;
    cammina il modello esterno (p. 124), cioe' il fronte per l'angolo in
    radianti; chi non ce la fa ruota quanto puo' e non avanza. I Lumbering
    hanno 90° gratis dopo essersi mossi, se non hanno marciato (p. 195). */
+/* Chi ha un'arma che «o si muove o tira» e ha gia' qualcuno a tiro non
+   deve muoversi: se lo fa, quel turno non spara affatto. L'opzione
+   `ferma` lo diceva a tutti con la stessa riga — «chi non muove spara
+   meglio», che e' il -1 di p. 138 — e non diceva questa, che non e' un
+   -1 ma un turno intero. La marca con un campo suo, perche' l'elenco
+   delle mosse non porta le armi: senza, la macchina da guerra avanzava
+   di cinque pollici a ogni turno per poi non sparare mai. */
+function restareFermo(S, u, d){
+  const arma = CB.rangedWeapons(u)[0];
+  if (!arma) return { why: "resta dov'è: chi non muove spara meglio (p. 138)" };
+  const f = SH.weaponFlagsOf(arma);
+  const bomba = SH.bombardOf(arma), linea = SH.lineShotOf(arma);
+  const banda = SH.rangeBand(arma);
+  const gittata = linea ? (banda.n || 1) * (banda.die || 6) : bomba ? banda.max : stat(arma.range);
+  const minima = bomba ? banda.min : 0;
+  if (f.moveOrShoot && d <= gittata && d >= minima)
+    return { tieniIlTiro: true,
+             why: `resta dov'è: ha ${arma.name} a tiro (${d}″ su ${gittata}″) e l'arma o si muove o tira (p. 175)` };
+  return { why: "resta dov'è: chi non muove spara meglio (p. 138)" };
+}
+
 function pianoRuota(S, u, rot, budget, { marcia = false } = {}){
   const da = u.rot || 0, giro = giroDi(da, rot), ampio = Math.abs(giro);
   const piano = { rot, giro, costo: 0, intera: 0, resta: budget, libero: 0, parziale: false, sciolta: false };
@@ -1170,6 +1208,24 @@ function opzioniTiro(S){
     /* una macchina guasta non tira fino alla fine del round successivo
        (p. 226): il divieto vale per la bombardata come per l'arco */
     if (u.nonTira && S.turno <= u.nonTira) continue;
+    /* il fulmine e' una linea e non una sagoma: la lunghezza si tira,
+       e allora la gittata massima e' quella che i dadi possono dare */
+    const fulmine = SH.lineShotOf(arma);
+    if (fulmine){
+      const massimo = (fulmine.banda.n || 1) * (fulmine.banda.die || 6);
+      for (const t of nemiciDi(S, u)){
+        if (ingaggiata(S, t)) continue;
+        const d = distanza(S, u, t);
+        if (d > massimo) continue;
+        if (vistaTagliata(S, u, t)) continue;
+        const f = previsioneFulmine(S, u, t, arma);
+        out.push({ id:"fulmina", uid: u.uid, target: t.uid, nome: u.name, contro: t.name,
+                   why: `${fulmine.why}, da ${d}″: in media ci finiscono sotto ${f.sotto} ` +
+                        `modell${f.sotto === 1 ? "o" : "i"} di ${t.name}, ≈ ${f.kills.toFixed(1)} perdite`,
+                   attesa: f.kills, page: fulmine.page });
+      }
+      continue;
+    }
     /* chi spara a bombardata non tira per colpire e non offre «tira»:
        e' un'altra procedura, e il bersaglio e' un punto sul tavolo */
     const bomba = bombardaDi(u, arma);
@@ -1518,9 +1574,18 @@ const GESTI = {
        Psychology sceglieva la fuga come chiunque. */
     const pt = PS.psychOf(t, { joined: capiDi(S, t) });
     const puo = PS.canFleeReaction(pt);
+    /* «Cumbersome» e «Quick Shot» stanno sul profilo dell'arma e non
+       sull'unita', e nessuno le leggeva: il Warp Lightning Cannon
+       teneva e sparava in faccia ai Black Orc, che il libro non gli
+       lascia fare (p. 167). */
+    const armaT = CB.rangedWeapons(t)[0];
+    const ft = SH.weaponFlagsOf(armaT);
     const r = CH.reactions({ dist: d.dist, chargerMove: move, shots: CB.shooters(t),
                              noFlee: puo.can ? "" : puo.why, mustHold: puo.hold ? puo.why : "",
-                             fleeing: !!t.fled, engaged: ingaggiata(S, t) });
+                             fleeing: !!t.fled, engaged: ingaggiata(S, t),
+                             noShoot: ft.cumbersome && !ft.quickShot
+                               ? "l'arma è ingombrante: non si alza in faccia a chi carica (p. 167)" : "",
+                             anyRange: !!ft.quickShot });
     const scelte = (Array.isArray(r) ? r : (r.list || [])).filter(x => x && x.can !== false);
     S.pending = {
       kind:"reazione", charger: u.uid, target: t.uid, dich: d,
@@ -1615,9 +1680,25 @@ const GESTI = {
     const armi = CB.rangedWeapons(u);
     if (!armi.length) return no("non ha armi da tiro");
     if (SH.bombardOf(armi[0])) return no("spara a bombardata: il gesto è «bombarda», non «tira» (p. 224)");
+    if (SH.lineShotOf(armi[0])) return no("spara una linea: il gesto è «fulmina», non «tira» (Legends: Skaven, p. 19)");
     tiro(S, u, t, armi[0], {});
     u.shot = true;
     return si("tiro risolto");
+  },
+
+  /* il fulmine: una linea tirata per terra, e chi ci sta sotto */
+  fulmina: (S, a) => {
+    const u = byUid(S, a.uid), t = byUid(S, a.target);
+    if (!u || !t) return no("unità sconosciuta");
+    if (u.shot) return no("ha già tirato in questo turno");
+    if (u.nonTira && S.turno <= u.nonTira) return no(`è guasta: non tira fino alla fine del round ${u.nonTira}`);
+    if (stupida(S, u)) return no("è in preda alla Stupidità: non tira");
+    const arma = CB.rangedWeapons(u)[0];
+    const row = arma && SH.lineShotOf(arma);
+    if (!row) return no("non spara una linea");
+    fulmina(S, u, t, arma, row);
+    u.shot = true;
+    return si("fulmine risolto");
   },
 
   /* la bombardata: niente tiro per colpire, una sagoma che devia */
@@ -1984,6 +2065,13 @@ function tiro(S, u, t, arma, { standAndShoot = false } = {}){
   const d = distanza(S, u, t);
   const gittata = stat(arma.range);
   if (d > gittata){ say(S, `${u.name} non arriva: ${d}″ con una gittata di ${gittata}″.`, { army: u.army }); return; }
+  /* le armi che hanno una procedura loro non passano di qui: se ci
+     arrivassero sparerebbero con i numeri letti male — gittata 8″ per
+     un «8D6"», Forza dell'equipaggio per una «*» */
+  if (SH.bombardOf(arma) || SH.lineShotOf(arma)){
+    say(S, `${u.name} non spara ${arma.name} così: ha una procedura sua.`, { army: u.army, page: 222 });
+    return;
+  }
   if (sagomaOMacchina(u, arma)) limite(S, "sagome");
   const mods = modificatori(S, u, t, d, gittata, { standAndShoot });
   const r = CB.shootRoll(u, t, { weapon: arma, mods: mods.total });
@@ -2156,6 +2244,115 @@ function bombarda(S, u, t, arma, row){
     perdite(S, g.u, toll.kills, toll.left);
     if (toll.kills > 0) panico(S, g.u, `la sagoma di ${u.name}`, u);
   }
+}
+
+/* ---- la linea del Warp Lightning Cannon (Legends: Skaven, p. 19) ----
+   Non e' una sagoma e non e' un tiro: e' una riga tirata per terra.
+   «Draw a straight line, 8D6" in length, from the model's base edge.
+   Any model (friend or foe) whose base falls under this line suffers a
+   hit, the Strength of which is determined by rolling an Artillery
+   dice.» Tre dadi in fila — la lunghezza, la Forza, e semmai la
+   tabella — e nessuno di loro e' un tiro per colpire.
+
+   Questa macchina e' l'unica delle liste salvate, e fino a qui giocava
+   con i numeri che l'export le dava letti male: gittata 8″ (era «8D6"»)
+   e Forza 3, quella dell'equipaggio (era «*»). Non ha mai sparato in
+   nessuna partita, perche' 8″ non li fa mai. */
+
+/* il versore da un'unita' verso un'altra, e il punto in cui esce dalla
+   sua basetta: il libro fa partire la linea dal BORDO, non dal centro */
+function bordoVerso(S, u, dir){
+  const b = boxOf(u, S.units);
+  const r = boxRadius(b, Math.atan2(dir[1], dir[0]));
+  return [u.x + dir[0] * r, u.y + dir[1] * r];
+}
+const versoreVerso = (u, t) => {
+  const dx = t.x - u.x, dy = t.y - u.y, d = Math.hypot(dx, dy) || 1;
+  return [dx / d, dy / d];
+};
+
+/* Chi sta sotto la linea, e i colpi che ne vengono. Le caselle della
+   macchina stessa restano fuori: la linea parte dal suo bordo, e senza
+   questa riga si sparerebbe addosso da sola. */
+function colpiInLinea(S, u, da, a, forza, ap, comeMai){
+  const celle = caselleDelTavolo(S).filter(c => c.u.uid !== u.uid);
+  const sotto = SH.lineUnder(celle, da, a);
+  const mucchi = new Map();
+  for (const c of sotto.cells){
+    const chi = padroneDi(S, c);
+    if (!chi || chi.dead) continue;
+    const g = mucchi.get(chi.uid) || { u: chi, n: 0 };
+    g.n++;
+    mucchi.set(chi.uid, g);
+  }
+  const detta = [...mucchi.values()].map(g => `${g.u.name}: ${g.n}`).join(", ");
+  say(S, `${u.name} ${comeMai}: una linea di ${r1(inch(Math.hypot(a[0] - da[0], a[1] - da[1])))}″, ` +
+         `Forza ${forza}. Sotto la linea: ${detta || "nessuno"}.`,
+      { army: u.army, page: 19 });
+  const chiSpara = CB.combatant(u);
+  for (const g of mucchi.values()){
+    if (g.u.dead) continue;
+    const r = CB.strike(chiSpara, CB.combatant(g.u),
+                        { attacks: g.n, auto: true, strength: forza, ap, label: "fulmine" });
+    const toll = CB.woundsToll(g.u, r.wounds, { carried: g.u.wounds || 0 });
+    inizioFase(S, g.u);
+    say(S, `${u.name} su ${g.u.name}: ${g.n} ${g.n === 1 ? "colpo" : "colpi"} di Forza ${forza}, ` +
+           `${r.wounds} ferit${r.wounds === 1 ? "a" : "e"}, ${toll.kills} a terra.`,
+        { army: u.army, page: 19 });
+    perdite(S, g.u, toll.kills, toll.left);
+    if (toll.kills > 0) panico(S, g.u, `il fulmine di ${u.name}`, u);
+  }
+}
+
+function fulmina(S, u, t, arma, row){
+  limite(S, "fulmine");
+  /* 1. la lunghezza si tira: sono 8D6, e sono dadi come tutti gli altri */
+  const dadi = roll(row.banda.n || 1);
+  const lung = dadi.reduce((x, y) => x + y, 0);
+  const dir = versoreVerso(u, t);
+  const da = bordoVerso(S, u, dir);
+  const a = [da[0] + dir[0] * lung * MM, da[1] + dir[1] * lung * MM];
+  say(S, `${u.name} punta ${t.name}: la linea è lunga ${lung}″ (${dadi.join(" + ")}).`,
+      { dice: dadi, army: u.army, page: 19 });
+
+  /* 2. la Forza e' un dado di artiglieria, e il Mancato Colpo sta li' */
+  const art = rollDice({ kind: "artillery", n: 1 }).dice[0];
+  const ap = Math.abs(stat(arma.ap));
+  if (!art.misfire) return colpiInLinea(S, u, da, a, art.value, ap, `spara un fulmine su ${t.name}`);
+
+  const dado = roll(1)[0];
+  const read = SH.misfireRead(row.misfire, dado);
+  say(S, `${u.name}: ${read.text}`, { dice: [art.raw, dado], army: u.army, page: read.page });
+  u.shot = true;
+  if (dado === 1){ perdite(S, u, alive(u)); return; }
+  if (dado <= 4){
+    /* Energy Overload: spara lo stesso, con Forza 6 e in una direzione
+       a caso. Il libro non dice di ritirare la lunghezza, e l'arbitro
+       tiene quella gia' uscita: e' il limite `fulmine`. */
+    const dev = deviazione({ distance: "none" });
+    const ang = dev.deg * Math.PI / 180;
+    const d2 = [Math.cos(ang), Math.sin(ang)];
+    const da2 = bordoVerso(S, u, d2);
+    const a2 = [da2[0] + d2[0] * lung * MM, da2[1] + d2[1] * lung * MM];
+    colpiInLinea(S, u, da2, a2, 6, ap, `gira su se stessa e scarica verso ${dev.compass} (${dev.deg}°)`);
+  }
+}
+
+/* Quanto ci si aspetta da un fulmine: la lunghezza e la Forza sono
+   due dadi, e quello che si puo' dire prima e' la media — 8D6 fanno
+   28″, e il dado di artiglieria che non fa Mancato Colpo fa Forza 6. */
+function previsioneFulmine(S, u, t, arma){
+  const dir = versoreVerso(u, t);
+  const da = bordoVerso(S, u, dir);
+  const MEDIA = 28, FORZA = 6;
+  const a = [da[0] + dir[0] * MEDIA * MM, da[1] + dir[1] * MEDIA * MM];
+  const mie = FM.worldCells(t, layoutOf(t, S.units)).map((c, i) => ({ ...c, cell: i }));
+  const n = SH.lineUnder(mie, da, a).cells.length;
+  const b = CB.combatant(t);
+  const ferite = n * chanceOf(woundOn(FORZA, b.t)) *
+    (1 - chanceOf(saveOn(b.armour, Math.abs(stat(arma.ap))))) *
+    (1 - chanceOf(saveOn(b.ward, 0))) * (1 - chanceOf(saveOn(b.regen, 0)));
+  return { sotto: n, kills: (ferite / (b.w || 1)) * (5 / 6) };
 }
 
 /* Torna vero se l'unita' e' appena sparita. `zitto` e' per la mischia,
@@ -3352,6 +3549,12 @@ function seguire(S, vicini, perdente, { dx, dy }){
    ancora un altro nemico addosso. */
 function inseguimento(S, vincitore, fuggito, quantoHaFuggito){
   if (!vincitore || !onBoard(vincitore) || vincitore.fled) return;
+  /* una macchina da guerra non fa mosse d'inseguimento (p. 197) */
+  if (macchina(vincitore)){
+    say(S, `${vincitore.name} non insegue: è una macchina da guerra (p. 197).`,
+        { army: vincitore.army, page: 197 });
+    return;
+  }
   const altri = aContatto(S, vincitore, nemiciDi(S, vincitore).filter(o => o !== fuggito));
   if (altri.length){
     say(S, `${vincitore.name} non insegue: combatte ancora con ${altri.map(o => o.name).join(" e ")}.`,

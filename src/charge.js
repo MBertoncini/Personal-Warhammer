@@ -214,15 +214,22 @@ export function alsoInTheWay(placedPoly, others = [], exclude = null){
    la fuga, e chi e' in preda alla Stupidita' deve tenere la posizione.
    Arrivano gia' scritte da `psych.js`, cosi' il perche' sta accanto al
    pulsante spento. */
+/* `noShoot` e' il divieto che viene dall'ARMA e non dall'unita' —
+   «Cumbersome» (p. 167): un lanciapietre non si alza in faccia a chi
+   carica. `anyRange` e' il suo contrario, «Quick Shot» (p. 175), che
+   spara a qualunque distanza e scavalca il tetto del Movimento. Li
+   legge `shoot.js` dal profilo dell'arma; qui arrivano gia' letti. */
 export function reactions({ dist = 0, chargerMove = 0, shots = 0,
                             engaged = false, fleeing = false,
-                            noFlee = "", mustHold = "" } = {}){
-  const tooNear = dist < chargerMove;
+                            noFlee = "", mustHold = "",
+                            noShoot = "", anyRange = false } = {}){
+  const tooNear = dist < chargerMove && !anyRange;
   const list = [
     { id:"hold", label:"Tiene la posizione", can:true, why:"" },
     { id:"shoot", label:"Tira e tiene",
-      can: shots > 0 && !engaged && !tooNear && !mustHold,
+      can: shots > 0 && !engaged && !tooNear && !mustHold && !noShoot,
       why: shots <= 0 ? "non ha niente da tirare"
+         : noShoot ? noShoot
          : engaged ? "è già in combattimento"
          : mustHold ? mustHold
          : tooNear ? "il caricante è a " + r1(dist) + "″, meno del suo Movimento (" + chargerMove + "″)"
