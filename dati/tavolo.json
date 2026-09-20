@@ -133,7 +133,7 @@
       "x": 673.0999999999999,
       "y": 603.25,
       "rot": 0,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -150,11 +150,7 @@
       "wounds": 0,
       "tags": [],
       "counters": [],
-      "anchor": {
-        "x": 673.0999999999999,
-        "y": 603.25,
-        "rot": 0
-      },
+      "anchor": null,
       "charged": null,
       "moved": null
     },
@@ -204,7 +200,7 @@
       "x": 454.79,
       "y": 522.77,
       "rot": 270,
-      "placed": true,
+      "placed": false,
       "lost": 6,
       "dead": false,
       "fled": false,
@@ -228,11 +224,7 @@
       "wounds": 0,
       "tags": [],
       "counters": [],
-      "anchor": {
-        "x": 454.79,
-        "y": 522.77,
-        "rot": 270
-      },
+      "anchor": null,
       "charged": null,
       "moved": null,
       "disordered": false,
@@ -286,7 +278,7 @@
       "x": 127,
       "y": 577.85,
       "rot": 0,
-      "placed": true,
+      "placed": false,
       "lost": 4,
       "dead": false,
       "fled": false,
@@ -308,11 +300,7 @@
       "wounds": 0,
       "tags": [],
       "counters": [],
-      "anchor": {
-        "x": 127,
-        "y": 577.85,
-        "rot": 0
-      },
+      "anchor": null,
       "charged": null,
       "moved": null
     },
@@ -444,7 +432,7 @@
       "x": 314.23,
       "y": 599.79,
       "rot": 0,
-      "placed": true,
+      "placed": false,
       "lost": 4,
       "dead": false,
       "fled": false,
@@ -466,11 +454,7 @@
       "wounds": 1,
       "tags": [],
       "counters": [],
-      "anchor": {
-        "x": 314.23,
-        "y": 599.79,
-        "rot": 0
-      },
+      "anchor": null,
       "charged": null,
       "moved": null,
       "disordered": false,
@@ -597,7 +581,7 @@
       "x": 527.05,
       "y": 336.54999999999995,
       "rot": 180,
-      "placed": true,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
@@ -614,11 +598,7 @@
       "wounds": 0,
       "tags": [],
       "counters": [],
-      "anchor": {
-        "x": 527.05,
-        "y": 336.54999999999995,
-        "rot": 180
-      },
+      "anchor": null,
       "charged": null,
       "moved": null
     },
@@ -669,7 +649,7 @@
       "x": 146.04999999999998,
       "y": 304.79999999999995,
       "rot": 180,
-      "placed": true,
+      "placed": false,
       "lost": 6,
       "dead": false,
       "fled": false,
@@ -693,11 +673,7 @@
       "wounds": 0,
       "tags": [],
       "counters": [],
-      "anchor": {
-        "x": 146.04999999999998,
-        "y": 304.79999999999995,
-        "rot": 180
-      },
+      "anchor": null,
       "charged": null,
       "moved": null
     },
@@ -749,7 +725,7 @@
       "x": 717.55,
       "y": 539.75,
       "rot": 270,
-      "placed": true,
+      "placed": false,
       "lost": 11,
       "dead": false,
       "fled": false,
@@ -778,11 +754,7 @@
       "wounds": 0,
       "tags": [],
       "counters": [],
-      "anchor": {
-        "x": 717.55,
-        "y": 539.75,
-        "rot": 270
-      },
+      "anchor": null,
       "charged": null,
       "moved": null
     },
@@ -835,7 +807,7 @@
       "x": 273.05,
       "y": 548.4399999999999,
       "rot": 180,
-      "placed": true,
+      "placed": false,
       "lost": 1,
       "dead": false,
       "fled": false,
@@ -854,11 +826,7 @@
       "wounds": 0,
       "tags": [],
       "counters": [],
-      "anchor": {
-        "x": 273.05,
-        "y": 548.4399999999999,
-        "rot": 180
-      },
+      "anchor": null,
       "charged": null,
       "moved": null
     },
@@ -909,7 +877,7 @@
       "x": 378.73,
       "y": 395.52,
       "rot": 90,
-      "placed": true,
+      "placed": false,
       "lost": 3,
       "dead": false,
       "fled": false,
@@ -930,11 +898,7 @@
       "wounds": 0,
       "tags": [],
       "counters": [],
-      "anchor": {
-        "x": 378.73,
-        "y": 395.52,
-        "rot": 90
-      },
+      "anchor": null,
       "charged": null,
       "moved": null,
       "regen": 5,
@@ -971,7 +935,7 @@
       "rot": 0
     }
   ],
-  "scenario": "sxmttrgusdc7c",
+  "scenario": "sxmu9q80qdc65",
   "markers": [],
   "zones": [],
   "tableW": 1219.1999999999998,
@@ -8843,9 +8807,6 @@
     "deploying": false,
     "pendingLength": 0
   },
-  "sel": {
-    "type": "unit",
-    "id": 83
-  },
+  "sel": null,
   "extras": null
 }
