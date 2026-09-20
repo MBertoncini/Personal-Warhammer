@@ -11,6 +11,7 @@ import { arcOf, arcOfPoly, arcSectors, sideOf } from '../src/formation.js';
 import { boxCorners } from '../src/geom.js';
 import * as EF from '../src/effects.js';
 import { TERRAIN, catOf, isNatural, coverOf, CAT_IDS } from '../src/terrain.js';
+import * as TR from '../src/terrain.js';
 import * as BM from '../src/battlemarch.js';
 import { makeArmies, coverage, rulesNow, toEffect, expressible, unmatched, applies, ruleFor } from '../src/armies.js';
 import { readRules, tallyUnknown } from '../src/rulebook.js';
@@ -203,9 +204,85 @@ ok('un bosco e naturale', isNatural({ kind:'wood' }));
 ok('un monolite no', !isNatural({ kind:'monolith' }));
 ok('ma il pezzo posato vince sul tipo', !isNatural({ kind:'wood', natural:false }));
 ok('e vale anche per la categoria', catOf({ kind:'wood', cat:'impassable' }).id === 'impassable');
+/* Il tavolo e l'arbitro la categoria se la tengono gia' letta, per non
+   rileggerla a ogni domanda di geometria: passando l'oggetto invece
+   del nome, `catOf` leggeva 'terreno aperto' in silenzio. */
+ok('e la categoria gia letta si rilegge uguale',
+   catOf({ kind:'wood', cat: catOf({ kind:'marsh' }) }).id === 'dangerous');
 ok('il punto di riferimento di Battle March c e', !!TERRAIN.landmark);
 ok('la copertura si legge dal pezzo o dal tipo',
    coverOf({ kind:'wood' }) === 'soft' && coverOf({ kind:'wood', cover:'hard' }) === 'hard');
+
+/* L'ostacolo basso e' terreno difficile per il movimento (p. 270), e la
+   pagina della carica lo nomina per esteso (p. 128): scavalcarlo costa
+   come attraversare un bosco. Prima diceva di no, e un muretto in mezzo
+   alla strada non cambiava niente. */
+ok('un muretto rallenta come il terreno difficile',
+   catOf({ kind:'wall' }).slow === true && catOf({ kind:'wall' }).worstDie === true);
+/* L'ostacolo alto e' impassabile, per il movimento e per il
+   combattimento (pp. 270 e 159): non si attraversa piu' lentamente,
+   non si attraversa. */
+ok('l ostacolo alto non si attraversa',
+   catOf({ cat:'highWall' }).noEntry === true && catOf({ cat:'highWall' }).slow === false);
+ok('e nemmeno l impassabile', catOf({ kind:'monolith' }).noEntry === true);
+ok('nel terreno aperto si entra', catOf({ kind:'hill' }).noEntry === false);
+/* Le rovine restano terreno difficile che ripara bene: l'ostacolo alto
+   del libro e' il muro di castello, non un tempio caduto. */
+ok('le rovine si attraversano e riparano pesante',
+   catOf({ kind:'ruins' }).id === 'difficult' && coverOf({ kind:'ruins' }) === 'hard');
+
+console.log('\nquello che il terreno fa davvero (pp. 269-270, 159)');
+/* Il pollice in meno (p. 269): vale se ci comincia, se ci passa o se ci
+   finisce, e non si somma. */
+{
+  const bosco = { kind:'wood' }, palude = { kind:'marsh' }, prato = { kind:'hill' };
+  ok('il terreno difficile toglie un pollice al Movimento',
+     TR.slowMove(4, [bosco]).move === 3 && TR.slowMove(4, [bosco]).penalty === 1);
+  ok('due pezzi ne tolgono sempre uno solo', TR.slowMove(4, [bosco, palude]).move === 3);
+  ok('e il Movimento non scende mai sotto uno', TR.slowMove(1, [bosco]).move === 1);
+  ok('in aperto non toglie niente',
+     TR.slowMove(4, [prato]).move === 4 && TR.slowMove(4, [prato]).slowed === false);
+  ok('e dice quale pezzo lo ha rallentato', /Bosco/.test(TR.slowMove(4, [bosco]).text));
+
+  /* Il test di terreno pericoloso (p. 269): un dado per modello per
+     OGNI pezzo pericoloso, 2+ e passa, 1 e si perde una ferita. Due
+     paludi sono due tiri per modello, non uno. */
+  ok('il bosco non chiede nessun test', TR.dangerousAsk(10, [bosco]) === null);
+  const ask = TR.dangerousAsk(10, [palude]);
+  ok('la palude ne chiede uno per modello', ask && ask.n === 10 && ask.need === 2);
+  ok('e due paludi ne chiedono due per modello',
+     TR.dangerousAsk(10, [palude, palude]).n === 20);
+  ok('con un 1 si perde una ferita, e solo con un 1',
+     TR.dangerousLosses([1, 2, 1, 6, 3]) === 2);
+  ok('senza modelli non si tira niente', TR.dangerousAsk(0, [palude]) === null);
+
+  /* La categoria che vale in combattimento (p. 159): il pericoloso e il
+     bosco contano come difficile, l'ostacolo alto come impassabile. */
+  ok('in combattimento il bosco e terreno difficile',
+     TR.combatCat(bosco).id === 'difficult' && TR.combatCat(bosco).from === 'wood');
+  ok('e cosi la palude', TR.combatCat(palude).id === 'difficult');
+  ok('l ostacolo alto conta come impassabile',
+     TR.combatCat({ cat:'highWall' }).id === 'impassable');
+  ok('il muretto resta se stesso', TR.combatCat({ kind:'wall' }).id === 'lowWall');
+
+  /* L'ostacolo difeso (pp. 270 e 159): chi lo carica non lo scavalca,
+     ma carica disordinato. Chi vola no. */
+  const dif = TR.defendedObstacle({ defended:true });
+  ok('chi carica un ostacolo difeso carica disordinato', dif.disordered === true);
+  ok('e non lo attraversa', dif.crosses === false);
+  ok('ma chi vola ci passa sopra e carica normale',
+     TR.defendedObstacle({ defended:true, fly:true }).disordered === false);
+  ok('un muretto non difeso si scavalca e basta',
+     TR.defendedObstacle({ defended:false }).disordered === false &&
+     TR.defendedObstacle({ defended:false }).crosses === true);
+
+  /* Le decorazioni (pp. 271 e 159): meno di due pollici, si ignorano
+     per il movimento e per il combattimento. */
+  ok('il tesoro e una decorazione', TR.isDecoration({ kind:'treasure' }) === true);
+  ok('il bosco no', TR.isDecoration({ kind:'wood' }) === false);
+  ok('e una decorazione non rallenta nessuno',
+     TR.slowMove(4, [{ kind:'wood', w:1.5, h:1.5 }]).move === 4);
+}
 
 /* ================================================================= */
 console.log('\nBattle March: le due tabelle');

@@ -43,11 +43,20 @@ import { boxCorners, polyDistance, closestPoints } from './geom.js';
 import { arcOfPoly } from './formation.js';
 import { wheelCost } from './movement.js';
 import { sightBlocked, frontCenter } from './tactics.js';
+import { catOf, isDecoration, defendedObstacle } from './terrain.js';
 
 const r1 = v => Math.round(v * 10) / 10;
 const r2 = v => Math.round(v * 100) / 100;
 const cornersOf = o => (o && o.poly) || boxCorners(o.box || o);
 const nameOf = o => (o && (o.name || (o.unit && o.unit.name))) || "";
+
+/* La categoria di un pezzo di terreno, da qualunque delle tre forme in
+   cui arriva: gia' letta dal tavolo (`p.cat` e' l'oggetto di
+   `catOf`), dichiarata per nome (`p.cat` e' una stringa), o non
+   dichiarata affatto — ed e' cosi' che l'arbitro li costruisce, per
+   cui prima un bosco dell'arbitro non rallentava nessuno, in
+   silenzio. */
+const catFor = p => (p && p.cat && typeof p.cat === "object") ? p.cat : catOf(p);
 
 /* ============================================================
    0 · LE COSTANTI CHE IL MANUALE SCRIVE IN CHIARO
@@ -318,6 +327,12 @@ export function crossed(from, to, pieces = [], samples = 24){
   const hit = [];
   for (const p of pieces){
     if (!p || typeof p.contains !== "function") continue;
+    /* le decorazioni del campo di battaglia — meno di due pollici, un
+       pozzo, una catasta di barili — si ignorano per il movimento e
+       per il combattimento, come se non ci fossero (pp. 271 e 159).
+       Prima un segnalino del tesoro sulla strada rovesciava il dado
+       della carica come un bosco. */
+    if (isDecoration(p)) continue;
     for (let i = 0; i <= samples; i++){
       const t = i / samples;
       const pt = [from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t];
@@ -333,7 +348,8 @@ export function crossed(from, to, pieces = [], samples = 24){
 export function terrainEffect(list = []){
   const out = { slow:false, worstDie:false, danger:false, disorder:false, why:[], pieces:[] };
   for (const p of list){
-    const c = p.cat || {};
+    if (!p || isDecoration(p)) continue;
+    const c = catFor(p);
     out.pieces.push(p.label || p.kind || "");
     if (c.slow)     out.slow = true;
     if (c.worstDie) out.worstDie = true;
@@ -343,6 +359,38 @@ export function terrainEffect(list = []){
       out.why.push((p.label || p.kind || "terreno") + ": " + (c.label || "").toLowerCase());
   }
   return out;
+}
+
+/* L'OSTACOLO BASSO DIFESO (pp. 270 e 159).
+   Un reggimento dietro un muretto lo difende portandoci contro la
+   prima fila. Chi lo carica non lo scavalca — si ferma a contatto
+   dall'altra parte, quindi quel muretto non gli rovescia il dado e non
+   gli toglie il pollice — ma la sua carica e' disordinata.
+
+   La geometria propone e il tavolo dispone, come per tutto il resto del
+   terreno: qui si cerca l'ostacolo basso che TOCCA il bersaglio e sta
+   in mezzo fra lui e il caricante; se i due giocatori dicono che quel
+   muretto non lo sta difendendo, il pezzo porta `defended:false` e non
+   se ne parla piu'. Difendere e' una scelta, non una posizione.
+
+   `CONTACT_SLOP` non e' un numero del libro: il libro dice «a contatto
+   di basetta», che e' zero. E' la tolleranza con cui si misura un
+   tavolo vero, e sta scritta qui invece che dentro a un `if`. */
+const CONTACT_SLOP = MM / 8;
+
+export function defendedLine(chargerBox, target, pieces = []){
+  if (!chargerBox || !target) return null;
+  const tPoly = cornersOf(target);
+  const tBox = target.box || target;
+  const from = [chargerBox.x, chargerBox.y], to = [tBox.x, tBox.y];
+  for (const p of pieces || []){
+    if (!p || isDecoration(p) || p.defended === false) continue;
+    if (catFor(p).id !== "lowWall" && catOf(p).id !== "lowWall") continue;
+    if (polyDistance(tPoly, cornersOf(p)) > CONTACT_SLOP) continue;
+    if (!crossed(from, to, [p]).length) continue;    // dietro di lui non conta
+    return p;
+  }
+  return null;
 }
 
 /* La carica DISORDINATA e il disordine da TERRENO sono due regole
@@ -359,13 +407,20 @@ export function terrainEffect(list = []){
    a cavallo di un ostacolo basso. Costa il **bonus dei ranghi**
    (p. 101). Attraversare il bosco senza fermarcisi dentro non la
    provoca: quello che conta e' dove si finisce. */
-export function disorderedCharge({ aligned = true, madeThemAlign = false, blockedBy = [] } = {}){
+export function disorderedCharge({ aligned = true, madeThemAlign = false, blockedBy = [],
+                                   defended = null, fly = false } = {}){
   const why = [];
   if (!aligned)      why.push("non riesce ad allinearsi" +
                               (blockedBy.length ? ": " + blockedBy.join(", ") + " in mezzo" : ""));
   if (madeThemAlign) why.push("e' il bersaglio a doversi allineare a lei");
+  /* la terza causa, che fin qui non c'era: il bersaglio difende un
+     ostacolo basso, e chi non vola ci si ferma davanti (p. 270) */
+  const wall = defended ? defendedObstacle({ defended:true, fly }) : null;
+  if (wall && wall.disordered)
+    why.push("il bersaglio difende " +
+             (typeof defended === "string" ? defended : (defended.label || defended.kind || "un ostacolo basso")));
   return {
-    disordered: why.length > 0, why,
+    disordered: why.length > 0, why, defended: !!(wall && wall.disordered),
     text: why.length ? "carica disordinata: " + why.join(", ") +
                        " — niente bonus di Iniziativa (pp. 128 e 146)" : "",
   };
@@ -616,14 +671,23 @@ export function chargeSurvey(charger, targets = [], { pieces = [], look = null }
        punteggio che serve, quindi puo' rendere impossibile una carica
        che in aperto si poteva dichiarare. Calcolarlo dopo vorrebbe
        dire scrivere «si puo'» e poi tirare con altri numeri. */
-    const path = crossed([charger.box.x, charger.box.y], [t.box.x, t.box.y], pieces);
+    /* L'ostacolo che il bersaglio difende non si attraversa: si
+       toglie dal percorso prima di contare il terreno, altrimenti la
+       carica pagherebbe due volte — il dado rovesciato per averlo
+       scavalcato e il disordine per non averlo scavalcato. */
+    const wall = defendedLine(charger.box, t, pieces);
+    const path = crossed([charger.box.x, charger.box.y], [t.box.x, t.box.y], pieces)
+      .filter(p => p !== wall);
     const eff = terrainEffect(path);
     const d = declareCharge({ charger, target: t, pieces, worst: eff.worstDie,
                               sight: look ? look(t) : null });
     if (!d) continue;
+    const dis = disorderedCharge({ defended: wall, fly: !!charger.fly });
     rows.push({
       ...d, unit: t,
       terrain: eff,
+      defended: wall || null, defendedWhy: dis.text,
+      disordered: dis.disordered,
       dice: chargeDice({ swift: charger.swift, worst: eff.worstDie }),
       align: alignTo(charger.box, t.box),
     });

@@ -8,7 +8,7 @@ import { hitMelee, hitShoot, woundOn, saveOn, chance, pool, rankBonus,
 import { shootModTotal } from '../src/charts.js';
 import * as C from '../src/combat.js';
 import * as D from '../src/dice.js';
-import { reachFan, sightFan, coverOn, stepCost, movementBands } from '../src/tactics.js';
+import { reachFan, sightFan, coverOn, stepKind, movementBands, SLOW_COST } from '../src/tactics.js';
 
 let fails = 0;
 const ok = (label, cond) => {
@@ -323,8 +323,22 @@ const ahead = fan => 500 - fan[1 + RAYS / 2][1];
 const open = reachFan(box, 200, [], { bounds: table, rays: RAYS });
 ok('in aperto si arriva a mezza base piu il budget', near(ahead(open), 25 + 200, 1));
 
+/* Il terreno difficile toglie UN POLLICE al Movimento (p. 269), non
+   meta' del passo: il ventaglio si accorcia di 25,4 mm e non di piu'.
+   Prima il passo nel bosco costava il doppio, che e' la regola
+   dell'ottava edizione di Warhammer e non di questa. */
 const wood = reachFan(box, 200, [piece(500, 380, 300, 200, 'difficult')], { bounds: table, rays: RAYS });
-ok('nel bosco si va meno lontano', ahead(wood) < ahead(open) - 40);
+ok('nel bosco si va meno lontano', ahead(wood) < ahead(open));
+ok('e si va meno lontano di un pollice esatto',
+   near(ahead(open) - ahead(wood), SLOW_COST, 6));
+ok('due boschi in fila costano lo stesso pollice',
+   near(ahead(reachFan(box, 200, [piece(500, 380, 300, 60, 'difficult'),
+                                  piece(500, 300, 300, 60, 'difficult')],
+                       { bounds: table, rays: RAYS })), ahead(wood), 6));
+ok('e la marcia ne paga due, perche il meno uno e sul Movimento',
+   near(ahead(reachFan(box, 200, [piece(500, 380, 300, 200, 'difficult')],
+                       { bounds: table, rays: RAYS, slowCost: 2 * SLOW_COST })),
+        ahead(wood) - SLOW_COST, 6));
 
 const stone = piece(500, 300, 400, 40, 'blocked');
 const wall = reachFan(box, 400, [stone], { bounds: table, rays: RAYS });
@@ -338,9 +352,11 @@ ok('chi vola ci passa sopra', near(ahead(flying), 25 + 400, 1));
 const edge = reachFan({ ...box, y: 120 }, 400, [], { bounds: table });
 ok('il bordo del tavolo ferma tutti', Math.min(...edge.map(p => p[1])) >= -0.01);
 
-ok('in terreno difficile un passo costa il doppio',
-   stepCost([500, 380], [piece(500, 380, 300, 200, 'difficult')]) === 2);
-ok('e in aperto costa uno', stepCost([500, 700], [piece(500, 380, 300, 200, 'difficult')]) === 1);
+ok('il terreno difficile si riconosce dove si mette il piede',
+   stepKind([500, 380], [piece(500, 380, 300, 200, 'difficult')]) === 'slow');
+ok('e l aperto pure', stepKind([500, 700], [piece(500, 380, 300, 200, 'difficult')]) === 'open');
+ok('e dove non si entra lo dice',
+   stepKind([500, 300], [piece(500, 300, 400, 40, 'blocked')]) === 'blocked');
 
 console.log('\nfin dove arriva lo sguardo');
 const blocker = piece(500, 300, 200, 100, 'blocked', 'hard', true);

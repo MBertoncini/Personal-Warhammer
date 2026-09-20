@@ -96,22 +96,42 @@ export function movementBands(unit){
    alla volta, spendendo i pollici finche' ce ne sono.
    ============================================================ */
 
-/* quanto costa un passo dove si e' finiti: 1 in aperto, 2 nel difficile
-   e negli ostacoli, infinito dove non si entra */
-export function stepCost(pt, pieces){
-  let cost = 1;
+/* Che cosa c'e' dove si e' finiti: aperto, terreno che rallenta,
+   terreno in cui non si entra.
+
+   Qui prima c'era `stepCost`, che nel difficile faceva costare il
+   passo il DOPPIO. Quella e' la regola dell'ottava edizione di
+   Warhammer; l'Old World non la ha. Il libro dice un'altra cosa, e la
+   dice in una riga sola: «se una parte qualsiasi dell'unita' si muove
+   attraverso terreno difficile, quell'unita' subisce un −1 al
+   Movimento, fino a un minimo di 1» (p. 269). Non e' un pedaggio che
+   si paga a metri: e' un pollice tolto al passo, una volta, e vale
+   anche solo a sfiorare il bosco con un angolo della basetta.
+
+   La differenza si vede: un M4 che entra subito in un bosco arrivava
+   a 2″ e il libro gli da' 3″. */
+export function stepKind(pt, pieces){
+  let kind = "open";
   for (const it of pieces){
     if (!it.contains(pt)) continue;
-    if (it.pass === "blocked") return Infinity;
-    if (it.pass === "difficult" || it.pass === "obstacle") cost = 2;
+    if (it.pass === "blocked") return "blocked";
+    if (it.pass === "difficult" || it.pass === "obstacle") kind = "slow";
   }
-  return cost;
+  return kind;
 }
+
+/* Quanto costa il terreno difficile, in millimetri di budget. E' il −1
+   al Movimento di p. 269, e quindi vale un pollice sulla banda del
+   movimento — ma la marcia e' M×2, e un −1 a M ne toglie DUE alla
+   marcia. Per questo e' un parametro e non una costante: chi disegna
+   la banda sa a che cosa quel budget corrisponde, il ventaglio no. */
+export const SLOW_COST = MM;
 
 /* Il ventaglio di quello che si raggiunge con un dato budget di
    movimento. Parte dal PERIMETRO della base, non dal centro: il pollice
    si misura da dove l'unita' tocca il tavolo. Chi vola scavalca tutto. */
-export function reachFan(box, budgetMm, pieces, { arc = true, fly = false, rays = 36, step = 5, bounds = null } = {}){
+export function reachFan(box, budgetMm, pieces, { arc = true, fly = false, rays = 36, step = 5,
+                                                  bounds = null, slowCost = SLOW_COST } = {}){
   const hw = box.w / 2, hh = box.h / 2;
   const rot = (box.rot || 0) * Math.PI / 180;
   const a0 = arc ? Math.atan2(-hh,  hw) : -Math.PI;
@@ -126,15 +146,23 @@ export function reachFan(box, budgetMm, pieces, { arc = true, fly = false, rays 
     const dx = Math.cos(wa), dy = Math.sin(wa);
     let r = boxRadius(box, wa);                 // si parte dal bordo della base
     let left = budgetMm;
+    let slowed = false;                         // il −1 si paga una volta sola
     while (left > 0){
       const adv = Math.min(step, left);
       const probe = [box.x + dx * (r + adv), box.y + dy * (r + adv)];
       if (!inside(probe)) break;
-      const cost = fly ? 1 : stepCost(probe, pieces);
-      if (cost === Infinity) break;
-      const spend = adv * cost;
-      if (spend > left){ r += adv * (left / spend); left = 0; break; }
-      r += adv; left -= spend;
+      const kind = fly ? "open" : stepKind(probe, pieces);
+      if (kind === "blocked") break;
+      /* entrare nel difficile costa il pollice, e non si torna piu'
+         indietro: due boschi sullo stesso raggio ne costano uno */
+      if (kind === "slow" && !slowed){
+        slowed = true;
+        left -= slowCost;
+        if (left <= 0) break;
+        continue;                               // il passo si rifa' col budget nuovo
+      }
+      if (adv > left){ r += left; left = 0; break; }
+      r += adv; left -= adv;
     }
     out.push([box.x + dx * r, box.y + dy * r]);
   }

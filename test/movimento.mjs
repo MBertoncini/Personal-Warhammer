@@ -8,6 +8,7 @@
 import * as CH from '../src/charge.js';
 import * as MV from '../src/movement.js';
 import { boxCorners, polyDistance } from '../src/geom.js';
+import * as CAT from '../src/terrain.js';
 
 const MM = 25.4;
 let fails = 0;
@@ -373,6 +374,41 @@ console.log('\nla riga che si legge prima di dichiarare');
   ok('e chiede il test di terreno pericoloso', rows[0].terrain.danger === true);
   ok('e la carica arriva gia allineata', rows[0].align && rows[0].align.side === 'fronte');
   ok('quello dietro resta in fondo con il suo perche', rows[1].can === false);
+
+  /* Le decorazioni del campo di battaglia (pp. 271 e 159): meno di due
+     pollici, si ignorano per il movimento e per il combattimento. Un
+     segnalino del tesoro sulla strada rovesciava il dado come un
+     bosco. */
+  const tesoro = piece('Tesoro', 0, -4, 1.575, 1.575,
+                       { label:'Aperto', slow:false, worstDie:false, danger:false, disorder:false });
+  tesoro.w = 1.575; tesoro.h = 1.575;
+  ok('una decorazione sulla strada non si conta',
+     CH.crossed([0, 0], [0, -8 * MM], [tesoro]).length === 0);
+
+  /* L'ostacolo basso difeso (pp. 270 e 159): chi lo carica non lo
+     scavalca — quindi niente dado peggiore per quel muretto — ma la
+     sua carica e' disordinata. Chi vola ci passa sopra. */
+  const muretto = piece('Muretto', 0, -6.6, 6, 0.8, CAT.catOf({ kind:'wall' }));
+  const dietroMuro = unit('Arcieri', 0, -8, 5 * MM, 2 * MM, 180);
+  const muro = CH.chargeSurvey(orc, [dietroMuro], { pieces:[muretto] })[0];
+  ok('chi carica dietro un muretto difeso lo trova',
+     muro.defended && muro.defended.label === 'Muretto');
+  ok('e la sua carica e disordinata', muro.disordered === true);
+  ok('ma non paga il dado peggiore per un muretto che non scavalca',
+     muro.dice.worst === false);
+  ok('e il perche finisce scritto', /ostacolo basso|difende/.test(muro.defendedWhy));
+
+  const volante = unit('Terradon', 0, 0, 5 * MM, 2 * MM, 0, { move:4, swift:false, fly:true });
+  ok('chi vola ci passa sopra e carica normale',
+     CH.chargeSurvey(volante, [dietroMuro], { pieces:[muretto] })[0].disordered === false);
+
+  /* Un muretto che il bersaglio non sta difendendo si scavalca come
+     qualunque altro ostacolo basso, e allora il dado si rovescia. */
+  const nonDifeso = piece('Muretto', 0, -3, 6, 0.8, CAT.catOf({ kind:'wall' }));
+  nonDifeso.defended = false;
+  const libero = CH.chargeSurvey(orc, [vicino], { pieces:[nonDifeso] })[0];
+  ok('un muretto non difeso si scavalca, e costa il dado peggiore',
+     libero.defended === null && libero.dice.worst === true);
 }
 
 /* ================================================================= */
