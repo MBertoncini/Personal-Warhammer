@@ -84,16 +84,22 @@ console.log('\nuna partita intera, giocata dall euristica');
 for (const s of [1, 7, 19]){
   seme(s);
   const G = AR.newBattle({ A, B, scenario:'bm-strada', nomi:{ A:'Lucertole', B:'Orchi' } });
+  /* le mosse che l'arbitro non ha accettato si raccolgono qui invece
+     che cercando «rifiutat» nel registro: da quando ci sono le sfide
+     (p. 211) una sfida rifiutata è una mossa legale che nel registro
+     si scrive proprio così, e la prova la contava come un errore */
+  const rifiutate = [];
   const esito = await AG.giocaPartita(AR, G, {
     A: AG.agenteEuristico({ nome:'a' }), B: AG.agenteEuristico({ nome:'b' }),
+    onPasso: x => { if (!x.esito.ok) rifiutate.push(`${x.mossa ? x.mossa.id : '?'}: ${x.esito.text}`); },
   });
   ok(`seme ${s}: la partita finisce, e con un verdetto`,
      G.finita && !!esito && typeof esito.A === 'number' && !!esito.label);
   ok(`seme ${s}: qualcuno si è mosso e qualcuno è caduto`,
      G.log.some(r => /avanza|marcia/.test(r.text)) &&
      G.log.some(r => /ferit|a terra|spazzata/.test(r.text)));
-  ok(`seme ${s}: nessuna mossa è stata rifiutata`,
-     !G.log.some(r => /rifiutat/.test(r.text)));
+  if (rifiutate.length) console.log('       ' + rifiutate.slice(0, 5).join(' | '));
+  ok(`seme ${s}: nessuna mossa è stata rifiutata`, rifiutate.length === 0);
   ok(`seme ${s}: il registro porta le pagine del manuale`,
      G.log.filter(r => r.page).length > 20);
   /* nessuno finisce dentro un nemico o fuori dal tavolo */
@@ -284,10 +290,17 @@ const conScheda = (l, units) => ({ ...l, prep: { general: null, bsb: null, note:
     seme(s);
     const G = AR.newBattle({ A: L1, B: L2, scenario: 'bm-monolite', magia: M });
     let offerti = 0;
+    const respinte = [];
     await AG.giocaPartita(AR, G, { A: AG.agenteEuristico({}), B: AG.agenteEuristico({}),
-      onPasso: ({ opzioni }) => { offerti += opzioni.list.filter(x => x.id === 'lancia').length; } });
+      onPasso: ({ opzioni, mossa, esito }) => {
+        offerti += opzioni.list.filter(x => x.id === 'lancia').length;
+        /* non si cerca «rifiutat» nel registro: una sfida rifiutata
+           (p. 211) è una mossa legale che si scrive proprio così */
+        if (!esito.ok) respinte.push(`${mossa ? mossa.id : '?'}: ${esito.text}`);
+      } });
     ok(`seme ${s}: la partita con due maghi finisce`, G.finita && !!G.esito);
-    ok(`seme ${s}: nessuna mossa rifiutata`, !G.log.some(r => /rifiutat/.test(r.text)));
+    if (respinte.length) console.log('       ' + respinte.slice(0, 5).join(' | '));
+    ok(`seme ${s}: nessuna mossa rifiutata`, respinte.length === 0);
     ok(`seme ${s}: gli incantesimi si offrono`, offerti > 0);
     if (G.log.some(r => / lancia .*: lancio /.test(r.text))) lanci++;
     if (G.log.some(r => /contro .*: dissolvimento/.test(r.text))) dissolti++;
@@ -1257,6 +1270,179 @@ console.log('\nil punteggio di Battle March (Battle March p. 27)');
   const e = AR.controllaFine(R, { inizioTurno: true });
   ok('e chi si rompe perde con vittoria schiacciante dell altro (p. 291)',
      !!e && e.winner === 'A' && e.level === 'crushing');
+}
+
+/* ================================================================= */
+console.log('\nle sfide (pp. 211-212)');
+{
+  /* Il tavolo della sfida: la Temple Guard con dentro due personaggi,
+     e i Black Orc Mobs con dentro il Warboss, a contatto di fronte. */
+  const tavolo = () => {
+    const G = nuova();
+    G.generale = { A: null, B: null };
+    const guardia = metti(G, uid(G, 6), 600, 600);
+    const orchi = metti(G, uid(G, 503), 600, 400);
+    for (const [c, h] of [[uid(G, 1), guardia], [uid(G, 2), guardia], [uid(G, 501), orchi]]){
+      c.join = { host: h.uid }; c.placed = true; c.x = h.x; c.y = h.y; c.rot = h.rot;
+    }
+    aContattoDi(G, orchi, guardia);
+    G.casella = casella('mischia');
+    return G;
+  };
+  const chiede = G => AR.options(G);
+  const trova = (G, id, uidCercato = null) =>
+    chiede(G).list.find(x => x.id === id && (uidCercato == null || x.uid === uidCercato));
+
+  /* 1 · si lancia quando il combattimento viene scelto, e prima la
+     lancia chi è di turno (p. 211) */
+  let G = tavolo(); G.army = 'B';
+  AR.apply(G, trova(G, 'combatti'));
+  let o = chiede(G);
+  ok('scelto il combattimento, la sfida la lancia prima chi è di turno',
+     o.player === 'B' && o.page === 211 && o.list.some(x => x.id === 'sfida' && x.uid === 501));
+  ok('e l opzione porta i numeri del duello, non solo il nome',
+     o.list.filter(x => x.id === 'sfida').every(x =>
+       typeof x.vantaggio === 'number' && /ferite a round/.test(x.why)));
+  ok('si può anche non lanciarla', o.list.some(x => x.id === 'nessuna'));
+
+  /* 1 bis · un campione d'unità nel combattimento: sul libro potrebbe
+     sfidare, qui no, e lo si dice quando conta (p. 211) */
+  {
+    const K = tavolo(); K.army = 'B';
+    uid(K, 6).command = { ...(uid(K, 6).command || {}), champion: true };
+    AR.apply(K, AR.options(K).list.find(x => x.id === 'combatti'));
+    ok('con un campione in campo il limite esce nel registro',
+       K.log.some(x => x.kind === 'limite' && /campioni d.unità/.test(x.text)));
+  }
+
+  /* 2 · chi la subisce la raccoglie o la rifiuta */
+  AR.apply(G, trova(G, 'sfida', 501));
+  o = chiede(G);
+  ok('lanciata, tocca all altro rispondere',
+     o.player === 'A' && /chi la raccoglie/.test(o.what) &&
+     o.list.filter(x => x.id === 'accetta').length === 2);
+  ok('e dentro un reggimento la si può rifiutare', o.list.some(x => x.id === 'rifiuta'));
+
+  /* 3 · raccolta, i due si menano solo fra loro (p. 212) */
+  AR.apply(G, trova(G, 'accetta', 1));
+  ok('la sfida raccolta resta nello stato, perché continua nei turni dopo (p. 212)',
+     G.sfide.length === 1 && G.sfide[0].a === 1 && G.sfide[0].b === 501);
+  ok('e il combattimento si è risolto', G.log.some(x => /Risultato:/.test(x.text)));
+  const colpi = G.log.filter(x => /colpi su/.test(x.text));
+  ok('il Warboss mena solo allo sfidante',
+     colpi.filter(x => /^Black Orc Warboss/.test(x.text))
+          .every(x => /su Saurus Scar-Veteran/.test(x.text)));
+  ok('e nessuno dei due si prende i colpi della truppa',
+     !colpi.some(x => /^(Temple Guard|Black Orc Mobs) colpi su (Black Orc Warboss|Saurus Scar-Veteran)/.test(x.text)));
+  ok('il registro dice che si battono in sfida, con la pagina',
+     G.log.some(x => /si battono in sfida/.test(x.text) && x.page === 212));
+
+  /* 4 · «To The Death!»: finché dura non se ne lancia un altra */
+  G.army = 'A'; G.casella = casella('mischia');
+  const dopo = trova(G, 'combatti');
+  if (dopo) AR.apply(G, dopo);
+  ok('con una sfida in corso non se ne lancia un altra (p. 212)',
+     !G.pending || G.pending.kind !== 'sfida');
+
+  /* 5 · rifiutata: chi l ha lanciata sceglie chi si ritira, e chi si
+     ritira esce dal combattimento (p. 211) */
+  G = tavolo(); G.army = 'B';
+  AR.apply(G, trova(G, 'combatti'));
+  AR.apply(G, trova(G, 'sfida', 501));
+  AR.apply(G, trova(G, 'rifiuta'));
+  o = chiede(G);
+  ok('rifiutata, sceglie chi si ritira chi l aveva lanciata',
+     o.player === 'B' && o.list.filter(x => x.id === 'ritira').length === 2 &&
+     o.list.every(x => x.id !== 'ritira' || typeof x.ld === 'number'));
+  AR.apply(G, trova(G, 'ritira', 1));
+  ok('il ritirato resta segnato, con chi lo ha sfidato',
+     uid(G, 1).ritiro && uid(G, 1).ritiro.sfidante === 501);
+  ok('non mena più: nel combattimento non c è',
+     !G.log.some(x => /^Saurus Scar-Veteran colpi/.test(x.text)));
+  ok('e nessuno può colpirlo',
+     !G.log.some(x => /colpi su Saurus Scar-Veteran/.test(x.text)));
+  ok('il limite di quello che il ritiro non toglie è dichiarato',
+     G.log.some(x => x.kind === 'limite' && /tiene il passo e la Forza d.Unità/.test(x.text)));
+
+  /* 5 bis · il Comando che il ritirato non presta più (p. 211). La
+     Temple Guard ha Comando 8 come il Saurus Scar-Veteran e non se ne
+     accorgerebbe: si guarda dove la differenza si vede, cioè dentro
+     uno Skink Skirmishers da Comando 5. */
+  {
+    const K = nuova();
+    const skink = metti(K, uid(K, 3), 600, 600);
+    for (const n of [1, 2]){
+      const c = uid(K, n);
+      c.join = { host: skink.uid }; c.placed = true; c.x = skink.x; c.y = skink.y;
+    }
+    ok('con dentro il Saurus il reggimento usa il suo Comando 8 (p. 97)',
+       AR.interni.ldProprio(K, skink).ld === 8);
+    uid(K, 1).ritiro = { sfidante: 501, ospite: 503, turno: 1 };
+    ok('ritirato, il Comando che presta non vale più: resta quello dello Skink Chief',
+       AR.interni.ldProprio(K, skink).ld === 6);
+  }
+
+  /* 6 · il ritiro scade quando chi lo ha sfidato non gli sta più
+     addosso (p. 211) */
+  const via = uid(G, 503); via.x = 100; via.y = 100;
+  uid(G, 501).x = 100; uid(G, 501).y = 100;
+  AR.interni.ripulisciSfide(G);
+  ok('staccato il nemico, il ritirato torna in prima fila',
+     !uid(G, 1).ritiro && G.log.some(x => /torna in prima fila/.test(x.text)));
+
+  /* 7 · «Nowhere To Run» (p. 212): un personaggio da solo non è dentro
+     nessuna unità, e la sfida non la può rifiutare */
+  const H = nuova();
+  H.generale = { A: null, B: null };
+  const solo = metti(H, uid(H, 1), 600, 600);
+  const mob = metti(H, uid(H, 503), 600, 400);
+  const boss = uid(H, 501);
+  boss.join = { host: mob.uid }; boss.placed = true; boss.x = mob.x; boss.y = mob.y; boss.rot = mob.rot;
+  aContattoDi(H, mob, solo);
+  H.army = 'B'; H.casella = casella('mischia');
+  AR.apply(H, AR.options(H).list.find(x => x.id === 'combatti'));
+  AR.apply(H, AR.options(H).list.find(x => x.id === 'sfida' && x.uid === 501));
+  const risposta = AR.options(H);
+  ok('un personaggio da solo non ha dove scappare: può solo raccoglierla',
+     risposta.list.some(x => x.id === 'accetta' && x.uid === 1) &&
+     !risposta.list.some(x => x.id === 'rifiuta'));
+  ok('e rifiutare lo stesso non si può', AR.apply(H, { id:'rifiuta' }).ok === false);
+
+  /* 8 · l altra metà di «Nowhere To Run»: un reggimento ingaggiato su
+     tutti e quattro i lati non ha dove nascondere nessuno (p. 212) */
+  {
+    const K = nuova();
+    const guardia = metti(K, uid(K, 6), 600, 600);
+    const capo = uid(K, 1);
+    capo.join = { host: guardia.uid }; capo.placed = true; capo.x = guardia.x; capo.y = guardia.y;
+    /* `aContattoDi` sceglie lui la faccia: qui le facce vanno scelte a
+       mano, una per lato, e si appoggia la basetta a quella */
+    const accosta = (u, lato) => {
+      u.placed = true;
+      u.rot = { fronte:180, retro:0, sinistra:90, destra:270 }[lato];
+      u.x = guardia.x; u.y = guardia.y;
+      const bt = AR.boxOf(guardia, K.units), bu = AR.boxOf(u, K.units);
+      if (lato === 'fronte')   u.y = bt.y - (bt.h + bu.h) / 2;
+      if (lato === 'retro')    u.y = bt.y + (bt.h + bu.h) / 2;
+      if (lato === 'sinistra') u.x = bt.x - (bt.w + bu.h) / 2;
+      if (lato === 'destra')   u.x = bt.x + (bt.w + bu.h) / 2;
+      return u;
+    };
+    /* prima un nemico solo, di fronte: di lì si scappa */
+    accosta(uid(K, 503), 'fronte');
+    ok('con il nemico solo davanti la sfida si può ancora rifiutare',
+       AR.interni.puoRifiutare(K, capo) === true);
+    /* e poi da tutte e quattro le parti */
+    accosta(uid(K, 504), 'retro');
+    accosta(uid(K, 505), 'sinistra');
+    accosta(uid(K, 509), 'destra');
+    ok('i quattro nemici toccano i quattro lati',
+       AR.contatti(K).filter(c => (c.a === guardia.uid || c.b === guardia.uid) &&
+                                  (c.a === guardia.uid ? c.bArmy : c.aArmy) !== 'A').length === 4);
+    ok('e allora non c è dove scappare: la sfida non si rifiuta (p. 212)',
+       AR.interni.puoRifiutare(K, capo) === false);
+  }
+  seme(1);
 }
 
 /* ================================================================= */

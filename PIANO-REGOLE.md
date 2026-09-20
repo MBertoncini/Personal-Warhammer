@@ -1736,6 +1736,42 @@ E una settima, che cambiava la forma di ogni turno:
    una ruota di 70° costa due pollici e fermarsi sarebbe sempre peggio;
    dopo il riordino il resto non si cammina (limite `manovre`).
 
+E un'ottava, che era l'ultima cosa del combattimento che l'app sapeva
+contare e non sapeva giocare:
+
+8. ~~**le sfide**~~ — fatte (pp. 211-212). Erano tre decisioni e non un
+   conto, e adesso sono tre domande in sospeso come la reazione alla
+   carica: si lancia quando il combattimento viene scelto, prima chi è
+   di turno e poi l'altro, una sola per combattimento; chi la subisce
+   la raccoglie o la rifiuta; chi la rifiuta lascia che l'altro nomini
+   il personaggio che **si ritira** in fondo alle file. Le decisioni
+   prese, perché si rifacciano solo se si trova di meglio:
+   - **i due sfidanti sono due schiere, non due unità.** In
+     `meleeFight` la sfida riscrive l'ingaggio — i due si vedono solo
+     fra loro e nessun altro li vede — invece di filtrare i colpi dopo,
+     perché l'ingaggio è già la domanda «chi mena a chi», ed è quella
+     che la sfida cambia. La cavalcatura segue il cavaliere senza che
+     nessuno gliene parli, e il rivale già caduto non la ferma (p. 212):
+     quei colpi contano per l'overkill e non per il risultato;
+   - **il ritiro toglie quello che si sa togliere.** Il libro dice che
+     chi si ritira non dà più all'unità «Comando, regole speciali o
+     qualunque altra cosa»: l'arbitro gli toglie i colpi, il Comando e
+     le regole, e gli lascia il passo e la Forza d'Unità, che non
+     saprebbe togliere senza farlo uscire dal reggimento. È il limite
+     `ritirato`, e il registro lo dice;
+   - **rifiutare si può solo se nessuno è con le spalle al muro.**
+     «Nowhere to run» (p. 212) è una regola del modello, ma se uno dei
+     possibili raccoglitori non può scappare, il rifiuto non è una
+     risposta che quella parte possa dare: chi non può scappare «deve
+     affrontare la sfida»;
+   - **una sfida che nessuno può raccogliere non si offre.** Sul libro
+     è legale e «resta senza risposta»: non cambia niente sul tavolo, e
+     questo arbitro non offre gesti che non cambiano niente — come non
+     offre gli incantesimi che non saprebbe applicare;
+   - **i campioni d'unità restano fuori**, e non per scelta: il file di
+     New Recruit dice che il gruppo di comando c'è e non dà al campione
+     un profilo suo. Limite `campioni`.
+
 E l'arbitro è sceso sul tavolo: la **Sfida** della scheda Matchup fa
 giocare una persona contro il modello di linguaggio, con l'arbitro in
 mezzo (`controai.js`).
@@ -1748,10 +1784,11 @@ mezzo (`controai.js`).
   (la stessa del punto qui sotto) e il movimento fuori turno. Con loro
   gli assalti al passo d'Iniziativa del mago (p. 158), che oggi si
   lanciano prima che si meni, e le ferite degli assalti nel risultato.
-- **Le sfide**, che sono una decisione e non un conto: l'overkill lo
-  conta già `melee.js`, chi la lancia e chi la rifiuta no.
 - **Il volo**, le **sagome** e le **macchine da guerra**, che vogliono
   la posizione modello per modello.
+- **I campioni d'unità**, che il libro lascia sfidare e l'app no,
+  perché il file dice solo che il gruppo di comando c'è; e quello che
+  il ritiro non toglie — il passo e la Forza d'Unità.
 - **L'Open Order** (p. 183), che il parser legge come formazione
   sciolta: i Warplock Jezzails e gli Squig si girano gratis e vedono a
   360°, e il libro li vuole in ranghi, con un giro rapido di 90° dopo

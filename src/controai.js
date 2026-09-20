@@ -188,6 +188,8 @@ const ETICHETTA = {
   gira: "Gira", riforma: "Riforma", indietro: "Indietro", lato: "Di lato", riordina: "Riordina",
   ferma: "Resta ferma", tira: "Tira", lancia: "Lancia", dissolvi: "Dissolvi", lascia: "Lascia",
   combatti: "Combatti", avanti: "Passa",
+  sfida: "Lancia la sfida", accetta: "Raccogli la sfida", rifiuta: "Rifiuta la sfida",
+  ritira: "Si ritira", nessuna: "Nessuna sfida",
 };
 const REAZIONE = { hold: "tiene", stand: "tiene e tira", flee: "fugge", fleeing: "sta già fuggendo" };
 

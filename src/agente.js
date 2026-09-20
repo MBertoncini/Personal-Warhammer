@@ -147,6 +147,36 @@ export function agenteEuristico({ nome = "euristica" } = {}){
         return { scelta: t, perche: `${t.nome} tira su ${t.contro}: ${t.why}` };
       }
 
+      /* SFIDE: qui c'è da decidere, e i numeri li ha già fatti
+         l'arbitro. `vantaggio` è quanto del rivale mi aspetto di
+         portare via in un round meno quanto lui porta via a me,
+         misurati tutti e due sulle ferite che restano: sopra zero il
+         duello conviene, sotto zero si sta regalando un personaggio. */
+      if (primo("ritira")){
+        /* lo sceglie chi ha lanciato la sfida, e toglie di mezzo il
+           Comando più alto: è quello che tiene in piedi il reggimento */
+        const r = l.filter(x => x.id === "ritira").sort((a, b) => (b.ld || 0) - (a.ld || 0))[0]
+                || primo("nessuna");
+        return { scelta: r, perche: r.id === "ritira"
+          ? `faccio ritirare ${r.nome}: senza di lui il reggimento perde il Comando ${r.ld}`
+          : "non c'è nessuno da far ritirare" };
+      }
+      if (primo("accetta")){
+        const a = l.filter(x => x.id === "accetta").sort((x, y) => y.vantaggio - x.vantaggio)[0];
+        const rif = primo("rifiuta");
+        /* rifiutare costa il personaggio per tutto il combattimento: lo
+           si fa solo quando raccoglierla vuol dire morire */
+        if (rif && a.vantaggio < -0.5)
+          return { scelta: rif, perche: `nessuno la raccoglie: ${a.why}, e un personaggio ritirato è meglio di un personaggio morto` };
+        return { scelta: a, perche: `${a.nome} raccoglie la sfida: ${a.why}` };
+      }
+      if (primo("sfida")){
+        const s = l.filter(x => x.id === "sfida").sort((x, y) => y.vantaggio - x.vantaggio)[0];
+        if (s.vantaggio > 0.2)
+          return { scelta: s, perche: `${s.nome} lancia la sfida: ${s.why}` };
+        return { scelta: primo("nessuna"), perche: "nessuna sfida: il duello non conviene a nessuno dei miei" };
+      }
+
       /* MISCHIA: si risolve. Non c'è niente da decidere. */
       if (primo("combatti")){
         const c = primo("combatti");

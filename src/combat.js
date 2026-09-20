@@ -743,7 +743,7 @@ export function woundsToll(u, wounds, { carried = null } = {}){
 /* Il clone di un assalto: le ferite appese se le porta dietro. Prima
    qui c'era `spill: 0`, ed e' il punto esatto in cui le ferite
    evaporavano fra un round e l'altro. */
-const clone = c => ({ ...c, spill: c.spill || 0, dealt: 0 });
+const clone = c => ({ ...c, spill: c.spill || 0, dealt: 0, oltre: 0 });
 const usOf = c => (c.usPer || 1) * (c.models || 0);
 /* la Forza d'Unita' di una PARTE: la somma di chi e' ancora in piedi
    (p. 154), ed e' quella che decide se il doppio schiaccia */
@@ -835,18 +835,68 @@ function outOfReach(c, mine, foes){
   return !ct.groups.some(g => g.character && sameUnit(c, g));
 }
 
+/* ------------------------------------------------------------------
+   LA SFIDA (pp. 211-212)
+
+   `challenge` ha due forme, e sono due cose diverse.
+
+   `true` e' quella che c'era: «conta l'overkill», e la usa il pannello
+   delle due schiere, dove la sfida e' tutto il combattimento e non
+   c'e' nessun altro sul tavolo da cui distinguere i due.
+
+   `{ a, b }` e' la sfida del manuale: due modelli — uno per parte, per
+   indice, per uid, per nome o proprio la schiera — che «dirigono tutti
+   i loro attacchi l'uno contro l'altro, in ordine di Iniziativa», e a
+   cui nessun altro del combattimento puo' dirigere i suoi (p. 212).
+   Sono le due meta' della stessa regola: quella di sopra ne conta il
+   risultato, questa la combatte.
+   ------------------------------------------------------------------ */
+const findAt = (list, key) => {
+  if (key == null) return -1;
+  if (typeof key === "number") return key >= 0 && key < list.length ? key : -1;
+  const uid = key && typeof key === "object" && key.uid != null ? key.uid : key;
+  return list.findIndex(c => c === key || c.ref === key ||
+    (c.ref && c.ref.uid != null && c.ref.uid === uid) || c.name === key);
+};
+function duelOf(challenge, A, B){
+  if (!challenge || typeof challenge !== "object") return null;
+  const a = findAt(A, challenge.a), b = findAt(B, challenge.b);
+  return a >= 0 && b >= 0 ? { a, b } : null;
+}
+/* I due si vedono solo fra loro, e nessun altro li vede. Si riscrive
+   l'ingaggio invece di filtrarlo dopo, perche' l'ingaggio e' la
+   domanda «chi mena a chi» ed e' esattamente quella che la sfida
+   cambia. Il contatto vero non serve: «se possibile i due modelli
+   vanno portati a contatto di basetta» (p. 212), e quando non e'
+   pratico si lasciano dove sono e duellano lo stesso. */
+function duelLinks(link, duel){
+  link.A.forEach((l, i) => { link.A[i] = i === duel.a ? [duel.b] : l.filter(j => j !== duel.b); });
+  link.B.forEach((l, j) => { link.B[j] = j === duel.b ? [duel.a] : l.filter(i => i !== duel.a); });
+}
+
 export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
   const startA = asSide(SA), startB = asSide(SB);
   const A = withRetinue(startA.map(clone)), B = withRetinue(startB.map(clone));
   /* i modelli e le ferite di partenza, per chi c'era e per i capi
      aggiunti qui: servono alle perdite e all'overkill */
-  const initA = A.map(c => ({ models: c.models, w: c.w }));
-  const initB = B.map(c => ({ models: c.models, w: c.w }));
+  const initA = A.map(c => ({ models: c.models, w: c.w, spill: c.spill || 0 }));
+  const initB = B.map(c => ({ models: c.models, w: c.w, spill: c.spill || 0 }));
+  const duel = duelOf(challenge, A, B);
   const link = engagements(A, B);
+  if (duel) duelLinks(link, duel);
   /* ogni schiera con la sua parte, i nemici che tocca, quanti colpi
      porta su ciascuno e quanta prima fila ci arriva */
   const mk = (c, at, tag, foes, side, mine) => {
     const e = { c, at, tag, foes, side, ...aimAt(c, foes, side) };
+    /* chi duella non si spartisce la prima fila con nessuno: porta
+       tutti i suoi attacchi addosso al rivale, e il rivale e' l'unico
+       che ha davanti (p. 212) */
+    if (duel && ((tag === "A" && at === duel.a) || (tag === "B" && at === duel.b))){
+      e.duel = true;
+      e.budget = foes.map(() => 0); e.fronts = foes.map(() => 0);
+      if (foes.length){ e.budget[0] = attacksOf(c); e.fronts[0] = 1; }
+      return e;
+    }
     if (outOfReach(c, mine, foes.map(j => side[j]))){
       e.budget = e.budget.map(() => 0); e.fronts = e.fronts.map(() => 0);
       c.outOfReach = true;
@@ -886,15 +936,25 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
     /* la bestia smette di menare quando cade il cavaliere: il modello
        intero esce dal gioco (p. 204) */
     const me = e.host ? e.host.c : e.c;
-    if (!def || def.models <= 0 || me.models <= 0) return null;
-    return { e, def, r: strike(e.c, def, { round, ...opts }) };
+    if (!def || me.models <= 0) return null;
+    /* «se il rivale cade prima che la cavalcatura meni, i suoi colpi si
+       tirano lo stesso, e contano per l'overkill» (p. 212). Fuori dalla
+       sfida un morto non si colpisce: e' il caso di sempre. */
+    const caduto = def.models <= 0;
+    if (caduto && !(e.duel && e.host)) return null;
+    return { e, def, r: strike(e.c, def, { round, ...opts }), caduto };
   };
   const land = (x, facce = null) => {
     if (!x) return;
     if (facce && facce.length) x.r.autoDice = facce;
     const kills = applyWounds(x.def, x.r.wounds);
-    (x.e.host ? x.e.host.c : x.e.c).dealt += x.r.wounds;
-    done[x.e.tag] += x.r.wounds;
+    const me = x.e.host ? x.e.host.c : x.e.c;
+    /* l'overkill e' «un'eccezione alla norma: di solito nel risultato
+       si contano solo le ferite perse» (p. 212). Quelle date a un
+       rivale gia' a terra stanno in un mucchio a parte: contano per
+       l'overkill e non per il conto del combattimento. */
+    if (x.caduto) me.oltre = (me.oltre || 0) + x.r.wounds;
+    else { me.dealt += x.r.wounds; done[x.e.tag] += x.r.wounds; }
     steps.push({ side: x.e.tag, name: x.e.c.name, at: x.e.at, foe: x.def.name,
                  character: !!x.e.c.attached, mount: !!x.e.host,
                  ...x.r, kills, together: !!x.together });
@@ -907,6 +967,9 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
      non a chi ci sta dentro. */
   const sotto = e => e.foes.map((j, k) => k).filter(k => {
     const f = e.side[e.foes[k]];
+    /* nella sfida i due stanno basetta contro basetta (p. 212): il
+       riparo del reggimento non c'e' piu', e urto e pestoni arrivano */
+    if (e.duel) return true;
     return !f.shielded || f.exposed;
   });
 
@@ -965,16 +1028,33 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
       attacks: split[k], auto: true, strength: e.c.autoS || e.c.baseS, label: "pestoni" }, facce); });
   }
 
-  /* L'overkill di una sfida: le ferite in piu' di quelle che
-     sarebbero bastate non si perdono, contano nel risultato. Si
-     misurano sulle ferite che l'avversario aveva PRIMA, non su quelle
-     che gli restano — e il tetto e' +5 (p. 152). */
-  if (challenge){
+  /* L'overkill: le ferite in piu' di quelle che sarebbero bastate non
+     si perdono, contano nel risultato. Si misurano sulle ferite che il
+     rivale aveva addosso all'INIZIO del round — quelle del profilo meno
+     quelle gia' prese, che un eroe con una ferita in corpo ne ha due e
+     non tre — e il tetto e' +5 (p. 152).
+
+     Con la sfida vera lo contano i due che duellano, e solo loro: le
+     ferite della cavalcatura sono le loro (p. 212, la riga sulle
+     cavalcature), quelle della truppa no. Con `challenge: true` — la
+     sfida del pannello, dove il combattimento E' la sfida — lo conta
+     chiunque, com'e' sempre stato. */
+  const ferite = (from, j) => {
+    const f = from[j] || {};
+    return Math.max(0, (f.models || 0) * (f.w || 1) - (f.spill || 0));
+  };
+  if (duel){
+    for (const [tag, at, from, quale] of [["A", duel.a, initB, duel.b],
+                                          ["B", duel.b, initA, duel.a]]){
+      const e = all.find(x => !x.host && x.tag === tag && x.at === at);
+      if (!e) continue;
+      e.c.overkill = ML.overkill((e.c.dealt || 0) + (e.c.oltre || 0), ferite(from, quale)).counted;
+    }
+  } else if (challenge){
     for (const e of all){
       if (e.host) continue;
       const from = e.tag === "A" ? initB : initA;
-      const left = e.foes.reduce((s, j) =>
-        s + ((from[j] || {}).models || 0) * ((from[j] || {}).w || 1), 0);
+      const left = e.foes.reduce((s, j) => s + ferite(from, j), 0);
       e.c.overkill = ML.overkill(e.c.dealt, left).counted;
     }
   }

@@ -667,5 +667,81 @@ console.log('\ngli schermagliatori non stanno in file (p. 101)');
 }
 
 /* ================================================================= */
+console.log('\nla sfida, come duello vero (pp. 211-212)');
+{
+  /* Le due schiere sono due personaggi uniti a due reggimenti: e' il
+     caso normale al tavolo, e l'unico in cui la sfida cambia davvero
+     qualcosa — un capo dentro un reggimento, senza sfida, lo colpisce
+     solo chi ci dirige i colpi (p. 209), e con la sfida non lo colpisce
+     piu' nessuno tranne il rivale. */
+  const truppa = st => unit('Truppa', st, 10, 5);
+  const capo = (nome, st, extra = {}) => unit(nome, st, 1, 1, extra);
+  const stTruppa = { M:'4',WS:'3',BS:'0',S:'3',T:'3',W:'1',I:'3',A:'1',Ld:'7' };
+  const stCapo   = { M:'4',WS:'6',BS:'0',S:'5',T:'4',W:'3',I:'6',A:'4',Ld:'9' };
+  const stVittima= { M:'4',WS:'3',BS:'0',S:'3',T:'3',W:'2',I:'2',A:'2',Ld:'8' };
+
+  const schiere = () => {
+    const rA = C.combatant(truppa(stTruppa));
+    const rB = C.combatant(truppa(stTruppa));
+    const cA = C.combatant(capo('Kroq-Gar', stCapo));
+    const cB = C.combatant(capo('Grimgor', stVittima));
+    cA.attached = true; cA.shielded = true; cA.hostAt = 0;
+    cB.attached = true; cB.shielded = true; cB.hostAt = 0;
+    return { A: [rA, cA], B: [rB, cB] };
+  };
+
+  const { A, B } = schiere();
+  const duello = C.meleeFight(A, B, { challenge: { a: 1, b: 1 } });
+  const colpi = duello.steps;
+  const daiDue = colpi.filter(s => s.name === 'Kroq-Gar' || s.name === 'Grimgor');
+  ok('i due sfidanti si dirigono i colpi solo addosso (p. 212)',
+     daiDue.length > 0 && daiDue.every(s => s.foe === (s.name === 'Kroq-Gar' ? 'Grimgor' : 'Kroq-Gar')));
+  ok('e nessun altro mena addosso a loro due',
+     !colpi.some(s => s.name === 'Truppa' && (s.foe === 'Kroq-Gar' || s.foe === 'Grimgor')));
+  ok('la truppa continua a menare alla truppa',
+     colpi.some(s => s.name === 'Truppa' && s.foe === 'Truppa'));
+  ok('lo sfidante porta tutti i suoi attacchi, non uno solo',
+     (colpi.find(s => s.name === 'Kroq-Gar') || {}).attacks === 4);
+
+  /* l'overkill si conta sulle ferite che il rivale aveva ADDOSSO
+     quando la sfida e' cominciata, non su quelle di tutta la sua
+     parte: prima `challenge: true` le sommava su tutto il gruppo, e
+     un campione da una ferita dentro un reggimento da dieci non
+     lasciava mai un punto di overkill */
+  let visto = false, senza = false;
+  for (let i = 0; i < 300 && !(visto && senza); i++){
+    const s = schiere();
+    const r = C.meleeFight(s.A, s.B, { challenge: { a: 1, b: 1 } });
+    if (r.sides.A[1].overkill > 0) visto = true;
+    if (r.sides.A[0].overkill > 0) senza = true;
+  }
+  ok('chi vince la sfida porta l overkill al suo conto', visto);
+  ok('e la truppa, che non duella, non ne porta mai', !senza);
+
+  /* p. 212: la cavalcatura dirige i colpi sul rivale, e se il rivale
+     e' gia' caduto li tira lo stesso — contano per l'overkill */
+  const dorso = capo('Carnosauro', stCapo,
+    { mountId:'carnosauro',
+      mount: { name:'Carnosaur', row:'Carnosaur',
+               righe:[{ chi:'Carnosaur', n:1, stats:{ WS:'3', S:'7', I:'2', A:'3' } }] } });
+  ok('la cavalcatura di chi duella mena al rivale e a nessun altro', (() => {
+    const s = schiere();
+    s.A[1] = C.combatant(dorso); s.A[1].attached = true; s.A[1].shielded = true; s.A[1].hostAt = 0;
+    const r = C.meleeFight(s.A, s.B, { challenge: { a: 1, b: 1 } });
+    const righe = r.steps.filter(x => x.mount);
+    return righe.length > 0 && righe.every(x => x.foe === 'Grimgor');
+  })());
+
+  /* le ferite date a un rivale gia' a terra non gonfiano il risultato:
+     contano per l'overkill e basta (p. 212, «this is an exception») */
+  ok('un rivale gia caduto non regala ferite al risultato', (() => {
+    const s = schiere();
+    s.B[1].models = 0;
+    const r = C.meleeFight(s.A, s.B, { challenge: { a: 1, b: 1 } });
+    return r.sides.A[1].dealt === 0;
+  })());
+}
+
+/* ================================================================= */
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

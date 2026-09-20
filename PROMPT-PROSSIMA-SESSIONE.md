@@ -435,13 +435,62 @@ Già che ci si è: il −1 al tiro contro gli schermagliatori `shoot.js` lo
 dà a ogni unità `loose`, e p. 185 lo dà solo a quelle fatte tutte di
 modelli con Forza d'Unità 1.
 
-## Compito 3 — le sfide (p. 210) — il prossimo
+## Compito 3 — fatto: le sfide (pp. 211-212)
 
-`melee.js` conta già l'overkill (con il tetto di +5 trovato sul libro). Chi
-lancia la sfida, chi la raccoglie e chi la rifiuta sono **decisioni**: sono
-tre mosse da offrire in `options()` quando in un combattimento ci sono due
-personaggi, e il modello di linguaggio le sa valutare bene. Attenzione al
-ritiro di chi rifiuta, che toglie il personaggio dal combattimento.
+Tre decisioni, e adesso sono tre domande in sospeso come la reazione
+alla carica: `sfida`/`nessuna`, `accetta`/`rifiuta`, `ritira`. Quello
+che è stato deciso, perché non si rifaccia la stessa strada:
+
+- **il duello sta in `meleeFight`**, e non è un filtro sui colpi: la
+  sfida **riscrive l'ingaggio** (`duelLinks`), perché l'ingaggio è già
+  la domanda «chi mena a chi». I due si vedono solo fra loro, nessun
+  altro li vede, e lo sfidante porta *tutti* i suoi attacchi sul
+  rivale invece di spartirsi la prima fila. `challenge` ha due forme e
+  vanno tenute tutte e due: `true` è la sfida del pannello delle due
+  schiere («conta l'overkill»), `{ a, b }` è quella del manuale;
+- **la cavalcatura** segue il cavaliere da sola (eredita `duel` dalla
+  riga dell'ospite), e **il rivale già caduto non la ferma** (p. 212):
+  quei colpi si tirano, contano per l'overkill (`c.oltre`) e **non**
+  entrano nel risultato del combattimento, che conta le ferite perse;
+- **l'overkill si misura sulle ferite che il rivale aveva addosso
+  all'inizio del round**, profilo meno quelle già prese — prima
+  `challenge: true` le sommava su tutto il gruppo nemico;
+- **il ritiro toglie quello che si sa togliere** (`capiInFila`): i
+  colpi, il Comando (p. 97) e le regole che il capo presta. Il passo e
+  la Forza d'Unità gli restano, ed è il limite `ritirato`;
+- **rifiutare si può solo se nessuno dei possibili raccoglitori è con
+  le spalle al muro** (p. 212: personaggio da solo, o reggimento
+  ingaggiato su tutti e quattro i lati). I quattro lati li dice dove
+  sta il nemico **intero** e non il punto in cui le basette si
+  sfiorano (`circondata`): con il punto più vicino un reggimento preso
+  su tre lati risultava preso su uno;
+- **una sfida che nessuno può raccogliere non si offre**: è legale e
+  «resta senza risposta», e questo arbitro non offre gesti che non
+  cambiano niente;
+- ogni opzione porta i suoi numeri (`duelloFra`: quante ferite fa,
+  quante ne prende, su quante ne restano, e un `vantaggio`), e
+  l'euristica di `agente.js` decide con quelli.
+
+Prove in `test/mischia.mjs` («la sfida, come duello vero») e
+`test/arbitro.mjs` («le sfide»). Una prova vecchia è stata riscritta:
+cercava «rifiutat» nel registro per dire che nessuna mossa era stata
+respinta, e una **sfida rifiutata** è una mossa legale che nel registro
+si scrive proprio così — adesso le mosse respinte si raccolgono da
+`onPasso`, che è quello che la prova voleva sapere.
+
+**Resta**, dichiarato in `LIMITI`:
+
+- `campioni`: il libro fa sfidare «un personaggio **o un campione**», e
+  il file di New Recruit segna solo che il gruppo di comando c'è
+  (`command.champion`) senza dare al campione un profilo. Senza
+  profilo non si duella;
+- `ritirato`: il passo e la Forza d'Unità che il ritirato continua a
+  dare al reggimento;
+- la sfida del **pannello del tavolo** (`duel.js`, la spunta *sfida*) è
+  ancora quella che conta e basta: là il combattimento *è* la sfida, e
+  non c'è nessun altro da cui distinguere i due. Se un giorno il
+  pannello mostrerà anche i reggimenti attorno, vorrà la forma
+  `{ a, b }`.
 
 ## Compito 4 — sagome, macchine da guerra, volo
 
