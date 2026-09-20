@@ -1887,11 +1887,15 @@ function drawTemplate(svg, g){
       g(layer, "circle", { cx:c.wx, cy:c.wy, r:5, fill, stroke:"var(--paper)", "stroke-width":1.4 });
     }
   };
+  /* il modello sotto il buco centrale e' colpito comunque (p. 95): nel
+     disegno sta con i pieni, non con quelli che devono tirare il 4+ */
+  const conto = SH.templateHits(under);
   mark(under.full, "var(--bad)");
-  mark(under.partial, "none");
+  if (under.hole != null && !under.full.includes(under.hole)) mark([under.hole], "var(--bad)");
+  mark(under.partial.filter(c => c !== under.hole), "none");
   const txt = g(layer, "text", { x:t.x, y:t.y - (shape.kind === "circle" ? shape.r : 0) - 10,
                                  "text-anchor":"middle", "font-size":15, fill:col });
-  txt.textContent = `${under.full.length} sotto · ${under.partial.length} a ${SH.PARTIAL_NEED}+`;
+  txt.textContent = `${conto.full} sotto · ${conto.partial} a ${SH.PARTIAL_NEED}+`;
 }
 
 function drawMarkers(svg, g, measure){
@@ -3826,8 +3830,10 @@ async function runBombard(u){
       cells.push({ ...c, foe });
   const under = SH.modelsUnder(cells.map((c, i) => ({ ...c, cell: i })), out.shape);
   let hits = SH.templateHits(under);
-  if (under.partial.length){
-    const parziali = await G.askRolls([{ id:"parziali", kind:"d6", n: under.partial.length,
+  /* i dadi sono `asks` e non «tutti i parziali»: chi sta sotto il buco
+     centrale e' colpito comunque e non ne tira uno (p. 95) */
+  if (hits.asks){
+    const parziali = await G.askRolls([{ id:"parziali", kind:"d6", n: hits.asks,
                                          need: SH.PARTIAL_NEED, why:"chi e' sotto solo in parte" }],
                                       `Sagoma di ${u.name}`);
     if (parziali && parziali.parziali) hits = SH.templateHits(under, parziali.parziali.dice);

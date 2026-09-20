@@ -414,10 +414,23 @@ function hullOfTwoCircles(c1, r1v, c2, r2v, steps = 16){
 
 /* Chi sta sotto, e quanto. Una basetta e' un rettangolo: dentro del
    tutto vuol dire tutti e quattro gli angoli dentro; dentro in parte
-   vuol dire che la sagoma e la basetta si toccano. */
+   vuol dire che la sagoma e la basetta si toccano.
+
+   `hole` e' il modello sotto il BUCO CENTRALE della sagoma tonda, che
+   e' una domanda a parte perche' il libro gli riserva due regole: e'
+   colpito comunque, anche se la basetta ci sta sotto solo in parte
+   (p. 95), ed e' lui a prendersi la Forza e la perforazione scritte
+   fra parentesi sul profilo dell'arma (p. 224). Il buco vero e' un
+   forellino di qualche millimetro, e il libro non ne da' il diametro:
+   qui e' il PUNTO centrale della sagoma, e il modello e' quello la cui
+   basetta ci sta sopra. E' una lettura, ed e' quella che al tavolo si
+   fa con la matita nel buco. Il libro dice «a single model»: se piu'
+   di una basetta tocca quel punto vince la piu' vicina di centro. */
 export function modelsUnder(cells = [], shape = null){
-  if (!shape) return { full: [], partial: [], out: cells.map(c => c.cell), page: PAGE.templates };
+  if (!shape) return { full: [], partial: [], out: cells.map(c => c.cell),
+                       hole: null, page: PAGE.templates };
   const full = [], partial = [], out = [];
+  let hole = null, holeD = Infinity;
   for (const c of cells){
     const box = { x: c.wx, y: c.wy, w: c.w || MM, h: c.h || MM, rot: c.wrot || c.rot || 0 };
     const pts = boxCorners(box);
@@ -425,8 +438,12 @@ export function modelsUnder(cells = [], shape = null){
     if (inside === pts.length) full.push(c.cell);
     else if (inside > 0 || touches(shape, box, pts)) partial.push(c.cell);
     else out.push(c.cell);
+    if (shape.kind === "circle" && distPointToBox(shape.c, box) === 0){
+      const d = Math.hypot(c.wx - shape.c[0], c.wy - shape.c[1]);
+      if (d < holeD){ holeD = d; hole = c.cell; }
+    }
   }
-  return { full, partial, out, need: PARTIAL_NEED, page: PAGE.templates };
+  return { full, partial, out, hole, need: PARTIAL_NEED, page: PAGE.templates };
 }
 
 function pointIn(shape, p){
@@ -462,19 +479,26 @@ function pointInPoly(p, poly){
    in parte passano con un 4+. Le facce arrivano da fuori — le tira il
    vassoio, come tutto il resto — e se non arrivano si torna il conto
    di quanti dadi servono. */
+/* Il modello sotto il buco centrale e' colpito comunque, anche quando
+   la sua basetta sta sotto solo in parte (p. 95): esce dal mucchio dei
+   dadi e passa con quelli sicuri. Prima si giocava il suo 4+ come
+   tutti gli altri, e il colpo forte dell'arma poteva non partire. */
 export function templateHits(under, dice = null){
-  const full = (under.full || []).length;
-  const part = (under.partial || []).length;
+  const sicuri = [...(under.full || [])];
+  const parziali = (under.partial || []).filter(c => c !== under.hole);
+  if (under.hole != null && !sicuri.includes(under.hole)) sicuri.push(under.hole);
+  const full = sicuri.length;
+  const part = parziali.length;
   if (!dice) return { hits: full, full, partial: part, need: PARTIAL_NEED,
-                      asks: part, page: PAGE.templates };
+                      hole: under.hole ?? null, asks: part, page: PAGE.templates };
   const kept = [];
-  (under.partial || []).forEach((cell, i) => {
+  parziali.forEach((cell, i) => {
     const face = dice[i];
     if (face != null && face >= PARTIAL_NEED && face > 1) kept.push(cell);
   });
   return {
     hits: full + kept.length, full, partial: part, saved: part - kept.length,
-    cells: [...(under.full || []), ...kept],
+    cells: [...sicuri, ...kept], hole: under.hole ?? null,
     need: PARTIAL_NEED, dice, page: PAGE.templates,
   };
 }
@@ -521,7 +545,7 @@ export function bombard({ aim = null, template = "large", deg = 0, inches = 0,
     aim, to: mv.to, moved: mv.moved, deg, hit: mv.hit,
     shape: placeTemplate(template, mv.to, angle),
     page: PAGE.machines,
-    text: mv.hit ? "Colpito!: la sagoma resta dove e' stata messa."
+    text: mv.hit ? "Colpito!: la sagoma resta dov'è stata messa."
                  : `Devia di ${mv.moved}″ a ${deg}°.`,
   };
 }
@@ -837,4 +861,119 @@ export function shareHits(hits = 0, { models = 0, characters = 1 } = {}){
     else chars[(i % mucchi) - 1]++;
   }
   return { unit, chars, page: PAGE.joined };
+}
+
+/* ============================================================
+   11 · LE ARMI CHE SPARANO SENZA ABILITA' BALISTICA (pp. 224-229)
+   «This weapon does not use its crew's Ballistic Skill. Instead, it
+   shoots using the "Bombardment" special rule» (p. 224). Non c'e'
+   nessun tiro per colpire: c'e' un punto scelto — il centro del
+   bersaglio —, una deviazione, e chi resta sotto la sagoma. Il §7
+   aveva gia' la deviazione e le due tabelle del Mancato Colpo; qui
+   c'e' quello che sta in mezzo, ed e' la parte che vuole il tavolo
+   modello per modello.
+
+   Due cose il file di New Recruit non le porta, e vengono dal libro:
+   QUALE SAGOMA usa l'arma e SU QUALE TABELLA va il Mancato Colpo.
+   Stanno nelle Note del profilo, e l'export le butta via. Qui c'e' la
+   riga di ogni arma che i libri in casa descrivono, con il libro e la
+   pagina accanto; un'arma a bombardata che non e' in questo elenco si
+   dichiara invece di sparare con una sagoma indovinata — le tre
+   sagome non sono intercambiabili, e sceglierne una a caso vuol dire
+   sbagliare di due pollici di diametro.
+   ============================================================ */
+const rulesText = w => Array.isArray(w && w.rules) ? w.rules.join(", ") : String((w && w.rules) || "");
+
+export const BOMBARDMENT = /\bbombardment\b/i;
+
+/* Le bandierine del tiro di un'arma, lette dalla sua riga di regole
+   come la scrive il file della lista: «Cumbersome, Magical Attacks,
+   Move or Shoot» e' una stringa sola, non un elenco, e chi la trattava
+   da elenco leggeva una regola sola lunga sessanta caratteri. */
+export function weaponFlagsOf(weapon){
+  const list = Array.isArray(weapon && weapon.rules)
+    ? weapon.rules
+    : String((weapon && weapon.rules) || "").split(/\s*,\s*/);
+  return readShooting(list.filter(x => x && String(x).trim() && String(x).trim() !== "-")).flags;
+}
+
+export const BOMBARDS = [
+  { re:/stone\s*thrower/i,       nome:"Lanciapietre",        template:"small", misfire:"stone",
+    book:"Core Rulebook",   page:224 },
+  { re:/mortar/i,                nome:"Mortaio",             template:"large", misfire:"cannon",
+    book:"Core Rulebook",   page:228 },
+  { re:/plagueclaw\s*catapult/i, nome:"Plagueclaw Catapult", template:"large", misfire:"stone",
+    book:"Legends: Skaven", page:19 },
+];
+
+/* Torna `null` se l'arma non spara a bombardata; una riga con
+   `known: false` se ci spara e il libro in casa non dice con che
+   sagoma. Sono due risposte diverse e chi chiama le tratta diverso:
+   la prima e' un arco, la seconda e' un limite da dichiarare. */
+export function bombardOf(weapon){
+  if (!weapon || !BOMBARDMENT.test(rulesText(weapon))) return null;
+  const name = String(weapon.name || "").trim();
+  const row = BOMBARDS.find(r => r.re.test(name));
+  if (!row) return {
+    known: false, name, page: PAGE.machines,
+    why: `«${name}» spara con la Bombardata e i libri in casa non dicono che sagoma usa: ` +
+         `sta nelle Note del profilo, che l'export non porta`,
+  };
+  return {
+    known: true, name, nome: row.nome, template: row.template, misfire: row.misfire,
+    book: row.book, page: row.page,
+    why: `${row.nome}: sagoma da ${TEMPLATES[row.template].d}″, Mancato Colpo sulla tabella ` +
+         `${(MISFIRE_KINDS[row.misfire] || "").toLowerCase()} (${row.book} p. ${row.page})`,
+  };
+}
+
+/* Il numero fra parentesi del profilo — «4 (8)», «-1 (-3)» — e' quello
+   del modello che sta sotto il buco centrale della sagoma (p. 224);
+   il primo numero vale per tutti gli altri. `stat()` legge gia' il
+   primo e basta, ed e' giusto cosi': questa serve a leggere l'altro. */
+export function bracket(v){
+  const s = String(v == null ? "" : v);
+  const nums = s.match(/-?\d+/g) || [];
+  const base = nums.length ? +nums[0] : 0;
+  const has = /\(/.test(s) && nums.length > 1;
+  return { base, hole: has ? +nums[1] : base, has };
+}
+
+/* La gittata di un'arma come il profilo la scrive. Tre forme, e due
+   non si leggevano: «12-60"» e' una fascia con un minimo — sotto i
+   dodici pollici un lanciapietre non arriva — e `stat()` ne tornava
+   12, cioe' scambiava il minimo per il massimo; «8D6"» e' una gittata
+   che si TIRA, e `stat()` ne tornava 8. La prima era un lanciapietre
+   che spara a dodici pollici, la seconda un cannone a otto. */
+export function rangeBand(weapon){
+  const s = String((weapon && weapon.range) || "").trim();
+  const dadi = /(\d*)\s*[Dd]\s*(\d+)/.exec(s);
+  if (dadi) return { min: 0, max: 0, rolled: `${dadi[1] || 1}D${dadi[2]}`,
+                     n: +(dadi[1] || 1), die: +dadi[2], known: false };
+  const fascia = /^\s*(\d+)\s*[-–]\s*(\d+)/.exec(s);
+  if (fascia) return { min: +fascia[1], max: +fascia[2], rolled: "", known: true };
+  const n = /\d+/.exec(s);
+  return { min: 0, max: n ? +n[0] : 0, rolled: "", known: !!n };
+}
+
+/* ============================================================
+   12 · UNA LINEA CHE ATTRAVERSA IL TAVOLO
+   La palla di cannone che rimbalza (p. 226) e il fulmine che corre
+   lungo il terreno chiedono la stessa cosa: quali basette stanno
+   sotto un segmento, e IN CHE ORDINE la linea le incontra. L'ordine
+   non e' un vezzo — il «Crunch» del cannone si ferma sulla prima
+   creatura mostruosa che trova, e senza l'ordine non si sa quale sia.
+   ============================================================ */
+export function lineUnder(cells = [], from = null, to = null){
+  if (!from || !to) return { cells: [], page: PAGE.machines };
+  const out = [];
+  for (const c of cells){
+    const box = { x: c.wx, y: c.wy, w: c.w || MM, h: c.h || MM, rot: c.wrot || c.rot || 0 };
+    const pts = boxCorners(box);
+    const dentro = distPointToBox(from, box) === 0 || distPointToBox(to, box) === 0;
+    if (!dentro && !segIntersectsPoly(from, to, pts)) continue;
+    out.push({ ...c, at: Math.hypot(c.wx - from[0], c.wy - from[1]) });
+  }
+  out.sort((a, b) => a.at - b.at);
+  return { cells: out, page: PAGE.machines };
 }

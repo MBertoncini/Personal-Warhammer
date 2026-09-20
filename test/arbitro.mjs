@@ -560,6 +560,134 @@ console.log('\nnon si tira dentro una mischia (p. 143)');
   ok('uno che ha addosso la Temple Guard no', AR.ingaggiata(G, bersaglio) && !suLui());
 }
 
+/* Le sagome e le macchine da guerra: il pezzo dell'arbitro che
+   mancava. Nessuna lista salvata ha un lanciapietre — l'unica macchina
+   dell'archivio e' il Warp Lightning Cannon, che spara in un altro modo
+   — e allora la macchina si monta qui con il profilo del libro (Core
+   Rulebook p. 224), che e' un numero letto e non inventato. */
+console.log('\nla bombardata (pp. 224-226)');
+{
+  const lanciapietre = () => ([{ name: 'Stone thrower', range: '12-60"', S: '4 (8)', ap: '-1 (-3)',
+                                 rules: 'Bombardment, Cumbersome, Move or Shoot' }]);
+  const macchina = (G, u, armi = lanciapietre()) => {
+    u.troop = 'War machine'; u.weapons = armi; return u;
+  };
+  /* una sorgente di dadi a copione: ogni numero e' la faccia grezza
+     meno uno, e l'ultimo vale per tutti quelli che restano */
+  const facce = (...seq) => { let i = 0; D.setSource(n => Math.min(n - 1, seq[Math.min(i++, seq.length - 1)])); };
+  const inTiro = G => { G.casella = casella('tiro'); G.army = 'A'; return G; };
+
+  /* l'opzione c'e', e dice con che sagoma si spara */
+  {
+    const G = inTiro(nuova());
+    const lp = macchina(G, metti(G, uid(G, 3), 600, 900));
+    metti(G, uid(G, 505), 600, 400);
+    const o = AR.options(G).list;
+    const b = o.find(x => x.id === 'bombarda' && x.uid === lp.uid);
+    ok('una macchina a bombardata non tira come un arco',
+       !!b && !o.some(x => x.id === 'tira' && x.uid === lp.uid));
+    ok('e l opzione dice la sagoma e la pagina', /sagoma da 3/.test(b.why) && b.page === 224);
+  }
+
+  /* «12-60"» e' una fascia: sotto i dodici pollici non si spara */
+  {
+    const G = inTiro(nuova());
+    const lp = macchina(G, metti(G, uid(G, 3), 600, 700));
+    metti(G, uid(G, 505), 600, 600);
+    ok('sotto la gittata minima non si bombarda',
+       !AR.options(G).list.some(x => x.id === 'bombarda' && x.uid === lp.uid));
+  }
+
+  /* il tiro vero: Colpito!, la sagoma resta sul centro del bersaglio */
+  {
+    const G = inTiro(nuova());
+    const lp = macchina(G, metti(G, uid(G, 3), 600, 900));
+    const tg = metti(G, uid(G, 505), 600, 400);
+    facce(0);                                   // Colpito!, e tutti gli altri dadi a 1
+    const r = AR.apply(G, { id: 'bombarda', uid: lp.uid, target: tg.uid });
+    ok('la bombardata si applica', r !== false && r.ok !== false);
+    ok('il registro dice dov e caduta la sagoma e chi c era sotto',
+       G.log.some(x => /sagoma/i.test(x.text) && /sotto/i.test(x.text)));
+    ok('e la macchina ha sparato', lp.shot === true);
+    ok('nessun tiro per colpire: la bombardata non usa l Abilita Balistica',
+       !G.log.some(x => x.text.includes(lp.name) && /a \d\+/.test(x.text)));
+  }
+
+  /* la sagoma non guarda le bandiere: sotto ci finisce chi c'e' */
+  {
+    const G = nuova();
+    metti(G, uid(G, 3), 600, 900);
+    metti(G, uid(G, 505), 600, 400);
+    const celle = AR.interni.caselleDelTavolo(G);
+    ok('le caselle del tavolo sono quelle di tutti e due gli eserciti',
+       celle.some(c => c.u.army === 'A') && celle.some(c => c.u.army === 'B'));
+  }
+
+  /* il Mancato Colpo: un 1 e la macchina non c'e' piu' (p. 226) */
+  {
+    const G = inTiro(nuova());
+    const lp = macchina(G, metti(G, uid(G, 3), 600, 900));
+    const tg = metti(G, uid(G, 505), 600, 400);
+    facce(5, 0, 5, 0);                          // deviazione: Mancato Colpo; tabella: 1
+    AR.apply(G, { id: 'bombarda', uid: lp.uid, target: tg.uid });
+    ok('un 1 sul Mancato Colpo distrugge la macchina', lp.dead === true);
+    ok('e il registro lo scrive', G.log.some(x => /Mancato Colpo/.test(x.text) && /distrutta/i.test(x.text)));
+  }
+
+  /* 2-4: una Ferita all'equipaggio, e niente tiro fino alla fine del
+     round successivo */
+  {
+    const G = inTiro(nuova());
+    const lp = macchina(G, metti(G, uid(G, 3), 600, 900));
+    const tg = metti(G, uid(G, 505), 600, 400);
+    facce(5, 0, 5, 1);                          // deviazione: Mancato Colpo; tabella: 2
+    AR.apply(G, { id: 'bombarda', uid: lp.uid, target: tg.uid });
+    ok('un guasto non la distrugge', !lp.dead);
+    ok('ma le costa una Ferita', (lp.wounds || 0) + (lp.lost || 0) > 0);
+    ok('e la ferma fino alla fine del round dopo', lp.nonTira === G.turno + 1);
+    lp.shot = false;
+    ok('il turno dopo non spara ancora',
+       !AR.options(G).list.some(x => x.id === 'bombarda' && x.uid === lp.uid));
+  }
+
+  /* un'arma a bombardata che i libri in casa non coprono: non si spara
+     con una sagoma indovinata, e lo si dichiara */
+  {
+    D.setSource(D.seeded(4));
+    const G = AR.newBattle({ A, B, scenario: 'bm-strada' });
+    const lp = macchina(G, uid(G, 3), [{ name: 'Doom Rocket', range: '48"', S: '5', ap: '-2',
+                                         rules: 'Bombardment, Cumbersome' }]);
+    let giri = 0;
+    while (G.schierando && giri++ < 200 && AR.options(G).list.length) AR.apply(G, AR.options(G).list[0]);
+    ok('la sagoma che il libro in casa non dice si dichiara a fine schieramento',
+       G.log.some(x => /\[limite\]/.test(x.text) && /bombardata/i.test(x.text)));
+    inTiro(G);
+    ok('e quell arma non spara', !AR.options(G).list.some(x => x.uid === lp.uid &&
+       (x.id === 'bombarda' || x.id === 'tira')));
+  }
+  D.setSource(D.seeded(1));
+}
+
+/* «Move or Shoot» non e' un divieto dell'unita' ma dell'arma, e
+   l'arbitro non lo passava a `canShoot`: nella partita fra i due
+   Skaven i Warplock Jezzails marciavano e sparavano nello stesso
+   turno, con tanto di «ha mosso» scritto accanto. */
+console.log('\nl arma che o si muove o tira (p. 137)');
+{
+  const G = nuova();
+  const jz = metti(G, uid(G, 3), 600, 900);
+  jz.weapons = [{ name: 'Warplock jezzail', range: '36"', S: '6', ap: '-3',
+                  rules: 'Cumbersome, Magical Attacks, Move or Shoot' }];
+  const orc = metti(G, uid(G, 505), 600, 400);
+  const spara = () => AR.options(G).list.some(x => x.id === 'tira' && x.uid === jz.uid);
+  G.casella = casella('tiro'); G.army = 'A';
+  ok('fermo, il jezzail tira', spara());
+  jz.moved = { kind: 'walk', inches: 3 };
+  ok('e dopo essersi mosso no', !spara());
+  jz.moved = { kind: 'still', inches: 0 };
+  ok('ma restare fermi non e muoversi', spara());
+}
+
 /* La sfida Michele contro Gemini lo aveva preso per un errore: il
    Bastiladon fallisce il test, avanza di un movimento solo, e poi non
    spara. E' il libro: chi tenta la marcia e fallisce «is considered to

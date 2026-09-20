@@ -311,6 +311,71 @@ ok('le due tabelle hanno sei facce piene',
    ['cannon', 'stone'].every(k => SH.MISFIRE[k].length === 6 && SH.MISFIRE[k].every(Boolean)));
 
 /* ================================================================= */
+console.log('\nla bombardata: quale sagoma, e il buco centrale (pp. 224-228)');
+
+/* Quale sagoma usa un'arma sta nelle Note del profilo, e l'export di
+   New Recruit le butta via: l'elenco viene dal libro, arma per arma. */
+const lanciapietre = { name: 'Stone thrower', range: '12-60"', S: '4 (8)', ap: '-1 (-3)',
+                       rules: 'Bombardment, Cumbersome, Move or Shoot, Multiple Wounds (D3+1)' };
+const bomb = SH.bombardOf(lanciapietre);
+ok('il lanciapietre usa la sagoma da tre pollici', bomb && bomb.known && bomb.template === 'small');
+ok('e va sulla tabella del lanciapietre', bomb.misfire === 'stone' && bomb.page === 224);
+const mortaio = SH.bombardOf({ name: 'Mortar', range: '12-48"', S: '2 (6)', ap: '-2 (-3)',
+                               rules: 'Bombardment, Cumbersome' });
+ok('il mortaio usa quella da cinque e la polvere nera',
+   mortaio.known && mortaio.template === 'large' && mortaio.misfire === 'cannon');
+ok('un arma a bombardata che i libri in casa non coprono si dichiara',
+   SH.bombardOf({ name: 'Doom Rocket', rules: 'Bombardment' }).known === false);
+ok('e un arco non e una bombardata', SH.bombardOf({ name: 'Short bow', rules: '-' }) === null);
+
+/* il numero fra parentesi e' quello del modello sotto il buco */
+ok('la Forza fra parentesi si legge', SH.bracket('4 (8)').base === 4 && SH.bracket('4 (8)').hole === 8);
+ok('e anche la perforazione', SH.bracket('-1 (-3)').hole === -3);
+ok('senza parentesi il colpo forte non c e',
+   SH.bracket('6').has === false && SH.bracket('6').hole === 6);
+
+/* la gittata: una fascia ha un minimo, e una tirata non e un numero */
+ok('12-60 e una fascia, non una gittata di dodici',
+   SH.rangeBand(lanciapietre).min === 12 && SH.rangeBand(lanciapietre).max === 60);
+ok('48 e solo un massimo',
+   SH.rangeBand({ range: '48"' }).max === 48 && SH.rangeBand({ range: '48"' }).min === 0);
+ok('e 8D6 e una gittata che si tira',
+   SH.rangeBand({ range: '8D6"' }).rolled === '8D6' && SH.rangeBand({ range: '8D6"' }).known === false);
+
+/* il buco centrale: uno solo, e colpito comunque (p. 95) */
+const centrata = SH.placeTemplate('small', [0, 0]);
+const conBuco = SH.modelsUnder([
+  { cell: 0, wx: 0.3 * MM, wy: 0, w: 20, h: 20 },        // ci sta sopra
+  { cell: 1, wx: 1.4 * MM, wy: 0, w: 20, h: 20 },        // sul bordo
+], centrata);
+ok('il modello sotto il buco e uno solo', conBuco.hole === 0);
+ok('e fuori dal centro non c e nessun buco',
+   SH.modelsUnder([{ cell: 0, wx: 2.2 * MM, wy: 0, w: 20, h: 20 }], centrata).hole === null);
+/* una basetta larga sotto il buco puo' stare sotto solo in parte: il
+   libro la colpisce lo stesso, e non le fa tirare il suo 4+ */
+const grosso = SH.modelsUnder([{ cell: 0, wx: 0, wy: 0, w: 100, h: 100 }], centrata);
+ok('una basetta grande sotto il buco e sotto solo in parte',
+   grosso.partial.includes(0) && grosso.hole === 0);
+const colpiti = SH.templateHits(grosso);
+ok('ma e colpita comunque, e non tira nessun dado',
+   colpiti.hits === 1 && colpiti.asks === 0 && colpiti.hole === 0);
+
+/* ================================================================= */
+console.log('\nuna linea che attraversa il tavolo (p. 226)');
+
+const filaLinea = [
+  { cell: 0, wx: 1 * MM, wy: 0,      w: 20, h: 20 },
+  { cell: 1, wx: 3 * MM, wy: 0,      w: 20, h: 20 },
+  { cell: 2, wx: 3 * MM, wy: 3 * MM, w: 20, h: 20 },
+];
+const linea2 = SH.lineUnder(filaLinea, [0, 0], [6 * MM, 0]);
+ok('la linea prende chi ci sta sotto e salta chi e da parte',
+   linea2.cells.map(c => c.cell).join(',') === '0,1');
+ok('e li da in ordine di quanto sono lontani', linea2.cells[0].at < linea2.cells[1].at);
+ok('e si ferma dove finisce',
+   SH.lineUnder(filaLinea, [0, 0], [2 * MM, 0]).cells.map(c => c.cell).join(',') === '0');
+
+/* ================================================================= */
 console.log('\nil test di Panico del tiro (p. 141)');
 
 ok('un quarto tondo non basta',

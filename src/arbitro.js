@@ -49,6 +49,11 @@ import * as MG from './magic.js';
 import * as EF from './effects.js';
 import { splitStat, moveInfo } from './profiles.js';
 import { roll, d3, leadershipTest, stat, rankBonus, woundOn, saveOn, chance as chanceOf } from './rules.js';
+/* Il dado di deviazione e quello di artiglieria non passano da
+   `rules.js`, che riesporta solo i cubi: la deviazione e' un gesto
+   suo — una direzione piu' una distanza — e `dice.js` lo tira gia'
+   intero, con il Mancato Colpo dentro (p. 95). */
+import { scatter as deviazione } from './dice.js';
 import { SCENARIOS, geometry } from './scenarios.js';
 import { troopType, unitStrength } from './troops.js';
 import { TERRAIN } from './terrain.js';
@@ -71,8 +76,14 @@ export const LIMITI = [
     why:"il libro li vuole al passo d'Iniziativa del mago; e le loro ferite tolgono modelli ma non entrano nel risultato del combattimento, che `meleeFight` conta da sé" },
   { id:"armatura",  what:"un mago con armatura lancia lo stesso", page:111,
     why:"la pelle callosa degli Skink Priest conta come armatura leggera, e letto alla lettera il libro toglierebbe loro il lancio: finché una FAQ non lo chiarisce il divieto non si applica" },
-  { id:"sagome",    what:"le sagome e le macchine da guerra sparano come un'arma normale", page:222,
-    why:"deviazione e «sotto in parte» stanno in `shoot.js` e vogliono la posizione modello per modello" },
+  { id:"sagome",    what:"delle macchine da guerra l'arbitro spara la Bombardata, e non la palla di cannone, la grappola, l'organo e il lanciafiamme", page:226,
+    why:"la Bombardata sceglie un punto, devia e guarda chi resta sotto, e quella si gioca (pp. 224-226); la palla di cannone vuole la linea che rimbalza con il «Crunch», e le altre tre vogliono ognuna la sua procedura" },
+  { id:"bombardata", what:"un'arma a Bombardata di cui i libri in casa non dicono la sagoma non spara", page:224,
+    why:"quale sagoma usa sta nelle Note del profilo, e l'export di New Recruit le butta via: fra la sagoma da tre pollici e quella da cinque ce ne sono due di diametro, e sceglierne una a caso vuol dire sbagliare in silenzio" },
+  { id:"indiretto", what:"la Bombardata si spara sempre a vista", page:225,
+    why:"il tiro indiretto non chiede la linea di vista e devia di meno — l'Artiglieria meno l'Abilità Balistica dell'equipaggio — ed è una scelta che si dichiara prima di sparare: l'arbitro non la offre" },
+  { id:"ferite",    what:"«Multiple Wounds» non moltiplica le ferite", page:224,
+    why:"il lanciapietre ne fa D3+1 al modello sotto il buco centrale, e la palla di cannone D3: l'app legge la regola, la scrive fra quelle note, e non la tira" },
   { id:"ruota",     what:"la ruota si paga giusta, ma si fa una volta sola, all'inizio, e sul centro", page:124,
     why:"il libro la fa girare su uno spigolo del fronte e lascia alternare ruote e passi avanti: l'arbitro conta quanto cammina il modello esterno, gira il pezzo sul posto e poi va dritto. Il giro libero dei Lumbering (p. 195) si fa prima di muovere invece che dopo" },
   { id:"manovre",   what:"chi riordina le file o si riforma non usa il resto del movimento, e la riforma tiene il fronte che aveva", page:125,
@@ -1147,10 +1158,38 @@ function opzioniTiro(S){
     if (u.fled || ingaggiata(S, u) || u.shot || stupida(S, u)) continue;
     const armi = CB.rangedWeapons(u);
     if (!armi.length) continue;
-    const gate = SH.canShoot({ charged: !!u.charged, marched: !!(u.moved && u.moved.kind === "march"),
-                               engaged: ingaggiata(S, u), fleeing: !!u.fled });
-    if (!gate.can) continue;
     const arma = armi[0];
+    /* «Move or Shoot» non e' un divieto dell'unita' ma dell'arma, e
+       l'arbitro non lo passava a `canShoot`: i Warplock Jezzails
+       marciavano e sparavano nello stesso turno, e il Warp Lightning
+       Cannon pure. La riga delle regole sta sul profilo dell'arma. */
+    const gate = SH.canShoot({ charged: !!u.charged, marched: !!(u.moved && u.moved.kind === "march"),
+                               engaged: ingaggiata(S, u), fleeing: !!u.fled,
+                               moved: haMosso(u), weaponFlags: SH.weaponFlagsOf(arma) });
+    if (!gate.can) continue;
+    /* una macchina guasta non tira fino alla fine del round successivo
+       (p. 226): il divieto vale per la bombardata come per l'arco */
+    if (u.nonTira && S.turno <= u.nonTira) continue;
+    /* chi spara a bombardata non tira per colpire e non offre «tira»:
+       e' un'altra procedura, e il bersaglio e' un punto sul tavolo */
+    const bomba = bombardaDi(u, arma);
+    if (bomba){
+      /* la sagoma che i libri in casa non dicono non si indovina: il
+         limite lo dichiara `limitiDiPartenza`, qui non si spara */
+      if (!bomba.known) continue;
+      for (const t of nemiciDi(S, u)){
+        if (ingaggiata(S, t)) continue;
+        const d = distanza(S, u, t);
+        if (d > bomba.banda.max || d < bomba.banda.min) continue;
+        if (vistaTagliata(S, u, t)) continue;
+        const f = previsioneBombarda(S, u, t, arma, bomba);
+        out.push({ id:"bombarda", uid: u.uid, target: t.uid, nome: u.name, contro: t.name,
+                   why: `${bomba.why}, da ${d}″: se non devia ci finiscono sotto ${f.sotto} ` +
+                        `modell${f.sotto === 1 ? "o" : "i"} di ${t.name}, ≈ ${f.kills.toFixed(1)} perdite`,
+                   attesa: f.kills, page: bomba.page });
+      }
+      continue;
+    }
     const gittata = stat(arma.range);
     for (const t of nemiciDi(S, u)){
       /* «units cannot shoot at enemy units that are engaged in combat»
@@ -1571,12 +1610,30 @@ const GESTI = {
     const u = byUid(S, a.uid), t = byUid(S, a.target);
     if (!u || !t) return no("unità sconosciuta");
     if (u.shot) return no("ha già tirato in questo turno");
+    if (u.nonTira && S.turno <= u.nonTira) return no(`è guasta: non tira fino alla fine del round ${u.nonTira}`);
     if (stupida(S, u)) return no("è in preda alla Stupidità: non tira");
     const armi = CB.rangedWeapons(u);
     if (!armi.length) return no("non ha armi da tiro");
+    if (SH.bombardOf(armi[0])) return no("spara a bombardata: il gesto è «bombarda», non «tira» (p. 224)");
     tiro(S, u, t, armi[0], {});
     u.shot = true;
     return si("tiro risolto");
+  },
+
+  /* la bombardata: niente tiro per colpire, una sagoma che devia */
+  bombarda: (S, a) => {
+    const u = byUid(S, a.uid), t = byUid(S, a.target);
+    if (!u || !t) return no("unità sconosciuta");
+    if (u.shot) return no("ha già tirato in questo turno");
+    if (u.nonTira && S.turno <= u.nonTira) return no(`è guasta: non tira fino alla fine del round ${u.nonTira}`);
+    if (stupida(S, u)) return no("è in preda alla Stupidità: non tira");
+    const arma = CB.rangedWeapons(u)[0];
+    const row = arma && bombardaDi(u, arma);
+    if (!row) return no("non spara a bombardata");
+    if (!row.known) return no(row.why);
+    bombarda(S, u, t, arma, row);
+    u.shot = true;
+    return si("bombardata risolta");
   },
 
   /* ---- le sfide (pp. 211-212) ---- */
@@ -1943,6 +2000,162 @@ function tiro(S, u, t, arma, { standAndShoot = false } = {}){
      resta nessuno in piedi» sopra il tiro che li aveva abbattuti */
   perdite(S, t, r.kills, r.left);
   if (r.kills > 0) panico(S, t, `il tiro di ${u.name}`, u);
+}
+
+/* ---- la bombardata (pp. 224-226) ----
+   Un lanciapietre non tira per colpire. «This weapon does not use its
+   crew's Ballistic Skill»: si sceglie un bersaglio, la sagoma si posa
+   sul suo centro, devia di quello che dice il dado di artiglieria, e
+   chi resta sotto e' colpito — sotto del tutto sempre, sotto in parte
+   con un 4+ (p. 95). E' l'unica cosa del tiro che vuole sapere dove
+   sta ogni singolo modello, ed e' per questo che e' arrivata ultima:
+   `formation.js` le basette le sa da sempre, nessuno gliele chiedeva.
+
+   Tre cose che al tavolo sono ovvie e nel codice no. La sagoma non
+   guarda le bandiere: sotto ci finisce chi c'e', amico o nemico. Il
+   personaggio unito a un reggimento, che a un arco non si puo'
+   bersagliare (p. 209), sotto la sagoma ci sta come tutti gli altri —
+   e infatti la sua basetta e' una casella come le altre. E il modello
+   sotto il buco centrale prende il colpo forte, quello scritto fra
+   parentesi sul profilo. */
+
+/* Ogni basetta sul tavolo, con addosso di chi e'. I personaggi uniti
+   non hanno una casella loro: stanno nella fila del reggimento che li
+   ospita, e `layout` gliene da' una marcata `char` con il loro uid —
+   per questo la truppa e il capo si distinguono qui e non prima. */
+function caselleDelTavolo(S){
+  const out = [];
+  for (const u of S.units){
+    if (!onBoard(u) || isJoined(u)) continue;
+    for (const c of FM.worldCells(u, layoutOf(u, S.units)))
+      out.push({ ...c, u, cell: out.length });
+  }
+  return out;
+}
+/* di chi e' questa basetta: del capo che ci sta sopra, o del reggimento */
+const padroneDi = (S, c) => (c.kind === "char" && byUid(S, c.uid)) || c.u;
+
+/* Il Mancato Colpo (p. 226): non e' un tiro fallito, e' un rinvio a
+   una tabella. Le due tabelle stanno in `shoot.js`, lette a p. 347; qui
+   c'e' quello che succede sul tavolo. */
+function mancatoColpo(S, u, kind){
+  const dado = roll(1)[0];
+  const read = SH.misfireRead(kind, dado);
+  say(S, `${u.name}: ${read.text}`, { dice: [dado], army: u.army, page: read.page });
+  u.shot = true;
+  if (dado === 1){ perdite(S, u, alive(u)); return; }
+  if (dado <= 4){
+    /* «The crew immediately loses one Wound»: una ferita sola, con il
+       resto che resta appeso come tutte le altre. E poi non tira piu'
+       fino alla fine del round successivo, che e' due turni di questa
+       parte, non due caselle. */
+    const t = CB.woundsToll(u, 1, { carried: u.wounds || 0 });
+    inizioFase(S, u);
+    perdite(S, u, t.kills, t.left);
+    if (!u.dead){
+      u.nonTira = S.turno + 1;
+      say(S, `${u.name} non tira fino alla fine del round ${u.nonTira}.`, { army: u.army, page: 226 });
+    }
+  }
+}
+
+/* Chi spara a bombardata non tira per colpire: quello che gli serve e'
+   l'arma, la sagoma che il libro le da', e la fascia di gittata. Torna
+   `null` quando l'arma non e' a bombardata. */
+function bombardaDi(u, arma){
+  const row = SH.bombardOf(arma);
+  if (!row) return null;
+  return { ...row, banda: SH.rangeBand(arma) };
+}
+
+/* Quanto ci si aspetta da una bombardata, per chi deve sceglierla: i
+   modelli che la sagoma coprirebbe se non deviasse, e le perdite che
+   ne verrebbero. La deviazione non entra nel conto — è il dado, e un
+   dado non si prevede — e l'opzione lo dice: «se non devia». */
+function previsioneBombarda(S, u, t, arma, row){
+  const shape = SH.placeTemplate(row.template, [t.x, t.y], 0);
+  const mie = FM.worldCells(t, layoutOf(t, S.units)).map((c, i) => ({ ...c, cell: i }));
+  const conto = SH.templateHits(SH.modelsUnder(mie, shape));
+  const sotto = conto.full + conto.partial * chanceOf(SH.PARTIAL_NEED);
+  const forza = SH.bracket(arma.S), pen = SH.bracket(arma.ap);
+  const b = CB.combatant(t);
+  const passa = (colpi, S0, AP0) => colpi * chanceOf(woundOn(S0, b.t)) *
+    (1 - chanceOf(saveOn(b.armour, Math.abs(AP0)))) *
+    (1 - chanceOf(saveOn(b.ward, 0))) * (1 - chanceOf(saveOn(b.regen, 0)));
+  const buco = conto.hole != null ? 1 : 0;
+  const ferite = passa(Math.max(0, sotto - buco), forza.base, pen.base) +
+                 passa(buco, forza.hole, pen.hole);
+  return { sotto: Math.round(sotto), kills: ferite / (b.w || 1) };
+}
+
+function bombarda(S, u, t, arma, row){
+  const banda = row.banda;
+  const d = distanza(S, u, t);
+  if (d > banda.max || d < banda.min){
+    say(S, `${u.name} non arriva: ${d}″ con una gittata di ${banda.min}-${banda.max}″.`, { army: u.army });
+    return;
+  }
+  limite(S, "indiretto");
+  if (/multiple wounds/i.test(Array.isArray(arma.rules) ? arma.rules.join() : String(arma.rules || "")))
+    limite(S, "ferite");
+
+  /* 1. il punto: il centro del bersaglio (p. 224) */
+  const aim = [t.x, t.y];
+  /* 2. la deviazione: dado di artiglieria per i pollici, dado di
+        deviazione per la direzione, e il Mancato Colpo sta sul primo */
+  const dev = deviazione({ distance: "artillery" });
+  if (dev.misfire) return mancatoColpo(S, u, row.misfire);
+  const out = SH.bombard({ aim, template: row.template, deg: dev.deg, inches: dev.inches, hit: dev.hit });
+
+  /* 3. chi resta sotto, basetta per basetta */
+  const celle = caselleDelTavolo(S);
+  const sotto = SH.modelsUnder(celle, out.shape);
+  const conto = SH.templateHits(sotto);
+  const dadi = conto.asks ? roll(conto.asks) : null;
+  const colpi = dadi ? SH.templateHits(sotto, dadi) : conto;
+
+  const mucchi = new Map();
+  for (const i of colpi.cells || []){
+    const c = celle[i];
+    const chi = padroneDi(S, c);
+    if (!chi || chi.dead) continue;
+    const g = mucchi.get(chi.uid) || { u: chi, n: 0, buco: false };
+    g.n++;
+    if (i === colpi.hole) g.buco = true;
+    mucchi.set(chi.uid, g);
+  }
+  const detta = [...mucchi.values()].map(g => `${g.u.name}: ${g.n}`).join(", ");
+  say(S, `${u.name} bombarda ${t.name} con ${arma.name} da ${d}″. ${out.text} ` +
+         `Sotto la sagoma: ${colpi.full} del tutto, ${colpi.partial} in parte` +
+         (detta ? ` — colpiti ${detta}.` : " — nessuno."),
+      { dice: [...(dev.die ? [dev.die.raw] : []), ...(dadi || [])],
+        army: u.army, page: row.page });
+
+  /* 4. e i colpi si tirano come tutti gli altri: per ferire, e poi le
+        salvezze. La Forza e la perforazione sono quelle del profilo,
+        salvo il modello sotto il buco, che prende quelle fra parentesi. */
+  const forza = SH.bracket(arma.S), pen = SH.bracket(arma.ap);
+  const chiSpara = CB.combatant(u);
+  for (const g of mucchi.values()){
+    if (g.u.dead) continue;
+    const bers = CB.combatant(g.u);
+    const normali = g.n - (g.buco ? 1 : 0);
+    const uno = normali ? CB.strike(chiSpara, bers, { attacks: normali, auto: true,
+                            strength: forza.base, ap: Math.abs(pen.base), label: "sagoma" }) : null;
+    const forte = g.buco ? CB.strike(chiSpara, bers, { attacks: 1, auto: true,
+                            strength: forza.hole, ap: Math.abs(pen.hole), label: "buco centrale" }) : null;
+    const ferite = (uno ? uno.wounds : 0) + (forte ? forte.wounds : 0);
+    const toll = CB.woundsToll(g.u, ferite, { carried: g.u.wounds || 0 });
+    inizioFase(S, g.u);
+    if (g.buco && forza.has)
+      say(S, `${g.u.name}: il modello sotto il buco centrale prende Forza ${forza.hole} con ${pen.hole} di penetrazione (p. 224).`,
+          { army: g.u.army, page: 224 });
+    say(S, `${u.name} su ${g.u.name}: ${g.n} ${g.n === 1 ? "colpo" : "colpi"} di sagoma, ` +
+           `${ferite} ferit${ferite === 1 ? "a" : "e"}, ${toll.kills} a terra.`,
+        { army: u.army, page: row.page });
+    perdite(S, g.u, toll.kills, toll.left);
+    if (toll.kills > 0) panico(S, g.u, `la sagoma di ${u.name}`, u);
+  }
 }
 
 /* Torna vero se l'unita' e' appena sparita. `zitto` e' per la mischia,
@@ -3222,6 +3435,11 @@ function limitiDiPartenza(S){
      `preparaMaghi`, con il limite «domini» */
   if (campo.some(u => { const p = PS.psychOf(u); return p.frenzy || p.impetuous; })) limite(S, "frenesia");
   if (campo.some(u => puoUnirsi(S, u))) limite(S, "solitari");
+  /* una macchina che spara a bombardata e di cui i libri in casa non
+     dicono la sagoma non sparerà mai: e' una riga di partita intera,
+     e si dice subito invece che a ogni fase di tiro in silenzio */
+  if (campo.some(u => CB.rangedWeapons(u).some(w => { const b = SH.bombardOf(w); return b && !b.known; })))
+    limite(S, "bombardata");
 }
 
 /* Chi non si e' radunato continua a fuggire nelle mosse (p. 132): il
@@ -3485,4 +3703,5 @@ export function ultimeRighe(S, n = 12){
    e che vanno provati uno per uno con i pezzi messi a mano. */
 export const interni = { indietreggia, seguire, fuggi, postoAContatto, percorso, comandoDi, ldOf, muoviCarica,
                          panico, faseDi, continuaAFuggire, perdite, pauraDi, inizioTurno, ldProprio, movimento,
+                         caselleDelTavolo,
                          testPanico, ondaPanico, ripulisciSfide, sfidanti, puoRifiutare };

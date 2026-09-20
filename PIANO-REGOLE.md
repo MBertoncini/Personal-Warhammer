@@ -1772,6 +1772,47 @@ contare e non sapeva giocare:
      New Recruit dice che il gruppo di comando c'è e non dà al campione
      un profilo suo. Limite `campioni`.
 
+E una nona, che era l'ultima cosa del tiro che l'app sapeva calcolare
+e non sapeva giocare:
+
+9. ~~**le sagome e le macchine da guerra**~~ — fatte per la parte che
+   il libro chiama **Bombardata** (pp. 224-226). `shoot.js` aveva le
+   sagome, la deviazione e le due tabelle del Mancato Colpo dalla
+   Tappa 4, e nessuno gliele chiedeva: quello che mancava era la
+   posizione **modello per modello**, che `formation.js` sapeva dare
+   da sempre (`worldCells`). Le decisioni prese, perché si rifacciano
+   solo se si trova di meglio:
+   - **la sagoma non guarda le bandiere.** Le caselle che si
+     confrontano con la sagoma sono quelle di tutto il tavolo, amiche
+     comprese, perché il libro dice «any model whose base lies
+     underneath»; e il personaggio unito a un reggimento, che a un
+     arco non si può bersagliare (p. 209), sotto la sagoma è una
+     basetta come le altre — `layout` gliene dà una marcata `char`, e
+     il colpo va a lui e non al reggimento;
+   - **il buco centrale è un punto, non un cerchio.** Il libro gli dà
+     due regole — è colpito anche se ci sta sotto solo in parte
+     (p. 95), e prende la Forza fra parentesi (p. 224) — e non gli dà
+     un diametro. L'app prende il modello la cui basetta sta sopra il
+     punto centrale della sagoma, che è quello che al tavolo si trova
+     con la matita nel buco, e se sono due vince il più vicino di
+     centro: il libro dice «a single model»;
+   - **una sagoma che il libro in casa non descrive non si spara.**
+     Quale sagoma usa un'arma sta nelle Note del profilo e l'export di
+     New Recruit le butta via: l'app ha la riga dei tre pezzi che i
+     suoi libri descrivono e per gli altri dichiara il limite. Fra tre
+     pollici e cinque ce ne sono due di diametro, e indovinare vuol
+     dire sbagliare in silenzio;
+   - **la gittata si legge come il profilo la scrive.** «12-60"» è una
+     fascia con un minimo, e `stat()` ne tornava 12 — un lanciapietre
+     che spara a dodici pollici; «8D6"» è una gittata che si tira, e
+     ne tornava 8.
+
+   Strada facendo, un difetto vecchio: **«Move or Shoot» non arrivava
+   a `canShoot`**. È un divieto dell'arma e non dell'unità, e
+   l'arbitro passava solo quelli dell'unità: i Warplock Jezzails
+   marciavano e sparavano nello stesso turno, con «ha mosso» scritto
+   accanto.
+
 E l'arbitro è sceso sul tavolo: la **Sfida** della scheda Matchup fa
 giocare una persona contro il modello di linguaggio, con l'arbitro in
 mezzo (`controai.js`).
@@ -1784,8 +1825,16 @@ mezzo (`controai.js`).
   (la stessa del punto qui sotto) e il movimento fuori turno. Con loro
   gli assalti al passo d'Iniziativa del mago (p. 158), che oggi si
   lanciano prima che si meni, e le ferite degli assalti nel risultato.
-- **Il volo**, le **sagome** e le **macchine da guerra**, che vogliono
-  la posizione modello per modello.
+- **Il volo**, che vuole una decisione e non un conto: sorvolare
+  significa ignorare il terreno e chi sta in mezzo, e oggi il
+  movimento dell'arbitro è una linea retta.
+- Delle **macchine da guerra**, i quattro modi di sparare che non sono
+  la Bombardata: la palla di cannone con il suo rimbalzo e il
+  «Crunch», la grappola, l'organo, il lanciafiamme. La palla vuole la
+  linea che attraversa il tavolo — `SH.lineUnder` la sa già dare — più
+  il tetto di un colpo per rango o per fila e le due cose che la
+  fermano di colpo.
+- **«Multiple Wounds»**, che l'app legge e non tira.
 - **I campioni d'unità**, che il libro lascia sfidare e l'app no,
   perché il file dice solo che il gruppo di comando c'è; e quello che
   il ritiro non toglie — il passo e la Forza d'Unità.
