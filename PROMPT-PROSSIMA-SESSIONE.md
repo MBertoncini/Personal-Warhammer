@@ -492,14 +492,84 @@ si scrive proprio così — adesso le mosse respinte si raccolgono da
   pannello mostrerà anche i reggimenti attorno, vorrà la forma
   `{ a, b }`.
 
-## Compito 4 — sagome, macchine da guerra, volo
+## Compito 4 — fatto a metà: le sagome sparano, e il volo no
 
-`shoot.js` ha già sagome, deviazione, cannone e lanciapietre, e il «sotto in
-parte»: quello che manca all'arbitro è la posizione **modello per modello**,
-che `formation.js` sa già dare (`layout`, `baseCells`). È il compito più
-meccanico dei quattro. Il volo (`profiles.js` dà il numero, `Fly (n)`) vuole
-invece una decisione: sorvolare vuol dire ignorare il terreno e le unità in
-mezzo, e oggi il movimento è una linea retta.
+`shoot.js` aveva sagome, deviazione e le due tabelle del Mancato Colpo
+dalla Tappa 4, e nessuno gliele chiedeva; `formation.js` sapeva dare la
+posizione modello per modello da sempre. Adesso l'arbitro le mette
+insieme. Quello che è stato deciso, perché non si rifaccia la stessa
+strada:
+
+- **la Bombardata** (pp. 224-226): si sceglie un bersaglio, la sagoma si
+  posa sul **centro** della sua unità, artiglieria e deviazione la
+  spostano, e chi resta sotto è colpito — del tutto sempre, in parte a
+  4+ (p. 95). **Niente tiro per colpire**: «this weapon does not use its
+  crew's Ballistic Skill». Poi i colpi si tirano per ferire come tutti
+  gli altri. Gesto `bombarda`, in `arbitro.js`;
+- **la sagoma non guarda le bandiere**: `caselleDelTavolo` prende le
+  basette di tutto il tavolo, amiche comprese, e un personaggio unito a
+  un reggimento — che a un arco non si potrebbe bersagliare (p. 209) —
+  sotto la sagoma è una basetta come le altre, perché `layout` gliene dà
+  una marcata `char` con il suo uid;
+- **il buco centrale è un PUNTO e non un cerchio.** Il libro gli dà due
+  regole — colpito anche se ci sta sotto solo in parte (p. 95), e la
+  Forza fra parentesi (p. 224) — e non gli dà un diametro. `modelsUnder`
+  torna `hole`: il modello la cui basetta sta sopra il centro della
+  sagoma, e se sono due il più vicino di centro («a single model»);
+- **una sagoma che i libri in casa non descrivono non si spara.** Quale
+  sagoma usa un'arma sta nelle Note del profilo, e l'export le butta
+  via: `SH.BOMBARDS` ha i tre pezzi che i libri descrivono (lanciapietre
+  3″, mortaio 5″, Plagueclaw 5″), e per gli altri c'è il limite
+  `bombardata`. Fra tre pollici e cinque ce ne sono due di diametro;
+- **il Warp Lightning Cannon** — l'unica macchina delle liste salvate, e
+  non aveva mai sparato un colpo. Non è una sagoma: è una **linea** di
+  8D6″ dal bordo della basetta, e chi ci finisce sotto (amico o nemico)
+  prende un colpo di Forza pari a un dado di artiglieria (Legends:
+  Skaven, p. 19). Gesto `fulmina`, geometria `SH.lineUnder`, e la terza
+  tabella del Mancato Colpo in `SH.MISFIRE.warpLightning`.
+
+**Quattro regole lette sul libro**, che valevano in ogni partita e non
+solo per le macchine: «Weapon of War» (p. 197 — niente marcia, niente
+carica, niente inseguimento, −1 alla fuga, giro gratis); «Move or Shoot»
+(p. 174), che è un divieto dell'**arma** e non arrivava a `canShoot`, per
+cui i Warplock Jezzails marciavano e sparavano; «Cumbersome» (p. 167 —
+niente *tira e tieni*) e «Ponderous»/«Quick Shot» (p. 175), che erano
+dichiarate da verificare. **«Quick Shot» non dà tiri in più**: questo
+repo lo diceva, ed era un'invenzione del nome.
+
+E due cose dell'euristica: cercava `tira` e basta, così la macchina
+restava ferma con la sua opzione in elenco; e non sapeva restare ferma
+per sparare, che il commento prometteva da sempre — adesso l'opzione
+`ferma` porta `tieniIlTiro` quando muoversi costerebbe il tiro.
+
+### Quello che del Compito 4 resta
+
+- **Il volo**, che è una decisione e non un conto: `profiles.js` dà il
+  numero (`Fly (n)`), e sorvolare vuol dire ignorare il terreno e le
+  unità in mezzo. Oggi il movimento dell'arbitro è una linea retta.
+  Limite `volo`;
+- **gli altri quattro modi di sparare di una macchina**: la palla di
+  cannone con il rimbalzo e il «Crunch» (p. 226 — la linea `lineUnder`
+  c'è già, mancano il tetto di un colpo per rango o per fila e le due
+  cose che la fermano di colpo), la grappola, l'organo, il lanciafiamme.
+  Limite `sagome`;
+- **«Multiple Wounds»** (p. 175), letta e non tirata: ogni ferita non
+  salvata ne vale X su **un** modello, e l'eccesso non passa al vicino —
+  per questo non si può sommare e dividere, si deve scorrere ferita per
+  ferita. Sul lanciapietre vale solo per il modello sotto il buco.
+  Limite `ferite`;
+- **il tiro indiretto** (p. 225), che è una scelta da dichiarare prima
+  di sparare: niente linea di vista, e la deviazione ridotta
+  dell'Abilità Balistica dell'equipaggio. Limite `indiretto`;
+- **il profilo diviso** di una macchina da guerra (p. 97): Resistenza e
+  Ferite dell'equipaggio in combattimento, quelle della macchina fuori,
+  e il modello che se ne va se uno dei due arriva a zero. Oggi l'app
+  tiene una riga sola. Limite `macchina`, che dice anche l'altra cosa
+  che manca: il giro che **non** conta come essersi mossa, che per
+  un'arma «o si muove o tira» è la differenza fra sparare e non sparare;
+- il pannello del tavolo (`deploy.js`, `runBombard`) conta i colpi di
+  sagoma **direttamente come perdite**, senza tirare per ferire né le
+  salvezze. L'arbitro li tira; il pannello no.
 
 ---
 
