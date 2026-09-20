@@ -57,6 +57,8 @@ import { scatter as deviazione, rollDice } from './dice.js';
 import { SCENARIOS, geometry } from './scenarios.js';
 import { troopType, unitStrength } from './troops.js';
 import { TERRAIN } from './terrain.js';
+import * as TR from './terrain.js';
+import * as SG from './sight.js';
 import { objectiveHolder, OBJECTIVE_RANGE } from './battlemarch.js';
 
 /* ============================================================
@@ -102,8 +104,12 @@ export const LIMITI = [
     why:"il bonus c'è (25 punti in Battle March, 50 nel Core Rulebook), ma l'arbitro non segna chi ha preso lo stendardo di un'unità travolta" },
   { id:"bordo",     what:"chi cede terreno contro il bordo del tavolo si ferma lì", page:134,
     why:"il libro dice dove si ferma chi cede terreno — un'unità, il terreno, un pollice da un nemico — e del bordo non dice niente" },
-  { id:"volo",      what:"chi vola si muove del suo volo ma non sorvola niente", page:0,
-    why:"il numero lo dà `profiles.js`; sorvolo e atterraggio vogliono la geometria del volo" },
+  { id:"volo",      what:"chi vola scavalca il terreno ma non le unità", page:0,
+    why:"il numero lo dà `profiles.js`, e il terreno lo ignora — impassabile, difficile, pericoloso, ostacolo difeso; sorvolare le unità e atterrare vogliono la geometria del volo, che non c'è" },
+  { id:"pericoloso", what:"il test di terreno pericoloso lo tirano tutti i modelli dell'unità", page:269,
+    why:"il libro lo fa tirare a ogni modello che ci comincia, ci passa o ci finisce dentro: l'arbitro misura il percorso con cinque linee — il centro e i quattro angoli — e non sa dire quali modelli ci siano passati davvero, quindi li conta tutti" },
+  { id:"cammino",   what:"il terreno attraversato si misura su cinque linee, non sulla sagoma che scorre", page:269,
+    why:"«una parte qualsiasi dell'unità» vorrebbe il rettangolo intero trascinato lungo il percorso: l'arbitro guarda il centro e i quattro angoli, che è molto meglio della linea sola di prima e non è ancora la regola" },
   { id:"seguire",   what:"chi vince segue sempre chi cede terreno, e non segue mai chi ripiega in ordine", page:134,
     why:"seguire o fermarsi è una scelta di chi gioca, e l'arbitro qui non la offre" },
   { id:"ridirezione", what:"chi vede fuggire il bersaglio della carica non la ridirige su un altro", page:121,
@@ -223,14 +229,30 @@ export function newBattle({ A, B, scenario = "bm-strada", nomi = null, magia = n
        aspettano: la scatola, i quattro angoli e la domanda «questo
        punto ci sta dentro?». E' la stessa che il tavolo passa agli
        aiuti tattici, perche' le regole della vista sono quelle e non
-       vanno riscritte qui. */
+       vanno riscritte qui.
+
+       Quello che qui non c'era, e che e' costato all'arbitro tutto il
+       capitolo del terreno, e' la CATEGORIA. `blocks` e `cover` si
+       leggevano da due espressioni regolari sul nome del tipo — un
+       bosco «blocca», le rovine «riparano leggera» — e il resto (il
+       pollice in meno, il dado peggiore, i ranghi persi, il test di
+       terreno pericoloso) non si leggeva affatto, perche' non c'era
+       niente da cui leggerlo. `catOf` e `coverOf` lo dicono, e lo
+       dicono dallo stesso posto da cui lo dice il tavolo. */
     terrain: (sc.terrain || []).map((t, i) => {
       const box = { x: t.x * MM, y: t.y * MM, w: (t.w || 2) * MM, h: (t.h || 2) * MM, rot: t.rot || 0 };
+      const cfg = TERRAIN[t.kind] || {};
+      const cat = TR.catOf(t);
       return {
-        tid: i + 1, kind: t.kind, label: t.kind, box, poly: boxCorners(box), circle: false,
+        tid: i + 1, kind: t.kind, label: cfg.label || t.kind, box, poly: boxCorners(box), circle: false,
         x: box.x, y: box.y, w: box.w, h: box.h, rot: box.rot,
-        blocks: /wood|monolith|pyramid|ruins/.test(t.kind),
-        cover: /wood|ruins|wall/.test(t.kind) ? "leggera" : "",
+        cat, natural: TR.isNatural(t),
+        /* la larghezza vera, in pollici, sta qui: `w` e `h` di questo
+           oggetto sono millimetri, e la regola delle decorazioni si
+           misura in pollici (p. 271) */
+        decor: TR.isDecoration(t),
+        blocks: cfg.los === true,
+        cover: TR.coverOf(t),
         contains: p => Math.abs(p[0] - box.x) <= box.w / 2 && Math.abs(p[1] - box.y) <= box.h / 2,
       };
     }),
@@ -421,9 +443,21 @@ export const sulTavolo = (S, u) => dentroTavolo(S, cornersOf(u, S.units));
    che non contano (il bersaglio di una carica, chi combatte con lui);
    `unPollice` accende la distanza dai nemici; `bordo` il bordo. Torna
    null quando il posto e' libero. */
-export function ingombro(S, u, box, { ignora = [], unPollice = true, bordo = true, gia = null } = {}){
+export function ingombro(S, u, box, { ignora = [], unPollice = true, bordo = true, gia = null,
+                                      terreno = true } = {}){
   const poly = boxCorners(box);
   if (bordo && !dentroTavolo(S, poly)) return { chi: null, perche: "il bordo del tavolo" };
+  /* Il terreno impassabile (p. 270): «non si attraversa durante la
+     battaglia — le unita' devono girarci attorno». Questo controllo non
+     c'era affatto: `ingombro` guardava le unita' e il bordo, e nelle
+     partite dell'arbitro si camminava dentro il monolite e dentro la
+     piramide come se fossero prati. Chi vola lo scavalca, ed e' l'unica
+     cosa del volo che l'arbitro fa (vedi il limite `volo`). */
+  if (terreno && !vola(u))
+    for (const t of S.terrain){
+      if (t.decor || !(t.cat && t.cat.noEntry)) continue;
+      if (polysOverlap(poly, t.poly)) return { chi: null, perche: `${t.label} (p. 270)` };
+    }
   for (const o of S.units){
     if (o === u || !onBoard(o) || isJoined(o) || ignora.includes(o.uid)) continue;
     const q = cornersOf(o, S.units);
@@ -764,10 +798,11 @@ function opzioniCarica(S){
     for (const t of nemiciDi(S, u)){
       const paura = pauraDi(S, u, t, "charge");
       if (paura.already && !paura.passed) continue;
+      const tc = terrenoDiCarica(S, u, t);
       const d = CH.declareCharge({
         charger: { name: u.name, box: boxOf(u, S.units), move, swift: MV.swiftOf(u), loose: !!u.loose },
         target:  { name: t.name, box: boxOf(t, S.units) },
-        pieces: S.terrain,
+        pieces: S.terrain, worst: tc.eff.worstDie,
       });
       if (!d || !d.can) continue;
       /* Il posto a contatto c'e'? Una carica su un nemico che ha gia'
@@ -1382,13 +1417,168 @@ function tiraRandom(S, u, mv){
   return n;
 }
 
-function vistaTagliata(S, a, b){
-  const from = { x: a.x, y: a.y }, to = { x: b.x, y: b.y };
-  return S.terrain.filter(t => t.blocks).some(t => segmentoTocca(from, to, t));
+/* ---- il terreno (pp. 269-272, e p. 159 per il combattimento) ----
+   Fin qui l'arbitro del terreno sapeva due cose, tutte e due guardando
+   un punto solo: se una retta fra i due centri toccava un pezzo che
+   «blocca», e se il centro di un'unita' stava dentro un pezzo che
+   «ripara». Non sapeva il pollice in meno, il dado peggiore, i ranghi
+   persi, il test di terreno pericoloso, la collina. Le regole c'erano
+   tutte, scritte in `terrain.js` e in `sight.js`: mancava chi gliele
+   chiedesse. */
+
+/* I pezzi che un'unita' tocca stando dove sta: il conto e' sui modelli
+   veri, perche' «un quarto dei modelli dentro» (p. 128) non si legge
+   su un rettangolo. */
+function celleDi(S, u){
+  return FM.worldCells(u, layoutOf(u, S.units)).map(c => [c.wx, c.wy]);
 }
-function coperturaDi(S, u){
-  return S.terrain.some(t => t.cover && pointInRect([u.x, u.y],
-    { x: t.x - t.w / 2, y: t.y - t.h / 2, w: t.w, h: t.h }));
+function pezziSotto(S, u){
+  const pts = celleDi(S, u);
+  return S.terrain.filter(t => !t.decor && pts.some(p => t.contains(p)));
+}
+
+/* Dove sta un'unita', nella forma che serve a misurare un percorso: il
+   centro e i quattro angoli. Il libro conta «una parte qualsiasi
+   dell'unita'» (p. 269), e una linea sola dal centro non e' una parte
+   qualsiasi. */
+const postiDi = (S, u) => [[u.x, u.y], ...cornersOf(u, S.units)];
+
+/* I pezzi attraversati andando da un posto all'altro. Resta una stima —
+   cinque linee invece di una sagoma che scorre — ed e' molto meno
+   grossolana della linea sola di prima. */
+function pezziFra(S, da, a){
+  const visti = new Set(), out = [];
+  for (let i = 0; i < Math.min(da.length, a.length); i++)
+    for (const hit of CH.crossed(da[i], a[i], S.terrain)){
+      if (visti.has(hit.tid)) continue;
+      visti.add(hit.tid); out.push(hit);
+    }
+  return out;
+}
+
+/* I pezzi che si attraverserebbero andando da quella parte per tanti
+   pollici: il percorso che si ha in mente prima di muovere, che e'
+   quello su cui si decide di quanto ci si puo' muovere. */
+function pezziSulCammino(S, u, verso, pollici){
+  const dx = verso[0] - u.x, dy = verso[1] - u.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const mm = Math.max(0, +pollici || 0) * MM;
+  const ux = dx / len * mm, uy = dy / len * mm;
+  const da = postiDi(S, u);
+  return pezziFra(S, da, da.map(p => [p[0] + ux, p[1] + uy]));
+}
+
+/* Il pollice in meno (p. 269): si applica al Movimento, non ai pollici
+   gia' raddoppiati della marcia, e per questo si passa `move` e non
+   `quanti` — una marcia nel bosco ne perde due, ed e' giusto cosi'. */
+function rallenta(S, u, verso, pollici){
+  const eff = TR.slowMove(pollici, pezziSulCammino(S, u, verso, pollici));
+  if (eff.slowed) say(S, `${u.name}: ${eff.text}.`, { army: u.army, page: eff.page });
+  return eff.move;
+}
+
+/* Il test di terreno pericoloso (p. 269): un D6 per modello per ogni
+   pezzo attraversato, e con un 1 il modello perde una ferita. Lo
+   tirano tutti i modelli dell'unita', non solo quelli passati davvero
+   dentro: e' la semplificazione dichiarata in `LIMITI`. */
+function terrenoPericoloso(S, u, pezzi){
+  const ask = TR.dangerousAsk(alive(u), pezzi);
+  if (!ask) return 0;
+  limite(S, "pericoloso");
+  const dadi = roll(ask.n);
+  const ferite = TR.dangerousLosses(dadi);
+  /* «perde una ferita», non «cade»: un Troll da tre ferite che mette un
+     piede in fallo non muore per una pozzanghera. `woundsToll` fa la
+     conversione da ferite a modelli e tiene appeso quello che avanza,
+     ed e' la stessa che usano il tiro e la magia. */
+  const conto = ferite ? CB.woundsToll(u, ferite, { carried: u.wounds || 0 }) : null;
+  say(S, `${u.name} attraversa ${[...new Set(ask.pieces)].join(", ")}: ` +
+         `${ask.n} dad${ask.n === 1 ? "o" : "i"} a ${ask.need}+, ` +
+         (ferite ? `${ferite} ferit${ferite === 1 ? "a" : "e"}` +
+                   (conto.kills ? `, ${conto.kills} a terra` : ", nessuno a terra")
+                 : "nessuna ferita") +
+         ` (p. ${ask.page}).`,
+      { dice: dadi, army: u.army, page: ask.page });
+  if (conto) perdite(S, u, conto.kills, conto.left);
+  return ferite;
+}
+
+/* Muoversi e pagarne il prezzo: il conto si fa sul percorso VERO, da
+   dove si e' partiti a dove si e' finiti, non su quello che si aveva in
+   mente. `da` sono i posti di partenza, presi prima di muovere. */
+function dopoIlMovimento(S, u, da){
+  if (!onBoard(u) || !da) return;
+  terrenoPericoloso(S, u, pezziFra(S, da, postiDi(S, u)));
+}
+
+/* Chi vola: il numero lo da' `profiles.js` leggendo «Fly (X)». Qui
+   serve per l'ostacolo difeso, che chi vola scavalca (p. 270). Il
+   sorvolo vero resta fra i limiti dichiarati. */
+const vola = u => (moveInfo(u).fly || 0) > 0;
+
+/* Il terreno che una carica attraversa (p. 128), e l'ostacolo che il
+   bersaglio difende (p. 270). Sono due cose che si guardano insieme e
+   prima del tiro, perche' cambiano il numero con cui si decide se la
+   carica si puo' dichiarare: il difficile toglie un pollice al
+   Movimento e rovescia il dado, e il muretto difeso non si attraversa
+   affatto — quindi non costa niente di quei due, e costa invece il
+   bonus di Iniziativa. */
+function terrenoDiCarica(S, u, t){
+  const muro = CH.defendedLine(boxOf(u, S.units), { box: boxOf(t, S.units), poly: cornersOf(t, S.units) },
+                               S.terrain);
+  const strada = CH.crossed([u.x, u.y], [t.x, t.y], S.terrain).filter(p => p !== muro);
+  return { eff: CH.terrainEffect(strada), muro, strada };
+}
+
+/* Chi sta sulla collina, e quanto (p. 272). Serve due volte: alla vista
+   — che ci si vede oltre le unita' — e al tiro, che da lassu' ha una
+   fila in piu'. Il terreno piu' alto del combattimento (p. 152) si
+   conta invece sulla sola prima fila, perche' e' la fila che mena. */
+const collineDi = S => S.terrain.filter(t => t.kind === "hill");
+function primaFila(S, u){
+  const lay = layoutOf(u, S.units);
+  return FM.worldCells(u, lay)
+    .filter(c => u.loose || SH.rankOf(c.cell, lay.front || 1) === 0)
+    .map(c => [c.wx, c.wy]);
+}
+const sullaCollina = (S, u) => SG.hillState(celleDi(S, u), collineDi(S));
+const filaPiuAlta = (S, u) => SG.hillShare(primaFila(S, u), collineDi(S)) > 0.5;
+
+/* Quanti modelli tirano (p. 143), con la FILA IN PIU' di chi sta tutto
+   su una collina (p. 272, *Vantage Point*). `shoot.js` sa questa regola
+   da sempre; `CB.shooters` chiamava il tetto senza dirgli della
+   collina, e un reggimento di arcieri in cima tirava con la stessa
+   prima fila di uno in mezzo all'erba. */
+const quantiTirano = (S, u) => SH.shooterCap({
+  models: u.models || 1, lost: u.lost || 0,
+  frontage: u.frontage || 1, loose: !!u.loose,
+  hill: sullaCollina(S, u) === "all",
+});
+
+/* Le unita' in mezzo, nella forma che `sight.js` vuole: bloccano la
+   vista (p. 103), e chi sta tutto su una collina le scavalca con lo
+   sguardo (p. 272). */
+function altreDi(S, a, b){
+  return S.units.filter(o => o !== a && o !== b && onBoard(o) && !isJoined(o)).map(o => ({
+    name: o.name, poly: cornersOf(o, S.units), loose: !!o.loose,
+    hill: !!sullaCollina(S, o),
+  }));
+}
+
+/* La vista del libro, quella intera: i modelli e le unita' in mezzo, la
+   penombra del bosco, la cresta della collina, e il riparo contato sui
+   modelli coperti invece che sul centro (pp. 103, 139, 270, 272). */
+function guarda(S, a, b){
+  return SG.unitSight({
+    eyes: primaFila(S, a),
+    targets: FM.worldCells(b, layoutOf(b, S.units)),
+    terrain: S.terrain, others: altreDi(S, a, b),
+    fromHill: sullaCollina(S, a), toHill: sullaCollina(S, b),
+  });
+}
+function vistaTagliata(S, a, b){ return !guarda(S, a, b).sees; }
+function coperturaDi(S, u, da = null){
+  return da ? guarda(S, da, u).cover : "";
 }
 function segmentoTocca(a, b, t){
   const poly = boxCorners({ x: t.x, y: t.y, w: t.w, h: t.h, rot: t.rot || 0 });
@@ -1547,10 +1737,11 @@ const GESTI = {
     if (stupida(S, u)) return no("è in preda alla Stupidità: non carica");
     if (u.moved || u.charged) return no("si è già mossa in questo turno");
     const { move } = movimento(S, u);
+    const tc = terrenoDiCarica(S, u, t);
     const d = CH.declareCharge({
       charger: { name: u.name, box: boxOf(u, S.units), move, swift: MV.swiftOf(u), loose: !!u.loose },
       target:  { name: t.name, box: boxOf(t, S.units) },
-      pieces: S.terrain,
+      pieces: S.terrain, worst: tc.eff.worstDie,
     });
     if (!d || !d.can) return no(`carica impossibile: ${d ? d.why : "?"}`);
     /* la Paura si tira prima di dichiarare (p. 168) */
@@ -1580,7 +1771,7 @@ const GESTI = {
        lascia fare (p. 167). */
     const armaT = CB.rangedWeapons(t)[0];
     const ft = SH.weaponFlagsOf(armaT);
-    const r = CH.reactions({ dist: d.dist, chargerMove: move, shots: CB.shooters(t),
+    const r = CH.reactions({ dist: d.dist, chargerMove: move, shots: quantiTirano(S, t),
                              noFlee: puo.can ? "" : puo.why, mustHold: puo.hold ? puo.why : "",
                              fleeing: !!t.fled, engaged: ingaggiata(S, t),
                              noShoot: ft.cumbersome && !ft.quickShot
@@ -1809,8 +2000,15 @@ function mossa(S, a, marcia){
   if (u.moved) return no("si è già mossa");
   if (u.unito === chiave(S)) return no("un personaggio le si è unito: non si muove più in questo turno (p. 207)");
   if (stupida(S, u)) return no("è in preda alla Stupidità: non si muove");
-  const { move } = movimento(S, u);
-  if (!move) return no("non sa di quanto si muove: il profilo non porta il Movimento");
+  const { move: pieno } = movimento(S, u);
+  if (!pieno) return no("non sa di quanto si muove: il profilo non porta il Movimento");
+  /* Il terreno difficile toglie UN POLLICE al Movimento, e vale sia a
+     cominciarci dentro, sia ad attraversarlo, sia a finirci (p. 269).
+     Si toglie qui, prima di raddoppiare per la marcia: il −1 e' su M,
+     quindi una marcia nel bosco ne perde due, ed e' quello che dice il
+     libro. Prima l'arbitro attraversava una palude alla stessa
+     velocita' con cui attraversava un prato. */
+  const move = vola(u) ? pieno : rallenta(S, u, [t.x, t.y], pieno);
   let quanti = move;
   if (marcia && bandiera(u, "noMarch")) return no("un incantesimo le impedisce di marciare");
   if (marcia){
@@ -1835,6 +2033,7 @@ function mossa(S, a, marcia){
      e un reggimento largo cinque basette si voltava di 45° e faceva
      ancora tutto il suo Movimento. Anche chi fallisce il test di marcia
      ha marciato, e non ha il giro libero dei Lumbering. */
+  const partenza = postiDi(S, u);
   const pr = pianoRuota(S, u, versoDi(t.x - u.x, t.y - u.y), quanti, { marcia });
   const p = avanzaRuotando(S, u, t, pr, quanti);
   /* anche con il test fallito e' una marcia: «it is considered to have
@@ -1854,6 +2053,7 @@ function mossa(S, a, marcia){
                                     : `${verbo} di ${p.pollici}″ ${p.bloccata ? "dritta" : "verso " + t.name}`) +
          (p.stop && p.pollici < p.voluti - 0.05 ? `, e si ferma: c'è ${p.stop.perche}` : "") + ".",
       { army: u.army, page: pr.costo && g ? 124 : marcia ? 123 : 122 });
+  if (!vola(u)) dopoIlMovimento(S, u, partenza);
   return si("mossa");
 }
 
@@ -1943,7 +2143,14 @@ function postoAContatto(S, u, t){
 }
 
 function muoviCarica(S, u, t, d){
-  const spec = CH.chargeDice({ swift: MV.swiftOf(u) });
+  /* Il terreno della carica (p. 128): il dado si rovescia, e il
+     Movimento con il pollice in meno sta gia' in `d.move`, perche'
+     `declareCharge` lo ha contato quando ha detto che la carica si
+     poteva dichiarare. Prima qui si tirava sempre tenendo il maggiore,
+     anche attraversando una palude. */
+  const tc = terrenoDiCarica(S, u, t);
+  const partenza = postiDi(S, u);
+  const spec = CH.chargeDice({ swift: MV.swiftOf(u), worst: !!d.worst });
   const dadi = roll(spec.n);
   /* il bersaglio puo' essere scappato: si misura adesso, non alla
      dichiarazione (p. 121) */
@@ -1995,6 +2202,16 @@ function muoviCarica(S, u, t, d){
          `e la prende di ${posto.arc}` +
          (posto.scorso ? ` (scorre di ${posto.scorso}″ lungo la faccia: c'era già qualcuno)` : "") + ".",
       { dice: dadi, army: u.army, page: 121 });
+  /* L'ostacolo difeso (p. 270): non lo si scavalca, e la carica e'
+     disordinata — niente bonus di Iniziativa a fine assalto (p. 146).
+     Chi vola ci passa sopra. */
+  const dis = CH.disorderedCharge({ defended: tc.muro, fly: vola(u) });
+  if (dis.disordered){
+    u.disordered = true;
+    say(S, `${u.name}: ${dis.text}`, { army: u.army, page: 270 });
+  }
+  /* e il terreno attraversato presenta il conto, come a ogni movimento */
+  terrenoPericoloso(S, u, pezziFra(S, partenza, postiDi(S, u)));
   return "carica a segno";
 }
 
@@ -2042,10 +2259,17 @@ function fuggi(S, u, da, pollici){
 const haMosso = u => !!u.moved && u.moved.kind !== "still";
 /* I modificatori del tiro, gli stessi del pannello (`SH.modsFor`): il
    bersaglio sciolto e il «tira e tiene» l'arbitro non li passava, e la
-   reazione alla carica sparava senza il suo −1. */
+   reazione alla carica sparava senza il suo −1.
+
+   Il riparo adesso e' quello del libro (p. 139): non «c'e' un bosco
+   addosso al centro del bersaglio, quindi −1», ma quanti modelli del
+   bersaglio sono coperti da dove si tira — fino a meta' e' riparo
+   parziale, oltre la meta' e' pieno e vale −2. Prima l'arbitro non
+   sapeva nemmeno dire −2, e un reggimento dietro un monolite si
+   prendeva lo stesso sconto di uno in mezzo all'erba alta. */
 function modificatori(S, u, t, d, gittata, { standAndShoot = false } = {}){
   return SH.shootMods({ long: d > gittata / 2, moved: haMosso(u) && !standAndShoot,
-                        cover: coperturaDi(S, t) ? "soft" : "",
+                        cover: coperturaDi(S, t, u),
                         looseTarget: !!t.loose, standAndShoot });
 }
 
@@ -2074,7 +2298,7 @@ function tiro(S, u, t, arma, { standAndShoot = false } = {}){
   }
   if (sagomaOMacchina(u, arma)) limite(S, "sagome");
   const mods = modificatori(S, u, t, d, gittata, { standAndShoot });
-  const r = CB.shootRoll(u, t, { weapon: arma, mods: mods.total });
+  const r = CB.shootRoll(u, t, { weapon: arma, mods: mods.total, shots: quantiTirano(S, u) });
   /* la Forza d'Unita' com'era all'inizio di questa fase: il quarto del
      Panico si conta su quella, sommando tutti i tiri della fase */
   const fase = faseDi(S);
@@ -3279,8 +3503,42 @@ function chiediRitiro(S, uids, sfidante){
    e poi porta sul tavolo quello che torna. Le perdite, i test di rotta
    uno per unita', le mosse all'indietro, l'inseguimento.
    ============================================================ */
+/* IL TERRENO QUANDO SI MENA (p. 159).
+   Due voci, e l'arbitro non ne aveva nessuna.
+
+   I RANGHI PERSI: «se un quarto o piu' dei modelli di un'unita' sta nel
+   terreno difficile all'inizio della fase di combattimento, l'unita' e'
+   Disrupted e non puo' reclamare il bonus dei ranghi». All'inizio della
+   fase, non alla fine della carica: un reggimento che si e' fermato in
+   un bosco due turni fa li perde ogni volta che mena. E il pericoloso e
+   il bosco qui contano come difficile (`combatCat`).
+
+   IL TERRENO PIU' ALTO (p. 152): un punto a chi ha la prima fila piu'
+   in alto. Se lo reclamano tutti e due si annulla, e quel conto lo fa
+   gia' `melee.js` — qui si dice soltanto chi ce l'ha.
+
+   `combat.js` legge `u.disrupted` e `u.highGround` dalla schiera: le
+   due bandierine c'erano da sempre e nessuno le accendeva. */
+function terrenoInMischia(S, g){
+  const difficile = S.terrain.filter(t => !t.decor && TR.combatCat(t).disorder);
+  for (const u of [...g.A, ...g.B]){
+    if (!onBoard(u)) continue;
+    const d = CH.disruptedInTerrain(celleDi(S, u), difficile);
+    if (d.disrupted && !u.disrupted)
+      say(S, `${u.name}: ${d.why}`, { army: u.army, page: 159 });
+    u.disrupted = d.disrupted;
+
+    const alto = filaPiuAlta(S, u);
+    if (alto && !u.highGround)
+      say(S, `${u.name} combatte con la prima fila sulla collina: +1 al risultato (p. 152).`,
+          { army: u.army, page: 152 });
+    u.highGround = alto;
+  }
+}
+
 function mischia(S, g){
   for (const u of [...g.A, ...g.B]) u.fought = chiave(S);
+  terrenoInMischia(S, g);
   /* La Paura quando il combattimento viene scelto: chi tocca un nemico
      che la fa ed e' piu' grosso tira, una volta per turno, e se
      fallisce ha −1 per colpire (p. 168). */
@@ -3907,4 +4165,8 @@ export function ultimeRighe(S, n = 12){
 export const interni = { indietreggia, seguire, fuggi, postoAContatto, percorso, comandoDi, ldOf, muoviCarica,
                          panico, faseDi, continuaAFuggire, perdite, pauraDi, inizioTurno, ldProprio, movimento,
                          caselleDelTavolo,
+                         /* il terreno: le prove devono poter chiedere che cosa vede chi
+                            guarda e che cosa sta sotto a chi sta fermo */
+                         guarda, pezziSotto, pezziSulCammino, rallenta, terrenoInMischia,
+                         sullaCollina, filaPiuAlta, quantiTirano, terrenoDiCarica,
                          testPanico, ondaPanico, ripulisciSfide, sfidanti, puoRifiutare };

@@ -427,22 +427,32 @@ Qui il progetto parte molto avanti. Quello che manca è preciso:
    nella Tappa 4 (`shoot.js`), e con la deviazione che finalmente sposta
    la sagoma sul tavolo. Le due larghezze della goccia sono dichiarate
    da verificare.
-8. **Terreno per categoria** (pp. 269-270): aperto, difficile,
-   pericoloso, impassabile, ostacolo basso, ostacolo alto, bosco. Oggi i
-   tipi di terreno sono grafici e uno o due sono trattati come
-   bloccanti. Ogni pezzo di terreno deve dichiarare la sua categoria, e
-   da lì discendono: −1 al movimento, la carica che tiene il dado
-   *peggiore*, il test di terreno pericoloso, l'unità *disordinata* che
-   perde i ranghi, la copertura, e la penombra del bosco che taglia la
-   linea di vista fra due unità entrambe fuori dal bosco.
+8. ~~**Terreno per categoria** (pp. 269-270): aperto, difficile,
+   pericoloso, impassabile, ostacolo basso, ostacolo alto, bosco. Ogni
+   pezzo di terreno deve dichiarare la sua categoria, e da lì
+   discendono: −1 al movimento, la carica che tiene il dado *peggiore*,
+   il test di terreno pericoloso, l'unità *disordinata* che perde i
+   ranghi, la copertura, e la penombra del bosco che taglia la linea di
+   vista fra due unità entrambe fuori dal bosco.~~ — **fatto.**
 
-Il punto 8 è il più sottovalutato: quasi tutte le regole di terreno sono
-già rappresentabili con quello che l'app disegna, manca solo il campo
-che dice **che tipo di terreno è**. Il campo c'è dalla Tappa 0, e dalla
-Tappa 2 la carica lo legge: il pezzo attraversato dice se rallenta, se
-fa tenere il dado peggiore, se chiede il test di terreno pericoloso e
-se fa arrivare in disordine. Restano le due eccezioni dell'ostacolo
-difeso.
+Il punto 8 era il più sottovalutato, e lo è stato fino in fondo: il
+campo della categoria c'era dalla Tappa 0 e dalla Tappa 2 la carica lo
+leggeva, ma **nessuno tirava il dado che quel campo annunciava**. La
+tabella diceva che la palude è pericolosa e la palude non faceva male a
+nessuno; l'ostacolo basso diceva di scavalcarsi gratis, mentre il libro
+lo tratta da terreno difficile (p. 270), e l'ostacolo alto diceva di
+rallentare, mentre è impassabile (pp. 270 e 159). Adesso `terrain.js`
+porta le regole e non solo la tabella — `slowMove`, `dangerousAsk`,
+`defendedObstacle`, `combatCat`, `isDecoration` — e le leggono tutti e
+tre: il pannello, la carica (`charge.js`) e **l'arbitro**, che del
+terreno non sapeva niente perché costruiva i pezzi senza categoria.
+
+Quello che il libro ha e qui ancora non c'è, detto per intero:
+l'**occupazione** delle *special features* (p. 272) — non carica, 360°,
+copertura piena, misure dalla base, una sola unità; il **Disrupted dal
+buco** quando l'impassabile impedisce l'allineamento (p. 159); e il
+terreno **combinato** su due lati dello stesso pezzo (p. 271), che qui
+si risolve dichiarando una categoria sola per pezzo.
 
 ---
 

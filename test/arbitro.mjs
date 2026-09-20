@@ -216,9 +216,18 @@ const conScheda = (l, units) => ({ ...l, prep: { general: null, bsb: null, note:
   const mob = G.units.find(u => u.name === 'Night Goblin Mobs');
   const nob = G.units.find(u => u.name === 'Night Goblin Oddnob');
   for (const u of [prete, mob, nob]) u.placed = true;
-  prete.x = 600; prete.y = 900; prete.rot = 0;
-  mob.x = 600; mob.y = 900 - 12 * MM; mob.rot = 180;
-  nob.x = 700; nob.y = 900 - 12 * MM; nob.rot = 180;
+  /* Sulla corsia di destra, e non al centro del tavolo: da quando
+     l'arbitro conosce la collina, «oltre la cresta» (p. 272) taglia la
+     linea di vista fra due unita' che stanno una di qua e una di la'
+     della collina bassa del Monolite, e senza linea di vista la
+     Fireball non si offre. Qui si prova la magia, non il terreno: i
+     tre pezzi si mettono dove il terreno non c'entra. */
+  prete.x = 1100; prete.y = 900; prete.rot = 0;
+  mob.x = 1100; mob.y = 900 - 12 * MM; mob.rot = 180;
+  /* e l'Oddnob un po' piu' in la' del suo reggimento: da dietro la mob
+     non vedrebbe il prete, perche' adesso l'arbitro sa che un'unita' in
+     mezzo taglia la vista (p. 103), e la maledizione non si offrirebbe */
+  nob.x = 1180; nob.y = 900 - 12 * MM; nob.rot = 180;
   G.schierando = false; G.army = 'A'; G.turno = 1;
   G.casella = AR.CASELLE.findIndex(c => c.id === 'tiro');
   const o = AR.options(G);
@@ -1656,6 +1665,100 @@ console.log('\nle sfide (pp. 211-212)');
     ok('e allora non c è dove scappare: la sfida non si rifiuta (p. 212)',
        AR.interni.puoRifiutare(K, capo) === false);
   }
+  seme(1);
+}
+
+/* ================================================================= */
+console.log('\nil terreno, in partita (pp. 269-272 e 159)');
+{
+  /* Le Rovine di Xhotl hanno tutto quello che serve in un tavolo solo:
+     due paludi (pericoloso), due boschi, due colline, una piramide
+     impassabile e due tesori, che sono decorazioni da 40 mm.
+
+     Il terreno c'era anche prima; quello che non c'era era la CATEGORIA
+     sui pezzi, e senza quella l'arbitro non poteva leggere nemmeno una
+     riga del capitolo del terreno. */
+  const X = lista('lmtl5st4mdsb5'), Y = lista('lmtl5t6hcsa1y');   // «Le Rovine di Xhotl»
+  seme(1);
+  const G = AR.newBattle({ A: X, B: Y, scenario: 'bm-rovine' });
+  const pezzo = k => G.terrain.find(t => t.kind === k);
+
+  ok('ogni pezzo posato porta la sua categoria',
+     pezzo('marsh').cat.id === 'dangerous' && pezzo('wood').cat.id === 'wood' &&
+     pezzo('pyramid').cat.id === 'impassable' && pezzo('hill').cat.id === 'open');
+  ok('e la copertura vera, non due nomi di tipo',
+     pezzo('wood').cover === 'soft' && pezzo('pyramid').cover === 'hard' && pezzo('marsh').cover === '');
+  ok('il tesoro è una decorazione: sotto i due pollici (p. 271)',
+     pezzo('treasure').decor === true && pezzo('wood').decor === false);
+
+  const sauri = G.units.find(u => u.name === 'Saurus Warriors');
+  const mob = G.units.find(u => u.name === 'Night Goblin Mobs');
+  for (const u of [sauri, mob]) u.placed = true;
+
+  /* La piramide sta al centro (24″, 18″): non si attraversa (p. 270).
+     Prima `ingombro` guardava solo le unità e il bordo, e nelle partite
+     dell'arbitro si camminava dentro la piramide come in un prato. */
+  sauri.x = 610; sauri.y = 850; sauri.rot = 0;
+  const dentro = AR.ingombro(G, sauri, { ...AR.boxOf(sauri, G.units), x: 610, y: 457 });
+  ok('nella piramide non si entra', !!dentro && /Piramide/.test(dentro.perche));
+  ok('e nel prato accanto sì',
+     AR.ingombro(G, sauri, { ...AR.boxOf(sauri, G.units), x: 610, y: 850 }) === null);
+
+  /* Il pollice in meno (p. 269): il bosco in basso a sinistra sta a
+     (9″, 28″), i Saurus hanno Movimento 4. */
+  sauri.x = 229; sauri.y = 860; sauri.rot = 0;
+  ok('attraversare il bosco toglie un pollice al Movimento',
+     AR.interni.rallenta(G, sauri, [229, 700], 4) === 3);
+  ok('e in aperto il Movimento resta quello',
+     AR.interni.rallenta(G, sauri, [900, 860], 4) === 4);
+  ok('il Movimento non scende mai sotto uno', AR.interni.rallenta(G, sauri, [229, 700], 1) === 1);
+
+  /* Il test di terreno pericoloso (p. 269): la palude in basso a destra
+     sta a (36″, 26″). Non c'era da nessuna parte: la palude si
+     dichiarava «pericolosa» e non faceva male a nessuno. */
+  sauri.x = 914; sauri.y = 850; sauri.rot = 0;
+  ok('la palude sul cammino si vede',
+     AR.interni.pezziSulCammino(G, sauri, [914, 660], 8).some(t => t.kind === 'marsh'));
+  const persi = sauri.lost || 0, prima = G.log.length;
+  D.setSource(() => 0);                       // tutti 1: nessuno mette il piede giusto
+  AR.apply(G, { id: 'avanza', uid: sauri.uid, verso: mob.uid, x: 914, y: 660 });
+  seme(1);
+  ok('chi la attraversa tira un dado per modello, e con gli 1 perde ferite',
+     (sauri.lost || 0) > persi &&
+     G.log.slice(prima).some(r => /attraversa Palude: \d+ dadi a 2\+/.test(r.text) && r.page === 269));
+
+  /* I ranghi persi (p. 159): un quarto o più dei modelli nel terreno
+     difficile all'INIZIO della fase di combattimento, non solo a fine
+     carica. `combat.js` leggeva `u.disrupted` da sempre, e nessuno
+     l'accendeva mai. */
+  sauri.lost = 0; sauri.dead = false; sauri.placed = true;
+  sauri.x = 229; sauri.y = 711; sauri.rot = 0;       // dentro il bosco
+  mob.x = 700; mob.y = 850; mob.rot = 180;           // in aperto
+  AR.interni.terrenoInMischia(G, { A: [sauri], B: [mob] });
+  ok('chi mena con un quarto dei modelli nel bosco perde i ranghi', sauri.disrupted === true);
+  ok('e chi sta in aperto no', mob.disrupted === false);
+
+  /* Il terreno più alto (p. 152): la collina di destra sta a (43,5″, 18″). */
+  sauri.x = 1105; sauri.y = 457; sauri.rot = 0;
+  AR.interni.terrenoInMischia(G, { A: [sauri], B: [mob] });
+  ok('chi ha la prima fila sulla collina prende il terreno più alto', sauri.highGround === true);
+  ok('e chi è nel prato no', mob.highGround === false);
+
+  /* La vedetta (p. 272): chi sta tutto su una collina tira con una fila
+     in più. `shoot.js` lo sapeva da sempre; `CB.shooters` non glielo
+     chiedeva, e da sopra una collina si tirava come dal prato. */
+  const conCollina = AR.interni.quantiTirano(G, sauri);
+  sauri.x = 700; sauri.y = 850;
+  const senza = AR.interni.quantiTirano(G, sauri);
+  ok('dalla collina tira una fila in più', conCollina === senza + sauri.frontage);
+
+  /* Il riparo contato sui modelli (p. 139) e non sul centro: prima
+     l'arbitro sapeva dire solo «leggera» oppure niente. */
+  mob.x = 965; mob.y = 203; mob.rot = 180;           // dentro il bosco in alto
+  sauri.x = 965; sauri.y = 600; sauri.rot = 0;
+  ok('il bersaglio nel bosco è in riparo', !!AR.interni.guarda(G, sauri, mob).cover);
+  mob.x = 700; mob.y = 300;
+  ok('e in aperto no', AR.interni.guarda(G, sauri, mob).cover === '');
   seme(1);
 }
 
