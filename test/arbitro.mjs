@@ -1348,9 +1348,14 @@ console.log('\nla Paura (p. 168)');
   D.setSource(() => 5);
   const c = AR.options(K).list.find(x => x.id === 'combatti');
   AR.apply(K, c);
+  /* I nomi si chiedono ai pezzi, non si scrivono a mano: quando
+     l'archivio fonde quattro Stone Troll Mobs da un modello in una da
+     quattro, il numero di coda sparisce — «Stone Troll Mobs 1» diventa
+     «Stone Troll Mobs» — e una prova che quel numero se l'era scritto
+     addosso diventa rossa senza che nessuno abbia toccato una regola. */
   ok('in combattimento gli Skink tirano la Paura, e fallendo hanno −1 per colpire',
-     K.log.some(x => /Skink Skirmishers 1, test di Paura/.test(x.text)) &&
-     K.log.some(x => /ha paura di Stone Troll Mobs 1: −1 per colpire/.test(x.text)));
+     K.log.some(x => x.text.includes(`${ks.name}, test di Paura`)) &&
+     K.log.some(x => x.text.includes(`ha paura di ${kt.name}: −1 per colpire`)));
   seme(1);
 }
 
@@ -1394,7 +1399,7 @@ console.log('\nla Stupidità (testo della lista, p. 178)');
   D.setSource(() => 5);
   AR.interni.inizioTurno(G);
   ok('all inizio del turno il Troll tira, e fallisce',
-     G.log.some(x => /Stone Troll Mobs 1, test di Stupidità/.test(x.text) && x.page === 178) &&
+     G.log.some(x => x.text.includes(`${troll.name}, test di Stupidità`) && x.page === 178) &&
      EF.flagsOf(troll).flags.stupid);
   ok('e si dichiara quale testo si gioca', G.log.some(x => /\[limite\] la Stupidità è quella del testo/.test(x.text)));
   G.casella = casella('mosse');
@@ -1651,14 +1656,21 @@ console.log('\nle sfide (pp. 211-212)');
       if (lato === 'destra')   u.x = bt.x + (bt.w + bu.h) / 2;
       return u;
     };
+    /* I quattro reggimenti nemici si prendono dal tavolo, non per
+       numero: gli uid scritti a mano seguono l'ordine delle unità nella
+       lista, e quando l'archivio ne fonde quattro in una — i Stone Troll
+       Mobs, il 2026-09-20 — un uid smette di esistere e la prova casca
+       con un errore invece che con un FAIL leggibile. */
+    const reggimenti = K.units.filter(u => u.army === 'B' && u.models > 1);
+    ok('sul tavolo ci sono i quattro reggimenti che servono', reggimenti.length >= 4);
     /* prima un nemico solo, di fronte: di lì si scappa */
-    accosta(uid(K, 503), 'fronte');
+    accosta(reggimenti[0], 'fronte');
     ok('con il nemico solo davanti la sfida si può ancora rifiutare',
        AR.interni.puoRifiutare(K, capo) === true);
     /* e poi da tutte e quattro le parti */
-    accosta(uid(K, 504), 'retro');
-    accosta(uid(K, 505), 'sinistra');
-    accosta(uid(K, 509), 'destra');
+    accosta(reggimenti[1], 'retro');
+    accosta(reggimenti[2], 'sinistra');
+    accosta(reggimenti[3], 'destra');
     ok('i quattro nemici toccano i quattro lati',
        AR.contatti(K).filter(c => (c.a === guardia.uid || c.b === guardia.uid) &&
                                   (c.a === guardia.uid ? c.bArmy : c.aArmy) !== 'A').length === 4);
