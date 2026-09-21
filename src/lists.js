@@ -497,7 +497,8 @@ export function renderLists(){
     else if (field === "note") PREP.setPrep(l, { note: v });
     else {
       const kind = field[0], i = +field.slice(1);
-      PREP.setUnitPrep(l, i, { w:"weapon", s:"spells", i:"items" }[kind]
+      if (kind === "p") PREP.setUnitPrep(l, i, { shield: v === "" ? null : v === "1" });
+      else PREP.setUnitPrep(l, i, { w:"weapon", s:"spells", i:"items" }[kind]
         ? { [{ w:"weapon", s:"spells", i:"items" }[kind]]: v } : {});
     }
     await persist();
@@ -774,14 +775,20 @@ function prepHTML(l){
   const perUnit = (l.units || []).map((u, i) => {
     const mine = (p.units || {})[i] || {};
     const arms = (u.weapons || []).filter(w => !/\d/.test(String(w.range || "")));
-    const wizard = (u.rules || []).some(r => /wizard|lore of|mago|level \d/i.test(String(r)));
-    if (arms.length < 2 && !wizard && !PREP.isCharacter(u)) return "";
+    const wizard = (u.rules || []).some(r => /\bwizard\b|\blore of\b|\bmago\b|level \d/i.test(String(r)));
+    const shield = PREP.needsShield(u);
+    if (arms.length < 2 && !wizard && !shield && !PREP.isCharacter(u)) return "";
     return `
       <div class="row prep-row">
         <span class="nm"><b>${esc(u.name)}</b></span>
         ${arms.length > 1 ? `<select data-prep="${l.id}|w${i}" title="Arma impugnata">
           <option value="">— quale arma impugna —</option>
           ${arms.map(w => `<option value="${esc(w.name)}" ${mine.weapon === w.name ? "selected" : ""}>${esc(w.name)}</option>`).join("")}
+        </select>` : ""}
+        ${shield ? `<select data-prep="${l.id}|p${i}" title="Parry: con arma a una mano e scudo, +1 all'armatura in mischia">
+          <option value="" ${mine.shield == null ? "selected" : ""}>— ha lo scudo? (Parry) —</option>
+          <option value="1" ${mine.shield === true ? "selected" : ""}>con lo scudo</option>
+          <option value="0" ${mine.shield === false ? "selected" : ""}>senza scudo</option>
         </select>` : ""}
         ${wizard ? `<input type="text" data-prep="${l.id}|s${i}" placeholder="incantesimi generati (p. 106)" value="${esc(mine.spells || "")}">` : ""}
         ${PREP.isCharacter(u) ? `<input type="text" data-prep="${l.id}|i${i}" placeholder="oggetti magici" value="${esc(mine.items || "")}">` : ""}

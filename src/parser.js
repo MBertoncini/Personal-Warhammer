@@ -262,6 +262,10 @@ function readUnit(node){
   const armour = readArmour(profs, ruleText);
   const ward   = readSpecialSave(profs, WARD_RE);
   const regen  = readSpecialSave(profs, REGEN_RE);
+  /* Lo scudo, che il valore d'armatura ha gia' assorbito e che la Parry
+     vuole sapere a parte. Si scrive solo quando c'e': quando non si
+     trova, il file puo' tacerlo, e la scheda di preparazione lo chiede. */
+  const shield = profs.some(p => /^Armour$/i.test(pType(p)) && /shield|scudo/i.test(String(pick(p, "name") || "")));
 
   const cats = catsOf(node).map(c => String(pick(c, "name") || "")).filter(Boolean);
   const primary = catsOf(node).find(c => pick(c, "primary") === true || pick(c, "primary") === "true");
@@ -297,6 +301,7 @@ function readUnit(node){
     us: Math.round(deepCost(node, /unit strength/)),
     troop, unitSize: size, stats, profiles, mount, rules, ruleText, command, weapons, maxRange, slot, faction,
     armour, ward, regen,
+    ...(shield ? { shield: true } : {}),
   };
 }
 

@@ -158,6 +158,51 @@ export const RULEBOOK = [
     what:"chi la prende di fianco o di retro non ne ha il bonus nel risultato",
     on: f => { f.impervious = true; } },
 
+  /* Le cinque che hanno portato le liste «fun», dai cataloghi della
+     comunita' (Renegades). Il testo per esteso sta dentro le liste, e
+     nessuna nomina un esercito: stanno qui come le altre universali.
+
+       Massed Infantry — «se una parte ha Forza d'Unita' piu' alta
+       dell'altra e comprende almeno un'unita' con questa regola, prende
+       +1 al risultato». Una volta per parte, non una per unita'.
+
+       Parry — «in corpo a corpo, chi usa arma a una mano e scudo
+       migliora l'armatura di 1, fino a 3+». Lo scudo il file non lo
+       dice: lo dice la scheda di preparazione, o il parser da quando
+       lo legge.
+
+       Press of Battle — «tranne nel turno in cui ha caricato, la fila
+       che combatte di un'unita' in ordine di combattimento e' profonda
+       due ranghi»: la seconda fila mena con tutti i suoi attacchi, e
+       l'appoggio viene dalla terza.
+
+       Predatory Fighter — «un attacco in piu' per ogni 6 naturale per
+       colpire in corpo a corpo», il modello e non la cavalcatura, e gli
+       attacchi nati cosi' non ne generano altri.
+
+       Skink Riders — «gli attacchi contro questa unita' si risolvono
+       contro l'Abilita' di Combattimento piu' alta fra cavaliere,
+       equipaggio e mostro». */
+  { id:"massedInfantry", re:/^massed infantry/i,
+    what:"+1 al risultato se la sua parte ha più Forza d'Unità",
+    on: f => { f.massedInfantry = true; } },
+
+  { id:"parry", re:/^parry\b/i,
+    what:"in mischia, con arma a una mano e scudo, +1 all'armatura (fino a 3+)",
+    on: f => { f.parry = true; } },
+
+  { id:"pressOfBattle", re:/^press of battle/i,
+    what:"tranne nel turno in cui carica, combatte con due ranghi pieni",
+    on: f => { f.pressOfBattle = true; } },
+
+  { id:"predatory", re:/^predatory fighter/i,
+    what:"ogni 6 naturale per colpire in mischia dà un attacco in più",
+    on: f => { f.predatory = true; } },
+
+  { id:"skinkRiders", re:/^skink riders/i,
+    what:"chi la colpisce guarda l'Abilità di Combattimento più alta fra bestia ed equipaggio",
+    on: f => { f.skinkRiders = true; } },
+
   /* Non fa niente qui perche' e' gia' stata fatta: il valore d'armatura
      che arriva dal file la contiene. Sta in elenco lo stesso, altrimenti
      comparirebbe fra le regole che l'app non conosce. */
@@ -212,6 +257,13 @@ export const ELSEWHERE = [
     why:"toglie dal tiro di lancio degli incantesimi nemici che bersagliano l'unità: né il pannello né l'arbitro la sottraggono ancora" },
   { re:/^random movement/i,
     why:"riguarda il movimento: il Movimento si tira, e l'ispettore lo dice" },
+  /* Due vincoli di forma, che si giocano dove i pezzi si uniscono e si
+     muovono: `formation.js` li fa rispettare al tavolo, e l'arbitro gira
+     il Lumbering dopo aver mosso. */
+  { re:/^lumbering/i,
+    why:"sempre in ordine chiuso, dopo aver mosso (non caricato, marciato o fuggito) si gira fino a 90° sul posto, e non si unisce a nessuno né ospita personaggi: lo fanno il tavolo e l'arbitro (p. 195)" },
+  { re:/^clumsy/i,
+    why:"le si unisce solo un personaggio che ha anche lui Clumsy: il tavolo e l'arbitro non offrono gli altri" },
   { re:/^random attacks/i,
     why:"gli Attacchi si tirano a ogni assalto, e il conto non li tira: legge il primo numero della riga («D6+1» vale 6). Correggili a mano nel pannello" },
 ];
@@ -224,6 +276,7 @@ export const emptyFlags = () => ({
   handWeaponAP:0, impact:null, stomp:null, extraRank:false, hatred:false,
   strikeFirst:false, strikeLast:false, stubborn:false, unbreakable:false,
   battleStandard:false, horde:false, shieldwall:false, impervious:false,
+  massedInfantry:false, parry:false, pressOfBattle:false, predatory:false, skinkRiders:false,
   /* le regole d'esercito riconosciute e applicabili, come stanno nel
      file: `combat.js` le traduce con `meleeBoosts` */
   army:[],

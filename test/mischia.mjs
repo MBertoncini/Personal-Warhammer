@@ -743,5 +743,83 @@ console.log('\nla sfida, come duello vero (pp. 211-212)');
 }
 
 /* ================================================================= */
+console.log('\nle regole delle liste «fun» (Renegades)');
+{
+  const D = await import('../src/dice.js');
+  const FM = await import('../src/formation.js');
+  const st = { WS:'3', BS:'3', S:'3', T:'3', W:'1', I:'3', A:'1', Ld:'6' };
+  const hw = [{ name:'Hand Weapon', range:'Combat', S:'S', ap:'-', rules:'-' }];
+
+  const r = readRules(['Massed Infantry', 'Parry', 'Press of Battle', 'Predatory Fighter', 'Skink Riders',
+                       'Lumbering', 'Clumsy']);
+  ok('nessuna delle sette universali resta sconosciuta', r.unknown.length === 0);
+  ok('le cinque di mischia entrano nel conto',
+     r.flags.massedInfantry && r.flags.parry && r.flags.pressOfBattle && r.flags.predatory && r.flags.skinkRiders);
+
+  /* Massed Infantry: un punto alla parte con piu' Forza d'Unita', una volta sola */
+  const card = (us, massed) => ({ wounds: 0, models: 1, frontage: 1, maxRank: 0, us, massed });
+  ok('Massed Infantry vale un punto a chi ha più Forza d Unità',
+     ML.combatResult([card(20, true)], [card(10, false)]).A.massed === 1);
+  ok('e niente a chi ne ha meno', ML.combatResult([card(10, true)], [card(20, false)]).A.massed === 0);
+  ok('e con due unità che la portano il punto resta uno',
+     ML.combatResult([card(10, true), card(10, true)], [card(5, false)]).A.massed === 1);
+
+  /* Parry: lo scudo lo dice il file o la scheda, e vale solo in mischia */
+  const rats = extra => C.combatant(unit('Clanrats', st, 20, 5, { weapons: hw, rules: ['Parry'], armour: 5, ...extra }));
+  ok('Parry con lo scudo porta l armatura da 5+ a 4+', rats({ shield: true }).parryArmour === 4);
+  ok('lo scudo può dirlo la scheda di preparazione', rats({ prepara: { shield: true } }).parryArmour === 4);
+  ok('senza sapere dello scudo non si applica, e lo dice',
+     !rats({}).parryArmour && /scheda di preparazione/.test(rats({}).parryOff));
+  ok('e non va oltre il 3+', !C.combatant(unit('X', st, 1, 1, { weapons: hw, rules: ['Parry'], armour: 3, shield: true })).parryArmour);
+  D.setSource(() => 3);                                  // tutti quattro
+  const foe = C.combatant(unit('Nemico', st, 10, 5, { weapons: hw }));
+  const def = rats({ shield: true });
+  ok('in mischia il 4 salva con la Parry', C.strike(foe, def, { attacks: 5, melee: true }).wounds === 0);
+  ok('fuori dalla mischia no', C.strike(foe, def, { attacks: 5 }).wounds === 5);
+
+  /* Press of Battle: due ranghi pieni, tranne nel turno della carica */
+  const press = C.combatant(unit('Clanrats', st, 20, 5, { weapons: hw, rules: ['Press of Battle'] }));
+  const other = C.combatant(unit('Nemico', st, 20, 5, { weapons: hw }));
+  ok('Press of Battle: la seconda fila mena piena e la terza appoggia',
+     C.contact(press, other).troop === 15 && C.contact(press, other).pressed === 5);
+  ok('nel turno in cui carica no', C.contact({ ...press, charged: true }, other).troop === 10);
+  ok('e gli schermagliatori non stanno in file', C.contact({ ...press, loose: true }, other).troop === 10);
+
+  /* Predatory Fighter: ogni 6 per colpire porta un attacco in piu', che non ne porta altri */
+  D.setSource(() => 5);                                  // tutti sei
+  const pred = C.combatant(unit('Oldblood', st, 1, 1, { weapons: hw, rules: ['Predatory Fighter'] }));
+  ok('Predatory Fighter: quattro sei portano quattro attacchi, e basta',
+     C.strike(pred, other, { attacks: 4, melee: true }).hit.of === 8);
+  ok('e fuori dalla mischia non c è', C.strike(pred, other, { attacks: 4 }).hit.of === 4);
+
+  /* Skink Riders: si colpisce l'Abilita' piu' alta fra bestia ed equipaggio */
+  const bast = C.combatant(unit('Bastiladon', st, 1, 1, { weapons: hw, rules: ['Skink Riders'],
+    profiles: [{ name:'Bastiladon', stats:{ WS:'3' } }, { name:'Crew', stats:{ WS:'5' } }] }));
+  ok('Skink Riders: chi colpisce guarda l Abilità più alta', bast.wsDef === 5 && bast.ws === 3);
+  D.setSource(D.seeded(1));
+
+  /* Lumbering e Clumsy: chi si unisce a chi */
+  ok('Lumbering per nome vale anche fuori dai tipi di truppa',
+     FM.isLumbering({ troop:'Monstrous infantry', rules:['Lumbering'] }));
+  const t = { uid:1, army:'A', name:'Terradon Riders', models:3, rules:['Clumsy'] };
+  const skink = { uid:2, army:'A', name:'Skink Chief', models:1, slot:'Characters', rules:[] };
+  const volante = { uid:3, army:'A', name:'Skink Chief on Terradon', models:1, slot:'Characters', rules:['Clumsy'] };
+  const units = [t, skink, volante];
+  ok('Clumsy: a piedi non ci si unisce', !FM.joinCandidates(units, t).includes(skink));
+  ok('chi è Clumsy anche lui sì', FM.joinCandidates(units, t).includes(volante));
+  ok('e il tavolo dice perché', FM.joinRefusals(units, t).some(x => x.uid === 2 && /Clumsy/.test(x.why)));
+
+  /* lo scudo della Parry: la scheda lo chiede finche' nessuno lo dice */
+  const PREP = await import('../src/prep.js');
+  const lista = { units: [{ name:'Skink Skirmishers', rules:['Skirmishers', 'Parry'] },
+                          { name:'Clanrats', rules:['Parry'], shield: true },
+                          { name:'Temple Guard', rules:[] }] };
+  ok('la scheda chiede lo scudo a chi ha Parry e un file che tace',
+     PREP.questions(lista).filter(q => q.id === 'shield').map(q => q.unit).join() === '0');
+  ok('e smette di chiederlo quando ha risposta',
+     !PREP.questions({ ...lista, prep: { units: { 0: { shield: false } } } }).some(q => q.id === 'shield'));
+}
+
+/* ================================================================= */
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

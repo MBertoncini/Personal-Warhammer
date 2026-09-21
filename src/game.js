@@ -183,6 +183,24 @@ function wireCoreRules(E){
     if (line) E.dispatch({ type:"note", army:g.army,
       text: line + (ctx.to === 0 ? " Chi è in combattimento non tira." : "") });
   }, "promemoria della psicologia");
+
+  /* Le due regole dell'Arca di Sotek (Renegades) non sono gesti di
+     nessuno: succedono. Al tavolo i dadi li tirate voi, e il registro
+     lo ricorda nella casella giusta — la sotto-fase di comando e la
+     scelta dei bersagli — invece di lasciarlo alla memoria. */
+  E.on("onStepEnter", "arca di sotek", ctx => {
+    if (ctx.to !== 1 && ctx.to !== 8) return;
+    const g = game();
+    if (!g.on) return;
+    const re = ctx.to === 1 ? /^spawn of sotek/i : /^slithering serpents/i;
+    const who = S().units.filter(u => u.army === g.army && u.placed && !u.dead &&
+                                      (u.rules || []).some(r => re.test(String(r))));
+    if (!who.length) return;
+    const names = who.map(u => u.name).join(", ");
+    E.dispatch({ type:"note", army:g.army, text: ctx.to === 1
+      ? `Spawn of Sotek (${names}): un D6, con 4+ uno Jungle Swarm amico entro 6″ recupera D3 ferite.`
+      : `Slithering Serpents (${names}): un D6 per la distanza, e ogni unità nemica entro quei pollici subisce 2D6 colpi a Forza 2, senza perforazione. Arrivano senza tirare per colpire, quindi il veleno non scatta.` });
+  }, "promemoria dell'Arca di Sotek");
 }
 
 /* La riga nel registro. `phase` resta la fase — il report la stampa

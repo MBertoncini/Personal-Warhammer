@@ -3,7 +3,7 @@
   "name": "Uomini Lucertola",
   "matches": ["Lizardmen", "Legends: Lizardmen"],
   "book": { "title": "Legends: Lizardmen" },
-  "nota": "Le regole d'esercito vere del libro non sono ancora trascritte. Qui ci sono quelle delle unita' che le liste salvate schierano, scritte sul testo per esteso che le liste si portano dietro. Cold Blooded, Aquatic e Predatory Fighter sono regole universali e passano dal registro di rulebook.js, non da qui; Shieldwall e Impervious Defence hanno un testo che non nomina nessun esercito, e stanno anche loro nel registro universale.",
+  "nota": "Le regole d'esercito vere del libro non sono ancora trascritte. Qui ci sono quelle delle unita' che le liste salvate schierano, scritte sul testo per esteso che le liste si portano dietro. Cold Blooded, Aquatic e Predatory Fighter sono regole universali e passano dal registro di rulebook.js, non da qui; Shieldwall e Impervious Defence hanno un testo che non nomina nessun esercito, e stanno anche loro nel registro universale, come Skink Riders. Slithering Serpents e Spawn of Sotek vengono dall'Arca di Sotek del catalogo Renegades, e stanno qui.",
   "rules": [
     {
       "id": "arcaneShield",
@@ -40,6 +40,24 @@
       "when": "magic",
       "what": "lancia Beam of Chotec con Livello di Potere 2",
       "perche": "e' un incantesimo: la magia e' la Tappa 6"
+    },
+    {
+      "id": "slitheringSerpents",
+      "name": "Slithering Serpents",
+      "nomi": ["Slithering Serpents v2", "Slithering Serpents"],
+      "testo": "lista",
+      "when": "shoot",
+      "what": "nella fase di tiro del suo turno ogni unita' nemica entro D6 pollici subisce 2D6 colpi a Forza 2, senza perforazione",
+      "perche": "non e' un tiro con un'arma: in io contro l'AI la gioca l'arbitro nella fase di tiro, al tavolo la ricorda il registro e i dadi li tirate voi. Il veleno che il testo nomina non scatta: i colpi arrivano senza tirare per colpire, e il veleno vuole un 6 per colpire"
+    },
+    {
+      "id": "spawnOfSotek",
+      "name": "Spawn of Sotek",
+      "nomi": ["Spawn of Sotek"],
+      "testo": "lista",
+      "when": "command",
+      "what": "nella sotto-fase di comando, con 4+ su un D6, uno Jungle Swarm amico entro 6 pollici recupera D3 ferite",
+      "perche": "si tira nella sotto-fase di comando: in io contro l'AI la tira l'arbitro, al tavolo la ricorda il registro. Senza Jungle Swarm entro 6 pollici non fa niente"
     },
     {
       "id": "howdah",

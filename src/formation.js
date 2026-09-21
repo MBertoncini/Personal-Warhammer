@@ -298,9 +298,21 @@ export const hostsAnyone = (units, u) =>
    Seer sulla Screaming Bell finiva dentro i Clanrats. La regola sta nel
    tipo di truppa, e la spunta «e' un personaggio» non la cambia — un
    personaggio sul carro resta sul carro (p. 205). */
+/* La regola, quando il file la scrive fra quelle dell'unita', vale
+   anche per chi il tipo di truppa non lo direbbe: l'Hell Pit
+   Abomination e il Bastiladon dei Renegades la portano per nome. */
 const LUMBERING = ["heavyChariot", "monstrousCreature", "behemoth"];
-export const isLumbering = u => LUMBERING.includes(troopType(u && u.troop).id);
+const hasRule = (u, re) => ((u && u.rules) || []).some(r => re.test(String(r)));
+export const isLumbering = u => LUMBERING.includes(troopType(u && u.troop).id) || hasRule(u, /^lumbering/i);
 const LUMBER_WHY = "è un carro pesante o un mostro: non si unisce e non ospita (Lumbering, p. 195)";
+
+/* Clumsy: «a quest'unita' si unisce solo un personaggio che ha anche lui
+   questa regola» — i Terradon non si fanno salire in groppa uno skink
+   a piedi. Il vincolo e' fra due pezzi, e allora sta qui accanto ai
+   candidati invece che in `canJoin`. */
+export const isClumsy = u => hasRule(u, /^clumsy/i);
+export const clumsyOk = (ch, host) => !isClumsy(host) || isClumsy(ch);
+const CLUMSY_WHY = "è Clumsy: le si unisce solo un personaggio che ha anche lui Clumsy";
 
 export const canJoin = u => !u.dead && !isLumbering(u) && (isCharacter(u) || (u.models || 1) === 1);
 
@@ -311,7 +323,7 @@ export const canHost = (units, u) => !u.dead && !isLumbering(u) && hostUnit(unit
 
 /* i candidati all'aggancio dentro `host`, in ordine di lista */
 export const joinCandidates = (units, host) =>
-  units.filter(c => c.uid !== host.uid && c.army === host.army &&
+  units.filter(c => c.uid !== host.uid && c.army === host.army && clumsyOk(c, host) &&
                     canJoin(c) && hostUnit(units, c) == null && !hostsAnyone(units, c));
 
 /* la strada opposta: i reggimenti in cui `ch` si puo' infilare. Serve
@@ -319,7 +331,7 @@ export const joinCandidates = (units, host) =>
    che rimandava altrove. */
 export const hostCandidates = (units, ch) =>
   (canJoin(ch) && !hostsAnyone(units, ch))
-    ? units.filter(h => h.uid !== ch.uid && h.army === ch.army && canHost(units, h))
+    ? units.filter(h => h.uid !== ch.uid && h.army === ch.army && canHost(units, h) && clumsyOk(ch, h))
     : [];
 
 /* Perche' un pezzo che ti aspettavi non c'e'. La tendina spariva senza
@@ -332,6 +344,7 @@ export function joinRefusals(units, host){
     if (!(isCharacter(c) || (c.models || 1) === 1)) continue;   // un reggimento non ci sta, e si sa
     if (c.dead){ out.push({ uid:c.uid, name:c.name, why:"è eliminata" }); continue; }
     if (isLumbering(c)){ out.push({ uid:c.uid, name:c.name, why:LUMBER_WHY }); continue; }
+    if (!clumsyOk(c, host)){ out.push({ uid:c.uid, name:c.name, why:CLUMSY_WHY.replace("è Clumsy", host.name + " è Clumsy") }); continue; }
     const h = hostUnit(units, c);
     if (h){
       if (h.uid !== host.uid)                                   // chi e' gia' dentro QUESTO non manca
@@ -351,6 +364,7 @@ export function hostRefusals(units, ch){
     if (c.uid === ch.uid || c.army !== ch.army) continue;
     if (c.dead){ out.push({ uid:c.uid, name:c.name, why:"è eliminata" }); continue; }
     if (isLumbering(c)){ out.push({ uid:c.uid, name:c.name, why:LUMBER_WHY }); continue; }
+    if (!clumsyOk(ch, c)){ out.push({ uid:c.uid, name:c.name, why:CLUMSY_WHY }); continue; }
     const h = hostUnit(units, c);
     if (h) out.push({ uid:c.uid, name:c.name, why:`è già dentro ${h.name}` });
   }

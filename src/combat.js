@@ -210,6 +210,43 @@ export function combatant(u, over = {}){
   if (c.flags.handWeaponAP && melee && /hand weapon|arma a una mano/i.test(melee.name))
     c.ap = Math.max(c.ap, c.flags.handWeaponAP);
 
+  /* Parry: arma a una mano e scudo, +1 all'armatura fino a 3+. Lo scudo
+     l'export di New Recruit lo fonde nel valore d'armatura e poi se lo
+     scorda: lo dice il parser, da quando lo legge (`u.shield`), o la
+     scheda di preparazione per le liste importate prima. Quando nessuno
+     dei due lo sa la regola non si applica, e lo si scrive. */
+  const shield = u.shield != null ? !!u.shield : !!(u.prepara && u.prepara.shield);
+  const handWeapon = !melee || /hand weapon|arma a una mano/i.test(melee.name);
+  if (c.flags.parry){
+    if (!shield) c.parryOff = u.shield == null ? "Parry: il file non dice se ha lo scudo (scheda di preparazione)" : "Parry: non ha lo scudo";
+    else if (!handWeapon) c.parryOff = "Parry: vale solo con l'arma a una mano";
+    else {
+      /* a parte, non su `armour`: la schiera serve anche al tiro e agli
+         incantesimi, e la Parry vale solo «in corpo a corpo» */
+      const before = c.armour || 7;
+      const after = Math.max(3, before - 1);
+      if (after < before){ c.parryArmour = after; c.parryFrom = "Parry: armatura " + (before >= 7 ? "nessuna" : before + "+") + " → " + after + "+"; }
+    }
+    /* una regola che non scatta non sta fra le applicate: passa fra
+       quelle «altrove», con il perche' */
+    if (c.parryOff){
+      const k = c.rulesRead.applied.findIndex(x => /^parry\b/i.test(x.name));
+      if (k >= 0){
+        const [x] = c.rulesRead.applied.splice(k, 1);
+        c.rulesRead.elsewhere.push({ name: x.name, text: x.text, why: c.parryOff.replace(/^Parry: /, "") });
+      }
+    }
+  }
+
+  /* Skink Riders: chi la colpisce guarda l'Abilita' di Combattimento
+     piu' alta fra la bestia e chi le sta sopra. Le righe le porta il
+     file (`u.profiles`); colpire usa `wsDef`, menare resta `ws`. */
+  if (c.flags.skinkRiders){
+    const all = [c.ws, ...((u.profiles || []).map(p => stat((p.stats || {}).WS)))].filter(n => n > 0);
+    const best = Math.max(...all);
+    if (best > c.ws){ c.wsDef = best; c.wsDefFrom = "Skink Riders"; }
+  }
+
   /* La psicologia (Tappa 5), nelle tre cose che un assalto sente.
 
      Il Comando della Warband sale del bonus di ranghi *attuale* — quello
@@ -353,6 +390,13 @@ const attacksOf = c => (c.a || 1) + (ranIn(c) && c.flags && c.flags.furiousCharg
                           caricato, o aver inseguito il turno prima */
                        (c.frenzyA || 0);
 
+/* Press of Battle vale per un'unita' «in ordine di combattimento» e
+   non nel turno in cui ha caricato: gli schermagliatori non stanno in
+   file, e la colonna piu' profonda che larga non e' ordine di
+   combattimento (p. 101). */
+const pressing = c => !!(c.flags && c.flags.pressOfBattle) && !c.charged && !c.loose &&
+                      ML.inCombatOrder(c);
+
 /* ------------------------------------------------------------------
    Quanti menano, e con quanti dadi.
 
@@ -417,14 +461,18 @@ export function contact(att, def, { touching = null, frontage = null, withChars 
      testa, non con tutti i suoi attacchi. */
   const ranks = att.flags && att.flags.extraRank ? 2 : 1;
   const behind = Math.max(0, att.models - att.frontage);
-  const support = wide <= 0 ? 0 : Math.min(wide * ranks, behind);
+  /* Press of Battle: fuori dal turno in cui ha caricato, la fila che
+     combatte e' profonda due ranghi. Chi sta dietro la prima fila mena
+     con tutti i suoi attacchi, e l'appoggio passa al rango dopo. */
+  const pressed = wide <= 0 || !pressing(att) ? 0 : Math.min(wide, behind);
+  const support = wide <= 0 ? 0 : Math.min(wide * ranks, behind - pressed);
 
   const groups = [];
-  const rankA = front * attacksOf(att) + support;
+  const rankA = (front + pressed) * attacksOf(att) + support;
   if (rankA > 0) groups.push({
     id:"rank", name: att.name, character:false, models: front,
     ws: att.ws, i: att.i, s: att.s, baseS: att.baseS, ap: att.ap,
-    flags: att.flags, attacks: rankA, support,
+    flags: att.flags, attacks: rankA, support, pressed,
   });
   fighting.forEach((g, k) => groups.push({
     ...g, id:"char" + k, support: 0,
@@ -434,7 +482,7 @@ export function contact(att, def, { touching = null, frontage = null, withChars 
   }));
 
   return {
-    front, wide, support, ranks, groups,
+    front, wide, support, ranks, groups, pressed,
     inFront: fighting.length,
     /* i personaggi uniti che NON menano: sta scritto, perche' «e il
        capo dov'e' finito?» e' la prima domanda che si fa guardando il
@@ -556,7 +604,7 @@ export function fleeBonusOf(u){
 /* ============================================================
    2 · UN COLPO
    ============================================================ */
-export function strike(att, def, { attacks, auto = false, strength, ap, label = "", round = 1 } = {}){
+export function strike(att, def, { attacks, auto = false, strength, ap, label = "", round = 1, melee = false } = {}){
   /* `forcedAttacks` e' il numero corretto a mano nel pannello: chi
      guarda il tavolo vede quanti si toccano meglio di qualsiasi conto */
   const n = Math.max(0, attacks ?? att.forcedAttacks ?? contact(att, def).troop);
@@ -571,7 +619,7 @@ export function strike(att, def, { attacks, auto = false, strength, ap, label = 
   const AP = (ap ?? att.ap) + (boost ? boost.ap : 0);
   if (boost) notes.push(...boost.notes, ...boost.off);
 
-  const hitNeed = auto ? 0 : fearful(hitMelee(att.ws, def.ws), att);
+  const hitNeed = auto ? 0 : fearful(hitMelee(att.ws, def.wsDef || def.ws), att);
   if (!auto && att.feared) notes.push("Paura: −1 per colpire");
   /* L'Odio ritira i colpi mancati, e solo nel primo assalto. Era
      elencato fra le regole «che si giocano altrove — e' un test di
@@ -586,6 +634,16 @@ export function strike(att, def, { attacks, auto = false, strength, ap, label = 
      si ritira due volte (p. 93). */
   const hitAgain = hateful ? "misses" : (boost && boost.rerollHit) || null;
   const hit = auto ? { dice: [], hits: n, need: 0, of: n } : pool(n, hitNeed, hitAgain);
+  /* Predatory Fighter: ogni 6 naturale per colpire in mischia porta un
+     attacco in piu', che si tira come gli altri — e i sei che escono da
+     questi non ne portano altri. */
+  if (!auto && melee && f.predatory && sixes(hit)){
+    const more = sixes(hit);
+    const extra = pool(more, hitNeed, hitAgain);
+    notes.push("Predatory Fighter: " + more + (more === 1 ? " attacco in più" : " attacchi in più") +
+               " dai 6 naturali, " + extra.hits + " a segno");
+    Object.assign(hit, mergePools(hit, extra), { rerolled: hit.rerolled });
+  }
   if (hit.rerolled) notes.push(hateful
     ? "Odio: " + hit.rerolled + (hit.rerolled === 1 ? " colpo mancato ritirato" : " colpi mancati ritirati")
     : boost.from.hit + ": " + hit.rerolled + (hit.rerolled === 1 ? " 1 per colpire ritirato" : " 1 per colpire ritirati"));
@@ -611,8 +669,11 @@ export function strike(att, def, { attacks, auto = false, strength, ap, label = 
      salta del tutto l'armatura. */
   const crit = (f.armourBane || f.killingBlow) ? sixes(plain) + (spiked ? sixes(spiked) : 0) : 0;
   const critHits = Math.min(crit, wound.hits);
-  const saveNeed = saveOn(def.armour, AP);
-  const critNeed = f.killingBlow ? IMPOSSIBLE : saveOn(def.armour, AP + f.armourBane);
+  /* la Parry vale in corpo a corpo, e solo li' */
+  const armour = melee && def.parryArmour ? def.parryArmour : def.armour;
+  if (melee && def.parryArmour) notes.push(def.parryFrom);
+  const saveNeed = saveOn(armour, AP);
+  const critNeed = f.killingBlow ? IMPOSSIBLE : saveOn(armour, AP + f.armourBane);
   const savePlain = pool(wound.hits - critHits, saveNeed);
   const saveCrit = critHits ? pool(critHits, critNeed) : null;
   const save = mergePools(savePlain, saveCrit);
@@ -950,7 +1011,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
        sfida un morto non si colpisce: e' il caso di sempre. */
     const caduto = def.models <= 0;
     if (caduto && !(e.duel && e.host)) return null;
-    return { e, def, r: strike(e.c, def, { round, ...opts }), caduto };
+    return { e, def, r: strike(e.c, def, { round, melee: true, ...opts }), caduto };
   };
   const land = (x, facce = null) => {
     if (!x) return;
@@ -1241,15 +1302,17 @@ export function meleeForecast(att, def, attacks){
 function oneForecast(att, def, n0){
   const n = n0;
   const f = att.flags || emptyFlags();
-  const h = fearful(hitMelee(att.ws, def.ws), att);
+  const h = fearful(hitMelee(att.ws, def.wsDef || def.ws), att);
   /* Con l'Odio i colpi mancati si ritirano, e la media dei colpi
      andati a segno sale: il conto lo sa gia' fare `expected`, che la
      stessa regola la applica ai dadi veri. */
   /* le regole d'esercito entrano nella media come nei dadi veri: gli 1
      ritirati li conta `expected`, la perforazione e la Forza si sommano */
   const boost = boostsOf(att);
-  const hChance = f.hatred ? expected(1, h, "misses")
+  const hOne = f.hatred ? expected(1, h, "misses")
     : boost.rerollHit ? expected(1, h, boost.rerollHit) : chance(h);
+  /* Predatory Fighter: un sesto degli attacchi porta un attacco in piu' */
+  const hChance = f.predatory && h < IMPOSSIBLE ? hOne * (1 + 1 / 6) : hOne;
   const w = woundOn(att.s + boost.s, def.t);
   const wOne = need => boost.rerollWound ? expected(1, need, boost.rerollWound) : chance(need);
   /* col veleno un colpo su sei ferisce con due punti di sconto: la
@@ -1258,9 +1321,10 @@ function oneForecast(att, def, n0){
     ? (5 / 6) * wOne(w) + (1 / 6) * wOne(Math.max(2, w - 2))
     : wOne(w);
   const ap = att.ap + boost.ap;
-  const sv = saveOn(def.armour, ap);
+  const armour = def.parryArmour || def.armour;
+  const sv = saveOn(armour, ap);
   const svChance = f.killingBlow ? (5 / 6) * chance(sv)
-    : f.armourBane ? (5 / 6) * chance(sv) + (1 / 6) * chance(saveOn(def.armour, ap + f.armourBane))
+    : f.armourBane ? (5 / 6) * chance(sv) + (1 / 6) * chance(saveOn(armour, ap + f.armourBane))
     : chance(sv);
   const wd = saveOn(def.ward, 0), rg = saveOn(def.regen, 0);
   const wounds = n * hChance * wChance * (1 - svChance) * (1 - chance(wd)) * (1 - chance(rg));

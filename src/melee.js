@@ -182,6 +182,10 @@ export const RESULT_PARTS = [
      Orchi (Tappa 5 bis). Il nome di chi l'ha dato lo porta la scheda. */
   { id:"rule",     label:"regole speciali",    one:"da regola speciale", many:"da regole speciali" },
   { id:"out",      label:"superiorità numerica", one:"in più",        many:"in più" },
+  /* Massed Infantry: il punto della superiorita' numerica, che il
+     manuale non da' piu' a tutti e questa regola restituisce a chi la
+     porta. Una volta per parte, anche con tre unita' che la hanno. */
+  { id:"massed",   label:"Massed Infantry",   one:"Massed Infantry",   many:"Massed Infantry" },
 ];
 
 /* `me` e' una scheda piatta, non un'unita' del tavolo: cosi' il conto
@@ -212,10 +216,11 @@ export function combatScore(me = {}, foe = {}){
   const ground = me.highGround ? 1 : 0;
   const over = Math.max(0, Math.round(+me.overkill || 0));
   const out = OUTNUMBER_COUNTS && (+me.us || 0) > (+foe.us || 0) ? 1 : 0;
+  const massed = me.massed && foe.us != null && (+me.us || 0) > (+foe.us || 0) ? 1 : 0;
   const rule = Math.max(0, Math.round(+me.ruleBonus || 0));
   const order = me.combatOrder ? 1 : 0;
 
-  const got = { wounds, rank, order, std, bsb, flank, ground, overkill: over, rule, out };
+  const got = { wounds, rank, order, std, bsb, flank, ground, overkill: over, rule, out, massed };
   const parts = RESULT_PARTS.filter(p => got[p.id] > 0)
     .map(p => ({ ...p, v: got[p.id] }));
   const total = Object.values(got).reduce((s, v) => s + v, 0);
@@ -285,9 +290,13 @@ export function sideScore(cards = [], foes = []){
   const over = each.reduce((s, e) => s + e.overkill, 0);
   const rule = each.reduce((s, e) => s + e.rule, 0);
   const us = list.reduce((s, c) => s + (+c.us || 0), 0);
-  const out = OUTNUMBER_COUNTS && us > other.reduce((s, c) => s + (+c.us || 0), 0) ? 1 : 0;
+  const theirUS = other.reduce((s, c) => s + (+c.us || 0), 0);
+  const out = OUTNUMBER_COUNTS && us > theirUS ? 1 : 0;
+  /* la Forza d'Unita' e' della parte intera, e basta un'unita' con la
+     regola perche' la parte la reclami */
+  const massed = list.some(c => c.massed) && us > theirUS ? 1 : 0;
 
-  const got = { wounds, rank, order, std, bsb, flank, ground, overkill: over, rule, out };
+  const got = { wounds, rank, order, std, bsb, flank, ground, overkill: over, rule, out, massed };
   const parts = RESULT_PARTS.filter(p => got[p.id] > 0).map(p => ({ ...p, v: got[p.id] }));
   const denied = list.find(c => c.flank && c.flankDenied);
   return { ...got, parts, total: Object.values(got).reduce((s, v) => s + v, 0),
@@ -615,5 +624,6 @@ export function scoreCardOf(c = {}, wounds = 0, { foe = "" } = {}){
     overkill: c.overkill || 0, disrupted: !!c.disrupted,
     musician: !dentro && !!c.musician, us: (c.usPer || 1) * (c.models || 0),
     ruleBonus: +((c.eff || {}).combatResult) || 0,
+    massed: !!(c.flags && c.flags.massedInfantry),
   };
 }

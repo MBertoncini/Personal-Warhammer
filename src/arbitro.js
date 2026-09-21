@@ -96,6 +96,8 @@ export const LIMITI = [
     why:"il riordino costa metà del Movimento e l'altra metà si potrebbe camminare; la riforma può anche cambiare la formazione. Dopo un giro si va solo dritti" },
   { id:"campioni",  what:"le sfide le lanciano e le raccolgono solo i personaggi, non i campioni d'unità", page:211,
     why:"il libro dice «un personaggio o un campione»; il file di New Recruit segna che il gruppo di comando c'è (`command.champion`) e non dà al campione un profilo suo, e senza profilo non si può duellare" },
+  { id:"sciami",    what:"Spawn of Sotek guarisce le ferite appese di uno Jungle Swarm, e non rimette in campo le basette già tolte", page:115,
+    why:"il testo dice «regains D3 lost Wounds» e non dice se una basetta tolta torni in piedi: l'arbitro cura quello che il pezzo ha ancora addosso" },
   { id:"ritirato",  what:"chi si ritira da una sfida esce dal combattimento, ma tiene il passo e la Forza d'Unità del reggimento", page:211,
     why:"il libro dice che non dà più niente all'unità, «Comando, regole speciali o qualunque altra cosa»: l'arbitro gli toglie i colpi, il Comando e le regole, e gli lascia quello che non saprebbe togliere senza farlo uscire dal reggimento" },
   { id:"oggetti",   what:"gli oggetti magici non fanno niente", page:0,
@@ -387,6 +389,9 @@ export const puoUnirsi = (S, c) => PREP.isCharacter(c) && !!genere(c) && (c.mode
 function puoOspitare(S, c, h){
   if (h === c || h.army !== c.army || h.dead || !onBoard(h) || isJoined(h)) return false;
   if (PREP.isCharacter(h) || genere(h) !== genere(c)) return false;
+  /* Lumbering non ospita nessuno (p. 195), e a chi e' Clumsy si unisce
+     solo chi e' Clumsy anche lui */
+  if (FM.isLumbering(h) || !FM.clumsyOk(c, h)) return false;
   return indomito(h) === indomito(c);
 }
 /* La Forza d'Unita' con i personaggi dentro (p. 207): e' quella che la
@@ -4119,6 +4124,61 @@ function fineSchieramento(S){
    salvo che fugga o combatta. Chi fallisce ci resta fino al suo
    prossimo inizio di turno, che e' dove l'effetto scade e il test si
    rifa'. Non e' una scelta: l'arbitro lo tira da solo. */
+/* ---- l'Arca di Sotek (Renegades) ----
+   Due regole del Bastiladon che non sono gesti ma cose che succedono:
+   nessuno le sceglie, e l'arbitro le fa accadere nel loro momento.
+
+   Slithering Serpents: «nella fase di tiro del suo turno, ogni unita'
+   nemica entro D6″ da questo modello subisce 2D6 colpi a Forza 2,
+   perforazione -, con Poisoned Attacks». Un D6 solo per la distanza,
+   2D6 per ciascun nemico dentro. Il veleno resta scritto e non scatta:
+   vuole un 6 per colpire, e questi colpi arrivano senza tirare.
+
+   Spawn of Sotek: «nella sotto-fase di comando, con 4+ su un D6, uno
+   Jungle Swarm entro 6″ recupera D3 ferite perse». L'arbitro guarisce
+   le ferite appese, non rimette in piedi basette gia' tolte: e' il
+   limite `sciami`, e finche' nessuna lista schiera Jungle Swarm non
+   pesa su niente. */
+const haRegola = (u, re) => ((u && u.rules) || []).some(r => re.test(String(r)));
+
+function serpenti(S){
+  for (const u of inCampo(S, S.army)){
+    if (!haRegola(u, /^slithering serpents/i) || u.serpenti === chiave(S)) continue;
+    u.serpenti = chiave(S);
+    const [raggio] = roll(1);
+    const presi = nemiciDi(S, u).filter(t => distanza(S, u, t) <= raggio);
+    say(S, `${u.name}, Slithering Serpents: i serpenti arrivano a ${raggio}″` +
+           (presi.length ? `, e prendono ${presi.map(t => t.name).join(", ")}.` : ": nessun nemico così vicino."),
+        { dice: [raggio], army: u.army, page: 136 });
+    for (const t of presi){
+      const dadi = roll(2);
+      const n = dadi[0] + dadi[1];
+      colpisci(S, t, { S: 2, AP: 0 }, n, "Slithering Serpents", { da: u });
+    }
+  }
+}
+
+function spawnOfSotek(S){
+  for (const u of inCampo(S, S.army)){
+    if (!haRegola(u, /^spawn of sotek/i)) continue;
+    const sciami = inCampo(S, S.army).filter(t => /jungle swarm/i.test(t.baseName || t.name) &&
+                                                  (t.wounds || 0) > 0 && distanza(S, u, t) <= 6);
+    if (!sciami.length) continue;
+    const [d] = roll(1);
+    if (d < 4){
+      say(S, `${u.name}, Spawn of Sotek: ${d}, niente.`, { dice: [d], army: u.army, page: 115 });
+      continue;
+    }
+    const t = sciami.reduce((a, b) => (b.wounds || 0) > (a.wounds || 0) ? b : a);
+    const [g] = roll(1);
+    const quante = Math.min(t.wounds || 0, Math.ceil(g / 2));
+    t.wounds = (t.wounds || 0) - quante;
+    limite(S, "sciami");
+    say(S, `${u.name}, Spawn of Sotek: ${d}, e ${t.name} recupera ${quante} ferit${quante === 1 ? "a" : "e"}.`,
+        { dice: [d, g], army: u.army, page: 115 });
+  }
+}
+
 function inizioTurno(S){
   /* Le sfide e i ritiri si rileggono in testa al turno, e non solo
      quando si sceglie un combattimento: uno sfidante puo' essere caduto
@@ -4126,6 +4186,7 @@ function inizioTurno(S){
      appena quel nemico non gli sta piu' addosso (p. 211). Senza questa
      riga il suo Comando restava fuori dai test di Panico di mezzo turno. */
   ripulisciSfide(S);
+  spawnOfSotek(S);
   for (const u of inCampo(S, S.army)){
     const p = PS.psychOf(u, { joined: capiInFila(S, u) });
     const c = PS.stupidityCheck({ p, fleeing: !!u.fled, engaged: ingaggiata(S, u) });
@@ -4199,6 +4260,7 @@ function passo(S){
   S.casella++;
   if (S.casella < CASELLE.length){
     if (CASELLE[S.casella].id === "mosse") continuaAFuggire(S);
+    if (CASELLE[S.casella].id === "tiro") serpenti(S);
     return `si passa a: ${CASELLE[S.casella].what}`;
   }
 

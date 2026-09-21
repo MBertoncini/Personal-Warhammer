@@ -384,7 +384,7 @@ ok('le Teeming Masses no, e lo dice',
 const lm = A.find('Lizardmen');
 ok('il file degli Uomini Lucertola dichiara che le regole del libro mancano',
    /non sono ancora trascritte/.test(lm.nota));
-ok('ma ha quelle delle unita che le liste schierano', lm.rules.length === 5);
+ok('ma ha quelle delle unita che le liste schierano', lm.rules.length === 7);
 ok('la parentesi dietro il nome non la nasconde', ruleFor(lm, 'Howdah (Lizardmen)').id === 'howdah');
 
 /* Da dove viene ogni riga. `testo: lista` e' una promessa — «scritta

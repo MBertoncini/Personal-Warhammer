@@ -101,6 +101,10 @@ export const guessBsb = l => {
 const RE_WIZARD = /\bwizard\b|\blore of\b|\bmago\b|\bdominio\b|level \d/i;
 const melee = u => (u.weapons || []).filter(w => !/\d/.test(String(w.range || "")));
 
+/* chi ha Parry e un file che non dice se ha lo scudo */
+export const needsShield = u => u && u.shield == null &&
+  (u.rules || []).some(r => /^parry\b/i.test(String(r)));
+
 export function questions(l){
   if (!l) return [];
   const p = prepOf(l);
@@ -125,6 +129,14 @@ export function questions(l){
                  why:"cambia Forza e perforazione di ogni colpo",
                  options: arms.map(w => w.name) });
 
+    /* Parry vuole lo scudo, e l'export di New Recruit lo fonde nel
+       valore d'armatura: per le liste importate prima che il parser lo
+       leggesse (`u.shield`) si chiede qui, una volta */
+    if (needsShield(u) && mine.shield == null)
+      out.push({ id:"shield", unit:i, name:u.name,
+                 what:"se " + u.name + " ha lo scudo",
+                 why:"con arma a una mano e scudo la Parry dà +1 all'armatura in mischia; il file non lo dice" });
+
     if ((u.rules || []).some(r => RE_WIZARD.test(String(r))) && !mine.spells)
       out.push({ id:"spells", unit:i, name:u.name,
                  what:"quali incantesimi ha generato " + u.name,
@@ -146,7 +158,8 @@ export function answered(l){
   for (const [i, v] of Object.entries(p.units || {})){
     const u = units[i]; if (!u) continue;
     if (v.weapon) out.push({ what:u.name + " impugna", value:v.weapon });
-    if (v.shield) out.push({ what:u.name, value:"scudo in uso" });
+    if (v.shield === true) out.push({ what:u.name, value:"scudo in uso" });
+    if (v.shield === false) out.push({ what:u.name, value:"senza scudo" });
     if (v.spells) out.push({ what:"incantesimi di " + u.name, value:v.spells });
     if (v.items)  out.push({ what:"oggetti di " + u.name, value:v.items });
   }

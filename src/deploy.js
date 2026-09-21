@@ -5846,9 +5846,12 @@ function evidenzia(uid){
 function loadArmyFromList(list, armyId){
   history.push("carica " + (list.name || "lista"));
   state.units = state.units.filter(u => u.army !== armyId);
-  for (const p of list.units){
+  /* le risposte della scheda di preparazione viaggiano con l'unita',
+     come nell'arbitro: lo scudo della Parry sta li' */
+  const prep = (list.prep && list.prep.units) || {};
+  for (const [i, p] of list.units.entries()){
     state.units.push({
-      uid: uidSeq++, army: armyId, ...p,
+      uid: uidSeq++, army: armyId, ...p, prepara: prep[i] || null,
       catId: p.catId || matchUnitName(p.name),
       x:0, y:0, rot: armyId === "A" ? 0 : 180, placed:false,
       lost:0, dead:false, fled:false,
