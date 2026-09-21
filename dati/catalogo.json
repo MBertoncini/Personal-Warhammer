@@ -99,11 +99,12 @@
     "baseId": "25x25",
     "baseW": 25,
     "baseH": 25,
-    "owned": 30,
+    "owned": 32,
     "aliases": [
       "skink skirmishers"
     ],
-    "notes": ""
+    "notes": "",
+    "painted": 0
   },
   {
     "id": "cmttwtdohr5ms",
