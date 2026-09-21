@@ -29,6 +29,7 @@ import * as MG from './magic.js';
 import * as PR from './profiles.js';
 import * as PREP from './prep.js';
 import { SCENARIOS } from './scenarios.js';
+import { customScenarioMap } from './scenariokit.js';
 import { mostraSfida, chiudiSfida, evidenzia, toast } from './deploy.js';
 
 const KEY = "tow-gemini-key";
@@ -46,8 +47,11 @@ let serie = 0;
    1 · GLI SCENARI CHE L'ARBITRO SA GIOCARE
    Quelli con un tavolo e uno schieramento: gli altri sono disegni
    liberi, e l'arbitro non saprebbe dove mettere nessuno.
+   Ci sono anche i tuoi, salvati dal tavolo: hanno la stessa forma.
    ============================================================ */
-export const scenariGiocabili = () => Object.entries(SCENARIOS)
+const tuttiGliScenari = () => ({ ...SCENARIOS, ...customScenarioMap() });
+
+export const scenariGiocabili = () => Object.entries(tuttiGliScenari())
   .filter(([, s]) => s.table && s.deploy)
   .map(([id, s]) => ({ id, label: s.label, pts: s.pts || 0, group: s.group || "" }));
 
@@ -81,7 +85,7 @@ export function startSfida({ listA, listB, mia = "A", scenario = "" } = {}){
   const nomi = { A: (listA.info && listA.info.catalogue) || listA.name,
                  B: (listB.info && listB.info.catalogue) || listB.name };
   if (nomi.A === nomi.B){ nomi.A += " (A)"; nomi.B += " (B)"; }
-  const S = AR.newBattle({ A: listA, B: listB, scenario: sc, nomi, magia: MG.magicNow() });
+  const S = AR.newBattle({ A: listA, B: listB, scenario: sc, def: tuttiGliScenari()[sc], nomi, magia: MG.magicNow() });
   partita = { id: ++serie, S, mia: mia === "B" ? "B" : "A", attesa: null, pensa: false,
               ultima: null, avvisi, errori: [], agente: null };
   partita.agente = faiAgente();

@@ -214,8 +214,11 @@ export function armyFrom(lista, army, from = 0){
    scenario — cinque round in Battle March (p. 27), sei nel Core
    Rulebook (p. 286). Il punto di rottura va chiesto: e' la durata di
    uno scenario (p. 291), non una regola di tutte le partite. */
-export function newBattle({ A, B, scenario = "bm-strada", nomi = null, magia = null, durata = null } = {}){
-  const sc = SCENARIOS[scenario] || SCENARIOS["bm-strada"];
+/* `def` e' la scheda dello scenario quando non sta in `SCENARIOS`: gli
+   scenari salvati dal tavolo vivono nell'archivio del browser, e
+   l'arbitro — che gira anche fuori dal browser — non li va a cercare. */
+export function newBattle({ A, B, scenario = "bm-strada", def = null, nomi = null, magia = null, durata = null } = {}){
+  const sc = def || SCENARIOS[scenario] || SCENARIOS["bm-strada"];
   const formato = VC.formatFor(sc);
   const lunga = durata === "breakpoint" || durata === "fixed" || durata === "bm" ? durata : VC.defaultLength(formato);
   const [tw, th] = sc.table;
