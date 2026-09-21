@@ -56,6 +56,7 @@ import { roll, d3, leadershipTest, stat, rankBonus, woundOn, saveOn, chance as c
 import { scatter as deviazione, rollDice } from './dice.js';
 import { SCENARIOS, geometry } from './scenarios.js';
 import { troopType, unitStrength } from './troops.js';
+import { troopOf } from './mounts.js';
 import { TERRAIN } from './terrain.js';
 import * as TR from './terrain.js';
 import * as SG from './sight.js';
@@ -376,7 +377,7 @@ export const capiDi = (S, u) => FM.attachedTo(S.units, u);
 export const capiInFila = (S, u) => capiDi(S, u).filter(c => !c.ritiro);
 const GENERE = { regularInfantry:"fanteria", heavyInfantry:"fanteria", monstrousInfantry:"fanteria",
                  lightCavalry:"cavalleria", heavyCavalry:"cavalleria", monstrousCavalry:"cavalleria" };
-const genere = u => GENERE[troopType(u.troop).id] || "";
+const genere = u => GENERE[troopType(troopOf(u)).id] || "";
 const indomito = u => ((u && u.rules) || []).some(r => /^unbreakable/i.test(String(r)));
 /* Un personaggio che puo' unirsi: fanteria o cavalleria, un modello
    solo, e non gia' dentro qualcuno (p. 206). I carri e i mostri

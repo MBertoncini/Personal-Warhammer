@@ -125,6 +125,23 @@ export function guessMount(u, faction = ""){
   return best;
 }
 
+/* Il tipo di truppa che conta al tavolo. Il personaggio montato da qui
+   ha gia' quello della cavalcatura; quello che il file porta con la
+   cavalcatura accanto ma il tipo del cavaliere («Heavy infantry» per
+   un Oldblood sul Carnosauro) no, e finiva dentro gli Skink. Qui vale
+   la cavalcatura: quella della tabella, se la si conosce, e se la
+   tabella non e' caricata il Large Target, che e' dei mostri (p. 195).
+   Il file non si tocca: e' una lettura. */
+export function troopOf(u){
+  if (!u) return "";
+  const troop = u.troop || "";
+  if (u.mountId || !u.mount || !u.mount.name || (u.models || 1) !== 1) return troop;
+  const m = allMounts().find(x => norm(x.nome) === norm(u.mount.name));
+  if (m) return `${m.troop} (character)`;
+  if ((u.rules || []).some(r => /^large target/i.test(String(r)))) return "Monstrous creature (character)";
+  return troop;
+}
+
 /* ============================================================
    3 · MONTARE E SMONTARE
    ============================================================ */
