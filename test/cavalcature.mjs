@@ -17,6 +17,7 @@ import * as PAL from '../src/palmares.js';
 import * as PREP from '../src/prep.js';
 import { moveInfo } from '../src/profiles.js';
 import * as L from '../src/lists.js';
+import * as AR from '../src/arbitro.js';
 
 let fails = 0;
 const ok = (label, cond) => {
@@ -103,6 +104,28 @@ const boss = MT.mountUnit({ name: 'Orc Warboss', faction: 'Orc and Goblin Tribes
   troop: 'Regular Infantry', stats: { M:'4', WS:'5', BS:'3', S:'4', T:'4', W:'3', I:'4', A:'4', Ld:'8' },
   rules: [], weapons: [], armour: 5 }, MT.mountById('war-boar'));
 ok('sul cinghiale invece si unisce ancora', FM.canJoin(boss) && !FM.isLumbering(boss));
+
+/* L'Oldblood di «LIZ fun»: il Carnosauro c'e', ma il tipo di truppa e'
+   quello del cavaliere. Si schierava dentro gli Skink, che poi facevano
+   Terrore in carica. */
+const lizOldblood = copy(saved.find(l => l.name === 'LIZ fun').units.find(u => u.name === 'Saurus Oldblood'));
+const skinks = { name: 'Skink Skirmishers', models: 10, troop: 'Regular infantry', army: 'A', uid: 2, loose: true };
+lizOldblood.army = 'A'; lizOldblood.uid = 1;
+ok('l Oldblood del file e fanteria sul foglio, ma sul Carnosauro',
+   /infantry/i.test(lizOldblood.troop) && !lizOldblood.mountId && lizOldblood.mount.name === 'Carnosaur');
+ok('conta la cavalcatura: e un Behemoth', /behemoth/i.test(MT.troopOf(lizOldblood)));
+ok('al tavolo non entra negli Skink', FM.isLumbering(lizOldblood) && !FM.canJoin(lizOldblood) &&
+   !FM.joinCandidates([lizOldblood, skinks], skinks).length && !FM.hostCandidates([lizOldblood, skinks], lizOldblood).length);
+ok('e nessuno entra in lui', !FM.canHost([lizOldblood], lizOldblood));
+ok('per l arbitro non si unisce a nessuno', !AR.puoUnirsi({ units: [lizOldblood, skinks] }, lizOldblood));
+MT.useMounts(null);
+ok('senza tabella delle cavalcature basta il Large Target', FM.isLumbering(lizOldblood) &&
+   !AR.puoUnirsi({ units: [lizOldblood, skinks] }, lizOldblood));
+MT.useMounts(json('../dati/cavalcature.json'));
+const walker = copy(lizOldblood); walker.mount = null;
+walker.rules = walker.rules.filter(r => !/large target/i.test(r));
+ok('a piedi resta fanteria e si unisce', !FM.isLumbering(walker) && FM.canJoin(walker) &&
+   AR.puoUnirsi({ units: [walker, skinks] }, walker));
 ok('cavalleria pesante, Movimento 7, Resistenza e Ferite del cavaliere',
    /heavy cavalry/i.test(boss.troop) && boss.stats.M === '7' && boss.stats.T === '4' && boss.stats.W === '3');
 ok('e la pelle dura del cinghiale migliora l armatura di uno', boss.armour === 4);

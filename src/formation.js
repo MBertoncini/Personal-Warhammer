@@ -27,6 +27,7 @@ import { MM, inch } from './util.js';
 import { boxCorners, polyDistance, closestPoints, toLocal } from './geom.js';
 import { TERRAIN } from './terrain.js';
 import { troopType } from './troops.js';
+import { troopOf } from './mounts.js';
 
 /* mezzo pollice fra una base e l'altra: la spaziatura degli
    schermagliatori che l'app usava gia' prima che le formazioni
@@ -297,9 +298,11 @@ export const hostsAnyone = (units, u) =>
    regola del modello solo li lasciava entrare in un reggimento: il Grey
    Seer sulla Screaming Bell finiva dentro i Clanrats. La regola sta nel
    tipo di truppa, e la spunta «e' un personaggio» non la cambia — un
-   personaggio sul carro resta sul carro (p. 205). */
+   personaggio sul carro resta sul carro (p. 205). Il tipo e' quello
+   della cavalcatura anche quando il file scrive quello del cavaliere
+   (`troopOf`): l'Oldblood sul Carnosauro non e' fanteria. */
 const LUMBERING = ["heavyChariot", "monstrousCreature", "behemoth"];
-export const isLumbering = u => LUMBERING.includes(troopType(u && u.troop).id);
+export const isLumbering = u => LUMBERING.includes(troopType(troopOf(u)).id);
 const LUMBER_WHY = "è un carro pesante o un mostro: non si unisce e non ospita (Lumbering, p. 195)";
 
 export const canJoin = u => !u.dead && !isLumbering(u) && (isCharacter(u) || (u.models || 1) === 1);
