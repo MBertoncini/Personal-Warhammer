@@ -185,6 +185,7 @@ const ETICHETTA = {
   schiera: "Schiera", unisci: "Unisci", unisciti: "Unisciti", separa: "Esci dal reggimento",
   dominio: "Dominio", tieni: "Tieni", scambia: "Scambia",
   raduna: "Raduna", carica: "Carica", reazione: "Reagisce", avanza: "Avanza", marcia: "Marcia",
+  aggira: "Aggira l’ostacolo",
   gira: "Gira", riforma: "Riforma", indietro: "Indietro", lato: "Di lato", riordina: "Riordina",
   ferma: "Resta ferma", tira: "Tira", lancia: "Lancia", dissolvi: "Dissolvi", lascia: "Lascia",
   combatti: "Combatti", avanti: "Passa",

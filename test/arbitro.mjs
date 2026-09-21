@@ -15,7 +15,7 @@ import * as D from '../src/dice.js';
 import * as PR from '../src/profiles.js';
 import * as CH from '../src/charge.js';
 import * as CB from '../src/combat.js';
-import { polysOverlap } from '../src/geom.js';
+import { polysOverlap, boxCorners } from '../src/geom.js';
 import { spawnSync } from 'node:child_process';
 import * as MG from '../src/magic.js';
 import * as EF from '../src/effects.js';
@@ -1771,6 +1771,147 @@ console.log('\nil terreno, in partita (pp. 269-272 e 159)');
   ok('il bersaglio nel bosco è in riparo', !!AR.interni.guarda(G, sauri, mob).cover);
   mob.x = 700; mob.y = 300;
   ok('e in aperto no', AR.interni.guarda(G, sauri, mob).cover === '');
+  seme(1);
+}
+
+console.log('\nil muro che chiude la strada, e come lo si aggira (p. 270)');
+{
+  /* La partita del 2026-09-21: un reggimento di Black Orc schierato
+     dietro il monolite ci e' rimasto fermo per tutta la partita. Il
+     tavolo era giusto — `ingombro` nel monolite non ci lascia entrare —
+     e sbagliato era quello che si metteva davanti a chi sceglie:
+
+       · la fotografia non nominava il terreno, e quindi per chi
+         schierava il monolite non esisteva;
+       · l'opzione diceva «marcia di 8″» e il tavolo ne dava zero, ogni
+         turno, identica.
+
+     Qui si prova tutte e due, e che dall'incastro si esce. */
+  const P1 = lista('lmtl5rgsd5g06'), P2 = lista('lmtl5ruzktzvb');   // «Il Monolite nella Palude»
+  seme(7);
+  const M = AR.newBattle({ A: P1, B: P2, scenario: 'bm-monolite' });
+  const mono = M.terrain.find(t => t.kind === 'monolith');
+
+  const foto = AR.fotografia(M, { per: 'A' });
+  ok('la fotografia elenca i pezzi del tavolo', /Il terreno sul tavolo \(pp\. 269-272\)/.test(foto));
+  ok('e del monolite dice che non si attraversa e dove sta',
+     /Monolite — 4×4″, al centro del tavolo \(24, 18\): non si attraversa/.test(foto));
+  ok('del bosco dice la penombra, e della palude il dado per modello',
+     /Bosco.*penombra/.test(foto) && /Palude.*test di terreno pericoloso/.test(foto));
+  ok('le decorazioni non finiscono fra i pezzi che si aggirano',
+     !/· Tesoro —/.test(foto));
+
+  /* i pezzi a mano: un reggimento di A sotto il monolite, un nemico
+     sopra, e in mezzo il monolite e nient'altro */
+  const mio = M.units.find(u => u.army === 'A' && u.name === 'Saurus Warriors');
+  const suo = M.units.find(u => u.army === 'B' && u.name === 'Night Goblin Mobs');
+  for (const u of M.units) u.placed = false;
+  mio.placed = true; mio.x = 24 * MM; mio.y = 23 * MM; mio.rot = 0;
+  suo.placed = true; suo.x = 24 * MM; suo.y = 10 * MM; suo.rot = 180;
+  M.schierando = false; M.casella = casella('mosse'); M.army = 'A'; M.turno = 1;
+
+  const mosse = () => AR.options(M).list.filter(x => x.uid === mio.uid);
+  const l1 = mosse();
+  const av = l1.find(x => x.id === 'avanza'), ma = l1.find(x => x.id === 'marcia');
+  ok('l opzione non promette più pollici di quelli che il tavolo darà',
+     /Monolite chiude la strada: di pollici ne fa 1\.2/.test(av.why) &&
+     /però Monolite chiude la strada/.test(ma.why) && av.page === 270);
+
+  const agg = l1.filter(x => x.id === 'aggira');
+  ok('e si offre di girarci attorno, un varco per lato', agg.length === 2);
+  ok('da attaccati al muro il varco si prende di lato: girarsi non ci starebbe (p. 125)',
+     agg.every(x => x.lato === true && x.page === 125) &&
+     agg.map(x => x.segno).sort().join() === '-1,1');
+
+  /* l'euristica la sceglie: è la riga che prima non c'era, e senza la
+     quale «aggira» resterebbe in elenco senza che nessuno la prenda */
+  const euro = AG.agenteEuristico({ nome: 'prova' });
+  const scelta = await euro.scegli({ opzioni: AR.options(M) });
+  ok('l euristica preferisce aggirare invece di andare addosso al muro',
+     scelta.scelta.id === 'aggira');
+
+  /* e si esce davvero: sei turni di mosse, scegliendo come l'euristica */
+  let giri = 0;
+  while (giri++ < 6 && AR.distanza(M, mio, suo) > 2){
+    mio.moved = null; M.army = 'A'; M.casella = casella('mosse');
+    const l = mosse();
+    const a = l.filter(x => x.id === 'aggira').sort((x, y) => (y.pollici || 0) - (x.pollici || 0))[0];
+    const m = l.find(x => x.id === 'marcia') || l.find(x => x.id === 'avanza');
+    AR.apply(M, a || m);
+  }
+  ok('in sei turni il reggimento supera il monolite e arriva sul nemico',
+     AR.distanza(M, mio, suo) <= 2);
+  ok('e non è passato attraverso: il monolite è ancora libero',
+     !polysOverlap(AR.cornersOf(mio, M.units), mono.poly));
+
+  /* quando la strada è libera l'aggiramento non si offre: sarebbe una
+     mossa in più in ogni elenco di ogni turno, per niente */
+  mio.x = 10 * MM; mio.y = 23 * MM; mio.rot = 0; mio.moved = null;
+  suo.x = 10 * MM; suo.y = 14 * MM;
+  M.casella = casella('mosse');
+  ok('in campo aperto non si offre nessun aggiramento',
+     !mosse().some(x => x.id === 'aggira'));
+  seme(1);
+}
+
+console.log('\ni posti di schieramento dicono che cosa ci trovano (pp. 269-272)');
+{
+  /* L'altra meta' della stessa partita: i Black Orc dietro il monolite
+     ci sono finiti allo SCHIERAMENTO, e l'etichetta diceva soltanto
+     «centro, in prima fila». `postiPer` guardava le unita' amiche e i
+     bordi della zona, e del terreno non sapeva niente.
+
+     Le Rovine di Xhotl hanno la piramide impassabile in mezzo e le
+     zone che la sfiorano: e' il tavolo su cui la cosa si vede. */
+  const X = lista('lmtl5st4mdsb5'), Y = lista('lmtl5t6hcsa1y');
+  seme(3);
+  const R = AR.newBattle({ A: X, B: Y, scenario: 'bm-rovine' });
+  const primo = R.units.find(u => u.army === 'A' && !u.placed && u.models > 5);
+  const posti = AR.postiPer(R, primo);
+
+  ok('il posto dice su che cosa ci si posa, e con che nome',
+     posti.some(x => /ci si posa dentro (Bosco|Palude)/.test(x.why)));
+  ok('e con il tag corto, non con la regola intera ricopiata quindici volte',
+     posti.some(x => /Palude \(pericoloso, niente ranghi/.test(x.why)) &&
+     !posti.some(x => /penombra/.test(x.why)));
+  ok('quello che ha la piramide davanti lo dice, con la distanza e la pagina',
+     posti.some(x => x.murato && /c'e Piramide: non si attraversa/.test(x.why.replace(/è/g, 'e')) &&
+                     /davanti, a \d/.test(x.why)));
+  ok('e i posti murati stanno in fondo all elenco, non in cima',
+     posti.some(x => x.murato) &&
+     posti.slice(posti.findIndex(x => x.murato)).every(x => x.murato));
+  ok('i pezzi lontani non si nominano: si guarda avanti dodici pollici',
+     posti.every(x => !/a (1[3-9]|[2-9]\d)(\.\d)?″/.test(x.why)));
+
+  /* nessun posto dentro un impassabile, su nessuno dei tre tavoli di
+     Battle March: prima era vero per fortuna, adesso per costruzione */
+  for (const sc of ['bm-monolite', 'bm-rovine', 'bm-strada']){
+    seme(3);
+    const T = AR.newBattle({ A: X, B: Y, scenario: sc });
+    const muri = T.terrain.filter(t => !t.decor && t.cat.noEntry);
+    let dentro = 0, offerti = 0;
+    for (const u of T.units.filter(x => !x.placed)){
+      for (const p of AR.postiPer(T, u)){
+        offerti++;
+        const poly = boxCorners({ ...AR.boxOf(u, T.units), x: p.x, y: p.y, rot: p.rot });
+        if (muri.some(m => polysOverlap(poly, m.poly))) dentro++;
+      }
+    }
+    ok(`su ${sc} nessuno dei ${offerti} posti offerti sta dentro un impassabile`, offerti > 0 && dentro === 0);
+  }
+
+  /* e l'euristica li evita: senza questa riga il marchio resterebbe
+     scritto sull'opzione e nessuno lo guarderebbe */
+  const euro = AG.agenteEuristico({ nome: 'prova' });
+  const solo = { list: [
+    { id:'schiera', uid: 1, dove:'centro', murato: true, why:'centro, con la Piramide davanti' },
+    { id:'schiera', uid: 1, dove:'destra', why:'destra, in prima fila' },
+  ] };
+  const s1 = await euro.scegli({ opzioni: solo });
+  ok('l euristica lascia stare il posto murato', s1.scelta.dove === 'destra');
+  const tuttiMurati = { list: [{ id:'schiera', uid: 1, dove:'centro', murato: true, why:'x' }] };
+  const s2 = await euro.scegli({ opzioni: tuttiMurati });
+  ok('ma se sono murati tutti si schiera lo stesso', s2.scelta.dove === 'centro');
   seme(1);
 }
 

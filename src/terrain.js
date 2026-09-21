@@ -177,6 +177,50 @@ export function combatCat(t){
   return { ...c, from: c.id };
 }
 
+/* IL PEZZO DETTO IN UNA RIGA.
+   La tabella del §1 e' fatta di bandierine, e le bandierine si leggono
+   solo se si ha il libro aperto accanto. Qui diventano una frase.
+
+   Serve a chi deve decidere senza il libro: l'elenco delle mosse, il
+   posto di schieramento, e soprattutto la fotografia del tavolo che
+   `arbitro.js` mette davanti a chi gioca — un umano o un modello di
+   linguaggio. La fotografia il terreno non lo nominava affatto: le
+   unita', i profili, le distanze, i punti vittoria, e dei sette pezzi
+   posati sul tavolo nemmeno una parola. Un monolite impassabile in
+   mezzo al campo, per chi sceglieva le mosse, non esisteva — e un
+   reggimento schierato dietro ci restava tutta la partita.
+
+   La penombra del bosco e la cresta della collina stanno sul PEZZO e
+   non sulla categoria (un bosco e una collina sono tutti e due «open»
+   o «wood» ma vedono in modo diverso), e per questo si legge `los` di
+   qui e non da `CATS`. */
+export function testoCat(t){
+  const c = catOf(t);
+  const cfg = TERRAIN[t && t.kind] || {};
+  const los = t && t.los != null ? t.los : cfg.los;
+  const dice = [];
+  if (c.noEntry) dice.push("non si attraversa: ci si gira attorno");
+  if (c.slow) dice.push("−1 al Movimento");
+  if (c.worstDie) dice.push("chi ci carica dentro tiene il dado peggiore");
+  if (c.danger) dice.push("test di terreno pericoloso, un dado per modello");
+  if (c.disorder) dice.push("niente ranghi a chi ci combatte dentro");
+  const rip = coverOf(t);
+  if (rip) dice.push(rip === "hard" ? "riparo pesante, −2 per colpire" : "riparo leggero, −1 per colpire");
+  /* Il bosco porta `los:true` sul tipo e `los:"soft"` sulla categoria, e
+     non e' una contraddizione: e' la penombra (p. 270), che blocca la
+     vista fra due che stanno tutti e due fuori e non blocca niente a
+     chi ci sta dentro. La categoria lo dice piu' preciso, e vince. */
+  if (c.los === "soft") dice.push("penombra: fra due che stanno fuori la vista non passa");
+  else if (los === "crest") dice.push("oltre la cresta non si vede, se nessuno ci sta sopra");
+  else if (los === true || c.los === true) dice.push("blocca la linea di vista");
+  /* La collina e' terreno aperto, e sarebbe una riga vuota: quello che
+     fa lo fa in combattimento, dove la fila piu' alta ne guadagna una
+     in piu' (p. 152). Il landmark di Battle March e' un obiettivo. */
+  if (cfg.los === "crest") dice.push("chi ci combatte sopra conta una fila in più (p. 152)");
+  if (t && (t.objective ?? cfg.objective)) dice.push("è un obiettivo: chi lo tiene a fine turno fa punti");
+  return dice.join(", ");
+}
+
 /* ============================================================
    4 · LE REGOLE CHE LA CATEGORIA FA SCATTARE
    Fin qui `terrain.js` era una tabella: diceva che la palude e'

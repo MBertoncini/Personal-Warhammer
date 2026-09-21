@@ -50,8 +50,16 @@ export function agenteEuristico({ nome = "euristica" } = {}){
          angolo, che e' il modo piu' rapido di perdere una partita. */
       if (primo("schiera")){
         const posti = l.filter(x => x.id === "schiera");
-        const scelto = posti[colonna++ % posti.length];
-        return { scelta: scelto, perche: `la metto ${scelto.dove}: uno schieramento largo non si fa prendere di fianco` };
+        /* Un posto con un pezzo impassabile davanti non e' un posto:
+           chi ci si mette ci resta. L'arbitro lo marca (`murato`), e
+           qui si preferisce qualunque altra colonna — se sono murate
+           tutte si schiera lo stesso, che restare fuori dal tavolo e'
+           peggio. */
+        const buoni = posti.filter(x => !x.murato);
+        const usa = buoni.length ? buoni : posti;
+        const scelto = usa[colonna++ % usa.length];
+        return { scelta: scelto, perche: `la metto ${scelto.dove}: uno schieramento largo non si fa prendere di fianco` +
+          (buoni.length < posti.length ? `, e i posti col terreno impassabile davanti li lascio stare` : "") };
       }
 
       /* INCANTESIMI, PRIMA DI SCHIERARE: il dominio con piu'
@@ -136,6 +144,19 @@ export function agenteEuristico({ nome = "euristica" } = {}){
          partita. Il conto lo fa l'arbitro, che le armi le ha in mano. */
       const tieniIlTiro = l.find(x => x.id === "ferma" && x.tieniIlTiro);
       if (tieniIlTiro) return { scelta: tieniIlTiro, perche: `${tieniIlTiro.nome} ${tieniIlTiro.why}` };
+
+      /* CHI HA UN MURO DAVANTI LO AGGIRA, prima di qualunque avanzata.
+         L'arbitro offre «aggira» solo a chi ha la strada chiusa da un
+         pezzo impassabile, e quella e' la sola mossa che lo sblocca:
+         andargli addosso un'altra volta vuol dire fare zero pollici e
+         riprovare il turno dopo, che e' come un reggimento di Black
+         Orc ha passato una partita intera dietro un monolite. Fra i
+         due lati si prende quello che porta piu' lontano. */
+      const aggira = l.filter(x => x.id === "aggira");
+      if (aggira.length){
+        const a = aggira.slice().sort((x, y) => (y.pollici || 0) - (x.pollici || 0))[0];
+        return { scelta: a, perche: `${a.nome} ${a.why}` };
+      }
 
       const avanza = l.filter(x => x.id === "avanza");
       if (avanza.length){
@@ -237,6 +258,12 @@ Come si ragiona in questo gioco:
 - un'unità sola contro due nemici perde: si arriva in due sullo stesso bersaglio quando si può;
 - la mossa «passa» chiude la fase: le unità che non hanno ancora agito in questa fase restano come sono;
 - un tiro con una probabilità bassa di colpire vale poco: meglio avvicinarsi o cambiare bersaglio;
+- il terreno è sul tavolo e la fotografia lo elenca: un pezzo IMPASSABILE non si attraversa mai, e chi gli si
+  ferma dietro non passa più — per andare oltre bisogna aggirarlo, e la mossa «aggira» è quella che lo fa;
+  il bosco e la palude tolgono un pollice al Movimento e fanno perdere i ranghi a chi ci combatte dentro;
+  chi sta dietro un muretto o dentro le rovine si fa colpire peggio, e la collina dà una fila in più;
+- guarda sempre il terreno PRIMA di schierare: un reggimento messo dietro un pezzo impassabile ci resta tutta
+  la partita, e un tiratore messo dietro un bosco non vedrà mai niente;
 - girarsi costa: la ruota si paga con il movimento, e una manovra sola per turno. Il giro di 90° costa poco ma
   fa di un reggimento largo una colonna senza bonus di ranghi; la riforma lo gira intero e costa tutto il movimento;
   un passo indietro o di lato si fa a metà del Movimento;

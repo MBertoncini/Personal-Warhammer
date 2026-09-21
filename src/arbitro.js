@@ -35,7 +35,7 @@
  */
 
 import { MM, inch } from './util.js';
-import { boxCorners, polyDistance, polysOverlap, pointInRect, distPointToBox, boxRadius } from './geom.js';
+import { boxCorners, polyDistance, polysOverlap, pointInRect, distPointToBox, boxRadius, toWorld } from './geom.js';
 import * as FM from './formation.js';
 import * as MV from './movement.js';
 import * as CH from './charge.js';
@@ -116,8 +116,8 @@ export const LIMITI = [
     why:"tira comunque, e se non raggiunge chi fugge fa la carica fallita" },
   { id:"attraversare", what:"chi fugge passa attraverso le unità senza il test di Pericolo", page:133,
     why:"il test c'è in `charge.js` (`perilAsk`), ma vuole sapere quali modelli hanno attraversato" },
-  { id:"ingombro",  what:"chi trova la strada chiusa si ferma o gira un poco, non aggira l'ostacolo", page:122,
-    why:"il percorso è una linea con qualche deviazione, non una ricerca di strada" },
+  { id:"ingombro",  what:"chi trova la strada chiusa si ferma, gira un poco, o la aggira scegliendo un varco: nessuno cerca un cammino", page:122,
+    why:"il percorso è una linea con qualche deviazione, non una ricerca di strada. Quando la chiude un pezzo impassabile l'arbitro offre i due varchi ai suoi fianchi (p. 270) e chi gioca sceglie — ma guarda un ostacolo solo, quello che ha davanti adesso: un secondo pezzo dietro al primo si scopre arrivandoci" },
   { id:"stupidita", what:"la Stupidità è quella del testo che la lista porta", page:178,
     why:"ferma, niente tiro né magia, e se caricata tiene la posizione; il Core Rulebook a p. 178 ne stampa un'altra versione — si muove in avanti nelle mosse obbligate, non marcia e non carica — e l'arbitro gioca quella della lista, che è la più recente" },
   { id:"frenesia",  what:"chi è frenetico o impetuoso non è obbligato a caricare", page:170,
@@ -456,7 +456,11 @@ export function ingombro(S, u, box, { ignora = [], unPollice = true, bordo = tru
   if (terreno && !vola(u))
     for (const t of S.terrain){
       if (t.decor || !(t.cat && t.cat.noEntry)) continue;
-      if (polysOverlap(poly, t.poly)) return { chi: null, perche: `${t.label} (p. 270)` };
+      /* il pezzo torna insieme al perche': chi offre le mosse deve
+         sapere QUALE muro chiude la strada, per poter proporre di
+         aggirarlo (`aggiramenti`) invece di riproporre ogni turno una
+         marcia da otto pollici che ne fa zero */
+      if (polysOverlap(poly, t.poly)) return { chi: null, terreno: t, perche: `${t.label} (p. 270)` };
     }
   for (const o of S.units){
     if (o === u || !onBoard(o) || isJoined(o) || ignora.includes(o.uid)) continue;
@@ -560,6 +564,65 @@ function zonaDi(S, army){
   return z || { x: 0, y: 0, w: S.table.w, h: S.table.h };
 }
 
+/* ---- il terreno di un posto di schieramento (pp. 269-272) ----
+   `postiPer` guardava le unita' amiche e i bordi della zona, e il
+   terreno no: proponeva «centro, in prima fila» senza dire che al
+   centro c'era un monolite. Chi sceglieva ci metteva un reggimento e
+   se lo ritrovava murato per tutta la partita — e' la partita del
+   2026-09-21, con i Black Orc dietro il monolite.
+
+   Due domande, che al tavolo si fanno guardando il pezzo in mano:
+   SU CHE COSA lo poso, e CHE COSA gli si para davanti. Il davanti si
+   guarda per dodici pollici — due o tre turni di marcia — e dalla
+   FACCIA, non dal centro: il monolite che frega e' quello che il
+   fronte trova al primo passo.
+
+   Un posto dentro un pezzo impassabile non si offre affatto: quello
+   non e' uno schieramento discutibile, e' una posa illegale (p. 270),
+   e per gli scenari di casa non capitava per fortuna e non per
+   progetto — le zone stanno lontane dai pezzi centrali, ma un tavolo
+   disegnato a mano non lo promette. */
+const ORIZZONTE = 12;            // pollici, quanto avanti si guarda
+
+function terrenoDelPosto(S, box){
+  const poly = boxCorners(box);
+  const utili = (S.terrain || []).filter(t => !t.decor && t.kind !== "treasure");
+  const sotto = utili.filter(t => polysOverlap(poly, t.poly));
+  const a = (box.rot || 0) * Math.PI / 180;
+  const ux = Math.sin(a), uy = -Math.cos(a);
+  const mm = ORIZZONTE * MM;
+  /* i tre punti della faccia: i due spigoli davanti e il mezzo */
+  const fronte = [[-box.w / 2, -box.h / 2], [0, -box.h / 2], [box.w / 2, -box.h / 2]]
+    .map(p => toWorld(p, box));
+  const davanti = [];
+  for (const p of fronte)
+    for (const hit of CH.crossed(p, [p[0] + ux * mm, p[1] + uy * mm], utili)){
+      if (sotto.includes(hit) || davanti.includes(hit)) continue;
+      davanti.push(hit);
+    }
+  davanti.sort((x, y) => polyDistance(poly, x.poly) - polyDistance(poly, y.poly));
+  const muro = davanti.find(t => t.cat && t.cat.noEntry) || null;
+  /* Il pezzo si NOMINA e basta: che cosa fa lo dice la fotografia, una
+     volta per tutte, e ripeterlo in ognuno dei quindici posti farebbe
+     dell'elenco un muro di testo. Quello che resta e' il tag corto —
+     quello che cambia la scelta guardando un posto accanto all'altro. */
+  const tag = t => {
+    const c = t.cat || {};
+    return [c.danger ? "pericoloso" : "", c.disorder ? "niente ranghi" : "",
+            t.cover ? "riparo" : "", c.slow ? "−1 al Movimento" : ""].filter(Boolean).join(", ");
+  };
+  const testo = [
+    sotto.length ? `ci si posa dentro ${sotto.map(t =>
+      t.label + (tag(t) ? ` (${tag(t)})` : "")).join(" e ")}` : "",
+    muro ? `davanti, a ${r1(polyDistance(poly, muro.poly) / MM)}″, c'è ${muro.label}:` +
+      ` non si attraversa, e di qui in avanti non si passa (p. 270)` : "",
+    !muro && davanti.length ? `davanti, entro ${ORIZZONTE}″: ${davanti.map(t =>
+      `${t.label} a ${r1(polyDistance(poly, t.poly) / MM)}″`).join(", ")}` : "",
+    !sotto.length && !davanti.length ? "prato aperto davanti e sotto" : "",
+  ].filter(Boolean).join("; ");
+  return { sotto, davanti, muro, testo };
+}
+
 export function postiPer(S, u){
   const z = zonaDi(S, u.army);
   const lay = layoutOf(u, S.units);
@@ -581,16 +644,26 @@ export function postiPer(S, u){
       const y = u.army === "A"
         ? z.y + lay.h / 2 + MM + f * passo
         : z.y + z.h - lay.h / 2 - MM - f * passo;
-      const poly = boxCorners({ x, y, w: lay.w, h: lay.h, rot: u.rot || 0 });
+      const box = { x, y, w: lay.w, h: lay.h, rot: u.rot || 0 };
+      const poly = boxCorners(box);
       const libero = !mie.some(o => polyDistance(poly, cornersOf(o, S.units)) < MM / 2) &&
                      x - lay.w / 2 >= z.x - 0.01 && x + lay.w / 2 <= z.x + z.w + 0.01 &&
                      y - lay.h / 2 >= z.y - 0.01 && y + lay.h / 2 <= z.y + z.h + 0.01;
-      if (libero) out.push({ id:"schiera", uid: u.uid, x, y, rot: u.rot || 0,
-                             dove: colonne[i] + (f ? `, ${f + 1}ª fila` : ""),
-                             why: `${colonne[i]}${f ? ", dietro" : ", in prima fila"}` });
+      if (!libero) continue;
+      const ter = terrenoDelPosto(S, box);
+      /* dentro un pezzo impassabile non ci si posa (p. 270) */
+      if (ter.sotto.some(t => t.cat && t.cat.noEntry)) continue;
+      out.push({ id:"schiera", uid: u.uid, x, y, rot: u.rot || 0,
+                 dove: colonne[i] + (f ? `, ${f + 1}ª fila` : ""),
+                 murato: !!ter.muro,
+                 why: `${colonne[i]}${f ? ", dietro" : ", in prima fila"}` +
+                      (ter.testo ? ` — ${ter.testo}` : "") });
     }
   }
-  return out;
+  /* i posti murati in fondo all'elenco, senza toglierli: al tavolo un
+     reggimento dietro il monolite lo si puo' anche volere — ci si
+     ripara dal tiro — ma non deve essere la prima riga che si legge */
+  return out.sort((a, b) => (a.murato ? 1 : 0) - (b.murato ? 1 : 0));
 }
 
 /* Dove un personaggio si puo' unire (p. 207): allo schieramento ogni
@@ -837,6 +910,147 @@ function opzioniCarica(S){
   return [...out, avanti("basta cariche: si passa al movimento")];
 }
 
+/* ============================================================
+   AGGIRARE QUELLO CHE CHIUDE LA STRADA (p. 270)
+   Questa e' la cosa che una partita vera ha mostrato, e che nessuna
+   prova aveva preso: un reggimento schierato dietro il monolite ci
+   resta tutta la partita.
+
+   L'arbitro il muro lo sapeva — `ingombro` non ci lascia entrare da
+   quando c'e' la categoria del terreno — ma lo sapeva solo DOPO. Chi
+   sceglieva leggeva «Night Goblin Mobs è a 8″: marcia di 8″», la
+   sceglieva, e il tavolo gliene dava zero: il pezzo partiva, toccava il
+   monolite al primo passo e si fermava. Poi l'elenco riproponeva la
+   stessa riga, identica, e cosi' per sei turni. La deviazione che
+   `percorso` ha gia' (±45°) non bastava, e non poteva: un reggimento
+   largo cinque pollici contro un monolite largo quattro tocca il
+   monolite a qualunque angolo, e la prova «mi avvicina di almeno un
+   pollice?» non passava mai.
+
+   Due cose, allora.
+
+   LA STRADA SI PROVA PRIMA DI OFFRIRLA. `stradaVera` fa esattamente il
+   conto che `mossa` fara' un attimo dopo — il pollice in meno del
+   terreno difficile, la ruota, il percorso con la sua deviazione — e
+   non tocca niente. Quando il numero vero e' piu' piccolo di quello
+   promesso e la colpa e' di un pezzo di terreno, l'opzione lo dice. E'
+   la meta' che conta anche per l'euristica, che la distanza se la legge
+   proprio da quella stringa.
+
+   E SI OFFRE DI GIRARCI ATTORNO. Non e' una ricerca di strada — il
+   limite `ingombro` resta dichiarato, e l'arbitro continua a non
+   sapere navigare un tavolo — e' il passo di lato che fa un giocatore:
+   ci si mette di traverso al varco, si paga la ruota (p. 124), e il
+   turno dopo si passa. I due varchi si mirano al FIANCO del pezzo e non
+   a dietro: puntare dietro da' una diagonale stretta, e una diagonale
+   stretta contro un pezzo piu' stretto del reggimento lo tocca lo
+   stesso al primo passo.
+   ============================================================ */
+
+/* Quanti pollici fa davvero, andando verso quel punto. Torna anche il
+   piano di ruota e cosa l'ha fermata, e non scrive una riga di
+   registro: `TR.slowMove` invece di `rallenta`, `pianoAvanzata`
+   invece di `avanzaRuotando`. */
+function stradaVera(S, u, meta, { marcia = false } = {}){
+  const { move: pieno } = movimento(S, u);
+  if (!pieno) return null;
+  const move = vola(u) ? pieno : TR.slowMove(pieno, pezziSulCammino(S, u, meta, pieno)).move;
+  const quanti = marcia ? move * 2 : move;
+  const pr = pianoRuota(S, u, versoDi(meta[0] - u.x, meta[1] - u.y), quanti, { marcia });
+  const p = pianoAvanzata(S, u, { x: meta[0], y: meta[1] }, pr, quanti);
+  return { pr, quanti, move, pollici: p.pollici, bloccata: p.bloccata,
+           stop: p.stop, muro: p.stop && p.stop.terreno ? p.stop.terreno : null };
+}
+
+/* I due varchi ai lati del pezzo che chiude la strada, nel sistema di
+   chi guarda la meta': `avanti` e' il bordo vicino del pezzo, `s` lo
+   scostamento di lato, e il reggimento ci passa se gli si lascia la
+   sua mezza larghezza piu' mezzo pollice. */
+function varchiAiLati(S, u, meta, pezzo){
+  const lay = layoutOf(u, S.units);
+  const dx = meta[0] - u.x, dy = meta[1] - u.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len, uy = dy / len;
+  const nx = -uy, ny = ux;                     // la destra di chi guarda avanti
+  let avanti = Infinity, smin = 0, smax = 0;
+  for (const c of pezzo.poly){
+    const ex = c[0] - u.x, ey = c[1] - u.y;
+    avanti = Math.min(avanti, ex * ux + ey * uy);
+    const s = ex * nx + ey * ny;
+    smin = Math.min(smin, s); smax = Math.max(smax, s);
+  }
+  avanti = Math.max(avanti, MM);               // mai un varco dietro le spalle
+  const largo = Math.max(lay.w, lay.h) / 2 + MM / 2;
+  const dove = s => [u.x + ux * avanti + nx * s, u.y + uy * avanti + ny * s];
+  return [{ verso: "destra", punto: dove(smax + largo) },
+          { verso: "sinistra", punto: dove(smin - largo) }];
+}
+
+/* Il passo di lato verso il varco (p. 125), provato senza muovere
+   niente: e' la mossa di chi sta troppo attaccato al muro per potersi
+   girare — ruotare un reggimento largo cinque pollici a un pollice dal
+   monolite lo farebbe entrare dentro il monolite, e l'arbitro allora
+   non lo gira affatto. Di lato si va a meta' Movimento e senza
+   cambiare faccia, e non e' un ripiego: e' quello che fa un giocatore
+   al tavolo prima di riprendere la marcia. */
+function passoDiLato(S, u, punto, move){
+  const a = (u.rot || 0) * Math.PI / 180;
+  const destra = [Math.cos(a), Math.sin(a)];
+  const lx = (punto[0] - u.x) * destra[0] + (punto[1] - u.y) * destra[1];
+  const segno = lx >= 0 ? 1 : -1;
+  const quanti = move / 2;
+  const p = percorso(S, u, [u.x + destra[0] * segno * quanti * MM, u.y + destra[1] * segno * quanti * MM],
+                     quanti, { rot: u.rot || 0, devia: false });
+  return { segno, quanti, pollici: p.pollici, verso: segno > 0 ? "destra" : "sinistra" };
+}
+
+/* Le mosse per girare attorno al muro: una per lato, e di ognuna si
+   offre quella che il tavolo permette davvero — girarsi verso il varco
+   e andarci (camminando o marciando), oppure, se girarsi non ci sta,
+   il passo di lato. Un lato che non porta da nessuna parte non si
+   offre: sarebbe la riga di prima con un nome nuovo. */
+function opzioniAggiramento(S, u, t, muro, drittoP){
+  const out = [];
+  const puoMarciare = !bandiera(u, "noMarch") && !macchina(u);
+  const { move } = movimento(S, u);
+  for (const { verso, punto } of varchiAiLati(S, u, [t.x, t.y], muro)){
+    const a = stradaVera(S, u, punto, { marcia: false });
+    const m = puoMarciare ? stradaVera(S, u, punto, { marcia: true }) : null;
+    const meglio = m && m.pollici > (a ? a.pollici : 0) + 0.05 ? m : a;
+    const g = meglio ? Math.round(Math.abs(meglio.pr.giro)) : 0;
+    const gira = meglio && !meglio.bloccata && (meglio.pollici > drittoP + 0.05 || g >= 1);
+    if (gira){
+      const marcia = meglio === m;
+      out.push({
+        id:"aggira", uid: u.uid, punto, marcia, verso: t.uid, nome: u.name, contro: t.name,
+        dove: `a ${verso} di ${muro.label}`,
+        why: (meglio.pr.parziale
+              ? `${muro.label} non si attraversa: ci si comincia a girare verso il varco a ${verso},` +
+                ` ${g}° adesso e il resto il turno prossimo — la ruota intera costerebbe` +
+                ` ${r1(meglio.pr.intera)}″ e il Movimento non basta (p. 124)`
+              : `${muro.label} non si attraversa: gli si passa a ${verso}` +
+                (g ? `, ruotando di ${g}°` : "") +
+                `, ${marcia ? "marciando " : ""}di ${r1(meglio.pollici)}″`),
+        pollici: meglio.pollici, page: 270 });
+      continue;
+    }
+    /* girarsi non ci sta: si scivola di lato, e il turno prossimo la
+       ruota ci starà perché il muro non sarà più davanti */
+    const l = passoDiLato(S, u, punto, move);
+    if (l.pollici <= 0.25) continue;
+    if (out.some(x => x.lato && x.segno === l.segno)) continue;
+    out.push({
+      id:"aggira", lato: true, segno: l.segno, pollici: l.pollici,
+      uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
+      dove: `di lato a ${l.verso}, verso il fianco di ${muro.label}`,
+      why: `${muro.label} non si attraversa e da qui non ci si riesce nemmeno a girare — ruotando,` +
+           ` il reggimento ci entrerebbe dentro. Si scivola di lato di ${r1(l.pollici)}″ a ${l.verso}` +
+           ` (metà del Movimento, p. 125), e da là il varco si prende`,
+      page: 125 });
+  }
+  return out;
+}
+
 /* ---- mosse (p. 122) ---- */
 function opzioniMossa(S){
   const out = [];
@@ -862,13 +1076,27 @@ function opzioniMossa(S){
        che deve girarsi di 45° per guardare il nemico non avanza affatto */
     const rotT = versoDi(t.x - u.x, t.y - u.y);
     const pa = pianoRuota(S, u, rotT, move), pm = pianoRuota(S, u, rotT, move * 2, { marcia: true });
+    /* la strada dritta, provata: quando un pezzo di terreno la chiude,
+       il numero promesso e quello vero sono due numeri diversi, ed e'
+       quello vero che va scritto (vedi il blocco sull'aggiramento) */
+    const va = stradaVera(S, u, [t.x, t.y], { marcia: false });
+    const vm = stradaVera(S, u, [t.x, t.y], { marcia: true });
+    /* con un trattino e non con un «ma»: la marcia porta gia' il suo
+       «ma» per il test di Comando, e due «ma» di fila non si leggono */
+    const muroTesto = v => v && v.muro && v.pollici < v.pr.resta - 0.05
+      ? ` — però ${v.muro.label} chiude la strada: di pollici ne fa ${r1(v.pollici)} e si ferma lì (p. 270)` : "";
     out.push({ id:"avanza", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
-               why: `${t.name} è a ${d}″: ${testoRuota(pa, move)}` + (mv.why ? ` (${mv.why})` : ""),
-               page: pa.costo ? 124 : 122 });
+               why: `${t.name} è a ${d}″: ${testoRuota(pa, move)}` + (mv.why ? ` (${mv.why})` : "") +
+                    muroTesto(va),
+               page: va && va.muro ? 270 : pa.costo ? 124 : 122 });
     if (!bandiera(u, "noMarch") && !macchina(u)) out.push({ id:"marcia", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
                why: `${t.name} è a ${d}″: ${testoRuota(pm, move * 2, "marcia")}` +
-                    (d <= CH.MARCH_WATCH ? `, ma a ${CH.MARCH_WATCH}″ da un nemico serve un test di Comando (p. 123)` : ""),
-               page: 123 });
+                    (d <= CH.MARCH_WATCH ? `, ma a ${CH.MARCH_WATCH}″ da un nemico serve un test di Comando (p. 123)` : "") +
+                    muroTesto(vm),
+               page: vm && vm.muro ? 270 : 123 });
+    /* e se la strada e' chiusa, si offre di girarci attorno */
+    const muro = (va && va.muro) || (vm && vm.muro);
+    if (muro) out.push(...opzioniAggiramento(S, u, t, muro, Math.max(va ? va.pollici : 0, vm ? vm.pollici : 0)));
     out.push(...opzioniManovra(S, u, t, move));
     out.push({ id:"ferma", uid: u.uid, nome: u.name, ...restareFermo(S, u, d), page: 138 });
   }
@@ -1846,6 +2074,12 @@ const GESTI = {
 
   avanza: (S, a) => mossa(S, a, false),
   marcia: (S, a) => mossa(S, a, true),
+  /* aggirare e' avanzare, solo verso un varco invece che verso un
+     nemico: e' `a.punto` a dirlo, e se il varco si raggiunge marciando
+     e' una marcia con tutto quello che comporta (p. 123). Chi e' troppo
+     attaccato al muro per girarsi ci scivola accanto, ed e' il passo di
+     lato di p. 125 — la stessa manovra, con il perche' scritto meglio. */
+  aggira: (S, a) => a.lato ? manovra(S, { ...a, id:"lato" }) : mossa(S, a, !!a.marcia),
   gira:     (S, a) => manovra(S, a),
   riforma:  (S, a) => manovra(S, a),
   indietro: (S, a) => manovra(S, a),
@@ -1993,9 +2227,16 @@ const GESTI = {
   },
 };
 
-/* ---- il movimento vero ---- */
+/* ---- il movimento vero ----
+   `a.verso` e' un nemico da raggiungere; `a.punto` e' un posto sul
+   tavolo, ed e' quello che usa l'aggiramento — il passo di lato che
+   scavalca il monolite non ha un'unita' a cui mirare, ha un varco.
+   Da qui in giu' la meta' e' una cosa sola con `x`, `y` e un nome, e
+   tutto il resto della funzione non sa quale delle due sia. */
 function mossa(S, a, marcia){
-  const u = byUid(S, a.uid), t = byUid(S, a.verso);
+  const u = byUid(S, a.uid);
+  const t = a.punto ? { x: a.punto[0], y: a.punto[1], name: a.dove || "di lato" }
+                    : byUid(S, a.verso);
   if (!u || !t) return no("unità sconosciuta");
   if (u.moved) return no("si è già mossa");
   if (u.unito === chiave(S)) return no("un personaggio le si è unito: non si muove più in questo turno (p. 207)");
@@ -2070,7 +2311,12 @@ const giaAddosso = (S, u) => {
    vicino: se succederebbe non si gira, e chi ha il nemico nella meta'
    davanti va dritto con tutto il movimento — come una fila che avanza
    accanto a un'altra. */
-function avanzaRuotando(S, u, t, pr, quanti){
+/* La ruota e la corsa CONTATE, senza toccare il tavolo. E' la stessa
+   cosa che si faceva qui dentro, staccata dal `posa` e dalle righe di
+   registro: serve a poterla chiedere PRIMA di offrire la mossa, e cosi'
+   l'elenco smette di promettere otto pollici dove il monolite ne
+   lascia zero (`stradaVera`). */
+function pianoAvanzata(S, u, t, pr, quanti){
   const da = u.rot || 0;
   let rot = pr.rot, resta = pr.resta, bloccata = false;
   if (Math.abs(giroDi(da, rot)) > 0.5 &&
@@ -2078,16 +2324,21 @@ function avanzaRuotando(S, u, t, pr, quanti){
     rot = da; bloccata = true;
     resta = Math.abs(giroDi(da, versoDi(t.x - u.x, t.y - u.y))) <= 90 ? quanti : 0;
   }
-  if (!bloccata && Math.abs(pr.giro) >= 0.5 && !pr.sciolta) limite(S, "ruota");
   let p = { x: u.x, y: u.y, mm: 0, pollici: 0, stop: null };
   if (resta > 0.01){
     const a = rot * Math.PI / 180;
     const meta = bloccata ? [u.x + Math.sin(a) * resta * MM, u.y - Math.cos(a) * resta * MM] : [t.x, t.y];
     p = percorso(S, u, meta, resta, { rot, devia: !bloccata });
-    if (p.stop && p.pollici < resta - 0.05) limite(S, "ingombro");
   }
-  posa(S, u, p.x, p.y, rot);
-  return { ...p, bloccata, voluti: resta, giro: bloccata ? 0 : pr.giro };
+  return { ...p, rot, bloccata, voluti: resta, giro: bloccata ? 0 : pr.giro };
+}
+
+function avanzaRuotando(S, u, t, pr, quanti){
+  const p = pianoAvanzata(S, u, t, pr, quanti);
+  if (!p.bloccata && Math.abs(pr.giro) >= 0.5 && !pr.sciolta) limite(S, "ruota");
+  if (p.stop && p.pollici < p.voluti - 0.05) limite(S, "ingombro");
+  posa(S, u, p.x, p.y, p.rot);
+  return p;
 }
 
 /* Verso il nemico, girandosi a guardarlo: e' il passo della carica
@@ -4142,6 +4393,7 @@ export function fotografia(S, { per = null } = {}){
     (S.rounds ? `Turno ${S.turno} di ${S.rounds}.` : `Turno ${S.turno}: si gioca fino al punto di rottura.`) +
       ` Tavolo ${S.table.wIn}×${S.table.hIn}″, scenario «${S.sc.label}».`,
     `Tu sei ${S.nomi[io]} (${S.punti[io]} punti). L'avversario è ${S.nomi[lui]} (${S.punti[lui]}).`,
+    ...ilTerreno(S),
     `Le tue unità in campo:`, ...mie.map(riga),
     fuori.length ? `Ancora da schierare: ${fuori.map(u => u.name).join(", ")}.` : "",
     `Le sue unità in campo:`, ...sue.map(riga),
@@ -4151,6 +4403,47 @@ export function fotografia(S, { per = null } = {}){
       (o.army ? `tenuto da ${o.by} (${o.army === io ? "tuo" : "suo"})` : "libero")).join("; ") +
       `. Chi ne tiene uno alla fine del suo turno prende ${bn.treasure} punti per un tesoro, ${bn.landmark} per il landmark.` : "",
   ].filter(Boolean).join("\n");
+}
+
+/* IL TERRENO, NELLA FOTOGRAFIA (pp. 269-272).
+   Fin qui la fotografia del tavolo elencava le unita', i profili, le
+   distanze, i punti vittoria e gli obiettivi, e dei pezzi posati sul
+   tavolo non diceva niente. Chi sceglieva le mosse — l'euristica, o il
+   modello di linguaggio — giocava su un prato: non sapeva che al
+   centro c'era un monolite, ci schierava dietro un reggimento e ce lo
+   lasciava per tutta la partita, perche' di quel muro non aveva mai
+   letto una riga.
+
+   Le regole le sapeva gia' l'arbitro, e le sa `terrain.js`: quello che
+   mancava era dirle. Le decorazioni (p. 271) stanno in una riga a
+   parte, perche' per il movimento e il combattimento non esistono ma
+   la vista la coprono lo stesso.
+
+   Le coordinate sono quelle del tavolo e non quelle di chi guarda: i
+   due eserciti leggono la stessa fotografia, e girargliela a testa in
+   giu' vorrebbe dire scrivere due tavoli diversi e non poter piu'
+   confrontare una riga di registro con quello che si legge qui. */
+function doveSulTavolo(S, t){
+  const x = t.x / S.table.w, y = t.y / S.table.h;
+  const col = x < 0.33 ? "a sinistra" : x > 0.67 ? "a destra" : "al centro";
+  const fil = y < 0.33 ? "in alto" : y > 0.67 ? "in basso" : "a mezzo tavolo";
+  return col === "al centro" && fil === "a mezzo tavolo" ? "al centro del tavolo" : `${col}, ${fil}`;
+}
+
+function ilTerreno(S){
+  const pezzi = (S.terrain || []).filter(t => !t.decor && t.kind !== "treasure");
+  const decori = (S.terrain || []).filter(t => t.decor && t.kind !== "treasure");
+  if (!pezzi.length && !decori.length) return [];
+  const riga = t =>
+    `  · ${t.label} — ${r1(t.w / MM)}×${r1(t.h / MM)}″, ${doveSulTavolo(S, t)}` +
+    ` (${r1(t.x / MM)}, ${r1(t.y / MM)}): ${TR.testoCat(t) || "terreno aperto, non fa niente"}.`;
+  return [
+    `Il terreno sul tavolo (pp. 269-272). Le coordinate sono in pollici dall'angolo in alto a sinistra;` +
+      ` un pezzo impassabile va aggirato, e chi gli si ferma dietro non passa piu':`,
+    ...pezzi.map(riga),
+    decori.length ? `  · decorazioni, che per muoversi e combattere non esistono (p. 271) ma la vista la coprono:` +
+      ` ${decori.map(t => t.label).join(", ")}.` : "",
+  ].filter(Boolean);
 }
 
 /* Il registro in parole, dall'ultima riga indietro: serve a chi entra
