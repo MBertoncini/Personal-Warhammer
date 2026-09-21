@@ -431,6 +431,17 @@ console.log('\nil Movimento che il file della lista non porta');
                   rules:['Fly (10)', 'Skirmishers'] };
   ok('chi vola si muove volando', MV.moveOf(terra) === 10 && MV.moveDetail(terra).fly === 10);
 
+  /* la lista «LIZ fun» viene dal catalogo Renegades, e la fazione se
+     lo porta scritto: il profilo del libro deve trovarla lo stesso */
+  const bast = { name:'Bastiladon', faction:'Lizardmen - Renegades v2',
+                 stats:{ M:'4', WS:'3', BS:'-', S:'4', T:'5', W:'4', I:'1', A:'3', Ld:'-' } };
+  ok('il Bastiladon di un catalogo della comunita ha il Comando dei suoi skink',
+     PR.splitStat(bast, 'Ld') === 6 && PR.splitStat(bast, 'BS') === 3);
+  ok('e il Terradon della stessa lista vola',
+     MV.moveOf({ ...terra, faction:'Lizardmen - Renegades v2' }) === 10);
+  ok('ma un esercito diverso non prende il profilo',
+     PR.splitStat({ ...bast, faction:'Skaven' }, 'Ld') === null);
+
   const squig = { name:'Night Goblin Squig Hopper Mobs', faction:'Orc and Goblin Tribes',
                   stats:{ M:'-' }, rules:[] };
   ok('un Movimento che si tira non e un numero, e viene detto',

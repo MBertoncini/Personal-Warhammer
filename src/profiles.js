@@ -55,9 +55,20 @@ export function profileFor(u){
   const fazione = norm(u.faction || "");
   return TAVOLA.profili.find(p => {
     if (!(p.nomi || []).some(n => norm(n) === nome)) return false;
-    if (p.faction && fazione && norm(p.faction) !== fazione) return false;
+    if (p.faction && fazione && !sameArmy(norm(p.faction), fazione)) return false;
     return true;
   }) || null;
+}
+
+/* Lo stesso esercito sotto due nomi. New Recruit scrive nella fazione
+   il catalogo da cui viene la lista, e un catalogo della comunita' si
+   porta dietro la sua etichetta: «Lizardmen - Renegades v2» e'
+   l'esercito dei Lizardmen, e il Bastiladon di quella lista cercava
+   «Lizardmen» per uguaglianza esatta, non lo trovava, e restava con il
+   Comando «-». Vale quello che `mounts.js` fa gia' per le cavalcature:
+   basta che uno dei due nomi contenga l'altro. */
+function sameArmy(a, b){
+  return a === b || a.includes(b) || b.includes(a);
 }
 
 /* Il numero che manca sulla riga dell'unita' e sta su un'altra riga
