@@ -7361,22 +7361,22 @@
         "name": "Saurus Oldblood",
         "models": 1,
         "crew": 0,
-        "baseId": "50x50",
+        "baseId": "50x100",
         "baseW": 50,
-        "baseH": 50,
+        "baseH": 100,
         "frontage": 1,
         "loose": false,
         "pts": 310,
-        "us": 4,
-        "troop": "Heavy infantry",
+        "us": 0,
+        "troop": "Behemoth (character)",
         "unitSize": "1",
         "stats": {
-          "M": "4",
+          "M": "7",
           "WS": "6",
           "BS": "0",
           "S": "5",
-          "T": "5",
-          "W": "3",
+          "T": "6",
+          "W": "7",
           "I": "3",
           "A": "5",
           "Ld": "8"
@@ -7400,11 +7400,11 @@
             "name": "Carnosaur",
             "stats": {
               "M": "7",
-              "WS": "4",
+              "WS": "3",
               "BS": "0",
               "S": "7",
-              "T": "(+1)",
-              "W": "(+4)",
+              "T": "-",
+              "W": "-",
               "I": "2",
               "A": "4",
               "Ld": "-"
@@ -7412,18 +7412,50 @@
           }
         ],
         "mount": {
+          "id": "carnosaur",
           "name": "Carnosaur",
+          "genere": "mostro",
           "stats": {
             "M": "7",
-            "WS": "4",
+            "WS": "3",
             "BS": "0",
             "S": "7",
-            "T": "(+1)",
-            "W": "(+4)",
+            "T": "-",
+            "W": "-",
             "I": "2",
             "A": "4",
             "Ld": "-"
-          }
+          },
+          "row": "Carnosaur",
+          "righe": [
+            {
+              "chi": "Carnosaur",
+              "n": 1,
+              "stats": {
+                "M": "7",
+                "WS": "3",
+                "BS": "0",
+                "S": "7",
+                "T": "-",
+                "W": "-",
+                "I": "2",
+                "A": "4",
+                "Ld": "-"
+              },
+              "arma": {
+                "name": "Slashing talons",
+                "S": "S",
+                "ap": "-3",
+                "rules": ""
+              }
+            }
+          ],
+          "forzaUrto": 7,
+          "random": "",
+          "armour": 5,
+          "libro": "Legends: Lizardmen",
+          "pagina": 12,
+          "nota": "La pelle squamosa vale armatura pesante (5+). Le Ferite Multiple (D3) degli artigli valgono solo contro i mostri, e la Blood Frenzy si accende quando il Carnosauro (non il cavaliere) ferisce: tutte e due a mano."
         },
         "rules": [
           "Cold Blooded",
@@ -7471,7 +7503,8 @@
             "range": "Combat",
             "S": "S",
             "ap": "-3",
-            "rules": "Multiple Wounds (D3)"
+            "rules": "Multiple Wounds (D3)",
+            "di": "Carnosaur"
           }
         ],
         "maxRange": 0,
@@ -7480,7 +7513,123 @@
         "armour": 3,
         "ward": 0,
         "regen": 0,
-        "catId": "cmttwt5q1icif"
+        "catId": "cmttwt5q1icif",
+        "foot": {
+          "stats": {
+            "M": "4",
+            "WS": "6",
+            "BS": "0",
+            "S": "5",
+            "T": "5",
+            "W": "3",
+            "I": "3",
+            "A": "5",
+            "Ld": "8"
+          },
+          "profiles": [
+            {
+              "name": "Saurus Oldblood",
+              "stats": {
+                "M": "4",
+                "WS": "6",
+                "BS": "0",
+                "S": "5",
+                "T": "5",
+                "W": "3",
+                "I": "3",
+                "A": "5",
+                "Ld": "8"
+              }
+            },
+            {
+              "name": "Carnosaur",
+              "stats": {
+                "M": "7",
+                "WS": "4",
+                "BS": "0",
+                "S": "7",
+                "T": "(+1)",
+                "W": "(+4)",
+                "I": "2",
+                "A": "4",
+                "Ld": "-"
+              }
+            }
+          ],
+          "mount": {
+            "name": "Carnosaur",
+            "stats": {
+              "M": "7",
+              "WS": "4",
+              "BS": "0",
+              "S": "7",
+              "T": "(+1)",
+              "W": "(+4)",
+              "I": "2",
+              "A": "4",
+              "Ld": "-"
+            }
+          },
+          "baseId": "50x50",
+          "baseW": 50,
+          "baseH": 50,
+          "troop": "Heavy infantry",
+          "slot": "Characters",
+          "frontage": 1,
+          "loose": false,
+          "rules": [
+            "Cold Blooded",
+            "Obsidian Blades",
+            "Rallying Cry",
+            "Predatory Fighter",
+            "Armoured Hide (2)",
+            "General",
+            "Blood Frenzy",
+            "Close Order",
+            "Large Target",
+            "Stomp Attacks (2)",
+            "Swiftstride",
+            "Terror"
+          ],
+          "ruleText": {
+            "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Leadership or Break Test, models with this special rule may roll an extra D6 and discard the highest result.",
+            "Obsidian Blades": "Lizardmen favour weapons studded with shards of razor sharp volcanic glass that cut through flesh and armour with ease.\n\nA hand weapon carried by a model with this special rule has an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to a single, non-magical hand weapon and does not apply to a model’s mount (should it have one). If the model is using two hand weapons or any other sort of weapon, this special rule ceases to apply.",
+            "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+            "Predatory Fighter": "A model with this special rule (but not its mount) generates one additional Attack on any natural roll of a 6 made when rolling To Hit in close combat. Roll To Hit and To Wound for this additional Attack as normal. Additional Attacks generated by this special rule cannot themselves generate further Attacks.",
+            "Armoured Hide (2)": "The hide of some creatures forms natural armour and improves their armour value ( and that of their rider). By how much armour value is improved varies from model to model, as shown in brackets after the name of this special rule.\n\n Note that a model that wears no armour is considerer to have an armour value of 7+ for the purposes of rules that improve armour value.",
+            "General": "Inspiring Presence: Warriors fight all the better under the stern gaze of their General. Unless your General is fleeing, all friendly units within their Command range can use their Leadership characteristic instead of their own (so rally your General first!).",
+            "Blood Frenzy": "When this model (but not its rider) inflicts an unsaved wound upon an enemy model, it becomes subject to the Frenzy special rule. A model with this special rule may become Frenzied in this way even if it has lost Frenzy earlier in the game.\n\nNote that this model’s rider does not gain a +1 modifier to their Attacks characteristic.\n\nCharacter Mount: A Carnosaur may only be included in your army as a character’s mount. Its points are added to that of its rider.",
+            "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+            "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
+            "Stomp Attacks (2)": "The number of Stomp Attacks caused varies from model to model and will be shown in brackets after the name of this special rule. Often, this is determined by the roll of a dice.\n\n**Resolving Stomp Attacks:** Stomp Attacks can only be made by a model that is in base contact with the enemy. Stomp Attacks are attacks made in combat that must be made last, after all other attacks have been made, including attacks made at Initiative 1. They hit automatically and use the unmodified Strength of the model making them.",
+            "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result.",
+            "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does."
+          },
+          "weapons": [
+            {
+              "name": "Hand Weapon",
+              "range": "Combat",
+              "S": "S",
+              "ap": "-",
+              "rules": "-"
+            },
+            {
+              "name": "Slashing talons",
+              "range": "Combat",
+              "S": "S",
+              "ap": "-3",
+              "rules": "Multiple Wounds (D3)"
+            }
+          ],
+          "maxRange": 0,
+          "armour": 3,
+          "ward": 0,
+          "us": 4,
+          "models": 1
+        },
+        "mountId": "carnosaur",
+        "mountFromFile": true,
+        "mountPts": 0
       },
       {
         "name": "Skink Skirmishers",

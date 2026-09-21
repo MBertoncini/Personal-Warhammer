@@ -108,7 +108,11 @@ ok('sul cinghiale invece si unisce ancora', FM.canJoin(boss) && !FM.isLumbering(
 /* L'Oldblood di «LIZ fun»: il Carnosauro c'e', ma il tipo di truppa e'
    quello del cavaliere. Si schierava dentro gli Skink, che poi facevano
    Terrore in carica. */
-const lizOldblood = copy(saved.find(l => l.name === 'LIZ fun').units.find(u => u.name === 'Saurus Oldblood'));
+const savedOldblood = saved.find(l => l.name === 'LIZ fun').units.find(u => u.name === 'Saurus Oldblood');
+ok('nella lista salvata ora e montato sul Carnosauro, e non si unisce',
+   savedOldblood.mountId === 'carnosaur' && /behemoth/i.test(savedOldblood.troop) && !FM.canJoin(savedOldblood));
+/* smontato torna com'era nel file */
+const lizOldblood = MT.dismountUnit(copy(savedOldblood));
 const skinks = { name: 'Skink Skirmishers', models: 10, troop: 'Regular infantry', army: 'A', uid: 2, loose: true };
 lizOldblood.army = 'A'; lizOldblood.uid = 1;
 ok('l Oldblood del file e fanteria sul foglio, ma sul Carnosauro',
