@@ -885,7 +885,13 @@ console.log('\nla riga di comando');
   ok('«--liste 3, 4» si legge come «3,4»', spezzata.status === 0 && /B = 4 /.test(spezzata.stdout));
   const monca = lancia(['--liste', '3,', '--breve']);
   ok('e «--liste 3,» non diventa la lista 0: si ferma e lo dice',
-     monca.status === 1 && /due numeri/.test(monca.stderr));
+     monca.status === 1 && /due liste/.test(monca.stderr));
+  /* il comando copiato dalla scheda Matchup nomina le liste per id */
+  const liste = JSON.parse(fs.readFileSync(new URL('../dati/liste.json', import.meta.url), 'utf8'));
+  const perId = lancia(['--liste', `${liste[3].id},${liste[4].id}`, '--breve']);
+  ok('le liste si prendono anche per id', perId.status === 0 && /A = 3 /.test(perId.stdout) && /B = 4 /.test(perId.stdout));
+  const idIgnoto = lancia(['--liste', `${liste[3].id},lnonce`, '--breve']);
+  ok('e un id che non c è si dice', idIgnoto.status === 1 && /Archivio/.test(idIgnoto.stderr));
   const ignoto = lancia(['--list', '3,4']);
   ok('un argomento sconosciuto si dice', ignoto.status === 1 && /--list/.test(ignoto.stderr));
 }

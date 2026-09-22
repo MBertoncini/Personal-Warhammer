@@ -306,6 +306,7 @@ npm run partita                       # due euristiche, partita commentata
 node tools/partita.mjs --seme 42      # la stessa partita, sempre identica
 node tools/partita.mjs --liste ?      # le liste dell'archivio, numerate
 node tools/partita.mjs --liste 4,9 --scenario bm-rovine
+node tools/partita.mjs --liste lmtl5r4mb97yl,lmubp01267euf   # o per id: il comando che copia la scheda Matchup
 node tools/partita.mjs --gemini       # due modelli che si affrontano
 node tools/partita.mjs --gemini A     # solo l'esercito A è il modello
 node tools/partita.mjs --html partita.html   # la partita da GUARDARE
