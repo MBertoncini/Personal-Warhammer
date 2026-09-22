@@ -256,10 +256,12 @@ export const ELSEWHERE = [
     why:"vincolo sui personaggi che si uniscono e sul Generale: si rispetta schierando" },
   { re:/^counter charge/i,
     why:"è una reazione alla carica di cavalleria, carri e mostri: il pannello offre tenere, tirare e fuggire, e questa la muovete voi" },
-  /* Le tre che ha portato l'Hell Pit Abomination. La terza e' la piu'
+  /* Le tre che ha portato l'Hell Pit Abomination. La terza era la piu'
      insidiosa: la riga degli Attacchi dice «D6+1», e il profilo la
-     legge come il primo numero che trova — 6 — senza tirare niente.
-     Finche' la mischia non tira gli attacchi, lo si dice. */
+     leggeva come il primo numero che trovava — 6 — senza tirare niente.
+     Adesso la mischia li tira (`randomAttacksOf` in `combat.js`); resta
+     fuori la riga di un equipaggio o di una cavalcatura, come i ratti
+     della Doom-Wheel, che `attackRows` legge ancora col primo numero. */
   { re:/^magic resistance/i,
     why:"toglie dal tiro di lancio degli incantesimi nemici che bersagliano l'unità: né il pannello né l'arbitro la sottraggono ancora" },
   { re:/^random movement/i,
@@ -283,7 +285,7 @@ export const ELSEWHERE = [
   { re:/^flammable/i,
     why:"niente Rigenerazione contro le ferite infuocate: la Rigenerazione non entra ancora nella risoluzione, e quindi non c'è niente da togliere" },
   { re:/^random attacks/i,
-    why:"gli Attacchi si tirano a ogni assalto, e il conto non li tira: legge il primo numero della riga («D6+1» vale 6). Correggili a mano nel pannello" },
+    why:"gli Attacchi si tirano a ogni assalto, uno per modello che mena (p. 176): lo fa la mischia, e la previsione conta la media. La riga di un equipaggio o di una cavalcatura («Rats only») resta al primo numero" },
 ];
 
 /* ============================================================

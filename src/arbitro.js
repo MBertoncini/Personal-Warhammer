@@ -3880,6 +3880,10 @@ function mischia(S, g){
      partita che racconta solo i colpi riusciti non insegna a leggere i
      dadi. I dadi sono tutti, ognuno nel suo mucchio: per colpire, per
      ferire, l'armatura, la salvezza speciale, quanti colpi automatici. */
+  for (const x of r.randomA || [])
+    say(S, `${x.name} tira gli attacchi (${x.text}): ${x.dice.join(" + ")} → ${x.attacks} ` +
+           `${x.attacks === 1 ? "attacco" : "attacchi"} (Random Attacks).`,
+        { dice: x.dice, army: x.side, page: 176 });
   for (const s of r.steps){
     const tutti = mucchi(s);
     say(S, `${s.name} ${s.label} su ${s.foe}: ${s.attacks} ${s.attacks === 1 ? "attacco" : "attacchi"}, ` +

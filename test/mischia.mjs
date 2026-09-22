@@ -821,5 +821,45 @@ console.log('\nle regole delle liste «fun» (Renegades)');
 }
 
 /* ================================================================= */
+console.log('\ngli attacchi che si tirano (Random Attacks, p. 176)');
+{
+  const D = await import('../src/dice.js');
+  /* l'Hell Pit Abomination (Legends: Skaven): la riga dice «D6+1», e
+     prima la mischia la leggeva come il primo numero che trovava — 6 */
+  const abominio = unit('Hell Pit Abomination',
+    { M:'3D6',WS:'3',BS:'1',S:'6',T:'5',W:'6',I:'4',A:'D6+1',Ld:'8' }, 1, 1,
+    { armour: 5, rules: ['Random Attacks'] });
+  const muro = () => C.combatant(unit('Guardia del Tempio',
+    { M:'4',WS:'4',BS:'0',S:'4',T:'4',W:'1',I:'2',A:'1',Ld:'8' }, 20, 5, { armour: 4 }));
+  const hp = C.combatant(abominio);
+  ok('la riga «D6+1» non vale 6: la schiera sa che si tira',
+     !!hp.randomA && hp.randomA.n === 1 && hp.randomA.die === 6 && hp.randomA.plus === 1);
+  ok('e in media ne porta 4 e mezzo, che è quello che la previsione conta',
+     hp.a === 4.5 && C.meleeForecast(hp, muro()).attacks === 4.5);
+  const colpi = r => r.steps.filter(s => s.side === 'A' && s.label === 'colpi')
+                            .reduce((n, s) => n + s.attacks, 0);
+  D.setSource(() => 0);
+  const basso = C.meleeFight(hp, muro());
+  ok('con un 1 sul dado mena con 2 attacchi', colpi(basso) === 2);
+  ok('e il tiro sta nel risultato, per chi lo racconta',
+     basso.randomA.length === 1 && basso.randomA[0].dice.join() === '1' &&
+     basso.randomA[0].attacks === 2 && basso.randomA[0].side === 'A');
+  D.setSource(n => n - 1);
+  ok('con un 6 ne porta 7', colpi(C.meleeFight(hp, muro())) === 7);
+  /* si tira a ogni assalto: due assalti di fila non sono lo stesso numero */
+  D.setSource(D.seeded(5));
+  const visti = new Set();
+  for (let k = 0; k < 40; k++) visti.add(colpi(C.meleeFight(hp, muro())));
+  ok('si tira a ogni assalto, e i sei esiti escono tutti', [2,3,4,5,6,7].every(n => visti.has(n)) && visti.size === 6);
+  /* un effetto sugli Attacchi si somma al tiro, non al 6 */
+  D.setSource(() => 0);
+  const furioso = C.combatant({ ...abominio, effects: [{ id:'x', from:'prova', mods:{ A: 1 } }] });
+  ok('un +1 agli Attacchi si somma al dado', colpi(C.meleeFight(furioso, muro())) === 3);
+  ok('chi ha un numero scritto non tira niente',
+     C.meleeFight(muro(), C.combatant(abominio)).randomA.every(x => x.side === 'B'));
+  D.setSource(D.seeded(1));
+}
+
+/* ================================================================= */
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

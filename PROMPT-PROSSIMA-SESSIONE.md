@@ -316,11 +316,17 @@ d'unità stanno in `dati/eserciti/skaven.json` (testo della lista, niente
 pagina: il libro non è stato aperto), le tre universali nell'`ELSEWHERE`
 di `rulebook.js`. **Da fare**, in ordine di quanto pesano:
 
-- **Random Attacks**: la riga «A: D6+1» viene letta da `effects.js` come
-  6, senza tirare niente. `rulebook.js` lo dichiara, ma è un numero
-  sbagliato che entra nei dadi. La mischia dovrebbe tirare gli attacchi
-  a ogni assalto (`contact()` / `attacksOf` in `combat.js`: oggi non
-  hanno il generatore in mano) e la previsione usare la distribuzione;
+- ~~**Random Attacks**~~ — fatto (p. 176): `randomAttacksOf` in
+  `combat.js` legge «D6+1», fuori dall'assalto vale la media (4,5),
+  dentro `meleeFight` si tira un dado per modello che mena
+  (`attacksFor`, ricordato in `rolls` perché la stessa fila si misura
+  più volte), e gli effetti sugli Attacchi si sommano al dado.
+  `meleeFight` torna `randomA` e l'arbitro lo scrive nel registro.
+  Resta al primo numero la riga di un equipaggio o di una cavalcatura
+  (`attackRows` in `mounts.js`: i ratti della Doom-Wheel). Da notare:
+  l'Hell Pit Abomination ha anche **Abominable Attacks** (nutrirsi o
+  la valanga di carne con la sagoma, Legends: Skaven), che l'arbitro non
+  offre ancora — e che adesso, con `bombarda`, ha la geometria pronta;
 - **Magic Resistance**: `castResult` ha già il posto (`mod`), nessuno ce
   la mette — né il pannello né l'arbitro;
 - Blessings of the Horned Rat vale solo contro gli attacchi non magici,

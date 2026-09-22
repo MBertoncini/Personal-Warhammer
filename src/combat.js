@@ -20,7 +20,7 @@ import { hitMelee, woundOn, saveOn, pool, roll, chance, expected, rankBonus,
          stat, weaponStrength, weaponAP, IMPOSSIBLE } from './rules.js';
 import { readRules, splitWeaponRules, emptyFlags } from './rulebook.js';
 import { troopType, usPerModel } from './troops.js';
-import { flagsOf, spent, val } from './effects.js';
+import { flagsOf, spent, val, statOf } from './effects.js';
 import { woundsOf } from './extras.js';
 import { armyFor, meleeBoosts, fleeBonus } from './armies.js';
 import * as ML from './melee.js';
@@ -125,7 +125,8 @@ export function combatant(u, over = {}){
   const c = {
     ref: u, name: u.name, army: u.army,
     ws: val(u, "WS"), bs: val(u, "BS"), s: val(u, "S"), t: val(u, "T"),
-    w: Math.max(1, val(u, "W") || 1), i: val(u, "I"), a: Math.max(1, val(u, "A") || 1),
+    w: Math.max(1, val(u, "W") || 1), i: val(u, "I"), a: attacksStat(u),
+    randomA: randomAttacksOf(u),
     ld: val(u, "Ld"),
     models: Math.max(1, alive), frontage: Math.max(1, u.frontage || 1),
     /* la forza d'unita' per modello: quando cadono i modelli deve calare
@@ -320,7 +321,7 @@ export function retinueOf(joined = [], host = null){
       character: true,
       name: ch.name, ref: ch,
       ws: val(ch, "WS"), i: val(ch, "I"),
-      a: Math.max(1, val(ch, "A") || 1),
+      a: attacksStat(ch), randomA: randomAttacksOf(ch),
       baseS, s: melee ? weaponStrength(melee, baseS) : baseS,
       t: val(ch, "T"), w: Math.max(1, val(ch, "W") || 1),
       ap: melee ? weaponAP(melee) : 0,
@@ -389,6 +390,50 @@ const attacksOf = c => (c.a || 1) + (ranIn(c) && c.flags && c.flags.furiousCharg
                        /* la Frenzy non vuole i tre pollici: le basta aver
                           caricato, o aver inseguito il turno prima */
                        (c.frenzyA || 0);
+
+/* Gli Attacchi che si tirano (Random Attacks, p. 176): «D6+1» non e' un
+   numero, e' un dado da tirare «ogni volta che il modello attacca in
+   combattimento», uno per ogni modello della fila che mena. Prima la
+   riga passava da `val`, che prende il primo numero che trova, e
+   l'Hell Pit Abomination menava sempre con sei attacchi: mai due, mai
+   sette, e la media sbagliata di un attacco e mezzo.
+
+   Fuori dall'assalto — la previsione, il pannello, la fotografia per chi
+   gioca — vale la media, che per un conto lineare come quello delle
+   ferite attese e' il numero giusto. Dentro `meleeFight` si tira: la
+   schiera clonata porta `rolls`, e il tiro del modello k si fa una
+   volta sola e poi si ricorda, perche' la stessa fila viene misurata
+   piu' volte (i nemici, chi e' fuori portata) e non deve cambiare
+   numero a ogni misura. Gli effetti sugli Attacchi (+1 da un
+   incantesimo) si sommano al dado. */
+const RANDOM_A = /^\s*(\d*)\s*d\s*(3|6)\s*(?:\+\s*(\d+))?\s*$/i;
+export function randomAttacksOf(u){
+  const raw = u && u.stats && u.stats.A;
+  const m = RANDOM_A.exec(String(raw ?? ""));
+  if (!m) return null;
+  const s = statOf(u, "A");
+  const delta = s.mods.reduce((t, x) => t + (x.delta || 0), 0);
+  return { n: m[1] ? +m[1] : 1, die: +m[2], plus: (m[3] ? +m[3] : 0) + delta, text: String(raw).trim() };
+}
+const randomMean = r => r.n * (r.die + 1) / 2 + r.plus;
+const attacksStat = u => {
+  const r = randomAttacksOf(u);
+  return r ? Math.max(0, randomMean(r)) : Math.max(1, val(u, "A") || 1);
+};
+function attacksFor(c, n){
+  if (!c.randomA || !c.rolls || n <= 0) return n * attacksOf(c);
+  const extra = attacksOf(c) - (c.a || 1);
+  let tot = 0;
+  for (let k = 0; k < n; k++){
+    if (!c.rolls[k]){
+      const dice = roll(c.randomA.n);
+      const got = dice.reduce((t, d) => t + 1 + Math.floor((d - 1) * c.randomA.die / 6), 0) + c.randomA.plus;
+      c.rolls[k] = { dice, attacks: Math.max(0, got) };
+    }
+    tot += c.rolls[k].attacks + extra;
+  }
+  return tot;
+}
 
 /* Press of Battle vale per un'unita' «in ordine di combattimento» e
    non nel turno in cui ha caricato: gli schermagliatori non stanno in
@@ -468,7 +513,7 @@ export function contact(att, def, { touching = null, frontage = null, withChars 
   const support = wide <= 0 ? 0 : Math.min(wide * ranks, behind - pressed);
 
   const groups = [];
-  const rankA = (front + pressed) * attacksOf(att) + support;
+  const rankA = attacksFor(att, front + pressed) + support;
   if (rankA > 0) groups.push({
     id:"rank", name: att.name, character:false, models: front,
     ws: att.ws, i: att.i, s: att.s, baseS: att.baseS, ap: att.ap,
@@ -476,9 +521,7 @@ export function contact(att, def, { touching = null, frontage = null, withChars 
   });
   fighting.forEach((g, k) => groups.push({
     ...g, id:"char" + k, support: 0,
-    attacks: (g.a || 1) + (g.frenzyA || 0) +
-             (g.charged && (g.chargeInches || 0) >= CHARGE_IMPETUS &&
-              g.flags && g.flags.furiousCharge ? 1 : 0),
+    attacks: attacksFor(g, 1),
   }));
 
   return {
@@ -763,7 +806,7 @@ function aimAt(c, foes, side){
   if (veri.length === 1 && c.forcedAttacks != null) budget[veri[0].k] = Math.max(0, +c.forcedAttacks || 0);
   let tolti = 0;
   capi.forEach(x => {
-    const n = Math.max(0, Math.round(+c.aimed >= 0 ? +c.aimed : attacksOf(c)));
+    const n = Math.max(0, Math.round(+c.aimed >= 0 ? +c.aimed : attacksFor(c, 1)));
     budget[x.k] = n; fronts[x.k] = n ? 1 : 0;
     tolti += n;
   });
@@ -812,7 +855,7 @@ export function woundsToll(u, wounds, { carried = null } = {}){
 /* Il clone di un assalto: le ferite appese se le porta dietro. Prima
    qui c'era `spill: 0`, ed e' il punto esatto in cui le ferite
    evaporavano fra un round e l'altro. */
-const clone = c => ({ ...c, spill: c.spill || 0, dealt: 0, oltre: 0 });
+const clone = c => ({ ...c, spill: c.spill || 0, dealt: 0, oltre: 0, rolls: c.randomA ? [] : null });
 const usOf = c => (c.usPer || 1) * (c.models || 0);
 /* la Forza d'Unita' di una PARTE: la somma di chi e' ancora in piedi
    (p. 154), ed e' quella che decide se il doppio schiaccia */
@@ -963,7 +1006,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
     if (duel && ((tag === "A" && at === duel.a) || (tag === "B" && at === duel.b))){
       e.duel = true;
       e.budget = foes.map(() => 0); e.fronts = foes.map(() => 0);
-      if (foes.length){ e.budget[0] = attacksOf(c); e.fronts[0] = 1; }
+      if (foes.length){ e.budget[0] = attacksFor(c, 1); e.fronts[0] = 1; }
       return e;
     }
     if (outOfReach(c, mine, foes.map(j => side[j]))){
@@ -1162,8 +1205,16 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
   const kills = { A: A.map((c, i) => initA[i].models - c.models),
                   B: B.map((c, i) => initB[i].models - c.models) };
   const sum = list => list.reduce((s, v) => s + v, 0);
+  /* gli Attacchi tirati, per chi racconta l'assalto: senza, il registro
+     scriverebbe «5 attacchi» e nessuno saprebbe da dove vengono */
+  const randomA = [];
+  for (const [tag, list] of [["A", A], ["B", B]])
+    for (const c of list) if (c.rolls && c.rolls.length)
+      randomA.push({ side: tag, name: c.name, text: c.randomA.text,
+                     dice: c.rolls.flatMap(x => x.dice),
+                     attacks: c.rolls.reduce((t, x) => t + x.attacks, 0) });
   return { sides: { A, B }, a: A[0], b: B[0], steps, cr, tests, test: tests[0] || null,
-           wiped, done, order, round, challenge, kills,
+           wiped, done, order, round, challenge, kills, randomA,
            killsA: sum(kills.A), killsB: sum(kills.B) };
 }
 
