@@ -254,5 +254,20 @@ console.log('\ni maghi del libro, che il file non descrive');
 }
 
 /* ================================================================= */
+console.log('\nMagic Resistance (p. 108)');
+{
+  const campana = { name:'Grey Seer', rules:['Magic Resistance (-1)', 'Magic Resistance (-3)'] };
+  const ratti = { name:'Clanrats', rules:['Parry'] };
+  ok('non si somma: vale il −X più alto', MG.magicResistance([campana]).mod === -3);
+  ok('e vale per l unità se ce l ha un modello qualunque, anche il capo unito',
+     MG.magicResistance([ratti, campana]).mod === -3 && MG.magicResistance([ratti, campana]).who === 'Grey Seer');
+  ok('chi non ce l ha non toglie niente', MG.magicResistance([ratti]).mod === 0);
+  ok('il −3 entra nel tiro di lancio',
+     MG.castResult({ dice:[4, 4], level:1, cv:8, mod:-3 }).total === 6 &&
+     !MG.castResult({ dice:[4, 4], level:1, cv:8, mod:-3 }).cast);
+  ok('e non ferma l invocazione perfetta', MG.castResult({ dice:[6, 6], level:1, cv:10, mod:-3 }).cast);
+}
+
+/* ================================================================= */
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

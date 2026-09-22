@@ -292,6 +292,25 @@ export function castResult({ dice = [], level = 0, cv = 0, cv2 = 0, mod = 0, cvU
   };
 }
 
+/* Magic Resistance (-X) (p. 108): il tiro di lancio di un incantesimo
+   NEMICO — vincolati compresi — che bersaglia un'unita' con dentro uno o
+   piu' modelli con la regola prende il modificatore fra parentesi. Non si
+   somma: con due modelli che l'hanno vale il piu' alto. Il Grey Seer
+   sulla Screaming Bell porta (-1) suo e (-3) della campana: vale −3.
+   `units` e' l'unita' bersaglio con i personaggi che ci stanno dentro,
+   perche' «include» vuol dire anche loro. Torna `mod` gia' col segno. */
+const MAGIC_RES = /magic resistance\s*\(\s*[-−–]?\s*(\d+)\s*\)/i;
+export function magicResistance(units = []){
+  let best = null;
+  for (const u of (Array.isArray(units) ? units : [units]).filter(Boolean))
+    for (const r of u.rules || []){
+      const m = MAGIC_RES.exec(String(r));
+      if (m && (!best || +m[1] > best.x)) best = { x: +m[1], who: u.name };
+    }
+  return best ? { mod: -best.x, who: best.who, text: `Magic Resistance −${best.x}` }
+              : { mod: 0, who: "", text: "" };
+}
+
 /* La tabella del fiasco (p. 109). Due righe su cinque fanno lanciare lo
    stesso l'incantesimo, e tutte e due chiudono la magia del turno.
 

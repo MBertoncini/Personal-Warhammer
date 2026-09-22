@@ -1410,9 +1410,10 @@ Quello che resta fuori, detto per non lasciarlo scoprire a una partita:
 
 - **Le sagome e i vortici** sono tutti a mano: la sagoma della Tappa 4
   sa cadere e deviare, ma non ancora muoversi a ogni inizio turno.
-- **La Magic Resistance e il Drain Magic** sono scritti in `castResult`
-  (`mod` e `cvUp`) e il tavolo non li passa ancora; lo stesso vale per
-  Mob Rule e Syphoned Strength degli Orchi.
+- **Il Drain Magic** è scritto in `castResult` (`cvUp`) e il tavolo non
+  lo passa ancora; lo stesso vale per Mob Rule e Syphoned Strength degli
+  Orchi. ~~La Magic Resistance~~ la passano il pannello e l'arbitro
+  (p. 108).
 - **Il mago con l'armatura** non tira (p. 111): `canCast` lo sa, il
   tavolo non glielo dice, perché il file non distingue bene l'armatura
   del mago da quella della cavalcatura.

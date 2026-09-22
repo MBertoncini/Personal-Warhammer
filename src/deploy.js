@@ -3634,8 +3634,12 @@ async function runCast(caster, spellId, preUid = null){
     why:`tiro di lancio: ${sp.name} (${sp.cv}+${sp.bound ? ", Potere " + sp.potere : w.level ? ", Livello " + w.level : ""})` }],
     `${sp.name} di ${caster.name}`);
   if (!rolls || !rolls.lancio) return;
+  /* la Magic Resistance del bersaglio nemico, e dei capi che ci stanno
+     dentro (p. 108): il piu' alto dei −X */
+  const mr = target && target.army !== caster.army
+    ? MG.magicResistance([target, ...attachedOf(target)]) : MG.magicResistance([]);
   let res = MG.castResult({ dice: rolls.lancio.dice, level: w.level, cv: sp.cv, cv2: sp.cv2 || 0,
-                            bound: !!sp.bound, power: sp.potere || 0 });
+                            bound: !!sp.bound, power: sp.potere || 0, mod: mr.mod });
   let mis = null, misRolls = null;
   if (res.miscast){
     misRolls = await G.askRolls([{ id:"fiasco", kind:"d6", n:2, why:"tabella del fiasco (p. 109)" }], `Fiasco di ${caster.name}`);
@@ -3687,7 +3691,7 @@ async function runCast(caster, spellId, preUid = null){
     caster.magic = { ...(caster.magic || {}), cast: {
       turn: state.game.turn, side: state.game.army,
       ids: [...(cs ? cs.ids : []), sp.id], stop: !!(cs && cs.stop) || !!(mis && mis.stop) } };
-    const notes = [...gate.why, ...targetWhy];
+    const notes = [...gate.why, ...targetWhy, ...(mr.mod ? [`${mr.text} di ${mr.who} (p. 108)`] : [])];
     G.dispatch({ type:"cast", wizard: caster, spell: sp, army: caster.army,
       text: `${caster.name} lancia ${sp.name}${target && target !== host ? " su " + target.name : ""}: ${res.text}` +
             (notes.length ? ` [${notes.join("; ")}]` : "") }, rolls);

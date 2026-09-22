@@ -3235,15 +3235,16 @@ function opzioniLancio(S, tipi, { army = S.army, gruppo = null } = {}){
       const gate = MG.canCast(sp, { fleeing: !!host.fled, engaged, castThisTurn: giaLanciati(S, u),
                                     stepId: MG.CAST_STEP[sp.type], stupid: stupida(S, u) });
       if (!gate.can) continue;
-      const odds = MG.castOdds({ level: m.level, cv: sp.cv, bound: !!sp.bound, power: sp.potere || 0 });
       const chi = sp.bound ? `Potere ${sp.potere || 0}` : `Livello ${m.level}`;
       for (const b of bersagli(S, u, host, sp, gruppo)){
+        const mr = resistenza(S, u, b.t);
+        const odds = MG.castOdds({ level: m.level, cv: sp.cv, bound: !!sp.bound, power: sp.potere || 0, mod: mr.mod });
         const attesa = sp.effetto.colpi && b.t ? attesaColpi(sp, b.t) : 0;
         out.push({ id:"lancia", uid: u.uid, spell: sp.id, target: b.t ? b.t.uid : null,
                    nome: u.name, contro: b.t ? b.t.name : "",
                    why: `${sp.name} (${MG.TYPE_LABEL[sp.type]}, ${sp.cv}+)` +
                         (b.t ? ` su ${b.t.name}` : "") + (b.dist ? ` a ${b.dist}″` : "") +
-                        `: con ${chi} riesce il ${pct(odds.cast)}` +
+                        `: con ${chi}${mr.mod ? `, ${mr.text}` : ""} riesce il ${pct(odds.cast)}` +
                         (odds.miscast ? `, fiasco il ${pct(odds.miscast)}` : "") +
                         (attesa ? `, ≈ ${attesa.toFixed(1)} perdite` : `; ${sp.testo || MG.manualOf(sp)}`),
                    chance: odds.cast, attesa: attesa * odds.cast, page: sp.page || MG.PAGE.casting });
@@ -3277,6 +3278,14 @@ function bersagli(S, u, host, sp, gruppo){
   return out;
 }
 
+/* La Magic Resistance del bersaglio (p. 108), che vale solo contro gli
+   incantesimi del nemico: sull'unita' e sui personaggi che ci stanno
+   dentro, il piu' alto dei −X. */
+function resistenza(S, mago, t){
+  if (!t || t.army === mago.army) return MG.magicResistance([]);
+  return MG.magicResistance([t, ...capiDi(S, t)]);
+}
+
 /* ---- il lancio (pp. 108-109) ---- */
 function lancia(S, a){
   const M = magico(S);
@@ -3305,9 +3314,11 @@ function lancia(S, a){
   if (u.armour > 0 && !sp.bound) limite(S, "armatura");
 
   const dadi = roll(2);
+  const mr = resistenza(S, u, t);
   let res = MG.castResult({ dice: dadi, level: m.level, cv: sp.cv, cv2: sp.cv2 || 0,
-                            bound: !!sp.bound, power: sp.potere || 0 });
-  say(S, `${u.name} lancia ${sp.name}${t && t !== host ? " su " + t.name : ""}: ${res.text}.`,
+                            bound: !!sp.bound, power: sp.potere || 0, mod: mr.mod });
+  say(S, `${u.name} lancia ${sp.name}${t && t !== host ? " su " + t.name : ""}: ${res.text}` +
+         (mr.mod ? ` (${mr.text} di ${mr.who}, p. 108)` : "") + ".",
       { dice: dadi, army: u.army, page: MG.PAGE.casting });
   if (res.miscast){
     const fd = roll(2);

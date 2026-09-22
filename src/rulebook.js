@@ -263,7 +263,7 @@ export const ELSEWHERE = [
      fuori la riga di un equipaggio o di una cavalcatura, come i ratti
      della Doom-Wheel, che `attackRows` legge ancora col primo numero. */
   { re:/^magic resistance/i,
-    why:"toglie dal tiro di lancio degli incantesimi nemici che bersagliano l'unità: né il pannello né l'arbitro la sottraggono ancora" },
+    why:"toglie dal tiro di lancio degli incantesimi nemici che bersagliano l'unità il −X più alto, anche se ce l'ha solo il capo unito (p. 108): lo sottraggono il pannello e l'arbitro, e la probabilità offerta la conta" },
   { re:/^random movement/i,
     why:"riguarda il movimento: il Movimento si tira, e l'ispettore lo dice" },
   /* Due vincoli di forma, che si giocano dove i pezzi si uniscono e si

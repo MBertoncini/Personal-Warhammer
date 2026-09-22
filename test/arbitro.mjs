@@ -208,6 +208,33 @@ const conScheda = (l, units) => ({ ...l, prep: { general: null, bsb: null, note:
   ok('e «la fase di magia non si gioca» non è più fra i limiti', !AR.LIMITI.some(l => l.id === 'magia'));
 }
 {
+  /* Magic Resistance (p. 108): il tiro di lancio di un incantesimo
+     nemico che bersaglia l'unita' prende il −X, il piu' alto fra i
+     modelli e senza sommarli. Prima la regola si leggeva e basta. */
+  const A = conScheda(L1, { 1: { level: 2, lore: 'battle', spellIds: ['fireball', 'oakenShield'] } });
+  const B = conScheda(L2, { 1: { lore: 'illusion', spellIds: ['miasmicMirage'] } });
+  const G = AR.newBattle({ A, B, scenario: 'bm-monolite', magia: M });
+  const prete = G.units.find(u => u.name === 'Skink Priest');
+  const mob = G.units.find(u => u.name === 'Night Goblin Mobs');
+  const nob = G.units.find(u => u.name === 'Night Goblin Oddnob');
+  for (const u of [prete, mob, nob]) u.placed = true;
+  prete.x = 1100; prete.y = 900; prete.rot = 0;
+  mob.x = 1100; mob.y = 900 - 12 * MM; mob.rot = 180;
+  nob.x = 1400; nob.y = 200; nob.rot = 180;
+  mob.rules = [...(mob.rules || []), 'Magic Resistance (-1)', 'Magic Resistance (-2)'];
+  G.schierando = false; G.army = 'A'; G.turno = 1;
+  G.casella = AR.CASELLE.findIndex(c => c.id === 'tiro');
+  const fuoco = AR.options(G).list.find(x => x.id === 'lancia' && x.spell === 'fireball' && x.target === mob.uid);
+  ok('Magic Resistance: la probabilità offerta la conta, il −2 e non il −3',
+     !!fuoco && fuoco.chance > 0.4 && fuoco.chance < 0.45 && /Magic Resistance −2/.test(fuoco.why));
+  const coda = [4, 5, 6, 6];
+  D.setSource(n => (coda.length ? coda.shift() : 4) - 1);
+  AR.apply(G, fuoco);
+  ok('e il tiro di lancio la sottrae (p. 108)',
+     G.log.some(x => /lancio 4 \+ 5 \+ 2 di Livello − 2 = 9 contro 8\+ — lanciato/.test(x.text)));
+  D.setSource(D.seeded(1));
+}
+{
   /* Un lancio intero con i dadi scelti: Fireball su una mob a dodici
      pollici, il Night Goblin prova a dissolverlo e non ce la fa. */
   const A = conScheda(L1, { 1: { level: 2, lore: 'battle', spellIds: ['fireball', 'oakenShield'] } });

@@ -327,8 +327,11 @@ di `rulebook.js`. **Da fare**, in ordine di quanto pesano:
   l'Hell Pit Abomination ha anche **Abominable Attacks** (nutrirsi o
   la valanga di carne con la sagoma, Legends: Skaven), che l'arbitro non
   offre ancora — e che adesso, con `bombarda`, ha la geometria pronta;
-- **Magic Resistance**: `castResult` ha già il posto (`mod`), nessuno ce
-  la mette — né il pannello né l'arbitro;
+- ~~**Magic Resistance**~~ — fatto (p. 108): `MG.magicResistance` sulle
+  regole dell'unità e dei capi uniti, il −X più alto; solo contro gli
+  incantesimi del nemico. La sottraggono `lancia` e `opzioniLancio`
+  nell'arbitro (`resistenza`) e il lancio del pannello in `deploy.js`.
+  Resta testo la «Magia residua» del terreno selvaggio (Battle March);
 - Blessings of the Horned Rat vale solo contro gli attacchi non magici,
   e l'app la conta sempre (come la speciale della campana).
 
