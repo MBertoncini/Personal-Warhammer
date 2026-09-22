@@ -899,6 +899,25 @@ console.log('\nla riga di comando');
   const pari = +((serie.stdout.match(/pareggio\s+(\d+)/) || [])[1]);
   ok('--partite 3 gioca tre partite e le conta tutte', serie.status === 0 && vinte.length === 2 && vinte[0] + vinte[1] + pari === 3);
   ok('--partite non si mescola con --gemini', lancia(['--partite', '3', '--gemini']).status === 1);
+  /* senza estro si schiera sempre uguale; con l'estro ogni partita ha
+     il suo piano, e la partita di un seme si rigioca identica da sola */
+  const schier = out => +((out.match(/schieramenti diversi: (\d+)/) || [])[1]);
+  const rigide = lancia(['--liste', '3,4', '--partite', '4']);
+  const estrose = lancia(['--liste', '3,4', '--partite', '4', '--estro']);
+  ok('senza estro le partite si schierano tutte uguali', rigide.status === 0 && schier(rigide.stdout) === 1);
+  ok('con l estro no, e il conto dice quali piani vincono',
+     estrose.status === 0 && schier(estrose.stdout) > 1 && /quali piani vincono/.test(estrose.stdout));
+  const vp = out => (out.match(/(\d+) punti vittoria — .* (\d+)\s*$/m) || []).slice(1).join('-');
+  const una = lancia(['--liste', '3,4', '--seme', '7', '--estro', '--breve']);
+  const due = lancia(['--liste', '3,4', '--seme', '7', '--estro', '--breve']);
+  ok('e con lo stesso seme l estro rigioca lo stesso piano', una.status === 0 && /piano di A/.test(una.stdout) &&
+     vp(una.stdout) !== '' && vp(una.stdout) === vp(due.stdout));
+  /* gli scenari disegnati nell'app, da dati/scenari.json */
+  const mio = (JSON.parse(fs.readFileSync(new URL('../dati/scenari.json', import.meta.url), 'utf8')) || [])[0];
+  if (mio){
+    const custom = lancia(['--liste', '3,4', '--scenario', mio.id, '--breve']);
+    ok('uno scenario disegnato nell app si gioca per id', custom.status === 0 && custom.stdout.includes(mio.label));
+  }
   const ignoto = lancia(['--list', '3,4']);
   ok('un argomento sconosciuto si dice', ignoto.status === 1 && /--list/.test(ignoto.stderr));
 }

@@ -27,12 +27,12 @@ const MU_KEY = "matchup:current";
 const DEP_KEY = "deployments:all";
 
 let mu = { listA: null, listB: null, mine: "A", note: "", sfidaMia: "A", sfidaScenario: "",
-           aiai: { scenario: "", chi: "euristica", seme: 1, partite: 1, html: true, archivia: false } };
+           aiai: { scenario: "", chi: "euristica", seme: 1, partite: 1, estro: true, html: true, archivia: false } };
 let deployments = [];
 
 export async function initMatchup(){
   mu = await loadDoc(MU_KEY, mu) || mu;
-  mu.aiai = { scenario: "", chi: "euristica", seme: 1, partite: 1, html: true, archivia: false, ...(mu.aiai || {}) };
+  mu.aiai = { scenario: "", chi: "euristica", seme: 1, partite: 1, estro: true, html: true, archivia: false, ...(mu.aiai || {}) };
   deployments = await loadDoc(DEP_KEY, []) || [];
 }
 
@@ -219,11 +219,20 @@ function sfidaHTML(){
 /* AI contro AI: la partita non si gioca qui ma in `tools/partita.mjs`,
    dal terminale. La scheda scrive il comando giusto per le due liste e
    lo copia. Le liste vanno per id, che non cambia quando l'archivio si
-   riordina; gli scenari sono solo quelli che il comando conosce, cioe'
-   quelli del regolamento — i tuoi stanno nell'app e basta. */
-const scenariDelComando = () => Object.entries(SCENARIOS)
-  .filter(([, s]) => s.table && s.deploy)
-  .map(([id, s]) => ({ id, label: s.label, pts: s.pts || 0 }));
+   riordina. Gli scenari sono quelli del regolamento e i tuoi, disegnati
+   sul tavolo: il comando li legge da dati/scenari.json, dove arrivano
+   con l'Archivio, con lo stesso id. */
+const scenariDelComando = () => scenariGiocabili();
+
+/* i tuoi in un gruppo a parte, con la nota che il comando li trova
+   solo dopo l'Archivio */
+function opzioniScenari(sc){
+  const opt = s => `<option value="${s.id}" ${s.id === sc ? "selected" : ""}>${esc(s.label)}${s.pts ? ` · ${s.pts} pt` : ""}</option>`;
+  const tutti = scenariDelComando();
+  const miei = tutti.filter(s => !SCENARIOS[s.id]);
+  return tutti.filter(s => SCENARIOS[s.id]).map(opt).join("") +
+    (miei.length ? `<optgroup label="Miei scenari (con l'Archivio)">${miei.map(opt).join("")}</optgroup>` : "");
+}
 
 const quante = () => Math.max(1, Math.floor(+mu.aiai.partite) || 1);
 
@@ -237,7 +246,11 @@ export function aiaiCommand(){
   const parti = ["node tools/partita.mjs", `--liste ${A.id},${B.id}`, `--scenario ${sc}`, `--seme ${Math.max(1, +o.seme || 1)}`];
   /* tante partite si giocano solo con l'euristica, e danno solo il
      conto: il resto non va nel comando, che se no si rifiuta */
-  if (quante() > 1) return [...parti, `--partite ${quante()}`].join(" ");
+  /* l'estro vale per l'euristica: con Gemini da tutte e due le parti
+     non c'e' nessuna euristica a cui darlo */
+  const estro = o.estro && (quante() > 1 || o.chi !== "gemini") ? ["--estro"] : [];
+  if (quante() > 1) return [...parti, `--partite ${quante()}`, ...estro].join(" ");
+  parti.push(...estro);
   if (o.chi === "gemini") parti.push("--gemini");
   if (o.chi === "gemini-A") parti.push("--gemini A");
   if (o.chi === "gemini-B") parti.push("--gemini B");
@@ -260,11 +273,13 @@ function aiaiHTML(){
     <p class="note">Una partita intera senza nessuno al tavolo, giocata da <span class="mono">tools/partita.mjs</span>
       nel terminale. Qui scrivi il comando e lo copi. Le liste devono essere già in <span class="mono">dati/liste.json</span>
       (con l'Archivio); per Gemini serve <span class="mono">GEMINI_API_KEY</span> nell'ambiente.
-      Con più di una partita gioca l'euristica, un seme dopo l'altro, e stampa solo il conto: chi vince quante volte.</p>
+      Con più di una partita gioca l'euristica, un seme dopo l'altro, e stampa solo il conto: chi vince quante volte.
+      Senza estro l'euristica si schiera sempre uguale e le partite cambiano solo per i dadi; con l'estro ogni partita
+      ha il suo piano, e il conto dice quali piani vincono.</p>
     <div class="grid2">
       <label class="field">Scenario
         <select id="mu-aiai-sc">
-          ${scenariDelComando().map(s => `<option value="${s.id}" ${s.id === sc ? "selected" : ""}>${esc(s.label)}${s.pts ? ` · ${s.pts} pt` : ""}</option>`).join("")}
+          ${opzioniScenari(sc)}
         </select></label>
       <label class="field">Chi gioca
         <select id="mu-aiai-chi" ${serie ? "disabled" : ""}>
@@ -278,6 +293,7 @@ function aiaiHTML(){
         <input type="number" id="mu-aiai-n" min="1" step="1" value="${quante()}"></label>
     </div>
     <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <label title="ogni partita un piano diverso: dove schiera, da che probabilità carica, quando marcia"><input type="checkbox" id="mu-aiai-estro" ${o.estro ? "checked" : ""}> euristica con estro</label>
       <label><input type="checkbox" id="mu-aiai-html" ${o.html ? "checked" : ""} ${serie ? "disabled" : ""}> pagina da guardare</label>
       <label><input type="checkbox" id="mu-aiai-arch" ${o.archivia ? "checked" : ""} ${serie ? "disabled" : ""}> nel diario delle partite</label>
     </div>
@@ -381,13 +397,14 @@ export function renderMatchup(){
       mu.aiai = { scenario: $("#mu-aiai-sc").value, chi: $("#mu-aiai-chi").value,
                   seme: Math.max(1, Math.floor(+$("#mu-aiai-seme").value) || 1),
                   html: $("#mu-aiai-html").checked, archivia: $("#mu-aiai-arch").checked,
+                  estro: $("#mu-aiai-estro").checked,
                   partite: Math.max(1, Math.floor(+$("#mu-aiai-n").value) || 1) };
       const serie = quante() > 1;
       ["#mu-aiai-chi", "#mu-aiai-html", "#mu-aiai-arch"].forEach(id => { $(id).disabled = serie; });
       $("#mu-aiai-cmd").textContent = aiaiCommand();
       await persist();
     };
-    ["#mu-aiai-sc", "#mu-aiai-chi", "#mu-aiai-seme", "#mu-aiai-n", "#mu-aiai-html", "#mu-aiai-arch"]
+    ["#mu-aiai-sc", "#mu-aiai-chi", "#mu-aiai-seme", "#mu-aiai-n", "#mu-aiai-estro", "#mu-aiai-html", "#mu-aiai-arch"]
       .forEach(id => $(id).addEventListener("change", aggiorna));
     aiai.addEventListener("click", async () => {
       const ok = await copyText(aiaiCommand());

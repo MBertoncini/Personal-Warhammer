@@ -312,6 +312,8 @@ node tools/partita.mjs --gemini A     # solo l'esercito A è il modello
 node tools/partita.mjs --html partita.html   # la partita da GUARDARE
 node tools/partita.mjs --archivia     # e anche nel diario, in testa a dati/partite.json
 node tools/partita.mjs --liste 4,9 --partite 100   # cento partite di euristica, solo il conto: chi vince quante volte
+node tools/partita.mjs --liste 4,9 --partite 100 --estro   # e ognuna con un piano diverso: dice anche quali piani vincono
+node tools/partita.mjs --scenario sxmttrgusdc7c   # uno scenario disegnato nell'app, da dati/scenari.json
 node tools/controlla-partita.mjs partita.html  # e il controllo di quello che è successo
 ```
 

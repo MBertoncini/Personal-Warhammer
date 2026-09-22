@@ -9,6 +9,7 @@
  *   node tools/partita.mjs                      due euristiche
  *   node tools/partita.mjs --seme 42            la stessa partita, sempre uguale
  *   node tools/partita.mjs --scenario bm-rovine
+ *   node tools/partita.mjs --scenario sxmttrgusdc7c   uno dei tuoi, da dati/scenari.json
  *   node tools/partita.mjs --liste 3,9          per numero (le elenca --liste ?)
  *   node tools/partita.mjs --liste lmtl5r4mb97yl,lmubp01267euf   o per id
  *   node tools/partita.mjs --gemini             se GEMINI_API_KEY è nell'ambiente
@@ -18,6 +19,7 @@
  *   node tools/partita.mjs --html partita.html  la partita DA GUARDARE: una pagina sola
  *   node tools/partita.mjs --archivia           e anche nel diario, dati/partite.json
  *   node tools/partita.mjs --partite 100        cento partite, semi 1..100, e solo il conto
+ *   node tools/partita.mjs --partite 100 --estro  e ognuna con un piano diverso dell'euristica
  *
  * Quello che stampa è pensato per essere LETTO: ogni mossa dice chi ha
  * scelto, perché, e cosa è successo, con la pagina del manuale accanto.
@@ -43,6 +45,14 @@ import * as ARCH from './archivia.mjs';
 const qui = path.dirname(fileURLToPath(import.meta.url));
 const dati = f => JSON.parse(fs.readFileSync(path.join(qui, '..', 'dati', f), 'utf8'));
 
+/* Gli scenari: quelli del regolamento e quelli disegnati sul tavolo
+   dell'app, che con l'Archivio arrivano in dati/scenari.json con lo
+   stesso id che hanno nell'app. */
+const mieiScenari = (() => { try { return dati('scenari.json') || []; } catch (_){ return []; } })();
+const TUTTI = { ...SCENARIOS,
+  ...Object.fromEntries(mieiScenari.filter(s => s && s.id && s.table && s.deploy)
+                                   .map(s => [s.id, { ...s, group: 'Miei scenari' }])) };
+
 /* ---- gli argomenti ----
    Un valore puo' arrivare spezzato dalla shell: «--liste 3, 9» sono due
    parole, «3,» e «9». Prima si leggeva solo la prima, «3,» diventava
@@ -50,7 +60,7 @@ const dati = f => JSON.parse(fs.readFileSync(path.join(qui, '..', 'dati', f), 'u
    Adesso le parole fino al prossimo «--» si rimettono insieme, e quelle
    che nessuno legge si dicono. */
 const argv = process.argv.slice(2);
-const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste', 'archivia', 'partite'];
+const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste', 'archivia', 'partite', 'estro'];
 const valori = {};
 const ignoti = [];
 for (let i = 0; i < argv.length; i++){
@@ -100,7 +110,17 @@ if (partite > 1 && (gemini || html || archivia)){
   console.error("--partite con più di una partita gioca solo l'euristica, senza --gemini, --html né --archivia.");
   process.exit(1);
 }
+/* --estro: l'euristica non gioca sempre lo stesso piano. Senza, due
+   partite con semi diversi si schierano identiche e si separano solo
+   quando i dadi dicono cose diverse (vedi `pianoDa` in agente.js). */
+const estro = !!arg('estro', false);
 const fileArchivio = archivia === true ? path.join(qui, '..', 'dati', 'partite.json') : archivia;
+if (!TUTTI[scenario]){
+  console.error(`Scenario «${scenario}» sconosciuto. Ci sono: ${Object.keys(SCENARIOS).join(', ')}` +
+                (mieiScenari.length ? `, e i tuoi: ${mieiScenari.map(s => `${s.id} («${s.label}»)`).join(', ')}` : '') +
+                ". Uno scenario appena disegnato nell'app arriva in dati/scenari.json solo con l'Archivio.");
+  process.exit(1);
+}
 
 /* ---- i dadi, con il seme: la stessa partita si rigioca uguale ---- */
 D.setSource(D.seeded(seme));
@@ -139,17 +159,13 @@ if (scelte){
   [iA, iB] = indici;
 } else {
   /* di suo prende le due liste dello scenario, una per fazione */
-  const dello = liste.filter(l => (l.points || 0) === (SCENARIOS[scenario] || {}).pts);
+  const dello = liste.filter(l => (l.points || 0) === (TUTTI[scenario] || {}).pts);
   const fazioni = [...new Set(dello.map(l => (l.info || {}).catalogue).filter(Boolean))];
   iA = liste.indexOf(dello.find(l => (l.info || {}).catalogue === fazioni[0]));
   iB = liste.indexOf(dello.find(l => (l.info || {}).catalogue === fazioni[1]));
 }
 const A = liste[iA], B = liste[iB];
 if (!A || !B){ console.error('Non trovo le due liste: prova --liste ?'); process.exit(1); }
-if (!SCENARIOS[scenario]){
-  console.error(`Scenario «${scenario}» sconosciuto. Ci sono: ${Object.keys(SCENARIOS).join(', ')}.`);
-  process.exit(1);
-}
 
 /* La fazione: la dice il catalogo della lista. Una lista scritta a mano
    non ce l'ha, e allora si guarda chi sono le sue unita' — la fazione
@@ -187,7 +203,7 @@ for (const t of ['A', 'B']){
   const pa = puntiDi(A), pb = puntiDi(B);
   if (Math.abs(pa - pb) > 0.1 * Math.max(pa, pb))
     avvisa(`le due liste non si equivalgono: ${pa} contro ${pb} punti.`);
-  const pts = (SCENARIOS[scenario] || {}).pts;
+  const pts = (TUTTI[scenario] || {}).pts;
   if (pts && (pa > pts * 1.05 || pb > pts * 1.05))
     avvisa(`lo scenario «${scenario}» è pensato per ${pts} punti.`);
 }
@@ -212,12 +228,19 @@ for (const [tag, l] of [['A', A], ['B', B]]){
 const chiave = process.env.GEMINI_API_KEY || '';
 const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const erroriModello = [];
+/* L'euristica, con o senza estro. Il generatore dell'estro nasce dal
+   seme della partita e dalla parte, e non tocca quello dei dadi: la
+   partita col seme 42 e l'estro e' la stessa da sola e dentro una serie. */
+const euristica = (tag, nome, s) => AG.agenteEuristico({
+  nome: nome + (estro ? ' (euristica con estro)' : ' (euristica)'),
+  estro: estro ? D.seeded(((s * 2654435761) ^ (tag === 'A' ? 0x51ed27 : 0xa3c1f5)) >>> 0) : null,
+});
 const faiAgente = (tag, nome) => {
   const vuole = gemini === true || gemini === tag;
-  if (!vuole) return AG.agenteEuristico({ nome: nome + ' (euristica)' });
+  if (!vuole) return euristica(tag, nome, seme);
   if (!chiave){
     avvisa(`--gemini chiesto ma GEMINI_API_KEY non c'è: ${nome} gioca con l'euristica.`);
-    return AG.agenteEuristico({ nome: nome + ' (euristica)' });
+    return euristica(tag, nome, seme);
   }
   return AG.agenteGemini({ apiKey: chiave, model, nome: nome + ' (' + model + ')',
                            attesa: pausa,
@@ -226,7 +249,7 @@ const faiAgente = (tag, nome) => {
 
 const nomi = { A: faz.A.nome, B: faz.B.nome };
 if (nomi.A === nomi.B){ nomi.A += ' (A)'; nomi.B += ' (B)'; }
-const S = AR.newBattle({ A, B, scenario, nomi, magia });
+const S = AR.newBattle({ A, B, scenario, def: TUTTI[scenario], nomi, magia });
 const agenti = { A: faiAgente('A', nomi.A), B: faiAgente('B', nomi.B) };
 const conModello = Object.values(agenti).some(a => !/euristica/.test(a.nome));
 
@@ -245,20 +268,26 @@ for (const tag of ['A', 'B']){
 
 /* ---- tante partite: solo il conto ---- */
 if (partite > 1){
-  const sc = SCENARIOS[scenario];
-  console.log(`\n${partite} partite su «${sc.label}», semi ${seme}–${seme + partite - 1}, euristica contro euristica…`);
+  const sc = TUTTI[scenario];
+  console.log(`\n${partite} partite su «${sc.label}», semi ${seme}–${seme + partite - 1}, euristica contro euristica` +
+              (estro ? ', con l’estro…' : ', senza estro: cambiano solo i dadi…'));
   const t0 = Date.now();
   const tutte = [];
   for (let i = 0; i < partite; i++){
     /* il seme prima della battaglia: anche lo schieramento e chi
        comincia vengono dai dadi */
     D.setSource(D.seeded(seme + i));
-    const Si = AR.newBattle({ A, B, scenario, nomi, magia });
-    const e = await AG.giocaPartita(AR, Si, {
-      A: AG.agenteEuristico({ nome: nomi.A + ' (euristica)' }),
-      B: AG.agenteEuristico({ nome: nomi.B + ' (euristica)' }),
-    });
-    tutte.push({ seme: seme + i, winner: e.winner || null, label: e.label, A: e.A, B: e.B, turno: Si.turno, why: e.why });
+    const Si = AR.newBattle({ A, B, scenario, def: TUTTI[scenario], nomi, magia });
+    const ag = { A: euristica('A', nomi.A, seme + i), B: euristica('B', nomi.B, seme + i) };
+    /* lo schieramento, fotografato quando finisce: dice se le partite
+       cambiano gia' prima del primo dado, o solo dopo */
+    let schierati = '';
+    const e = await AG.giocaPartita(AR, Si, { ...ag, onPasso: () => {
+      if (!schierati && !Si.schierando)
+        schierati = Si.units.filter(u => u.placed && !u.dead).map(u => `${u.uid}:${Math.round(u.x)}:${Math.round(u.y)}`).join('|');
+    } });
+    tutte.push({ seme: seme + i, winner: e.winner || null, label: e.label, A: e.A, B: e.B, turno: Si.turno, why: e.why,
+                 schierati, piano: { A: ag.A.piano, B: ag.B.piano } });
     if (process.stdout.isTTY) process.stdout.write(`\r  ${i + 1}/${partite}`);
   }
   if (process.stdout.isTTY) process.stdout.write('\r' + ' '.repeat(20) + '\r');
@@ -294,25 +323,59 @@ if (partite > 1){
   const diverse = new Set(tutte.map(x => `${x.winner}|${x.A}|${x.B}`)).size;
   console.log(`\n  risultati diversi: ${diverse} su ${partite}` +
               (diverse === 1 ? ' — i dadi non cambiano niente: è sempre la stessa partita' : ''));
+  const schieramenti = new Set(tutte.map(x => x.schierati)).size;
+  console.log(`  schieramenti diversi: ${schieramenti} su ${partite}` +
+              (schieramenti === 1 ? ' — si schiera sempre uguale, e le partite si separano solo ai dadi' : ''));
+
+  /* Quali piani vincono. Per ogni scelta del piano, quante partite vince
+     chi l'ha fatta, divise a meta' sulla mediana (o per valore, quando i
+     valori sono pochi). Con cento partite sono indizi, non verdetti:
+     ogni riga porta quante partite ci stanno dietro. */
+  if (estro){
+    console.log('\n  quali piani vincono (partite vinte da chi ha fatto quella scelta):');
+    const riga = (t, etichetta, gruppi) => console.log(`    ${t}  ${etichetta.padEnd(26)} ` +
+      gruppi.map(([nome, l]) => `${nome} ${l.length ? Math.round(100 * l.filter(x => x.winner === t).length / l.length) + '%' : '—'} (${l.length})`)
+            .join('   '));
+    for (const t of ['A', 'B']){
+      const numero = (k, etichetta, fmt = v => v) => {
+        const v = tutte.map(x => x.piano[t][k]).sort((a, b) => a - b);
+        const med = v[Math.floor(v.length / 2)];
+        riga(t, etichetta, [[`≤ ${fmt(med)}`, tutte.filter(x => x.piano[t][k] <= med)],
+                            [`> ${fmt(med)}`, tutte.filter(x => x.piano[t][k] > med)]]);
+      };
+      numero('carica', 'carica da (probabilità)', v => Math.round(v * 100) + '%');
+      numero('marcia', 'marcia oltre (pollici)', v => v + '″');
+      numero('sfida', 'sfida se conviene più di');
+      riga(t, 'resta fermo a tirare', [['sì', tutte.filter(x => x.piano[t].tieniTiro)], ['no', tutte.filter(x => !x.piano[t].tieniTiro)]]);
+      riga(t, 'capi dentro i reggimenti', [['sì', tutte.filter(x => x.piano[t].unisci)], ['no', tutte.filter(x => !x.piano[t].unisci)]]);
+      riga(t, 'prima colonna schierata', AG.COLONNE.map((c, i) => [c, tutte.filter(x => x.piano[t].colonne[0] === i)]));
+    }
+  }
   const peggio = t => tutte.filter(x => x.winner === t).sort((a, b) => Math.abs(b.A - b.B) - Math.abs(a.A - a.B))[0];
   for (const t of ['A', 'B']){
     const x = peggio(t);
     if (x) console.log(`  la vittoria più netta di ${t}: seme ${x.seme} (${x.A}–${x.B}) → node tools/partita.mjs ` +
-                       `--liste ${A.id},${B.id} --scenario ${scenario} --seme ${x.seme} --html partita.html`);
+                       `--liste ${A.id},${B.id} --scenario ${scenario} --seme ${x.seme}${estro ? ' --estro' : ''} --html partita.html`);
   }
   console.log(`\n  ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   process.exit(0);
 }
 
 /* ---- l'intestazione ---- */
-const sc = SCENARIOS[scenario];
+const sc = TUTTI[scenario];
 console.log('═'.repeat(72));
-console.log(`  ${sc.label} — ${sc.pts || ''} punti, tavolo ${sc.table[0]}×${sc.table[1]}″`);
+console.log(`  ${sc.label}${sc.pts ? ` — ${sc.pts} punti` : ""}, tavolo ${sc.table[0]}×${sc.table[1]}″` + (sc.group ? ` (${sc.group})` : ""));
 console.log(`  ${nomi.A} (${S.punti.A} pt, ${agenti.A.nome})`);
 console.log(`  contro ${nomi.B} (${S.punti.B} pt, ${agenti.B.nome})`);
 console.log(conModello
   ? `  seme ${seme}: i dadi sono gli stessi, le scelte del modello no`
   : `  seme ${seme}: la stessa partita si rigioca identica`);
+if (estro) for (const t of ['A', 'B']){
+  const p = agenti[t].piano;
+  if (p) console.log(`  piano di ${t}: carica da ${Math.round(p.carica * 100)}%, marcia oltre ${p.marcia}″, ` +
+                     `sfida sopra ${p.sfida}, ${p.tieniTiro ? 'resta fermo a tirare' : 'avanza anche a tiro'}, ` +
+                     `${p.unisci ? 'capi nei reggimenti' : 'capi da soli'}, comincia a schierare a ${AG.COLONNE[p.colonne[0]]}`);
+}
 console.log('═'.repeat(72));
 if (sc.desc) console.log(`\n${sc.desc}\n`);
 

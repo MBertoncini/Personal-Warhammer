@@ -30,10 +30,53 @@
    Sei regole, nell'ordine in cui un giocatore le applica. Nessuna e'
    furba: servono a giocare una partita sensata, non a vincerla.
    ============================================================ */
-export function agenteEuristico({ nome = "euristica" } = {}){
-  let colonna = 0;
+/* L'ESTRO. Senza, l'euristica e' una funzione: stessa situazione,
+   stessa mossa, e cento partite differiscono solo per i dadi — lo
+   schieramento e' sempre quello, e le cariche partono sempre alla
+   stessa soglia. Con `estro` (un generatore n => intero in [0, n), come
+   `D.seeded`) ogni partita ha il suo PIANO: dove comincia a schierare,
+   da che probabilita' carica, quando marcia, se tiene i capi dentro i
+   reggimenti, quanto si concede di scegliere la seconda mossa migliore
+   invece della prima. Il generatore e' suo e non quello dei dadi: lo
+   stesso seme rigioca lo stesso piano, e il piano non sposta i dadi.
+
+   Il piano sta su `agente.piano`, perche' chi gioca cento partite
+   possa chiedersi quali piani vincono. */
+export const COLONNE = ["sinistra", "centro-sinistra", "centro", "centro-destra", "destra"];
+export const PIANO_FISSO = Object.freeze({ carica: 0.5, marcia: 14, sfida: 0.2, tieniTiro: true,
+                                           unisci: true, scarto: 0, colonne: null });
+
+export function pianoDa(estro){
+  if (!estro) return { ...PIANO_FISSO };
+  const u = () => estro(1000000) / 1000000;
+  const colonne = [0, 1, 2, 3, 4];
+  for (let i = colonne.length - 1; i > 0; i--){
+    const j = estro(i + 1);
+    [colonne[i], colonne[j]] = [colonne[j], colonne[i]];
+  }
   return {
-    nome,
+    carica: Math.round((0.35 + 0.4 * u()) * 100) / 100,   // da che probabilita' si carica
+    marcia: Math.round(8 + 12 * u()),                        // oltre quanti pollici si marcia
+    sfida: Math.round((-0.2 + 0.8 * u()) * 100) / 100,       // quanto deve convenire un duello
+    tieniTiro: u() < 0.8,                                    // chi ha il nemico a tiro resta fermo
+    unisci: u() < 0.85,                                      // i capi dentro i reggimenti
+    scarto: estro(3),                                        // fra quante mosse migliori si sceglie
+    colonne,                                                 // l'ordine delle colonne allo schieramento
+  };
+}
+
+export function agenteEuristico({ nome = "euristica", estro = null } = {}){
+  let colonna = 0;
+  const piano = pianoDa(estro);
+  /* fra le prime `scarto + 1` mosse, gia' in ordine dall'arbitro, una a
+     caso: la migliore resta la piu' probabile */
+  const fra = l => {
+    if (!estro || !piano.scarto || l.length < 2) return l[0];
+    const k = Math.min(l.length, piano.scarto + 1);
+    return estro(2) ? l[0] : l[estro(k)];
+  };
+  return {
+    nome, piano,
     async scegli({ opzioni }){
       const l = opzioni.list;
       const primo = id => l.find(x => x.id === id);
@@ -41,7 +84,7 @@ export function agenteEuristico({ nome = "euristica" } = {}){
       /* I CAPI stanno dentro un reggimento: da soli muoiono al primo
          turno, e dentro danno il loro Comando a tutti (p. 97). Il
          reggimento piu' grosso, che l'arbitro mette in cima. */
-      if (primo("unisci")){
+      if (primo("unisci") && piano.unisci){
         const u = primo("unisci");
         return { scelta: u, perche: `${u.nome} si schiera dentro ${u.contro}: ${u.why}` };
       }
@@ -57,7 +100,7 @@ export function agenteEuristico({ nome = "euristica" } = {}){
            peggio. */
         const buoni = posti.filter(x => !x.murato);
         const usa = buoni.length ? buoni : posti;
-        const scelto = usa[colonna++ % usa.length];
+        const scelto = piano.colonne ? perColonna(usa, piano.colonne, colonna++) : usa[colonna++ % usa.length];
         return { scelta: scelto, perche: `la metto ${scelto.dove}: uno schieramento largo non si fa prendere di fianco` +
           (buoni.length < posti.length ? `, e i posti col terreno impassabile davanti li lascio stare` : "") };
       }
@@ -112,7 +155,7 @@ export function agenteEuristico({ nome = "euristica" } = {}){
       const cariche = l.filter(x => x.id === "carica");
       if (cariche.length){
         const best = cariche[0];
-        if (best.chance >= 0.5)
+        if (best.chance >= piano.carica)
           return { scelta: best, perche: `carico ${best.contro} con ${best.nome}: ${best.why}` };
       }
 
@@ -143,7 +186,7 @@ export function agenteEuristico({ nome = "euristica" } = {}){
          cinque pollici a ogni turno e non ha mai sparato in nessuna
          partita. Il conto lo fa l'arbitro, che le armi le ha in mano. */
       const tieniIlTiro = l.find(x => x.id === "ferma" && x.tieniIlTiro);
-      if (tieniIlTiro) return { scelta: tieniIlTiro, perche: `${tieniIlTiro.nome} ${tieniIlTiro.why}` };
+      if (tieniIlTiro && piano.tieniTiro) return { scelta: tieniIlTiro, perche: `${tieniIlTiro.nome} ${tieniIlTiro.why}` };
 
       /* CHI HA UN MURO DAVANTI LO AGGIRA, prima di qualunque avanzata.
          L'arbitro offre «aggira» solo a chi ha la strada chiusa da un
@@ -160,11 +203,11 @@ export function agenteEuristico({ nome = "euristica" } = {}){
 
       const avanza = l.filter(x => x.id === "avanza");
       if (avanza.length){
-        const a = avanza[0];
+        const a = fra(avanza);
         const m = l.find(x => x.id === "marcia" && x.uid === a.uid);
         const lontano = /a (\d+(\.\d+)?)″/.exec(a.why);
         const dist = lontano ? +lontano[1] : 0;
-        if (m && dist > 14)
+        if (m && dist > piano.marcia)
           return { scelta: m, perche: `${m.nome} è lontana: marcia, che è il doppio del Movimento` };
         return { scelta: a, perche: `${a.nome} avanza su ${a.contro}: ${a.why}` };
       }
@@ -177,7 +220,7 @@ export function agenteEuristico({ nome = "euristica" } = {}){
          portano `attesa`, e l'arbitro le ha già messe in ordine. */
       const tiri = l.filter(x => x.id === "tira" || x.id === "bombarda" || x.id === "fulmina");
       if (tiri.length){
-        const t = tiri[0];
+        const t = fra(tiri);
         return { scelta: t, perche: `${t.nome} tira su ${t.contro}: ${t.why}` };
       }
 
@@ -206,7 +249,7 @@ export function agenteEuristico({ nome = "euristica" } = {}){
       }
       if (primo("sfida")){
         const s = l.filter(x => x.id === "sfida").sort((x, y) => y.vantaggio - x.vantaggio)[0];
-        if (s.vantaggio > 0.2)
+        if (s.vantaggio > piano.sfida)
           return { scelta: s, perche: `${s.nome} lancia la sfida: ${s.why}` };
         return { scelta: primo("nessuna"), perche: "nessuna sfida: il duello non conviene a nessuno dei miei" };
       }
@@ -220,6 +263,19 @@ export function agenteEuristico({ nome = "euristica" } = {}){
       return { scelta: primo("avanti") || l[0], perche: "non c'è altro da fare in questa casella" };
     },
   };
+}
+
+/* Lo schieramento col piano: la k-esima unita' va nella k-esima colonna
+   dell'ordine del piano, e se li' non c'e' posto nella prossima. Dentro
+   la colonna, la fila piu' avanti — l'arbitro le mette in quell'ordine. */
+function perColonna(posti, ordine, k){
+  const col = p => COLONNE.indexOf(String(p.dove || "").split(",")[0]);
+  for (let i = 0; i < ordine.length; i++){
+    const c = ordine[(k + i) % ordine.length];
+    const qui = posti.find(p => col(p) === c);
+    if (qui) return qui;
+  }
+  return posti[k % posti.length];
 }
 
 /* ============================================================
