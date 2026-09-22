@@ -21,15 +21,18 @@ import { emit } from './bus.js';
 import { askText, askConfirm } from './uikit.js';
 import { snapshot, applySnapshot, loadArmyFromList, renderAll, history, state as board } from './deploy.js';
 import { startSfida, scenariGiocabili, scenarioPer, inCorso } from './controai.js';
+import { SCENARIOS } from './scenarios.js';
 
 const MU_KEY = "matchup:current";
 const DEP_KEY = "deployments:all";
 
-let mu = { listA: null, listB: null, mine: "A", note: "", sfidaMia: "A", sfidaScenario: "" };
+let mu = { listA: null, listB: null, mine: "A", note: "", sfidaMia: "A", sfidaScenario: "",
+           aiai: { scenario: "", chi: "euristica", seme: 1, html: true, archivia: false } };
 let deployments = [];
 
 export async function initMatchup(){
   mu = await loadDoc(MU_KEY, mu) || mu;
+  mu.aiai = { scenario: "", chi: "euristica", seme: 1, html: true, archivia: false, ...(mu.aiai || {}) };
   deployments = await loadDoc(DEP_KEY, []) || [];
 }
 
@@ -213,6 +216,66 @@ function sfidaHTML(){
     <button class="btn primary" id="mu-sfida" style="margin-top:6px;width:100%">Sfida l'AI sul tavolo</button>`;
 }
 
+/* AI contro AI: la partita non si gioca qui ma in `tools/partita.mjs`,
+   dal terminale. La scheda scrive il comando giusto per le due liste e
+   lo copia. Le liste vanno per id, che non cambia quando l'archivio si
+   riordina; gli scenari sono solo quelli che il comando conosce, cioe'
+   quelli del regolamento — i tuoi stanno nell'app e basta. */
+const scenariDelComando = () => Object.entries(SCENARIOS)
+  .filter(([, s]) => s.table && s.deploy)
+  .map(([id, s]) => ({ id, label: s.label, pts: s.pts || 0 }));
+
+export function aiaiCommand(){
+  const A = getList(mu.listA), B = getList(mu.listB);
+  if (!A || !B) return "";
+  const o = mu.aiai;
+  const tutti = scenariDelComando();
+  const voluto = tutti.some(s => s.id === o.scenario) ? o.scenario : scenarioPer(A, B, "", "");
+  const sc = tutti.some(s => s.id === voluto) ? voluto : "bm-strada";
+  const parti = ["node tools/partita.mjs", `--liste ${A.id},${B.id}`, `--scenario ${sc}`, `--seme ${Math.max(1, +o.seme || 1)}`];
+  if (o.chi === "gemini") parti.push("--gemini");
+  if (o.chi === "gemini-A") parti.push("--gemini A");
+  if (o.chi === "gemini-B") parti.push("--gemini B");
+  if (o.html) parti.push("--html partita.html");
+  if (o.archivia) parti.push("--archivia");
+  return parti.join(" ");
+}
+
+function aiaiHTML(){
+  const A = getList(mu.listA), B = getList(mu.listB);
+  const o = mu.aiai;
+  const sc = aiaiCommand().match(/--scenario (\S+)/)[1];
+  const chi = [["euristica", "L'euristica, da tutte e due le parti"],
+               ["gemini", "Gemini contro Gemini"],
+               ["gemini-A", `Gemini con A · ${A.name}`],
+               ["gemini-B", `Gemini con B · ${B.name}`]];
+  return `
+    <div class="panel-title" style="margin-top:16px">AI contro AI</div>
+    <p class="note">Una partita intera senza nessuno al tavolo, giocata da <span class="mono">tools/partita.mjs</span>
+      nel terminale. Qui scrivi il comando e lo copi. Le liste devono essere già in <span class="mono">dati/liste.json</span>
+      (con l'Archivio); per Gemini serve <span class="mono">GEMINI_API_KEY</span> nell'ambiente.</p>
+    <div class="grid2">
+      <label class="field">Scenario
+        <select id="mu-aiai-sc">
+          ${scenariDelComando().map(s => `<option value="${s.id}" ${s.id === sc ? "selected" : ""}>${esc(s.label)}${s.pts ? ` · ${s.pts} pt` : ""}</option>`).join("")}
+        </select></label>
+      <label class="field">Chi gioca
+        <select id="mu-aiai-chi">
+          ${chi.map(([v, t]) => `<option value="${v}" ${o.chi === v ? "selected" : ""}>${esc(t)}</option>`).join("")}
+        </select></label>
+    </div>
+    <div class="grid2">
+      <label class="field">Seme dei dadi
+        <input type="number" id="mu-aiai-seme" min="1" step="1" value="${Math.max(1, +o.seme || 1)}"></label>
+      <div class="field" style="display:flex;flex-direction:column;gap:4px;justify-content:flex-end">
+        <label><input type="checkbox" id="mu-aiai-html" ${o.html ? "checked" : ""}> pagina da guardare</label>
+        <label><input type="checkbox" id="mu-aiai-arch" ${o.archivia ? "checked" : ""}> nel diario delle partite</label>
+      </div>
+    </div>
+    <pre class="mono" id="mu-aiai-cmd" style="white-space:pre-wrap;word-break:break-all;margin:6px 0;padding:8px;border:1px solid var(--line);border-radius:6px;font-size:12px">${esc(aiaiCommand())}</pre>
+    <button class="btn primary" id="mu-aiai" style="width:100%">Copia il comando</button>`;
+}
+
 export function renderMatchup(){
   const host = $("#matchup");
   if (!host) return;
@@ -268,6 +331,7 @@ export function renderMatchup(){
       </div>`}
 
     ${mu.listA && mu.listB ? sfidaHTML() : ""}
+    ${mu.listA && mu.listB ? aiaiHTML() : ""}
 
     <div class="panel-title" style="margin-top:16px">Schieramenti salvati</div>
     <div class="tray">
@@ -302,6 +366,23 @@ export function renderMatchup(){
     startSfida({ listA: getList(mu.listA), listB: getList(mu.listB), mia: mu.sfidaMia, scenario: mu.sfidaScenario });
     emit("sfida:show");
   });
+  const aiai = $("#mu-aiai");
+  if (aiai){
+    const aggiorna = async () => {
+      mu.aiai = { scenario: $("#mu-aiai-sc").value, chi: $("#mu-aiai-chi").value,
+                  seme: Math.max(1, Math.floor(+$("#mu-aiai-seme").value) || 1),
+                  html: $("#mu-aiai-html").checked, archivia: $("#mu-aiai-arch").checked };
+      $("#mu-aiai-cmd").textContent = aiaiCommand();
+      await persist();
+    };
+    ["#mu-aiai-sc", "#mu-aiai-chi", "#mu-aiai-seme", "#mu-aiai-html", "#mu-aiai-arch"]
+      .forEach(id => $(id).addEventListener("change", aggiorna));
+    aiai.addEventListener("click", async () => {
+      const ok = await copyText(aiaiCommand());
+      aiai.textContent = ok ? "Comando copiato ✓" : "Non riesco a copiare";
+      setTimeout(() => { aiai.textContent = "Copia il comando"; }, 2200);
+    });
+  }
   const sv = $("#mu-save");
   if (sv) sv.addEventListener("click", async () => {
     const n = await askText({ title:"Salva lo schieramento", label:"Lo ritrovi in fondo a questa scheda.", placeholder:"Come si chiama" });

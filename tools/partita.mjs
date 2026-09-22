@@ -10,6 +10,7 @@
  *   node tools/partita.mjs --seme 42            la stessa partita, sempre uguale
  *   node tools/partita.mjs --scenario bm-rovine
  *   node tools/partita.mjs --liste 3,9          per numero (le elenca --liste ?)
+ *   node tools/partita.mjs --liste lmtl5r4mb97yl,lmubp01267euf   o per id
  *   node tools/partita.mjs --gemini             se GEMINI_API_KEY è nell'ambiente
  *   node tools/partita.mjs --gemini A           solo l'esercito A è il modello
  *   node tools/partita.mjs --gemini --pausa 8000  più lento, per le quote strette
@@ -104,20 +105,24 @@ if (scelte === '?' || scelte === 'true'){
   liste.forEach((l, i) => {
     const p = PREP.playability(l, { split: PR.splitStat });
     console.log(`${String(i).padStart(2)}  ${l.name.padEnd(30)} ${String(l.points || 0).padStart(4)} pt  ` +
-                `${l.units.length} unità  ${p.can ? '' : '⚠ ' + p.text}`);
+                `${String(l.units.length).padStart(2)} unità  ${l.id}  ${p.can ? '' : '⚠ ' + p.text}`);
   });
   process.exit(0);
 }
 let iA, iB;
 if (scelte){
-  const pezzi = scelte.split(',');
-  const buoni = pezzi.length === 2 && pezzi.every(p => /^\d+$/.test(p.trim()) && +p < liste.length);
-  if (!buoni){
-    console.error(`--liste vuole due numeri separati da una virgola, fra 0 e ${liste.length - 1} (è arrivato «${scelte}»). ` +
-                  'Le liste si elencano con --liste ?');
+  /* un numero, o l'id della lista: il comando copiato dalla scheda
+     Matchup usa l'id, che non cambia quando l'archivio si riordina */
+  const trova = p => /^\d+$/.test(p) ? (+p < liste.length ? +p : -1) : liste.findIndex(l => l.id === p);
+  const pezzi = scelte.split(',').map(p => p.trim());
+  const indici = pezzi.map(trova);
+  if (pezzi.length !== 2 || indici.some(i => i < 0)){
+    console.error(`--liste vuole due liste separate da una virgola, per numero (fra 0 e ${liste.length - 1}) o per id ` +
+                  `(è arrivato «${scelte}»). Le liste si elencano con --liste ?; una lista appena fatta nell'app ` +
+                  "arriva in dati/liste.json solo con l'Archivio.");
     process.exit(1);
   }
-  [iA, iB] = pezzi.map(p => +p);
+  [iA, iB] = indici;
 } else {
   /* di suo prende le due liste dello scenario, una per fazione */
   const dello = liste.filter(l => (l.points || 0) === (SCENARIOS[scenario] || {}).pts);
