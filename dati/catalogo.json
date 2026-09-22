@@ -258,6 +258,20 @@
     "notes": ""
   },
   {
+    "id": "cmuce091lspsp",
+    "name": "Goblin Mobs",
+    "faction": "Orc and Goblin Tribes",
+    "baseId": "25x25",
+    "baseW": 25,
+    "baseH": 25,
+    "owned": 10,
+    "painted": 0,
+    "aliases": [
+      "goblin mobs"
+    ],
+    "notes": ""
+  },
+  {
     "id": "cmttwupi8cano",
     "name": "Goblin Oddnob",
     "faction": "Orc and Goblin Tribes",
