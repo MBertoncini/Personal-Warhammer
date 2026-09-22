@@ -1,6 +1,13 @@
 {
-  "listA": "lmtl5r4mb97yl",
+  "listA": "lmubp2kimjzhw",
   "listB": "lmubp01267euf",
   "mine": "both",
-  "note": ""
+  "note": "",
+  "aiai": {
+    "scenario": "bm-strada",
+    "chi": "euristica",
+    "seme": 1,
+    "html": true,
+    "archivia": true
+  }
 }
