@@ -17,6 +17,7 @@
  *   node tools/partita.mjs --breve              solo il registro, senza i perché
  *   node tools/partita.mjs --html partita.html  la partita DA GUARDARE: una pagina sola
  *   node tools/partita.mjs --archivia           e anche nel diario, dati/partite.json
+ *   node tools/partita.mjs --partite 100        cento partite, semi 1..100, e solo il conto
  *
  * Quello che stampa è pensato per essere LETTO: ogni mossa dice chi ha
  * scelto, perché, e cosa è successo, con la pagina del manuale accanto.
@@ -49,7 +50,7 @@ const dati = f => JSON.parse(fs.readFileSync(path.join(qui, '..', 'dati', f), 'u
    Adesso le parole fino al prossimo «--» si rimettono insieme, e quelle
    che nessuno legge si dicono. */
 const argv = process.argv.slice(2);
-const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste', 'archivia'];
+const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste', 'archivia', 'partite'];
 const valori = {};
 const ignoti = [];
 for (let i = 0; i < argv.length; i++){
@@ -86,6 +87,19 @@ const fileHtml = html === true ? 'partita.html' : html;
    (o al file che gli si dice): con la Nuvola arriva nella scheda
    Partite dell'app, marcata come simulata */
 const archivia = arg('archivia', false);
+/* --partite N gioca N partite di fila, una per seme (seme, seme+1, ...),
+   e invece del racconto stampa il conto: chi vince quante volte. Solo
+   con l'euristica — cento partite di un modello sono diecimila domande
+   — e senza pagina ne' diario, che sono di una partita sola. */
+const partite = arg('partite', null) === null ? 1 : Math.floor(+arg('partite'));
+if (!(partite >= 1)){
+  console.error(`--partite vuole un numero intero da 1 in su (è arrivato «${arg('partite')}»).`);
+  process.exit(1);
+}
+if (partite > 1 && (gemini || html || archivia)){
+  console.error("--partite con più di una partita gioca solo l'euristica, senza --gemini, --html né --archivia.");
+  process.exit(1);
+}
 const fileArchivio = archivia === true ? path.join(qui, '..', 'dati', 'partite.json') : archivia;
 
 /* ---- i dadi, con il seme: la stessa partita si rigioca uguale ---- */
@@ -227,6 +241,67 @@ for (const tag of ['A', 'B']){
   if (zero.length)
     avvisa(`${tag}: ${zero.length} unità giocano senza profilo (${[...new Set(zero.map(u => u.baseName || u.name))].join(', ')}): ` +
            'Resistenza o Abilità a zero.');
+}
+
+/* ---- tante partite: solo il conto ---- */
+if (partite > 1){
+  const sc = SCENARIOS[scenario];
+  console.log(`\n${partite} partite su «${sc.label}», semi ${seme}–${seme + partite - 1}, euristica contro euristica…`);
+  const t0 = Date.now();
+  const tutte = [];
+  for (let i = 0; i < partite; i++){
+    /* il seme prima della battaglia: anche lo schieramento e chi
+       comincia vengono dai dadi */
+    D.setSource(D.seeded(seme + i));
+    const Si = AR.newBattle({ A, B, scenario, nomi, magia });
+    const e = await AG.giocaPartita(AR, Si, {
+      A: AG.agenteEuristico({ nome: nomi.A + ' (euristica)' }),
+      B: AG.agenteEuristico({ nome: nomi.B + ' (euristica)' }),
+    });
+    tutte.push({ seme: seme + i, winner: e.winner || null, label: e.label, A: e.A, B: e.B, turno: Si.turno, why: e.why });
+    if (process.stdout.isTTY) process.stdout.write(`\r  ${i + 1}/${partite}`);
+  }
+  if (process.stdout.isTTY) process.stdout.write('\r' + ' '.repeat(20) + '\r');
+
+  const pc = n => `${(100 * n / partite).toFixed(1).padStart(5)}%`;
+  /* l'intervallo di Wilson al 95%: con cento partite un 55 contro 45
+     puo' essere solo fortuna, e il conto lo deve dire */
+  const wilson = n => {
+    const z = 1.96, p = n / partite, d = 1 + z * z / partite;
+    const c = (p + z * z / (2 * partite)) / d, m = z * Math.sqrt(p * (1 - p) / partite + z * z / (4 * partite * partite)) / d;
+    return `${Math.max(0, 100 * (c - m)).toFixed(0)}–${Math.min(100, 100 * (c + m)).toFixed(0)}%`;
+  };
+  const media = f => (tutte.reduce((s, x) => s + f(x), 0) / partite);
+  const vA = tutte.filter(x => x.winner === 'A').length;
+  const vB = tutte.filter(x => x.winner === 'B').length;
+  const pari = partite - vA - vB;
+  console.log('═'.repeat(72));
+  console.log(`  A  ${nomi.A.padEnd(28)} vince ${String(vA).padStart(4)}  ${pc(vA)}   (95%: ${wilson(vA)})`);
+  console.log(`  B  ${nomi.B.padEnd(28)} vince ${String(vB).padStart(4)}  ${pc(vB)}   (95%: ${wilson(vB)})`);
+  console.log(`     ${'pareggio'.padEnd(28)}       ${String(pari).padStart(4)}  ${pc(pari)}`);
+  console.log('═'.repeat(72));
+  console.log(`  punti vittoria in media: A ${media(x => x.A).toFixed(0)}, B ${media(x => x.B).toFixed(0)}` +
+              ` (scarto medio ${media(x => x.A - x.B) >= 0 ? '+' : ''}${media(x => x.A - x.B).toFixed(0)} per A)`);
+  console.log(`  finita in media al turno ${media(x => x.turno).toFixed(1)}`);
+  const perEsito = new Map();
+  for (const x of tutte){
+    const k = x.winner ? `${x.winner}: ${x.label}` : x.label;
+    perEsito.set(k, (perEsito.get(k) || 0) + 1);
+  }
+  console.log('\n  come sono finite:');
+  for (const [k, n] of [...perEsito].sort((a, b) => b[1] - a[1])) console.log(`    ${String(n).padStart(4)}  ${k}`);
+  /* se i dadi non spostano niente, tante partite dicono quanto una */
+  const diverse = new Set(tutte.map(x => `${x.winner}|${x.A}|${x.B}`)).size;
+  console.log(`\n  risultati diversi: ${diverse} su ${partite}` +
+              (diverse === 1 ? ' — i dadi non cambiano niente: è sempre la stessa partita' : ''));
+  const peggio = t => tutte.filter(x => x.winner === t).sort((a, b) => Math.abs(b.A - b.B) - Math.abs(a.A - a.B))[0];
+  for (const t of ['A', 'B']){
+    const x = peggio(t);
+    if (x) console.log(`  la vittoria più netta di ${t}: seme ${x.seme} (${x.A}–${x.B}) → node tools/partita.mjs ` +
+                       `--liste ${A.id},${B.id} --scenario ${scenario} --seme ${x.seme} --html partita.html`);
+  }
+  console.log(`\n  ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+  process.exit(0);
 }
 
 /* ---- l'intestazione ---- */

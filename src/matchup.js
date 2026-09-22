@@ -27,12 +27,12 @@ const MU_KEY = "matchup:current";
 const DEP_KEY = "deployments:all";
 
 let mu = { listA: null, listB: null, mine: "A", note: "", sfidaMia: "A", sfidaScenario: "",
-           aiai: { scenario: "", chi: "euristica", seme: 1, html: true, archivia: false } };
+           aiai: { scenario: "", chi: "euristica", seme: 1, partite: 1, html: true, archivia: false } };
 let deployments = [];
 
 export async function initMatchup(){
   mu = await loadDoc(MU_KEY, mu) || mu;
-  mu.aiai = { scenario: "", chi: "euristica", seme: 1, html: true, archivia: false, ...(mu.aiai || {}) };
+  mu.aiai = { scenario: "", chi: "euristica", seme: 1, partite: 1, html: true, archivia: false, ...(mu.aiai || {}) };
   deployments = await loadDoc(DEP_KEY, []) || [];
 }
 
@@ -225,6 +225,8 @@ const scenariDelComando = () => Object.entries(SCENARIOS)
   .filter(([, s]) => s.table && s.deploy)
   .map(([id, s]) => ({ id, label: s.label, pts: s.pts || 0 }));
 
+const quante = () => Math.max(1, Math.floor(+mu.aiai.partite) || 1);
+
 export function aiaiCommand(){
   const A = getList(mu.listA), B = getList(mu.listB);
   if (!A || !B) return "";
@@ -233,6 +235,9 @@ export function aiaiCommand(){
   const voluto = tutti.some(s => s.id === o.scenario) ? o.scenario : scenarioPer(A, B, "", "");
   const sc = tutti.some(s => s.id === voluto) ? voluto : "bm-strada";
   const parti = ["node tools/partita.mjs", `--liste ${A.id},${B.id}`, `--scenario ${sc}`, `--seme ${Math.max(1, +o.seme || 1)}`];
+  /* tante partite si giocano solo con l'euristica, e danno solo il
+     conto: il resto non va nel comando, che se no si rifiuta */
+  if (quante() > 1) return [...parti, `--partite ${quante()}`].join(" ");
   if (o.chi === "gemini") parti.push("--gemini");
   if (o.chi === "gemini-A") parti.push("--gemini A");
   if (o.chi === "gemini-B") parti.push("--gemini B");
@@ -245,6 +250,7 @@ function aiaiHTML(){
   const A = getList(mu.listA), B = getList(mu.listB);
   const o = mu.aiai;
   const sc = aiaiCommand().match(/--scenario (\S+)/)[1];
+  const serie = quante() > 1;
   const chi = [["euristica", "L'euristica, da tutte e due le parti"],
                ["gemini", "Gemini contro Gemini"],
                ["gemini-A", `Gemini con A · ${A.name}`],
@@ -253,24 +259,27 @@ function aiaiHTML(){
     <div class="panel-title" style="margin-top:16px">AI contro AI</div>
     <p class="note">Una partita intera senza nessuno al tavolo, giocata da <span class="mono">tools/partita.mjs</span>
       nel terminale. Qui scrivi il comando e lo copi. Le liste devono essere già in <span class="mono">dati/liste.json</span>
-      (con l'Archivio); per Gemini serve <span class="mono">GEMINI_API_KEY</span> nell'ambiente.</p>
+      (con l'Archivio); per Gemini serve <span class="mono">GEMINI_API_KEY</span> nell'ambiente.
+      Con più di una partita gioca l'euristica, un seme dopo l'altro, e stampa solo il conto: chi vince quante volte.</p>
     <div class="grid2">
       <label class="field">Scenario
         <select id="mu-aiai-sc">
           ${scenariDelComando().map(s => `<option value="${s.id}" ${s.id === sc ? "selected" : ""}>${esc(s.label)}${s.pts ? ` · ${s.pts} pt` : ""}</option>`).join("")}
         </select></label>
       <label class="field">Chi gioca
-        <select id="mu-aiai-chi">
+        <select id="mu-aiai-chi" ${serie ? "disabled" : ""}>
           ${chi.map(([v, t]) => `<option value="${v}" ${o.chi === v ? "selected" : ""}>${esc(t)}</option>`).join("")}
         </select></label>
     </div>
     <div class="grid2">
       <label class="field">Seme dei dadi
         <input type="number" id="mu-aiai-seme" min="1" step="1" value="${Math.max(1, +o.seme || 1)}"></label>
-      <div class="field" style="display:flex;flex-direction:column;gap:4px;justify-content:flex-end">
-        <label><input type="checkbox" id="mu-aiai-html" ${o.html ? "checked" : ""}> pagina da guardare</label>
-        <label><input type="checkbox" id="mu-aiai-arch" ${o.archivia ? "checked" : ""}> nel diario delle partite</label>
-      </div>
+      <label class="field">Quante partite
+        <input type="number" id="mu-aiai-n" min="1" step="1" value="${quante()}"></label>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <label><input type="checkbox" id="mu-aiai-html" ${o.html ? "checked" : ""} ${serie ? "disabled" : ""}> pagina da guardare</label>
+      <label><input type="checkbox" id="mu-aiai-arch" ${o.archivia ? "checked" : ""} ${serie ? "disabled" : ""}> nel diario delle partite</label>
     </div>
     <pre class="mono" id="mu-aiai-cmd" style="white-space:pre-wrap;word-break:break-all;margin:6px 0;padding:8px;border:1px solid var(--line);border-radius:6px;font-size:12px">${esc(aiaiCommand())}</pre>
     <button class="btn primary" id="mu-aiai" style="width:100%">Copia il comando</button>`;
@@ -371,11 +380,14 @@ export function renderMatchup(){
     const aggiorna = async () => {
       mu.aiai = { scenario: $("#mu-aiai-sc").value, chi: $("#mu-aiai-chi").value,
                   seme: Math.max(1, Math.floor(+$("#mu-aiai-seme").value) || 1),
-                  html: $("#mu-aiai-html").checked, archivia: $("#mu-aiai-arch").checked };
+                  html: $("#mu-aiai-html").checked, archivia: $("#mu-aiai-arch").checked,
+                  partite: Math.max(1, Math.floor(+$("#mu-aiai-n").value) || 1) };
+      const serie = quante() > 1;
+      ["#mu-aiai-chi", "#mu-aiai-html", "#mu-aiai-arch"].forEach(id => { $(id).disabled = serie; });
       $("#mu-aiai-cmd").textContent = aiaiCommand();
       await persist();
     };
-    ["#mu-aiai-sc", "#mu-aiai-chi", "#mu-aiai-seme", "#mu-aiai-html", "#mu-aiai-arch"]
+    ["#mu-aiai-sc", "#mu-aiai-chi", "#mu-aiai-seme", "#mu-aiai-n", "#mu-aiai-html", "#mu-aiai-arch"]
       .forEach(id => $(id).addEventListener("change", aggiorna));
     aiai.addEventListener("click", async () => {
       const ok = await copyText(aiaiCommand());

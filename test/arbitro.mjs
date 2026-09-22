@@ -892,6 +892,13 @@ console.log('\nla riga di comando');
   ok('le liste si prendono anche per id', perId.status === 0 && /A = 3 /.test(perId.stdout) && /B = 4 /.test(perId.stdout));
   const idIgnoto = lancia(['--liste', `${liste[3].id},lnonce`, '--breve']);
   ok('e un id che non c è si dice', idIgnoto.status === 1 && /Archivio/.test(idIgnoto.stderr));
+  /* tante partite: il conto torna, e ogni seme è la partita che si
+     rigioca da sola con quel seme */
+  const serie = lancia(['--liste', '3,4', '--partite', '3', '--seme', '5']);
+  const vinte = [...serie.stdout.matchAll(/vince\s+(\d+)/g)].map(m => +m[1]);
+  const pari = +((serie.stdout.match(/pareggio\s+(\d+)/) || [])[1]);
+  ok('--partite 3 gioca tre partite e le conta tutte', serie.status === 0 && vinte.length === 2 && vinte[0] + vinte[1] + pari === 3);
+  ok('--partite non si mescola con --gemini', lancia(['--partite', '3', '--gemini']).status === 1);
   const ignoto = lancia(['--list', '3,4']);
   ok('un argomento sconosciuto si dice', ignoto.status === 1 && /--list/.test(ignoto.stderr));
 }
