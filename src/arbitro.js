@@ -464,7 +464,7 @@ export function ingombro(S, u, box, { ignora = [], unPollice = true, bordo = tru
      cosa del volo che l'arbitro fa (vedi il limite `volo`). */
   if (terreno && !vola(u))
     for (const t of S.terrain){
-      if (t.decor || !(t.cat && t.cat.noEntry)) continue;
+      if (t.decor || !chiusoPer(u, t)) continue;
       /* il pezzo torna insieme al perche': chi offre le mosse deve
          sapere QUALE muro chiude la strada, per poter proporre di
          aggirarlo (`aggiramenti`) invece di riproporre ogni turno una
@@ -593,7 +593,7 @@ function zonaDi(S, army){
    disegnato a mano non lo promette. */
 const ORIZZONTE = 12;            // pollici, quanto avanti si guarda
 
-function terrenoDelPosto(S, box){
+function terrenoDelPosto(S, box, u = null){
   const poly = boxCorners(box);
   const utili = (S.terrain || []).filter(t => !t.decor && t.kind !== "treasure");
   const sotto = utili.filter(t => polysOverlap(poly, t.poly));
@@ -610,7 +610,7 @@ function terrenoDelPosto(S, box){
       davanti.push(hit);
     }
   davanti.sort((x, y) => polyDistance(poly, x.poly) - polyDistance(poly, y.poly));
-  const muro = davanti.find(t => t.cat && t.cat.noEntry) || null;
+  const muro = davanti.find(t => chiusoPer(u, t)) || null;
   /* Il pezzo si NOMINA e basta: che cosa fa lo dice la fotografia, una
      volta per tutte, e ripeterlo in ognuno dei quindici posti farebbe
      dell'elenco un muro di testo. Quello che resta e' il tag corto —
@@ -659,9 +659,9 @@ export function postiPer(S, u){
                      x - lay.w / 2 >= z.x - 0.01 && x + lay.w / 2 <= z.x + z.w + 0.01 &&
                      y - lay.h / 2 >= z.y - 0.01 && y + lay.h / 2 <= z.y + z.h + 0.01;
       if (!libero) continue;
-      const ter = terrenoDelPosto(S, box);
+      const ter = terrenoDelPosto(S, box, u);
       /* dentro un pezzo impassabile non ci si posa (p. 270) */
-      if (ter.sotto.some(t => t.cat && t.cat.noEntry)) continue;
+      if (ter.sotto.some(t => chiusoPer(u, t))) continue;
       out.push({ id:"schiera", uid: u.uid, x, y, rot: u.rot || 0,
                  dove: colonne[i] + (f ? `, ${f + 1}ª fila` : ""),
                  murato: !!ter.muro,
@@ -1718,12 +1718,22 @@ function rallenta(S, u, verso, pollici){
    pezzo attraversato, e con un 1 il modello perde una ferita. Lo
    tirano tutti i modelli dell'unita', non solo quelli passati davvero
    dentro: e' la semplificazione dichiarata in `LIMITI`. */
+/* Iron Shod Wheels: il carro tratta il difficile come pericoloso, e
+   con un 1 perde D3 ferite invece di una. L'ostacolo basso per lui e'
+   impassabile, e lo dice `chiusoPer`. */
+const ferrate = u => haRegola(u, /^iron shod wheels/i);
+const chiusoPer = (u, t) => !!(t.cat && (t.cat.noEntry || (t.cat.id === "lowWall" && ferrate(u))));
+
 function terrenoPericoloso(S, u, pezzi){
-  const ask = TR.dangerousAsk(alive(u), pezzi);
+  const fer = ferrate(u);
+  const ask = TR.dangerousAsk(alive(u), pezzi, { ferrate: fer });
   if (!ask) return 0;
   limite(S, "pericoloso");
   const dadi = roll(ask.n);
-  const ferite = TR.dangerousLosses(dadi);
+  const uni = TR.dangerousLosses(dadi);
+  const d3 = fer && uni ? roll(uni) : [];
+  const ferite = fer ? d3.reduce((s, d) => s + Math.ceil(d / 2), 0) : uni;
+  if (d3.length) dadi.push(...d3);
   /* «perde una ferita», non «cade»: un Troll da tre ferite che mette un
      piede in fallo non muore per una pozzanghera. `woundsToll` fa la
      conversione da ferite a modelli e tiene appeso quello che avanza,
@@ -1734,6 +1744,7 @@ function terrenoPericoloso(S, u, pezzi){
          (ferite ? `${ferite} ferit${ferite === 1 ? "a" : "e"}` +
                    (conto.kills ? `, ${conto.kills} a terra` : ", nessuno a terra")
                  : "nessuna ferita") +
+         (fer ? ", D3 ferite per ogni 1 (Iron Shod Wheels)" : "") +
          ` (p. ${ask.page}).`,
       { dice: dadi, army: u.army, page: ask.page });
   if (conto) perdite(S, u, conto.kills, conto.left);
@@ -3178,6 +3189,8 @@ const casellaOra = S => (CASELLE[S.casella] || {}).id || "";
 
 function nelArco(S, host, t){
   if (t === host) return true;
+  /* Firing Platform: dal carro si tira e si lancia in tutte le direzioni */
+  if (haRegola(host, /^firing platform/i)) return true;
   return FM.arcOfPoly(cornersOf(t, S.units), boxOf(host, S.units)).has.includes("fronte");
 }
 

@@ -282,12 +282,15 @@ export function slowMove(move, pieces = []){
    stessa: quella e' a 4+ e sta a p. 133, questa e' a 2+. */
 export const DANGER_NEED = 2;
 
-export function dangerousAsk(models = 1, pieces = []){
+/* `ferrate`: Iron Shod Wheels, i carri che trattano il terreno
+   difficile come pericoloso (il bosco e' difficile anche lui) */
+export function dangerousAsk(models = 1, pieces = [], { ferrate = false } = {}){
   const n0 = Math.max(0, models | 0);
   const names = [];
   for (const p of pieces || []){
     if (!p || isDecoration(p)) continue;
-    if (!catFor(p).danger) continue;
+    const c = catFor(p);
+    if (!c.danger && !(ferrate && (c.id === "difficult" || c.id === "wood"))) continue;
     names.push(nameOf(p));
   }
   if (!names.length || !n0) return null;

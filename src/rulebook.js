@@ -203,6 +203,13 @@ export const RULEBOOK = [
     what:"chi la colpisce guarda l'Abilità di Combattimento più alta fra bestia ed equipaggio",
     on: f => { f.skinkRiders = true; } },
 
+  /* Scythed Wheels, sui carri pesanti degli Orchi: «le ferite d'urto di
+     un carro pesante hanno Perforazione -2». Solo l'urto: le armi
+     dell'equipaggio perforano quanto dicono loro. */
+  { id:"scythedWheels", re:/^scythed wheels/i,
+    what:"le ferite d'urto perforano di 2",
+    on: f => { f.impactAP = Math.max(f.impactAP || 0, 2); } },
+
   /* Non fa niente qui perche' e' gia' stata fatta: il valore d'armatura
      che arriva dal file la contiene. Sta in elenco lo stesso, altrimenti
      comparirebbe fra le regole che l'app non conosce. */
@@ -264,6 +271,17 @@ export const ELSEWHERE = [
     why:"sempre in ordine chiuso, dopo aver mosso (non caricato, marciato o fuggito) si gira fino a 90° sul posto, e non si unisce a nessuno né ospita personaggi: lo fanno il tavolo e l'arbitro (p. 195)" },
   { re:/^clumsy/i,
     why:"le si unisce solo un personaggio che ha anche lui Clumsy: il tavolo e l'arbitro non offrono gli altri" },
+  /* Le quattro che hanno portato i carri e i Troll della lista «O&G FUN».
+     Iron Shod Wheels e Firing Platform le gioca l'arbitro, e la riga dice
+     dove; le altre due sono gia' quello che succede. */
+  { re:/^iron shod wheels/i,
+    why:"il carro tratta il terreno difficile (e il bosco) come pericoloso, con un 1 perde D3 ferite invece di una, e l'ostacolo basso per lui è impassabile: lo fa l'arbitro quando muove e schiera" },
+  { re:/^firing platform/i,
+    why:"vede a 360° per tirare e per lanciare: l'arbitro non chiude l'arco di tiro a nessuno, e agli incantesimi del carro non chiede il bersaglio davanti" },
+  { re:/^cavalry support/i,
+    why:"l'attacco d'appoggio lo fa il cavaliere, non la cavalcatura: il conto dà già un attacco solo a testa alle file dietro" },
+  { re:/^flammable/i,
+    why:"niente Rigenerazione contro le ferite infuocate: la Rigenerazione non entra ancora nella risoluzione, e quindi non c'è niente da togliere" },
   { re:/^random attacks/i,
     why:"gli Attacchi si tirano a ogni assalto, e il conto non li tira: legge il primo numero della riga («D6+1» vale 6). Correggili a mano nel pannello" },
 ];
@@ -273,7 +291,7 @@ export const ELSEWHERE = [
    ============================================================ */
 export const emptyFlags = () => ({
   furiousCharge:false, poisoned:false, armourBane:0, killingBlow:false,
-  handWeaponAP:0, impact:null, stomp:null, extraRank:false, hatred:false,
+  handWeaponAP:0, impact:null, impactAP:0, stomp:null, extraRank:false, hatred:false,
   strikeFirst:false, strikeLast:false, stubborn:false, unbreakable:false,
   battleStandard:false, horde:false, shieldwall:false, impervious:false,
   massedInfantry:false, parry:false, pressOfBattle:false, predatory:false, skinkRiders:false,

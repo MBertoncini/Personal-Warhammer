@@ -1055,7 +1055,9 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
     if (!n) continue;
     const split = spread(n, e.fronts.map((v, k) => dove.includes(k) ? v : 0));
     e.foes.forEach((j, k) => { if (split[k]) blow(e, j, {
-      attacks: split[k], auto: true, strength: e.c.autoS || e.c.baseS, label: "urto della carica" }, facce); });
+      attacks: split[k], auto: true, strength: e.c.autoS || e.c.baseS, label: "urto della carica",
+      /* Scythed Wheels: l'urto del carro pesante perfora di 2 */
+      ap: e.c.flags && e.c.flags.impactAP ? e.c.flags.impactAP : undefined }, facce); });
   }
 
   /* poi si mena, in ordine di Iniziativa — con dentro il bonus della
