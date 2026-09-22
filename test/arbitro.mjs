@@ -1001,6 +1001,21 @@ console.log('\nla carica su chi fugge come reazione (pp. 120-121)');
      sv.moved && /[cC]harge/.test(sv.moved.kind));
   ok('e non può né dichiarare di nuovo né marciare altrove',
      !AR.options(G).list.some(x => x.uid === sv.uid));
+  ok('senza passo lungo si fugge di 2D6', G.log.some(r => /reagisce fuggendo: 1 \+ 1 = 2″/.test(r.text)));
+  D.setSource(D.seeded(1));
+
+  /* Swiftstride vale anche per il tiro di fuga (p. 178): prima le fughe
+     tiravano due dadi soli, e un Carnosauro in rotta si faceva prendere */
+  const G1 = nuova();
+  const s1 = metti(G1, uid(G1, 1), 600, 600);
+  const w1 = metti(G1, uid(G1, 501), 600, 430);
+  w1.rules = [...(w1.rules || []), 'Swiftstride'];
+  G1.casella = casella('cariche'); G1.army = 'A';
+  AR.apply(G1, { id:'carica', uid: s1.uid, target: w1.uid });
+  D.setSource(() => 0);
+  AR.apply(G1, AR.options(G1).list.find(x => x.kind === 'flee'));
+  ok('con Swiftstride la fuga aggiunge un D6 (p. 178)',
+     G1.log.some(r => /reagisce fuggendo: 1 \+ 1 \+ 1 \(Swiftstride, p\. 178\) = 3″/.test(r.text)));
   D.setSource(D.seeded(1));
 
   const G2 = nuova();

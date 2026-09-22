@@ -322,9 +322,8 @@ export function leadershipTest(ld, penalty = 0){
    Il modificatore c'e' perche' esiste chi corre meglio: la Fuga
    Precipitosa degli Skaven da' +1, e senza questo argomento la regola
    non si poteva nemmeno scrivere. Chi ha il passo lungo aggiunge un
-   D6 intero, e per quello c'e' `fleeDistance` in `moves.js`, che sa
-   anche leggere il ripiegamento in ordine. Non si scende sotto 2, che
-   e' il minimo di due dadi. */
+   D6 intero (p. 178), e per quello c'e' `tiroDiFuga` in `arbitro.js`.
+   Non si scende sotto 2, che e' il minimo di due dadi. */
 export const fleeRoll = (mod = 0) => {
   const dice = roll(2);
   const m = +mod || 0;

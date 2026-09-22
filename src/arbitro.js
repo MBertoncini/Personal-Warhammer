@@ -2063,9 +2063,8 @@ const GESTI = {
     const u = byUid(S, p.charger), t = byUid(S, p.target);
     S.pending = null;
     if (a.kind === "flee"){
-      const dadi = roll(2);
-      const via = dadi.reduce((s, v) => s + v, 0) + CB.fleeBonusOf(t).mod;
-      say(S, `${t.name} reagisce fuggendo: ${dadi.join(" + ")} = ${via}″ lontano da ${u.name}.`,
+      const { dadi, via, testo } = tiroDiFuga(t);
+      say(S, `${t.name} reagisce fuggendo: ${testo} = ${via}″ lontano da ${u.name}.`,
           { dice: dadi, army: t.army, page: 120 });
       fuggi(S, t, u, via);
       /* La carica non finisce qui: chi caricava tira lo stesso, e o
@@ -2491,6 +2490,18 @@ function muoviCarica(S, u, t, d){
    limiti), ma non si ferma dentro nessuno: se il punto d'arrivo e'
    occupato va avanti finche' trova posto. Fuori dal tavolo — anche solo
    con un angolo — e' fuori dalla partita (p. 132). */
+/* Il tiro di fuga (p. 132): 2D6, piu' il D6 del passo lungo — Swiftstride
+   vale per la carica, la fuga e l'inseguimento (p. 178), non solo per
+   le prime e l'ultima. Lo usano tutte le fughe: reazione, rotta, panico,
+   e chi non si raduna e continua a scappare. */
+function tiroDiFuga(u){
+  const swift = MV.swiftOf(u);
+  const dadi = roll(swift ? 3 : 2);
+  const via = dadi.reduce((s, v) => s + v, 0) + CB.fleeBonusOf(u).mod;
+  const testo = dadi.slice(0, 2).join(" + ") + (swift ? ` + ${dadi[2]} (Swiftstride, p. 178)` : "");
+  return { dadi, via, testo };
+}
+
 function fuggi(S, u, da, pollici){
   const dx = u.x - da.x, dy = u.y - da.y;
   const len = Math.hypot(dx, dy) || 1;
@@ -2953,9 +2964,8 @@ function testPanico(S, u, causa, { perche = "", da = null, fonte = null, dist = 
     indietreggia(S, u, [nemico], quanto, { kind: "fallBack" });
     return;
   }
-  const fuga = roll(2);
-  const via = fuga.reduce((t, v) => t + v, 0) + CB.fleeBonusOf(u).mod;
-  say(S, `${u.name} va nel panico e fugge da ${nemico.name} (${esito.why}): ${fuga.join(" + ")} = ${via}″.`,
+  const { dadi: fuga, via, testo } = tiroDiFuga(u);
+  say(S, `${u.name} va nel panico e fugge da ${nemico.name} (${esito.why}): ${testo} = ${via}″.`,
       { dice: fuga, army: u.army, page: 132 });
   fuggi(S, u, nemico, via);
 }
@@ -3910,8 +3920,7 @@ function mischia(S, g){
     if (t.outcome === "rout" || t.outcome === "fallBack") ondaPanico(S, u, "broke", usConCapi(S, u));
     if (t.outcome === "rout"){
       const vincitore = piuVicino(S, u, loro) || loro[0];
-      const dadi = roll(2);
-      const via = dadi.reduce((s, v) => s + v, 0) + CB.fleeBonusOf(u).mod;
+      const { dadi, via } = tiroDiFuga(u);
       say(S, `${u.name} rompe e fugge di ${via}″.`, { dice: dadi, army: u.army, page: 132 });
       if (vincitore) fuggi(S, u, vincitore, via); else u.fled = true;
       /* e chi ha vinto insegue (p. 156) */
@@ -4241,9 +4250,8 @@ function continuaAFuggire(S){
     if (!u.fled || u.moved) continue;
     const da = piuVicino(S, u);
     if (!da) continue;
-    const dadi = roll(2);
-    const via = dadi.reduce((s, v) => s + v, 0) + CB.fleeBonusOf(u).mod;
-    say(S, `${u.name} non si è radunata e continua a fuggire: ${dadi.join(" + ")} = ${via}″ lontano da ${da.name}.`,
+    const { dadi, via, testo } = tiroDiFuga(u);
+    say(S, `${u.name} non si è radunata e continua a fuggire: ${testo} = ${via}″ lontano da ${da.name}.`,
         { dice: dadi, army: u.army, page: 132 });
     fuggi(S, u, da, via);
   }
