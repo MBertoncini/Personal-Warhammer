@@ -7,3 +7,4 @@ package-lock.json
 # le partite da guardare: si generano, non si versionano
 # (quella che vuoi pubblicare mettila in partite/ e toglila da qui)
 partita*.html
+mappa*.html

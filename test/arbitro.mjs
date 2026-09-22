@@ -9,6 +9,8 @@
  * Si lancia con:  node test/arbitro.mjs
  */
 import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 import * as AR from '../src/arbitro.js';
 import * as AG from '../src/agente.js';
 import * as D from '../src/dice.js';
@@ -912,6 +914,19 @@ console.log('\nla riga di comando');
   const due = lancia(['--liste', '3,4', '--seme', '7', '--estro', '--breve']);
   ok('e con lo stesso seme l estro rigioca lo stesso piano', una.status === 0 && /piano di A/.test(una.stdout) &&
      vp(una.stdout) !== '' && vp(una.stdout) === vp(due.stdout));
+  /* la mappa di tante partite: una pagina con dentro ogni unita' di
+     tutte e due le liste, e per ognuna i posti da cui e' partita */
+  const fileMappa = path.join(os.tmpdir(), `mappa-prova-${process.pid}.html`);
+  const conMappa = lancia(['--liste', '3,4', '--partite', '4', '--estro', '--heatmap', fileMappa]);
+  const pagina = conMappa.status === 0 && fs.existsSync(fileMappa) ? fs.readFileSync(fileMappa, 'utf8') : '';
+  const P = pagina ? JSON.parse((pagina.match(/var P = (\{.*\});\n/) || [])[1] || 'null') : null;
+  const conte = l => (JSON.parse(fs.readFileSync(new URL('../dati/liste.json', import.meta.url), 'utf8'))[l].units || []).length;
+  ok('--heatmap scrive la pagina, con tutte le unità delle due liste',
+     !!P && P.unita.length === conte(3) + conte(4) && P.meta.partite === 4);
+  ok('e ogni unità ha i suoi posti di partenza, contati su tutte le partite',
+     !!P && P.unita.every(u => u.posti.reduce((s, p) => s + p.n, 0) === 4));
+  ok('--heatmap senza --partite si ferma e lo dice', lancia(['--heatmap', fileMappa]).status === 1);
+  if (fs.existsSync(fileMappa)) fs.unlinkSync(fileMappa);
   /* gli scenari disegnati nell'app, da dati/scenari.json */
   const mio = (JSON.parse(fs.readFileSync(new URL('../dati/scenari.json', import.meta.url), 'utf8')) || [])[0];
   if (mio){

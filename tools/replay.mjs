@@ -22,7 +22,7 @@ const esc = s => String(s == null ? "" : s)
 
 /* I colori del tavolo vero, così una partita guardata qui e una
    guardata nell'app si somigliano. */
-const COLORI = {
+export const COLORI = {
   A: "#c0392b", B: "#2a6fb0",
   tavolo: "#efe7d7", linea: "#cdbfa6",
   wood: "#7a9e6a", hill: "#d8c99a", marsh: "#8fa3a8", ruins: "#b7ada0",

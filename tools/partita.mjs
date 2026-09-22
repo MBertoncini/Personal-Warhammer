@@ -20,6 +20,7 @@
  *   node tools/partita.mjs --archivia           e anche nel diario, dati/partite.json
  *   node tools/partita.mjs --partite 100        cento partite, semi 1..100, e solo il conto
  *   node tools/partita.mjs --partite 100 --estro  e ognuna con un piano diverso dell'euristica
+ *   node tools/partita.mjs --partite 300 --estro --heatmap mappa.html   e la mappa, unità per unità
  *
  * Quello che stampa è pensato per essere LETTO: ogni mossa dice chi ha
  * scelto, perché, e cosa è successo, con la pagina del manuale accanto.
@@ -39,7 +40,9 @@ import * as PREP from '../src/prep.js';
 import * as CB from '../src/combat.js';
 import * as MG from '../src/magic.js';
 import { SCENARIOS } from '../src/scenarios.js';
-import { paginaHTML, fotogramma, coloreTerreno, stessoTavolo } from './replay.mjs';
+import * as FM from '../src/formation.js';
+import { paginaHTML, fotogramma, coloreTerreno, stessoTavolo, COLORI } from './replay.mjs';
+import { raccoglitore, paginaHeatmap } from './heatmap.mjs';
 import * as ARCH from './archivia.mjs';
 
 const qui = path.dirname(fileURLToPath(import.meta.url));
@@ -60,7 +63,7 @@ const TUTTI = { ...SCENARIOS,
    Adesso le parole fino al prossimo «--» si rimettono insieme, e quelle
    che nessuno legge si dicono. */
 const argv = process.argv.slice(2);
-const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste', 'archivia', 'partite', 'estro'];
+const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste', 'archivia', 'partite', 'estro', 'heatmap'];
 const valori = {};
 const ignoti = [];
 for (let i = 0; i < argv.length; i++){
@@ -114,6 +117,15 @@ if (partite > 1 && (gemini || html || archivia)){
    partite con semi diversi si schierano identiche e si separano solo
    quando i dadi dicono cose diverse (vedi `pianoDa` in agente.js). */
 const estro = !!arg('estro', false);
+/* --heatmap mappa.html: le N partite guardate tutte insieme, unità per
+   unità — dove parte, dove passa i turni, dove combatte e muore, e come
+   va la partita in ciascun caso (tools/heatmap.mjs) */
+const heatmap = arg('heatmap', false);
+const fileHeatmap = heatmap === true ? 'mappa.html' : heatmap;
+if (heatmap && partite < 2){
+  console.error('--heatmap guarda tante partite insieme: va con --partite (per esempio --partite 300).');
+  process.exit(1);
+}
 const fileArchivio = archivia === true ? path.join(qui, '..', 'dati', 'partite.json') : archivia;
 if (!TUTTI[scenario]){
   console.error(`Scenario «${scenario}» sconosciuto. Ci sono: ${Object.keys(SCENARIOS).join(', ')}` +
@@ -273,6 +285,7 @@ if (partite > 1){
               (estro ? ', con l’estro…' : ', senza estro: cambiano solo i dadi…'));
   const t0 = Date.now();
   const tutte = [];
+  const mappa = heatmap ? raccoglitore({ AR, FM }) : null;
   for (let i = 0; i < partite; i++){
     /* il seme prima della battaglia: anche lo schieramento e chi
        comincia vengono dai dadi */
@@ -282,10 +295,13 @@ if (partite > 1){
     /* lo schieramento, fotografato quando finisce: dice se le partite
        cambiano gia' prima del primo dado, o solo dopo */
     let schierati = '';
+    if (mappa) mappa.nuova(Si);
     const e = await AG.giocaPartita(AR, Si, { ...ag, onPasso: () => {
       if (!schierati && !Si.schierando)
         schierati = Si.units.filter(u => u.placed && !u.dead).map(u => `${u.uid}:${Math.round(u.x)}:${Math.round(u.y)}`).join('|');
+      if (mappa) mappa.passo(Si);
     } });
+    if (mappa) mappa.fine(Si, e);
     tutte.push({ seme: seme + i, winner: e.winner || null, label: e.label, A: e.A, B: e.B, turno: Si.turno, why: e.why,
                  schierati, piano: { A: ag.A.piano, B: ag.B.piano } });
     if (process.stdout.isTTY) process.stdout.write(`\r  ${i + 1}/${partite}`);
@@ -356,6 +372,22 @@ if (partite > 1){
     const x = peggio(t);
     if (x) console.log(`  la vittoria più netta di ${t}: seme ${x.seme} (${x.A}–${x.B}) → node tools/partita.mjs ` +
                        `--liste ${A.id},${B.id} --scenario ${scenario} --seme ${x.seme}${estro ? ' --estro' : ''} --html partita.html`);
+  }
+  if (mappa){
+    const d = mappa.dati();
+    const avvisiMappa = [...avvisi];
+    if (!estro) avvisiMappa.push("senza --estro l'euristica si schiera sempre uguale: la mappa dello schieramento ha un posto solo per unità, e le altre due mostrano solo cosa cambiano i dadi.");
+    if (d.meta.terreniDiversi > 1) avvisiMappa.push(`il terreno di questo scenario cambia da una partita all'altra (${d.meta.terreniDiversi} tavoli diversi): quello disegnato è della prima, e le caselle mescolano tavoli diversi.`);
+    if (partite < 200) avvisiMappa.push(`${partite} partite sono poche per una mappa unità per unità: i posti restano con una manciata di partite ciascuno. Da 300 in su i colori cominciano a voler dire qualcosa.`);
+    const pagina = paginaHeatmap({
+      dati: d,
+      titolo: `${sc.label} — ${nomi.A} contro ${nomi.B}: la mappa di ${partite} partite`,
+      sotto: `${nomi.A} vince ${vA}, ${nomi.B} ${vB}, pareggi ${pari} · semi ${seme}–${seme + partite - 1} · ` +
+             `euristica${estro ? ' con estro' : ''} · ${schieramenti} schieramenti diversi`,
+      avvisi: avvisiMappa, colori: COLORI, coloreTerreno,
+    });
+    fs.writeFileSync(fileHeatmap, pagina);
+    console.log(`\n  la mappa: ${fileHeatmap} (${Math.round(pagina.length / 1024)} KB) — si apre con un doppio clic, senza rete`);
   }
   console.log(`\n  ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   process.exit(0);

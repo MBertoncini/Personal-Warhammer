@@ -27,12 +27,12 @@ const MU_KEY = "matchup:current";
 const DEP_KEY = "deployments:all";
 
 let mu = { listA: null, listB: null, mine: "A", note: "", sfidaMia: "A", sfidaScenario: "",
-           aiai: { scenario: "", chi: "euristica", seme: 1, partite: 1, estro: true, html: true, archivia: false } };
+           aiai: { scenario: "", chi: "euristica", seme: 1, partite: 1, estro: true, mappa: true, html: true, archivia: false } };
 let deployments = [];
 
 export async function initMatchup(){
   mu = await loadDoc(MU_KEY, mu) || mu;
-  mu.aiai = { scenario: "", chi: "euristica", seme: 1, partite: 1, estro: true, html: true, archivia: false, ...(mu.aiai || {}) };
+  mu.aiai = { scenario: "", chi: "euristica", seme: 1, partite: 1, estro: true, mappa: true, html: true, archivia: false, ...(mu.aiai || {}) };
   deployments = await loadDoc(DEP_KEY, []) || [];
 }
 
@@ -249,7 +249,7 @@ export function aiaiCommand(){
   /* l'estro vale per l'euristica: con Gemini da tutte e due le parti
      non c'e' nessuna euristica a cui darlo */
   const estro = o.estro && (quante() > 1 || o.chi !== "gemini") ? ["--estro"] : [];
-  if (quante() > 1) return [...parti, `--partite ${quante()}`, ...estro].join(" ");
+  if (quante() > 1) return [...parti, `--partite ${quante()}`, ...estro, ...(o.mappa ? ["--heatmap mappa.html"] : [])].join(" ");
   parti.push(...estro);
   if (o.chi === "gemini") parti.push("--gemini");
   if (o.chi === "gemini-A") parti.push("--gemini A");
@@ -275,7 +275,8 @@ function aiaiHTML(){
       (con l'Archivio); per Gemini serve <span class="mono">GEMINI_API_KEY</span> nell'ambiente.
       Con più di una partita gioca l'euristica, un seme dopo l'altro, e stampa solo il conto: chi vince quante volte.
       Senza estro l'euristica si schiera sempre uguale e le partite cambiano solo per i dadi; con l'estro ogni partita
-      ha il suo piano, e il conto dice quali piani vincono.</p>
+      ha il suo piano, e il conto dice quali piani vincono. La mappa delle posizioni (da 300 partite in su) è una pagina
+      da aprire con un doppio clic: per ogni unità, i posti di schieramento, le strade e gli scontri che vanno meglio.</p>
     <div class="grid2">
       <label class="field">Scenario
         <select id="mu-aiai-sc">
@@ -294,6 +295,7 @@ function aiaiHTML(){
     </div>
     <div style="display:flex;gap:14px;flex-wrap:wrap">
       <label title="ogni partita un piano diverso: dove schiera, da che probabilità carica, quando marcia"><input type="checkbox" id="mu-aiai-estro" ${o.estro ? "checked" : ""}> euristica con estro</label>
+      <label title="con più partite: per ogni unità dove parte, dove passa i turni, dove combatte, e come va in ciascun caso"><input type="checkbox" id="mu-aiai-mappa" ${o.mappa ? "checked" : ""} ${serie ? "" : "disabled"}> mappa delle posizioni</label>
       <label><input type="checkbox" id="mu-aiai-html" ${o.html ? "checked" : ""} ${serie ? "disabled" : ""}> pagina da guardare</label>
       <label><input type="checkbox" id="mu-aiai-arch" ${o.archivia ? "checked" : ""} ${serie ? "disabled" : ""}> nel diario delle partite</label>
     </div>
@@ -397,14 +399,15 @@ export function renderMatchup(){
       mu.aiai = { scenario: $("#mu-aiai-sc").value, chi: $("#mu-aiai-chi").value,
                   seme: Math.max(1, Math.floor(+$("#mu-aiai-seme").value) || 1),
                   html: $("#mu-aiai-html").checked, archivia: $("#mu-aiai-arch").checked,
-                  estro: $("#mu-aiai-estro").checked,
+                  estro: $("#mu-aiai-estro").checked, mappa: $("#mu-aiai-mappa").checked,
                   partite: Math.max(1, Math.floor(+$("#mu-aiai-n").value) || 1) };
       const serie = quante() > 1;
       ["#mu-aiai-chi", "#mu-aiai-html", "#mu-aiai-arch"].forEach(id => { $(id).disabled = serie; });
+      $("#mu-aiai-mappa").disabled = !serie;
       $("#mu-aiai-cmd").textContent = aiaiCommand();
       await persist();
     };
-    ["#mu-aiai-sc", "#mu-aiai-chi", "#mu-aiai-seme", "#mu-aiai-n", "#mu-aiai-estro", "#mu-aiai-html", "#mu-aiai-arch"]
+    ["#mu-aiai-sc", "#mu-aiai-chi", "#mu-aiai-seme", "#mu-aiai-n", "#mu-aiai-estro", "#mu-aiai-mappa", "#mu-aiai-html", "#mu-aiai-arch"]
       .forEach(id => $(id).addEventListener("change", aggiorna));
     aiai.addEventListener("click", async () => {
       const ok = await copyText(aiaiCommand());
