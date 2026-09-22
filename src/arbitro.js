@@ -48,7 +48,7 @@ import * as PREP from './prep.js';
 import * as MG from './magic.js';
 import * as EF from './effects.js';
 import { splitStat, moveInfo } from './profiles.js';
-import { roll, d3, leadershipTest, stat, rankBonus, woundOn, saveOn, chance as chanceOf } from './rules.js';
+import { roll, d3, leadershipTest, stat, rankBonus, woundOn, saveOn, hitMelee, chance as chanceOf } from './rules.js';
 /* Il dado di deviazione e quello di artiglieria non passano da
    `rules.js`, che riesporta solo i cubi: la deviazione e' un gesto
    suo — una direzione piu' una distanza — e `dice.js` lo tira gia'
@@ -95,6 +95,10 @@ export const LIMITI = [
     why:"il libro la fa girare su uno spigolo del fronte e lascia alternare ruote e passi avanti: l'arbitro conta quanto cammina il modello esterno, gira il pezzo sul posto e poi va dritto. Il giro libero dei Lumbering (p. 195) si fa prima di muovere invece che dopo" },
   { id:"manovre",   what:"chi riordina le file o si riforma non usa il resto del movimento, e la riforma tiene il fronte che aveva", page:125,
     why:"il riordino costa metà del Movimento e l'altra metà si potrebbe camminare; la riforma può anche cambiare la formazione. Dopo un giro si va solo dritti" },
+  { id:"vagante",   what:"il Movimento che si tira si gioca nelle mosse, e l'inseguimento non carica", page:176,
+    why:"chi ha Random Movement si muove nella casella delle mosse insieme a tutti gli altri, invece che in una sottofase delle mosse obbligatorie tutta sua; va dritto o verso un nemico e, se lo tocca, carica (p. 176). Se invece arriva addosso a un'unità nuova mentre insegue, l'arbitro lo ferma a contatto come fa con tutti, e non conta come carica" },
+  { id:"abominio",  what:"gli Abominable Attacks si risolvono prima che si meni", page:144,
+    why:"l'Hell Pit Abomination si nutre o travolge prima di tutti gli altri, non al suo passo d'Iniziativa: le ferite che fa entrano nel risultato del combattimento, ma chi cade non mena più. Con Iniziativa 4 è quasi sempre fra i primi" },
   { id:"campioni",  what:"le sfide le lanciano e le raccolgono solo i personaggi, non i campioni d'unità", page:211,
     why:"il libro dice «un personaggio o un campione»; il file di New Recruit segna che il gruppo di comando c'è (`command.champion`) e non dà al campione un profilo suo, e senza profilo non si può duellare" },
   { id:"sciami",    what:"Spawn of Sotek guarisce le ferite appese di uno Jungle Swarm, e non rimette in campo le basette già tolte", page:115,
@@ -784,6 +788,13 @@ export function options(S){
              list: S.pending.list };
   }
 
+  if (S.pending && S.pending.kind === "abominio"){
+    const ab = byUid(S, S.pending.uid);
+    return { ...base, player: ab ? ab.army : S.army, fase: "Corpo a corpo", page: 144,
+             what: `${ab ? ab.name : "l'Abominio"}: attacca normalmente, si nutre o travolge? (Abominable Attacks)`,
+             list: S.pending.list };
+  }
+
   if (c.id === "congiura") return { ...base, list: [...opzioniLancio(S, ["enchantment", "hex"]),
                                                    avanti("nessun altro incantesimo")] };
   if (c.id === "raduno")  return { ...base, list: opzioniRaduno(S) };
@@ -871,6 +882,9 @@ function opzioniCarica(S){
     if (u.fled || u.charged || u.moved || ingaggiata(S, u)) continue;
     /* una macchina da guerra non dichiara cariche (p. 197) */
     if (macchina(u)){ limite(S, "macchina"); continue; }
+    /* e chi si muove di quanto tira non dichiara: carica solo se il suo
+       movimento lo porta addosso a qualcuno (p. 176), nelle mosse */
+    if (vagante(u)) continue;
     /* Miasmic Mirage, Earthen Ramparts: chi ce l'ha addosso non carica */
     if (bandiera(u, "noCharge") || stupida(S, u) || u.unito === chiave(S)) continue;
     const { move } = movimento(S, u);
@@ -1068,6 +1082,7 @@ function opzioniMossa(S){
     if (u.unito === chiave(S) || stupida(S, u)) continue;
     const { mv, move } = movimento(S, u);
     if (!move){ continue; }
+    if (vagante(u)){ out.push(...opzioniVaga(S, u, move)); continue; }
     /* un personaggio da solo puo' invece unirsi a chi raggiunge */
     if (puoUnirsi(S, u)) out.push(...opzioniUnione(S, u, { pollici: move }));
     const t = piuVicino(S, u);
@@ -1638,6 +1653,10 @@ function movimentoSolo(S, u){
   return { mv, move: Math.max(0, base + delta), delta };
 }
 const bandiera = (u, k) => !!EF.flagsOf(u).flags[k];
+/* Random Movement (p. 176): chi ce l'ha non marcia e non dichiara
+   cariche; si muove di quanto tira, e se tocca un nemico ha caricato */
+const vagante = u => (u.rules || []).some(r => /^random movement/i.test(String(r)));
+const abominevole = u => (u.rules || []).some(r => /^abominable attacks/i.test(String(r)));
 /* In preda alla Stupidita': il reggimento, o quello in cui il capo sta. */
 const stupida = (S, u) => bandiera(isJoined(u) ? (byUid(S, FM.joinedHost(u)) || u) : u, "stupid");
 
@@ -1873,7 +1892,8 @@ function alterna(S){
 const SOSPESI = { dissolvi: ["dissolvi", "lascia", "avanti"], assalto: ["lancia", "lascia", "avanti"],
                   sfida: ["sfida", "nessuna", "avanti"],
                   raccogli: ["accetta", "rifiuta", "avanti"],
-                  ritira: ["ritira", "nessuna", "avanti"] };
+                  ritira: ["ritira", "nessuna", "avanti"],
+                  abominio: ["abominio", "avanti"] };
 const no = why => ({ ok: false, text: why });
 const si = text => ({ ok: true, text });
 
@@ -1884,6 +1904,8 @@ const GESTI = {
     const k = S.pending ? S.pending.kind : "";
     if (k === "dissolvi" || k === "assalto") return GESTI.lascia(S);
     if (k === "sfida" || k === "ritira") return GESTI.nessuna(S);
+    /* «passo» davanti agli Abominable Attacks vuol dire attaccare come sempre */
+    if (k === "abominio") return sceltaAbominio(S, S.pending.list.find(x => x.scelta === "normali"));
     /* «passo» davanti a una sfida vuol dire raccoglierla: rifiutarla e'
        una scelta che costa un personaggio, e non la si fa per distrazione */
     if (k === "raccogli"){
@@ -1894,6 +1916,8 @@ const GESTI = {
   },
 
   dominio: (S, a) => sceltaDominio(S, a),
+  vaga:    (S, a) => vaga(S, a),
+  abominio:(S, a) => sceltaAbominio(S, a),
   tieni:   (S, a) => tieniIncantesimi(S, a),
   scambia: (S, a) => scambiaIncantesimo(S, a),
   lancia:  (S, a) => lancia(S, a),
@@ -2483,6 +2507,100 @@ function muoviCarica(S, u, t, d){
   /* e il terreno attraversato presenta il conto, come a ogni movimento */
   terrenoPericoloso(S, u, pezziFra(S, partenza, postiDi(S, u)));
   return "carica a segno";
+}
+
+/* ---- il Movimento che si tira (Random Movement, p. 176) ----
+   «Whenever a model with this special rule moves (for any reason),
+   roll the dice to determine how far it MUST move.» Non marcia, non
+   dichiara cariche, puo' ruotare e basta. Se il movimento lo porta a
+   contatto con un nemico «counts as having charged»: si allinea, si
+   ferma, e chi e' caricato cosi' deve tenere la posizione — niente
+   reazione. Prima l'arbitro tirava il 3D6 e poi lo trattava come un
+   Movimento qualunque: l'Hell Pit Abomination marciava di 2×3D6,
+   dichiarava cariche con 3D6 piu' il dado, e poteva restare ferma.
+
+   Le opzioni: le cariche che il tiro basta a fare, poi la strada verso
+   il nemico piu' vicino e quella dritta davanti. «Resta ferma» non
+   c'e', e chi passa senza averla mossa la vede muoversi da sola. */
+function opzioniVaga(S, u, n){
+  const out = [], vicino = piuVicino(S, u, nemiciDi(S, u).filter(e => !e.fled));
+  for (const t of nemiciDi(S, u)){
+    if (t.fled || isJoined(t)) continue;
+    const c = caricaVagando(S, u, t, n);
+    if (c) out.push({ id:"vaga", uid: u.uid, verso: t.uid, carica: true, nome: u.name, contro: t.name,
+      attesa: 1 / (1 + c.serve),
+      why: `il Movimento tirato è ${n}″ e ${t.name} è a ${c.serve}″: ci arriva, e conta come carica ` +
+           `(p. 176) — ${t.name} deve tenere la posizione, senza reagire`, page: 176 });
+  }
+  out.sort((a, b) => b.attesa - a.attesa);
+  if (vicino && !out.some(x => x.verso === vicino.uid))
+    out.push({ id:"vaga", uid: u.uid, verso: vicino.uid, nome: u.name, contro: vicino.name,
+      why: `verso ${vicino.name}, a ${distanza(S, u, vicino)}″: il Movimento tirato è ${n}″, e non basta per arrivarci`, page: 176 });
+  out.push({ id:"vaga", uid: u.uid, dritto: true, nome: u.name,
+    why: `dritta davanti a sé per ${n}″: il Movimento tirato si fa tutto (p. 176)`, page: 176 });
+  return out;
+}
+/* La carica del movimento tirato: stesso posto a contatto e stessa
+   distanza della carica dichiarata, ma senza dado di carica — i
+   pollici sono quelli del Movimento tirato. */
+function caricaVagando(S, u, t, n){
+  const posto = postoAContatto(S, u, t);
+  if (!posto || posto.pieno) return null;
+  const serve = r1(distanza(S, u, t) + (posto.extra || 0));
+  return n + 0.01 >= serve ? { posto, serve } : null;
+}
+function vaga(S, a){
+  const u = byUid(S, a.uid);
+  if (!u || !vagante(u)) return no("non ha il Movimento che si tira");
+  if (u.moved) return no("si è già mossa");
+  if (u.fled || ingaggiata(S, u)) return no("non si muove adesso");
+  const { move: n } = movimento(S, u);
+  if (!n) return no("non sa di quanto si muove");
+  const partenza = postiDi(S, u);
+  limite(S, "vagante");
+  if (a.verso != null){
+    const t = byUid(S, a.verso);
+    if (!t || !onBoard(t)) return no("bersaglio sconosciuto");
+    const c = a.carica ? caricaVagando(S, u, t, n) : null;
+    if (a.carica && !c) return no(`${n}″ non bastano per arrivare a ${t.name}`);
+    if (c){
+      posa(S, u, c.posto.x, c.posto.y, c.posto.rot);
+      u.charged = { target: t.name, uid: t.uid, inches: c.serve, arc: c.posto.arc, vagando: true };
+      u.moved = { kind:"charge", inches: c.serve };
+      say(S, `${u.name} si muove di ${n}″ e arriva addosso a ${t.name}, di ${c.posto.arc}: ` +
+             `conta come carica, e ${t.name} tiene la posizione (p. 176).`, { army: u.army, page: 176 });
+      terrenoPericoloso(S, u, pezziFra(S, partenza, postiDi(S, u)));
+      return si("carica vagando");
+    }
+    const pr = pianoRuota(S, u, versoDi(t.x - u.x, t.y - u.y), n);
+    const p = avanzaRuotando(S, u, t, pr, n);
+    u.moved = { kind:"move", inches: p.pollici };
+    say(S, `${u.name} si muove di ${p.pollici}″ verso ${t.name} (Movimento tirato ${n}″` +
+           (p.pollici < n - 0.05 ? `: ${pr.costo ? `ruotare costa ${r1(pr.costo)}″, e ` : ""}si ferma dove non passa` : "") +
+           `, p. 176).`, { army: u.army, page: 176 });
+  } else {
+    const r = (u.rot || 0) * Math.PI / 180;
+    const meta = [u.x + Math.sin(r) * n * MM, u.y - Math.cos(r) * n * MM];
+    const p = percorso(S, u, meta, n, { rot: u.rot || 0, devia: false });
+    posa(S, u, p.x, p.y, u.rot || 0);
+    u.moved = { kind:"move", inches: p.pollici };
+    say(S, `${u.name} va dritta di ${p.pollici}″ (Movimento tirato ${n}″` +
+           (p.pollici < n - 0.05 && p.stop ? `: si ferma, c'è ${p.stop.perche}` : "") + `, p. 176).`,
+        { army: u.army, page: 176 });
+  }
+  if (!vola(u)) dopoIlMovimento(S, u, partenza);
+  return si("mossa tirata");
+}
+/* chi passa le mosse senza aver mosso chi DEVE muoversi: si muove da
+   solo, con la prima delle sue opzioni — la carica, se ce n'e' una */
+function vaganoDaSoli(S){
+  for (const u of inCampo(S, S.army)){
+    if (!vagante(u) || u.moved || u.fled || u.charged || ingaggiata(S, u) || isJoined(u)) continue;
+    const { move } = movimento(S, u);
+    if (!move) continue;
+    const o = opzioniVaga(S, u, move)[0];
+    if (o) vaga(S, o);
+  }
 }
 
 /* La fuga: via dal nemico, girati a guardare dove si va. Chi fugge
@@ -3527,6 +3645,8 @@ function avviaCombattimento(S, uids){
 function dopoLaSfida(S, uids){
   const g = gruppoCon(S, uids);
   if (!g || fatto(S, g)) return "il combattimento non c'è più";
+  const q = chiediAbominio(S, uids);
+  if (q) return q;
   const dopo = { kind: "combatti", uids };
   const assalti = opzioniLancio(S, ["assailment"], { army: altro(S.army), gruppo: g })
     .map(x => ({ ...x, dopo }));
@@ -3543,6 +3663,157 @@ function continua(S, dopo){
   if (!dopo || S.pending) return "";
   if (dopo.kind === "combatti") return dopoLaSfida(S, dopo.uids);
   return "";
+}
+
+/* ---- gli Abominable Attacks (Legends: Skaven, Hell Pit Abomination) ----
+   «Instead of attacking normally during the Combat phase, a Hell Pit
+   Abomination may choose to make one of the following»: nutrirsi — un
+   modello nemico a contatto, un tiro per colpire, e se colpito D3 ferite
+   senza armatura (la speciale e la Rigenerazione si tirano) — o la
+   valanga di carne: la sagoma piccola col buco sul centro dell'unita'
+   bersaglio, e chiunque ci stia sotto, amico o nemico, prende un colpo
+   con la Forza dell'Abominio e PA −2. Una domanda per combattimento e
+   per turno, a chi possiede l'Abominio, dopo la sfida e prima degli
+   assalti. Ogni opzione porta quanto ci si aspetta di fare, e sono in
+   ordine: l'euristica prende la prima. */
+function chiediAbominio(S, uids){
+  const g = gruppoCon(S, uids);
+  if (!g) return "";
+  for (const [miei, loro] of [[g.A, g.B], [g.B, g.A]]){
+    for (const u of miei){
+      if (!onBoard(u) || !abominevole(u) || (u.abominio && u.abominio.key === chiave(S))) continue;
+      const vivi = loro.filter(onBoard);
+      if (!vivi.length) continue;
+      S.pending = { kind:"abominio", uid: u.uid, uids, list: opzioniAbominio(S, u, vivi) };
+      return `${S.nomi[u.army]} sceglie come attacca ${u.name}`;
+    }
+  }
+  return "";
+}
+function opzioniAbominio(S, u, loro){
+  const me = CB.combatant(u);
+  const out = [];
+  const davanti = aContatto(S, u, loro);
+  const normali = davanti.length ? CB.meleeForecast(me, CB.combatant(davanti[0])) : null;
+  out.push({ id:"abominio", uid: u.uid, scelta:"normali", nome: u.name,
+             attesa: normali ? normali.wounds : 0,
+             why: `attacca normalmente${normali ? `: ${r1(normali.attacks)} attacchi in media, ≈ ${normali.wounds.toFixed(1)} ferite su ${davanti[0].name}` : ""}`,
+             page: 176 });
+  /* nutrirsi: un modello a contatto, anche un capo che sta nel reggimento */
+  for (const t of davanti.flatMap(x => [x, ...capiInFila(S, x)])){
+    const d = CB.combatant(t);
+    const need = hitMelee(me.ws, d.wsDef || d.ws);
+    const salva = (1 - chanceOf(saveOn(d.ward, 0))) * (1 - chanceOf(saveOn(d.regen, 0)));
+    const attesa = chanceOf(need) * Math.min(2, d.w) * salva;
+    out.push({ id:"abominio", uid: u.uid, scelta:"nutriti", target: t.uid, nome: u.name, contro: t.name, attesa,
+               why: `si nutre di un modello di ${t.name}: lo colpisce col ${need}+, e se lo colpisce ` +
+                    `D3 ferite senza armatura su quel modello solo (≈ ${attesa.toFixed(1)})`, page: 144 });
+  }
+  /* la valanga: dove cade la sagoma lo si sa prima, perche' non devia */
+  for (const t of loro){
+    const v = valanga(S, u, t, { conta: true });
+    out.push({ id:"abominio", uid: u.uid, scelta:"valanga", target: t.uid, nome: u.name, contro: t.name,
+               attesa: v.attesa,
+               why: `valanga di carne su ${t.name}: sagoma piccola sul centro, un colpo di Forza ${v.forza} ` +
+                    `e PA −2 a chi ci sta sotto — ${v.nemici} nemici` + (v.amici ? ` e ${v.amici} dei tuoi` : "") +
+                    ` (≈ ${v.attesa.toFixed(1)} ferite)`, page: 144 });
+  }
+  return out.sort((a, b) => b.attesa - a.attesa);
+}
+function sceltaAbominio(S, a){
+  const p = S.pending;
+  if (!p || p.kind !== "abominio" || !a) return no("nessuna domanda sugli Abominable Attacks");
+  const lecita = p.list.find(x => x.scelta === a.scelta && (x.target ?? null) === (a.target ?? null));
+  if (!lecita) return no("scelta non fra quelle offerte");
+  const u = byUid(S, p.uid);
+  S.pending = null;
+  u.abominio = { key: chiave(S), scelta: a.scelta, target: a.target ?? null };
+  if (a.scelta === "normali") say(S, `${u.name} attacca normalmente.`, { army: u.army, page: 144 });
+  else limite(S, "abominio");
+  return si(dopoLaSfida(S, p.uids));
+}
+/* Nutrirsi: un tiro per colpire, D3 ferite su UN modello — quello che
+   avanza oltre le sue Ferite non passa al vicino. Torna le ferite fatte. */
+function nutriti(S, u, t){
+  const me = CB.combatant(u), d = CB.combatant(t);
+  const need = hitMelee(me.ws, d.wsDef || d.ws);
+  const colpo = roll(1)[0];
+  if (!(colpo >= need && colpo > 1)){
+    say(S, `${u.name} prova a nutrirsi di ${t.name}: ${colpo} contro ${need}+, manca.`,
+        { dice: [colpo], army: u.army, page: 144 });
+    return 0;
+  }
+  const dd = roll(1)[0], quante = 1 + Math.floor((dd - 1) / 2);
+  const salvi = roll(quante);
+  const ward = saveOn(d.ward, 0), rig = saveOn(d.regen, 0);
+  const passano = salvi.filter(v => !((ward < 7 && v >= ward) || (rig < 7 && v >= rig))).length;
+  const gia = t.wounds || 0;
+  const ferite = Math.min(passano, Math.max(1, d.w - gia));
+  const toll = CB.woundsToll(t, ferite, { carried: gia });
+  inizioFase(S, t);
+  say(S, `${u.name} si nutre di ${t.name}: ${colpo} contro ${need}+, colpito; D3 → ${dd} = ${quante} ` +
+         `ferit${quante === 1 ? "a" : "e"} senza armatura` +
+         (ward < 7 || rig < 7 ? ` (salvezze ${salvi.join(", ")})` : "") +
+         `, ${ferite} su un modello solo, ${toll.kills} a terra.`,
+      { dice: [colpo, dd, ...(ward < 7 || rig < 7 ? salvi : [])], army: u.army, page: 144 });
+  perdite(S, t, toll.kills, toll.left);
+  return ferite;
+}
+/* La valanga di carne. Con `conta` non tocca niente e dice quanti sono
+   sotto e quante ferite ci si aspettano; senza, tira e toglie. Torna le
+   ferite fatte a chi sta in `nemici` (quelli del combattimento, che
+   entrano nel risultato). */
+function valanga(S, u, t, { conta = false, nemici = [] } = {}){
+  const out = SH.bombard({ aim: [t.x, t.y], template: "small", hit: true });
+  const celle = caselleDelTavolo(S).filter(c => c.u !== u);
+  const cella = i => celle.find(x => x.cell === i);
+  const sotto = SH.modelsUnder(celle, out.shape);
+  const me = CB.combatant(u);
+  const forza = me.baseS || me.s;
+  if (conta){
+    let attesa = 0, amici = 0, nem = 0;
+    const tutte = new Set([...(sotto.full || []), ...(sotto.partial || []), ...(sotto.hole != null ? [sotto.hole] : [])]);
+    for (const i of tutte){
+      const c = cella(i);
+      const chi = c && padroneDi(S, c);
+      if (!chi) continue;
+      const pieno = (sotto.full || []).includes(i) || i === sotto.hole;
+      const d = CB.combatant(chi);
+      const f = (pieno ? 1 : 0.5) * chanceOf(woundOn(forza, d.t)) *
+                (1 - chanceOf(saveOn(d.armour, 2))) * (1 - chanceOf(saveOn(d.ward, 0))) * (1 - chanceOf(saveOn(d.regen, 0)));
+      if (chi.army === u.army){ amici++; attesa -= f; } else { nem++; attesa += f; }
+    }
+    return { attesa, amici, nemici: nem, forza };
+  }
+  const conto = SH.templateHits(sotto);
+  const dadi = conto.asks ? roll(conto.asks) : null;
+  const colpi = dadi ? SH.templateHits(sotto, dadi) : SH.templateHits(sotto, []);
+  const mucchi = new Map();
+  for (const i of colpi.cells || []){
+    const c = cella(i);
+    const chi = c && padroneDi(S, c);
+    if (!chi || chi.dead) continue;
+    const g = mucchi.get(chi.uid) || { u: chi, n: 0 };
+    g.n++;
+    mucchi.set(chi.uid, g);
+  }
+  say(S, `${u.name} si abbatte su ${t.name}: valanga di carne, sagoma piccola sul centro. ` +
+         `Sotto: ${colpi.full} del tutto, ${colpi.partial} in parte` +
+         (mucchi.size ? ` — colpiti ${[...mucchi.values()].map(g => `${g.u.name}: ${g.n}`).join(", ")}.` : " — nessuno."),
+      { dice: dadi || [], army: u.army, page: 144 });
+  let fatte = 0;
+  for (const g of mucchi.values()){
+    const d = CB.combatant(g.u);
+    const v = CB.strike(me, d, { attacks: g.n, auto: true, strength: forza, ap: 2, label: "valanga di carne" });
+    const toll = CB.woundsToll(g.u, v.wounds, { carried: g.u.wounds || 0 });
+    inizioFase(S, g.u);
+    say(S, `${u.name} su ${g.u.name}: ${g.n} ${g.n === 1 ? "colpo" : "colpi"} a Forza ${forza} e PA −2, ` +
+           `${v.wounds} ferit${v.wounds === 1 ? "a" : "e"}, ${toll.kills} a terra.`,
+        { army: u.army, page: 144 });
+    perdite(S, g.u, toll.kills, toll.left);
+    if (nemici.includes(g.u)) fatte += v.wounds;
+  }
+  return fatte;
 }
 
 /* i maghi, per la fotografia */
@@ -3857,8 +4128,24 @@ function mischia(S, g){
       }
     }
   }
-  const A = g.A.map(u => schieraDi(S, u, { feared: impauriti.has(u.uid) }));
-  const B = g.B.map(u => schieraDi(S, u, { feared: impauriti.has(u.uid) }));
+  /* gli Abominable Attacks scelti prima: le ferite che fanno entrano
+     nel risultato, e chi le ha fatte non attacca normalmente */
+  const abomini = new Map();
+  for (const [miei, loro] of [[g.A, g.B], [g.B, g.A]])
+    for (const u of miei){
+      const ab = u.abominio;
+      if (!ab || ab.key !== chiave(S) || ab.scelta === "normali" || !onBoard(u)) continue;
+      const t = byUid(S, ab.target);
+      if (!t || t.dead){ abomini.set(u.uid, 0); continue; }
+      const nemici = loro.flatMap(x => [x, ...capiInFila(S, x)]);
+      abomini.set(u.uid, ab.scelta === "nutriti" ? nutriti(S, u, t) : valanga(S, u, t, { nemici }));
+    }
+  const conAbominio = (u, c) => {
+    if (abomini.has(u.uid)){ c.noAttacks = true; c.randomA = null; c.preDealt = abomini.get(u.uid); }
+    return c;
+  };
+  const A = g.A.map(u => conAbominio(u, schieraDi(S, u, { feared: impauriti.has(u.uid) })));
+  const B = g.B.map(u => conAbominio(u, schieraDi(S, u, { feared: impauriti.has(u.uid) })));
   /* dove sta ogni modello nelle due parti: serve alla sfida, che e' fra
      due modelli e non fra due unita' */
   const posto = new Map();
@@ -4294,6 +4581,8 @@ function passo(S){
     }
     return "passa";
   }
+  /* chi si muove di quanto tira non puo' restare fermo (p. 176) */
+  if (CASELLE[S.casella] && CASELLE[S.casella].id === "mosse") vaganoDaSoli(S);
   S.casella++;
   if (S.casella < CASELLE.length){
     if (CASELLE[S.casella].id === "mosse") continuaAFuggire(S);

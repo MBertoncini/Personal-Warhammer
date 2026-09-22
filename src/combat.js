@@ -421,6 +421,9 @@ const attacksStat = u => {
   return r ? Math.max(0, randomMean(r)) : Math.max(1, val(u, "A") || 1);
 };
 function attacksFor(c, n){
+  /* chi ha scelto di attaccare in un altro modo (gli Abominable Attacks
+     dell'Hell Pit) non attacca normalmente: i pestoni restano suoi */
+  if (c.noAttacks) return 0;
   if (!c.randomA || !c.rolls || n <= 0) return n * attacksOf(c);
   const extra = attacksOf(c) - (c.a || 1);
   let tot = 0;
@@ -855,7 +858,10 @@ export function woundsToll(u, wounds, { carried = null } = {}){
 /* Il clone di un assalto: le ferite appese se le porta dietro. Prima
    qui c'era `spill: 0`, ed e' il punto esatto in cui le ferite
    evaporavano fra un round e l'altro. */
-const clone = c => ({ ...c, spill: c.spill || 0, dealt: 0, oltre: 0, rolls: c.randomA ? [] : null });
+/* `preDealt`: le ferite che la schiera ha gia' fatto in questo round
+   prima che si menasse — un attacco che sostituisce gli attacchi — e
+   che entrano nel risultato come le altre */
+const clone = c => ({ ...c, spill: c.spill || 0, dealt: +c.preDealt || 0, oltre: 0, rolls: c.randomA ? [] : null });
 const usOf = c => (c.usPer || 1) * (c.models || 0);
 /* la Forza d'Unita' di una PARTE: la somma di chi e' ancora in piedi
    (p. 154), ed e' quella che decide se il doppio schiaccia */

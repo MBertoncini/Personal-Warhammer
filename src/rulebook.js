@@ -265,7 +265,7 @@ export const ELSEWHERE = [
   { re:/^magic resistance/i,
     why:"toglie dal tiro di lancio degli incantesimi nemici che bersagliano l'unità il −X più alto, anche se ce l'ha solo il capo unito (p. 108): lo sottraggono il pannello e l'arbitro, e la probabilità offerta la conta" },
   { re:/^random movement/i,
-    why:"riguarda il movimento: il Movimento si tira, e l'ispettore lo dice" },
+    why:"il Movimento si tira, e si fa tutto: niente marcia, niente carica dichiarata, e chi arriva a contatto ha caricato e il bersaglio tiene (p. 176). L'arbitro lo gioca; al tavolo l'ispettore dice che si tira, e il resto lo fate voi" },
   /* Due vincoli di forma, che si giocano dove i pezzi si uniscono e si
      muovono: `formation.js` li fa rispettare al tavolo, e l'arbitro gira
      il Lumbering dopo aver mosso. */

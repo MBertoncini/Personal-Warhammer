@@ -171,6 +171,12 @@ export function agenteEuristico({ nome = "euristica", estro = null } = {}){
           : "tengo la posizione: fuggire regala il campo" };
       }
 
+      /* IL MOVIMENTO CHE SI TIRA viene prima di tutto: non è una scelta
+         se muoversi, solo dove (p. 176). L'arbitro mette in cima la
+         carica più corta, se il tiro basta a farne una. */
+      const vaga = l.find(x => x.id === "vaga");
+      if (vaga) return { scelta: vaga, perche: `${vaga.nome} deve muoversi di quanto ha tirato: ${vaga.why}` };
+
       /* MANOVRE: chi ha il nemico sul fianco o alle spalle, o non riesce
          a girarsi verso di lui ruotando, si riforma a guardarlo. Costa
          tutto il movimento ma tiene i ranghi; il giro di 90° costerebbe
@@ -252,6 +258,13 @@ export function agenteEuristico({ nome = "euristica", estro = null } = {}){
         if (s.vantaggio > piano.sfida)
           return { scelta: s, perche: `${s.nome} lancia la sfida: ${s.why}` };
         return { scelta: primo("nessuna"), perche: "nessuna sfida: il duello non conviene a nessuno dei miei" };
+      }
+
+      /* ABOMINABLE ATTACKS: le opzioni portano le ferite attese, già in
+         ordine, e la valanga conta anche gli amici sotto la sagoma */
+      if (primo("abominio")){
+        const a = l.filter(x => x.id === "abominio")[0];
+        return { scelta: a, perche: `${a.nome}: ${a.why}` };
       }
 
       /* MISCHIA: si risolve. Non c'è niente da decidere. */

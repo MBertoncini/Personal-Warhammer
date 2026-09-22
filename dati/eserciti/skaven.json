@@ -117,7 +117,7 @@
       "testo": "lista",
       "when": "melee",
       "what": "al posto degli attacchi l'Abominio puo' nutrirsi (un modello a contatto: se colpito, D3 ferite senza armatura) o travolgere (sagoma piccola sul bersaglio, un colpo con la sua Forza e PA -2 a chi ci sta sotto, amici compresi)",
-      "perche": "e' un attacco alternativo che si sceglie: il conto dell'assalto usa gli attacchi del profilo, e le due alternative si tirano dal vassoio"
+      "perche": "e' un attacco alternativo che si sceglie: l'arbitro lo chiede prima che si meni e lo tira; il pannello del tavolo usa gli attacchi del profilo, e le due alternative si tirano dal vassoio"
     },
     {
       "id": "tooHorribleToDie",

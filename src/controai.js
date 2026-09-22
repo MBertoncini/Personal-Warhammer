@@ -195,12 +195,18 @@ const ETICHETTA = {
   combatti: "Combatti", avanti: "Passa",
   sfida: "Lancia la sfida", accetta: "Raccogli la sfida", rifiuta: "Rifiuta la sfida",
   ritira: "Si ritira", nessuna: "Nessuna sfida",
+  vaga: "Si muove di quanto ha tirato",
 };
+/* gli Abominable Attacks sono un gesto solo con tre scelte dentro */
+const ABOMINIO = { normali: "Attacca normalmente", nutriti: "Si nutre", valanga: "Valanga di carne" };
 const REAZIONE = { hold: "tiene", stand: "tiene e tira", flee: "fugge", fleeing: "sta già fuggendo" };
 
 function etichetta(x){
   const cosa = x.id === "reazione" ? `${ETICHETTA.reazione}: ${REAZIONE[x.kind] || x.kind}`
              : x.id === "dissolvi" && x.fato ? "Dissolvi con la sorte"
+             : x.id === "abominio" ? ABOMINIO[x.scelta] || "Abominable Attacks"
+             : x.id === "vaga" && x.carica ? "Carica col Movimento tirato"
+             : x.id === "vaga" && x.dritto ? "Dritta, di quanto ha tirato"
              : ETICHETTA[x.id] || x.id;
   const chi = x.nome && !(x.id === "dissolvi" && x.fato) ? ` · ${x.nome}` : "";
   const dove = x.dove ? ` · ${x.dove}` : "";

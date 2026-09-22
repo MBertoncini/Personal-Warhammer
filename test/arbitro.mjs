@@ -2005,5 +2005,104 @@ console.log('\ni posti di schieramento dicono che cosa ci trovano (pp. 269-272)'
 }
 
 /* ================================================================= */
+console.log('\nil Movimento che si tira (Random Movement, p. 176)');
+{
+  /* l'Hell Pit Abomination di «Skaven fun» contro gli Skink di «LIZ fun» */
+  const campo = () => {
+    const G = AR.newBattle({ A: lista('lmubp01267euf'), B: lista('lmubp2kimjzhw'), scenario:'bm-strada' });
+    G.schierando = false; G.preparando = false; G.army = 'A'; G.turno = 1;
+    const hp = metti(G, G.units.find(u => u.name === 'Hell Pit Abomination'), 600, 600, 0);
+    const sk = metti(G, G.units.find(u => u.army === 'B' && /Skink Skirmishers/.test(u.name)), 600, 600, 180);
+    /* gli Skink a dieci pollici di bordo davanti all'Abominio */
+    const passo = MM / 4;
+    while (AR.distanza(G, hp, sk) < 10) sk.y -= passo;
+    return { G, hp, sk };
+  };
+  D.setSource(n => n - 1);                       // tutti sei: 3D6 = 18
+  {
+    const { G, hp } = campo();
+    G.casella = casella('cariche');
+    ok('non dichiara cariche, nemmeno con il nemico a dieci pollici',
+       !AR.options(G).list.some(x => x.uid === hp.uid));
+    G.casella = casella('mosse');
+    const mie = AR.options(G).list.filter(x => x.uid === hp.uid);
+    ok('nelle mosse ha solo le mosse tirate: niente marcia, niente «resta ferma», niente manovre',
+       mie.length > 0 && mie.every(x => x.id === 'vaga'));
+    ok('il Movimento si tira una volta e si scrive', G.log.filter(r => /Hell Pit Abomination: Movimento 3D6 → 6 \+ 6 \+ 6 = 18″/.test(r.text)).length === 1);
+    const carica = mie.find(x => x.carica);
+    ok('con 18″ gli Skink a 10″ sono una carica, ed è la prima opzione', !!carica && mie[0] === carica);
+    const r = AR.apply(G, carica);
+    ok('ci arriva, e conta come carica (p. 176)',
+       r.ok && hp.charged && hp.charged.uid === carica.verso && hp.moved.kind === 'charge' &&
+       G.log.some(x => /conta come carica, e .* tiene la posizione \(p\. 176\)/.test(x.text)));
+    ok('chi è caricato così non reagisce: nessuna domanda in sospeso', !G.pending);
+    ok('e i due sono a contatto', AR.ingaggiata(G, hp));
+  }
+  D.setSource(() => 0);                          // tutti uno: 3D6 = 3
+  {
+    const { G, hp, sk } = campo();
+    G.casella = casella('mosse');
+    const mie = AR.options(G).list.filter(x => x.uid === hp.uid);
+    ok('con 3″ non si offre nessuna carica', !mie.some(x => x.carica));
+    const y0 = hp.y;
+    AR.apply(G, mie.find(x => x.verso === sk.uid));
+    ok('e va verso gli Skink per tutto quello che ha tirato', Math.abs((y0 - hp.y) / MM - 3) <= 0.3 && !hp.charged);
+  }
+  {
+    const { G, hp } = campo();
+    G.casella = casella('mosse');
+    const y0 = hp.y;
+    AR.apply(G, { id:'avanti' });
+    ok('chi passa le mosse senza averla mossa la vede muoversi lo stesso', !!hp.moved && hp.y < y0);
+  }
+  D.setSource(D.seeded(1));
+
+  console.log('\ngli Abominable Attacks (Legends: Skaven)');
+  const inMischia = () => {
+    D.setSource(n => n - 1);
+    const c = campo();
+    c.G.casella = casella('mosse');
+    AR.apply(c.G, AR.options(c.G).list.find(x => x.uid === c.hp.uid && x.carica));
+    c.G.casella = casella('mischia');
+    AR.apply(c.G, AR.options(c.G).list.find(x => x.id === 'combatti'));
+    return c;
+  };
+  {
+    const { G, hp, sk } = inMischia();
+    const o = AR.options(G);
+    ok('scelto il combattimento, chi ha l Abominio sceglie come attacca',
+       G.pending && G.pending.kind === 'abominio' && o.player === 'A');
+    const scelte = o.list.map(x => x.scelta);
+    ok('attaccare normalmente, nutrirsi o travolgere',
+       scelte.includes('normali') && scelte.includes('nutriti') && scelte.includes('valanga'));
+    ok('e ogni scelta dice quanto ci si aspetta', o.list.every(x => typeof x.attesa === 'number' && /≈|attacca normalmente/.test(x.why)));
+    ok('mentre si aspetta non si fa altro', AR.apply(G, { id:'avanti' }).ok && !G.pending);
+  }
+  {
+    const { G, hp, sk } = inMischia();
+    const prima = sk.lost || 0;
+    D.setSource(n => n - 1);                     // colpisce, e il D3 fa 3
+    AR.apply(G, AR.options(G).list.find(x => x.scelta === 'nutriti' && x.target === sk.uid));
+    ok('nutrirsi: colpito, D3 ferite senza armatura, e uno Skink da una Ferita ne perde una sola',
+       G.log.some(x => /si nutre di .*: 6 contro 3\+, colpito; D3 → 6 = 3 ferite senza armatura, 1 su un modello solo, 1 a terra/.test(x.text)) &&
+       (sk.lost || 0) >= prima + 1);
+    ok('e l Abominio non attacca normalmente', !G.log.some(x => /^Hell Pit Abomination colpi su/.test(x.text)) &&
+       !G.log.some(x => /Hell Pit Abomination tira gli attacchi/.test(x.text)));
+    ok('la ferita entra nel risultato del combattimento',
+       G.log.some(x => /Risultato: Hell Pit Abomination [1-9]/.test(x.text)));
+  }
+  {
+    const { G, sk } = inMischia();
+    D.setSource(n => n - 1);
+    AR.apply(G, AR.options(G).list.find(x => x.scelta === 'valanga' && x.target === sk.uid));
+    ok('la valanga di carne: sagoma piccola sul centro, e chi ci sta sotto prende Forza 6 e PA −2',
+       G.log.some(x => /valanga di carne, sagoma piccola sul centro/.test(x.text)) &&
+       G.log.some(x => /Hell Pit Abomination su .*colp.* a Forza 6 e PA −2/.test(x.text)));
+    ok('un limite dichiarato: si risolve prima che si meni', G.log.some(x => /\[limite\] gli Abominable Attacks/.test(x.text)));
+  }
+  D.setSource(D.seeded(1));
+}
+
+/* ================================================================= */
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

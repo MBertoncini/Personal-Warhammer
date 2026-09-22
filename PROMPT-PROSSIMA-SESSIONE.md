@@ -323,10 +323,25 @@ di `rulebook.js`. **Da fare**, in ordine di quanto pesano:
   più volte), e gli effetti sugli Attacchi si sommano al dado.
   `meleeFight` torna `randomA` e l'arbitro lo scrive nel registro.
   Resta al primo numero la riga di un equipaggio o di una cavalcatura
-  (`attackRows` in `mounts.js`: i ratti della Doom-Wheel). Da notare:
-  l'Hell Pit Abomination ha anche **Abominable Attacks** (nutrirsi o
-  la valanga di carne con la sagoma, Legends: Skaven), che l'arbitro non
-  offre ancora — e che adesso, con `bombarda`, ha la geometria pronta;
+  (`attackRows` in `mounts.js`: i ratti della Doom-Wheel);
+- ~~**Abominable Attacks**~~ — fatto nell'arbitro: una domanda in
+  sospeso `abominio` a chi possiede l'Abominio, dopo la sfida e prima
+  degli assalti (`chiediAbominio`), con tre scelte che portano le ferite
+  attese: attaccare normalmente, nutrirsi (`nutriti`: un tiro per
+  colpire, D3 ferite senza armatura su un modello solo) o la valanga di
+  carne (`valanga`: sagoma piccola sul centro, senza deviazione, Forza
+  dell'Abominio e PA −2 a chiunque ci stia sotto). Si risolvono prima
+  che si meni (limite `abominio`); le ferite entrano nel risultato con
+  `preDealt`, e la schiera non attacca normalmente (`noAttacks` in
+  `combat.js`) ma i pestoni restano. Il pannello del tavolo non li offre;
+- ~~**Random Movement**~~ (p. 176) — fatto nell'arbitro: niente carica
+  dichiarata né marcia né manovre; nelle mosse ci sono solo le opzioni
+  `vaga` (la carica, se il Movimento tirato basta, poi verso il nemico
+  più vicino, poi dritta), e chi passa senza averla mossa si muove da solo
+  (`vaganoDaSoli`). Chi arriva a contatto ha caricato e il bersaglio tiene
+  senza reagire. Limite `vagante`: si muove nelle mosse con tutti gli
+  altri, e l'inseguimento che tocca un'unità nuova non conta come carica.
+  Mancano ancora Too Horrible To Die e Timmm-berrr!;
 - ~~**Magic Resistance**~~ — fatto (p. 108): `MG.magicResistance` sulle
   regole dell'unità e dei capi uniti, il −X più alto; solo contro gli
   incantesimi del nemico. La sottraggono `lancia` e `opzioniLancio`
