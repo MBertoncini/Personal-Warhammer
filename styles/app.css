@@ -1304,3 +1304,9 @@ label.field.inline{flex-direction:row;align-items:center;gap:6px;text-transform:
 .sf-perche > summary::after{content:" · perché?";color:var(--accent);font-size:11px;}
 .sf-perche[open] > summary::after{content:"";}
 .sf-perche .sp{margin:5px 0 4px;}
+/* sopra il tavolo il perché di una scelta si tiene a tre righe: e'
+   una frase lunga, e coprirebbe mezzo campo. Passandoci sopra si apre. */
+.sp-pila .sp-testo{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.sp-pila .sp-voce:hover .sp-testo, .sp-pila .sp-voce.sp-fissa .sp-testo{-webkit-line-clamp:unset;display:block;}
+.sf-guarda{align-items:center;margin:4px 0 8px;}
+.sf-guarda .dim{color:var(--muted);font-size:11.5px;}

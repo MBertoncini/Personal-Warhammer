@@ -201,20 +201,24 @@ function sfidaHTML(){
   return `
     <div class="panel-title" style="margin-top:16px">Gioca contro l'AI</div>
     <p class="note">L'arbitro tiene la partita e muove i pezzi sul tavolo; tu scegli le mosse del tuo esercito
-      fra quelle che il regolamento permette, e l'altro lo gioca Gemini — o l'euristica, se non hai una chiave.</p>
+      fra quelle che il regolamento permette, e l'altro lo gioca Gemini — o l'euristica, se non hai una chiave.
+      Con <i>nessuno</i> li gioca tutti e due l'AI, e tu guardi la partita sul tavolo con il perché di ogni tiro.</p>
     <div class="grid2">
       <label class="field">Giochi con
         <select id="mu-sfida-mia">
           <option value="A" ${mu.sfidaMia !== "B" ? "selected" : ""}>A · ${esc(A.name)}</option>
           <option value="B" ${mu.sfidaMia === "B" ? "selected" : ""}>B · ${esc(B.name)}</option>
+          <option value="guarda" ${mu.sfidaMia === "guarda" ? "selected" : ""}>Nessuno: guardo l'AI contro l'AI</option>
         </select></label>
       <label class="field">Scenario
         <select id="mu-sfida-sc">
           ${scenariGiocabili().map(s => `<option value="${s.id}" ${s.id === sc ? "selected" : ""}>${esc(s.label)}${s.pts ? ` · ${s.pts} pt` : ""}</option>`).join("")}
         </select></label>
     </div>
-    <button class="btn primary" id="mu-sfida" style="margin-top:6px;width:100%">Sfida l'AI sul tavolo</button>`;
+    <button class="btn primary" id="mu-sfida" style="margin-top:6px;width:100%">${bottoneSfida(mu.sfidaMia)}</button>`;
 }
+/* chi non gioca non sfida nessuno: guarda */
+const bottoneSfida = mia => mia === "guarda" ? "Guarda l'AI contro l'AI sul tavolo" : "Sfida l'AI sul tavolo";
 
 /* AI contro AI: la partita non si gioca qui ma in `tools/partita.mjs`,
    dal terminale. La scheda scrive il comando giusto per le due liste e
@@ -384,6 +388,8 @@ export function renderMatchup(){
     document.querySelector('[data-tab="deploy"]').click();
   });
   const sf = $("#mu-sfida");
+  const mia = $("#mu-sfida-mia");
+  if (sf && mia) mia.addEventListener("change", () => { sf.textContent = bottoneSfida(mia.value); });
   if (sf) sf.addEventListener("click", async () => {
     if (inCorso() && !await askConfirm("C'è già una sfida in corso: la abbandono e ne comincio un'altra?",
                                       { title:"Nuova sfida?" })) return;

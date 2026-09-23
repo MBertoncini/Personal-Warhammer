@@ -251,6 +251,8 @@ Nella scheda **Matchup**, con le due liste scelte, *Gioca contro l'AI* chiede co
 - **L'ultima mossa dell'AI** resta in vista con il suo perché, e sotto scorre il registro con dadi e pagine: le righe con una scheda si aprono con *perché?*. *Copia il registro* lo porta via; *Abbandona* chiude la sfida e lascia il tavolo com'è.
 - **Chi gioca contro di te**: Gemini, con una chiave di Google AI Studio scritta nel pannello (e il modello, se non vuoi `gemini-2.5-flash`). La chiave **resta in questo browser** — non entra nei backup né nell'archivio su GitHub — e parte solo verso Google. Senza chiave gioca l'euristica che guarda una mossa avanti (vedi sotto), e il pannello lo dice; se Gemini risponde male o non risponde, quella mossa la gioca l'euristica e il pannello conta gli intoppi.
 
+**AI contro AI, sul tavolo.** In *Giochi con* c'è anche *Nessuno: guardo l'AI contro l'AI*: l'arbitro fa giocare tutti e due gli eserciti a due agenti separati (l'euristica che guarda avanti, o Gemini se c'è la chiave) e tu guardi la partita sul tavolo mentre succede, con le schede del perché di ogni scelta e di ogni tiro. Con *L'AI aspetta* spuntato si ferma il tempo di leggerle; *❚❚ Ferma* la blocca dov'è, *Una mossa* la fa andare avanti di una scelta, *▶ Riprendi* la lascia andare. È la partita di `tools/partita.mjs`, ma guardata dal vivo invece che dopo.
+
 La sfida **vive nella scheda del browser**: ricaricando la pagina si ricomincia.
 
 **Una sfida finita, nel diario.** L'app non la salva da sola: quello che resta quando hai finito è il registro, che *Copia il registro* mette negli appunti. `tools/archivia-registro.mjs` prende quel testo e ne fa una voce di `dati/partite.json`, nella stessa forma di ogni altra partita:

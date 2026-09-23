@@ -1854,6 +1854,33 @@ console.log('\nla sfida contro l\'AI');
   await settle(30);
   ok('abbandonata, il tavolo torna libero', DP.state.sfida === false && !CA.inCorso());
   ok('nessun errore nella sfida', errors.length === 0);
+
+  /* nessuno dei due eserciti e' tuo: l'AI gioca da sola, e tu guardi */
+  CA.startSfida({ listA: la, listB: lb, mia: 'guarda' });
+  const S = CA.statoSfida();
+  for (let i = 0; i < 300 && S.schierando; i++) await settle(30);
+  ok('guardando, l AI schiera tutti e due gli eserciti senza un clic',
+     !S.schierando && doc.querySelectorAll('#sfida .sf-mossa').length === 0);
+  ok('il pannello dice chi gioca contro chi, e che sono tutti e due l AI',
+     /tutti e due/.test(doc.querySelector('#sfida .sf-testa').textContent));
+  doc.querySelector('#sf-ferma').dispatchEvent(new window.Event('click'));
+  await settle(600);
+  const fermo = S.log.length;
+  await settle(400);
+  ok('ferma, e la partita non va avanti', S.log.length === fermo && !!doc.querySelector('#sf-riprendi'));
+  const primaDelPasso = S.log.length;
+  doc.querySelector('#sf-passo').dispatchEvent(new window.Event('click'));
+  for (let i = 0; i < 100 && S.log.length === primaDelPasso; i++) await settle(30);
+  await settle(300);
+  const dopo = S.log.length;
+  await settle(400);
+  ok("una mossa, e poi si ferma di nuovo", dopo > primaDelPasso && S.log.length === dopo);
+  doc.querySelector('#sf-riprendi').dispatchEvent(new window.Event('click'));
+  for (let i = 0; i < 100 && S.log.length === dopo; i++) await settle(30);
+  ok('riprende da sola', S.log.length > dopo);
+  CA.abbandona();
+  await settle(30);
+  ok('nessun errore guardando', errors.length === 0 && !CA.inCorso());
 }
 
 console.log('\nil guscio per stare senza rete');

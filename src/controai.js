@@ -91,10 +91,20 @@ export function startSfida({ listA, listB, mia = "A", scenario = "" } = {}){
                  B: (listB.info && listB.info.catalogue) || listB.name };
   if (nomi.A === nomi.B){ nomi.A += " (A)"; nomi.B += " (B)"; }
   const S = AR.newBattle({ A: listA, B: listB, scenario: sc, def: tuttiGliScenari()[sc], nomi, magia: MG.magicNow() });
-  partita = { id: ++serie, S, mia: mia === "B" ? "B" : "A", attesa: null, pensa: false,
-              ultima: null, avvisi, errori: [], agente: null, visto: 0 };
+  /* `mia` vuota: nessuno dei due eserciti e' tuo, e si guarda l'AI
+     giocare contro se stessa. E' la partita di `tools/partita.mjs`, ma
+     sul tavolo vero e con le schede del perche' che compaiono mentre
+     succede, invece che dopo in una pagina da scorrere. */
+  const guarda = mia !== "A" && mia !== "B";
+  partita = { id: ++serie, S, mia: guarda ? null : mia, attesa: null, pensa: false,
+              ultima: null, avvisi, errori: [], agente: null, agenti: null, visto: 0,
+              fermo: false, unPasso: false };
   svuotaPila();
   partita.agente = faiAgente();
+  /* due agenti e non uno: quello che guarda avanti si tiene le sue
+     prove, e Gemini la sua conversazione — mescolarle vorrebbe dire
+     che un esercito ricorda i pensieri dell'altro */
+  if (guarda) partita.agenti = { A: faiAgente(), B: faiAgente() };
   mostraSfida(S, { nuova: true });
   renderSfida();
   gira();
@@ -123,6 +133,20 @@ export function abbandona(){
   renderSfida();
 }
 export const inCorso = () => !!partita && !partita.S.finita;
+/* la partita dell'arbitro, per chi la guarda da fuori (le prove) */
+export const statoSfida = () => partita ? partita.S : null;
+/* chi sceglie la mossa di un esercito: il tuo avversario, o in una
+   partita da guardare l'agente di quella parte */
+const agenteDi = (p, army) => (p.agenti && p.agenti[army]) || p.agente;
+
+/* i comandi di chi guarda: fermarsi, ripartire, una mossa sola */
+function ferma(){ if (partita && !partita.mia){ partita.fermo = true; renderSfida(); } }
+function riprendi(){ if (partita && !partita.mia){ partita.fermo = false; renderSfida(); gira(); } }
+function unPasso(){
+  if (!partita || partita.mia || partita.gira) return;
+  partita.fermo = true; partita.unPasso = true;
+  gira();
+}
 
 /* ============================================================
    3 · IL GIRO
@@ -137,9 +161,18 @@ async function gira(){
   p.gira = true;
   try {
     let giri = 0;
-    while (partita === p && !p.S.finita && giri++ < 400){
+    /* chi guarda non fa niente, e la partita non ha un tetto di mosse:
+       si ferma quando e' finita o quando lo chiedi */
+    while (partita === p && !p.S.finita && (!p.mia || giri++ < 400)){
+      if (!p.mia && p.fermo && !p.unPasso) break;
       const o = AR.options(p.S);
       if (!o.list.length) break;
+      /* l'unica mossa possibile e' passare: non c'e' niente da chiedere
+         a nessuno, e a Gemini costerebbe una domanda */
+      if (!p.mia && o.list.length === 1 && o.list[0].id === "avanti"){
+        applica(p, o, o.list[0], "", "ai");
+        continue;
+      }
       if (o.player === p.mia){
         const soloAvanti = o.list.length === 1 && o.list[0].id === "avanti";
         if (soloAvanti && leggi(SALTA, "1") === "1"){
@@ -149,21 +182,26 @@ async function gira(){
         p.attesa = o;
         break;
       }
-      p.attesa = null; p.pensa = true;
+      p.attesa = null; p.pensa = true; p.chiPensa = o.player;
       renderSfida();
       const ctx = { opzioni: o, fotografia: AR.fotografia(p.S, { per: o.player }),
                     registro: AR.ultimeRighe(p.S, 10), stato: p.S };
-      const r = await p.agente.scegli(ctx);
+      const r = await agenteDi(p, o.player).scegli(ctx);
       if (partita !== p) return;          // abbandonata mentre pensava
       p.pensa = false;
       const schede = applica(p, o, r && r.scelta, (r && r.perche) || "", "ai");
+      if (p.unPasso){ p.unPasso = false; break; }
       /* con calma: dopo una mossa dell'AI che ha tirato dadi ci si ferma
          il tempo di leggere le schede, prima che la mossa dopo le copra.
          Senza, l'euristica gioca mezzo turno in un attimo e dal tavolo si
-         vedono solo i pezzi arrivati, non il perche'. */
-      if (schede && !p.S.finita && leggi(SPIEGA, "1") === "1" && leggi(CALMA, "1") === "1"){
+         vedono solo i pezzi arrivati, non il perche'. Chi guarda si
+         ferma un attimo anche senza dadi: i pezzi devono vedersi muovere. */
+      const calma = leggi(CALMA, "1") === "1";
+      const leggere = schede && leggi(SPIEGA, "1") === "1" && calma ? Math.min(4500, 700 + schede * 1100) : 0;
+      const ms = Math.max(leggere, p.mia ? 0 : calma ? 450 : 120);
+      if (ms && !p.S.finita){
         renderSfida();
-        await pausa(Math.min(4500, 700 + schede * 1100));
+        await pausa(ms);
         if (partita !== p) return;
       }
     }
@@ -178,7 +216,7 @@ async function gira(){
 function applica(p, o, mossa, perche, chi){
   const r = AR.apply(p.S, mossa);
   if (chi === "ai" && mossa && mossa.id !== "avanti")
-    p.ultima = { mossa: AG.descrivi(mossa), perche, ok: r.ok, casella: o.fase };
+    p.ultima = { mossa: AG.descrivi(mossa), perche, ok: r.ok, casella: o.fase, army: o.player };
   if (!r.ok && mossa && mossa.id !== "avanti"){
     /* come nella partita da riga di comando: una mossa rifiutata non
        blocca niente, si passa e si scrive perche' */
@@ -189,7 +227,8 @@ function applica(p, o, mossa, perche, chi){
   mostraSfida(p.S);
   /* le schede delle righe nuove, e davanti il perche' dell'AI */
   const scelta = chi === "ai" && mossa && mossa.id !== "avanti" && perche
-    ? { x: { k: "scelta", t: "Perché questa mossa", u: p.agente.nome, testo: perche }, army: o.player } : null;
+    ? { x: { k: "scelta", t: "Perché questa mossa", testo: perche,
+             u: p.mia ? agenteDi(p, o.player).nome : p.S.nomi[o.player] }, army: o.player } : null;
   return raccogli(p, scelta);
 }
 const pausa = ms => new Promise(r => setTimeout(r, ms));
@@ -321,14 +360,16 @@ function raccogli(p, scelta = null){
   if (leggi(SPIEGA, "1") !== "1") return 0;
   const tutte = (scelta ? [scelta] : []).concat(nuove);
   for (const r of tutte) aggiungiScheda(r);
-  return nuove.length;
+  /* il perche' della scelta si legge anche lui, ma e' una frase e non
+     un tiro: vale poco piu' di mezza scheda */
+  return nuove.length + (scelta ? 0.6 : 0);
 }
 
 function impostazioni(){
   const chiave = leggi(KEY);
   return `
     <details class="sf-imp" ${chiave ? "" : "open"}>
-      <summary class="panel-title">Chi gioca contro di te</summary>
+      <summary class="panel-title">${partita && !partita.mia ? "Chi gioca, da tutte e due le parti" : "Chi gioca contro di te"}</summary>
       <p class="note">${chiave
         ? "Gemini, con la chiave salvata in questo browser."
         : "Nessuna chiave: gioca l'euristica che guarda avanti — le regole di buon senso da tavolo, e ogni mossa provata su una copia della partita prima di farla. Con una chiave di Google AI Studio gioca Gemini."}
@@ -357,7 +398,8 @@ export function renderSfida(){
   if (!p){
     host.innerHTML = `
       <p class="empty">Nessuna sfida in corso. Si comincia dalla scheda <b>Matchup</b>: scegli le due liste,
-        con quale giochi tu, e premi <b>Sfida l'AI sul tavolo</b>.</p>
+        con quale giochi tu, e premi <b>Sfida l'AI sul tavolo</b>. Se scegli <i>nessuno</i>, l'AI gioca da
+        tutte e due le parti e tu guardi.</p>
       <p class="note">L'arbitro tiene la partita e muove i pezzi: tu scegli fra le mosse che il regolamento
         ti permette, con le distanze e le probabilità già fatte, e l'altra parte la sceglie l'AI.</p>
       ${impostazioni()}`;
@@ -372,17 +414,40 @@ export function renderSfida(){
              : S.pending && S.pending.kind === "primo" ? "Chi comincia"
              : S.schierando ? "Schieramento"
              : `Turno ${S.turno}${S.rounds ? " di " + S.rounds : ""} · ${(AR.CASELLE[S.casella] || {}).fase || ""}`;
+  const guarda = !p.mia;
+  /* chi guarda vede i due eserciti alla pari, A a sinistra */
+  const [io, altro] = guarda ? ["A", "B"] : [p.mia, lui];
+  const testa = guarda
+    ? `<div><b style="color:var(--armyA)">${esc(S.nomi.A)}</b>
+         <span class="dim">contro</span> <b style="color:var(--armyB)">${esc(S.nomi.B)}</b>
+         <span class="dim">(tutti e due: ${esc(p.agente.nome)})</span></div>`
+    : `<div><b style="color:var(--army${p.mia})">Tu: ${esc(S.nomi[p.mia])}</b>
+        <span class="dim">contro</span> <b style="color:var(--army${lui})">${esc(S.nomi[lui])}</b>
+        <span class="dim">(${esc(p.agente.nome)})</span></div>`;
+  const vince = !S.finita || !S.esito.winner ? ""
+    : guarda ? `Ha vinto ${S.nomi[S.esito.winner]}: ` : S.esito.winner === p.mia ? "Hai vinto: " : "Ha vinto l'AI: ";
+  /* chi guarda: fermarsi, ripartire, una mossa per volta */
+  const comandi = guarda && !S.finita ? `
+    <div class="btn-row sf-guarda">
+      ${p.fermo
+        ? `<button class="btn tiny primary" id="sf-riprendi">▶ Riprendi</button>
+           <button class="btn tiny" id="sf-passo" ${p.gira ? "disabled" : ""}>Una mossa</button>`
+        : `<button class="btn tiny" id="sf-ferma">❚❚ Ferma</button>`}
+      <span class="dim">${p.fermo ? (p.gira ? "sta giocando una mossa…" : "ferma: passa sopra le schede per leggerle")
+                                  : "gioca da sola; ferma quando vuoi guardare meglio"}</span>
+    </div>` : "";
+  const chiPensa = guarda && p.chiPensa ? S.nomi[p.chiPensa] : p.agente.nome;
   host.innerHTML = `
     <div class="sf-testa">
-      <div><b style="color:var(--army${p.mia})">Tu: ${esc(S.nomi[p.mia])}</b>
-        <span class="dim">contro</span> <b style="color:var(--army${lui})">${esc(S.nomi[lui])}</b>
-        <span class="dim">(${esc(p.agente.nome)})</span></div>
-      <div class="mono">${esc(S.sc.label)} · ${esc(fase)} · punti vittoria ${pt[p.mia]} a ${pt[lui]}</div>
+      ${testa}
+      <div class="mono">${esc(S.sc.label)} · ${esc(fase)} · punti vittoria ${pt[io]} a ${pt[altro]}</div>
     </div>
     ${p.avvisi.length ? `<p class="note warn">${p.avvisi.map(esc).join("<br>")}<br>La partita si gioca lo stesso, ma quei conti sono finti.</p>` : ""}
+    ${comandi}
     ${S.finita ? `
       <div class="readout"><span>${esc(S.esito.why)}</span>
-        <b>${S.esito.winner ? (S.esito.winner === p.mia ? "Hai vinto" : "Ha vinto l'AI") + ": " + esc(S.esito.label) : esc(S.esito.label)}</b></div>`
+        <b>${esc(vince)}${esc(S.esito.label)}</b></div>`
+    : guarda ? (p.pensa ? `<p class="sf-pensa">${esc(chiPensa)} sta scegliendo…</p>` : "")
     : p.pensa || !o ? `<p class="sf-pensa">${esc(p.agente.nome)} sta scegliendo…</p>`
     : `
       <div class="sf-scelta">
@@ -398,7 +463,8 @@ export function renderSfida(){
       </div>`}
     ${p.ultima ? `
       <div class="sf-ai">
-        <div class="dim">L'ultima mossa dell'AI (${esc(p.ultima.casella || "")})</div>
+        <div class="dim">${guarda && p.ultima.army ? `L'ultima mossa di <b style="color:var(--army${p.ultima.army})">${esc(S.nomi[p.ultima.army])}</b>`
+                                                  : "L'ultima mossa dell'AI"} (${esc(p.ultima.casella || "")})</div>
         <div><b>${esc(p.ultima.mossa)}</b></div>
         ${p.ultima.perche ? `<blockquote>${esc(p.ultima.perche)}</blockquote>` : ""}
       </div>` : ""}
@@ -422,6 +488,10 @@ export function renderSfida(){
     try { await navigator.clipboard.writeText(testo); copia.textContent = "Copiato ✓"; }
     catch { copia.textContent = "Non riesco a copiare"; }
   });
+  for (const [id, fai] of [["#sf-ferma", ferma], ["#sf-riprendi", riprendi], ["#sf-passo", unPasso]]){
+    const b = host.querySelector(id);
+    if (b) b.addEventListener("click", fai);
+  }
   const basta = $("#sf-basta");
   if (basta) basta.addEventListener("click", () => abbandona());
   agganciaImpostazioni(host);
@@ -433,13 +503,13 @@ function agganciaImpostazioni(host){
     scrivi(KEY, host.querySelector("#sf-key").value.trim());
     scrivi(MODEL, host.querySelector("#sf-model").value.trim());
     /* l'avversario cambia subito, anche a partita in corso */
-    if (partita) partita.agente = faiAgente();
+    if (partita){ partita.agente = faiAgente(); if (partita.agenti) partita.agenti = { A: faiAgente(), B: faiAgente() }; }
     toast(leggi(KEY) ? "Chiave salvata: gioca Gemini." : "Nessuna chiave: gioca l'euristica che guarda avanti.");
     renderSfida();
   });
   const dimentica = host.querySelector("#sf-forget");
   if (dimentica) dimentica.addEventListener("click", () => {
-    scrivi(KEY, ""); if (partita) partita.agente = faiAgente(); renderSfida();
+    scrivi(KEY, ""); if (partita){ partita.agente = faiAgente(); if (partita.agenti) partita.agenti = { A: faiAgente(), B: faiAgente() }; } renderSfida();
   });
   const salta = host.querySelector("#sf-salta");
   if (salta) salta.addEventListener("change", () => { scrivi(SALTA, salta.checked ? "1" : "0"); gira(); });
