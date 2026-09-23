@@ -1028,10 +1028,13 @@ console.log('\nla riga di comando');
   const pagina = conMappa.status === 0 && fs.existsSync(fileMappa) ? fs.readFileSync(fileMappa, 'utf8') : '';
   const P = pagina ? JSON.parse((pagina.match(/var P = (\{.*\});\n/) || [])[1] || 'null') : null;
   const conte = l => (JSON.parse(fs.readFileSync(new URL('../dati/liste.json', import.meta.url), 'utf8'))[l].units || []).length;
+  const vere = P ? P.unita.filter(u => !u.tutte) : [];
   ok('--heatmap scrive la pagina, con tutte le unità delle due liste',
-     !!P && P.unita.length === conte(3) + conte(4) && P.meta.partite === 4);
+     !!P && vere.length === conte(3) + conte(4) && P.meta.partite === 4);
   ok('e ogni unità ha i suoi posti di partenza, contati su tutte le partite',
-     !!P && P.unita.every(u => u.posti.reduce((s, p) => s + p.n, 0) === 4));
+     !!P && vere.every(u => u.posti.reduce((s, p) => s + p.n, 0) === 4));
+  ok('e ogni posto porta la stima ristretta, fra 0 e 1',
+     !!P && vere.every(u => u.posti.every(p => p.post >= 0 && p.post <= 1)));
   ok('--heatmap senza --partite si ferma e lo dice', lancia(['--heatmap', fileMappa]).status === 1);
   if (fs.existsSync(fileMappa)) fs.unlinkSync(fileMappa);
   /* gli scenari disegnati nell'app, da dati/scenari.json */
