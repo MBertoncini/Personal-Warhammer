@@ -672,14 +672,17 @@ Prove in `test/mischia.mjs` («le ferite multiple») e `test/arbitro.mjs`
   bombardata «colpiva nessuno». Adesso l'arbitro la chiama sempre con i
   dadi, anche zero.
 
-**Da decidere**: senza la regola, le ferite su un'unità spazzata via si
-contano ancora **tutte** nel risultato (`land` in `meleeFight` somma
-`r.wounds`), anche quelle che non avevano più nessuno da ferire. P. 212
-dice che si contano le ferite perse: `takeWounds` il numero giusto lo
-dà già (`lost`), ma cambiarlo sposta i verdetti di molte prove, e va
-fatto da solo, con il libro aperto sul caso dell'unità distrutta
-(p. 152). Restano testo i tre incantesimi con «Multiple Wounds» dei
-domini (`dati/magia/domini.json`, voci «a mano»).
+~~**Da decidere**~~ — fatto subito dopo: nel risultato entrano le ferite
+**perse** anche senza la regola. P. 152: «each Wound the enemy side lost
+… is counted», e chi è tolto dal gioco conta le ferite che gli
+restavano. Prima `land` sommava le ferite non salvate, e otto ferite su
+un'unità da due modelli valevano otto punti mentre l'unità accanto
+restava in piedi. L'eccesso va in `oltre` e conta solo per l'overkill
+della sfida, che resta com'era (la prova lo guarda). Pesa solo nei
+combattimenti a più unità e sui capi presi di mira: quando una parte è
+spazzata via tutta, l'altra vince comunque (stessa pagina). Restano
+testo i tre incantesimi con «Multiple Wounds» dei domini
+(`dati/magia/domini.json`, voci «a mano»).
 
 ## Come si lavora qui
 

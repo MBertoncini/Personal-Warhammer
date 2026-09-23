@@ -1133,12 +1133,14 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
        si contano solo le ferite perse» (p. 212). Quelle date a un
        rivale gia' a terra stanno in un mucchio a parte: contano per
        l'overkill e non per il conto del combattimento. */
-    /* Con le «Multiple Wounds» nel risultato vanno le ferite PERSE, e
-       quello che avanza su un modello «counts for Overkill» se e' un
-       personaggio (p. 175): sta nello stesso mucchio a parte. Senza la
-       regola si somma quello che si e' sempre sommato. */
-    const fatte = x.r.losses ? t.caused : x.r.wounds;
-    const perse = x.r.losses ? t.lost : x.r.wounds;
+    /* Nel risultato vanno le ferite PERSE: «each Wound the enemy side
+       lost … is counted» (p. 152). Prima si sommavano le ferite non
+       salvate, e otto ferite su un'unita' da due modelli valevano otto
+       punti mentre l'unita' accanto restava in piedi. Quello che avanza
+       — su un modello, con le «Multiple Wounds» (p. 175), o su chi non
+       c'e' piu' — sta nel mucchio a parte, e conta solo per l'overkill
+       di un personaggio in sfida (p. 212). */
+    const fatte = t.caused, perse = t.lost;
     if (x.caduto) me.oltre = (me.oltre || 0) + fatte;
     else {
       me.dealt += perse; done[x.e.tag] += perse;

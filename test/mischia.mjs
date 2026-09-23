@@ -861,6 +861,33 @@ console.log('\ngli attacchi che si tirano (Random Attacks, p. 176)');
 }
 
 /* ================================================================= */
+console.log('\nnel risultato contano le ferite perse (p. 152)');
+{
+  const D = await import('../src/dice.js');
+  const prof = { M:'4',WS:'3',BS:'3',S:'3',T:'3',W:'1',I:'3',A:'1',Ld:'7' };
+  /* due unita' davanti: una da due modelli presa da quasi tutta la
+     fila, e una grande che resta in piedi */
+  const due = [C.combatant(unit('Pochi', prof, 2, 2, { uid: 61 })),
+               C.combatant(unit('Tanti', prof, 20, 5, { uid: 62 }))];
+  const saurus = C.combatant(unit('Saurus', { ...prof, S:'5', T:'4' }, 20, 5),
+                             { touchingVs: { 61: { models: 4, chars: [] }, 62: { models: 1, chars: [] } } });
+  D.setSource(() => 5);                                  // tutti sei
+  const r = C.meleeFight([saurus], due);
+  const su = nome => r.steps.filter(s => s.side === 'A' && s.foe === nome).reduce((n, s) => n + s.wounds, 0);
+  ok('otto ferite non salvate su due modelli da una', su('Pochi') === 8 && r.sides.B[0].models === 0);
+  ok('ma ne perdono due, e nel risultato ne entrano due',
+     r.done.A === 2 + su('Tanti'));
+  ok('la parte non è spazzata via: l altra unità è ancora lì', !r.wiped);
+  /* «any unsaved wounds … counts for Overkill» resta: nella sfida
+     l'eccesso sul rivale caduto si conta ancora */
+  const eroe = () => C.combatant(unit('Saurus Oldblood', { ...prof, WS:'6', S:'7', T:'5', W:'3', A:'5' }, 1, 1));
+  const rivale = () => C.combatant(unit('Orc Boss', { ...prof, T:'4', W:'2', A:'1' }, 1, 1));
+  const duello = C.meleeFight([eroe()], [rivale()], { challenge: true });
+  ok('e l overkill conta ancora le ferite in più (p. 212)', duello.sides.A[0].overkill === 3);
+  D.setSource(D.seeded(1));
+}
+
+/* ================================================================= */
 console.log('\nle ferite multiple (Multiple Wounds, p. 175)');
 {
   const D = await import('../src/dice.js');

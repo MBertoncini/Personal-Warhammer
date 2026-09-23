@@ -1897,7 +1897,9 @@ per chi ne ha bisogno.
   le ferite **perse** (quelle che il risultato conta, p. 212) e quelle
   **fatte** (l'overkill di un personaggio); le previsioni usano la
   media del dado tagliata alle ferite del modello (`multiMean`). Sulla
-  Bombardata vale solo per il buco (pp. 224, 228).
+  Bombardata vale solo per il buco (pp. 224, 228). E con lei una
+  correzione che valeva per tutti: nel risultato entrano le ferite
+  **perse** e non quelle non salvate (p. 152), anche senza la regola.
 - Il **profilo diviso** di una macchina da guerra (p. 97): Resistenza
   e Ferite dell'equipaggio in combattimento, quelle della macchina
   fuori, e il modello che se ne va se uno dei due arriva a zero.
