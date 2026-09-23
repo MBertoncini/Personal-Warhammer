@@ -224,7 +224,12 @@ export function armyFrom(lista, army, from = 0){
 /* `def` e' la scheda dello scenario quando non sta in `SCENARIOS`: gli
    scenari salvati dal tavolo vivono nell'archivio del browser, e
    l'arbitro — che gira anche fuori dal browser — non li va a cercare. */
-export function newBattle({ A, B, scenario = "bm-strada", def = null, nomi = null, magia = null, durata = null } = {}){
+/* `primo`: "tira" (il libro: due tiri, vedi CHI COMINCIA) oppure "A" o
+   "B", per chi vuole una partita in cui quella parte schiera e muove per
+   prima comunque — le prove che guardano un gesto preciso, e chi
+   rigioca una partita di prima dei tiri. */
+export function newBattle({ A, B, scenario = "bm-strada", def = null, nomi = null, magia = null, durata = null,
+                            primo = "tira" } = {}){
   const sc = def || SCENARIOS[scenario] || SCENARIOS["bm-strada"];
   const formato = VC.formatFor(sc);
   const lunga = durata === "breakpoint" || durata === "fixed" || durata === "bm" ? durata : VC.defaultLength(formato);
@@ -271,7 +276,13 @@ export function newBattle({ A, B, scenario = "bm-strada", def = null, nomi = nul
     punti: { A: (A.units || []).reduce((s, u) => s + (u.pts || 0), 0),
              B: (B.units || []).reduce((s, u) => s + (u.pts || 0), 0) },
     usStart: { A: 0, B: 0 },
-    turno: 1, army: "A", casella: 0, schierando: true, primo: "A",
+    turno: 1, army: primo === "B" ? "B" : "A", casella: 0, schierando: true,
+    /* chi comincia: con «tira» lo si sa solo a schieramento finito, e
+       fino ad allora e' null; `chiSchiera` e' chi mette la prima unita' */
+    primo: primo === "A" || primo === "B" ? primo : null,
+    primoFisso: primo === "A" || primo === "B",
+    chiSchiera: primo === "A" || primo === "B" ? primo : null,
+    finitoPrima: null, tiriPrimo: [],
     formato, durata: lunga, rounds: VC.roundsFor(lunga) || null, finita: false, esito: null,
     /* chi teneva gli obiettivi alla fine di ogni turno di giocatore:
        e' la forma che `VC.objectivePoints` somma */
@@ -728,6 +739,17 @@ export function options(S){
     if (o) return o;
   }
 
+  /* le due domande di CHI COMINCIA vengono prima di tutto il resto */
+  if (S.schierando && !S.chiSchiera && !S.pending) apriSchieramento(S);
+  if (S.pending && S.pending.kind === "primo"){
+    const p = S.pending;
+    return { player: p.lato, fase: p.cosa === "schiera" ? "Schieramento" : "Primo turno", page: p.page,
+             what: p.cosa === "schiera"
+               ? `${S.nomi[p.lato]} ha vinto il tiro: chi schiera la prima unità?`
+               : `${S.nomi[p.lato]} ha vinto il tiro: chi comincia la partita?`,
+             list: p.list };
+  }
+
   if (S.schierando){
     const prossima = daSchierare(S);
     if (!prossima) return { player: S.army, fase: "Schieramento", what: "tutti schierati", list: [{ id:"avanti", why:"si comincia" }] };
@@ -809,11 +831,11 @@ const byUid = (S, uid) => S.units.find(u => u.uid === uid) || null;
 const avanti = why => ({ id:"avanti", why });
 const altro = army => army === "A" ? "B" : "A";
 
-function daSchierare(S){
+function daSchierare(S, army = S.army){
   /* chi ha rinunciato — perche' nella zona non c'era piu' posto — non
      torna a chiedere: resta fuori dal tavolo, e a fine partita vale
      quello che vale */
-  const mie = unitsOf(S, S.army).filter(u => !u.placed && !isJoined(u) && !u.rinuncia);
+  const mie = unitsOf(S, army).filter(u => !u.placed && !isJoined(u) && !u.rinuncia);
   /* i personaggi che possono unirsi vengono dopo i reggimenti: al
      tavolo ci si unisce «essendo messi con l'unita'» (p. 207), e un
      capo schierato per primo non avrebbe nessuno con cui stare */
@@ -1883,13 +1905,14 @@ export function apply(S, a){
 }
 /* si alterna, e chi ha finito lascia continuare l'altro */
 function alterna(S){
+  segnaChiHaFinito(S);
   S.army = S.army === "A" ? "B" : "A";
   if (!daSchierare(S)){
     S.army = S.army === "A" ? "B" : "A";
     if (!daSchierare(S)) fineSchieramento(S);
   }
 }
-const SOSPESI = { dissolvi: ["dissolvi", "lascia", "avanti"], assalto: ["lancia", "lascia", "avanti"],
+const SOSPESI = { primo: ["primo", "avanti"], dissolvi: ["dissolvi", "lascia", "avanti"], assalto: ["lancia", "lascia", "avanti"],
                   sfida: ["sfida", "nessuna", "avanti"],
                   raccogli: ["accetta", "rifiuta", "avanti"],
                   ritira: ["ritira", "nessuna", "avanti"],
@@ -1902,6 +1925,8 @@ const GESTI = {
      «non faccio niente»: la partita non salta la domanda, la chiude */
   avanti: (S) => {
     const k = S.pending ? S.pending.kind : "";
+    /* «passo» davanti a chi comincia: chi ha vinto il tiro prende per se' */
+    if (k === "primo") return GESTI.primo(S, S.pending.list.find(x => x.chi === S.pending.lato));
     if (k === "dissolvi" || k === "assalto") return GESTI.lascia(S);
     if (k === "sfida" || k === "ritira") return GESTI.nessuna(S);
     /* «passo» davanti agli Abominable Attacks vuol dire attaccare come sempre */
@@ -1915,6 +1940,7 @@ const GESTI = {
     return si(passo(S));
   },
 
+  primo:   (S, a) => sceltaPrimo(S, a),
   dominio: (S, a) => sceltaDominio(S, a),
   vaga:    (S, a) => vaga(S, a),
   abominio:(S, a) => sceltaAbominio(S, a),
@@ -4434,7 +4460,122 @@ function inseguimento(S, vincitore, fuggito, quantoHaFuggito){
    gioca ha finito, e l'arbitro non lo fa da solo: la partita e' di chi
    la gioca, anche quando chi la gioca e' una macchina.
    ============================================================ */
+/* ============================================================
+   CHI COMINCIA (p. 285, p. 289; Battle March pp. 26-27)
+   Prima questo pezzo non c'era: A schierava per prima e muoveva per
+   prima in ogni partita, e ogni partita fra due macchine lo
+   ereditava. Trecento partite dicevano «O&G vince il 75%» e non si
+   poteva sapere quanto di quel numero fosse l'esercito e quanto il
+   primo turno, che le liste da tiro e da magia pagano care.
+
+   Il libro fa due tiri, e i due manuali li fanno diversi:
+
+     CORE (p. 285) chi vince il primo tiro SCEGLIE chi schiera la
+       prima unita'. A schieramento finito (p. 289, ed e' la stessa
+       riga in tutti gli scenari del libro) si tira ancora, chi ha
+       finito di schierare per primo aggiunge 1, e chi vince muove per
+       primo: qui non c'e' scelta.
+     BATTLE MARCH (p. 26) chi vince il primo tiro schiera la prima
+       unita', senza scegliere; e a schieramento finito (p. 27) chi
+       vince il secondo SCEGLIE chi muove per primo, senza +1.
+
+   Le scelte sono gesti, come tutte: l'arbitro le chiede a chi ha
+   vinto (`pending.kind === "primo"`), e «passo» vuol dire «io». Lo
+   scenario che dice «questo esercito comincia comunque» (p. 289, gli
+   Orchi di L'Anguille) non c'e' fra quelli che l'app conosce; chi
+   vuole una parte fissa la da' a `newBattle({ primo })`.
+   ============================================================ */
+export const PAGINE_PRIMO = { core: { schiera: 285, turno: 289 }, bm: { schiera: 26, turno: 27 } };
+const libroPrimo = S => S.formato === "bm" ? "bm" : "core";
+
+/* Un tiro a chi fa di piu', rifatto finche' e' pari; `piu` e' chi ha il
+   +1 per aver finito di schierare */
+function tiroAChiFaDiPiu(S, piu = null){
+  const volte = [];
+  for (let i = 0; i < 50; i++){
+    const [a] = roll(1), [b] = roll(1);
+    const ta = a + (piu === "A" ? 1 : 0), tb = b + (piu === "B" ? 1 : 0);
+    volte.push({ A: a, B: b });
+    if (ta !== tb) return { vince: ta > tb ? "A" : "B", volte, piu };
+  }
+  return { vince: "A", volte, piu };
+}
+const scriviTiro = (S, t) => t.volte
+  .map(v => `${S.nomi.A} ${v.A}${t.piu === "A" ? "+1" : ""}, ${S.nomi.B} ${v.B}${t.piu === "B" ? "+1" : ""}`)
+  .join(" — pari, si ritira: ");
+
+function opzioniPrimo(S, cosa, lato, page){
+  const verbo = cosa === "schiera" ? "schiera la prima unità" : "muove per primo";
+  return ["A", "B"].map(chi => ({
+    id: "primo", cosa, chi, nome: S.nomi[chi],
+    why: `${S.nomi[chi]} ${verbo}` + (cosa === "schiera"
+      ? (chi === lato ? ": chi finisce di schierare per primo ha +1 al tiro per il primo turno"
+                      : ": si schiera vedendo cosa ha già messo l'altro")
+      : chi === lato ? ": tira e muove prima che l'altro si sia avvicinato"
+                     : ": vede la prima mossa dell'altro, e ha l'ultima parola sugli obiettivi"),
+    page }));
+}
+
+function apriSchieramento(S){
+  const libro = libroPrimo(S), pg = PAGINE_PRIMO[libro];
+  const t = tiroAChiFaDiPiu(S);
+  S.tiriPrimo.push({ cosa: "schiera", ...t });
+  S.army = t.vince;
+  if (libro === "bm"){
+    S.chiSchiera = t.vince;
+    say(S, `Tiro per lo schieramento: ${scriviTiro(S, t)}. ${S.nomi[t.vince]} schiera la prima unità (Battle March p. ${pg.schiera}).`,
+        { page: pg.schiera });
+    return;
+  }
+  say(S, `Tiro per lo schieramento: ${scriviTiro(S, t)}. ${S.nomi[t.vince]} sceglie chi schiera la prima unità (p. ${pg.schiera}).`,
+      { page: pg.schiera });
+  S.pending = { kind: "primo", cosa: "schiera", lato: t.vince, page: pg.schiera,
+                list: opzioniPrimo(S, "schiera", t.vince, pg.schiera) };
+}
+
+function sceltaPrimo(S, a){
+  const p = S.pending;
+  if (!p || p.kind !== "primo" || !a || (a.chi !== "A" && a.chi !== "B")) return no("non c'è da scegliere chi comincia");
+  S.pending = null;
+  const chi = a.chi === p.lato ? "se stesso" : S.nomi[a.chi];
+  if (p.cosa === "schiera"){
+    S.chiSchiera = a.chi; S.army = a.chi;
+    say(S, `${S.nomi[p.lato]} fa schierare per primo ${chi}.`, { army: p.lato, page: p.page });
+    return si(`${S.nomi[a.chi]} schiera per primo`);
+  }
+  S.primo = a.chi;
+  say(S, `${S.nomi[p.lato]} fa cominciare ${chi}.`, { army: p.lato, page: p.page });
+  iniziaBattaglia(S);
+  return si(`${S.nomi[a.chi]} muove per primo`);
+}
+
+/* chi finisce di schierare per primo: si guarda ogni volta che una
+   parte ha messo qualcosa (o ha rinunciato), prima di passare la mano */
+function segnaChiHaFinito(S){
+  if (S.finitoPrima) return;
+  for (const a of [S.army, altro(S.army)]) if (!daSchierare(S, a)){ S.finitoPrima = a; return; }
+}
+
 function fineSchieramento(S){
+  if (S.primoFisso) return iniziaBattaglia(S);
+  const libro = libroPrimo(S), pg = PAGINE_PRIMO[libro];
+  const t = tiroAChiFaDiPiu(S, libro === "core" ? S.finitoPrima : null);
+  S.tiriPrimo.push({ cosa: "turno", ...t });
+  if (libro === "core"){
+    S.primo = t.vince;
+    say(S, `Tiro per il primo turno: ${scriviTiro(S, t)}` +
+           (S.finitoPrima ? ` (${S.nomi[S.finitoPrima]} ha finito di schierare per primo)` : "") +
+           `. Comincia ${S.nomi[t.vince]} (p. ${pg.turno}).`, { page: pg.turno });
+    return iniziaBattaglia(S);
+  }
+  S.army = t.vince;
+  say(S, `Tiro per il primo turno: ${scriviTiro(S, t)}. ${S.nomi[t.vince]} sceglie chi comincia (Battle March p. ${pg.turno}).`,
+      { page: pg.turno });
+  S.pending = { kind: "primo", cosa: "turno", lato: t.vince, page: pg.turno,
+                list: opzioniPrimo(S, "turno", t.vince, pg.turno) };
+}
+
+function iniziaBattaglia(S){
   S.schierando = false;
   S.army = S.primo;
   S.casella = 0;
@@ -4574,6 +4715,7 @@ function passo(S){
        comincia */
     const mia = daSchierare(S);
     if (mia){ mia.placed = false; mia.rinuncia = true; }
+    segnaChiHaFinito(S);
     S.army = S.army === "A" ? "B" : "A";
     if (!daSchierare(S)){
       S.army = S.army === "A" ? "B" : "A";

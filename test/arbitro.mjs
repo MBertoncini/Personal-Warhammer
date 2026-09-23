@@ -49,7 +49,9 @@ const casella = id => AR.CASELLE.findIndex(c => c.id === id);
 /* ================================================================= */
 console.log('il tavolo');
 seme(1);
-let S = AR.newBattle({ A, B, scenario:'bm-strada', nomi:{ A:'Lucertole', B:'Orchi' } });
+/* A schiera per prima per scelta, non per tiro: qui si guarda il gesto
+   dello schieramento, e i tiri di chi comincia hanno le prove loro */
+let S = AR.newBattle({ A, B, scenario:'bm-strada', nomi:{ A:'Lucertole', B:'Orchi' }, primo:'A' });
 ok('le due liste diventano due eserciti',
    AR.unitsOf(S, 'A').length === A.units.length && AR.unitsOf(S, 'B').length === B.units.length);
 ok('con il tavolo dello scenario', S.table.wIn === 48 && S.table.hIn === 36);
@@ -438,7 +440,7 @@ const aContattoDi = (G, u, t) => {
   u.x = al.x; u.y = al.y; u.rot = al.rot; return al;
 };
 const dentro = (G, a, b) => polysOverlap(AR.cornersOf(a, G.units), AR.cornersOf(b, G.units));
-const nuova = () => { const G = AR.newBattle({ A, B, scenario:'bm-strada' }); G.schierando = false; return G; };
+const nuova = () => { const G = AR.newBattle({ A, B, scenario:'bm-strada', primo:'A' }); G.schierando = false; return G; };
 
 console.log('\ni nomi uguali');
 {
@@ -832,9 +834,78 @@ console.log('\nla marcia fallita è una marcia (p. 123)');
   ok('e chi ha marciato non tira (p. 137)', !AR.options(G).list.some(x => x.id === 'tira' && x.uid === sk.uid));
 }
 
+console.log('\nchi comincia (p. 285, p. 289; Battle March pp. 26-27)');
+{
+  /* Battle March: chi vince il primo tiro schiera, senza scegliere */
+  seme(3);
+  const G = AR.newBattle({ A, B, scenario:'bm-strada', nomi:{ A:'Lucertole', B:'Orchi' } });
+  const o = AR.options(G);
+  const t = G.tiriPrimo[0];
+  ok('Battle March: si tira per lo schieramento, e chi vince schiera la prima unità',
+     t && t.cosa === 'schiera' && o.fase === 'Schieramento' && o.player === t.vince &&
+     o.list.every(x => x.id === 'schiera') && G.log.some(r => r.page === 26 && /Tiro per lo schieramento/.test(r.text)));
+  ok('il tiro pari si ritira', t.volte.slice(0, -1).every(v => v.A === v.B) && t.volte.at(-1).A !== t.volte.at(-1).B);
+  ok('nessuno comincia prima che lo schieramento finisca', G.primo === null);
+  /* a schieramento finito, il secondo tiro: chi vince SCEGLIE (p. 27) */
+  let giri = 0;
+  while (!AR.options(G).list.some(x => x.id === 'primo') && giri++ < 60) AR.apply(G, AR.options(G).list[0]);
+  const q = AR.options(G);
+  const t2 = G.tiriPrimo[1];
+  ok('Battle March: a schieramento finito chi vince il tiro sceglie chi comincia',
+     q.fase === 'Primo turno' && q.player === t2.vince && q.list.length === 2 &&
+     q.list.map(x => x.chi).sort().join('') === 'AB' && q.page === 27);
+  ok('e senza il +1 del Core', t2.piu === null);
+  const altro = q.list.find(x => x.chi !== q.player);
+  AR.apply(G, altro);
+  ok('e può anche lasciar cominciare l altro', G.primo === altro.chi && G.army === altro.chi &&
+     !G.schierando && G.turno === 1);
+}
+{
+  /* Core: chi vince il primo tiro sceglie chi schiera (p. 285) */
+  seme(5);
+  const G = AR.newBattle({ A, B, scenario:'open', nomi:{ A:'Lucertole', B:'Orchi' } });
+  const o = AR.options(G);
+  ok('Core: chi vince il tiro sceglie chi schiera per primo',
+     o.list.length === 2 && o.list.every(x => x.id === 'primo' && x.cosa === 'schiera') && o.page === 285);
+  const per = o.list.find(x => x.chi !== o.player);
+  AR.apply(G, per);
+  ok('e la scelta vale', G.chiSchiera === per.chi && AR.options(G).player === per.chi &&
+     AR.options(G).list.every(x => x.id === 'schiera' || x.id === 'unisci'));
+  /* «passo» vuol dire «io» */
+  seme(5);
+  const H = AR.newBattle({ A, B, scenario:'open' });
+  const oh = AR.options(H);
+  AR.apply(H, { id:'avanti' });
+  ok('«passo» davanti alla scelta vuol dire che chi ha vinto prende per sé', H.chiSchiera === oh.player);
+  /* a schieramento finito, +1 a chi ha finito per primo, e nessuna scelta */
+  let giri = 0;
+  while (G.schierando && giri++ < 80) AR.apply(G, AR.options(G).list[0]);
+  const t2 = G.tiriPrimo[1];
+  const fin = t2.volte.at(-1);
+  const tot = x => fin[x] + (t2.piu === x ? 1 : 0);
+  ok('Core: il secondo tiro dà +1 a chi ha finito di schierare per primo (p. 289)',
+     t2.cosa === 'turno' && t2.piu === G.finitoPrima && !!G.finitoPrima);
+  ok('e chi fa di più comincia, senza scegliere', !G.schierando && G.primo === (tot('A') > tot('B') ? 'A' : 'B') &&
+     G.army === G.primo && G.log.some(r => r.page === 289));
+}
+{
+  /* su cento semi i due tiri si dividono, e A non comincia sempre */
+  const chi = { A: 0, B: 0 };
+  for (let s = 1; s <= 100; s++){
+    seme(s);
+    const G = AR.newBattle({ A, B, scenario:'bm-strada' });
+    AR.options(G);
+    chi[G.chiSchiera]++;
+  }
+  ok(`cento tiri per lo schieramento si dividono (A ${chi.A}, B ${chi.B})`, chi.A > 30 && chi.B > 30);
+  const F = AR.newBattle({ A, B, scenario:'bm-strada', primo:'B' });
+  ok('con primo:"B" B schiera e comincia senza tirare', F.primo === 'B' && F.chiSchiera === 'B' &&
+     AR.options(F).player === 'B' && F.tiriPrimo.length === 0);
+}
+
 console.log('\nlo schieramento, la prima fila davanti (p. 115)');
 {
-  const G = AR.newBattle({ A, B, scenario:'bm-strada' });
+  const G = AR.newBattle({ A, B, scenario:'bm-strada', primo:'A' });
   const posti = AR.options(G).list;
   const primi = posti.filter(x => !/fila/.test(x.dove)), dietro = posti.filter(x => /fila/.test(x.dove));
   ok('la prima fila di chi sta in basso è la più alta sul tavolo',
@@ -924,7 +995,9 @@ console.log('\nla riga di comando');
   /* tante partite: il conto torna, e ogni seme è la partita che si
      rigioca da sola con quel seme */
   const serie = lancia(['--liste', '3,4', '--partite', '3', '--seme', '5']);
-  const vinte = [...serie.stdout.matchAll(/vince\s+(\d+)/g)].map(m => +m[1]);
+  /* le righe «<lista>  vince  N  P%»: le altre righe con «vince» (chi
+     muove per primo, chi sta in basso) hanno la percentuale e non il conto */
+  const vinte = [...serie.stdout.matchAll(/vince\s+(\d+)\s+\d+%/g)].map(m => +m[1]);
   const pari = +((serie.stdout.match(/pareggio\s+(\d+)/) || [])[1]);
   ok('--partite 3 gioca tre partite e le conta tutte', serie.status === 0 && vinte.length === 2 && vinte[0] + vinte[1] + pari === 3);
   ok('--partite non si mescola con --gemini', lancia(['--partite', '3', '--gemini']).status === 1);
@@ -934,8 +1007,15 @@ console.log('\nla riga di comando');
   const rigide = lancia(['--liste', '3,4', '--partite', '4']);
   const estrose = lancia(['--liste', '3,4', '--partite', '4', '--estro']);
   ok('senza estro le partite si schierano tutte uguali', rigide.status === 0 && schier(rigide.stdout) === 1);
-  ok('con l estro no, e il conto dice quali piani vincono',
-     estrose.status === 0 && schier(estrose.stdout) > 1 && /quali piani vincono/.test(estrose.stdout));
+  ok('con l estro no, e il conto dice quali piani contano',
+     estrose.status === 0 && schier(estrose.stdout) > 1 && /quali piani contano/.test(estrose.stdout));
+  /* lo specchio: ogni seme due volte, e il conto separa il lato */
+  const spec = lancia(['--liste', '3,4', '--partite', '2', '--specchio']);
+  const vs = [...spec.stdout.matchAll(/vince\s+(\d+)\s+\d+%/g)].map(m => +m[1]);
+  const ps = +((spec.stdout.match(/pareggio\s+(\d+)/) || [])[1]);
+  ok('--specchio gioca ogni seme due volte, e stima il lato del tavolo',
+     spec.status === 0 && vs[0] + vs[1] + ps === 4 && /stare in basso \(zona A\)\s+[+-]\d+ punti/.test(spec.stdout));
+  ok('--specchio senza --partite si ferma e lo dice', lancia(['--specchio']).status === 1);
   const vp = out => (out.match(/(\d+) punti vittoria — .* (\d+)\s*$/m) || []).slice(1).join('-');
   const una = lancia(['--liste', '3,4', '--seme', '7', '--estro', '--breve']);
   const due = lancia(['--liste', '3,4', '--seme', '7', '--estro', '--breve']);
@@ -1305,7 +1385,7 @@ console.log('\ni personaggi che si uniscono (pp. 206-208)');
 {
   /* dadi fissi: `sei` fa uscire sempre la stessa faccia */
   const sempre = f => D.setSource(() => f - 1);
-  const G = AR.newBattle({ A, B, scenario:'bm-strada' });
+  const G = AR.newBattle({ A, B, scenario:'bm-strada', primo:'A' });   // A schiera: il tiro non c'entra qui
   /* i reggimenti di A in campo, i personaggi ancora fuori */
   let x = 150;
   for (const u of AR.unitsOf(G, 'A')) if (!AR.puoUnirsi(G, u)){ metti(G, u, x, 650); x += 180; }

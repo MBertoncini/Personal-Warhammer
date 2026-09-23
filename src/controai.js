@@ -186,7 +186,7 @@ function scegli(i){
    4 · IL PANNELLO
    ============================================================ */
 const ETICHETTA = {
-  schiera: "Schiera", unisci: "Unisci", unisciti: "Unisciti", separa: "Esci dal reggimento",
+  primo: "Tocca a", schiera: "Schiera", unisci: "Unisci", unisciti: "Unisciti", separa: "Esci dal reggimento",
   dominio: "Dominio", tieni: "Tieni", scambia: "Scambia",
   raduna: "Raduna", carica: "Carica", reazione: "Reagisce", avanza: "Avanza", marcia: "Marcia",
   aggira: "Aggira l’ostacolo",
@@ -266,6 +266,7 @@ export function renderSfida(){
   const o = p.attesa;
   const fase = S.finita ? "Partita finita"
              : S.preparando ? "Incantesimi, prima di schierare"
+             : S.pending && S.pending.kind === "primo" ? "Chi comincia"
              : S.schierando ? "Schieramento"
              : `Turno ${S.turno}${S.rounds ? " di " + S.rounds : ""} · ${(AR.CASELLE[S.casella] || {}).fase || ""}`;
   host.innerHTML = `

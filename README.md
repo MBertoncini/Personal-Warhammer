@@ -314,6 +314,7 @@ node tools/partita.mjs --archivia     # e anche nel diario, in testa a dati/part
 node tools/partita.mjs --liste 4,9 --partite 100   # cento partite di euristica, solo il conto: chi vince quante volte
 node tools/partita.mjs --liste 4,9 --partite 100 --estro   # e ognuna con un piano diverso: dice anche quali piani vincono
 node tools/partita.mjs --liste 4,9 --partite 300 --estro --heatmap mappa.html   # la mappa: dove parte, passa e combatte ogni unità, e come va
+node tools/partita.mjs --liste 4,9 --partite 150 --specchio   # ogni seme due volte, con le liste scambiate di lato
 node tools/partita.mjs --scenario sxmttrgusdc7c   # uno scenario disegnato nell'app, da dati/scenari.json
 node tools/controlla-partita.mjs partita.html  # e il controllo di quello che è successo
 ```

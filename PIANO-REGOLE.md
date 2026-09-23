@@ -1858,6 +1858,22 @@ E l'arbitro è sceso sul tavolo: la **Sfida** della scheda Matchup fa
 giocare una persona contro il modello di linguaggio, con l'arbitro in
 mezzo (`controai.js`).
 
+**Chi comincia** (Core pp. 285, 289; Battle March pp. 26-27). L'arbitro
+non lo tirava: la parte A schierava per prima e muoveva per prima in
+ogni partita, e ogni serie di partite fra due macchine lo ereditava
+senza dirlo — il commento di `partita.mjs` sosteneva il contrario. Il
+libro fa due tiri, diversi nei due manuali: nel Core chi vince il primo
+**sceglie** chi schiera la prima unità (p. 285), e a schieramento
+finito si tira ancora con **+1 a chi ha finito di schierare per
+primo**, e chi vince comincia senza scegliere (p. 289, la stessa riga
+in tutti gli scenari del libro); in Battle March chi vince il primo
+schiera per primo senza scegliere (p. 26), e chi vince il secondo
+**sceglie** chi comincia, senza +1 (p. 27). Le scelte sono gesti
+(`primo`), e «passo» vuol dire «io». Gli scenari del libro che fanno
+cominciare un esercito comunque (gli Orchi di L'Anguille, p. 289) non
+sono fra quelli dell'app; `newBattle({ primo: "A" })` fissa una parte
+per chi ne ha bisogno.
+
 ### Cosa resta
 
 - **La magia che resta testo.** Vortici, trasporti, sagome, linee: un

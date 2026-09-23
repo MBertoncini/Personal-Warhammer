@@ -21,6 +21,8 @@
  *   node tools/partita.mjs --partite 100        cento partite, semi 1..100, e solo il conto
  *   node tools/partita.mjs --partite 100 --estro  e ognuna con un piano diverso dell'euristica
  *   node tools/partita.mjs --partite 300 --estro --heatmap mappa.html   e la mappa, unità per unità
+ *   node tools/partita.mjs --partite 150 --specchio   ogni seme due volte, con le liste scambiate di lato:
+ *                                               separa quanto vale la lista, il lato e il primo turno
  *
  * Quello che stampa è pensato per essere LETTO: ogni mossa dice chi ha
  * scelto, perché, e cosa è successo, con la pagina del manuale accanto.
@@ -44,6 +46,7 @@ import * as FM from '../src/formation.js';
 import { paginaHTML, fotogramma, coloreTerreno, stessoTavolo, COLORI } from './replay.mjs';
 import { raccoglitore, paginaHeatmap } from './heatmap.mjs';
 import * as ARCH from './archivia.mjs';
+import * as SE from './serie.mjs';
 
 const qui = path.dirname(fileURLToPath(import.meta.url));
 const dati = f => JSON.parse(fs.readFileSync(path.join(qui, '..', 'dati', f), 'utf8'));
@@ -63,7 +66,7 @@ const TUTTI = { ...SCENARIOS,
    Adesso le parole fino al prossimo «--» si rimettono insieme, e quelle
    che nessuno legge si dicono. */
 const argv = process.argv.slice(2);
-const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste', 'archivia', 'partite', 'estro', 'heatmap'];
+const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste', 'archivia', 'partite', 'estro', 'heatmap', 'specchio'];
 const valori = {};
 const ignoti = [];
 for (let i = 0; i < argv.length; i++){
@@ -117,6 +120,14 @@ if (partite > 1 && (gemini || html || archivia)){
    partite con semi diversi si schierano identiche e si separano solo
    quando i dadi dicono cose diverse (vedi `pianoDa` in agente.js). */
 const estro = !!arg('estro', false);
+/* --specchio: ogni seme due volte, la seconda con le liste scambiate di
+   lato (tools/serie.mjs). Senza, lista e lato del tavolo sono la stessa
+   cosa e nessun conto li puo' separare. */
+const specchio = !!arg('specchio', false);
+if (specchio && partite < 2){
+  console.error('--specchio va con --partite: una partita sola non ha niente da confrontare.');
+  process.exit(1);
+}
 /* --heatmap mappa.html: le N partite guardate tutte insieme, unità per
    unità — dove parte, dove passa i turni, dove combatte e muore, e come
    va la partita in ciascun caso (tools/heatmap.mjs) */
@@ -281,109 +292,74 @@ for (const tag of ['A', 'B']){
 /* ---- tante partite: solo il conto ---- */
 if (partite > 1){
   const sc = TUTTI[scenario];
-  console.log(`\n${partite} partite su «${sc.label}», semi ${seme}–${seme + partite - 1}, euristica contro euristica` +
+  const quante = partite * (specchio ? 2 : 1);
+  console.log(`\n${quante} partite su «${sc.label}», semi ${seme}–${seme + partite - 1}` +
+              (specchio ? ', ognuno giocato due volte con le liste scambiate di lato' : '') +
+              ', euristica contro euristica' +
               (estro ? ', con l’estro…' : ', senza estro: cambiano solo i dadi…'));
   const t0 = Date.now();
-  const tutte = [];
-  const mappa = heatmap ? raccoglitore({ AR, FM }) : null;
-  for (let i = 0; i < partite; i++){
-    /* il seme prima della battaglia: anche lo schieramento e chi
-       comincia vengono dai dadi */
-    D.setSource(D.seeded(seme + i));
-    const Si = AR.newBattle({ A, B, scenario, def: TUTTI[scenario], nomi, magia });
-    const ag = { A: euristica('A', nomi.A, seme + i), B: euristica('B', nomi.B, seme + i) };
-    /* lo schieramento, fotografato quando finisce: dice se le partite
-       cambiano gia' prima del primo dado, o solo dopo */
-    let schierati = '';
-    if (mappa) mappa.nuova(Si);
-    const e = await AG.giocaPartita(AR, Si, { ...ag, onPasso: () => {
-      if (!schierati && !Si.schierando)
-        schierati = Si.units.filter(u => u.placed && !u.dead).map(u => `${u.uid}:${Math.round(u.x)}:${Math.round(u.y)}`).join('|');
-      if (mappa) mappa.passo(Si);
-    } });
-    if (mappa) mappa.fine(Si, e);
-    tutte.push({ seme: seme + i, winner: e.winner || null, label: e.label, A: e.A, B: e.B, turno: Si.turno, why: e.why,
-                 schierati, piano: { A: ag.A.piano, B: ag.B.piano } });
-    if (process.stdout.isTTY) process.stdout.write(`\r  ${i + 1}/${partite}`);
-  }
+  /* le liste della serie si chiamano x e y: A e B sono le zone, e con
+     lo specchio una lista le gira tutte e due */
+  const nomeDi = { x: nomi.A.replace(/ \(A\)$/, ' (x)'), y: nomi.B.replace(/ \(B\)$/, ' (y)') };
+  const mappa = heatmap ? raccoglitore({ AR, FM, nomiListe: nomeDi }) : null;
+  const tutte = await SE.giocaSerie({
+    AR, AG, D, liste: { x: A, y: B }, nomi: nomeDi, scenario, def: TUTTI[scenario], magia,
+    partite, seme, specchio, osservatore: mappa,
+    agente: (lista, nome, s) => AG.agenteEuristico({
+      nome: nome + (estro ? ' (euristica con estro)' : ' (euristica)'),
+      estro: estro ? D.seeded(SE.semeEstro(s, lista)) : null,
+    }),
+    avanzamento: (k, n) => { if (process.stdout.isTTY) process.stdout.write(`\r  ${k}/${n}`); },
+  });
   if (process.stdout.isTTY) process.stdout.write('\r' + ' '.repeat(20) + '\r');
 
-  const pc = n => `${(100 * n / partite).toFixed(1).padStart(5)}%`;
-  /* l'intervallo di Wilson al 95%: con cento partite un 55 contro 45
-     puo' essere solo fortuna, e il conto lo deve dire */
-  const wilson = n => {
-    const z = 1.96, p = n / partite, d = 1 + z * z / partite;
-    const c = (p + z * z / (2 * partite)) / d, m = z * Math.sqrt(p * (1 - p) / partite + z * z / (4 * partite * partite)) / d;
-    return `${Math.max(0, 100 * (c - m)).toFixed(0)}–${Math.min(100, 100 * (c + m)).toFixed(0)}%`;
-  };
-  const media = f => (tutte.reduce((s, x) => s + f(x), 0) / partite);
-  const vA = tutte.filter(x => x.winner === 'A').length;
-  const vB = tutte.filter(x => x.winner === 'B').length;
-  const pari = partite - vA - vB;
+  const an = SE.analizza(tutte);
+  const media = f => (tutte.reduce((s, x) => s + f(x), 0) / tutte.length);
   console.log('═'.repeat(72));
-  console.log(`  A  ${nomi.A.padEnd(28)} vince ${String(vA).padStart(4)}  ${pc(vA)}   (95%: ${wilson(vA)})`);
-  console.log(`  B  ${nomi.B.padEnd(28)} vince ${String(vB).padStart(4)}  ${pc(vB)}   (95%: ${wilson(vB)})`);
-  console.log(`     ${'pareggio'.padEnd(28)}       ${String(pari).padStart(4)}  ${pc(pari)}`);
+  for (const r of SE.righeAnalisi(an, nomeDi)) console.log(r);
   console.log('═'.repeat(72));
-  console.log(`  punti vittoria in media: A ${media(x => x.A).toFixed(0)}, B ${media(x => x.B).toFixed(0)}` +
-              ` (scarto medio ${media(x => x.A - x.B) >= 0 ? '+' : ''}${media(x => x.A - x.B).toFixed(0)} per A)`);
+  console.log(`  punti vittoria in media: ${nomeDi.x} ${media(x => x.vp.x).toFixed(0)}, ${nomeDi.y} ${media(x => x.vp.y).toFixed(0)}`);
   console.log(`  finita in media al turno ${media(x => x.turno).toFixed(1)}`);
   const perEsito = new Map();
   for (const x of tutte){
-    const k = x.winner ? `${x.winner}: ${x.label}` : x.label;
+    const k = x.vincitore ? `${nomeDi[x.vincitore]}: ${x.label}` : x.label;
     perEsito.set(k, (perEsito.get(k) || 0) + 1);
   }
   console.log('\n  come sono finite:');
   for (const [k, n] of [...perEsito].sort((a, b) => b[1] - a[1])) console.log(`    ${String(n).padStart(4)}  ${k}`);
   /* se i dadi non spostano niente, tante partite dicono quanto una */
-  const diverse = new Set(tutte.map(x => `${x.winner}|${x.A}|${x.B}`)).size;
-  console.log(`\n  risultati diversi: ${diverse} su ${partite}` +
+  const diverse = new Set(tutte.map(x => `${x.vincitore}|${x.vp.x}|${x.vp.y}`)).size;
+  console.log(`\n  risultati diversi: ${diverse} su ${tutte.length}` +
               (diverse === 1 ? ' — i dadi non cambiano niente: è sempre la stessa partita' : ''));
   const schieramenti = new Set(tutte.map(x => x.schierati)).size;
-  console.log(`  schieramenti diversi: ${schieramenti} su ${partite}` +
+  console.log(`  schieramenti diversi: ${schieramenti} su ${tutte.length}` +
               (schieramenti === 1 ? ' — si schiera sempre uguale, e le partite si separano solo ai dadi' : ''));
 
-  /* Quali piani vincono. Per ogni scelta del piano, quante partite vince
-     chi l'ha fatta, divise a meta' sulla mediana (o per valore, quando i
-     valori sono pochi). Con cento partite sono indizi, non verdetti:
-     ogni riga porta quante partite ci stanno dietro. */
   if (estro){
-    console.log('\n  quali piani vincono (partite vinte da chi ha fatto quella scelta):');
-    const riga = (t, etichetta, gruppi) => console.log(`    ${t}  ${etichetta.padEnd(26)} ` +
-      gruppi.map(([nome, l]) => `${nome} ${l.length ? Math.round(100 * l.filter(x => x.winner === t).length / l.length) + '%' : '—'} (${l.length})`)
-            .join('   '));
-    for (const t of ['A', 'B']){
-      const numero = (k, etichetta, fmt = v => v) => {
-        const v = tutte.map(x => x.piano[t][k]).sort((a, b) => a - b);
-        const med = v[Math.floor(v.length / 2)];
-        riga(t, etichetta, [[`≤ ${fmt(med)}`, tutte.filter(x => x.piano[t][k] <= med)],
-                            [`> ${fmt(med)}`, tutte.filter(x => x.piano[t][k] > med)]]);
-      };
-      numero('carica', 'carica da (probabilità)', v => Math.round(v * 100) + '%');
-      numero('marcia', 'marcia oltre (pollici)', v => v + '″');
-      numero('sfida', 'sfida se conviene più di');
-      riga(t, 'resta fermo a tirare', [['sì', tutte.filter(x => x.piano[t].tieniTiro)], ['no', tutte.filter(x => !x.piano[t].tieniTiro)]]);
-      riga(t, 'capi dentro i reggimenti', [['sì', tutte.filter(x => x.piano[t].unisci)], ['no', tutte.filter(x => !x.piano[t].unisci)]]);
-      riga(t, 'prima colonna schierata', AG.COLONNE.map((c, i) => [c, tutte.filter(x => x.piano[t].colonne[0] === i)]));
-    }
+    console.log('\n  quali piani contano (regressione sullo scarto di punti, tutte le scelte insieme):');
+    for (const r of SE.righePiani(SE.analizzaPiani(tutte), nomeDi)) console.log(r);
   }
-  const peggio = t => tutte.filter(x => x.winner === t).sort((a, b) => Math.abs(b.A - b.B) - Math.abs(a.A - a.B))[0];
-  for (const t of ['A', 'B']){
-    const x = peggio(t);
-    if (x) console.log(`  la vittoria più netta di ${t}: seme ${x.seme} (${x.A}–${x.B}) → node tools/partita.mjs ` +
-                       `--liste ${A.id},${B.id} --scenario ${scenario} --seme ${x.seme}${estro ? ' --estro' : ''} --html partita.html`);
+  /* solo le partite del primo giro: in quelle dello specchio le liste
+     stanno scambiate, e una partita sola le rimette al loro posto */
+  const netta = t => tutte.filter(x => x.vincitore === t && !x.giro).sort((a, b) => Math.abs(b.vp.x - b.vp.y) - Math.abs(a.vp.x - a.vp.y))[0];
+  for (const t of ['x', 'y']){
+    const x = netta(t);
+    if (x){
+      console.log(`  la vittoria più netta di ${nomeDi[t]}: seme ${x.seme} (${x.vp[t]}–${x.vp[SE.ALTRA[t]]}) → node tools/partita.mjs ` +
+                  `--liste ${A.id},${B.id} --scenario ${scenario} --seme ${x.seme}${estro ? ' --estro' : ''} --html partita.html`);
+    }
   }
   if (mappa){
     const d = mappa.dati();
     const avvisiMappa = [...avvisi];
     if (!estro) avvisiMappa.push("senza --estro l'euristica si schiera sempre uguale: la mappa dello schieramento ha un posto solo per unità, e le altre due mostrano solo cosa cambiano i dadi.");
     if (d.meta.terreniDiversi > 1) avvisiMappa.push(`il terreno di questo scenario cambia da una partita all'altra (${d.meta.terreniDiversi} tavoli diversi): quello disegnato è della prima, e le caselle mescolano tavoli diversi.`);
-    if (partite < 200) avvisiMappa.push(`${partite} partite sono poche per una mappa unità per unità: i posti restano con una manciata di partite ciascuno. Da 300 in su i colori cominciano a voler dire qualcosa.`);
+    if (tutte.length < 200) avvisiMappa.push(`${tutte.length} partite sono poche per una mappa unità per unità: i colori restano chiari quasi ovunque, perché la mappa li schiarisce da sola dove le partite non bastano.`);
     const pagina = paginaHeatmap({
       dati: d,
-      titolo: `${sc.label} — ${nomi.A} contro ${nomi.B}: la mappa di ${partite} partite`,
-      sotto: `${nomi.A} vince ${vA}, ${nomi.B} ${vB}, pareggi ${pari} · semi ${seme}–${seme + partite - 1} · ` +
-             `euristica${estro ? ' con estro' : ''} · ${schieramenti} schieramenti diversi`,
+      titolo: `${sc.label} — ${nomeDi.x} contro ${nomeDi.y}: la mappa di ${tutte.length} partite`,
+      sotto: `${nomeDi.x} vince ${an.vince.x}, ${nomeDi.y} ${an.vince.y}, pareggi ${an.pareggi} · semi ${seme}–${seme + partite - 1}` +
+             (specchio ? ' a specchio' : '') + ` · euristica${estro ? ' con estro' : ''} · ${schieramenti} schieramenti diversi`,
       avvisi: avvisiMappa, colori: COLORI, coloreTerreno,
     });
     fs.writeFileSync(fileHeatmap, pagina);

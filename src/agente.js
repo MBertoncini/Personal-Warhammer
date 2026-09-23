@@ -44,7 +44,8 @@
    possa chiedersi quali piani vincono. */
 export const COLONNE = ["sinistra", "centro-sinistra", "centro", "centro-destra", "destra"];
 export const PIANO_FISSO = Object.freeze({ carica: 0.5, marcia: 14, sfida: 0.2, tieniTiro: true,
-                                           unisci: true, scarto: 0, colonne: null });
+                                           unisci: true, scarto: 0, colonne: null,
+                                           schieraPrimo: true, muoviPrimo: true });
 
 export function pianoDa(estro){
   if (!estro) return { ...PIANO_FISSO };
@@ -62,6 +63,10 @@ export function pianoDa(estro){
     unisci: u() < 0.85,                                      // i capi dentro i reggimenti
     scarto: estro(3),                                        // fra quante mosse migliori si sceglie
     colonne,                                                 // l'ordine delle colonne allo schieramento
+    /* in fondo, perche' i piani di prima restino quelli: chi vince il
+       tiro schiera per primo? e muove per primo? */
+    schieraPrimo: u() < 0.5,
+    muoviPrimo: u() < 0.85,
   };
 }
 
@@ -80,6 +85,18 @@ export function agenteEuristico({ nome = "euristica", estro = null } = {}){
     async scegli({ opzioni }){
       const l = opzioni.list;
       const primo = id => l.find(x => x.id === id);
+
+      /* CHI COMINCIA: chi ha vinto il tiro sceglie. Muovere per primo
+         conviene quasi sempre — si tira e si carica prima che l'altro
+         si avvicini; schierare per primo da' il +1 del Core (p. 289) e
+         toglie di vedere cosa mette l'altro, e l'euristica tanto non
+         guarda: lo decide il piano. */
+      if (primo("primo")){
+        const p = l.filter(x => x.id === "primo");
+        const vuole = p[0].cosa === "schiera" ? piano.schieraPrimo : piano.muoviPrimo;
+        const io = p.find(x => (x.chi === opzioni.player) === vuole) || p[0];
+        return { scelta: io, perche: io.why };
+      }
 
       /* I CAPI stanno dentro un reggimento: da soli muoiono al primo
          turno, e dentro danno il loro Comando a tutti (p. 97). Il
