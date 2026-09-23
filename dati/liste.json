@@ -8997,5 +8997,358 @@
       },
       "note": ""
     }
+  },
+  {
+    "id": "lmuegsxz4wod0",
+    "name": "Skaven orda",
+    "info": {
+      "catalogue": "Skaven",
+      "forceName": "Battle March",
+      "limit": 800
+    },
+    "points": 804,
+    "external": false,
+    "imported": "2026-09-23T18:57:10.912Z",
+    "units": [
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Grey Seer",
+            "stats": {
+              "M": "5",
+              "WS": "3",
+              "BS": "3",
+              "S": "3",
+              "T": "4",
+              "W": "3",
+              "I": "5",
+              "A": "2",
+              "Ld": "7"
+            }
+          }
+        ],
+        "command": {
+          "standard": false,
+          "musician": false,
+          "champion": false
+        },
+        "faction": "Skaven",
+        "ward": 0,
+        "regen": 0,
+        "name": "Grey Seer",
+        "models": 1,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 1,
+        "pts": 215,
+        "us": 1,
+        "troop": "Regular infantry (character)",
+        "unitSize": "1",
+        "stats": {
+          "M": "5",
+          "WS": "3",
+          "BS": "3",
+          "S": "3",
+          "T": "4",
+          "W": "3",
+          "I": "5",
+          "A": "2",
+          "Ld": "7"
+        },
+        "armour": 0,
+        "rules": [
+          "Lore of the Horned Rat",
+          "Magical Attacks",
+          "Magic Resistance (-1)",
+          "Scurry Away",
+          "Verminous Valour",
+          "Warband",
+          "Warpstone Weapons"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "slot": "Characters",
+        "maxRange": 0,
+        "catId": "cmu8ebc4u8xca",
+        "ruleText": {
+          "Lore of the Horned Rat": "A Wizard with the ‘Lore of the Horned Rat’ special rule may discard one of their randomly generated spells as normal. When they do so, they may select instead either the signature spell of their chosen Lore of Magic, or one of the spells listed below:\n• Skitterleap\n• Warp Lightning\n• Cloud Of Corruption",
+          "Magical Attacks": "Any attack made or hit caused by a model with this special rule, or made using a weapon with this special rule, is a ‘Magical’ attack.\n\n Note that all spells are considered to have this special rule, as are any hits caused by magic items.",
+          "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+          "Scurry Away": "Models with this special rule have a +1 modifier to the result of any Flee roll they make.",
+          "Verminous Valour": "Unless they are engaged in a challenge, a character with this special rule that has joined a unit that has a Unit Strength of 10 or more may voluntarily ‘retire’ to the rear of the unit at any time, moving through the ranks and taking up a position away from the combat. Should they do so, they are no longer within the fighting rank and cannot make any attacks or have attacks directed against them. However, the unit may still use this character’s Leadership.",
+          "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+          "Warpstone Weapons": "A hand weapon carried by a model with this special rule has the Magical Attacks special rule and an Armour Piercing characteristic of -1.\n\n*Note that this special rule only applies to a single, ordinary hand weapon. If the model is using two hand weapons or any other sort of weapon, this special rule ceases to apply.*"
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Clanrats",
+            "stats": {
+              "M": "5",
+              "WS": "3",
+              "BS": "3",
+              "S": "3",
+              "T": "3",
+              "W": "1",
+              "I": "4",
+              "A": "1",
+              "Ld": "4"
+            }
+          }
+        ],
+        "command": {
+          "standard": true,
+          "musician": true,
+          "champion": true
+        },
+        "faction": "Skaven",
+        "ward": 0,
+        "regen": 0,
+        "name": "Clanrats",
+        "models": 40,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 8,
+        "pts": 217,
+        "us": 40,
+        "troop": "Regular infantry",
+        "unitSize": "20-40",
+        "stats": {
+          "M": "5",
+          "WS": "3",
+          "BS": "3",
+          "S": "3",
+          "T": "3",
+          "W": "1",
+          "I": "4",
+          "A": "1",
+          "Ld": "4"
+        },
+        "armour": 5,
+        "shield": true,
+        "rules": [
+          "Close Order",
+          "Horde",
+          "Scurry Away",
+          "Warband",
+          "Press of Battle",
+          "Massed Infantry",
+          "Parry"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "slot": "Core",
+        "maxRange": 0,
+        "catId": "cmtt5y64js1fw",
+        "ruleText": {
+          "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+          "Horde": "A unit with this special rule may increase the maximum Rank Bonus it can claim (as determined by its troop type) by one.",
+          "Scurry Away": "Models with this special rule have a +1 modifier to the result of any Flee roll they make.",
+          "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+          "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+          "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+          "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Clanrats",
+            "stats": {
+              "M": "5",
+              "WS": "3",
+              "BS": "3",
+              "S": "3",
+              "T": "3",
+              "W": "1",
+              "I": "4",
+              "A": "1",
+              "Ld": "4"
+            }
+          }
+        ],
+        "command": {
+          "standard": true,
+          "musician": true,
+          "champion": true
+        },
+        "faction": "Skaven",
+        "ward": 0,
+        "regen": 0,
+        "name": "Clanrats",
+        "models": 40,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 8,
+        "pts": 217,
+        "us": 40,
+        "troop": "Regular infantry",
+        "unitSize": "20-40",
+        "stats": {
+          "M": "5",
+          "WS": "3",
+          "BS": "3",
+          "S": "3",
+          "T": "3",
+          "W": "1",
+          "I": "4",
+          "A": "1",
+          "Ld": "4"
+        },
+        "armour": 5,
+        "shield": true,
+        "rules": [
+          "Close Order",
+          "Horde",
+          "Scurry Away",
+          "Warband",
+          "Press of Battle",
+          "Massed Infantry",
+          "Parry"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "slot": "Core",
+        "maxRange": 0,
+        "catId": "cmtt5y64js1fw",
+        "ruleText": {
+          "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+          "Horde": "A unit with this special rule may increase the maximum Rank Bonus it can claim (as determined by its troop type) by one.",
+          "Scurry Away": "Models with this special rule have a +1 modifier to the result of any Flee roll they make.",
+          "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+          "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+          "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+          "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Clanrats",
+            "stats": {
+              "M": "5",
+              "WS": "3",
+              "BS": "3",
+              "S": "3",
+              "T": "3",
+              "W": "1",
+              "I": "4",
+              "A": "1",
+              "Ld": "4"
+            }
+          }
+        ],
+        "command": {
+          "standard": true,
+          "musician": true,
+          "champion": false
+        },
+        "faction": "Skaven",
+        "ward": 0,
+        "regen": 0,
+        "name": "Clanrats",
+        "models": 29,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 6,
+        "pts": 155,
+        "us": 29,
+        "troop": "Regular infantry",
+        "unitSize": "20-40",
+        "stats": {
+          "M": "5",
+          "WS": "3",
+          "BS": "3",
+          "S": "3",
+          "T": "3",
+          "W": "1",
+          "I": "4",
+          "A": "1",
+          "Ld": "4"
+        },
+        "armour": 5,
+        "shield": true,
+        "rules": [
+          "Close Order",
+          "Horde",
+          "Scurry Away",
+          "Warband",
+          "Press of Battle",
+          "Massed Infantry",
+          "Parry"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "slot": "Core",
+        "maxRange": 0,
+        "catId": "cmtt5y64js1fw",
+        "ruleText": {
+          "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+          "Horde": "A unit with this special rule may increase the maximum Rank Bonus it can claim (as determined by its troop type) by one.",
+          "Scurry Away": "Models with this special rule have a +1 modifier to the result of any Flee roll they make.",
+          "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+          "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+          "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+          "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+        }
+      }
+    ],
+    "prep": {
+      "general": 0,
+      "bsb": null,
+      "units": {
+        "0": {
+          "level": 4,
+          "lore": "battle"
+        }
+      },
+      "note": "Grey Seer Livello 4 (+30 pt), dominio Battle Magic. Scudi su tutti i Clanrats: con la Parry fanno 4+ in mischia. Fronti: 8 per i due da 40 (cinque file), 6 per quello da 29 — ci stanno anche nelle zone da 6″."
+    },
+    "formerNames": []
   }
 ]

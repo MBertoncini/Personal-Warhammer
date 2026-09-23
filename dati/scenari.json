@@ -72,5 +72,103 @@
         "rot": 0
       }
     ]
+  },
+  {
+    "id": "sxprova-profondo",
+    "label": "Poligono profondo",
+    "table": [
+      48,
+      36
+    ],
+    "gap": 6,
+    "deploy": "pitched battle",
+    "desc": "Il Poligono di tiro con le zone profonde 12″ invece di 6″: lo stesso terreno, ma ci stanno tutte le unità. Fatto per provare le liste Skaven il 23/09/2026.",
+    "terrain": [
+      {
+        "kind": "treasure",
+        "x": 11.75,
+        "y": 24,
+        "w": 1.575,
+        "h": 1.575,
+        "rot": 0
+      },
+      {
+        "kind": "treasure",
+        "x": 36,
+        "y": 12.25,
+        "w": 1.575,
+        "h": 1.575,
+        "rot": 0
+      },
+      {
+        "kind": "hill",
+        "x": 36,
+        "y": 29,
+        "w": 11.75,
+        "h": 5.5,
+        "rot": 0
+      }
+    ]
+  },
+  {
+    "id": "sxprova-boschi",
+    "label": "Boschi e rovine",
+    "table": [
+      48,
+      36
+    ],
+    "gap": 8,
+    "deploy": "pitched battle",
+    "desc": "Due boschi sui fianchi, rovine al centro, una collina e due tesori a specchio: riparo per chi tira e corsie strette per i reggimenti. Fatto per provare le liste Skaven il 23/09/2026.",
+    "terrain": [
+      {
+        "kind": "wood",
+        "x": 10,
+        "y": 14,
+        "w": 8,
+        "h": 6,
+        "rot": 0
+      },
+      {
+        "kind": "wood",
+        "x": 38,
+        "y": 22,
+        "w": 8,
+        "h": 6,
+        "rot": 0
+      },
+      {
+        "kind": "ruins",
+        "x": 24,
+        "y": 18,
+        "w": 6,
+        "h": 5,
+        "rot": 0
+      },
+      {
+        "kind": "hill",
+        "x": 36,
+        "y": 9,
+        "w": 10,
+        "h": 5,
+        "rot": 0
+      },
+      {
+        "kind": "treasure",
+        "x": 14,
+        "y": 22,
+        "w": 1.575,
+        "h": 1.575,
+        "rot": 0
+      },
+      {
+        "kind": "treasure",
+        "x": 34,
+        "y": 14,
+        "w": 1.575,
+        "h": 1.575,
+        "rot": 0
+      }
+    ]
   }
 ]

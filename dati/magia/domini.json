@@ -297,6 +297,12 @@
       "regole": ["Lore Of Lustria"], "libro": "Legends: Lizardmen", "page": 3 },
     { "nomi": ["Warlock Engineer"], "livello": 0, "domini": ["battle", "elementalism"],
       "regole": ["Lore of the Horned Rat"], "libro": "Legends: Skaven", "page": 4,
-      "opzione": "Livello 1 per 40 punti o Livello 2 per 70: senza, non e' un mago" }
+      "opzione": "Livello 1 per 40 punti o Livello 2 per 70: senza, non e' un mago" },
+    { "nomi": ["Grey Seer"], "livello": 3, "domini": ["battle", "daemonology", "dark", "elementalism", "illusion"],
+      "regole": ["Lore of the Horned Rat"], "libro": "Legends: Skaven", "page": 3,
+      "opzione": "Livello 4, +30 punti" },
+    { "nomi": ["Plague Priest"], "livello": 0, "domini": ["battle", "daemonology", "dark"],
+      "regole": ["Lore of the Horned Rat"], "libro": "Legends: Skaven", "page": 6,
+      "opzione": "Livello 1 per 30 punti o Livello 2 per 60: senza, non e' un mago" }
   ]
 }
