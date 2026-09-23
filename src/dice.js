@@ -82,6 +82,41 @@ export function seeded(seed = 1){
   };
 }
 
+/* ---- un flusso di dadi per gesto ----
+   Per gli esperimenti (tools/serie.mjs): due partite che differiscono
+   per una scelta sola dovrebbero tirare gli stessi dadi dove fanno la
+   stessa cosa. Con una sequenza unica non succede: al primo gesto
+   diverso una partita pesca un dado in piu', e da li' tutti i dadi
+   dell'una sono scalati di uno rispetto all'altra — la fortuna comune
+   finisce al primo turno.
+
+   Qui invece ogni gesto ha il suo generatore: la chiave la da' chi
+   gioca (`contesto`, l'arbitro la mette a ogni `apply` — turno, parte,
+   gesto, unita', bersaglio) e dalla chiave e dal seme nasce una
+   sequenza che non dipende da quanti dadi hanno pescato gli altri. La
+   carica degli Orc Mobs al turno 3 tira gli stessi dadi in tutte e
+   cinque le partite dell'esperimento, dovunque sia la Temple Guard.
+
+   Senza una sorgente che la capisca, `contesto` non fa niente: le
+   partite normali restano identiche a prima. */
+const hash32 = str => {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return h >>> 0;
+};
+export function seededPerGesto(seed = 1){
+  const flussi = new Map();
+  let chiave = "";
+  const src = n => {
+    let f = flussi.get(chiave);
+    if (!f){ f = seeded((hash32(chiave) ^ Math.imul(seed >>> 0 || 1, 0x9E3779B1)) >>> 0 || 1); flussi.set(chiave, f); }
+    return f(n);
+  };
+  src.contesto = k => { chiave = String(k); };
+  return src;
+}
+export function contesto(k){ if (source && source.contesto) source.contesto(k); }
+
 /* Il generatore vero c'e'? Serve a dirlo nel vassoio invece di far
    finta: senza crypto si tira lo stesso, ma peggio. */
 export const trueRandom = () => !!(globalThis.crypto && globalThis.crypto.getRandomValues);

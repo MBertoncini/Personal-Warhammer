@@ -23,6 +23,9 @@
  *   node tools/partita.mjs --partite 300 --estro --heatmap mappa.html   e la mappa, unità per unità
  *   node tools/partita.mjs --partite 150 --specchio   ogni seme due volte, con le liste scambiate di lato:
  *                                               separa quanto vale la lista, il lato e il primo turno
+ *   node tools/partita.mjs --partite 60 --estro --esperimento "Temple Guard"
+ *                                               l'esperimento: la stessa partita cinque volte per seme,
+ *                                               con quell'unità della lista A in ognuna delle cinque colonne
  *
  * Quello che stampa è pensato per essere LETTO: ogni mossa dice chi ha
  * scelto, perché, e cosa è successo, con la pagina del manuale accanto.
@@ -66,7 +69,7 @@ const TUTTI = { ...SCENARIOS,
    Adesso le parole fino al prossimo «--» si rimettono insieme, e quelle
    che nessuno legge si dicono. */
 const argv = process.argv.slice(2);
-const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste', 'archivia', 'partite', 'estro', 'heatmap', 'specchio'];
+const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste', 'archivia', 'partite', 'estro', 'heatmap', 'specchio', 'esperimento'];
 const valori = {};
 const ignoti = [];
 for (let i = 0; i < argv.length; i++){
@@ -124,6 +127,13 @@ const estro = !!arg('estro', false);
    lato (tools/serie.mjs). Senza, lista e lato del tavolo sono la stessa
    cosa e nessun conto li puo' separare. */
 const specchio = !!arg('specchio', false);
+/* --esperimento NOME: un'unita' della lista A, messa in ogni colonna
+   con gli stessi dadi (tools/serie.mjs, L'ESPERIMENTO) */
+const esperimento = arg('esperimento', false);
+if (esperimento && (partite < 3 || esperimento === true)){
+  console.error("--esperimento vuole il nome di un'unità della lista A e --partite da 3 in su (i semi).");
+  process.exit(1);
+}
 if (specchio && partite < 2){
   console.error('--specchio va con --partite: una partita sola non ha niente da confrontare.');
   process.exit(1);
@@ -287,6 +297,33 @@ for (const tag of ['A', 'B']){
   if (zero.length)
     avvisa(`${tag}: ${zero.length} unità giocano senza profilo (${[...new Set(zero.map(u => u.baseName || u.name))].join(', ')}): ` +
            'Resistenza o Abilità a zero.');
+}
+
+/* ---- l'esperimento: una scelta sola, gli stessi dadi ---- */
+if (esperimento){
+  const cerca = String(esperimento).toLowerCase();
+  const indice = (A.units || []).findIndex(u => String(u.name).toLowerCase() === cerca);
+  const ind = indice >= 0 ? indice : (A.units || []).findIndex(u => String(u.name).toLowerCase().includes(cerca));
+  if (ind < 0){
+    console.error(`Nella lista A («${A.name}») non c'è un'unità «${esperimento}». Ci sono: ${(A.units || []).map(u => u.name).join(', ')}.`);
+    process.exit(1);
+  }
+  const sc = TUTTI[scenario];
+  console.log(`\nL'esperimento: ${A.units[ind].name} in ognuna delle cinque colonne, ${partite} semi, «${sc.label}»` +
+              (estro ? ', euristica con estro' : ', euristica senza estro') + '…');
+  const t0 = Date.now();
+  const righe = await SE.esperimentoSchieramento({
+    AR, AG, D, liste: { x: A, y: B }, nomi: { x: nomi.A, y: nomi.B }, scenario, def: TUTTI[scenario], magia,
+    partite, seme, indice: ind,
+    agente: (lista, nome, s) => AG.agenteEuristico({ nome, estro: estro ? D.seeded(SE.semeEstro(s, lista)) : null }),
+    avanzamento: (k, n) => { if (process.stdout.isTTY) process.stdout.write(`\r  ${k}/${n}`); },
+  });
+  if (process.stdout.isTTY) process.stdout.write('\r' + ' '.repeat(20) + '\r');
+  console.log('═'.repeat(72));
+  for (const r of SE.righeEsperimento(SE.analizzaEsperimento(righe), `${A.units[ind].name} di ${nomi.A}`)) console.log(r);
+  console.log('═'.repeat(72));
+  console.log(`  ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+  process.exit(0);
 }
 
 /* ---- tante partite: solo il conto ---- */

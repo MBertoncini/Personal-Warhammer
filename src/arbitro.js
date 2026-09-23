@@ -53,7 +53,7 @@ import { roll, d3, leadershipTest, stat, rankBonus, woundOn, saveOn, hitMelee, c
    `rules.js`, che riesporta solo i cubi: la deviazione e' un gesto
    suo — una direzione piu' una distanza — e `dice.js` lo tira gia'
    intero, con il Mancato Colpo dentro (p. 95). */
-import { scatter as deviazione, rollDice } from './dice.js';
+import { scatter as deviazione, rollDice, contesto as contestoDadi } from './dice.js';
 import { SCENARIOS, geometry } from './scenarios.js';
 import { troopType, unitStrength } from './troops.js';
 import { troopOf } from './mounts.js';
@@ -2080,6 +2080,11 @@ export function apply(S, a){
   /* con una domanda in sospeso si risponde a quella e basta */
   const attesi = S.pending ? SOSPESI[S.pending.kind] : null;
   if (attesi && !attesi.includes(a.id)) return no(`prima si risponde alla domanda in sospeso (${S.pending.kind})`);
+  /* il gesto dice ai dadi chi li tira: con una sorgente per gesto
+     (`D.seededPerGesto`, gli esperimenti) lo stesso gesto nella stessa
+     casella tira gli stessi dadi in partite diverse; con le altre
+     sorgenti non cambia niente */
+  contestoDadi(`${S.turno}|${S.army}|${S.casella}|${a.id}|${a.uid ?? ""}|${a.target ?? a.verso ?? a.host ?? a.spell ?? ""}|${a.kind ?? a.chi ?? ""}`);
   return f(S, a);
 }
 /* si alterna, e chi ha finito lascia continuare l'altro */

@@ -240,4 +240,136 @@ export function righePiani(an, nomeDi){
   return r;
 }
 
+/* ============================================================
+   L'ESPERIMENTO: UNA SCELTA SOLA, GLI STESSI DADI
+   Le mappe e la regressione dei piani GUARDANO partite in cui tutto
+   cambia insieme. Qui invece si FA l'esperimento: per ogni seme la
+   stessa partita si gioca cinque volte, una per colonna, con l'unita'
+   scelta messa li' e tutto il resto uguale — lo stesso piano per
+   tutte e due le liste, gli stessi dadi di partenza. E' il disegno a
+   blocchi dei numeri casuali comuni:
+
+     scarto(seme, colonna) = μ + α_seme + β_colonna + errore
+
+   e la differenza fra due colonne si misura DENTRO lo stesso seme,
+   dove la fortuna della partita (α) si cancella. Quanto si guadagna lo
+   dice il conto stesso: la quota di varianza che il seme si porta via.
+
+   I dadi. Con una sequenza unica sarebbero gli stessi solo finche' le
+   partite restano uguali: al primo gesto diverso una pesca un dado in
+   piu' e da li' tutto e' scalato. La prima prova su dodici semi ha
+   dato un seme che spiegava il 13% della varianza, e l'appaiamento
+   valeva 1,2 partite indipendenti. Per questo qui i dadi sono PER
+   GESTO (`D.seededPerGesto`): ogni gesto — turno, parte, casella, chi,
+   contro chi — ha una sequenza sua, e lo stesso gesto tira gli stessi
+   dadi in tutte le colonne. Restano diversi i gesti che l'unita'
+   spostata cambia davvero, ed e' giusto: sono l'effetto. Sulla stessa
+   prova il seme e' passato dal 13% al 21% della varianza: meglio, non
+   un miracolo. Il grosso della differenza fra due colonne non e'
+   fortuna, e' che l'euristica gioca un'altra partita — e il conto lo
+   stampa ogni volta, perche' chi legge sappia quanto vale l'appaiamento
+   su quel tavolo.
+
+   Mettere un'unita' in una colonna puo' spostare le altre: se la sua
+   colonna era quella che il piano dava a un'altra, quella va nella
+   prossima. E' giusto cosi' — e' quello che succede al tavolo — ed e'
+   parte dell'effetto che si misura.
+   ============================================================ */
+const colonnaDi = p => COLONNE_PIANO.indexOf(String(p.dove || '').split(',')[0]);
+
+export async function esperimentoSchieramento({ AR, AG, D, liste, nomi, scenario, def, magia, partite, seme = 1,
+                                                agente, indice, colonne = [0, 1, 2, 3, 4], avanzamento = null,
+                                                gesto = true }){
+  const righe = [];
+  let fatte = 0;
+  for (let i = 0; i < partite; i++){
+    const s = seme + i;
+    for (const col of colonne){
+      /* un flusso di dadi per gesto: vedi `seededPerGesto` in dice.js */
+      D.setSource(gesto ? D.seededPerGesto(s) : D.seeded(s));
+      const S = AR.newBattle({ A: liste.x, B: liste.y, scenario, def, magia, nomi: { A: nomi.x, B: nomi.y } });
+      const uid = indice + 1;                         // la lista x sta in zona A: uid da 1
+      const base = agente('x', nomi.x, s);
+      let messa = null;
+      /* l'agente della lista x, con una scelta sola cambiata: dove va
+         quell'unita'. L'agente di base si interroga lo stesso, perche'
+         il suo contatore delle colonne vada avanti come sempre */
+      const x = { nome: base.nome, piano: base.piano, async scegli(ctx){
+        const r = await base.scegli(ctx);
+        const o = ctx.opzioni;
+        if (o.unit === uid && o.list.some(q => q.id === 'schiera')){
+          const qui = o.list.filter(q => q.id === 'schiera' && colonnaDi(q) === col);
+          const p = qui.find(q => !/fila/.test(q.dove)) || qui[0];
+          if (p){ messa = p.dove; return { scelta: p, perche: `esperimento: ${p.dove}` }; }
+          messa = messa || null;
+        }
+        return r;
+      } };
+      const y = agente('y', nomi.y, s);
+      const e = await AG.giocaPartita(AR, S, { A: x, B: y });
+      righe.push({ seme: s, col, messa, scarto: (e.A || 0) - (e.B || 0), vince: e.winner === 'A' ? 1 : e.winner === 'B' ? 0 : 0.5 });
+      fatte++;
+      if (avanzamento) avanzamento(fatte, partite * colonne.length);
+    }
+  }
+  return righe;
+}
+
+export function analizzaEsperimento(righe, { q = 0.1 } = {}){
+  /* solo i semi in cui l'unita' e' andata davvero in ogni colonna: un
+     blocco a cui manca una casella non si confronta */
+  const perSeme = new Map();
+  for (const r of righe) (perSeme.get(r.seme) || perSeme.set(r.seme, []).get(r.seme)).push(r);
+  const colonne = [...new Set(righe.map(r => r.col))].sort((a, b) => a - b);
+  const blocchi = [...perSeme.values()].filter(b => colonne.every(c => b.some(r => r.col === c && r.messa)));
+  const S = blocchi.length, C = colonne.length;
+  if (S < 3) return { S, C, colonne: [], scartati: perSeme.size - S };
+  const y = blocchi.map(b => colonne.map(c => b.find(r => r.col === c).scarto));
+  const mediaSeme = y.map(r => r.reduce((s, v) => s + v, 0) / C);
+  const tot = y.flat().reduce((s, v) => s + v, 0) / (S * C);
+  const beta = colonne.map((_, j) => y.reduce((s, r, i) => s + (r[j] - mediaSeme[i]), 0) / S);
+  let sse = 0, sst = 0;
+  for (let i = 0; i < S; i++) for (let j = 0; j < C; j++){
+    const e = y[i][j] - mediaSeme[i] - beta[j];
+    sse += e * e; sst += (y[i][j] - tot) ** 2;
+  }
+  const s2 = sse / ((S - 1) * (C - 1));
+  const se = Math.sqrt(s2 * (C - 1) / (C * S));
+  /* quanto si porta via il seme: la varianza fra semi sul totale */
+  const ssSeme = C * mediaSeme.reduce((s, m) => s + (m - tot) ** 2, 0);
+  const quotaSeme = sst > 0 ? ssSeme / sst : 0;
+  /* la stessa precisione con partite indipendenti: la varianza di una
+     colonna fra semi diversi, senza togliere il seme */
+  const seIndip = Math.sqrt(colonne.map((_, j) => ST.media(y.map(r => r[j])).sd ** 2).reduce((s, v) => s + v, 0) / C / S);
+  const tab = colonne.map((c, j) => {
+    const z = se > 0 ? beta[j] / se : 0;
+    return { col: c, nome: COLONNE_PIANO[c], media: ST.media(y.map(r => r[j])).m, effetto: beta[j],
+             lo: beta[j] - ST.Z95 * se, hi: beta[j] + ST.Z95 * se, p: ST.pDueCode(z),
+             vince: blocchi.reduce((s, b) => s + b.find(r => r.col === c).vince, 0) / S };
+  });
+  const regge = ST.bh(tab.map(t => t.p), q);
+  tab.forEach((t, i) => { t.regge = regge[i]; });
+  return { S, C, colonne: tab, se, seIndip, quotaSeme, scartati: perSeme.size - S, q };
+}
+
+export function righeEsperimento(a, chi){
+  const f = x => (x >= 0 ? '+' : '') + Math.round(x);
+  const r = [];
+  if (!a.colonne.length){
+    r.push(`  troppi pochi semi in cui ${chi} è potuta andare in ogni colonna (${a.S}): servono almeno tre blocchi interi`);
+    return r;
+  }
+  r.push(`  ${chi}: ${a.C} colonne × ${a.S} semi, ogni seme con gli stessi dadi di partenza` +
+         (a.scartati ? ` (${a.scartati} semi scartati: in qualche colonna non c'era posto)` : ''));
+  r.push(`  ${'colonna'.padEnd(16)} ${'scarto medio'.padStart(12)}  ${'vince'.padStart(6)}   rispetto alla media delle colonne, 95%`);
+  for (const t of a.colonne)
+    r.push(`  ${t.nome.padEnd(16)} ${f(t.media).padStart(12)}  ${ST.pc(t.vince).padStart(6)}   ${f(t.effetto).padStart(5)} punti (${f(t.lo)} … ${f(t.hi)})  ` +
+           (t.regge ? 'regge' : t.p < 0.05 ? 'sembra, ma su cinque confronti non regge' : '—'));
+  r.push(`  il seme da solo spiega il ${ST.pc(a.quotaSeme)} della varianza: il confronto appaiato ha un errore di ±${Math.round(ST.Z95 * a.se)} punti` +
+         ` contro ±${Math.round(ST.Z95 * a.seIndip)} di partite indipendenti` +
+         (a.seIndip > 0 ? ` — come giocarne ${Math.max(1, (a.seIndip / Math.max(a.se, 1e-9)) ** 2).toFixed(1)} volte tante` : ''));
+  r.push(`  «regge» = sopravvive a Benjamini-Hochberg al ${Math.round(100 * a.q)}%; è il meglio PER L’EURISTICA.`);
+  return r;
+}
+
 export { ALTRA };

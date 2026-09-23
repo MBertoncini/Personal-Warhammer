@@ -89,5 +89,51 @@ console.log('\nlo schieramento è lo stesso dai due lati');
      pa.length === pb.length && pa.every(p => rovesciati.has(chiave(p))));
 }
 
+console.log('\ni dadi per gesto (dice.js)');
+{
+  const a = D.seededPerGesto(9), b = D.seededPerGesto(9);
+  a.contesto('carica 3'); const da = [a(6), a(6), a(6)];
+  b.contesto('altro'); b(6); b(6); b(6); b(6);           // l'altra partita ha pescato di più altrove
+  b.contesto('carica 3'); const db = [b(6), b(6), b(6)];
+  ok('lo stesso gesto tira gli stessi dadi, quanti che siano i dadi pescati dagli altri', da.join() === db.join());
+  const c = D.seededPerGesto(9);
+  c.contesto('carica 4');
+  ok('e gesti diversi tirano sequenze diverse', Array.from({ length: 8 }, () => c(6)).join() !==
+     (() => { const d = D.seededPerGesto(9); d.contesto('carica 3'); return Array.from({ length: 8 }, () => d(6)).join(); })());
+  D.setSource(D.seeded(3)); const x1 = D.roll(3).join();
+  D.setSource(D.seeded(3)); D.contesto('qualunque'); const x2 = D.roll(3).join();
+  ok('con una sorgente normale il contesto non cambia niente', x1 === x2);
+}
+
+console.log('\nl esperimento: il disegno a blocchi');
+{
+  /* dati finti di cui si sa la risposta: la fortuna del seme è enorme
+     (±300), l'effetto delle colonne piccolo e noto (−40, 0, +40) */
+  const r = [];
+  let k = 1;
+  const rnd = () => ((k = (k * 48271) % 2147483647) / 2147483647) - 0.5;
+  for (let s = 1; s <= 40; s++){
+    const fortuna = 600 * rnd();
+    [-40, 0, 40].forEach((eff, col) => r.push({ seme: s, col, messa: 'x', scarto: fortuna + eff + 60 * rnd(), vince: 1 }));
+  }
+  const a = SE.analizzaEsperimento(r);
+  ok(`ritrova gli effetti delle colonne (${a.colonne.map(c => Math.round(c.effetto)).join(', ')} contro −40, 0, +40)`,
+     a.colonne.every((c, i) => Math.abs(c.effetto - [-40, 0, 40][i]) < 15));
+  ok(`e dice quanto si è portato via il seme (${Math.round(100 * a.quotaSeme)}%)`, a.quotaSeme > 0.8);
+  ok(`l appaiamento è molto più preciso delle partite indipendenti (±${Math.round(a.se)} contro ±${Math.round(a.seIndip)})`,
+     a.se * 4 < a.seIndip);
+  ok('un seme a cui manca una colonna si scarta', SE.analizzaEsperimento(r.filter(x => !(x.seme === 1 && x.col === 2))).scartati === 1);
+}
+{
+  /* e uno vero, piccolo: i Saurus Warriors, tre semi, due colonne */
+  const righe = await SE.esperimentoSchieramento({ AR, AG, D, liste: { x: L, y: L }, nomi, scenario: 'bm-guado',
+    partite: 3, seme: 1, indice: 2, colonne: [0, 4], agente: euristica(true) });
+  ok('l esperimento mette l unità dove deve, in ogni seme', righe.length === 6 &&
+     righe.every(r => r.messa && r.messa.startsWith(r.col === 0 ? 'sinistra' : 'destra')));
+  const due = await SE.esperimentoSchieramento({ AR, AG, D, liste: { x: L, y: L }, nomi, scenario: 'bm-guado',
+    partite: 1, seme: 1, indice: 2, colonne: [0], agente: euristica(true) });
+  ok('e la stessa casella si rigioca identica', due[0].scarto === righe[0].scarto);
+}
+
 console.log(fails ? `\n${fails} prove fallite` : '\ntutte le prove passano');
 process.exit(fails ? 1 : 0);

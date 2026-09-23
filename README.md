@@ -317,6 +317,7 @@ node tools/partita.mjs --liste 4,9 --partite 100   # cento partite di euristica,
 node tools/partita.mjs --liste 4,9 --partite 100 --estro   # e ognuna con un piano diverso: dice anche quali piani vincono
 node tools/partita.mjs --liste 4,9 --partite 300 --estro --heatmap mappa.html   # la mappa: dove parte, passa e combatte ogni unità, e come va
 node tools/partita.mjs --liste 4,9 --partite 150 --specchio   # ogni seme due volte, con le liste scambiate di lato
+node tools/partita.mjs --liste 4,9 --partite 60 --estro --esperimento "Temple Guard"   # l'esperimento: quell'unità in ogni colonna, stessi dadi
 node tools/partita.mjs --scenario sxmttrgusdc7c   # uno scenario disegnato nell'app, da dati/scenari.json
 node tools/controlla-partita.mjs partita.html  # e il controllo di quello che è successo
 ```
@@ -359,6 +360,20 @@ Una partita sono un centinaio di domande al modello (circa 55 per parte, ~80 mil
 ```
 
 Una partita dura quattro o cinque secondi con l'euristica, e finisce con il verdetto del libro: cinque round in Battle March e sei nel Core Rulebook, i punti vittoria con i bonus del generale, dello stendardo da battaglia e degli obiettivi tenuti a fine turno, e il margine del formato — in Battle March vince chi ne ha di più (p. 27), nel Core ne servono cento. Il punto di rottura è la durata di uno scenario del Core Rulebook (p. 291), non di tutte le partite, e si chiede con `durata: "breakpoint"`. In fondo stampa **quello che quella partita non ha giocato**, riga per riga: è la lista della spesa del prossimo pezzo di lavoro.
+
+### Tante partite: come si leggono
+
+Trecento partite dell'euristica sono un campione, e fino a poco fa si leggevano come un verdetto. Tre cose sono cambiate, e vale la pena sapere perché.
+
+**Chi comincia lo decidono i dadi, come nel libro.** Prima la parte A schierava e muoveva per prima in ogni partita, e «O&G vince il 75%» non diceva quanto fosse l'esercito e quanto il primo turno. Adesso ci sono i due tiri: nel Core chi vince il primo sceglie chi schiera la prima unità (p. 285), e a schieramento finito si tira ancora con +1 a chi ha finito di schierare per primo, e chi vince comincia (p. 289); in Battle March chi vince il primo schiera per primo e chi vince il secondo **sceglie** chi comincia (pp. 26-27). Le scelte sono gesti come gli altri, e l'arbitro le chiede.
+
+**Lo specchio separa la lista dal lato.** Con `--specchio` ogni seme si gioca due volte, la seconda con le liste scambiate di posto. Il conto finale non dice più «A vince», dice quanto vale ciascuna lista **a parità di lato e di turno**, quanto vale stare in basso e quanto vale muovere per primi, con una regressione sullo scarto di punti vittoria (errori robusti) e una logistica sulla vittoria. Senza specchio lista e lato restano la stessa cosa, e il conto lo scrive. La prova della lista contro se stessa è in `npm test`: con la stessa lista e senza estro le due partite di un seme devono essere la stessa partita a etichette scambiate, e i posti di schieramento delle due zone devono essere uno lo specchio dell'altro.
+
+**I numeri piccoli non gridano più.** «Quali piani vincono» era una fila di percentuali divise sulla mediana, una scelta alla volta; la lista contro se stessa ne dava una da 38 punti su una scelta che non poteva contare niente — dodici confronti in fila, e uno spettacolare esce sempre. Adesso è una regressione con tutte le scelte insieme e Benjamini-Hochberg sopra: una riga che non regge lo dice. Nella mappa ogni percentuale passa dal **restringimento beta-binomiale** (un posto con quattro partite torna verso la media della sua lista, uno con ottanta resta dov'è), il colore ha una **scala fissa** — pieno a venti punti percentuali — invece di riscalarsi sul massimo, scontri e morti si contano **una volta per partita** e non per mezzo turno, la posizione copre tutte le caselle dell'ingombro, e la croce sta dove l'unità è morta davvero. La mappa del movimento si chiama *Dove sta* e dice di sé che è **descrittiva**: un reggimento sta avanti *perché* sta vincendo, non il contrario. Si sfoglia turno per turno.
+
+**L'esperimento fa quello che la mappa osserva.** `--esperimento "Temple Guard"` gioca ogni seme cinque volte, con quell'unità della lista A in ognuna delle cinque colonne e tutto il resto uguale — lo stesso piano, gli stessi dadi — e confronta le colonne **dentro lo stesso seme**, dove la fortuna della partita si cancella (il disegno a blocchi dei numeri casuali comuni). I dadi sono **per gesto** (`seededPerGesto`): ogni gesto ha la sua sequenza, e lo stesso gesto tira gli stessi dadi in tutte e cinque le partite anche quando le altre hanno pescato di più altrove. Il conto stampa ogni volta quanto il seme si è portato via della varianza e a quante partite indipendenti vale l'appaiamento, perché dipende dal tavolo: sulle prime prove il seme spiegava il 21%, e l'appaiamento valeva poco più di una partita e un terzo.
+
+Tutto quello che si legge qui resta **il meglio per l'euristica**, non per un giocatore bravo: le pagine lo scrivono in fondo.
 
 Il turno che l'arbitro gioca è più corto delle sedici caselle di `phases.js` — congiurazione, raduno, cariche, mosse, tiro, mischia — e la differenza è dichiarata: niente sotto-fase di comando. Tutto il resto è quello vero: le reazioni alla carica, il tiro con i suoi modificatori, il combattimento **a più di due** con il conto di p. 153, le sfide fra personaggi con il ritiro di chi le rifiuta, i tre esiti del test di rotta uno per unità, l'inseguimento che travolge, il Panico con tutte e quattro le sue cause e i suoi due esiti, il raduno con le perdite insostenibili.
 
