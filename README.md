@@ -248,7 +248,7 @@ Nella scheda **Matchup**, con le due liste scelte, *Gioca contro l'AI* chiede co
 - **Le mosse sono pulsanti**, gli stessi che vede il modello: *Carica · Saurus Warriors → Night Goblin Mobs*, e sotto il perché — quanti pollici, che tiro serve, che probabilità ha, a che pagina sta. Passando sopra un pulsante il pezzo si accende sul tavolo. I pezzi non si trascinano: li muove l'arbitro, e un pezzo spostato a mano sarebbe un tavolo diverso da quello su cui si gioca.
 - **Le caselle senza scelte si passano da sole**, se lo lasci spuntato: sono una dozzina di clic a turno che non decidono niente.
 - **L'ultima mossa dell'AI** resta in vista con il suo perché, e sotto scorre il registro con dadi e pagine. *Copia il registro* lo porta via; *Abbandona* chiude la sfida e lascia il tavolo com'è.
-- **Chi gioca contro di te**: Gemini, con una chiave di Google AI Studio scritta nel pannello (e il modello, se non vuoi `gemini-2.5-flash`). La chiave **resta in questo browser** — non entra nei backup né nell'archivio su GitHub — e parte solo verso Google. Senza chiave gioca l'euristica, e il pannello lo dice; se Gemini risponde male o non risponde, quella mossa la gioca l'euristica e il pannello conta gli intoppi.
+- **Chi gioca contro di te**: Gemini, con una chiave di Google AI Studio scritta nel pannello (e il modello, se non vuoi `gemini-2.5-flash`). La chiave **resta in questo browser** — non entra nei backup né nell'archivio su GitHub — e parte solo verso Google. Senza chiave gioca l'euristica che guarda una mossa avanti (vedi sotto), e il pannello lo dice; se Gemini risponde male o non risponde, quella mossa la gioca l'euristica e il pannello conta gli intoppi.
 
 La sfida **vive nella scheda del browser**: ricaricando la pagina si ricomincia.
 
@@ -298,9 +298,10 @@ Fin qui l'app sapeva **calcolare** e non sapeva **applicare**: lo scontro simula
 
 Non sa le regole: le sanno `charge.js`, `combat.js`, `melee.js`, `shoot.js`, `psych.js`, `magic.js`, `victory.js`, e l'arbitro le chiama. Non decide: le decisioni le prende chi gioca. E dice quello che non fa — le semplificazioni sono elencate in `LIMITI` e finiscono nel registro la prima volta che contano.
 
-Chi gioca sta in `src/agente.js`, e può essere due cose:
+Chi gioca sta in `src/agente.js` e `src/ricerca.js`, e può essere tre cose:
 
-- **l'euristica**, sei regole di buon senso da tavolo (si schiera largo, si raduna sempre, si carica solo sopra il cinquanta per cento, chi ha un arco resta fermo, si va addosso a chi è più vicino). Serve a far girare mille partite in qualche secondo e a fare da rete di sicurezza;
+- **l'euristica**, regole di buon senso da tavolo in fila: si schiera largo, si raduna sempre, si carica sopra una soglia di probabilità e **solo se la carica rende** (l'arbitro scrive su ogni carica quanti punti guadagna al primo round), chi ha un arco resta fermo, si va addosso a chi è più vicino — ma **non dove il nemico carica e ci si perde**: ogni mossa porta il `rischio` di essere caricati dove arriva, il `danno` che quella carica costerebbe e la `portata` della propria carica il turno dopo, e se serve l'arbitro offre di fermarsi prima (*accosta*). Serve a far girare mille partite in qualche secondo e a fare da rete di sicurezza;
+- **l'euristica che guarda una mossa avanti** (`ricerca.js`): le cariche le decide tutte insieme come un problema di assegnazione — il secondo caricatore sul reggimento che il primo non basta a rompere vale più di due cariche mediocri, e il conto lo fa `scontroDiGruppo` con le regole del combattimento a più unità (p. 153) —, e le mosse, i tiri e le reazioni li **prova** su una copia della partita, con qualche dado campionato su una sorgente a parte, e sceglie quella che lascia la posizione migliore secondo `valuta` (punteggio, ferite, mischie in corso, cariche del turno che viene, obiettivi). È un passo solo, non un albero: costa sei volte l'euristica, cioè qualche secondo a partita;
 - **un modello di linguaggio**, che legge la fotografia del tavolo, l'elenco numerato delle mosse legali con dentro distanze e probabilità già calcolate, e sceglie — dicendo perché. Non gli si chiede di sapere le regole né di tirare i dadi: sceglie fra mosse che l'arbitro ha già dichiarato legali, e i dadi li tira l'arbitro con il seme.
 
 ```bash
@@ -317,6 +318,8 @@ node tools/partita.mjs --liste 4,9 --partite 100   # cento partite di euristica,
 node tools/partita.mjs --liste 4,9 --partite 100 --estro   # e ognuna con un piano diverso: dice anche quali piani vincono
 node tools/partita.mjs --liste 4,9 --partite 300 --estro --heatmap mappa.html   # la mappa: dove parte, passa e combatte ogni unità, e come va
 node tools/partita.mjs --liste 4,9 --partite 150 --specchio   # ogni seme due volte, con le liste scambiate di lato
+node tools/partita.mjs --ricerca A    # la parte A guarda una mossa avanti
+node tools/partita.mjs --liste 4,4 --partite 100 --specchio --ricerca x   # quanto vale guardare avanti, con la stessa lista
 node tools/partita.mjs --liste 4,9 --partite 60 --estro --esperimento "Temple Guard"   # l'esperimento: quell'unità in ogni colonna, stessi dadi
 node tools/partita.mjs --scenario sxmttrgusdc7c   # uno scenario disegnato nell'app, da dati/scenari.json
 node tools/controlla-partita.mjs partita.html  # e il controllo di quello che è successo
@@ -590,6 +593,8 @@ src/
   mounts.js           le cavalcature dei personaggi: chi monta cosa, montare e smontare, chi mena sulla bestia
   arbitro.js          l'arbitro senza pagina: stato, mosse legali, dadi, registro
   agente.js           chi gioca quando non c'è nessuno: euristica e modello di linguaggio
+  ricerca.js          chi guarda una mossa avanti: cariche come assegnazione, mosse provate su una copia
+  minacce.js          dove ti possono caricare: la dichiarazione di p. 119 fatta da ogni nemico, e la griglia
   controai.js         la sfida sul tavolo: tu contro l'AI, con l'arbitro in mezzo
   matchup.js          disponibilità, confronto, schieramenti salvati
   reports.js          archivio delle partite e scheda Partite
@@ -609,7 +614,11 @@ test/
   dadi.mjs            il generatore, e la faccia su cui il cubo si ferma
   vittoria.mjs        punti vittoria, verdetto, durata, punto di rottura
   liste.mjs           il palmarès di una lista, i filtri dell'elenco, le liste esterne
-  arbitro.mjs         una partita intera senza pagina, e chi la gioca
+  arbitro.mjs         una partita intera senza pagina, e chi la gioca; chi comincia; i campi di ogni gesto
+  statistica.mjs      Wilson, regressioni, restringimento, Benjamini-Hochberg, su dati di cui si sa la risposta
+  serie.mjs           lo specchio, la stessa lista contro se stessa, i dadi per gesto, l'esperimento
+  minacce.mjs         le minacce di carica, lo scontro atteso, il gioco delle distanze
+  ricerca.mjs         la copia della partita, il valore di una posizione, chi guarda avanti
   sync.mjs            archivio su GitHub, contro un GitHub finto in memoria
   boot.mjs            la pagina intera: schede, annulla, zoom, partita, report, link
 tools/
@@ -617,7 +626,9 @@ tools/
   partita.mjs         una partita intera dalla lista al verdetto, commentata
   prova-chiave.mjs    una domanda sola al modello, per sapere se la chiave funziona
   replay.mjs          la stessa partita da guardare: una pagina sola, con la barra del tempo
-  heatmap.mjs         la mappa di tante partite: per ogni unità dove parte, passa i turni, combatte e muore
+  heatmap.mjs         la mappa di tante partite: per ogni unità dove parte, dove sta, combatte e muore
+  serie.mjs           tante partite: lo specchio, i conti, quali piani contano, l'esperimento
+  statistica.mjs      i conti di un campione: Wilson, regressioni, restringimento, Benjamini-Hochberg
 dati/
   eserciti/           un file per esercito: regole, oggetti, domini
   profili.json        i profili letti sul libro: cavalcature, servitori, liste scritte a mano

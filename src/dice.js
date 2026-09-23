@@ -55,6 +55,10 @@ export function randomInt(n){
 /* setSource(fn) mette una sorgente propria — fn(n) torna 0..n-1;
    setSource(null) rimette quella del browser. */
 export function setSource(fn){ source = typeof fn === "function" ? fn : null; }
+/* quella di adesso, per rimetterla: chi guarda avanti (`ricerca.js`)
+   tira i suoi dadi finti su un'altra sorgente e poi ridà la mano a
+   questa, che riprende esattamente da dove era */
+export const getSource = () => source;
 
 /* La sorgente con il seme, per le partite che si devono poter
    rigiocare identiche. Sta qui e non negli strumenti perche' ne esiste

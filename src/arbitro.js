@@ -61,7 +61,7 @@ import { TERRAIN } from './terrain.js';
 import * as TR from './terrain.js';
 import * as SG from './sight.js';
 import * as MN from './minacce.js';
-import { objectiveHolder, OBJECTIVE_RANGE } from './battlemarch.js';
+import { objectiveHolder, OBJECTIVE_RANGE, OBJECTIVE_US } from './battlemarch.js';
 
 /* ============================================================
    0 · QUELLO CHE QUESTO ARBITRO NON FA
@@ -757,13 +757,16 @@ export function opzioniUnione(S, c, { pollici = null } = {}){
      danno     punti di lista che ci si aspetta di perdere per la carica
                peggiore, gia' pesata per la sua probabilita'
      portata   probabilita' che da li', il turno dopo, carichi lei
+     esito     punti di lista che la carica, se arriva, guadagna al primo
+               round (scontroAtteso); negativo se ci si perde
+     rotta     probabilita' che il bersaglio scappi, se la carica arriva
    ============================================================ */
 export const CAMPI = Object.freeze({
   primo:    ["cosa", "chi"],
   schiera:  ["uid", "x", "y", "dove", "murato"],
   dominio:  ["uid", "lore", "giocabili"],
   scambia:  ["uid", "out", "into", "lasciaMuto", "prendeMuto"],
-  carica:   ["uid", "target", "chance", "dist", "need", "lato"],
+  carica:   ["uid", "target", "chance", "dist", "need", "lato", "esito", "rotta"],
   avanza:   ["uid", "verso", "dist", "pollici", "muro", "rischio", "danno", "portata"],
   accosta:  ["uid", "verso", "dist", "pollici", "fino", "rischio", "danno", "portata"],
   marcia:   ["uid", "verso", "dist", "pollici", "muro", "provaComando", "rischio", "danno", "portata"],
@@ -990,11 +993,14 @@ function opzioniCarica(S){
       }
       const pt = PS.psychOf(t, { joined: capiDi(S, t) });
       if (pu.causesTerror && !pt.immuneTerror) nota += `; fa Terrore: ${t.name} tira, e se fallisce deve fuggire (p. 179)`;
+      const sc = scontroAtteso(S, u, t, d.side);
       out.push({ id:"carica", uid: u.uid, target: t.uid, nome: u.name, contro: t.name,
-                 dist: +d.dist, need, lato: d.side,
+                 dist: +d.dist, need, lato: d.side, esito: sc.valore, rotta: Math.round(sc.rottaLui * 100) / 100,
                  why: `${d.dist}″, ${need ? "serve " + need + "″ di tiro" : "ci arriva camminando"}` +
                       (extra ? ` (${extra}″ per trovare posto sulla faccia)` : "") +
-                      `, riesce il ${Math.round(chance * 100)}%, la prende di ${d.side}` + nota,
+                      `, riesce il ${Math.round(chance * 100)}%, la prende di ${d.side}` + nota +
+                      `; se arriva, al primo round ${sc.valore >= 0 ? "guadagna" : "perde"} ≈ ${Math.abs(sc.valore)} punti` +
+                      (sc.rottaLui > 0.05 ? ` e ${t.name} scappa il ${Math.round(sc.rottaLui * 100)}%` : ""),
                  chance, page: 119 });
     }
   }
@@ -1087,33 +1093,163 @@ function caricatori(S, army){
 export const PRESO_A_DADI_PARI = (1 + 146 / 1296) / 2;
 
 const scontri = new WeakMap();
+const firmaScontro = (S, u) => `${u.uid}:${alive(u)}:${u.wounds || 0}:${capiDi(S, u).map(c => c.uid + "/" + alive(c)).join(",")}`;
 export function scontroAtteso(S, att, def, lato = "fronte"){
   let cache = scontri.get(S);
   if (!cache){ cache = new Map(); scontri.set(S, cache); }
-  const firma = u => `${u.uid}:${alive(u)}:${u.wounds || 0}:${capiDi(S, u).map(c => c.uid + "/" + alive(c)).join(",")}`;
-  const k = `${firma(att)}|${firma(def)}|${lato}`;
+  const k = `${firmaScontro(S, att)}|${firmaScontro(S, def)}|${lato}`;
   if (cache.has(k)) return cache.get(k);
-  const ca = schieraDi(S, att), cd = schieraDi(S, def);
+  const r = scontroDiGruppo(S, [{ u: att, lato }], def);
+  cache.set(k, r);
+  return r;
+}
+
+/* Piu' caricatori sullo stesso bersaglio: le ferite si sommano, il
+   risultato lo conta `sideScore` con le regole del combattimento a piu'
+   unita' (p. 153) — i ranghi del migliore e non la somma, uno stendardo
+   per parte, il fianco una volta per nemico. Il bersaglio mena contro
+   il primo, che e' quello di fronte se c'e'. Serve all'assegnazione
+   delle cariche (`ricerca.js`): quanto aggiunge il secondo caricatore
+   a quello che il primo fa gia'. */
+export function scontroDiGruppo(S, attaccanti, def){
+  const lista = attaccanti.filter(a => a && a.u)
+    .sort((p, q) => (ML.arcToFlank(p.lato) ? 1 : 0) - (ML.arcToFlank(q.lato) ? 1 : 0));
+  if (!lista.length) return { date: 0, prese: 0, diff: 0, rottaLui: 0, rottaMia: 0, valore: 0 };
+  const cd = schieraDi(S, def);
   const fer = (c, u) => Math.max(1, alive(u) * (c.w || 1) - (u.wounds || 0));
-  const wa = fer(ca, att), wd = fer(cd, def);
-  const date = Math.min(wd, CB.meleeForecast(ca, cd).wounds);
-  const prese = Math.min(wa, CB.meleeForecast(cd, ca).wounds);
-  const carta = (c, w, fianco) => ({ ...ML.scoreCardOf(c, w), flank: fianco || "" });
+  const wd = fer(cd, def);
+  const schiere = lista.map(a => ({ ...a, c: schieraDi(S, a.u) }));
+  const lorde = schiere.map(a => CB.meleeForecast(a.c, cd).wounds);
+  const somma = lorde.reduce((s, v) => s + v, 0);
+  const date = Math.min(wd, somma), scala = somma > 0 ? date / somma : 0;
+  const primo = schiere[0], wa = fer(primo.c, primo.u);
+  const prese = Math.min(wa, CB.meleeForecast(cd, primo.c).wounds);
   /* il lato arriva come lo scrive `declareCharge` — fronte, fianco,
      retro — e la scheda del risultato lo vuole come `melee.js` */
-  const fianco = lato === "flank" || lato === "rear" ? lato : ML.arcToFlank(lato);
-  const sa = ML.combatScore(carta(ca, date, fianco), carta(cd, prese)).total;
-  const sd = ML.combatScore(carta(cd, prese), carta(ca, date)).total;
+  const fianco = l => l === "flank" || l === "rear" ? l : ML.arcToFlank(l);
+  const carte = schiere.map((a, i) => ({ ...ML.scoreCardOf(a.c, lorde[i] * scala, { foe: def.uid }), flank: fianco(a.lato) || "" }));
+  const cartaD = { ...ML.scoreCardOf(cd, prese), flank: "" };
+  const sa = ML.sideScore(carte, [cartaD]).total;
+  const sd = ML.sideScore([cartaD], carte).total;
   const diff = sa - sd;
   const rottaLui = diff > 0 ? ML.breakChances(cd.ld, diff).rout : 0;
-  const rottaMia = diff < 0 ? ML.breakChances(ca.ld, -diff).rout : 0;
-  const pa = att.pts || 0, pd = def.pts || 0;
+  const rottaMia = diff < 0 ? ML.breakChances(primo.c.ld, -diff).rout : 0;
+  const pa = primo.u.pts || 0, pd = def.pts || 0;
   const valore = (date / wd) * pd - (prese / wa) * pa
                + rottaLui * PRESO_A_DADI_PARI * pd * (1 - date / wd)
                - rottaMia * PRESO_A_DADI_PARI * pa * (1 - prese / wa);
-  const r = { date: r1(date), prese: r1(prese), diff: r1(diff), rottaLui, rottaMia, valore: Math.round(valore) };
-  cache.set(k, r);
-  return r;
+  return { date: r1(date), prese: r1(prese), diff: r1(diff), rottaLui, rottaMia, valore: Math.round(valore) };
+}
+
+/* ============================================================
+   IL VALORE DI UNA POSIZIONE
+   Per guardare avanti (`ricerca.js`) serve un numero che dica quanto
+   una posizione e' buona per una parte. E' in punti di lista, la moneta
+   dei punti vittoria, ed e' la somma di quattro cose:
+
+     1. il punteggio di adesso (`punteggio`, p. 286): unita' distrutte,
+        in fuga, sotto un quarto, generale, stendardo, obiettivi;
+     2. le ferite che il punteggio conta solo a gradini: una parte del
+        valore di un'unita' mezza morta, che il punteggio vede intera
+        finche' non scende sotto il quarto;
+     3. i combattimenti gia' ingaggiati: lo scontro atteso di ogni
+        coppia a contatto, che si risolvera' in questo turno;
+     4. le cariche del prossimo turno: quanto ogni mia unita' si aspetta
+        di perdere dalla carica peggiore che il nemico puo' dichiararle,
+        e quanto ogni sua dalla mia. Pesa di piu' chi muove per primo;
+     5. gli obiettivi (Battle March p. 27): chi ne tiene uno adesso vale
+        un turno dei suoi punti, e chi ci sta arrivando ne vale una
+        parte. Senza la seconda meta' una mossa che si avvicina a un
+        tesoro senza toccarlo valeva zero, e la ricerca lasciava gli
+        schermagliatori fermi a guardarlo.
+
+   I pesi sono dell'euristica, non del libro, e stanno in un posto solo
+   (`PESI`): chi fa esperimenti li cambia qui. Quello che il valore non
+   sa: la magia e il tiro del turno che viene.
+   ============================================================ */
+export const PESI = Object.freeze({ ferite: 0.5, mischia: 1, prossimo: 1, dopo: 0.5, obiettivi: 1, avvicina: 0.5 });
+
+export function valuta(S, army, pesi = PESI){
+  const lui = altro(army);
+  const p = punteggio(S);
+  let v = (p[army] || 0) - (p[lui] || 0);
+  for (const u of S.units){
+    if (u.dead || u.fledOff || !u.models) continue;
+    const persa = 1 - alive(u) / u.models;
+    if (persa > 0) v += (u.army === army ? -1 : 1) * pesi.ferite * persa * (u.pts || 0);
+  }
+  for (const g of gruppiInMischia(S)){
+    const miei = g[army], suoi = g[lui];
+    for (const u of miei){
+      const e = suoi.find(x => aContatto(S, u, [x]).length) || suoi[0];
+      if (e) v += pesi.mischia * scontroAtteso(S, u, e).valore / Math.max(1, miei.length);
+    }
+  }
+  const prossimo = S.army === army ? lui : army;
+  const cariche = (chi, su) => {
+    const att = caricatori(S, chi);
+    let tot = 0;
+    for (const t of inCampo(S, su)){
+      if (isJoined(t) || t.fled || ingaggiata(S, t)) continue;
+      const m = MN.minacciaSu(boxOf(t, S.units), att, S.terrain);
+      let peggio = 0;
+      for (const c of m.cariche.slice(0, 3)){
+        const e = byUid(S, c.uid);
+        if (e) peggio = Math.max(peggio, c.chance * Math.max(0, scontroAtteso(S, e, t, c.lato).valore));
+      }
+      tot += peggio;
+    }
+    return tot;
+  };
+  v -= (prossimo === lui ? pesi.prossimo : pesi.dopo) * cariche(lui, army);
+  v += (prossimo === army ? pesi.prossimo : pesi.dopo) * cariche(army, lui);
+
+  const pezzi = (S.sc.terrain || []).filter(t => OBIETTIVI[t.kind]);
+  if (pezzi.length){
+    const b = VC.bonuses(S.formato || VC.formatFor(S.sc));
+    const ob = obiettivi(S);
+    /* quanto una parte ci sta arrivando: la sua unita' migliore, a
+       uno se e' gia' dentro la portata, a zero se le servono piu' di due
+       marce */
+    const arrivo = (t, side) => {
+      let meglio = 0;
+      for (const u of inCampo(S, side)){
+        if (isJoined(u) || u.fled || usConCapi(S, u) < OBJECTIVE_US) continue;
+        const d = distPointToBox([t.x * MM, t.y * MM], boxOf(u, S.units)) / MM;
+        const m = moveInfo(u).m || 4;
+        meglio = Math.max(meglio, Math.max(0, Math.min(1, 1 - Math.max(0, d - OBJECTIVE_RANGE) / (2 * m))));
+      }
+      return meglio;
+    };
+    pezzi.forEach((t, i) => {
+      const val = OBIETTIVI[t.kind] === "landmark" ? b.landmark : b.treasure;
+      if (!val) return;
+      const o = ob[i];
+      if (o && o.army) v += (o.army === army ? 1 : -1) * pesi.obiettivi * val;
+      v += pesi.avvicina * val * (arrivo(t, army) - arrivo(t, lui));
+    });
+  }
+  return v;
+}
+
+/* Una copia della partita su cui provare una mossa senza toccare
+   quella vera. Le unita', le domande in sospeso e i conti della magia
+   si copiano; il terreno, lo scenario e il libro della magia si
+   condividono, perche' nessun gesto li cambia. Il registro della copia
+   parte vuoto: quello che succede li' non e' successo. */
+export function clona(S){
+  return {
+    ...S,
+    units: structuredClone(S.units),
+    log: [], detto: new Set(S.detto),
+    pending: S.pending ? structuredClone(S.pending) : null,
+    sfide: structuredClone(S.sfide || []),
+    fineTurni: structuredClone(S.fineTurni || []),
+    tiriPrimo: (S.tiriPrimo || []).slice(),
+    esito: S.esito ? { ...S.esito } : null,
+    magia: { ...S.magia, fato: { ...S.magia.fato }, stop: { ...S.magia.stop } },
+    ombra: true,
+  };
 }
 
 const pc = x => `${Math.round(100 * x)}%`;

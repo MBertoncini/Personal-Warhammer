@@ -597,6 +597,58 @@ per sparare, che il commento prometteva da sempre — adesso l'opzione
 
 ---
 
+## Fatto: la critica alla simulazione e alle mappe (2026-09-23)
+
+Sei punti, tutti dentro, con le prove (`test/statistica.mjs`,
+`test/serie.mjs`, `test/minacce.mjs`, `test/ricerca.mjs`, e pezzi in
+`arbitro.mjs` e `boot.mjs`). Il racconto sta nel README, sezione
+*Tante partite: come si leggono*; qui quello che serve a chi riprende.
+
+1. **Chi comincia** si tira come nel libro (Core pp. 285, 289; Battle
+   March pp. 26-27): `S.primo` e' null finche' lo schieramento non
+   finisce, le scelte sono il gesto `primo`, e `newBattle({ primo: "A" })`
+   fissa una parte. Le prove che guardano un gesto preciso la fissano.
+   **Lo specchio** (`--specchio`, `tools/serie.mjs`) gioca ogni seme due
+   volte a liste scambiate, e la regressione separa lista, lato e turno.
+2. **I campi di ogni gesto** (`AR.CAMPI`): l'euristica non legge piu' le
+   frasi. Una prova la gioca con tutti i `why` vuoti e deve venire
+   identica.
+3. **La mappa** (`tools/heatmap.mjs`) restringe le percentuali
+   (beta-binomiale), ha la scala fissa a ±20 punti, conta scontri e
+   morti una volta per partita, e la mappa del movimento si chiama *Dove
+   sta* e dice di se' che e' descrittiva.
+4. **Le minacce** (`src/minacce.js`): la levetta *Minacce* sul tavolo, i
+   campi `rischio`, `danno`, `portata` sulle mosse, il gesto `accosta`,
+   lo scontro atteso (`scontroAtteso`) e il gioco delle distanze
+   nell'euristica. Il lato della carica arriva in italiano (`fronte`,
+   `fianco`, `retro`): e' costato un giro di prove.
+5. **L'esperimento** (`--esperimento NOME`): la stessa partita per ogni
+   colonna, con i dadi per gesto (`D.seededPerGesto`, l'arbitro mette il
+   contesto a ogni `apply`). Il seme spiegava il 13% della varianza con
+   la sequenza unica, il 21% con i dadi per gesto.
+6. **Chi guarda avanti** (`src/ricerca.js`): cariche come assegnazione
+   golosa su `scontroDiGruppo`, mosse tiri e reazioni provati su
+   `AR.clona` con `AR.valuta`. Gioca la Sfida quando non c'e' la chiave.
+   Contro l'euristica, stessa lista a specchio, 80 partite: vince il 63%
+   (95%: 52–72%).
+
+Quello che resta aperto, in ordine di valore:
+
+- **la valutazione non sa la magia ne' il tiro del turno che viene**
+  (`PESI` in `arbitro.js`): chi guarda avanti non si ripara dagli
+  arcieri. E i pesi sono a occhio: un esperimento che li fa variare con
+  lo specchio direbbe quali contano;
+- **muovere per primi costa** nella misura di sopra (−161 punti,
+  intervallo lontano da zero): e' una cosa delle euristiche, non del
+  libro, ma vuol dire che il gioco delle distanze di chi muove per primo
+  e' ancora sbagliato — avanza dentro la carica dell'altro;
+- l'assegnazione delle cariche non conta il costo di una carica fallita
+  (l'unita' resta scoperta): oggi lo pesa solo la probabilita';
+- lo schieramento resta una griglia 5×3 senza ruoli: e' la prossima cosa
+  da far guardare avanti, e l'esperimento c'e' gia' per misurarla.
+
+---
+
 ## Come si lavora qui
 
 - `npm test` prima di ogni commit, e le prove nuove **falliscono prima** di

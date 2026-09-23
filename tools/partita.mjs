@@ -23,6 +23,8 @@
  *   node tools/partita.mjs --partite 300 --estro --heatmap mappa.html   e la mappa, unità per unità
  *   node tools/partita.mjs --partite 150 --specchio   ogni seme due volte, con le liste scambiate di lato:
  *                                               separa quanto vale la lista, il lato e il primo turno
+ *   node tools/partita.mjs --ricerca A          la parte A guarda una mossa avanti (src/ricerca.js)
+ *   node tools/partita.mjs --partite 100 --specchio --ricerca x   quanto vale guardare avanti, con lo specchio
  *   node tools/partita.mjs --partite 60 --estro --esperimento "Temple Guard"
  *                                               l'esperimento: la stessa partita cinque volte per seme,
  *                                               con quell'unità della lista A in ognuna delle cinque colonne
@@ -50,6 +52,7 @@ import { paginaHTML, fotogramma, coloreTerreno, stessoTavolo, COLORI } from './r
 import { raccoglitore, paginaHeatmap } from './heatmap.mjs';
 import * as ARCH from './archivia.mjs';
 import * as SE from './serie.mjs';
+import { agenteRicerca } from '../src/ricerca.js';
 
 const qui = path.dirname(fileURLToPath(import.meta.url));
 const dati = f => JSON.parse(fs.readFileSync(path.join(qui, '..', 'dati', f), 'utf8'));
@@ -69,7 +72,7 @@ const TUTTI = { ...SCENARIOS,
    Adesso le parole fino al prossimo «--» si rimettono insieme, e quelle
    che nessuno legge si dicono. */
 const argv = process.argv.slice(2);
-const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste', 'archivia', 'partite', 'estro', 'heatmap', 'specchio', 'esperimento'];
+const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste', 'archivia', 'partite', 'estro', 'heatmap', 'specchio', 'esperimento', 'ricerca'];
 const valori = {};
 const ignoti = [];
 for (let i = 0; i < argv.length; i++){
@@ -127,6 +130,13 @@ const estro = !!arg('estro', false);
    lato (tools/serie.mjs). Senza, lista e lato del tavolo sono la stessa
    cosa e nessun conto li puo' separare. */
 const specchio = !!arg('specchio', false);
+/* --ricerca: chi guarda una mossa avanti (src/ricerca.js). «A» o «B»
+   in una partita sola, «x» o «y» in una serie (le liste, non le zone:
+   con lo specchio una lista gioca da tutti e due i lati); da solo,
+   tutte e due. */
+const ricerca = arg('ricerca', false);
+const guardaAvanti = t => ricerca === true || ricerca === t ||
+  (ricerca === 'A' && t === 'x') || (ricerca === 'B' && t === 'y') || (ricerca === 'x' && t === 'A') || (ricerca === 'y' && t === 'B');
 /* --esperimento NOME: un'unita' della lista A, messa in ogni colonna
    con gli stessi dadi (tools/serie.mjs, L'ESPERIMENTO) */
 const esperimento = arg('esperimento', false);
@@ -270,6 +280,8 @@ const euristica = (tag, nome, s) => AG.agenteEuristico({
 });
 const faiAgente = (tag, nome) => {
   const vuole = gemini === true || gemini === tag;
+  if (!vuole && guardaAvanti(tag))
+    return agenteRicerca({ AR, base: euristica(tag, nome, seme), nome: nome + ' (guarda avanti)', seme });
   if (!vuole) return euristica(tag, nome, seme);
   if (!chiave){
     avvisa(`--gemini chiesto ma GEMINI_API_KEY non c'è: ${nome} gioca con l'euristica.`);
@@ -332,7 +344,7 @@ if (partite > 1){
   const quante = partite * (specchio ? 2 : 1);
   console.log(`\n${quante} partite su «${sc.label}», semi ${seme}–${seme + partite - 1}` +
               (specchio ? ', ognuno giocato due volte con le liste scambiate di lato' : '') +
-              ', euristica contro euristica' +
+              (ricerca ? ', con chi guarda una mossa avanti' : ', euristica contro euristica') +
               (estro ? ', con l’estro…' : ', senza estro: cambiano solo i dadi…'));
   const t0 = Date.now();
   /* le liste della serie si chiamano x e y: A e B sono le zone, e con
@@ -342,13 +354,17 @@ if (partite > 1){
   const tutte = await SE.giocaSerie({
     AR, AG, D, liste: { x: A, y: B }, nomi: nomeDi, scenario, def: TUTTI[scenario], magia,
     partite, seme, specchio, osservatore: mappa,
-    agente: (lista, nome, s) => AG.agenteEuristico({
-      nome: nome + (estro ? ' (euristica con estro)' : ' (euristica)'),
-      estro: estro ? D.seeded(SE.semeEstro(s, lista)) : null,
-    }),
+    agente: (lista, nome, s) => {
+      const e = AG.agenteEuristico({
+        nome: nome + (estro ? ' (euristica con estro)' : ' (euristica)'),
+        estro: estro ? D.seeded(SE.semeEstro(s, lista)) : null,
+      });
+      return guardaAvanti(lista) ? agenteRicerca({ AR, base: e, nome: nome + ' (guarda avanti)', seme: s }) : e;
+    },
     avanzamento: (k, n) => { if (process.stdout.isTTY) process.stdout.write(`\r  ${k}/${n}`); },
   });
   if (process.stdout.isTTY) process.stdout.write('\r' + ' '.repeat(20) + '\r');
+  if (ricerca) console.log(`  guarda una mossa avanti: ${['x', 'y'].filter(guardaAvanti).map(t => nomeDi[t]).join(' e ')}`);
 
   const an = SE.analizza(tutte);
   const media = f => (tutte.reduce((s, x) => s + f(x), 0) / tutte.length);

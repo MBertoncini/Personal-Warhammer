@@ -46,7 +46,7 @@ export const COLONNE = ["sinistra", "centro-sinistra", "centro", "centro-destra"
 export const PIANO_FISSO = Object.freeze({ carica: 0.5, marcia: 14, sfida: 0.2, tieniTiro: true,
                                            unisci: true, scarto: 0, colonne: null,
                                            schieraPrimo: true, muoviPrimo: true,
-                                           distanze: true, rischio: 0.35, danno: 15 });
+                                           distanze: true, rischio: 0.35, danno: 15, esito: 0 });
 
 export function pianoDa(estro){
   if (!estro) return { ...PIANO_FISSO };
@@ -73,6 +73,7 @@ export function pianoDa(estro){
     distanze: u() < 0.8,
     rischio: Math.round((0.2 + 0.4 * u()) * 100) / 100,
     danno: Math.round(5 + 30 * u()),
+    esito: Math.round(-20 + 40 * u()),                       // da quanti punti attesi si carica
   };
 }
 
@@ -182,7 +183,11 @@ export function agenteEuristico({ nome = "euristica", estro = null, piano: sopra
       /* CARICHE: quella con la probabilità più alta, e solo se conviene
          davvero. Sotto il cinquanta per cento una carica fallita
          lascia l'unità ferma e scoperta. */
-      const cariche = l.filter(x => x.id === "carica");
+      /* ...e che, se arriva, renda: l'arbitro scrive `esito`, i punti
+         che la carica guadagna al primo round. Prima si caricava con la
+         probabilita' piu' alta e basta, e uno schermo di Skink partiva al
+         cento per cento contro venti Black Orc per perderci. */
+      const cariche = l.filter(x => x.id === "carica" && (x.esito == null || x.esito >= piano.esito));
       if (cariche.length){
         const best = cariche[0];
         if (best.chance >= piano.carica)

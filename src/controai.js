@@ -17,7 +17,8 @@
  *
  * L'altra parte la gioca `agenteGemini`, con la chiave che scrivi qui:
  * resta in questo browser e parte solo verso Google. Senza chiave gioca
- * l'euristica, e il pannello lo dice.
+ * l'euristica che guarda una mossa avanti (`ricerca.js`), e il pannello
+ * lo dice.
  *
  * La partita vive in questa scheda: ricaricando la pagina si ricomincia.
  */
@@ -25,6 +26,7 @@
 import { $, esc } from './util.js';
 import * as AR from './arbitro.js';
 import * as AG from './agente.js';
+import { agenteRicerca } from './ricerca.js';
 import * as MG from './magic.js';
 import * as PR from './profiles.js';
 import * as PREP from './prep.js';
@@ -96,8 +98,11 @@ export function startSfida({ listA, listB, mia = "A", scenario = "" } = {}){
 
 function faiAgente(){
   const chiave = leggi(KEY);
-  const nome = chiave ? "Gemini" : "l'euristica";
-  if (!chiave) return AG.agenteEuristico({ nome });
+  const nome = chiave ? "Gemini" : "l'euristica che guarda avanti";
+  /* senza chiave, chi guarda una mossa avanti: prova le mosse su una
+     copia della partita e sceglie con i numeri (src/ricerca.js). Sei
+     volte piu' lento dell'euristica sola, cioe' un attimo per mossa. */
+  if (!chiave) return agenteRicerca({ AR, nome });
   return AG.agenteGemini({
     apiKey: chiave, model: leggi(MODEL) || MODELLO_DI_SOLITO, nome,
     /* il ritmo: tu sei lento di tuo, ma l'AI fa molte domande di fila
@@ -232,7 +237,7 @@ function impostazioni(){
       <summary class="panel-title">Chi gioca contro di te</summary>
       <p class="note">${chiave
         ? "Gemini, con la chiave salvata in questo browser."
-        : "Nessuna chiave: gioca l'euristica, sei regole di buon senso da tavolo. Con una chiave di Google AI Studio gioca Gemini."}
+        : "Nessuna chiave: gioca l'euristica che guarda avanti — le regole di buon senso da tavolo, e ogni mossa provata su una copia della partita prima di farla. Con una chiave di Google AI Studio gioca Gemini."}
         La chiave resta in questo browser, non entra nei backup né nella sincronia, e parte solo verso Google.</p>
       <label class="field"><span>Chiave Gemini</span>
         <input type="password" id="sf-key" autocomplete="off" placeholder="AIza…" value="${esc(chiave)}"></label>
@@ -331,7 +336,7 @@ function agganciaImpostazioni(host){
     scrivi(MODEL, host.querySelector("#sf-model").value.trim());
     /* l'avversario cambia subito, anche a partita in corso */
     if (partita) partita.agente = faiAgente();
-    toast(leggi(KEY) ? "Chiave salvata: gioca Gemini." : "Nessuna chiave: gioca l'euristica.");
+    toast(leggi(KEY) ? "Chiave salvata: gioca Gemini." : "Nessuna chiave: gioca l'euristica che guarda avanti.");
     renderSfida();
   });
   const dimentica = host.querySelector("#sf-forget");
