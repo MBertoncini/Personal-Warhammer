@@ -53,12 +53,35 @@ export async function initLists(){
   /* e le cavalcature dei personaggi: senza, la tendina non compare e
      il resto funziona */
   await MT.loadMounts();
+  await healMounts();
   /* il palmarès: quante partite ha fatto ogni lista e come sono
      andate. Senza, il filtro «quelle che hanno vinto» non esiste. */
   await PAL.initPalmares();
 }
 
 const persist = () => saveDoc(LIST_KEY, lists).then(() => emit("lists:changed"));
+
+/* Il personaggio che il file ha esportato montato ma che l'import non
+   ha montato — la tabella delle cavalcature non c'era ancora, o la
+   lista e' di prima che la firma si riconoscesse. Restava a piedi con
+   le regole della bestia addosso: il Grey Seer della Screaming Bell era
+   fanteria da 25 mm, e l'IA lo infilava nei Clanrats. Si rimonta a ogni
+   caricamento, senza toccare i punti che il file conta gia'. Chi lo ha
+   smontato a mano (`piedi`) resta a piedi. */
+async function healMounts(){
+  if (!MT.mountsNow()) return;
+  let changed = false;
+  for (const l of lists){
+    for (const u of l.units || []){
+      if (u.mountId || u.piedi) continue;
+      const m = MT.guessMount(u, u.faction || (l.info && l.info.catalogue) || "");
+      if (!m) continue;
+      MT.mountUnit(u, m, { fromFile: true });
+      changed = true;
+    }
+  }
+  if (changed) await persist();
+}
 
 export const allLists = () => lists.slice();
 export const getList = id => lists.find(l => l.id === id) || null;
@@ -233,11 +256,12 @@ export async function setMount(listId, i, mountId, { fromFile = false } = {}){
   const l = getList(listId);
   const u = l && l.units[i];
   if (!u) return null;
-  if (!mountId) MT.dismountUnit(u);
+  if (!mountId){ MT.dismountUnit(u); u.piedi = true; }
   else {
     const m = MT.mountById(mountId);
     if (!m) return null;
     MT.mountUnit(u, m, { fromFile });
+    delete u.piedi;
   }
   recount(l);
   await persist();

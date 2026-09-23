@@ -231,5 +231,22 @@ ok('dalla scheda: sulla campana, 370 punti e la lista li conta',
 await L.setMount(mine.id, i, null);
 ok('e a piedi di nuovo, 185', L.getList(mine.id).units[i].pts === 185 && L.getList(mine.id).points === 185);
 
+/* La lista salvata col Grey Seer che l'import non ha montato: a piedi,
+   25 mm, con le regole della campana addosso. Era fanteria, e l'IA lo
+   metteva nei Clanrats. Al caricamento si rimonta; chi e' stato smontato
+   a mano resta a piedi anche se porta le stesse regole. */
+const bellRules = ['Tolling the Bell', 'Large Target', 'Impact Hits (D6+1)'];
+await L.addUnit(mine.id, { name: 'Grey Seer', models: 1, pts: 370, troop: 'Regular infantry (character)' });
+const j = L.getList(mine.id).units.length - 1;
+await L.updateUnit(mine.id, j, { slot: 'Characters', rules: bellRules.slice(), stats: seer().stats });
+await L.updateUnit(mine.id, i, { rules: bellRules.slice() });
+ok('prima: il Grey Seer non montato si unisce a un reggimento', FM.canJoin(L.getList(mine.id).units[j]));
+await L.initLists();
+const healed = L.getList(mine.id).units[j];
+ok('al caricamento torna sulla campana', healed.mountId === 'screaming-bell' && healed.baseW === 60);
+ok('senza pagarla due volte', healed.pts === 370);
+ok('e non si unisce piu\' a nessuno', !FM.canJoin(healed) && FM.isLumbering(healed));
+ok('chi e\' stato smontato a mano resta a piedi', !L.getList(mine.id).units[i].mountId);
+
 console.log(fails ? `\n${fails} FALLITE` : '\ntutte a posto');
 process.exit(fails ? 1 : 0);
