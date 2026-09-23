@@ -1547,6 +1547,21 @@ console.log('\nla Paura (p. 168)');
   seme(1);
 }
 
+console.log('\nla Warband nei test di Comando');
+{
+  /* «Tutto SKA»: Clanrats da 20 su cinque di fronte, con la Warband */
+  const G = AR.newBattle({ A: lista('lmu8eb7xh723p'), B, scenario:'bm-strada', primo:'A' });
+  G.schierando = false; G.generale = { A: null, B: null };
+  const cr = metti(G, AR.unitsOf(G, 'A').find(u => u.baseName === 'Clanrats'), 600, 600);
+  const rotta = CB.combatant(cr).ld;
+  ok('i Clanrats tirano Terrore, Paura e Panico con il Comando alzato dai ranghi, non con il loro 4',
+     AR.interni.ldOf(G, cr) > 4 && AR.interni.ldOf(G, cr) === rotta);
+  cr.lost = 16;
+  ok('con quattro modelli rimasti non hanno ranghi, e il Comando torna 4', AR.interni.ldOf(G, cr) === 4);
+  cr.lost = 0; cr.fled = true;
+  ok('e chi fugge non somma i ranghi', AR.interni.ldOf(G, cr) === 4);
+}
+
 console.log('\nil Terrore (p. 179)');
 {
   const G = nuova();

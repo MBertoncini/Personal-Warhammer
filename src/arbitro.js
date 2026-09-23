@@ -1994,7 +1994,17 @@ export function gruppiInMischia(S){
 function ldOf(S, u, { zitto = false } = {}){
   const p = PS.psychOf(u, { joined: capiInFila(S, u) });
   const base = comandoDi(S, u, ldProprio(S, u).ld, { zitto }).ld;
-  return PS.leadershipOf(base, p, { fleeing: !!u.fled }).value;
+  return PS.leadershipOf(base, p, { rankBonus: ranghiAdesso(S, u), fleeing: !!u.fled }).value;
+}
+/* Il bonus di ranghi che la Warband somma al Comando: quello di adesso,
+   che il disordine azzera. Prima `ldOf` non lo passava, e la Warband
+   valeva nel test di rotta (`schieraDi`) ma non nel Terrore, nella
+   Paura e nel Panico: quaranta Clanrats su quattro ranghi tiravano il
+   Terrore del Carnosauro con Comando 4 invece di 7. */
+function ranghiAdesso(S, u){
+  const c = CB.combatant(u, { joined: capiInFila(S, u) });
+  return c.disrupted ? 0 : rankBonus(c.models, c.frontage,
+    c.troop ? c.troop.maxRank : 2, c.troop ? c.troop.perRank : 5);
 }
 /* Il Comando piu' alto fra i modelli dell'unita', capi compresi (p. 97):
    «warriors naturally look to the most steadfast of their number». */
@@ -2021,7 +2031,8 @@ function fontiComando(S, u){
   if (pr.chi) out.push({ t: `Comando ${pr.ld} di ${pr.chi}, che ci sta dentro (p. 97)`, f: "regola" });
   const g = comandoDi(S, u, pr.ld, { zitto: true });
   if (g.why) out.push({ t: `${g.why}: si usa il suo (p. 202)`, f: "generale" });
-  const w = PS.leadershipOf(g.ld, PS.psychOf(u, { joined: capiInFila(S, u) }), { fleeing: !!u.fled });
+  const w = PS.leadershipOf(g.ld, PS.psychOf(u, { joined: capiInFila(S, u) }),
+                            { rankBonus: ranghiAdesso(S, u), fleeing: !!u.fled });
   if (w.mods && w.mods.length) out.push({ t: w.why, f: "regola" });
   return out;
 }
