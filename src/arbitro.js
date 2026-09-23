@@ -730,6 +730,45 @@ export function opzioniUnione(S, c, { pollici = null } = {}){
    perche' chi sceglie deve poter scegliere con cognizione, e perche'
    chi legge la partita dopo deve capire perche' si e' scelto quello.
    ============================================================ */
+/* ============================================================
+   I CAMPI DI OGNI GESTO
+   Il `why` di un'opzione e' una frase da leggere: la legge chi gioca
+   al tavolo, la legge il modello di linguaggio. I numeri che servono a
+   decidere stanno ANCHE in campi, e chi sceglie a macchina legge
+   quelli. Prima l'euristica pescava la distanza con un'espressione
+   regolare dentro la frase («è a 8″») e il numero degli incantesimi
+   giocabili da «ne gioca 3 su 7»: ritoccare una frase cambiava la
+   strategia, e nessuna prova se ne accorgeva.
+
+   Questo e' il contratto: per ogni gesto, i campi che ci sono sempre.
+   `test/arbitro.mjs` lo controlla su partite intere. Aggiungere un
+   campo qui vuol dire promettere che l'arbitro lo scrive sempre.
+
+     dist      pollici, bordo a bordo, fino al bersaglio (o al nemico
+               piu' vicino, per chi si muove o resta fermo)
+     pollici   quanti ne fa davvero, ruota e terreno compresi
+     chance    probabilita' che riesca, fra 0 e 1
+     attesa    perdite che ci si aspetta, gia' pesate per la probabilita'
+     need      pollici di tiro che servono alla carica (0: ci arriva camminando)
+     lato      da che lato prende il bersaglio: fronte, fianco, retro
+   ============================================================ */
+export const CAMPI = Object.freeze({
+  primo:    ["cosa", "chi"],
+  schiera:  ["uid", "x", "y", "dove", "murato"],
+  dominio:  ["uid", "lore", "giocabili"],
+  scambia:  ["uid", "out", "into", "lasciaMuto", "prendeMuto"],
+  carica:   ["uid", "target", "chance", "dist", "need", "lato"],
+  avanza:   ["uid", "verso", "dist", "pollici", "muro"],
+  marcia:   ["uid", "verso", "dist", "pollici", "muro", "provaComando"],
+  ferma:    ["uid", "dist"],
+  aggira:   ["uid", "verso", "pollici"],
+  tira:     ["uid", "target", "dist", "attesa"],
+  bombarda: ["uid", "target", "dist", "attesa"],
+  fulmina:  ["uid", "target", "dist", "attesa"],
+  lancia:   ["uid", "spell", "chance", "attesa"],
+  dissolvi: ["chance"],
+});
+
 export function options(S){
   if (S.finita) return { player: null, fase: "finita", what: "la partita è finita", list: [] };
 
@@ -945,6 +984,7 @@ function opzioniCarica(S){
       const pt = PS.psychOf(t, { joined: capiDi(S, t) });
       if (pu.causesTerror && !pt.immuneTerror) nota += `; fa Terrore: ${t.name} tira, e se fallisce deve fuggire (p. 179)`;
       out.push({ id:"carica", uid: u.uid, target: t.uid, nome: u.name, contro: t.name,
+                 dist: +d.dist, need, lato: d.side,
                  why: `${d.dist}″, ${need ? "serve " + need + "″ di tiro" : "ci arriva camminando"}` +
                       (extra ? ` (${extra}″ per trovare posto sulla faccia)` : "") +
                       `, riesce il ${Math.round(chance * 100)}%, la prende di ${d.side}` + nota,
@@ -1115,7 +1155,7 @@ function opzioniMossa(S){
     if (d <= 1.05){
       /* girarsi o riordinarsi sul posto invece si puo' */
       out.push(...opzioniManovra(S, u, t, move).filter(x => x.id !== "lato"));
-      out.push({ id:"ferma", uid: u.uid, nome: u.name, why: `resta dov'è: ${t.name} è a ${d}″`, page: 122 });
+      out.push({ id:"ferma", uid: u.uid, nome: u.name, dist: d, why: `resta dov'è: ${t.name} è a ${d}″`, page: 122 });
       continue;
     }
     /* la ruota si paga (p. 124), e la dice l'opzione: un reggimento
@@ -1132,10 +1172,12 @@ function opzioniMossa(S){
     const muroTesto = v => v && v.muro && v.pollici < v.pr.resta - 0.05
       ? ` — però ${v.muro.label} chiude la strada: di pollici ne fa ${r1(v.pollici)} e si ferma lì (p. 270)` : "";
     out.push({ id:"avanza", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
+               dist: d, pollici: r1(va ? va.pollici : pa.resta), muro: !!(va && va.muro),
                why: `${t.name} è a ${d}″: ${testoRuota(pa, move)}` + (mv.why ? ` (${mv.why})` : "") +
                     muroTesto(va),
                page: va && va.muro ? 270 : pa.costo ? 124 : 122 });
     if (!bandiera(u, "noMarch") && !macchina(u)) out.push({ id:"marcia", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
+               dist: d, pollici: r1(vm ? vm.pollici : pm.resta), muro: !!(vm && vm.muro), provaComando: d <= CH.MARCH_WATCH,
                why: `${t.name} è a ${d}″: ${testoRuota(pm, move * 2, "marcia")}` +
                     (d <= CH.MARCH_WATCH ? `, ma a ${CH.MARCH_WATCH}″ da un nemico serve un test di Comando (p. 123)` : "") +
                     muroTesto(vm),
@@ -1144,7 +1186,7 @@ function opzioniMossa(S){
     const muro = (va && va.muro) || (vm && vm.muro);
     if (muro) out.push(...opzioniAggiramento(S, u, t, muro, Math.max(va ? va.pollici : 0, vm ? vm.pollici : 0)));
     out.push(...opzioniManovra(S, u, t, move));
-    out.push({ id:"ferma", uid: u.uid, nome: u.name, ...restareFermo(S, u, d), page: 138 });
+    out.push({ id:"ferma", uid: u.uid, nome: u.name, dist: d, ...restareFermo(S, u, d), page: 138 });
   }
   /* i capi escono prima che il reggimento si muova (p. 207): in fondo
      all'elenco, perche' e' la mossa che si fa di rado */
@@ -1528,7 +1570,7 @@ function opzioniTiro(S){
         if (d > massimo) continue;
         if (vistaTagliata(S, u, t)) continue;
         const f = previsioneFulmine(S, u, t, arma);
-        out.push({ id:"fulmina", uid: u.uid, target: t.uid, nome: u.name, contro: t.name,
+        out.push({ id:"fulmina", uid: u.uid, target: t.uid, nome: u.name, contro: t.name, dist: d,
                    why: `${fulmine.why}, da ${d}″: in media ci finiscono sotto ${f.sotto} ` +
                         `modell${f.sotto === 1 ? "o" : "i"} di ${t.name}, ≈ ${f.kills.toFixed(1)} perdite`,
                    attesa: f.kills, page: fulmine.page });
@@ -1548,7 +1590,7 @@ function opzioniTiro(S){
         if (d > bomba.banda.max || d < bomba.banda.min) continue;
         if (vistaTagliata(S, u, t)) continue;
         const f = previsioneBombarda(S, u, t, arma, bomba);
-        out.push({ id:"bombarda", uid: u.uid, target: t.uid, nome: u.name, contro: t.name,
+        out.push({ id:"bombarda", uid: u.uid, target: t.uid, nome: u.name, contro: t.name, dist: d,
                    why: `${bomba.why}, da ${d}″: se non devia ci finiscono sotto ${f.sotto} ` +
                         `modell${f.sotto === 1 ? "o" : "i"} di ${t.name}, ≈ ${f.kills.toFixed(1)} perdite`,
                    attesa: f.kills, page: bomba.page });
@@ -1570,7 +1612,7 @@ function opzioniTiro(S){
       /* la probabilita' scritta in chiaro: un modello che legge «6+» e
          basta continua a tirare a vuoto per quattro turni */
       const pc = Math.round(SH.hitChance(f.hitNeed, f.hitAgain, f.hitThen) * 100);
-      out.push({ id:"tira", uid: u.uid, target: t.uid, nome: u.name, contro: t.name,
+      out.push({ id:"tira", uid: u.uid, target: t.uid, nome: u.name, contro: t.name, dist: d,
                  why: `${f.shots} tiri con ${arma.name} da ${d}″, colpisce a ${f.hitNeed}+ (${pc}% a tiro)` +
                       (mods.list.length ? ` (${mods.list.map(m => m.why).join(", ")})` : "") +
                       `, ≈ ${f.kills.toFixed(1)} perdite`,
@@ -3275,6 +3317,7 @@ function opzioniPreparazione(S){
         const buoni = l.spells.filter(MG.applies);
         const firma = l.spells.find(sp => sp.n === 0);
         return { id:"dominio", uid: u.uid, lore: id, nome: u.name, contro: l.label || l.name,
+                 giocabili: buoni.length,
                  why: `${l.name}: l'app ne gioca ${buoni.length} su 7 (${buoni.map(sp => sp.name).join(", ") || "nessuno"})` +
                       (firma ? `; la firma è ${firma.name}` : ""),
                  page: MG.PAGE.generation };
@@ -3288,6 +3331,7 @@ function opzioniPreparazione(S){
         page: MG.PAGE.generation },
       ...m.known.flatMap(out => scambi.map(into => ({
         id:"scambia", uid: u.uid, out, into: into.id, nome: u.name,
+        lasciaMuto: !MG.applies(M.spell(out)), prendeMuto: !MG.applies(into),
         why: `lascia ${descriviSpell(M.spell(out))} e prende ${descriviSpell(into)}`,
         page: MG.PAGE.generation }))),
     ] };

@@ -2184,5 +2184,54 @@ console.log('\nil Movimento che si tira (Random Movement, p. 176)');
 }
 
 /* ================================================================= */
+console.log('\ni campi di ogni gesto (CAMPI)');
+{
+  /* Su partite intere, fra le liste che l'archivio ha: ogni opzione che
+     l'arbitro offre porta i campi che il contratto promette. Chi sceglie
+     a macchina legge quelli, e non la frase. */
+  const mancano = new Map(), visti = new Set();
+  const guarda = o => {
+    for (const x of o.list){
+      const campi = AR.CAMPI[x.id];
+      if (!campi) continue;
+      visti.add(x.id);
+      for (const c of campi) if (x[c] === undefined){
+        const k = `${x.id}.${c}`;
+        mancano.set(k, (mancano.get(k) || 0) + 1);
+      }
+    }
+  };
+  const coppie = [['lmtl5sa4300nt', 'lmtl5sn694u6w', 'bm-strada'], ['lmubp01267euf', 'lmubp2kimjzhw', 'bm-strada'],
+                  ['lmtl5rgsd5g06', 'lmtl5ruzktzvb', 'bm-monolite']];
+  for (const [a, b, sc] of coppie){
+    if (!lista(a) || !lista(b)) continue;
+    for (const s of [2, 3]){
+      seme(s);
+      const G = AR.newBattle({ A: lista(a), B: lista(b), scenario: sc, magia: MG.magicNow() });
+      const ag = AG.agenteEuristico({ nome: 'e', estro: D.seeded(s) });
+      const spia = { nome: 's', scegli: ctx => { guarda(ctx.opzioni); return ag.scegli(ctx); } };
+      await AG.giocaPartita(AR, G, { A: spia, B: spia });
+    }
+  }
+  if (mancano.size) console.log('       mancano: ' + [...mancano].map(([k, n]) => `${k} (${n})`).join(', '));
+  ok('ogni opzione porta i campi che il contratto promette', mancano.size === 0);
+  ok(`e il contratto si è visto all opera (${[...visti].sort().join(', ')})`,
+     ['carica', 'avanza', 'marcia', 'ferma', 'tira', 'schiera'].every(id => visti.has(id)));
+  /* l'euristica non legge piu' la frase: con i why svuotati gioca uguale */
+  seme(4);
+  const G1 = AR.newBattle({ A, B, scenario: 'bm-strada' });
+  const e1 = await AG.giocaPartita(AR, G1, { A: AG.agenteEuristico({}), B: AG.agenteEuristico({}) });
+  seme(4);
+  const G2 = AR.newBattle({ A, B, scenario: 'bm-strada' });
+  const muto = ag => ({ nome: 'muto', scegli: async ctx => {
+    const list = ctx.opzioni.list.map(x => ({ ...x, why: '', _vero: x }));
+    const r = await ag.scegli({ ...ctx, opzioni: { ...ctx.opzioni, list } });
+    return { ...r, scelta: r.scelta && r.scelta._vero };
+  } });
+  const e2 = await AG.giocaPartita(AR, G2, { A: muto(AG.agenteEuristico({})), B: muto(AG.agenteEuristico({})) });
+  ok('l euristica non legge le frasi: con tutti i «why» vuoti gioca la stessa partita',
+     e1.A === e2.A && e1.B === e2.B && G1.log.length === G2.log.length);
+}
+
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

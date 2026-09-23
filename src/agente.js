@@ -124,15 +124,19 @@ export function agenteEuristico({ nome = "euristica", estro = null } = {}){
 
       /* INCANTESIMI, PRIMA DI SCHIERARE: il dominio con piu'
          incantesimi che l'app sa giocare, e lo scambio con la firma
-         solo se si lascia uno che resterebbe sul libro. */
+         solo se si lascia uno che resterebbe sul libro.
+
+         I numeri si leggono dai campi dell'opzione (`giocabili`,
+         `lasciaMuto`, `prendeMuto`), non dalla frase: prima li si
+         pescava con un'espressione regolare dentro `why`, e bastava
+         ritoccare la frase per cambiare la strategia senza che nessuna
+         prova se ne accorgesse. */
       if (primo("dominio")){
-        const quanti = x => +((/ne gioca (\d+) su 7/.exec(x.why) || [])[1] || 0);
-        const d = l.filter(x => x.id === "dominio").sort((a, b) => quanti(b) - quanti(a))[0];
+        const d = l.filter(x => x.id === "dominio").sort((a, b) => (b.giocabili || 0) - (a.giocabili || 0))[0];
         return { scelta: d, perche: `${d.nome} studia ${d.contro}: ${d.why}` };
       }
       if (primo("tieni")){
-        const s = l.find(x => x.id === "scambia" && /da leggere sul libro\)/.test(x.why.split(" e prende ")[0]) &&
-                              !/da leggere sul libro\)/.test(x.why.split(" e prende ")[1] || ""));
+        const s = l.find(x => x.id === "scambia" && x.lasciaMuto && !x.prendeMuto);
         return s
           ? { scelta: s, perche: `${s.nome} ${s.why}: meglio un incantesimo che si gioca` }
           : { scelta: primo("tieni"), perche: `${primo("tieni").nome} tiene quello che è uscito` };
@@ -228,9 +232,7 @@ export function agenteEuristico({ nome = "euristica", estro = null } = {}){
       if (avanza.length){
         const a = fra(avanza);
         const m = l.find(x => x.id === "marcia" && x.uid === a.uid);
-        const lontano = /a (\d+(\.\d+)?)″/.exec(a.why);
-        const dist = lontano ? +lontano[1] : 0;
-        if (m && dist > piano.marcia)
+        if (m && (a.dist || 0) > piano.marcia)
           return { scelta: m, perche: `${m.nome} è lontana: marcia, che è il doppio del Movimento` };
         return { scelta: a, perche: `${a.nome} avanza su ${a.contro}: ${a.why}` };
       }
