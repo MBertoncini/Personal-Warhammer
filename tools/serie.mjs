@@ -187,6 +187,9 @@ const VOCI_PIANO = [
   { k: 'unisci', nome: 'capi dentro i reggimenti' },
   { k: 'schieraPrimo', nome: 'vinto il tiro, schiera per primo' },
   { k: 'muoviPrimo', nome: 'vinto il tiro, muove per primo' },
+  { k: 'distanze', nome: 'gioca il gioco delle distanze' },
+  { k: 'rischio', nome: 'accetta un rischio di carica più alto', num: true },
+  { k: 'danno', nome: 'accetta un danno più alto', num: true },
 ];
 const COLONNE_PIANO = ['sinistra', 'centro-sinistra', 'centro', 'centro-destra', 'destra'];
 

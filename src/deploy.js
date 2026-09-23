@@ -39,6 +39,7 @@ import { askText, askConfirm, askPick, showMenu, closeMenu,
          countersHTML, wireCounters, tagsHTML, wireTags } from './uikit.js';
 import * as EX from './extras.js';
 import * as MV from './movement.js';
+import * as MN from './minacce.js';
 import { ZONE_KINDS, zoneKind, makeZone, ensureZone, zoneRect, zoneBox,
          applyZones, hasCustomZones } from './zones.js';
 
@@ -75,7 +76,8 @@ const state = {
   rulers:[],
   /* aiuti tattici sull'unita' selezionata */
   distances:false, arcs:false, move:false, shoot:false,
-  distances:false, arcs:false,
+  /* dove il nemico puo' caricare l'unita' scelta, al suo prossimo turno */
+  threats:false,
   /* l'ancora di movimento: i cerchi restano dove l'unita' e' partita
      invece di seguirla, che era il motivo per cui non servivano a
      niente proprio mentre la muovevi */
@@ -4237,10 +4239,65 @@ function aimButton(u, kind, casterUid = "", spellId = ""){
     title="Mira: una linea segue il puntatore e dice se ${what} arriva; clic su un bersaglio per giocarlo, Esc per togliere">🎯</button>`;
 }
 
+/* ---- dove ti possono caricare (minacce.js) ----
+   La griglia costa: ogni casella chiede a ogni nemico se la carica
+   (arco, vista, distanza, terreno). Il tavolo si ridisegna a ogni
+   fotogramma di un trascinamento, e la griglia cambia solo se si muove
+   un nemico, il terreno o la forma dell'unita' scelta: si tiene da parte
+   e si rifa' solo allora. */
+let threatCache = { key: "", grid: null };
+function threatEnemies(u){
+  return state.units
+    .filter(x => x.placed && !isJoined(x) && x.army !== u.army && !(state.game.on && liveModels(x) <= 0))
+    .map(x => {
+      const b = movementBands(x);
+      return { uid: x.uid, name: x.name, box: boxOf(x), move: b ? b.move : 0, swift: !!(b && b.swift),
+               loose: !!x.loose, fly: flies(x) };
+    });
+}
+function threatGrid(u, enemies, pieces){
+  const box = boxOf(u);
+  const key = JSON.stringify([Math.round(box.w), Math.round(box.h), Math.round(box.rot || 0),
+    enemies.map(e => [e.uid, Math.round(e.box.x), Math.round(e.box.y), Math.round(e.box.rot || 0), e.move, e.swift, e.fly]),
+    state.terrain.map(t => [t.kind, Math.round(t.x), Math.round(t.y), Math.round(t.w || 0), Math.round(t.h || 0), Math.round(t.rot || 0)]),
+    state.tableW, state.tableH]);
+  if (threatCache.key !== key){
+    threatCache = { key, grid: MN.griglia({ W: state.tableW, H: state.tableH, passo: 1.5 * MM,
+                                             sonda: { w: box.w, h: box.h, rot: box.rot || 0 }, enemies, pieces }) };
+  }
+  return threatCache.grid;
+}
+
 function drawTactics(svg, g, u){
   if (!u || !u.placed) return;
   const col = state.armies[u.army].color;
-  const pieces = (state.move || state.shoot) ? terrainPieces() : [];
+  const pieces = (state.move || state.shoot || state.threats) ? terrainPieces() : [];
+
+  /* ---- dove ti possono caricare ----
+     Rosso dove, se l'unita' scelta si fermasse li' (girata com'e'
+     adesso), almeno un nemico la potrebbe caricare al suo prossimo
+     turno: piu' scuro, piu' probabile. E' la meta' del gioco delle
+     distanze che la levetta Archi non dice: Archi dice fin dove carichi
+     tu, questa fin dove caricano loro. Non sa di Paura e Terrore, ne'
+     di chi si mettera' in mezzo: dice cosa e' possibile. */
+  if (state.threats){
+    const enemies = threatEnemies(u);
+    const grid = threatGrid(u, enemies, pieces);
+    const layer = g(svg, "g", { "pointer-events":"none" });
+    for (let r = 0; r < grid.rows; r++) for (let c = 0; c < grid.cols; c++){
+      const p = grid.p[r * grid.cols + c];
+      if (p < 0.02) continue;
+      g(layer, "rect", { x: c * grid.passo, y: r * grid.passo, width: grid.passo + 0.5, height: grid.passo + 0.5,
+                         fill: "var(--bad)", opacity: (0.06 + 0.42 * p).toFixed(3) });
+    }
+    const here = MN.minacciaSu(boxOf(u), enemies, pieces);
+    const box = boxOf(u);
+    const t = g(layer, "text", { x: u.x, y: u.y + box.h / 2 + 18, "text-anchor":"middle", "font-size":14,
+                                 fill: here.p > 0 ? "var(--bad)" : "var(--ok)", "font-weight":600 });
+    t.textContent = here.cariche.length
+      ? `qui ti caricano il ${Math.round(here.p * 100)}% · ${here.cariche.slice(0, 2).map(c => `${c.name} ${Math.round(c.chance * 100)}%`).join(", ")}`
+      : "qui nessuno ti carica";
+  }
 
   /* ---- dove posso arrivare davvero ----
      Un cerchio dice quanto e' lungo il passo, non dove il passo porta:
@@ -5451,7 +5508,7 @@ $("#btn-terr-clear").addEventListener("click", () =>
 const TOGGLES = [
   ["#btn-snap", "snap"], ["#btn-labels", "labels"], ["#btn-ranges", "ranges"],
   ["#btn-measure", "measure"], ["#btn-photos", "photos"],
-  ["#btn-dist", "distances"], ["#btn-arcs", "arcs"],
+  ["#btn-dist", "distances"], ["#btn-arcs", "arcs"], ["#btn-threats", "threats"],
   ["#btn-move", "move"], ["#btn-shoot", "shoot"],
   ["#btn-moveaid", "moveAid"], ["#btn-ghost", "ghost"], ["#btn-zone-draw", "zoning"],
 ];
@@ -5751,7 +5808,7 @@ function snapshot(){
     markers:state.markers, zones:state.zones,
     tableW:state.tableW, tableH:state.tableH, gap:state.gap,
     snap:state.snap, labels:state.labels, ranges:state.ranges, photos:state.photos,
-    distances:state.distances, arcs:state.arcs, move:state.move, shoot:state.shoot,
+    distances:state.distances, arcs:state.arcs, move:state.move, shoot:state.shoot, threats:state.threats,
     moveAid:state.moveAid, ghost:state.ghost,
     rulers:state.rulers, game:state.game, sel:state.sel,
     extras:state.extras || null,
@@ -5795,6 +5852,7 @@ function applySnapshot(s){
   state.arcs = !!s.arcs;
   state.move = !!s.move;
   state.shoot = !!s.shoot;
+  state.threats = !!s.threats;
   state.moveAid = s.moveAid !== false;
   state.ghost = !!s.ghost;
   state.zoning = false; state.zonePts = null;

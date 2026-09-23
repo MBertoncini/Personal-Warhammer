@@ -174,6 +174,17 @@ click('#btn-dist'); click('#btn-arcs');
 deploy.renderAll();
 ok('archi e distanze si disegnano senza errori', errors.length === 0);
 click('#btn-dist'); click('#btn-arcs');
+/* le minacce: rosso dove un nemico potrebbe caricare l'unita' scelta,
+   e sotto l'unita' quanto la caricano dove sta adesso */
+{
+  const prima = doc.querySelectorAll('#board rect').length;
+  click('#btn-threats');
+  deploy.renderAll();
+  const scritta = [...doc.querySelectorAll('#board text')].find(t => /ti caricano|nessuno ti carica/.test(t.textContent));
+  ok('le minacce si disegnano senza errori, e dicono quanto ti caricano dove sei',
+     errors.length === 0 && !!scritta && doc.querySelectorAll('#board rect').length > prima);
+  click('#btn-threats');
+}
 
 console.log('\nmovimento e tiro');
 click('#btn-move');

@@ -60,6 +60,7 @@ import { troopOf } from './mounts.js';
 import { TERRAIN } from './terrain.js';
 import * as TR from './terrain.js';
 import * as SG from './sight.js';
+import * as MN from './minacce.js';
 import { objectiveHolder, OBJECTIVE_RANGE } from './battlemarch.js';
 
 /* ============================================================
@@ -751,6 +752,11 @@ export function opzioniUnione(S, c, { pollici = null } = {}){
      attesa    perdite che ci si aspetta, gia' pesate per la probabilita'
      need      pollici di tiro che servono alla carica (0: ci arriva camminando)
      lato      da che lato prende il bersaglio: fronte, fianco, retro
+     rischio   probabilita' che, fermandosi li', il nemico la carichi il
+               turno dopo (minacce.js)
+     danno     punti di lista che ci si aspetta di perdere per la carica
+               peggiore, gia' pesata per la sua probabilita'
+     portata   probabilita' che da li', il turno dopo, carichi lei
    ============================================================ */
 export const CAMPI = Object.freeze({
   primo:    ["cosa", "chi"],
@@ -758,8 +764,9 @@ export const CAMPI = Object.freeze({
   dominio:  ["uid", "lore", "giocabili"],
   scambia:  ["uid", "out", "into", "lasciaMuto", "prendeMuto"],
   carica:   ["uid", "target", "chance", "dist", "need", "lato"],
-  avanza:   ["uid", "verso", "dist", "pollici", "muro"],
-  marcia:   ["uid", "verso", "dist", "pollici", "muro", "provaComando"],
+  avanza:   ["uid", "verso", "dist", "pollici", "muro", "rischio", "danno", "portata"],
+  accosta:  ["uid", "verso", "dist", "pollici", "fino", "rischio", "danno", "portata"],
+  marcia:   ["uid", "verso", "dist", "pollici", "muro", "provaComando", "rischio", "danno", "portata"],
   ferma:    ["uid", "dist"],
   aggira:   ["uid", "verso", "pollici"],
   tira:     ["uid", "target", "dist", "attesa"],
@@ -1032,19 +1039,121 @@ function opzioniCarica(S){
    stesso al primo passo.
    ============================================================ */
 
+/* ============================================================
+   LE MINACCE E LO SCONTRO ATTESO
+   Due domande che l'elenco delle mosse non si faceva, e che al tavolo
+   decidono la fase di movimento:
+
+     DOVE ARRIVO, CHI MI CARICA? `minacce.js` risponde con il conto
+       della dichiarazione (p. 119) fatto da ogni nemico che il turno
+       dopo potra' caricare — arco, vista, distanza, terreno — e la
+       probabilita' che ne arrivi almeno uno. E' il campo `rischio`.
+
+     E SE MI CARICA, COME VA? `scontroAtteso` fa il primo round senza
+       tirare: le ferite medie dei due lati (`meleeForecast`), il
+       risultato con ranghi, stendardo e fianco (`combatScore`, p. 150),
+       la probabilita' che chi perde scappi (`breakChances`, p. 154) e
+       che l'inseguimento lo prenda. Tutto in punti di lista, che e' la
+       moneta dei punti vittoria. E' il campo `danno`: quanto mi aspetto
+       di perdere dalla carica peggiore, pesata per la sua probabilita'.
+
+   E la terza, che e' l'altra meta' del gioco delle distanze:
+
+     DA LI' CARICO IO? `portata`, la probabilita' che il turno dopo la
+       mia carica arrivi al bersaglio verso cui mi sono mosso.
+
+   Quello che lo scontro atteso non sa, detto una volta: la carica non
+   da' l'impeto qui (e' un round medio, non il primo colpo di chi
+   arriva), l'ordine d'Iniziativa non toglie attacchi a chi mena dopo,
+   e i capi uniti entrano con il reggimento come fa `schieraDi`. E'
+   un'indicazione per scegliere, non una previsione da scrivere nel
+   registro: nel registro va quello che i dadi fanno.
+   ============================================================ */
+
+/* chi, fra le unita' di `army`, il turno dopo potra' dichiarare una
+   carica: non chi fugge, combatte, e' una macchina o si muove di quanto
+   tira (che non dichiara, p. 176) */
+function caricatori(S, army){
+  return inCampo(S, army)
+    .filter(e => !isJoined(e) && !e.fled && !ingaggiata(S, e) && !macchina(e) && !vagante(e) && !bandiera(e, "noCharge"))
+    .map(e => ({ uid: e.uid, name: e.name, box: boxOf(e, S.units), move: movimento(S, e).move,
+                 swift: MV.swiftOf(e), loose: !!e.loose, fly: vola(e) }))
+    .filter(e => e.move > 0);
+}
+
+/* La probabilita' che chi fugge venga preso, a dadi pari: 2D6 contro
+   2D6, e l'inseguitore prende con un tiro uguale o piu' alto (p. 156).
+   Si conta, non si stima: (1 + P(pari)) / 2, e P(pari) = 146/1296. */
+export const PRESO_A_DADI_PARI = (1 + 146 / 1296) / 2;
+
+const scontri = new WeakMap();
+export function scontroAtteso(S, att, def, lato = "fronte"){
+  let cache = scontri.get(S);
+  if (!cache){ cache = new Map(); scontri.set(S, cache); }
+  const firma = u => `${u.uid}:${alive(u)}:${u.wounds || 0}:${capiDi(S, u).map(c => c.uid + "/" + alive(c)).join(",")}`;
+  const k = `${firma(att)}|${firma(def)}|${lato}`;
+  if (cache.has(k)) return cache.get(k);
+  const ca = schieraDi(S, att), cd = schieraDi(S, def);
+  const fer = (c, u) => Math.max(1, alive(u) * (c.w || 1) - (u.wounds || 0));
+  const wa = fer(ca, att), wd = fer(cd, def);
+  const date = Math.min(wd, CB.meleeForecast(ca, cd).wounds);
+  const prese = Math.min(wa, CB.meleeForecast(cd, ca).wounds);
+  const carta = (c, w, fianco) => ({ ...ML.scoreCardOf(c, w), flank: fianco || "" });
+  /* il lato arriva come lo scrive `declareCharge` — fronte, fianco,
+     retro — e la scheda del risultato lo vuole come `melee.js` */
+  const fianco = lato === "flank" || lato === "rear" ? lato : ML.arcToFlank(lato);
+  const sa = ML.combatScore(carta(ca, date, fianco), carta(cd, prese)).total;
+  const sd = ML.combatScore(carta(cd, prese), carta(ca, date)).total;
+  const diff = sa - sd;
+  const rottaLui = diff > 0 ? ML.breakChances(cd.ld, diff).rout : 0;
+  const rottaMia = diff < 0 ? ML.breakChances(ca.ld, -diff).rout : 0;
+  const pa = att.pts || 0, pd = def.pts || 0;
+  const valore = (date / wd) * pd - (prese / wa) * pa
+               + rottaLui * PRESO_A_DADI_PARI * pd * (1 - date / wd)
+               - rottaMia * PRESO_A_DADI_PARI * pa * (1 - prese / wa);
+  const r = { date: r1(date), prese: r1(prese), diff: r1(diff), rottaLui, rottaMia, valore: Math.round(valore) };
+  cache.set(k, r);
+  return r;
+}
+
+const pc = x => `${Math.round(100 * x)}%`;
+
+/* Il rischio, il danno e la portata di una scatola dove `u` potrebbe
+   fermarsi. `campi` va sull'opzione, `testo` in coda alla frase. */
+function guardia(S, u, box, nemici, t, tb, move){
+  const m = MN.minacciaSu(box, nemici, S.terrain);
+  let danno = 0, peggio = null;
+  for (const c of m.cariche.slice(0, 3)){
+    const e = byUid(S, c.uid);
+    if (!e) continue;
+    const v = c.chance * Math.max(0, scontroAtteso(S, e, u, c.lato).valore);
+    if (v > danno){ danno = v; peggio = { ...c, e }; }
+  }
+  const portata = MN.portataDa(box, move, tb, { swift: MV.swiftOf(u), fly: vola(u), pieces: S.terrain });
+  const rischio = Math.round(m.p * 100) / 100;
+  const testo = !m.cariche.length ? (portata > 0 ? `; da lì nessuno la carica, e lei carica ${t.name} il ${pc(portata)}` : "")
+    : `; da lì ${m.cariche.length === 1 ? m.cariche[0].name + " la carica" : "la caricano"} il ${pc(m.p)}` +
+      (peggio ? ` (con ${peggio.name} ci perderebbe ≈ ${Math.round(danno / Math.max(0.01, peggio.chance))} punti)` : ", e non le costerebbe") +
+      (portata > 0 ? `, lei carica ${t.name} il ${pc(portata)}` : "");
+  return { campi: { rischio, danno: Math.round(danno), portata: Math.round(portata * 100) / 100 }, testo };
+}
+
 /* Quanti pollici fa davvero, andando verso quel punto. Torna anche il
    piano di ruota e cosa l'ha fermata, e non scrive una riga di
    registro: `TR.slowMove` invece di `rallenta`, `pianoAvanzata`
    invece di `avanzaRuotando`. */
-function stradaVera(S, u, meta, { marcia = false } = {}){
+function stradaVera(S, u, meta, { marcia = false, fino = null } = {}){
   const { move: pieno } = movimento(S, u);
   if (!pieno) return null;
   const move = vola(u) ? pieno : TR.slowMove(pieno, pezziSulCammino(S, u, meta, pieno)).move;
-  const quanti = marcia ? move * 2 : move;
+  const quanti = fino != null ? Math.min(fino, marcia ? move * 2 : move) : marcia ? move * 2 : move;
   const pr = pianoRuota(S, u, versoDi(meta[0] - u.x, meta[1] - u.y), quanti, { marcia });
   const p = pianoAvanzata(S, u, { x: meta[0], y: meta[1] }, pr, quanti);
   return { pr, quanti, move, pollici: p.pollici, bloccata: p.bloccata,
-           stop: p.stop, muro: p.stop && p.stop.terreno ? p.stop.terreno : null };
+           stop: p.stop, muro: p.stop && p.stop.terreno ? p.stop.terreno : null,
+           /* dove arriva: serve a chiedersi, prima di andarci, chi ci
+              puo' caricare (`guardia`) */
+           x: p.x, y: p.y, rot: p.rot };
 }
 
 /* I due varchi ai lati del pezzo che chiude la strada, nel sistema di
@@ -1167,26 +1276,54 @@ function opzioniMossa(S){
        quello vero che va scritto (vedi il blocco sull'aggiramento) */
     const va = stradaVera(S, u, [t.x, t.y], { marcia: false });
     const vm = stradaVera(S, u, [t.x, t.y], { marcia: true });
+    /* chi mi puo' caricare dove arrivo, e quanto mi costerebbe; e se da
+       li' il turno dopo carico io (vedi LE MINACCE) */
+    const nemici = caricatori(S, altro(u.army));
+    const tb = boxOf(t, S.units), qui = boxOf(u, S.units);
+    const g = v => v ? guardia(S, u, { ...qui, x: v.x, y: v.y, rot: v.rot }, nemici, t, tb, move) : guardia(S, u, qui, nemici, t, tb, move);
+    const ga = g(va), gm = g(vm), gf = g(null);
     /* con un trattino e non con un «ma»: la marcia porta gia' il suo
        «ma» per il test di Comando, e due «ma» di fila non si leggono */
     const muroTesto = v => v && v.muro && v.pollici < v.pr.resta - 0.05
       ? ` — però ${v.muro.label} chiude la strada: di pollici ne fa ${r1(v.pollici)} e si ferma lì (p. 270)` : "";
     out.push({ id:"avanza", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
-               dist: d, pollici: r1(va ? va.pollici : pa.resta), muro: !!(va && va.muro),
+               dist: d, pollici: r1(va ? va.pollici : pa.resta), muro: !!(va && va.muro), ...ga.campi,
                why: `${t.name} è a ${d}″: ${testoRuota(pa, move)}` + (mv.why ? ` (${mv.why})` : "") +
-                    muroTesto(va),
+                    muroTesto(va) + ga.testo,
                page: va && va.muro ? 270 : pa.costo ? 124 : 122 });
+    /* ACCOSTARSI: il gioco delle distanze. Se dove l'avanzata intera
+       arriva il nemico carica facile, si offre il punto piu' avanti sul
+       percorso — a un quarto, a meta', a tre quarti — dove il rischio
+       scende davvero (almeno 15 punti). E' un gesto che il tavolo ha e
+       l'elenco non aveva: fermarsi prima. */
+    if (va && ga.campi.rischio >= 0.2 && va.pollici > 1){
+      let meglio = null;
+      for (const f of [0.75, 0.5, 0.25]){
+        const fino = r1(va.pollici * f);
+        const v = stradaVera(S, u, [t.x, t.y], { marcia: false, fino });
+        if (!v) continue;
+        const gv = g(v);
+        if (gv.campi.rischio <= ga.campi.rischio - 0.15){ meglio = { fino: r1(v.pollici), gv }; break; }
+      }
+      if (meglio) out.push({ id:"accosta", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
+        dist: d, pollici: meglio.fino, fino: meglio.fino, muro: false, ...meglio.gv.campi,
+        why: `${t.name} è a ${d}″: avanza di ${meglio.fino}″ e si ferma` + meglio.gv.testo +
+             ` — con tutti i ${r1(va.pollici)}″ il rischio sarebbe ${pc(ga.campi.rischio)}`,
+        page: 122 });
+    }
     if (!bandiera(u, "noMarch") && !macchina(u)) out.push({ id:"marcia", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
                dist: d, pollici: r1(vm ? vm.pollici : pm.resta), muro: !!(vm && vm.muro), provaComando: d <= CH.MARCH_WATCH,
+               ...gm.campi,
                why: `${t.name} è a ${d}″: ${testoRuota(pm, move * 2, "marcia")}` +
                     (d <= CH.MARCH_WATCH ? `, ma a ${CH.MARCH_WATCH}″ da un nemico serve un test di Comando (p. 123)` : "") +
-                    muroTesto(vm),
+                    muroTesto(vm) + gm.testo,
                page: vm && vm.muro ? 270 : 123 });
     /* e se la strada e' chiusa, si offre di girarci attorno */
     const muro = (va && va.muro) || (vm && vm.muro);
     if (muro) out.push(...opzioniAggiramento(S, u, t, muro, Math.max(va ? va.pollici : 0, vm ? vm.pollici : 0)));
     out.push(...opzioniManovra(S, u, t, move));
-    out.push({ id:"ferma", uid: u.uid, nome: u.name, dist: d, ...restareFermo(S, u, d), page: 138 });
+    const rf = restareFermo(S, u, d);
+    out.push({ id:"ferma", uid: u.uid, nome: u.name, dist: d, ...gf.campi, ...rf, why: rf.why + gf.testo, page: 138 });
   }
   /* i capi escono prima che il reggimento si muova (p. 207): in fondo
      all'elenco, perche' e' la mossa che si fa di rado */
@@ -2184,6 +2321,7 @@ const GESTI = {
   },
 
   avanza: (S, a) => mossa(S, a, false),
+  accosta: (S, a) => a.fino == null ? no("accosta vuole di quanto: il campo «fino»") : mossa(S, a, false),
   marcia: (S, a) => mossa(S, a, true),
   /* aggirare e' avanzare, solo verso un varco invece che verso un
      nemico: e' `a.punto` a dirlo, e se il varco si raggiunge marciando
@@ -2385,6 +2523,9 @@ function mossa(S, a, marcia){
      e un reggimento largo cinque basette si voltava di 45° e faceva
      ancora tutto il suo Movimento. Anche chi fallisce il test di marcia
      ha marciato, e non ha il giro libero dei Lumbering. */
+  /* «accosta»: ci si ferma prima, dove si e' deciso (p. 122: il
+     Movimento e' un massimo, non un obbligo) */
+  if (a.fino != null && a.fino >= 0) quanti = Math.min(quanti, a.fino);
   const partenza = postiDi(S, u);
   const pr = pianoRuota(S, u, versoDi(t.x - u.x, t.y - u.y), quanti, { marcia });
   const p = avanzaRuotando(S, u, t, pr, quanti);

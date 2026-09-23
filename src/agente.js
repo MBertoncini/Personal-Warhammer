@@ -45,7 +45,8 @@
 export const COLONNE = ["sinistra", "centro-sinistra", "centro", "centro-destra", "destra"];
 export const PIANO_FISSO = Object.freeze({ carica: 0.5, marcia: 14, sfida: 0.2, tieniTiro: true,
                                            unisci: true, scarto: 0, colonne: null,
-                                           schieraPrimo: true, muoviPrimo: true });
+                                           schieraPrimo: true, muoviPrimo: true,
+                                           distanze: true, rischio: 0.35, danno: 15 });
 
 export function pianoDa(estro){
   if (!estro) return { ...PIANO_FISSO };
@@ -67,12 +68,20 @@ export function pianoDa(estro){
        tiro schiera per primo? e muove per primo? */
     schieraPrimo: u() < 0.5,
     muoviPrimo: u() < 0.85,
+    /* il gioco delle distanze: se lo si gioca, da che rischio di essere
+       caricati, e da quanti punti persi in quella carica */
+    distanze: u() < 0.8,
+    rischio: Math.round((0.2 + 0.4 * u()) * 100) / 100,
+    danno: Math.round(5 + 30 * u()),
   };
 }
 
-export function agenteEuristico({ nome = "euristica", estro = null } = {}){
+/* `piano` sopra il piano: chi vuole una scelta precisa — una prova, un
+   esperimento che cambia una cosa sola — la scrive qui, e il resto
+   resta quello dell'estro (o quello fisso) */
+export function agenteEuristico({ nome = "euristica", estro = null, piano: sopra = null } = {}){
   let colonna = 0;
-  const piano = pianoDa(estro);
+  const piano = { ...pianoDa(estro), ...(sopra || {}) };
   /* fra le prime `scarto + 1` mosse, gia' in ordine dall'arbitro, una a
      caso: la migliore resta la piu' probabile */
   const fra = l => {
@@ -232,7 +241,24 @@ export function agenteEuristico({ nome = "euristica", estro = null } = {}){
       if (avanza.length){
         const a = fra(avanza);
         const m = l.find(x => x.id === "marcia" && x.uid === a.uid);
-        if (m && (a.dist || 0) > piano.marcia)
+        /* IL GIOCO DELLE DISTANZE. Prima si andava addosso al nemico di
+           tutto il Movimento, sempre: chi aveva il Movimento piu' alto
+           si fermava a portata di carica come tutti. Adesso, se dove
+           arriva la mossa il nemico la carica e la carica costa punti
+           (`danno`, dall'arbitro), si cerca fra fermarsi prima
+           («accosta») e restare dov'e' il posto che toglie di piu' al
+           nemico e lascia di piu' a noi: portata meno rischio. Chi dalla
+           carica nemica non perde niente — un'incudine, un mostro contro
+           dei goblin — va avanti come prima: farsi caricare li' e' un
+           affare. */
+        const cattiva = x => x && x.danno != null && x.danno >= piano.danno && x.rischio > piano.rischio;
+        if (piano.distanze && cattiva(a)){
+          const alt = l.filter(x => x.uid === a.uid && (x.id === "accosta" || x.id === "ferma") && x.rischio != null &&
+                                    x.danno < a.danno)
+            .sort((p, q) => ((q.portata || 0) - q.rischio) - ((p.portata || 0) - p.rischio))[0];
+          if (alt) return { scelta: alt, perche: `${alt.nome} non si mette dove la caricano: ${alt.why}` };
+        }
+        if (m && (a.dist || 0) > piano.marcia && !(piano.distanze && cattiva(m) && m.danno > (a.danno || 0)))
           return { scelta: m, perche: `${m.nome} è lontana: marcia, che è il doppio del Movimento` };
         return { scelta: a, perche: `${a.nome} avanza su ${a.contro}: ${a.why}` };
       }
@@ -355,6 +381,9 @@ Come si ragiona in questo gioco:
 - girarsi costa: la ruota si paga con il movimento, e una manovra sola per turno. Il giro di 90° costa poco ma
   fa di un reggimento largo una colonna senza bonus di ranghi; la riforma lo gira intero e costa tutto il movimento;
   un passo indietro o di lato si fa a metà del Movimento;
+- dove ti fermi conta quanto dove vai: le mosse dicono «da lì X la carica il N%» e «lei carica Y il M%». Fermarsi un
+  pollice fuori dalla carica nemica e dentro la propria è il cuore del movimento; la mossa «accosta» avanza di meno e
+  si ferma dove il rischio scende. Farsi caricare va bene solo a chi da quella carica non perde niente;
 - la magia: ogni incantesimo si tenta una volta per turno, e l'avversario prova a dissolverlo subito;
   quando dissolvi tu, la sorte si usa una volta sola per turno, e un mago che fa doppio 1 rischia la tabella del fiasco.`;
 
