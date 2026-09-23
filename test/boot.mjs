@@ -1813,6 +1813,10 @@ console.log('\nla sfida contro l\'AI');
   ok('e l arbitro sa giocare solo gli scenari con un tavolo e uno schieramento',
      CA.scenariGiocabili().every(s => s.id) && CA.scenariGiocabili().some(s => s.id === 'bm-strada'));
   window.localStorage.removeItem('tow-gemini-key');
+  /* l'AI che aspetta di farti leggere le schede e' per chi guarda: qui
+     si contano i clic, e trenta millesimi fra uno e l'altro non bastano
+     ad aspettare nessuno */
+  window.localStorage.setItem('tow-sfida-calma', '0');
   CA.startSfida({ listA: la, listB: lb, mia: 'A' });
   await settle(80);
   ok('la sfida porta sul tavolo le due liste e lo scenario',
@@ -1834,6 +1838,8 @@ console.log('\nla sfida contro l\'AI');
   ok('il tavolo mostra dove l arbitro ha messo i pezzi',
      DP.state.units.filter(u => u.placed).length >= 10);
   ok('il registro scorre nel pannello', doc.querySelectorAll('#sfida .sf-riga').length > 10);
+  ok('le righe con i dadi si aprono sul loro perché', doc.querySelectorAll('#sfida .sf-perche .sp').length > 0);
+  ok('e le schede del perché compaiono sopra il tavolo', doc.querySelectorAll('.board-scroll .sp-pila .sp').length > 0);
   /* un pezzo non si trascina: lo muove l'arbitro */
   const u = DP.state.units.find(x => x.placed && !x.join);
   const prima = [u.x, u.y];

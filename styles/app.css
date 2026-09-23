@@ -1281,3 +1281,26 @@ details.magic-block[open] > summary::after{content:"\2212";}
 .sf-err{font-size:11px;color:var(--muted);margin:6px 0;}
 .note.warn{border-left:3px solid var(--warn);padding-left:6px;}
 label.field.inline{flex-direction:row;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-size:12px;}
+
+/* il perché sul tavolo (`spiega.js`, `controai.js`): le schede stanno
+   in alto a destra sopra il campo, entrano scivolando e se ne vanno da
+   sole; la scheda vera e il suo stile vengono da spiega.js, qui c'e'
+   solo dove stanno e come si muovono */
+.board-scroll{position:relative;}
+.sp-pila{position:absolute;top:12px;right:12px;width:min(340px,calc(100% - 24px));z-index:5;
+  display:flex;flex-direction:column;gap:8px;pointer-events:none;max-height:calc(100% - 24px);overflow:hidden;}
+.sp-voce{position:relative;pointer-events:auto;cursor:pointer;animation:sp-entra .3s ease-out both;
+  transition:opacity .25s ease, transform .25s ease;}
+.sp-voce.sp-via{opacity:0;transform:translateX(12px);}
+.sp-voce.sp-fissa .sp{outline:2px solid var(--accent);outline-offset:1px;}
+.sp-chiudi{position:absolute;top:4px;right:6px;border:0;background:none;color:var(--muted);
+  font-size:15px;line-height:1;cursor:pointer;padding:2px 4px;opacity:0;transition:opacity .15s;}
+.sp-voce:hover .sp-chiudi, .sp-voce.sp-fissa .sp-chiudi{opacity:1;}
+@keyframes sp-entra{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion: reduce){ .sp-voce{animation:none;transition:none;} }
+.sf-perche{flex:1;min-width:0;}
+.sf-perche > summary{cursor:pointer;list-style:none;}
+.sf-perche > summary::-webkit-details-marker{display:none;}
+.sf-perche > summary::after{content:" · perché?";color:var(--accent);font-size:11px;}
+.sf-perche[open] > summary::after{content:"";}
+.sf-perche .sp{margin:5px 0 4px;}

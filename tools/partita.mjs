@@ -489,7 +489,9 @@ const esito = await AG.giocaPartita(AR, S, {
     if (html){
       const testo = righe.map(r => ({ t: r.text, p: r.page || 0, d: r.dice && r.dice.length ? r.dice : null,
                                       ...(r.groups ? { g: r.groups.map(g => ({ w: g.what, d: g.dice })) } : {}),
-                                      ...(r.kind ? { k: r.kind } : {}) }));
+                                      ...(r.kind ? { k: r.kind } : {}),
+                                      /* la spiegazione, che la pagina fa diventare una scheda */
+                                      ...(r.x ? { x: r.x } : {}) }));
       if (rifiutata) testo.push({ t: `mossa rifiutata dall'arbitro: ${esito.text}`, p: 0, d: null, k: 'limite' });
       const f = fotogramma(S, { AR, testo, chi: nomi[player], perche: detto, army: player, casella: c,
                                 turno: righe.length ? righe[0].turno : S.turno });

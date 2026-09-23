@@ -363,10 +363,15 @@ const totalUS = (S, army) => S.units
    che resta della partita, ed e' l'unica cosa che una partita giocata
    da due macchine lascia a chi la legge.
    ============================================================ */
-function say(S, text, { page = 0, dice = null, groups = null, army = "", kind = "" } = {}){
+/* `x` e' la spiegazione della riga, per chi guarda la partita e vuole
+   sapere perche': i dadi, il numero da battere e le cose che li hanno
+   spostati, ognuna con la sua fonte. La forma e' scritta in cima a
+   `spiega.js`, che ne fa la scheda sul tavolo. */
+function say(S, text, { page = 0, dice = null, groups = null, army = "", kind = "", x = null } = {}){
   const riga = { turno: S.turno, army: army || S.army, casella: CASELLE[S.casella] ? CASELLE[S.casella].id : "",
                  text, page, dice, kind };
   if (groups && groups.length) riga.groups = groups;
+  if (x) riga.x = x;
   S.log.push(riga);
   return riga;
 }
@@ -931,16 +936,58 @@ export function passaIl(ld, cold = false){
   }
   return si / n;
 }
+/* Per le schede di `spiega.js`: il tipo di ogni test, e cosa vuol dire
+   fallirlo — «fallito» da solo non dice perche' l'unita' adesso scappa. */
+const SPIEGA_PSICO = { fear: "paura", terror: "terrore", panic: "panico", stupidity: "stupidita",
+                       impetuous: "impeto", rally: "raduno" };
+const ESITO_PSICO = { fear: "fallito: ha paura", terror: "fallito: deve fuggire",
+                      panic: "fallito: va nel panico", stupidity: "fallito: è in preda alla Stupidità" };
+/* Gli indici dei dadi che non contano: tutti meno quelli tenuti, contati
+   una volta sola ciascuno (due 3 tenuti su tre 3 ne scartano uno). */
+function scartati(dadi, tenuti){
+  if (!tenuti || tenuti.length >= dadi.length) return [];
+  const resto = [...tenuti], via = [];
+  dadi.forEach((v, i) => {
+    const j = resto.indexOf(v);
+    if (j >= 0) resto.splice(j, 1); else via.push(i);
+  });
+  return via;
+}
+/* La scheda di un test di Comando tirato: i dadi, il Comando e da dove
+   viene, e cosa vuol dire l'esito. */
+function xPsico(S, u, kind, dadi, res, perche){
+  return { k: SPIEGA_PSICO[kind] || "panico", u: u.name, uid: u.uid, tot: res.total, via: scartati(dadi, res.kept),
+           vs: { v: res.target, op: "<=", t: "Comando" },
+           f: [...(perche ? [{ t: perche, f: "stato" }] : []), ...fontiComando(S, u),
+               ...(res.cold ? [{ t: "Cold Blooded: tre dadi, si tengono i due più bassi", f: "regola" }] : []),
+               ...(res.insane ? [{ t: "doppio uno: passa sempre", f: "dadi" }] : [])],
+           e: res.passed ? "passato" : ESITO_PSICO[kind] || "fallito", ok: res.passed };
+}
+/* La scheda di una fuga: 2D6, il terzo dado dello Swiftstride, e i
+   bonus e malus dell'esercito o della macchina da guerra. */
+function xFuga(u, dadi, via, { k = "fuga", da = null, perche = "" } = {}){
+  const b = CB.fleeBonusOf(u);
+  return { k, u: u.name, uid: u.uid, su: da ? da.uid : null, tot: dadi.reduce((s, v) => s + v, 0),
+           piu: b.mod ? [{ t: b.why || "bonus di fuga", v: b.mod }] : [],
+           f: [...(perche ? [{ t: perche, f: "stato" }] : []),
+               { t: "si fugge di 2D6″" + (da ? `, dritti lontano da ${da.name}` : "") + " (p. 132)", f: "regola" },
+               ...(dadi.length > 2 ? [{ t: "Swiftstride: un D6 in più (p. 178)", f: "regola" }] : [])],
+           e: `fugge di ${via}″`, ok: false };
+}
 /* Il test psicologico tirato davvero, con la sua riga di registro. */
 function testPsico(S, u, kind, p, perche, page){
   const auto = PS.autoPass(kind, p);
+  const k = SPIEGA_PSICO[kind] || "panico";
   if (auto.auto){
-    say(S, `${u.name}, ${PS.KINDS[kind].label} (${perche}): ${auto.why}.`, { army: u.army, page });
+    say(S, `${u.name}, ${PS.KINDS[kind].label} (${perche}): ${auto.why}.`, { army: u.army, page,
+        x: { k, u: u.name, uid: u.uid, f: [{ t: perche, f: "stato" }, { t: auto.why, f: "regola" }],
+             e: "passa senza tirare", ok: true } });
     return { passed: true, auto: true };
   }
   const dadi = roll(PS.coldDice(kind, p) ? 3 : 2);
   const res = PS.psychTest({ kind, ld: ldOf(S, u), dice: dadi, p });
-  say(S, `${u.name}, ${PS.KINDS[kind].label} (${perche}): ${res.text}.`, { dice: dadi, army: u.army, page });
+  say(S, `${u.name}, ${PS.KINDS[kind].label} (${perche}): ${res.text}.`, { dice: dadi, army: u.army, page,
+      x: xPsico(S, u, kind, dadi, res, perche) });
   return res;
 }
 
@@ -1961,6 +2008,23 @@ function ldProprio(S, u){
   }
   return { ld, chi };
 }
+/* Da dove viene il Comando con cui l'unita' tira, per la scheda che lo
+   spiega: il suo, quello del capo che ci sta dentro, quello del
+   generale vicino, la Warband. Sono le stesse strade di `ldOf`, dette
+   una per una — e il generale a cinque pollici e' quasi sempre la
+   ragione per cui un reggimento da Comando 5 non scappa. */
+function fontiComando(S, u){
+  const c = CB.combatant(u);
+  const suo = +(c.ldBase != null ? c.ldBase : c.ld) || 0;
+  const pr = ldProprio(S, u);
+  const out = [{ t: `Comando ${suo} dal profilo`, f: "profilo" }];
+  if (pr.chi) out.push({ t: `Comando ${pr.ld} di ${pr.chi}, che ci sta dentro (p. 97)`, f: "regola" });
+  const g = comandoDi(S, u, pr.ld, { zitto: true });
+  if (g.why) out.push({ t: `${g.why}: si usa il suo (p. 202)`, f: "generale" });
+  const w = PS.leadershipOf(g.ld, PS.psychOf(u, { joined: capiInFila(S, u) }), { fleeing: !!u.fled });
+  if (w.mods && w.mods.length) out.push({ t: w.why, f: "regola" });
+  return out;
+}
 
 /* Il Movimento che si tira (3D6 dei Squig Hopper, del Doomwheel): si
    tira una volta per turno e resta scritto, cosi' la stessa unita' non
@@ -2004,8 +2068,18 @@ function tiraRandom(S, u, mv){
   const dadi = roll(+m[1]);
   const n = dadi.reduce((s, v) => s + v, 0);
   u.randomMove = { key, n, dadi };
+  /* la scheda risponde a «perche' l'Abominio ha fatto proprio undici
+     pollici»: il suo Movimento non e' un numero ma un tiro, e sopra ci
+     possono stare gli incantesimi che lo toccano */
+  const magie = EF.statOf(u, "M").mods.filter(x => x.delta);
   say(S, `${u.name}: Movimento ${mv.random} → ${dadi.join(" + ")} = ${n}″.`,
-      { dice: dadi, army: u.army, page: mv.page || 0 });
+      { dice: dadi, army: u.army, page: mv.page || 0,
+        x: { k: "movimento", u: u.name, uid: u.uid, tot: n,
+             piu: magie.map(x => ({ t: x.from, v: x.delta })),
+             f: [{ t: mv.why || `il Movimento è ${mv.random}: si tira a ogni turno`, f: "profilo" },
+                 ...(vagante(u) ? [{ t: "Random Movement: non marcia e non dichiara cariche, va di quanto tira; se tocca un nemico lo ha caricato (p. 176)", f: "regola" }] : []),
+                 ...magie.map(x => ({ t: `${x.from}: ${x.delta > 0 ? "+" : "−"}${Math.abs(x.delta)}″ al Movimento`, f: "magia" }))],
+             e: `si muove fino a ${Math.max(0, n + magie.reduce((s, x) => s + x.delta, 0))}″` } });
   return n;
 }
 
@@ -2065,7 +2139,9 @@ function pezziSulCammino(S, u, verso, pollici){
    `quanti` — una marcia nel bosco ne perde due, ed e' giusto cosi'. */
 function rallenta(S, u, verso, pollici){
   const eff = TR.slowMove(pollici, pezziSulCammino(S, u, verso, pollici));
-  if (eff.slowed) say(S, `${u.name}: ${eff.text}.`, { army: u.army, page: eff.page });
+  if (eff.slowed) say(S, `${u.name}: ${eff.text}.`, { army: u.army, page: eff.page,
+      x: { k: "terreno", t: "Terreno difficile", u: u.name, uid: u.uid,
+           f: [{ t: eff.text, f: "terreno" }], e: `si muove di ${eff.move}″ invece di ${pollici}″`, ok: false } });
   return eff.move;
 }
 
@@ -2101,7 +2177,13 @@ function terrenoPericoloso(S, u, pezzi){
                  : "nessuna ferita") +
          (fer ? ", D3 ferite per ogni 1 (Iron Shod Wheels)" : "") +
          ` (p. ${ask.page}).`,
-      { dice: dadi, army: u.army, page: ask.page });
+      { dice: dadi, army: u.army, page: ask.page,
+        x: { k: "pericoloso", u: u.name, uid: u.uid, d: [],
+             passi: [{ t: "gli 1 feriscono", uno: true, d: dadi.slice(0, ask.n) }],
+             f: [{ t: `attraversa ${[...new Set(ask.pieces)].join(", ")}: un D6 per modello, con un 1 perde una ferita`, f: "terreno" },
+                 ...(fer ? [{ t: "Iron Shod Wheels: il difficile è pericoloso, e ogni 1 costa D3 ferite", f: "regola" }] : [])],
+             e: ferite ? `${ferite} ferit${ferite === 1 ? "a" : "e"}${conto.kills ? `, ${conto.kills} a terra` : ""}` : "nessuna ferita",
+             ok: !ferite } });
   if (conto) perdite(S, u, conto.kills, conto.left);
   return ferite;
 }
@@ -2339,7 +2421,14 @@ const GESTI = {
     const res = PS.rallyTest({ ld: ldOf(S, u), dice: dadi, models: alive(u), start: u.models || 0,
                                musician: !!(u.command && u.command.musician) });
     if (res.passed){ u.fled = false; u.moved = { kind:"rally", inches: 0 }; }
-    say(S, `${u.name}, raduno: ${res.text}. ${res.then}`, { dice: dadi, army: u.army, page: res.page });
+    say(S, `${u.name}, raduno: ${res.text}. ${res.then}`, { dice: dadi, army: u.army, page: res.page,
+        /* sotto un quarto dei modelli il Comando non conta: «serve ≤ 5»
+           accanto a un 5 uscito direbbe che doveva radunarsi */
+        x: { k: "raduno", u: u.name, uid: u.uid, tot: res.total,
+             vs: res.hopeless ? null : { v: res.target, op: "<=", t: "Comando" },
+             f: [...fontiComando(S, u), ...(res.why || []).map(t => ({ t, f: "stato" })),
+                 ...(res.insane ? [{ t: "doppio uno: si raduna sempre", f: "dadi" }] : [])],
+             e: res.passed ? "si raduna" : "continua a fuggire", ok: res.passed } });
     return si(res.text);
   },
 
@@ -2434,7 +2523,8 @@ const GESTI = {
     if (a.kind === "flee"){
       const { dadi, via, testo } = tiroDiFuga(t);
       say(S, `${t.name} reagisce fuggendo: ${testo} = ${via}″ lontano da ${u.name}.`,
-          { dice: dadi, army: t.army, page: 120 });
+          { dice: dadi, army: t.army, page: 120,
+            x: xFuga(t, dadi, via, { da: u, perche: `reazione alla carica di ${u.name} (p. 120)` }) });
       fuggi(S, t, u, via);
       /* La carica non finisce qui: chi caricava tira lo stesso, e o
          raggiunge chi fugge o fa la carica fallita (p. 121). Prima si
@@ -2651,7 +2741,12 @@ function mossa(S, a, marcia){
       const passa = tot <= ld || (dadi[0] === 1 && dadi[1] === 1);
       say(S, `${u.name} vuole marciare a ${CH.MARCH_WATCH}″ dal nemico: Comando ${ld}, ` +
              `${dadi.join(" + ")} = ${tot} → ${passa ? "marcia" : "niente marcia"}.`,
-          { dice: dadi, army: u.army, page: 123 });
+          { dice: dadi, army: u.army, page: 123,
+            x: { k: "marcia", u: u.name, uid: u.uid, tot, vs: { v: ld, op: "<=", t: "Comando" },
+                 f: [{ t: `un nemico entro ${CH.MARCH_WATCH}″: per marciare serve un test di Comando (p. 123)`, f: "distanza" },
+                     ...fontiComando(S, u),
+                     ...(u.command && u.command.musician ? [{ t: "il musico: +1 al Comando", f: "regola" }] : [])],
+                 e: passa ? `marcia: ${move * 2}″` : `niente marcia: solo ${move}″`, ok: passa } });
       quanti = passa ? move * 2 : move;
     } else quanti = move * 2;
   }
@@ -2785,6 +2880,19 @@ function postoAContatto(S, u, t){
   return { ...al, pieno: true };
 }
 
+/* La scheda del tiro di carica (p. 121): il dado tenuto e quello
+   scartato, il Movimento che si somma, e i pollici che servivano — con
+   dentro quello che li ha cambiati, il terreno per primo. */
+function xCarica(u, t, { dadi, spec, out, serve, posto, tc, scappato, e, ok }){
+  const f = [{ t: spec.why, f: spec.worst ? "terreno" : spec.swift ? "regola" : "dadi" }];
+  for (const w of (tc && tc.eff && tc.eff.why) || []) f.push({ t: w, f: "terreno" });
+  if (out.penalty) f.push({ t: `terreno difficile: il Movimento perde ${out.penalty}″ (p. 128)`, f: "terreno" });
+  if (posto && posto.extra) f.push({ t: `${r1(posto.extra)}″ in più per scorrere lungo la faccia: c'è già qualcuno`, f: "distanza" });
+  if (scappato) f.push({ t: `${t.name} è fuggita: la distanza si misura adesso (p. 121)`, f: "stato" });
+  return { k: "carica", u: `${u.name} → ${t.name}`, uid: u.uid, su: t.uid, tot: out.total,
+           via: scartati(dadi, out.kept),
+           piu: [{ t: "Movimento", v: out.move }], vs: { v: serve, op: ">=", t: "pollici" }, f, e, ok };
+}
 function muoviCarica(S, u, t, d){
   /* Il terreno della carica (p. 128): il dado si rovescia, e il
      Movimento con il pollice in meno sta gia' in `d.move`, perche'
@@ -2817,7 +2925,9 @@ function muoviCarica(S, u, t, d){
       : `ne servivano ${serve}${posto && posto.extra ? ` (${r1(posto.extra)} per scorrere lungo la faccia)` : ""}`;
     say(S, `${u.name} carica ${t.name}: ${dadi.join(", ")} → ${out.reach}″, ${perche}. Non arriva, ` +
            `e avanza di ${p.pollici}″.`,
-        { dice: dadi, army: u.army, page: 121 });
+        { dice: dadi, army: u.army, page: 121,
+          x: xCarica(u, t, { dadi, spec, out, serve, posto, tc, scappato, ok: false,
+                             e: `non arriva (${perche}): carica fallita, avanza di ${p.pollici}″` }) });
     return "carica fallita";
   }
   if (scappato){
@@ -2831,7 +2941,9 @@ function muoviCarica(S, u, t, d){
     u.moved = { kind:"charge", inches: p.pollici };
     say(S, `${u.name} carica ${t.name} che fugge: ${dadi.join(", ")} → ${out.reach}″ contro ${serve} richiesti. ` +
            `La raggiunge, e ${t.name} è travolta e distrutta.`,
-        { dice: dadi, army: u.army, page: 121 });
+        { dice: dadi, army: u.army, page: 121,
+          x: xCarica(u, t, { dadi, spec, out, serve, posto, tc, scappato, ok: true,
+                             e: `la raggiunge: ${t.name} travolta e distrutta` }) });
     ondaPanico(S, t, "destroyed", usT);
     return "carica su chi fugge";
   }
@@ -2844,7 +2956,9 @@ function muoviCarica(S, u, t, d){
   say(S, `${u.name} carica ${t.name} e arriva: ${dadi.join(", ")} → ${out.reach}″ contro ${serve} richiesti, ` +
          `e la prende di ${posto.arc}` +
          (posto.scorso ? ` (scorre di ${posto.scorso}″ lungo la faccia: c'era già qualcuno)` : "") + ".",
-      { dice: dadi, army: u.army, page: 121 });
+      { dice: dadi, army: u.army, page: 121,
+        x: xCarica(u, t, { dadi, spec, out, serve, posto, tc, scappato, ok: true,
+                           e: `arriva, e la prende di ${posto.arc}` }) });
   /* L'ostacolo difeso (p. 270): non lo si scavalca, e la carica e'
      disordinata — niente bonus di Iniziativa a fine assalto (p. 146).
      Chi vola ci passa sopra. */
@@ -2898,6 +3012,16 @@ function caricaVagando(S, u, t, n){
   const serve = r1(distanza(S, u, t) + (posto.extra || 0));
   return n + 0.01 >= serve ? { posto, serve } : null;
 }
+/* La scheda della mossa tirata: i dadi di questo turno, che stanno
+   scritti sull'unita' da quando li ha tirati, e quello che l'ha fermata. */
+function xVaga(u, n, { vs = null, f = [], e = "", ok } = {}){
+  const rm = u.randomMove || {};
+  const dadi = rm.dadi || [];
+  const magia = n - (rm.n || n);
+  return { k: "movimento", t: "Si muove di quanto ha tirato", u: u.name, uid: u.uid, d: dadi,
+           tot: dadi.length ? rm.n : n, piu: magia ? [{ t: "incantesimi sul Movimento", v: magia }] : [],
+           vs, f: [{ t: "Random Movement: il Movimento si tira, e si fa (p. 176)", f: "regola" }, ...f], e, ok };
+}
 function vaga(S, a){
   const u = byUid(S, a.uid);
   if (!u || !vagante(u)) return no("non ha il Movimento che si tira");
@@ -2917,7 +3041,10 @@ function vaga(S, a){
       u.charged = { target: t.name, uid: t.uid, inches: c.serve, arc: c.posto.arc, vagando: true };
       u.moved = { kind:"charge", inches: c.serve };
       say(S, `${u.name} si muove di ${n}″ e arriva addosso a ${t.name}, di ${c.posto.arc}: ` +
-             `conta come carica, e ${t.name} tiene la posizione (p. 176).`, { army: u.army, page: 176 });
+             `conta come carica, e ${t.name} tiene la posizione (p. 176).`, { army: u.army, page: 176,
+          x: xVaga(u, n, { vs: { v: c.serve, op: ">=", t: `pollici fino a ${t.name}` },
+                           f: [{ t: "Random Movement: toccare un nemico conta come carica, e lui non può reagire", f: "regola" }],
+                           e: `carica ${t.name}, di ${c.posto.arc}`, ok: true }) });
       terrenoPericoloso(S, u, pezziFra(S, partenza, postiDi(S, u)));
       return si("carica vagando");
     }
@@ -2926,7 +3053,11 @@ function vaga(S, a){
     u.moved = { kind:"move", inches: p.pollici };
     say(S, `${u.name} si muove di ${p.pollici}″ verso ${t.name} (Movimento tirato ${n}″` +
            (p.pollici < n - 0.05 ? `: ${pr.costo ? `ruotare costa ${r1(pr.costo)}″, e ` : ""}si ferma dove non passa` : "") +
-           `, p. 176).`, { army: u.army, page: 176 });
+           `, p. 176).`, { army: u.army, page: 176,
+        x: xVaga(u, n, { f: [{ t: `verso ${t.name}, a ${distanza(S, u, t)}″ adesso`, f: "distanza" },
+                             ...(pr.costo ? [{ t: `ruotare costa ${r1(pr.costo)}″ del Movimento`, f: "distanza" }] : []),
+                             ...(p.pollici < n - 0.05 ? [{ t: "si ferma dove non passa: un pollice dal nemico, un'altra unità o il bordo", f: "stato" }] : [])],
+                         e: `avanza di ${p.pollici}″` }) });
   } else {
     const r = (u.rot || 0) * Math.PI / 180;
     const meta = [u.x + Math.sin(r) * n * MM, u.y - Math.cos(r) * n * MM];
@@ -2935,7 +3066,9 @@ function vaga(S, a){
     u.moved = { kind:"move", inches: p.pollici };
     say(S, `${u.name} va dritta di ${p.pollici}″ (Movimento tirato ${n}″` +
            (p.pollici < n - 0.05 && p.stop ? `: si ferma, c'è ${p.stop.perche}` : "") + `, p. 176).`,
-        { army: u.army, page: 176 });
+        { army: u.army, page: 176,
+          x: xVaga(u, n, { f: p.pollici < n - 0.05 && p.stop ? [{ t: `si ferma prima: c'è ${p.stop.perche}`, f: "stato" }] : [],
+                           e: `va dritta di ${p.pollici}″` }) });
   }
   if (!vola(u)) dopoIlMovimento(S, u, partenza);
   return si("mossa tirata");
@@ -3034,6 +3167,9 @@ function sagomaOMacchina(u, arma){
   const regole = Array.isArray(arma.rules) ? arma.rules.join(", ") : String(arma.rules || "");
   return RE_SAGOMA.test(arma.name || "") || RE_SAGOMA.test(regole);
 }
+/* da dove viene ogni modificatore del tiro, per il pallino della scheda */
+const FONTE_TIRO = { long: "distanza", moved: "stato", ponderous: "stato", standAndShoot: "stato",
+                     soft: "terreno", hard: "terreno", looseTarget: "regola" };
 function tiro(S, u, t, arma, { standAndShoot = false } = {}){
   const d = distanza(S, u, t);
   const gittata = stat(arma.range);
@@ -3056,7 +3192,15 @@ function tiro(S, u, t, arma, { standAndShoot = false } = {}){
   say(S, `${u.name} tira su ${t.name} con ${arma.name} da ${d}″: ${r.shots} tiri a ${r.hitNeed}+, ` +
          `${r.hit.hits} ${r.hit.hits === 1 ? "colpo" : "colpi"}, ${r.wounds} ferit${r.wounds === 1 ? "a" : "e"}, ${r.kills} a terra` +
          (mods.list && mods.list.length ? ` [${mods.list.map(m => m.why).join(", ")}]` : "") + ".",
-      { dice: tutti.flat, groups: tutti.groups, army: u.army, page: 136 });
+      { dice: tutti.flat, groups: tutti.groups, army: u.army, page: 136,
+        x: { k: "tiro", u: `${u.name} → ${t.name}`, uid: u.uid, su: t.uid, t: `Tiro · ${arma.name}`,
+             passi: passiDi(r),
+             f: [{ t: `${d}″ con una gittata di ${gittata}″`, f: "distanza" },
+                 ...(mods.list || []).map(m => ({ t: `${m.why}: ${m.v > 0 ? "+" : "−"}${Math.abs(m.v)} per colpire`,
+                                                  f: FONTE_TIRO[m.id] || "regola" })),
+                 ...(r.notes || []).filter(n => typeof n === "string").map(n => ({ t: n, f: "regola" }))],
+             e: `${r.hit.hits} ${r.hit.hits === 1 ? "colpo" : "colpi"}, ${r.wounds} ferit${r.wounds === 1 ? "a" : "e"}, ${r.kills} a terra`,
+             ok: r.kills > 0 ? true : undefined } });
   /* le perdite dopo la riga del tiro: prima il registro diceva «non
      resta nessuno in piedi» sopra il tiro che li aveva abbattuti */
   perdite(S, t, r.kills, r.left);
@@ -3426,10 +3570,13 @@ function testPanico(S, u, causa, { perche = "", da = null, fonte = null, dist = 
                             sourceName: perche || (fonte ? fonte.name : "") });
   if (!c || !c.must) return;
   u.panicoFatto = fase;
-  if (c.auto){ say(S, `${u.name}: niente Panico — ${c.autoWhy}.`, { army: u.army, page: c.page }); return; }
+  if (c.auto){ say(S, `${u.name}: niente Panico — ${c.autoWhy}.`, { army: u.army, page: c.page,
+      x: { k: "panico", u: u.name, uid: u.uid, f: [{ t: c.why || "", f: "stato" }, { t: c.autoWhy, f: "regola" }],
+           e: "non tira", ok: true } }); return; }
   const dadi = roll(PS.coldDice("panic", p) ? 3 : 2);
   const res = PS.psychTest({ kind:"panic", ld: ldOf(S, u), dice: dadi, p });
-  say(S, `${u.name}, test di Panico (${c.why}): ${res.text}.`, { dice: dadi, army: u.army, page: c.page });
+  say(S, `${u.name}, test di Panico (${c.why}): ${res.text}.`, { dice: dadi, army: u.army, page: c.page,
+      x: xPsico(S, u, "panic", dadi, res, c.why) });
   if (res.passed) return;
   const nemico = (da && !da.dead && da.army !== u.army ? da : null) ||
                  piuVicino(S, u, nemiciDi(S, u).filter(e => !e.fled)) || piuVicino(S, u);
@@ -3439,13 +3586,16 @@ function testPanico(S, u, causa, { perche = "", da = null, fonte = null, dist = 
     const dd = roll(2);
     const quanto = Math.max(...dd);
     say(S, `${u.name} va nel panico e ripiega in ordine lontano da ${nemico.name} (${esito.why}): ` +
-           `${dd.join(", ")}, si tiene il maggiore.`, { dice: dd, army: u.army, page: esito.page });
+           `${dd.join(", ")}, si tiene il maggiore.`, { dice: dd, army: u.army, page: esito.page,
+        x: { k: "ripiega", u: u.name, uid: u.uid, tot: quanto, via: scartati(dd, [quanto]),
+             f: [{ t: esito.why, f: "stato" }, { t: "2D6, si tiene il maggiore (p. 134)", f: "regola" }],
+             e: `ripiega di ${quanto}″ lontano da ${nemico.name}` } });
     indietreggia(S, u, [nemico], quanto, { kind: "fallBack" });
     return;
   }
   const { dadi: fuga, via, testo } = tiroDiFuga(u);
   say(S, `${u.name} va nel panico e fugge da ${nemico.name} (${esito.why}): ${testo} = ${via}″.`,
-      { dice: fuga, army: u.army, page: 132 });
+      { dice: fuga, army: u.army, page: 132, x: xFuga(u, fuga, via, { da: nemico, perche: "panico: " + esito.why }) });
   fuggi(S, u, nemico, via);
 }
 
@@ -3800,12 +3950,26 @@ function lancia(S, a){
                             bound: !!sp.bound, power: sp.potere || 0, mod: mr.mod });
   say(S, `${u.name} lancia ${sp.name}${t && t !== host ? " su " + t.name : ""}: ${res.text}` +
          (mr.mod ? ` (${mr.text} di ${mr.who}, p. 108)` : "") + ".",
-      { dice: dadi, army: u.army, page: MG.PAGE.casting });
+      { dice: dadi, army: u.army, page: MG.PAGE.casting,
+        x: { k: "lancio", t: `Lancio · ${sp.name}`, u: u.name + (t && t !== host ? ` → ${t.name}` : ""), uid: u.uid,
+             tot: res.natural,
+             piu: [sp.bound ? { t: "Potere", v: sp.potere || 0 } : { t: `Livello ${m.level}`, v: m.level },
+                   { t: mr.text ? `${mr.text} di ${mr.who}` : "", v: mr.mod }],
+             vs: { v: res.value, op: ">=", t: "valore di lancio" },
+             f: [...(sp.bound ? [{ t: "incantesimo vincolato: si somma il Potere, non il Livello", f: "magia" }] : []),
+                 ...(mr.mod ? [{ t: `${mr.text}: vale per chi bersaglia ${mr.who} (p. 108)`, f: "regola" }] : []),
+                 ...(res.perfect ? [{ t: "doppio 6: invocazione perfetta, non si può dissolvere", f: "dadi" }] : []),
+                 ...(res.miscast ? [{ t: "doppio 1: fiasco, si tira sulla tabella", f: "dadi" }] : [])],
+             e: res.perfect ? "invocazione perfetta" : res.miscast ? "fiasco" : res.cast ? "lanciato" : "non lanciato",
+             ok: res.cast } });
   if (res.miscast){
     const fd = roll(2);
     const mis = MG.miscastRead(fd[0] + fd[1]);
     say(S, `${u.name}, fiasco — ${fd.join(" + ")} = ${mis.total}: ${mis.label}, ${mis.text}.`,
-        { dice: fd, army: u.army, page: MG.PAGE.miscast });
+        { dice: fd, army: u.army, page: MG.PAGE.miscast,
+          x: { k: "fiasco", u: u.name, uid: u.uid, tot: mis.total,
+               f: [{ t: "il doppio 1 al lancio porta alla tabella dei fiaschi: 2D6", f: "magia" }],
+               e: `${mis.label}: ${mis.text}`, ok: false } });
     colpiDelFiasco(S, u, mis);
     if (mis.stop) S.magia.stop["lancio:" + u.army] = castKey(S);
     if (mis.cast) res = { ...res, cast: true, perfect: !!mis.perfect, total: mis.atValue ? sp.cv : res.total };
@@ -3880,7 +4044,16 @@ function dissolvi(S, a){
   /* un incantesimo vincolato non surclassa nessuno (p. 109) */
   if (sp.bound && res.outclassed) res = { ...res, outclassed: false, dispelled: res.total > res.against };
   say(S, `${d ? d.name : "La sorte"} contro ${sp.name}: ${res.text}.`,
-      { dice: dadi, army: lui, page: MG.PAGE.dispel });
+      { dice: dadi, army: lui, page: MG.PAGE.dispel,
+        x: { k: "dissolvi", t: `Dissolvimento · ${sp.name}`, u: d ? d.name : "la sorte", uid: d ? d.uid : null,
+             tot: res.natural, piu: d ? [{ t: `Livello ${d.mago.level}`, v: d.mago.level }] : [],
+             vs: { v: res.against, op: MG.DISPEL_TIES ? ">=" : ">", t: "il lancio" },
+             f: [...(a.fato ? [{ t: "affidato alla sorte: niente Livello, una volta per turno", f: "magia" }] : []),
+                 ...(sp.bound ? [{ t: "vincolato: non surclassa nessuno (p. 109)", f: "magia" }] : []),
+                 ...(res.unbinding ? [{ t: "doppio 6: slegato, dissolto comunque", f: "dadi" }] : []),
+                 ...(res.outclassed ? [{ t: "doppio 1: surclassato", f: "dadi" }] : [])],
+             e: res.dispelled ? "dissolto" : res.outclassed ? "surclassato" : "l'incantesimo tiene",
+             ok: res.dispelled } });
   if (res.outclassed){
     const fd = roll(2);
     const out = MG.miscastRead(fd[0] + fd[1], { dispel: true });
@@ -4103,7 +4276,11 @@ function nutriti(S, u, t){
   const colpo = roll(1)[0];
   if (!(colpo >= need && colpo > 1)){
     say(S, `${u.name} prova a nutrirsi di ${t.name}: ${colpo} contro ${need}+, manca.`,
-        { dice: [colpo], army: u.army, page: 144 });
+        { dice: [colpo], army: u.army, page: 144,
+          x: { k: "mischia", t: "Abominable Attacks · si nutre", u: `${u.name} → ${t.name}`, uid: u.uid,
+               passi: [{ t: "colpire", serve: need, d: [colpo] }],
+               f: [{ t: `Abilità di Combattimento ${me.ws} contro ${d.wsDef || d.ws}: colpisce a ${need}+`, f: "profilo" }],
+               e: "manca", ok: false } });
     return 0;
   }
   const dd = roll(1)[0], quante = 1 + Math.floor((dd - 1) / 2);
@@ -4118,7 +4295,13 @@ function nutriti(S, u, t){
          `ferit${quante === 1 ? "a" : "e"} senza armatura` +
          (ward < 7 || rig < 7 ? ` (salvezze ${salvi.join(", ")})` : "") +
          `, ${ferite} su un modello solo, ${toll.kills} a terra.`,
-      { dice: [colpo, dd, ...(ward < 7 || rig < 7 ? salvi : [])], army: u.army, page: 144 });
+      { dice: [colpo, dd, ...(ward < 7 || rig < 7 ? salvi : [])], army: u.army, page: 144,
+        x: { k: "mischia", t: "Abominable Attacks · si nutre", u: `${u.name} → ${t.name}`, uid: u.uid,
+             passi: [{ t: "colpire", serve: need, d: [colpo] }, { t: "D3 ferite", d: [quante] },
+                     ...(ward < 7 || rig < 7 ? [{ t: "salvezza (salva)", serve: Math.min(ward, rig), d: salvi }] : [])],
+             f: [{ t: `Abilità di Combattimento ${me.ws} contro ${d.wsDef || d.ws}: colpisce a ${need}+`, f: "profilo" },
+                 { t: "D3 ferite senza tiro armatura, tutte su un modello solo", f: "regola" }],
+             e: `${ferite} ferit${ferite === 1 ? "a" : "e"}, ${toll.kills} a terra`, ok: ferite > 0 } });
   perdite(S, t, toll.kills, toll.left);
   return ferite;
 }
@@ -4453,13 +4636,18 @@ function terrenoInMischia(S, g){
     if (!onBoard(u)) continue;
     const d = CH.disruptedInTerrain(celleDi(S, u), difficile);
     if (d.disrupted && !u.disrupted)
-      say(S, `${u.name}: ${d.why}`, { army: u.army, page: 159 });
+      say(S, `${u.name}: ${d.why}`, { army: u.army, page: 159,
+          x: { k: "terreno", t: "Scompigliata dal terreno", u: u.name, uid: u.uid,
+               f: [{ t: d.why, f: "terreno" }], e: "niente bonus di ranghi in questo combattimento", ok: false } });
     u.disrupted = d.disrupted;
 
     const alto = filaPiuAlta(S, u);
     if (alto && !u.highGround)
       say(S, `${u.name} combatte con la prima fila sulla collina: +1 al risultato (p. 152).`,
-          { army: u.army, page: 152 });
+          { army: u.army, page: 152,
+            x: { k: "terreno", t: "Terreno più alto", u: u.name, uid: u.uid,
+                 f: [{ t: "più di metà della prima fila sta sulla collina", f: "terreno" }],
+                 e: "+1 al risultato del combattimento", ok: true } });
     u.highGround = alto;
   }
 }
@@ -4550,7 +4738,10 @@ function mischia(S, g){
     say(S, `${s.name} ${s.label} su ${s.foe}: ${s.attacks} ${s.attacks === 1 ? "attacco" : "attacchi"}, ` +
            (s.hit.dice.length ? `${s.hit.hits} ${s.hit.hits === 1 ? "colpo" : "colpi"}, ` : "") +
            `${s.wounds} ferit${s.wounds === 1 ? "a" : "e"}, ${s.kills} a terra.`,
-        { dice: tutti.flat, groups: tutti.groups, army: s.side === "A" ? "A" : "B", page: 144 });
+        { dice: tutti.flat, groups: tutti.groups, army: s.side === "A" ? "A" : "B", page: 144,
+          x: { k: "mischia", u: `${s.name} → ${s.foe}`,
+               passi: passiDi(s), f: (s.notes || []).filter(n => typeof n === "string").map(n => ({ t: n, f: "regola" })),
+               e: `${s.wounds} ferit${s.wounds === 1 ? "a" : "e"}, ${s.kills} a terra`, ok: s.kills > 0 ? true : undefined } });
   }
 
   /* le perdite, unità per unità: chi muore si dice dopo il conto */
@@ -4570,7 +4761,14 @@ function mischia(S, g){
   say(S, `Risultato: ${nomi(g.A)} ${r.cr.A.total} (${parti(r.cr.A) || "niente"}) contro ` +
          `${nomi(g.B)} ${r.cr.B.total} (${parti(r.cr.B) || "niente"}).` +
          (r.cr.winner ? ` Vince ${r.cr.winner === "A" ? nomi(g.A) : nomi(g.B)} di ${r.cr.diff}.` : " Pareggio."),
-      { page: ML.PAGE.multiple });
+      { page: ML.PAGE.multiple, army: r.cr.winner || "",
+        x: { k: "risultato", u: `${nomi(g.A)} contro ${nomi(g.B)}`,
+             f: [["A", g.A], ["B", g.B]].map(([tag, chi]) => ({
+               t: `${nomi(chi)}: ${r.cr[tag].parts.map(p => `${p.v} ${p.v === 1 ? p.one : p.many}`).join(" + ") || "niente"} = ${r.cr[tag].total}`,
+               f: "mischia" })).concat(
+               [...r.cr.A.parts, ...r.cr.B.parts].some(p => p.id === "ground")
+                 ? [{ t: "il terreno più alto vale un punto (p. 152)", f: "terreno" }] : []),
+             e: r.cr.winner ? `vince ${r.cr.winner === "A" ? nomi(g.A) : nomi(g.B)} di ${r.cr.diff}` : "pareggio" } });
   for (const u of caduti) say(S, `${u.name}: non resta nessuno in piedi.`, { army: u.army });
 
   /* i test di rotta, uno per unita' che ha perso (p. 154) */
@@ -4579,14 +4777,16 @@ function mischia(S, g){
     const u = c && c.ref;
     if (!u || !onBoard(u)) continue;
     const loro = (t.side === "A" ? g.B : g.A).filter(onBoard);
-    say(S, `${u.name}: ${t.text}` + (c.ldGen ? ` [${c.ldGen}]` : ""), { dice: t.dice, army: u.army, page: t.page });
+    say(S, `${u.name}: ${t.text}` + (c.ldGen ? ` [${c.ldGen}]` : ""), { dice: t.dice, army: u.army, page: t.page,
+        x: xRotta(u, c, t) });
     /* chi perde e rompe, o ripiega in ordine, manda al Panico gli
        amici entro 6″ (p. 161): si misura prima che si muova */
     if (t.outcome === "rout" || t.outcome === "fallBack") ondaPanico(S, u, "broke", usConCapi(S, u));
     if (t.outcome === "rout"){
       const vincitore = piuVicino(S, u, loro) || loro[0];
       const { dadi, via } = tiroDiFuga(u);
-      say(S, `${u.name} rompe e fugge di ${via}″.`, { dice: dadi, army: u.army, page: 132 });
+      say(S, `${u.name} rompe e fugge di ${via}″.`, { dice: dadi, army: u.army, page: 132,
+          x: xFuga(u, dadi, via, { da: vincitore, perche: "ha perso il test di rotta" }) });
       if (vincitore) fuggi(S, u, vincitore, via); else u.fled = true;
       /* e chi ha vinto insegue (p. 156) */
       inseguimento(S, vincitore, u, via);
@@ -4599,7 +4799,10 @@ function mischia(S, g){
       const dadi = roll(2);
       const quanto = Math.max(...dadi);
       say(S, `${u.name} ripiega in ordine: ${dadi.join(", ")}, si tiene il maggiore.`,
-          { dice: dadi, army: u.army, page: 134 });
+          { dice: dadi, army: u.army, page: 134,
+            x: { k: "ripiega", u: u.name, uid: u.uid, tot: quanto, via: scartati(dadi, [quanto]),
+                 f: [{ t: "2D6, si tiene il maggiore (p. 134)", f: "regola" }],
+                 e: `ripiega di ${quanto}″, girata verso il nemico` } });
       indietreggia(S, u, loro, quanto, { kind: "fallBack" });
       limite(S, "seguire");
     }
@@ -4612,6 +4815,44 @@ function mischia(S, g){
                           { army: w.army, page: 156 });
   }
   return "combattimento risolto";
+}
+
+/* La scheda del test di rotta (p. 154). E' quella che risponde a
+   «perche' i Clanrats scappano?», e la risposta ha sempre tre pezzi: i
+   dadi, lo scarto con cui hanno perso, e il Comando — che spesso non e'
+   il loro. Le tre fasce si scrivono, perche' il libro ne ha tre e non
+   due: con la somma tiene, con i soli dadi ripiega, sopra scappa. */
+function xRotta(u, c, t){
+  const base = { k: "rotta", u: u.name, uid: u.uid };
+  if (t.unbreakable || t.stubborn)
+    return { ...base, f: [{ t: t.text, f: "regola" }], e: t.verb || t.label || "", ok: true };
+  const f = [];
+  f.push(c.ldGen ? { t: c.ldGen, f: "generale" } : { t: `Comando ${t.ld - (t.ldMod || 0)} dell'unità`, f: "profilo" });
+  if (t.terror) f.push({ t: t.terror, f: "regola" });
+  if (t.insane) f.push({ t: "doppio uno: tiene i nervi qualunque sia lo scarto", f: "dadi" });
+  else if (t.outcome === "give") f.push({ t: `dadi più scarto ${t.modified} entro il Comando ${t.ld}: cede terreno`, f: "mischia" });
+  else if (t.outcome === "rout" && !t.keptNerve)
+    f.push({ t: `già i soli dadi (${t.natural}) superano il Comando ${t.ld}: va in rotta`, f: "mischia" });
+  else if (t.blocked) f.push({ t: "chi ha vinto ha più del doppio della Forza d'Unità: non può ripiegare", f: "mischia" });
+  else f.push({ t: `i soli dadi (${t.natural}) stanno nel Comando, con lo scarto no: ripiega in ordine`, f: "mischia" });
+  if (t.shieldwall) f.push({ t: "Shieldwall: cede terreno invece di ripiegare", f: "regola" });
+  return { ...base, tot: t.natural, piu: t.diff ? [{ t: `perso di ${t.diff}`, v: t.diff }] : [],
+           vs: { v: t.ld, op: "<=", t: "Comando" }, f,
+           e: t.label || t.verb || "", ok: t.outcome === "give" ? true : t.outcome === "rout" ? false : undefined };
+}
+
+/* I tiri in fila di un attacco, per la scheda: colpire, ferire,
+   armatura, speciale, rigenerazione. */
+function passiDi(s){
+  const out = [];
+  if (s.autoDice && s.autoDice.length) out.push({ t: "quanti", d: s.autoDice });
+  for (const [k, t] of [["hit", "colpire"], ["wound", "ferire"], ["save", "armatura"],
+                        ["ward", "speciale"], ["regen", "rigenerazione"]]){
+    const p = s[k];
+    if (!p || !p.dice || !p.dice.length || +p.need >= 7) continue;
+    out.push({ t: k === "save" || k === "ward" || k === "regen" ? t + " (salva)" : t, serve: +p.need || 0, d: p.dice });
+  }
+  return out;
 }
 
 /* I dadi di un colpo, mucchio per mucchio, e tutti in fila per chi
@@ -4773,7 +5014,13 @@ function inseguimento(S, vincitore, fuggito, quantoHaFuggito){
   const uscita = !!fuggito.fledOff;
   say(S, uscita ? `${vincitore.name} insegue di ${tot}″: ${fuggito.name} è già fuori dal tavolo.`
                 : `${vincitore.name} ${out.text}.`,
-      { dice: dadi, army: vincitore.army, page: ML.PAGE.pursuit });
+      { dice: dadi, army: vincitore.army, page: ML.PAGE.pursuit,
+        x: { k: "inseguimento", u: `${vincitore.name} → ${fuggito.name}`, uid: vincitore.uid, su: fuggito.uid, tot,
+             vs: uscita ? null : { v: quantoHaFuggito, op: ">=", t: `quanto ha fuggito ${fuggito.name}` },
+             f: [{ t: "chi insegue tira come chi fugge, e se arriva almeno fin lì lo travolge", f: "regola" },
+                 ...(dadi.length > 2 ? [{ t: "Swiftstride: un D6 in più (p. 178)", f: "regola" }] : [])],
+             e: uscita ? `${fuggito.name} è già fuori dal tavolo` : out.caught ? `${fuggito.name} travolta e distrutta` : "non la prende",
+             ok: uscita ? undefined : !!out.caught } });
   if (out.caught && !uscita){
     const usF = usConCapi(S, fuggito);
     fuggito.dead = true; fuggito.placed = false;
@@ -4902,12 +5149,18 @@ function fineSchieramento(S){
     S.primo = t.vince;
     say(S, `Tiro per il primo turno: ${scriviTiro(S, t)}` +
            (S.finitoPrima ? ` (${S.nomi[S.finitoPrima]} ha finito di schierare per primo)` : "") +
-           `. Comincia ${S.nomi[t.vince]} (p. ${pg.turno}).`, { page: pg.turno });
+           `. Comincia ${S.nomi[t.vince]} (p. ${pg.turno}).`, { page: pg.turno, army: t.vince,
+        x: { k: "primo", testo: scriviTiro(S, t),
+             f: t.piu ? [{ t: `${S.nomi[t.piu]} ha finito di schierare per primo: +1 al tiro`, f: "regola" }] : [],
+             e: `comincia ${S.nomi[t.vince]}` } });
     return iniziaBattaglia(S);
   }
   S.army = t.vince;
   say(S, `Tiro per il primo turno: ${scriviTiro(S, t)}. ${S.nomi[t.vince]} sceglie chi comincia (Battle March p. ${pg.turno}).`,
-      { page: pg.turno });
+      { page: pg.turno, army: t.vince,
+        x: { k: "primo", testo: scriviTiro(S, t),
+             f: t.piu ? [{ t: `${S.nomi[t.piu]} ha finito di schierare per primo: +1 al tiro`, f: "regola" }] : [],
+             e: `${S.nomi[t.vince]} sceglie chi comincia` } });
   S.pending = { kind: "primo", cosa: "turno", lato: t.vince, page: pg.turno,
                 list: opzioniPrimo(S, "turno", t.vince, pg.turno) };
 }
@@ -5032,7 +5285,8 @@ function continuaAFuggire(S){
     if (!da) continue;
     const { dadi, via, testo } = tiroDiFuga(u);
     say(S, `${u.name} non si è radunata e continua a fuggire: ${testo} = ${via}″ lontano da ${da.name}.`,
-        { dice: dadi, army: u.army, page: 132 });
+        { dice: dadi, army: u.army, page: 132,
+          x: xFuga(u, dadi, via, { da, perche: "non si è radunata: chi fugge continua a fuggire" }) });
     fuggi(S, u, da, via);
   }
 }

@@ -33,10 +33,13 @@ import * as PREP from './prep.js';
 import { SCENARIOS } from './scenarios.js';
 import { customScenarioMap } from './scenariokit.js';
 import { mostraSfida, chiudiSfida, evidenzia, toast } from './deploy.js';
+import { rigaHTML, SPIEGA_CSS } from './spiega.js';
 
 const KEY = "tow-gemini-key";
 const MODEL = "tow-gemini-model";
 const SALTA = "tow-sfida-salta";
+const SPIEGA = "tow-sfida-spiega";
+const CALMA = "tow-sfida-calma";
 const MODELLO_DI_SOLITO = "gemini-2.5-flash";
 
 const leggi = (k, d = "") => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
@@ -89,7 +92,8 @@ export function startSfida({ listA, listB, mia = "A", scenario = "" } = {}){
   if (nomi.A === nomi.B){ nomi.A += " (A)"; nomi.B += " (B)"; }
   const S = AR.newBattle({ A: listA, B: listB, scenario: sc, def: tuttiGliScenari()[sc], nomi, magia: MG.magicNow() });
   partita = { id: ++serie, S, mia: mia === "B" ? "B" : "A", attesa: null, pensa: false,
-              ultima: null, avvisi, errori: [], agente: null };
+              ultima: null, avvisi, errori: [], agente: null, visto: 0 };
+  svuotaPila();
   partita.agente = faiAgente();
   mostraSfida(S, { nuova: true });
   renderSfida();
@@ -114,6 +118,7 @@ function faiAgente(){
 
 export function abbandona(){
   partita = null;
+  svuotaPila();
   chiudiSfida();
   renderSfida();
 }
@@ -151,7 +156,16 @@ async function gira(){
       const r = await p.agente.scegli(ctx);
       if (partita !== p) return;          // abbandonata mentre pensava
       p.pensa = false;
-      applica(p, o, r && r.scelta, (r && r.perche) || "", "ai");
+      const schede = applica(p, o, r && r.scelta, (r && r.perche) || "", "ai");
+      /* con calma: dopo una mossa dell'AI che ha tirato dadi ci si ferma
+         il tempo di leggere le schede, prima che la mossa dopo le copra.
+         Senza, l'euristica gioca mezzo turno in un attimo e dal tavolo si
+         vedono solo i pezzi arrivati, non il perche'. */
+      if (schede && !p.S.finita && leggi(SPIEGA, "1") === "1" && leggi(CALMA, "1") === "1"){
+        renderSfida();
+        await pausa(Math.min(4500, 700 + schede * 1100));
+        if (partita !== p) return;
+      }
     }
   } catch (e){
     if (partita === p) p.errori.push(e.message);
@@ -173,7 +187,12 @@ function applica(p, o, mossa, perche, chi){
   }
   AR.controllaFine(p.S);
   mostraSfida(p.S);
+  /* le schede delle righe nuove, e davanti il perche' dell'AI */
+  const scelta = chi === "ai" && mossa && mossa.id !== "avanti" && perche
+    ? { x: { k: "scelta", t: "Perché questa mossa", u: p.agente.nome, testo: perche }, army: o.player } : null;
+  return raccogli(p, scelta);
 }
+const pausa = ms => new Promise(r => setTimeout(r, ms));
 
 /* il tuo clic */
 function scegli(i){
@@ -222,12 +241,87 @@ function etichetta(x){
 const pezzoDi = x => x.target ?? x.host ?? x.verso ?? x.uid ?? null;
 
 function righeRegistro(S, n = 40){
-  return S.log.slice(-n).reverse().map(r => `
+  return S.log.slice(-n).reverse().map(r => {
+    const testo = `${esc(r.text)}${r.page ? ` <span class="dim">p. ${r.page}</span>` : ""}`;
+    /* la riga con una spiegazione si apre sulla sua scheda: i dadi
+       stanno li', e la fila dei numeri non serve piu' */
+    return `
     <li class="sf-riga${r.kind === "limite" ? " sf-limite" : ""}">
       <span class="sf-t" style="color:var(--army${r.army === "B" ? "B" : "A"})">T${r.turno}</span>
-      <span>${esc(r.text)}${r.page ? ` <span class="dim">p. ${r.page}</span>` : ""}</span>
-      ${r.dice && r.dice.length ? `<span class="mono dim">[${r.dice.join(" ")}]</span>` : ""}
-    </li>`).join("");
+      ${r.x ? `<details class="sf-perche"><summary>${testo}</summary>${rigaHTML(r, { compatta: true })}</details>`
+            : `<span>${testo}</span>
+      ${r.dice && r.dice.length ? `<span class="mono dim">[${r.dice.join(" ")}]</span>` : ""}`}
+    </li>`;
+  }).join("");
+}
+
+/* ============================================================
+   5 · IL PERCHE' SUL TAVOLO
+   Ogni riga del registro che ha una spiegazione (`spiega.js`) diventa
+   una scheda sopra il tavolo: i dadi, il numero da battere, e quello
+   che li ha spostati. Le schede restano qualche secondo e poi se ne
+   vanno; passandoci sopra restano e accendono il pezzo di cui parlano,
+   e un clic le fissa finche' non le chiudi.
+   ============================================================ */
+const VITA = 9000, QUANTE = 3;
+let pila = null;
+
+function contenitore(){
+  if (pila && pila.isConnected) return pila;
+  const campo = document.querySelector(".board-scroll");
+  if (!campo) return null;
+  if (!document.getElementById("sp-css")){
+    const st = document.createElement("style");
+    st.id = "sp-css"; st.textContent = SPIEGA_CSS;
+    document.head.appendChild(st);
+  }
+  pila = document.createElement("div");
+  pila.className = "sp-pila";
+  pila.setAttribute("aria-live", "polite");
+  campo.appendChild(pila);
+  return pila;
+}
+function svuotaPila(){ if (pila) pila.innerHTML = ""; }
+
+function vattene(v){
+  if (!v.isConnected) return;
+  v.classList.add("sp-via");
+  setTimeout(() => v.remove(), 260);
+}
+function aggiungiScheda(riga){
+  const html = rigaHTML(riga);
+  const box = html && contenitore();
+  if (!box) return;
+  const v = document.createElement("div");
+  v.className = "sp-voce";
+  v.innerHTML = `${html}<button class="sp-chiudi" title="Chiudi" aria-label="Chiudi">×</button>`;
+  const uid = riga.x && riga.x.uid;
+  let timer = setTimeout(() => vattene(v), VITA);
+  v.addEventListener("mouseenter", () => {
+    clearTimeout(timer);
+    if (uid != null) evidenzia(uid);
+  });
+  v.addEventListener("mouseleave", () => {
+    if (!v.classList.contains("sp-fissa")) timer = setTimeout(() => vattene(v), VITA / 2);
+  });
+  v.addEventListener("click", e => {
+    if (e.target.closest(".sp-chiudi")) return vattene(v);
+    v.classList.toggle("sp-fissa");
+  });
+  box.appendChild(v);
+  /* le piu' vecchie lasciano il posto, tranne quelle fissate */
+  const libere = [...box.children].filter(x => !x.classList.contains("sp-fissa") && !x.classList.contains("sp-via"));
+  for (const x of libere.slice(0, Math.max(0, libere.length - QUANTE))) vattene(x);
+}
+
+/* le righe nuove del registro, dall'ultima volta: torna quante schede */
+function raccogli(p, scelta = null){
+  const nuove = p.S.log.slice(p.visto).filter(r => r.x);
+  p.visto = p.S.log.length;
+  if (leggi(SPIEGA, "1") !== "1") return 0;
+  const tutte = (scelta ? [scelta] : []).concat(nuove);
+  for (const r of tutte) aggiungiScheda(r);
+  return nuove.length;
 }
 
 function impostazioni(){
@@ -249,6 +343,10 @@ function impostazioni(){
       </div>
       <label class="field inline"><input type="checkbox" id="sf-salta" ${leggi(SALTA, "1") === "1" ? "checked" : ""}>
         <span>Passa da solo le caselle in cui non ho niente da scegliere</span></label>
+      <label class="field inline"><input type="checkbox" id="sf-spiega" ${leggi(SPIEGA, "1") === "1" ? "checked" : ""}>
+        <span>Spiega sul tavolo i dadi, le regole e il terreno che cambiano un risultato</span></label>
+      <label class="field inline"><input type="checkbox" id="sf-calma" ${leggi(CALMA, "1") === "1" ? "checked" : ""}>
+        <span>L'AI aspetta qualche secondo dopo ogni mossa con i dadi, per leggere il perché</span></label>
     </details>`;
 }
 
@@ -345,4 +443,11 @@ function agganciaImpostazioni(host){
   });
   const salta = host.querySelector("#sf-salta");
   if (salta) salta.addEventListener("change", () => { scrivi(SALTA, salta.checked ? "1" : "0"); gira(); });
+  const spiega = host.querySelector("#sf-spiega");
+  if (spiega) spiega.addEventListener("change", () => {
+    scrivi(SPIEGA, spiega.checked ? "1" : "0");
+    if (!spiega.checked) svuotaPila();
+  });
+  const calma = host.querySelector("#sf-calma");
+  if (calma) calma.addEventListener("change", () => scrivi(CALMA, calma.checked ? "1" : "0"));
 }

@@ -15,10 +15,27 @@
  * niente di internet: e' la partita gia' giocata, fotogramma per
  * fotogramma. Si puo' mandare a un amico, tenerla nell'archivio o
  * metterla online senza pensarci.
+ *
+ * Le schede del perche' (`src/spiega.js`) viaggiano dentro la pagina:
+ * il sorgente del modulo si copia nello <script>, e la pagina le
+ * disegna da sola dalle spiegazioni dei fotogrammi. Mettere nel file
+ * l'HTML gia' fatto di ogni scheda costava megabyte, e avrebbe fatto
+ * due disegni della stessa scheda da tenere uguali.
  */
+
+import fs from 'node:fs';
+import { SPIEGA_CSS } from '../src/spiega.js';
 
 const esc = s => String(s == null ? "" : s)
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/* il modulo delle schede come script qualunque, chiuso in una funzione
+   perche' i suoi nomi non urtino quelli della pagina */
+function spiegaNellaPagina(){
+  const src = fs.readFileSync(new URL('../src/spiega.js', import.meta.url), 'utf8')
+    .replace(/^export /gm, "").replace(/<\/script/gi, "<\\/script");
+  return `const SP = (() => {\n${src}\nreturn { scheda, schedaHTML, rigaHTML };\n})();`;
+}
 
 /* I colori del tavolo vero, così una partita guardata qui e una
    guardata nell'app si somigliano. */
@@ -43,7 +60,8 @@ export function fotogramma(S, { AR, testo = [], chi = "", perche = "", army = nu
     unita: S.units.filter(u => u.placed && !u.dead && AR.unitsOf(S, u.army).includes(u)).map(u => {
       const b = AR.boxOf(u, S.units);
       const fe = AR.feriteDi ? AR.feriteDi(u) : null;
-      return { n: u.name, a: u.army, x: Math.round(b.x), y: Math.round(b.y),
+      /* `id` serve alle schede: la scheda accende sul tavolo chi nomina */
+      return { id: u.uid, n: u.name, a: u.army, x: Math.round(b.x), y: Math.round(b.y),
                w: Math.round(b.w), h: Math.round(b.h), r: Math.round(u.rot || 0),
                v: Math.max(0, (u.models || 0) - (u.lost || 0)), m: u.models || 0,
                f: u.fled ? 1 : 0,
@@ -109,6 +127,28 @@ export function paginaHTML({ meta, frames }){
             border-radius:5px; color:#6b4410; font-size:13px; }
   .avvisi ul{ margin:4px 0 0; padding-left:18px; }
   footer{ padding:10px 18px; color:var(--muto); font-size:12.5px; border-top:1px solid var(--linea); }
+  /* le schede del perché: sopra il tavolo quelle del fotogramma, nel
+     registro ripiegate sotto la loro riga */
+${SPIEGA_CSS}
+  .campo-box{ position:relative; }
+  .pila{ position:absolute; top:10px; right:10px; width:min(340px, 48%); display:flex; flex-direction:column;
+         gap:8px; pointer-events:none; max-height:calc(100% - 20px); overflow:hidden; }
+  .pila .sp{ pointer-events:auto; animation:entra .3s ease-out both; }
+  .pila .sp:nth-child(2){ animation-delay:.08s; } .pila .sp:nth-child(3){ animation-delay:.16s; }
+  .pila .sp:nth-child(4){ animation-delay:.24s; }
+  .pila .altre{ align-self:flex-end; font-size:12px; color:var(--muto); background:var(--carta);
+                border:1px solid var(--linea); border-radius:999px; padding:2px 10px; pointer-events:auto; }
+  @keyframes entra{ from{ opacity:0; transform:translateY(-8px); } to{ opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce){ .pila .sp{ animation:none; } }
+  @media (max-width:900px){ .pila{ position:static; width:auto; margin-top:10px; max-height:none; } }
+  .acceso{ fill:none; stroke:#f5c542; stroke-width:7; stroke-opacity:.9; }
+  .acceso.subisce{ stroke:#f5c542; stroke-dasharray:14 8; stroke-opacity:.8; }
+  .barra label{ font-size:13px; color:var(--muto); display:flex; gap:4px; align-items:center; white-space:nowrap; }
+  .riga details > summary{ cursor:pointer; list-style:none; }
+  .riga details > summary::-webkit-details-marker{ display:none; }
+  .riga details > summary::after{ content:" · perché?"; color:var(--muto); font-size:12px; }
+  .riga details[open] > summary::after{ content:""; }
+  .riga details .sp{ margin:6px 0 6px; }
 </style>
 
 <header>
@@ -120,12 +160,16 @@ export function paginaHTML({ meta, frames }){
 
 <div class="schermo">
   <div class="tavolo">
-    <svg id="campo" viewBox="0 0 ${meta.w} ${meta.h}" role="img" aria-label="il tavolo"></svg>
+    <div class="campo-box">
+      <svg id="campo" viewBox="0 0 ${meta.w} ${meta.h}" role="img" aria-label="il tavolo"></svg>
+      <div class="pila" id="pila" aria-live="polite"></div>
+    </div>
     <div class="barra">
       <button id="via">◀</button>
       <button id="play">▶ Guarda</button>
       <button id="poi">▶</button>
       <input id="cursore" type="range" min="0" max="${frames.length - 1}" value="0">
+      <label title="le schede con i dadi, il numero da battere e il perché, sopra il tavolo"><input type="checkbox" id="spiega" checked> perché</label>
       <span class="stato" id="stato"></span>
     </div>
   </div>
@@ -160,12 +204,30 @@ const zone = P.meta.zone.map(z =>
   '" fill="none" stroke="' + (z.army === 'A' ? 'var(--A)' : 'var(--B)') +
   '" stroke-dasharray="10 8" stroke-opacity=".35"/>').join('');
 
+${spiegaNellaPagina()}
+const pila = document.getElementById('pila');
+const spiega = document.getElementById('spiega');
+/* le schede di un fotogramma: le righe con una spiegazione, e davanti
+   il perché di chi ha scelto la mossa, quando l'ha detto */
+const schedeDi = f => f.testo.filter(r => r.x);
+const sceltaDi = f => f.perche && !/^passa/.test(f.perche)
+  ? { x: { k: 'scelta', t: 'Perché questa mossa', u: f.chi || '', testo: f.perche }, army: f.army } : null;
+const MOSTRATE = 3;
+
 function disegna(i){
   const f = P.frames[i];
+  const schede = schedeDi(f);
+  const mostra = spiega.checked;
+  /* chi le schede nominano si accende sul tavolo */
+  const accesi = new Set(mostra ? schede.map(r => r.x.uid).filter(v => v != null) : []);
+  const colpiti = new Set(mostra ? schede.map(r => r.x.su).filter(v => v != null) : []);
   const pezzi = f.unita.map(u => {
     const col = u.a === 'A' ? 'var(--A)' : 'var(--B)';
     return '<g transform="translate(' + u.x + ',' + u.y + ') rotate(' + u.r + ')"' +
       (u.f ? ' class="fuga"' : '') + '>' +
+      (accesi.has(u.id) || colpiti.has(u.id) ? '<rect class="acceso' + (accesi.has(u.id) ? '' : ' subisce') +
+        '" x="' + (-u.w/2 - 6) + '" y="' + (-u.h/2 - 6) + '" width="' + (u.w + 12) +
+        '" height="' + (u.h + 12) + '" rx="6"/>' : '') +
       '<rect x="' + (-u.w/2) + '" y="' + (-u.h/2) + '" width="' + u.w + '" height="' + u.h +
         '" rx="2" fill="' + col + '" fill-opacity=".85"' +
         (u.c ? ' class="mischia"' : ' stroke="#2b2620" stroke-width="1"') + '/>' +
@@ -178,6 +240,14 @@ function disegna(i){
   }).join('');
   campo.innerHTML = zone + fondo + pezzi;
 
+  /* sopra il tavolo le ultime schede del fotogramma; le altre restano
+     nel registro, sotto la loro riga */
+  const scelta = sceltaDi(f);
+  const sopra = (scelta ? [scelta] : []).concat(schede.slice(-MOSTRATE));
+  pila.innerHTML = !mostra ? '' :
+    sopra.map(r => SP.rigaHTML(r, { army: r.army || f.army })).join('') +
+    (schede.length > MOSTRATE ? '<div class="altre">e altre ' + (schede.length - MOSTRATE) + ' nel registro</div>' : '');
+
   stato.textContent = 'Turno ' + f.turno + ' · ' + f.casella + ' · ha giocato ' +
     (f.chi || (f.army === 'A' ? P.meta.nomi.A : P.meta.nomi.B)) + ' · ' + (i + 1) + '/' + P.frames.length;
   cursore.value = i;
@@ -189,9 +259,14 @@ function disegna(i){
     if (!g.testo.length && !g.perche) continue;
     html.push('<div class="riga' + (k === i ? ' ora' : '') + '">' +
       (g.perche ? '<div class="perche">' + (g.chi ? esc(g.chi) + ': ' : '') + esc(g.perche) + '</div>' : '') +
-      g.testo.map(r => '<div' + (r.k === 'limite' ? ' class="limite"' : '') + '>' + esc(r.t) +
-        (r.p ? ' <span class="pag">(p. ' + r.p + ')</span>' : '') +
-        ((r.d && r.d.length) || (r.g && r.g.length) ? ' <span class="dadi">[' + dadiDi(r) + ']</span>' : '') + '</div>').join('') +
+      g.testo.map(r => {
+        const riga = esc(r.t) + (r.p ? ' <span class="pag">(p. ' + r.p + ')</span>' : '') +
+          ((r.d && r.d.length) || (r.g && r.g.length) ? ' <span class="dadi">[' + dadiDi(r) + ']</span>' : '');
+        /* la riga con una spiegazione si apre sulla sua scheda */
+        return '<div' + (r.k === 'limite' ? ' class="limite"' : '') + '>' +
+          (r.x ? '<details><summary>' + riga + '</summary>' + SP.rigaHTML(r, { army: g.army, compatta: true }) + '</details>' : riga) +
+          '</div>';
+      }).join('') +
       '</div>');
   }
   registro.innerHTML = html.join('');
@@ -204,14 +279,22 @@ const vai = n => { i = Math.max(0, Math.min(P.frames.length - 1, n)); disegna(i)
 document.getElementById('via').onclick = () => vai(i - 1);
 document.getElementById('poi').onclick = () => vai(i + 1);
 cursore.oninput = e => vai(+e.target.value);
-document.getElementById('play').onclick = e => {
-  if (timer){ clearInterval(timer); timer = null; e.target.textContent = '▶ Guarda'; return; }
-  e.target.textContent = '❚❚ Ferma';
-  timer = setInterval(() => {
-    if (i >= P.frames.length - 1){ clearInterval(timer); timer = null; e.target.textContent = '▶ Guarda'; return; }
-    vai(i + 1);
-  }, 420);
+/* Guardando, un fotogramma con delle schede resta il tempo di leggerle:
+   i dadi di un test di rotta non si leggono in quattro decimi. */
+const sosta = f => 420 + (spiega.checked ? Math.min(4200, schedeDi(f).length * 1300 + (sceltaDi(f) ? 900 : 0)) : 0);
+const play = document.getElementById('play');
+const ferma = () => { clearTimeout(timer); timer = null; play.textContent = '▶ Guarda'; };
+const avanti = () => {
+  if (i >= P.frames.length - 1) return ferma();
+  vai(i + 1);
+  timer = setTimeout(avanti, sosta(P.frames[i]));
 };
+play.onclick = () => {
+  if (timer) return ferma();
+  play.textContent = '❚❚ Ferma';
+  timer = setTimeout(avanti, 200);
+};
+spiega.onchange = () => disegna(i);
 window.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') vai(i + 1);
   if (e.key === 'ArrowLeft') vai(i - 1);

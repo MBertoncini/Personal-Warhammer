@@ -247,7 +247,8 @@ Nella scheda **Matchup**, con le due liste scelte, *Gioca contro l'AI* chiede co
 
 - **Le mosse sono pulsanti**, gli stessi che vede il modello: *Carica · Saurus Warriors → Night Goblin Mobs*, e sotto il perché — quanti pollici, che tiro serve, che probabilità ha, a che pagina sta. Passando sopra un pulsante il pezzo si accende sul tavolo. I pezzi non si trascinano: li muove l'arbitro, e un pezzo spostato a mano sarebbe un tavolo diverso da quello su cui si gioca.
 - **Le caselle senza scelte si passano da sole**, se lo lasci spuntato: sono una dozzina di clic a turno che non decidono niente.
-- **L'ultima mossa dell'AI** resta in vista con il suo perché, e sotto scorre il registro con dadi e pagine. *Copia il registro* lo porta via; *Abbandona* chiude la sfida e lascia il tavolo com'è.
+- **Il perché sul tavolo.** Ogni volta che un dado, una regola speciale, il terreno o un incantesimo cambiano un risultato, sopra il tavolo compare una scheda: i dadi usciti (quello scartato spento), quello che ci si somma, il numero da battere, e una riga per ogni cosa che li ha spostati, con il pallino del suo colore — il generale vicino, il bosco, il Terrore, lo Swiftstride. *Perché i Clanrats ripiegano?* 3 + 3 = 6, +3 di scarto = 9 contro il Comando 7 del Grey Seer a 5″: i soli dadi stanno nel Comando, con lo scarto no — ripiegano in ordine; un 8 ai dadi sarebbe stato rotta. *Perché l'Abominio fa undici pollici?* Movimento 3D6, 4 + 5 + 2. Passandoci sopra la scheda accende il pezzo di cui parla, un clic la tiene ferma. Vale per le mosse dell'AI e per le tue: l'arbitro tira per tutti e due. **L'AI aspetta qualche secondo** dopo ogni mossa con dei dadi, il tempo di leggere; tutte e due le cose si spengono nelle impostazioni del pannello.
+- **L'ultima mossa dell'AI** resta in vista con il suo perché, e sotto scorre il registro con dadi e pagine: le righe con una scheda si aprono con *perché?*. *Copia il registro* lo porta via; *Abbandona* chiude la sfida e lascia il tavolo com'è.
 - **Chi gioca contro di te**: Gemini, con una chiave di Google AI Studio scritta nel pannello (e il modello, se non vuoi `gemini-2.5-flash`). La chiave **resta in questo browser** — non entra nei backup né nell'archivio su GitHub — e parte solo verso Google. Senza chiave gioca l'euristica che guarda una mossa avanti (vedi sotto), e il pannello lo dice; se Gemini risponde male o non risponde, quella mossa la gioca l'euristica e il pannello conta gli intoppi.
 
 La sfida **vive nella scheda del browser**: ricaricando la pagina si ricomincia.
@@ -328,6 +329,8 @@ node tools/controlla-partita.mjs partita.html  # e il controllo di quello che è
 All'avvio stampa **quali liste ha preso** — numero, nome, fazione, punti — e avvisa quando i punti non si equivalgono, quando una lista non dice la fazione o quando le sue unità non hanno tipo di truppa o armi. `--liste` vuole due numeri: `--liste 3, 9` con lo spazio va bene, `--liste 3,` si ferma e lo dice (prima diventava «3 contro la lista 0» senza avvisare), e un argomento che non conosce non passa in silenzio.
 
 Con `--html` esce **una pagina sola**, senza dipendenze e senza rete: il tavolo disegnato, una barra per andare avanti e indietro fotogramma per fotogramma, e accanto il registro con i dadi usciti, la pagina del manuale e il perché tattico di chi ha scelto. Si apre con un doppio clic, si manda a un amico, si mette su GitHub Pages — dentro non c'è nessuna chiave e non chiama nessuno. I dadi sono tutti, a mucchi (`colpire 4+ · ferire 3+ · armatura 5+`), le unità in mischia hanno il bordo giallo e ⚔, i modelli singoli dicono le ferite che restano (♥3/4), e le unità con lo stesso nome prendono un numero (`Skink Skirmishers 2`). I fotogrammi in cui non succede niente non si tengono, e quando chi gioca **passa** con altre mosse possibili il perché si legge come quello di ogni altra scelta.
+
+Sopra il tavolo compaiono **le schede del perché**, le stesse della sfida nell'app: per ogni fotogramma il perché di chi ha scelto la mossa e le schede dei tiri che ha fatto fare — test di rotta, carica, tiro, colpi in mischia, risultato del combattimento, fuga, inseguimento, Panico, lancio e dissolvimento, terreno — con le unità di cui parlano accese sul tavolo (a tratto pieno chi agisce, tratteggiata chi subisce). *▶ Guarda* si ferma su un fotogramma quanto serve a leggerle; la spunta *perché* le toglie. Nel registro, ogni riga che ne ha una si apre sulla sua scheda. La pagina porta con sé il sorgente di `src/spiega.js` e le disegna da sola: il file resta leggero, e la scheda è disegnata in un posto solo.
 
 Gli avvisi di partenza — liste senza fazione, senza tipo di truppa o senza armi, unità che **sul tavolo** giocano con Resistenza o Abilità a zero, le volte in cui il modello non ha scelto — non restano in console: stanno anche in cima alla pagina, in un riquadro. Una partita ha girato con un esercito intero a caratteristiche zero, e la console lo diceva a metà mentre la pagina taceva.
 
@@ -596,6 +599,7 @@ src/
   ricerca.js          chi guarda una mossa avanti: cariche come assegnazione, mosse provate su una copia
   minacce.js          dove ti possono caricare: la dichiarazione di p. 119 fatta da ogni nemico, e la griglia
   controai.js         la sfida sul tavolo: tu contro l'AI, con l'arbitro in mezzo
+  spiega.js           il perché di un tiro: dalla riga del registro alla scheda, per la sfida e per la pagina da guardare
   matchup.js          disponibilità, confronto, schieramenti salvati
   reports.js          archivio delle partite e scheda Partite
   deploy.js           stato del tavolo, pannelli, campo di battaglia
@@ -620,6 +624,7 @@ test/
   minacce.mjs         le minacce di carica, lo scontro atteso, il gioco delle distanze
   ricerca.mjs         la copia della partita, il valore di una posizione, chi guarda avanti
   sync.mjs            archivio su GitHub, contro un GitHub finto in memoria
+  spiega.mjs          le schede del perché, e partite intere in cui ogni scheda deve tornare con i suoi conti
   boot.mjs            la pagina intera: schede, annulla, zoom, partita, report, link
 tools/
   make-icons.mjs      scrive i PNG del manifest senza dipendenze
