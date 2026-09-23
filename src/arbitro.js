@@ -109,6 +109,8 @@ export const LIMITI = [
     why:"i cataloghi li scrivono come testo libero: l'app li mostra e non li applica" },
   { id:"trofei",    what:"gli stendardi presi come trofeo non contano nel punteggio", page:200,
     why:"il bonus c'è (25 punti in Battle March, 50 nel Core Rulebook), ma l'arbitro non segna chi ha preso lo stendardo di un'unità travolta" },
+  { id:"fuori",     what:"un'unità che non trova posto nella sua zona resta fuori dalla partita", page:115,
+    why:"l'arbitro prova le cinque colonne, poi i varchi fra le unità già schierate, poi un fronte più largo; se niente basta la lascia fuori e lo scrive nel registro. Non combatte, e nei punti vittoria conta come intera: l'avversario non ne prende. Che cosa dica il manuale di un'unità che nella zona non ci sta non è stato controllato" },
   { id:"bordo",     what:"chi cede terreno contro il bordo del tavolo si ferma lì", page:134,
     why:"il libro dice dove si ferma chi cede terreno — un'unità, il terreno, un pollice da un nemico — e del bordo non dice niente" },
   { id:"volo",      what:"chi vola scavalca il terreno ma non le unità", page:0,
@@ -288,6 +290,9 @@ export function newBattle({ A, B, scenario = "bm-strada", def = null, nomi = nul
        e' la forma che `VC.objectivePoints` somma */
     fineTurni: [],
     log: [], detto: new Set(), pending: null,
+    /* le unita' rimaste fuori dal tavolo allo schieramento, con il
+       perche': gli strumenti le stampano (`partita.mjs`, `serie.mjs`) */
+    fuori: [],
     /* Le sfide in corso, una per combattimento: i due modelli che si
        sono presi a parte. Restano fra un turno e l'altro perche' il
        libro lo dice — «se sopravvivono tutti e due e il combattimento
@@ -584,7 +589,8 @@ function posa(S, u, x, y, rot = u.rot){
 /* ============================================================
    4 · LO SCHIERAMENTO (p. 115)
    A turno, un'unita' per volta, dentro la propria zona. L'arbitro
-   propone tre posti — sinistra, centro, destra — e chi gioca sceglie:
+   propone i posti — cinque colonne, e i varchi quando sono piene — e
+   chi gioca sceglie:
    la geometria resta qui, e chi decide non deve saper contare i
    millimetri.
    ============================================================ */
@@ -652,43 +658,149 @@ function terrenoDelPosto(S, box, u = null){
   return { sotto, davanti, muro, testo };
 }
 
-export function postiPer(S, u){
+/* ---- dove si posa un'unita' ----
+   Prima di tutto le cinque colonne con il nome — sinistra … destra —
+   in una, due o tre file: sono i posti che chi gioca legge e sceglie a
+   colpo d'occhio, e le partite di sempre si schierano li'.
+
+   Cinque colonne pero' sono cinque posti per fila, e una zona profonda
+   sei pollici ha una fila sola: la sesta unita' non trovava posto,
+   l'elenco diventava «avanti», e l'unita' spariva senza una riga nel
+   registro — non combatteva e non dava punti a nessuno. Le trecento
+   partite Skaven contro Lucertole sul «Poligono di tiro» si sono
+   giocate cosi', con i Terradon Riders sempre fuori (2026-09-23).
+
+   Quando le colonne sono piene si cercano i VARCHI: si scorre la fila
+   da sinistra a destra di un quarto di pollice alla volta, e ogni
+   posto libero diventa un'offerta; dopo ognuno si salta di una
+   larghezza d'unita', che il posto accanto non la tocchi. E quando
+   neanche i varchi bastano si prova un altro fronte, il piu' vicino a
+   quello della lista: piu' largo se l'unita' e' troppo PROFONDA —
+   trenta Clanrat cinque per sei non stanno in sei pollici — o piu'
+   stretto se e' troppo LARGA per il varco che resta. La formazione con
+   cui si schiera la sceglie chi gioca, e quella scritta nella lista e'
+   la preferita, non un obbligo: e' la lettura dell'app, dal libro non
+   ricontrollata. Se non basta niente l'unita' resta fuori, e lo si
+   scrive (`passo`, e il limite `fuori`). */
+const COLONNE_ZONA = ["sinistra", "centro-sinistra", "centro", "centro-destra", "destra"];
+
+function postiNellaZona(S, u, { varchi = false } = {}){
   const z = zonaDi(S, u.army);
   const lay = layoutOf(u, S.units);
   const mie = inCampo(S, u.army);
   const out = [];
-  const colonne = ["sinistra", "centro-sinistra", "centro", "centro-destra", "destra"];
+  const passo = lay.h + MM / 2;
   /* La zona in colonne e in file: la prima fila e' quella davanti, cioe'
      dalla parte del nemico, che e' dove al tavolo si mette chi deve
      arrivarci. Le file dietro servono quando la prima e' piena: uno
-     schieramento non e' mai una riga sola. */
-  const file = Math.max(1, Math.floor(z.h / Math.max(MM, lay.h + MM / 2)));
-  for (let f = 0; f < Math.min(file, 3); f++){
-    for (let i = 0; i < colonne.length; i++){
-      const x = z.x + z.w * (i + 0.5) / colonne.length;
-      const passo = lay.h + MM / 2;
-      /* A sta in basso e guarda in su: la sua prima fila e' il bordo
-         alto della zona. Prima era il contrario, e il capo messo «in
-         prima fila» stava sul bordo del tavolo dietro a tutti. */
-      const y = u.army === "A"
-        ? z.y + lay.h / 2 + MM + f * passo
-        : z.y + z.h - lay.h / 2 - MM - f * passo;
-      const box = { x, y, w: lay.w, h: lay.h, rot: u.rot || 0 };
-      const poly = boxCorners(box);
-      const libero = !mie.some(o => polyDistance(poly, cornersOf(o, S.units)) < MM / 2) &&
-                     x - lay.w / 2 >= z.x - 0.01 && x + lay.w / 2 <= z.x + z.w + 0.01 &&
-                     y - lay.h / 2 >= z.y - 0.01 && y + lay.h / 2 <= z.y + z.h + 0.01;
-      if (!libero) continue;
-      const ter = terrenoDelPosto(S, box, u);
-      /* dentro un pezzo impassabile non ci si posa (p. 270) */
-      if (ter.sotto.some(t => chiusoPer(u, t))) continue;
-      out.push({ id:"schiera", uid: u.uid, x, y, rot: u.rot || 0,
-                 dove: colonne[i] + (f ? `, ${f + 1}ª fila` : ""),
-                 murato: !!ter.muro,
-                 why: `${colonne[i]}${f ? ", dietro" : ", in prima fila"}` +
-                      (ter.testo ? ` — ${ter.testo}` : "") });
+     schieramento non e' mai una riga sola. Con i varchi le file non si
+     fermano a tre: si cerca in tutta la zona. */
+  const file = Math.max(1, Math.floor(z.h / Math.max(MM, passo)));
+  const posto = (x, f) => {
+    /* A sta in basso e guarda in su: la sua prima fila e' il bordo
+       alto della zona. Prima era il contrario, e il capo messo «in
+       prima fila» stava sul bordo del tavolo dietro a tutti. */
+    const y = u.army === "A"
+      ? z.y + lay.h / 2 + MM + f * passo
+      : z.y + z.h - lay.h / 2 - MM - f * passo;
+    const box = { x, y, w: lay.w, h: lay.h, rot: u.rot || 0 };
+    const poly = boxCorners(box);
+    const libero = !mie.some(o => polyDistance(poly, cornersOf(o, S.units)) < MM / 2) &&
+                   x - lay.w / 2 >= z.x - 0.01 && x + lay.w / 2 <= z.x + z.w + 0.01 &&
+                   y - lay.h / 2 >= z.y - 0.01 && y + lay.h / 2 <= z.y + z.h + 0.01;
+    if (!libero) return null;
+    const ter = terrenoDelPosto(S, box, u);
+    /* dentro un pezzo impassabile non ci si posa (p. 270) */
+    if (ter.sotto.some(t => chiusoPer(u, t))) return null;
+    return { y, ter };
+  };
+  const offerta = (x, f, p, nome, perche) => ({
+    id:"schiera", uid: u.uid, x, y: p.y, rot: u.rot || 0,
+    dove: nome + (f ? `, ${f + 1}ª fila` : ""),
+    murato: !!p.ter.muro,
+    why: `${perche}${f ? ", dietro" : ", in prima fila"}` + (p.ter.testo ? ` — ${p.ter.testo}` : ""),
+  });
+  for (let f = 0; f < (varchi ? file : Math.min(file, 3)); f++){
+    if (!varchi){
+      /* Le cinque colonne stanno fra i due posti estremi che l'unita'
+         puo' avere, non a un decimo di zona dal bordo: «sinistra» e'
+         contro il bordo sinistro. Prima, con i centri fissi, fra
+         un'unita' e l'altra restavano varchi di quattro o cinque
+         pollici — troppo stretti per la sesta, e sprecati ai bordi. */
+      const x0 = z.x + lay.w / 2, x1 = Math.max(x0, z.x + z.w - lay.w / 2);
+      for (let i = 0; i < COLONNE_ZONA.length; i++){
+        const x = x0 + (x1 - x0) * i / (COLONNE_ZONA.length - 1);
+        /* larga quanto la zona, le cinque colonne sono un posto solo */
+        if (i && x - x0 < 0.01) break;
+        const p = posto(x, f);
+        if (p) out.push(offerta(x, f, p, COLONNE_ZONA[i], COLONNE_ZONA[i]));
+      }
+      continue;
+    }
+    for (let x = z.x + lay.w / 2; x <= z.x + z.w - lay.w / 2 + 0.01; ){
+      const p = posto(x, f);
+      if (!p){ x += MM / 4; continue; }
+      const da = r1(inch(x - z.x));
+      out.push(offerta(x, f, p, `a ${da}″ da sinistra`,
+        `in un varco a ${da}″ dal bordo sinistro della zona, fra le unità già schierate`));
+      x += lay.w + MM / 2;
     }
   }
+  return out;
+}
+
+/* Chi puo' cambiare fronte allo schieramento: chi ha piu' di un
+   modello in file. Anche la formazione sciolta, che i modelli li mette
+   dove vuole (p. 185); non la macchina da guerra, che e' un pezzo col
+   suo equipaggio. */
+const cambiaFronte = u => ensureRanks(u) && !macchina(u) && alive(u) > 1;
+
+/* Il fronte piu' vicino a quello della lista con cui l'unita' trova
+   posto: si cambia meno formazione possibile, e a parita' di distanza
+   si prova prima il piu' stretto, che tiene i ranghi. */
+function postiAltroFronte(S, u){
+  if (!cambiaFronte(u)) return [];
+  const lay0 = layoutOf(u, S.units), n = lay0.slots.length, f0 = lay0.front;
+  const tt = troopType(u.troop);
+  const ranghi = f => rankBonus(n, f, tt.maxRank, tt.perRank);
+  const fronti = Array.from({ length: n }, (_, i) => i + 1).filter(f => f !== f0)
+    .sort((a, b) => Math.abs(a - f0) - Math.abs(b - f0) || a - b);
+  const prima = u.frontage;
+  try {
+    for (const f of fronti){
+      u.frontage = f;
+      const lay = layoutOf(u, S.units);
+      /* stessa larghezza e stessa profondita': non cambia niente */
+      if (Math.abs(lay.w - lay0.w) < 0.01 && Math.abs(lay.h - lay0.h) < 0.01) continue;
+      let posti = postiNellaZona(S, u);
+      if (!posti.length) posti = postiNellaZona(S, u, { varchi: true });
+      if (!posti.length) continue;
+      const cambio = `con ${f} di fronte invece di ${f0}, su ${lay.ranks} ranghi invece di ${lay0.ranks}` +
+        (ranghi(f) !== ranghi(f0) ? ` (bonus di ranghi +${ranghi(f0)} → +${ranghi(f)})` : "") +
+        `: com'è nella lista non trova posto nella zona`;
+      return posti.map(p => ({ ...p, fronte: f, dove: `${p.dove}, ${f} di fronte`, why: `${cambio}; ${p.why}` }));
+    }
+  } finally {
+    u.frontage = prima;
+  }
+  return [];
+}
+
+/* Perche' un'unita' resta fuori, detto in pollici: e' la riga che
+   finisce nel registro e fra i limiti della partita. */
+function perchéFuori(S, u){
+  const z = zonaDi(S, u.army), lay = layoutOf(u, S.units);
+  const spazio = z.h - MM;
+  if (lay.h > spazio + 0.01)
+    return `è profonda ${r1(inch(lay.h))}″ e la zona, tolto il pollice dal bordo davanti, ne lascia ${r1(inch(spazio))}″` +
+           (cambiaFronte(u) ? ", nemmeno cambiando il fronte" : ", e non ha file da allargare");
+  return `è larga ${r1(inch(lay.w))}″, e fra le unità già schierate, i bordi e il terreno impassabile non resta un varco così`;
+}
+
+export function postiPer(S, u){
+  let out = postiNellaZona(S, u);
+  if (!out.length) out = postiNellaZona(S, u, { varchi: true });
+  if (!out.length) out = postiAltroFronte(S, u);
   /* i posti murati in fondo all'elenco, senza toglierli: al tavolo un
      reggimento dietro il monolite lo si puo' anche volere — ci si
      ripara dal tiro — ma non deve essere la prima riga che si legge */
@@ -811,7 +923,9 @@ export function options(S){
       player: S.army, fase: "Schieramento", page: 115,
       what: `${S.nomi[S.army]} schiera ${prossima.name} (${alive(prossima)} modelli, ${prossima.pts || 0} pt)`,
       unit: prossima.uid,
-      list: posti.length ? posti : [{ id:"avanti", why:"non c'è posto per quest'unità nella zona" }],
+      list: posti.length ? posti
+        : [{ id:"avanti", fuori: true,
+             why:`${prossima.name} non trova posto nella zona e resta fuori dalla partita: ${perchéFuori(S, prossima)}` }],
     };
   }
 
@@ -1411,7 +1525,10 @@ function opzioniAggiramento(S, u, t, muro, drittoP){
       continue;
     }
     /* girarsi non ci sta: si scivola di lato, e il turno prossimo la
-       ruota ci starà perché il muro non sarà più davanti */
+       ruota ci starà perché il muro non sarà più davanti. Il passo di
+       lato e' una manovra, e in formazione sciolta non se ne fanno
+       (p. 185): offrirlo voleva dire vederselo rifiutare da `manovra` */
+    if (sciolta(u)) continue;
     const l = passoDiLato(S, u, punto, move);
     if (l.pollici <= 0.25) continue;
     if (out.some(x => x.lato && x.segno === l.segno)) continue;
@@ -2365,8 +2482,17 @@ const GESTI = {
   schiera: (S, a) => {
     const u = byUid(S, a.uid);
     if (!u || u.placed) return no("quest'unità non è da schierare");
+    /* un fronte diverso da quello della lista, quando con quello non
+       c'era posto (`postiAltroFronte`) */
+    let fronte = "";
+    if (a.fronte != null){
+      const lay = layoutOf(u, S.units), f = Math.round(+a.fronte);
+      if (!cambiaFronte(u) || !(f >= 1 && f <= lay.slots.length))
+        return no("quel fronte quest'unità non lo può avere");
+      if (f !== lay.front){ fronte = `, con ${f} modelli di fronte invece di ${lay.front}`; u.frontage = f; }
+    }
     u.x = a.x; u.y = a.y; u.rot = a.rot != null ? a.rot : u.rot; u.placed = true;
-    say(S, `${u.name} si schiera ${a.dove || ""}`.trim() + ".", { army: u.army, page: 115 });
+    say(S, `${u.name} si schiera ${a.dove || ""}`.trim() + fronte + ".", { army: u.army, page: 115 });
     /* i personaggi entrano con il reggimento a cui sono uniti */
     for (const c of S.units.filter(x => FM.joinedHost(x) === u.uid)){
       c.x = u.x; c.y = u.y; c.rot = u.rot; c.placed = true;
@@ -5316,7 +5442,18 @@ function passo(S){
        schiero»: si passa all'altro, e se nessuno ha piu' niente si
        comincia */
     const mia = daSchierare(S);
-    if (mia){ mia.placed = false; mia.rinuncia = true; }
+    if (mia){
+      /* Chi resta fuori si scrive, con il perche' in pollici. Prima
+         spariva in silenzio: nessuna riga, e una lista giocava intere
+         serie senza un'unita' che nessuno sapeva mancare. */
+      const why = postiPer(S, mia).length ? "chi gioca ha scelto di non schierarla" : perchéFuori(S, mia);
+      mia.placed = false; mia.rinuncia = true;
+      S.fuori.push({ uid: mia.uid, army: mia.army, name: mia.name, pts: mia.pts || 0, why });
+      limite(S, "fuori");
+      say(S, `${mia.name} (${mia.pts || 0} pt) non si schiera e resta fuori dalla partita: ${why}. ` +
+             `Non combatte, e nel conto dei punti vittoria non la perde nessuno.`,
+          { army: mia.army, page: 115, kind: "fuori" });
+    }
     segnaChiHaFinito(S);
     S.army = S.army === "A" ? "B" : "A";
     if (!daSchierare(S)){
@@ -5460,7 +5597,9 @@ export function controllaFine(S, { inizioTurno = false } = {}){
   for (const army of ["A", "B"]){
     /* chi ha ancora unita' da mettere in campo non ha perso: succede
        in riserva e negli scenari a rinforzi */
-    const fuori = unitsOf(S, army).filter(u => !u.dead && !u.placed).length;
+    /* chi e' rimasto fuori perche' non c'era posto non arrivera' mai:
+       non tiene in vita un esercito che in campo non ha piu' niente */
+    const fuori = unitsOf(S, army).filter(u => !u.dead && !u.placed && !u.rinuncia).length;
     if (!inCampo(S, army).length && !fuori)
       return fine(S, `${S.nomi[army]} non ha più nessuno in campo`);
   }

@@ -65,6 +65,9 @@ export async function giocaSerie({ AR, AG, D, liste, nomi, scenario, def, magia,
       const diLista = z => z ? zona[z] : null;
       tutte.push({
         seme: s, giro, zona, label: e.label, why: e.why, turno: S.turno, schierati,
+        /* chi non ha trovato posto allo schieramento: una serie in cui
+           un'unita' manca sempre misura un'altra lista */
+        fuori: (S.fuori || []).map(f => ({ lista: zona[f.army], name: f.name, pts: f.pts })),
         vincitore: diLista(e.winner || null),
         vp: { [zona.A]: e.A, [zona.B]: e.B },
         primo: diLista(S.primo), chiSchiera: diLista(S.chiSchiera), finitoPrima: diLista(S.finitoPrima),

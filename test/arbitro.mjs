@@ -928,6 +928,73 @@ console.log('\nlo schieramento, la prima fila davanti (p. 115)');
      primi.length && dietro.length && Math.max(...primi.map(x => x.y)) < Math.min(...dietro.map(x => x.y)));
 }
 
+console.log('\nlo schieramento quando le colonne non bastano (p. 115)');
+{
+  /* «Poligono di tiro (mio)»: 36″ di profondità e 12 di terra di
+     nessuno, cioè zone da sei pollici e una fila sola. Con cinque
+     colonne la sesta unità delle Lucertole restava fuori in silenzio:
+     trecento partite giocate senza i Terradon Riders. */
+  const poligono = dati('scenari.json').find(s => s.id === 'sxmu9q80qdc65');
+  const skaven = lista('lmubp01267euf'), liz = lista('lmubp2kimjzhw');
+  const schiera = G => { let giri = 0; while (G.schierando && giri++ < 80) AR.apply(G, AR.options(G).list[0]); };
+  const sovrapposte = (G, army) => {
+    const u = AR.inCampo(G, army);
+    return u.some((a, i) => u.slice(i + 1).some(b => polysOverlap(AR.cornersOf(a, G.units), AR.cornersOf(b, G.units))));
+  };
+  seme(3);
+  const G = AR.newBattle({ A: skaven, B: liz, scenario: poligono.id, def: poligono, primo: 'A' });
+  ok('la zona del poligono è profonda sei pollici', Math.round(G.zones.B[0].h / MM) === 6);
+  schiera(G);
+  const lucertole = AR.unitsOf(G, 'B').filter(u => !u.join);
+  ok('sei unità in una zona da una fila sola si schierano tutte e sei',
+     liz.units.length === 6 && lucertole.length >= 5 && lucertole.every(u => u.placed) && !G.fuori.length);
+  ok('la sesta trova un varco fra le altre, e il registro dice dove',
+     G.log.some(r => /Terradon Riders si schiera a [\d.]+″ da sinistra/.test(r.text)));
+  ok('e nessuna si posa sopra un\'altra', !sovrapposte(G, 'A') && !sovrapposte(G, 'B'));
+
+  /* trenta Clanrat cinque per sei sono profondi quasi sei pollici, e
+     la zona, tolto il pollice dal bordo davanti, ne lascia cinque */
+  const grossi = { ...skaven, units: skaven.units.map((u, i) => i === 1 ? { ...u, models: 30, frontage: 5 } : u) };
+  seme(3);
+  const H = AR.newBattle({ A: grossi, B: liz, scenario: poligono.id, def: poligono, primo: 'A' });
+  const topi = AR.unitsOf(H, 'A').find(u => u.models === 30);
+  const posti = AR.postiPer(H, topi);
+  ok('un reggimento troppo profondo per la zona si offre più largo, non sparisce',
+     posti.length > 0 && posti.every(p => p.fronte > 5 && /con \d+ di fronte invece di 5/.test(p.why)));
+  AR.apply(H, posti[0]);
+  ok('e si schiera con il fronte nuovo, scritto nel registro',
+     topi.placed && topi.frontage === posti[0].fronte &&
+     H.log.some(r => /Clanrats 1 si schiera .*con \d+ modelli di fronte invece di 5/.test(r.text)));
+  ok('dentro la zona', AR.boxOf(topi, H.units).h <= H.zones.A[0].h);
+
+  /* una zona da tre pollici: l'Hell Pit Abomination è una basetta sola
+     da quasi quattro, e un modello solo non si allarga */
+  const stretto = { ...poligono, gap: 30 };
+  seme(3);
+  const K = AR.newBattle({ A: skaven, B: liz, scenario: poligono.id, def: stretto, primo: 'A' });
+  const hpa = AR.unitsOf(K, 'A').find(u => /Hell Pit/.test(u.name));
+  const o = (() => { let giri = 0;
+    while (K.schierando && giri++ < 80){
+      const x = AR.options(K);
+      if (x.unit === hpa.uid) return x;
+      AR.apply(K, x.list[0]);
+    }
+    return null; })();
+  ok('chi non ci sta nemmeno così ha un «avanti» che lo nomina e dice perché',
+     o && o.list.length === 1 && o.list[0].id === 'avanti' && o.list[0].fuori &&
+     /Hell Pit Abomination non trova posto.*profonda [\d.]+″/.test(o.list[0].why));
+  AR.apply(K, o.list[0]);
+  ok('e resta fuori con una riga nel registro, non in silenzio',
+     !hpa.placed && K.log.some(r => r.kind === 'fuori' && /Hell Pit Abomination \(\d+ pt\) non si schiera e resta fuori/.test(r.text)));
+  ok('fra i limiti della partita, e nell\'elenco di chi è rimasto fuori',
+     K.detto.has('fuori') && K.fuori.some(f => f.uid === hpa.uid && f.pts === hpa.pts && f.army === 'A'));
+  schiera(K);
+  ok('i Clanrat invece nella zona da tre pollici entrano, allargati',
+     AR.unitsOf(K, 'A').filter(u => /Clanrats/.test(u.name)).every(u => u.placed && u.frontage > 5));
+  ok('e chi è rimasto fuori non tiene in vita un esercito che in campo non ha più nessuno',
+     (() => { for (const u of AR.inCampo(K, 'A')) u.dead = true; K.schierando = false; AR.controllaFine(K); return K.finita; })());
+}
+
 console.log('\nil Comando del generale');
 {
   const G = nuova();

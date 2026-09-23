@@ -384,6 +384,15 @@ if (partite > 1){
   const diverse = new Set(tutte.map(x => `${x.vincitore}|${x.vp.x}|${x.vp.y}`)).size;
   console.log(`\n  risultati diversi: ${diverse} su ${tutte.length}` +
               (diverse === 1 ? ' — i dadi non cambiano niente: è sempre la stessa partita' : ''));
+  /* le unita' rimaste fuori dal tavolo, contate per lista: 300 partite
+     con un'unita' sempre fuori sono 300 partite di un'altra lista */
+  const fuori = new Map();
+  for (const x of tutte) for (const f of x.fuori || []){
+    const k = `${nomeDi[f.lista]}: ${f.name} (${f.pts} pt)`;
+    fuori.set(k, (fuori.get(k) || 0) + 1);
+  }
+  for (const [k, n] of fuori)
+    avvisa(`${k} è rimasta fuori dal tavolo in ${n} partite su ${tutte.length}: non trovava posto nella zona.`);
   const schieramenti = new Set(tutte.map(x => x.schierati)).size;
   console.log(`  schieramenti diversi: ${schieramenti} su ${tutte.length}` +
               (schieramenti === 1 ? ' — si schiera sempre uguale, e le partite si separano solo ai dadi' : ''));
@@ -519,6 +528,10 @@ if (S.detto.size){
     if (l) console.log(`  · ${l.what} — ${l.why}${l.page ? ` (p. ${l.page})` : ''}`);
   }
 }
+/* chi e' rimasto fuori si nomina uno per uno: il limite dice la regola,
+   qui si dice quanti punti di lista la partita non ha giocato */
+for (const f of S.fuori || [])
+  avvisa(`${nomi[f.army]}: ${f.name} (${f.pts} pt) è rimasta fuori dal tavolo — ${f.why}.`);
 if (erroriModello.length){
   console.log('');
   avvisa(`il modello non ha scelto ${erroriModello.length} volte, e al suo posto ha giocato l'euristica: ` +
