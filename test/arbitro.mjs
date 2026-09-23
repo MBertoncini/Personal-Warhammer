@@ -653,6 +653,22 @@ console.log('\nla bombardata (pp. 224-226)');
        !G.log.some(x => x.text.includes(lp.name) && /a \d\+/.test(x.text)));
   }
 
+  /* «Multiple Wounds (D3+1)» vale per il modello sotto il buco e basta
+     (pp. 175, 224): un mostro da tre ferite, un colpo solo, e cade */
+  {
+    const G = inTiro(nuova());
+    const lp = macchina(G, metti(G, uid(G, 3), 600, 900), [{ ...lanciapietre()[0],
+      rules: 'Bombardment, Cumbersome, Move or Shoot, Multiple Wounds (D3+1)' }]);
+    const tg = metti(G, uid(G, 505), 600, 400);
+    Object.assign(tg, { models: 1, frontage: 1, lost: 0, wounds: 0, armour: 0, ward: 0, regen: 0,
+                        stats: { ...tg.stats, W: '3', T: '3' } });
+    facce(0, 0, 0, 5);                          // Colpito!, e poi tutti sei
+    AR.apply(G, { id: 'bombarda', uid: lp.uid, target: tg.uid });
+    ok('la ferita sotto il buco vale D3+1, e il registro lo dice',
+       G.log.some(x => /buco centrale vale 4/.test(x.text)));
+    ok('e un colpo solo abbatte un mostro da tre ferite', tg.dead === true || (tg.lost || 0) >= 1);
+  }
+
   /* la sagoma non guarda le bandiere: sotto ci finisce chi c'e' */
   {
     const G = nuova();

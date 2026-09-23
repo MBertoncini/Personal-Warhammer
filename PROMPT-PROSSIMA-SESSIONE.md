@@ -577,11 +577,7 @@ per sparare, che il commento prometteva da sempre — adesso l'opzione
   c'è già, mancano il tetto di un colpo per rango o per fila e le due
   cose che la fermano di colpo), la grappola, l'organo, il lanciafiamme.
   Limite `sagome`;
-- **«Multiple Wounds»** (p. 175), letta e non tirata: ogni ferita non
-  salvata ne vale X su **un** modello, e l'eccesso non passa al vicino —
-  per questo non si può sommare e dividere, si deve scorrere ferita per
-  ferita. Sul lanciapietre vale solo per il modello sotto il buco.
-  Limite `ferite`;
+- ~~**«Multiple Wounds»**~~ (p. 175) — fatta, vedi sotto;
 - **il tiro indiretto** (p. 225), che è una scelta da dichiarare prima
   di sparare: niente linea di vista, e la deviazione ridotta
   dell'Abilità Balistica dell'equipaggio. Limite `indiretto`;
@@ -648,6 +644,42 @@ Quello che resta aperto, in ordine di valore:
   da far guardare avanti, e l'esperimento c'e' gia' per misurarla.
 
 ---
+
+## Fatto: «Multiple Wounds» si tira (p. 175)
+
+Prove in `test/mischia.mjs` («le ferite multiple») e `test/arbitro.mjs`
+(la bombardata). Quello che è stato deciso:
+
+- **la regola è dell'arma** (`rulebook.js`, `flags.multipleWounds`, letta
+  con `amount`): in mischia la porta l'arma che si impugna o la riga
+  della cavalcatura (gli Slashing talons del Carnosauro), al tiro l'arma
+  da tiro (il Giant bow dell'howdah). Urto e pestoni non la usano;
+- **ogni ferita non salvata tira il suo dado** (`strike` e `shootRoll`
+  tornano `losses`) e **`takeWounds`** la fa cadere sul modello che ha
+  davanti: quello che avanza non passa al vicino. Torna le ferite
+  **perse** e quelle **fatte**: nel risultato del combattimento vanno le
+  perse (p. 212, «only the number of Wounds lost»), l'eccesso va in
+  `oltre` e conta solo per l'overkill di un personaggio;
+- **le previsioni** usano `multiMean`: la media del dado tagliata alle
+  ferite del modello. Su un bersaglio da una ferita non cambia niente;
+- **sulla Bombardata vale solo il buco** (pp. 224 e 228, lanciapietre e
+  mortaio): `strike(..., { multi })` passa la regola dell'arma da tiro,
+  perché quella della schiera è l'arma da mischia. Il limite `ferite` è
+  tolto da `LIMITI`;
+- **un difetto trovato strada facendo**: con sotto la sagoma solo modelli
+  coperti del tutto, nessuno in parte, non si tirava nessun dado e
+  `templateHits` tornava il conto senza dire *quali* basette — la
+  bombardata «colpiva nessuno». Adesso l'arbitro la chiama sempre con i
+  dadi, anche zero.
+
+**Da decidere**: senza la regola, le ferite su un'unità spazzata via si
+contano ancora **tutte** nel risultato (`land` in `meleeFight` somma
+`r.wounds`), anche quelle che non avevano più nessuno da ferire. P. 212
+dice che si contano le ferite perse: `takeWounds` il numero giusto lo
+dà già (`lost`), ma cambiarlo sposta i verdetti di molte prove, e va
+fatto da solo, con il libro aperto sul caso dell'unità distrutta
+(p. 152). Restano testo i tre incantesimi con «Multiple Wounds» dei
+domini (`dati/magia/domini.json`, voci «a mano»).
 
 ## Come si lavora qui
 

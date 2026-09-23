@@ -57,6 +57,7 @@ import { scatter as deviazione, rollDice, contesto as contestoDadi } from './dic
 import { SCENARIOS, geometry } from './scenarios.js';
 import { troopType, unitStrength } from './troops.js';
 import { troopOf } from './mounts.js';
+import { readRules, splitWeaponRules } from './rulebook.js';
 import { TERRAIN } from './terrain.js';
 import * as TR from './terrain.js';
 import * as SG from './sight.js';
@@ -90,8 +91,6 @@ export const LIMITI = [
     why:"il libro dice «draw a straight line, 8D6\" in length, from the model's base edge» e non dice né che serva la linea di vista né che il guasto ritiri la lunghezza (Legends: Skaven, p. 19): l'arbitro mira a un nemico che vede, e sul guasto tiene la linea già tirata e le cambia direzione" },
   { id:"indiretto", what:"la Bombardata si spara sempre a vista", page:225,
     why:"il tiro indiretto non chiede la linea di vista e devia di meno — l'Artiglieria meno l'Abilità Balistica dell'equipaggio — ed è una scelta che si dichiara prima di sparare: l'arbitro non la offre" },
-  { id:"ferite",    what:"«Multiple Wounds» non moltiplica le ferite", page:224,
-    why:"il lanciapietre ne fa D3+1 al modello sotto il buco centrale, e la palla di cannone D3: l'app legge la regola, la scrive fra quelle note, e non la tira" },
   { id:"ruota",     what:"la ruota si paga giusta, ma si fa una volta sola, all'inizio, e sul centro", page:124,
     why:"il libro la fa girare su uno spigolo del fronte e lascia alternare ruote e passi avanti: l'arbitro conta quanto cammina il modello esterno, gira il pezzo sul posto e poi va dritto. Il giro libero dei Lumbering (p. 195) si fa prima di muovere invece che dopo" },
   { id:"manovre",   what:"chi riordina le file o si riforma non usa il resto del movimento, e la riforma tiene il fronte che aveva", page:125,
@@ -3158,8 +3157,11 @@ function bombarda(S, u, t, arma, row){
     return;
   }
   limite(S, "indiretto");
-  if (/multiple wounds/i.test(Array.isArray(arma.rules) ? arma.rules.join() : String(arma.rules || "")))
-    limite(S, "ferite");
+  /* «The Multiple Wounds special rule applies only to a single model
+     whose base lies underneath the central hole» (pp. 224, 228): la
+     regola sta sull'arma, e vale per il buco e basta */
+  const regole = Array.isArray(arma.rules) ? arma.rules.join(", ") : String(arma.rules || "");
+  const multi = readRules([], splitWeaponRules(regole)).flags.multipleWounds;
 
   /* 1. il punto: il centro del bersaglio (p. 224) */
   const aim = [t.x, t.y];
@@ -3174,7 +3176,10 @@ function bombarda(S, u, t, arma, row){
   const sotto = SH.modelsUnder(celle, out.shape);
   const conto = SH.templateHits(sotto);
   const dadi = conto.asks ? roll(conto.asks) : null;
-  const colpi = dadi ? SH.templateHits(sotto, dadi) : conto;
+  /* sempre con i dadi, anche zero: senza, `templateHits` fa il conto e
+     non dice QUALI basette, e una sagoma con sotto solo modelli coperti
+     del tutto — nessuno in parte, nessun dado — non colpiva nessuno */
+  const colpi = SH.templateHits(sotto, dadi || []);
 
   const mucchi = new Map();
   for (const i of colpi.cells || []){
@@ -3202,16 +3207,22 @@ function bombarda(S, u, t, arma, row){
     if (g.u.dead) continue;
     const bers = CB.combatant(g.u);
     const normali = g.n - (g.buco ? 1 : 0);
-    const uno = normali ? CB.strike(chiSpara, bers, { attacks: normali, auto: true,
+    const uno = normali ? CB.strike(chiSpara, bers, { attacks: normali, auto: true, multi: null,
                             strength: forza.base, ap: Math.abs(pen.base), label: "sagoma" }) : null;
-    const forte = g.buco ? CB.strike(chiSpara, bers, { attacks: 1, auto: true,
+    const forte = g.buco ? CB.strike(chiSpara, bers, { attacks: 1, auto: true, multi,
                             strength: forza.hole, ap: Math.abs(pen.hole), label: "buco centrale" }) : null;
     const ferite = (uno ? uno.wounds : 0) + (forte ? forte.wounds : 0);
-    const toll = CB.woundsToll(g.u, ferite, { carried: g.u.wounds || 0 });
+    /* la ferita del buco vale quanto il suo dado, quelle della sagoma
+       una ciascuna: si mettono in fila e cadono modello per modello */
+    const losses = forte && forte.losses ? [...Array(uno ? uno.wounds : 0).fill(1), ...forte.losses] : null;
+    const toll = CB.woundsToll(g.u, ferite, { carried: g.u.wounds || 0, losses });
     inizioFase(S, g.u);
     if (g.buco && forza.has)
       say(S, `${g.u.name}: il modello sotto il buco centrale prende Forza ${forza.hole} con ${pen.hole} di penetrazione (p. 224).`,
           { army: g.u.army, page: 224 });
+    if (forte && forte.losses)
+      say(S, `${g.u.name}: la ferita sotto il buco centrale vale ${forte.losses.join(", ")} (Multiple Wounds, p. 175).`,
+          { army: g.u.army, page: 175 });
     say(S, `${u.name} su ${g.u.name}: ${g.n} ${g.n === 1 ? "colpo" : "colpi"} di sagoma, ` +
            `${ferite} ferit${ferite === 1 ? "a" : "e"}, ${toll.kills} a terra.`,
         { army: u.army, page: row.page });

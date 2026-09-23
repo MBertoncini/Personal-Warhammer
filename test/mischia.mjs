@@ -861,5 +861,63 @@ console.log('\ngli attacchi che si tirano (Random Attacks, p. 176)');
 }
 
 /* ================================================================= */
+console.log('\nle ferite multiple (Multiple Wounds, p. 175)');
+{
+  const D = await import('../src/dice.js');
+  const mw = readRules([], ['Multiple Wounds (D3+1)']).flags.multipleWounds;
+  ok('la regola si legge col dado fra parentesi', mw && mw.die === 3 && mw.plus === 1);
+  ok('e col numero secco', readRules([], ['Multiple Wounds (2)']).flags.multipleWounds.flat === 2);
+  ok('e in mischia non è più sconosciuta',
+     readRules([], ['Strike Last', 'Multiple Wounds (D3)']).unknown.length === 0);
+
+  /* ogni ferita cade su un modello: quello che avanza non passa al vicino */
+  const tre = () => ({ models: 3, w: 2, spill: 0 });
+  let s = tre(), t = C.takeWounds(s, 1, [6]);
+  ok('sei ferite su un modello da due ne tolgono uno, e basta', t.kills === 1 && s.models === 2 && s.spill === 0);
+  ok('le ferite perse sono due, quelle fatte sei', t.lost === 2 && t.caused === 6);
+  s = tre(); t = C.takeWounds(s, 2, [1, 1]);
+  ok('due ferite da uno fanno un modello, come sempre', t.kills === 1 && s.spill === 0 && t.lost === 2);
+  s = { models: 1, w: 3, spill: 0 }; t = C.takeWounds(s, 2, [2, 2]);
+  ok('due da due su un mostro da tre: la seconda lo finisce', t.kills === 1 && t.lost === 3 && t.caused === 4);
+  s = { models: 2, w: 3, spill: 1 }; t = C.takeWounds(s, 1, [3]);
+  ok('una ferita già addosso conta: tre su chi ne ha due lo abbattono', t.kills === 1 && s.spill === 0 && t.lost === 2);
+  s = tre(); t = C.takeWounds(s, 3);
+  ok('senza la regola il conto è quello di sempre', t.kills === 1 && s.spill === 1 && t.lost === 3);
+
+  const talons = [{ name:'Slashing talons', range:'Combat', S:'S', ap:'-', rules:'Multiple Wounds (2)' }];
+  const carno = () => C.combatant(unit('Carnosauro',
+    { M:'7',WS:'4',BS:'0',S:'7',T:'5',W:'5',I:'2',A:'2',Ld:'5' }, 1, 1, { weapons: talons }));
+  const bestia = () => C.combatant(unit('Stegadonte',
+    { M:'6',WS:'3',BS:'0',S:'5',T:'4',W:'3',I:'1',A:'0',Ld:'5' }, 1, 1));
+  D.setSource(() => 5);                                  // tutti sei
+  const r = C.strike(carno(), bestia(), { attacks: 2, melee: true });
+  ok('il colpo tira il moltiplicatore per ogni ferita non salvata',
+     r.wounds === 2 && Array.isArray(r.losses) && r.losses.join() === '2,2');
+  const f = C.meleeFight(carno(), bestia());
+  ok('due ferite non salvate abbattono un mostro da tre', f.kills.B[0] === 1);
+  ok('e nel risultato contano le ferite perse, tre e non quattro (p. 212)', f.done.A === 3);
+  const g = C.meleeForecast(carno(), bestia());
+  const piatto = C.meleeForecast(C.combatant(unit('Carnosauro',
+    { M:'7',WS:'4',BS:'0',S:'7',T:'5',W:'5',I:'2',A:'2',Ld:'5' }, 1, 1,
+    { weapons: [{ ...talons[0], rules: '-' }] })), bestia());
+  ok('la previsione conta le ferite perse, il doppio', near(g.wounds, 2 * piatto.wounds, 1e-9));
+  ok('e su un modello da una ferita non cambia niente',
+     near(C.meleeForecast(carno(), C.combatant(unit('Skink', st1(), 10, 5))).wounds,
+          C.meleeForecast(C.combatant(unit('Carnosauro',
+            { M:'7',WS:'4',BS:'0',S:'7',T:'5',W:'5',I:'2',A:'2',Ld:'5' }, 1, 1,
+            { weapons: [{ ...talons[0], rules: '-' }] })), C.combatant(unit('Skink', st1(), 10, 5))).wounds, 1e-9));
+  const tol = C.woundsToll(unit('Stegadonte', { W:'3', T:'4' }, 1, 1), 2, { losses: [2, 2] });
+  ok('anche il conto del tavolo le sa', tol.kills === 1 && tol.left === 0);
+
+  /* e a distanza: il Giant bow dello Skink Priest sull'howdah */
+  const arco = { name:'Giant bow', range:'36"', S:'5', ap:'-2', rules:'Multiple Wounds (D3), Poisoned Attacks' };
+  const prete = unit('Skink Priest', { WS:'2',BS:'3',S:'2',T:'2',W:'2',I:'4',A:'1',Ld:'7' }, 1, 1, { weapons: [arco] });
+  const tiro = C.shootRoll(prete, bestia(), { weapon: arco, shots: 1 });
+  ok('il tiro tira anche lui il moltiplicatore', tiro.wounds === 1 && tiro.losses.join() === '3' && tiro.kills === 1);
+  D.setSource(D.seeded(1));
+}
+function st1(){ return { M:'6',WS:'2',BS:'3',S:'3',T:'2',W:'1',I:'4',A:'1',Ld:'6' }; }
+
+/* ================================================================= */
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

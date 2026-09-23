@@ -1891,10 +1891,13 @@ per chi ne ha bisogno.
   linea che attraversa il tavolo — `SH.lineUnder` la sa già dare — più
   il tetto di un colpo per rango o per fila e le due cose che la
   fermano di colpo.
-- **«Multiple Wounds»**, che l'app legge e non tira: ogni ferita non
-  salvata ne vale X su un modello solo, e l'eccesso non passa al
-  vicino (p. 175) — per questo non si può sommare e dividere, si deve
-  scorrere ferita per ferita.
+- ~~**«Multiple Wounds»**~~ — fatta (p. 175): ogni ferita non salvata
+  tira il suo dado e cade su un modello solo, e l'eccesso non passa al
+  vicino. `takeWounds` in `combat.js` scorre ferita per ferita e torna
+  le ferite **perse** (quelle che il risultato conta, p. 212) e quelle
+  **fatte** (l'overkill di un personaggio); le previsioni usano la
+  media del dado tagliata alle ferite del modello (`multiMean`). Sulla
+  Bombardata vale solo per il buco (pp. 224, 228).
 - Il **profilo diviso** di una macchina da guerra (p. 97): Resistenza
   e Ferite dell'equipaggio in combattimento, quelle della macchina
   fuori, e il modello che se ne va se uno dei due arriva a zero.

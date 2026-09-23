@@ -34,7 +34,7 @@ const num = (s, dflt = 1) => {
    finendo nel ripiego «una ferita per modello di fronte» — che per un
    carro e' generoso e per un mostro solo e' assurdo, cioe' esattamente
    l'errore che il ripiego doveva evitare. */
-function amount(s){
+export function amount(s){
   const m = /\(\s*(?:(\d+)\s*)?d(\d+)\s*(?:([+-])\s*(\d+)\s*)?\)/i.exec(String(s));
   if (m) return {
     die: +m[2],
@@ -64,6 +64,15 @@ export const RULEBOOK = [
   { id:"killingBlow", re:/^killing blow/i,
     what:"il 6 naturale per ferire salta l'armatura",
     on: f => { f.killingBlow = true; } },
+
+  /* «Multiple Wounds» (p. 175) la leggeva solo la fase di tiro, per
+     scriverla fra le regole note; in mischia era sconosciuta. Non e'
+     una moltiplicazione da fare alla fine: ogni ferita non salvata si
+     tira per conto suo e cade su UN modello, e quello che avanza non
+     passa al vicino. Il conto lo fa `takeWounds` in `combat.js`. */
+  { id:"multipleWounds", re:/^multiple wounds/i,
+    what:"ogni ferita non salvata ne vale X su un modello solo, e l'eccesso non passa al vicino",
+    on: (f, name) => { f.multipleWounds = amount(name); } },
 
   { id:"obsidian", re:/^obsidian blades/i,
     what:"l'arma a una mano perfora di 1",
@@ -292,7 +301,7 @@ export const ELSEWHERE = [
    3 · LA LETTURA
    ============================================================ */
 export const emptyFlags = () => ({
-  furiousCharge:false, poisoned:false, armourBane:0, killingBlow:false,
+  furiousCharge:false, poisoned:false, armourBane:0, killingBlow:false, multipleWounds:null,
   handWeaponAP:0, impact:null, impactAP:0, stomp:null, extraRank:false, hatred:false,
   strikeFirst:false, strikeLast:false, stubborn:false, unbreakable:false,
   battleStandard:false, horde:false, shieldwall:false, impervious:false,

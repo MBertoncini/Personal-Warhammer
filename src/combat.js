@@ -650,7 +650,7 @@ export function fleeBonusOf(u){
 /* ============================================================
    2 · UN COLPO
    ============================================================ */
-export function strike(att, def, { attacks, auto = false, strength, ap, label = "", round = 1, melee = false } = {}){
+export function strike(att, def, { attacks, auto = false, strength, ap, label = "", round = 1, melee = false, multi } = {}){
   /* `forcedAttacks` e' il numero corretto a mano nel pannello: chi
      guarda il tavolo vede quanti si toccano meglio di qualsiasi conto */
   const n = Math.max(0, attacks ?? att.forcedAttacks ?? contact(att, def).troop);
@@ -735,18 +735,79 @@ export function strike(att, def, { attacks, auto = false, strength, ap, label = 
   const regenNeed = saveOn(def.regen, 0);
   const regen = pool(left, regenNeed);
 
+  /* «Multiple Wounds» (p. 175): un dado per ogni ferita non salvata.
+     Viene dall'arma che si impugna, e quindi non dall'urto ne' dai
+     pestoni, che un'arma non la usano; chi spara una sagoma la passa
+     con `multi`, perche' la regola sta sull'arma da tiro e non su
+     quella della schiera. */
+  const wounds = left - regen.hits;
+  const mw = multi !== undefined ? multi : (auto ? null : f.multipleWounds);
+  const losses = multiRoll(mw, wounds);
+  if (losses) notes.push("Multiple Wounds (" + amountText(mw) + "): " + losses.join(", "));
   return { label, attacks: n, strength: S, ap: AP, notes,
-           hit, wound, save, ward, regen, wounds: left - regen.hits };
+           hit, wound, save, ward, regen, wounds, losses };
 }
 
 /* le ferite diventano modelli tolti; quelle che non bastano a
    completare un modello restano appese fino alla fine dell'assalto */
-export function applyWounds(side, wounds){
-  side.spill += wounds;
-  const kills = Math.min(side.models, Math.floor(side.spill / side.w));
-  side.spill -= kills * side.w;
-  side.models -= kills;
-  return kills;
+export function applyWounds(side, wounds, losses = null){
+  return takeWounds(side, wounds, losses).kills;
+}
+
+/* Lo stesso conto, con le «Multiple Wounds» (p. 175) dentro. `losses`
+   sono le ferite che vale ciascuna ferita non salvata, gia' tirate una
+   per una: «roll separately for each unsaved wound». Ognuna cade sul
+   modello che ha davanti e si ferma li': sei ferite su un modello da
+   due ne tolgono uno, e le altre quattro «do not spill over».
+
+   Torna i modelli caduti, le ferite PERSE — che sono quello che il
+   risultato del combattimento conta (p. 212) — e quelle FATTE, che
+   contano solo per l'overkill di un personaggio. Senza `losses` il
+   conto e' quello di sempre, e le due cifre coincidono finche' c'e'
+   qualcuno da ferire. */
+export function takeWounds(side, wounds, losses = null){
+  const before = side.models * side.w - side.spill;
+  if (!losses){
+    side.spill += wounds;
+    const kills = Math.min(side.models, Math.floor(side.spill / side.w));
+    side.spill -= kills * side.w;
+    side.models -= kills;
+    return { kills, lost: Math.min(wounds, Math.max(0, before)), caused: wounds };
+  }
+  let kills = 0, caused = 0;
+  for (const v of losses){
+    caused += v;
+    if (side.models <= 0) continue;
+    const resta = side.w - side.spill;
+    if (v >= resta){ side.models--; side.spill = 0; kills++; }
+    else side.spill += v;
+  }
+  const after = Math.max(0, side.models) * side.w - side.spill;
+  return { kills, lost: before - after, caused };
+}
+
+/* Quanto vale in media una ferita non salvata con le «Multiple Wounds»
+   su un modello da `w` ferite: il dado fra parentesi, ma mai piu' di
+   quello che il modello ha. E' la media che serve alle previsioni; il
+   conto vero, ferita per ferita, lo fa `takeWounds`. */
+export function multiMean(a, w = 1){
+  if (!a) return 1;
+  if (a.flat) return Math.min(a.flat, w);
+  const n = Math.max(1, a.times || 1);
+  let tot = 0, casi = 0;
+  const giro = (k, s) => {
+    if (k === n){ tot += Math.min(Math.max(0, s + (a.plus || 0)), w); casi++; return; }
+    for (let d = 1; d <= 6; d++) giro(k + 1, s + 1 + Math.floor((d - 1) * a.die / 6));
+  };
+  giro(0, 0);
+  return tot / casi;
+}
+const amountText = a => a.flat ? String(a.flat)
+  : (a.times > 1 ? a.times : "") + "D" + a.die + (a.plus ? (a.plus > 0 ? "+" : "") + a.plus : "");
+/* e le ferite che vale ciascuna delle `n` non salvate, tirate */
+function multiRoll(a, n, dadi = null){
+  if (!a || n <= 0) return null;
+  return Array.from({ length: n }, () => autoHits(a, 1, dadi));
 }
 
 /* Quanti colpi porta una schiera su ciascuno di quelli che ha davanti,
@@ -827,10 +888,10 @@ function aimAt(c, foes, side){
 
    `carried` serve a dire «queste le ho gia' contate io»: senza, si
    parte da quelle che l'unita' ha addosso. */
-export function woundsToll(u, wounds, { carried = null } = {}){
+export function woundsToll(u, wounds, { carried = null, losses = null } = {}){
   const c = combatant(u);
   const side = { ...c, spill: carried == null ? c.spill : Math.max(0, carried) };
-  const kills = applyWounds(side, wounds);
+  const kills = applyWounds(side, wounds, losses);
   return { kills, left: side.spill, perModel: c.w, models: side.models };
 }
 
@@ -1065,14 +1126,24 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
   const land = (x, facce = null) => {
     if (!x) return;
     if (facce && facce.length) x.r.autoDice = facce;
-    const kills = applyWounds(x.def, x.r.wounds);
+    const t = takeWounds(x.def, x.r.wounds, x.r.losses);
+    const kills = t.kills;
     const me = x.e.host ? x.e.host.c : x.e.c;
     /* l'overkill e' «un'eccezione alla norma: di solito nel risultato
        si contano solo le ferite perse» (p. 212). Quelle date a un
        rivale gia' a terra stanno in un mucchio a parte: contano per
        l'overkill e non per il conto del combattimento. */
-    if (x.caduto) me.oltre = (me.oltre || 0) + x.r.wounds;
-    else { me.dealt += x.r.wounds; done[x.e.tag] += x.r.wounds; }
+    /* Con le «Multiple Wounds» nel risultato vanno le ferite PERSE, e
+       quello che avanza su un modello «counts for Overkill» se e' un
+       personaggio (p. 175): sta nello stesso mucchio a parte. Senza la
+       regola si somma quello che si e' sempre sommato. */
+    const fatte = x.r.losses ? t.caused : x.r.wounds;
+    const perse = x.r.losses ? t.lost : x.r.wounds;
+    if (x.caduto) me.oltre = (me.oltre || 0) + fatte;
+    else {
+      me.dealt += perse; done[x.e.tag] += perse;
+      if (fatte > perse) me.oltre = (me.oltre || 0) + fatte - perse;
+    }
     steps.push({ side: x.e.tag, name: x.e.c.name, at: x.e.at, foe: x.def.name,
                  character: !!x.e.c.attached, mount: !!x.e.host,
                  ...x.r, kills, together: !!x.together });
@@ -1175,7 +1246,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
       if (e.host) continue;
       const from = e.tag === "A" ? initB : initA;
       const left = e.foes.reduce((s, j) => s + ferite(from, j), 0);
-      e.c.overkill = ML.overkill(e.c.dealt, left).counted;
+      e.c.overkill = ML.overkill((e.c.dealt || 0) + (e.c.oltre || 0), left).counted;
     }
   }
 
@@ -1386,7 +1457,10 @@ function oneForecast(att, def, n0){
     : f.armourBane ? (5 / 6) * chance(sv) + (1 / 6) * chance(saveOn(armour, ap + f.armourBane))
     : chance(sv);
   const wd = saveOn(def.ward, 0), rg = saveOn(def.regen, 0);
-  const wounds = n * hChance * wChance * (1 - svChance) * (1 - chance(wd)) * (1 - chance(rg));
+  /* le «Multiple Wounds» contano per quello che il modello ha da
+     perdere: la media del dado, tagliata alle sue ferite */
+  const wounds = n * hChance * wChance * (1 - svChance) * (1 - chance(wd)) * (1 - chance(rg)) *
+                 multiMean(f.multipleWounds, def.w);
   return { attacks: n, hitNeed: h, woundNeed: w, saveNeed: sv, wardNeed: wd, regenNeed: rg,
            hatred: !!f.hatred, boost, wounds, kills: wounds / def.w };
 }
@@ -1429,9 +1503,10 @@ export function shootForecast(shooter, target, { weapon, mods = 0, shots } = {})
     ? (5 / 6) * chance(wNeed) + (1 / 6) * chance(Math.max(2, wNeed - 2))
     : chance(wNeed);
   const hChance = SH.hitChance(need, aim.again, aim.then);
-  const wounds = n * hChance * wChance * (1 - chance(sNeed)) * (1 - chance(kNeed)) * (1 - chance(rNeed));
+  const wounds = n * hChance * wChance * (1 - chance(sNeed)) * (1 - chance(kNeed)) * (1 - chance(rNeed)) *
+                 multiMean(f.multipleWounds, t.w);
   return { shots: n, hitNeed: need, hitAgain: aim.again, hitThen: aim.then || 0, hitRaw: aim.raw || need,
-           bs, strength: S, ap: AP, poisoned: f.poisoned,
+           bs, strength: S, ap: AP, poisoned: f.poisoned, multi: f.multipleWounds,
            woundNeed: wNeed, saveNeed: sNeed, wardNeed: kNeed, regenNeed: rNeed,
            wounds, kills: wounds / t.w, targetW: t.w,
            /* le ferite che il bersaglio si porta gia' addosso: tre
@@ -1479,9 +1554,12 @@ export function shootRoll(shooter, target, opts){
   const wounds = left - regen.hits;
   /* Dalle ferite ai modelli a terra, tenendo il resto. Prima era un
      `Math.floor` e basta: il resto spariva, e con un bersaglio da piu'
-     ferite sparivano intere raffiche. */
-  const tot = (f.carried || 0) + wounds;
-  const kills = Math.max(0, Math.min(f.targetModels || 0, Math.floor(tot / f.targetW)));
-  return { ...f, notes, hit, follow, wound, save, ward, regen, wounds,
-           kills, left: tot - kills * f.targetW };
+     ferite sparivano intere raffiche. Con le «Multiple Wounds» (p. 175)
+     ogni ferita si tira e cade su un modello solo. */
+  const losses = multiRoll(f.multi, wounds);
+  if (losses) notes.push("Multiple Wounds (" + amountText(f.multi) + "): " + losses.join(", "));
+  const side = { models: f.targetModels || 0, w: f.targetW, spill: f.carried || 0 };
+  const kills = takeWounds(side, wounds, losses).kills;
+  return { ...f, notes, hit, follow, wound, save, ward, regen, wounds, losses,
+           kills, left: side.spill };
 }
