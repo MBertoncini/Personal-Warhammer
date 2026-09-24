@@ -1,0 +1,1329 @@
+{
+ "formato": "tow-torneo/1",
+ "quando": "2026-09-24T10:47:04.296Z",
+ "punti": 800,
+ "semi": 5,
+ "seme": 7001,
+ "partite": 1950,
+ "secondi": 614,
+ "scenari": [
+  {
+   "id": "bm-guado",
+   "label": "Il Guado di Sangue",
+   "group": "Battle March",
+   "pts": 600
+  },
+  {
+   "id": "bm-monolite",
+   "label": "Il Monolite nella Palude",
+   "group": "Battle March",
+   "pts": 650
+  },
+  {
+   "id": "bm-strada",
+   "label": "La Strada delle Pietre",
+   "group": "Battle March",
+   "pts": 750
+  },
+  {
+   "id": "bm-rovine",
+   "label": "Le Rovine di Xhotl",
+   "group": "Battle March",
+   "pts": 750
+  },
+  {
+   "id": "open",
+   "label": "Battaglia Campale",
+   "group": "Generici",
+   "pts": null
+  },
+  {
+   "id": "meeting",
+   "label": "Scontro di Incontro",
+   "group": "Generici",
+   "pts": null
+  },
+  {
+   "id": "flank",
+   "label": "Attacco sul Fianco",
+   "group": "Generici",
+   "pts": null
+  },
+  {
+   "id": "pass",
+   "label": "Passo di Montagna",
+   "group": "Generici",
+   "pts": null
+  },
+  {
+   "id": "cross",
+   "label": "Fronti Incrociati",
+   "group": "Generici",
+   "pts": null
+  },
+  {
+   "id": "sxmttrgusdc7c",
+   "label": "Poligono di tiro",
+   "group": "Miei",
+   "pts": null
+  },
+  {
+   "id": "sxmu9q80qdc65",
+   "label": "Poligono di tiro (mio)",
+   "group": "Miei",
+   "pts": null
+  },
+  {
+   "id": "sxprova-profondo",
+   "label": "Poligono profondo",
+   "group": "Miei",
+   "pts": null
+  },
+  {
+   "id": "sxprova-boschi",
+   "label": "Boschi e rovine",
+   "group": "Miei",
+   "pts": null
+  }
+ ],
+ "liste": [
+  {
+   "id": "r-liz-collezione-800-1",
+   "name": "LIZ collezione",
+   "fazione": "liz",
+   "pool": "collezione",
+   "fonte": "ricerca",
+   "file": "liz-collezione-800.json",
+   "points": 797,
+   "descrizione": "Saurus Oldblood (alabarda) — 143 pt; 25 Temple Guard (stendardo, musico, fronte 7) — 414 pt; 16 Skink Skirmishers — 80 pt; Bastiladon — 160 pt",
+   "units": 4
+  },
+  {
+   "id": "r-liz-tutte-800-1",
+   "name": "LIZ libera",
+   "fazione": "liz",
+   "pool": "tutte",
+   "fonte": "ricerca",
+   "file": "liz-tutte-800.json",
+   "points": 795,
+   "descrizione": "Saurus Oldblood sul Carnosauro — 310 pt; 29 Temple Guard (campione, stendardo, musico, fronte 6) — 485 pt",
+   "units": 2
+  },
+  {
+   "id": "r-og-collezione-800-1",
+   "name": "O&G collezione",
+   "fazione": "og",
+   "pool": "collezione",
+   "fonte": "ricerca",
+   "file": "og-collezione-800.json",
+   "points": 797,
+   "descrizione": "Black Orc Warboss (arma grande) — 139 pt; Orc Weirdnob (Livello 4, elementalism) — 170 pt; 22 Orc Mobs (campione, stendardo, musico, Big 'Uns, fronte 7) — 171 pt; 11 Black Orc Mobs (campione, stendardo, musico, arma grande, fronte 5) — 172 pt; 22 Night Goblin Mobs (campione, stendardo, musico, lance, fronte 10) — 105 pt; 10 Goblin Mobs (stendardo, musico, fronte 6) — 40 pt",
+   "units": 6
+  },
+  {
+   "id": "r-og-tutte-800-1",
+   "name": "O&G libera",
+   "fazione": "og",
+   "pool": "tutte",
+   "fonte": "ricerca",
+   "file": "og-tutte-800.json",
+   "points": 796,
+   "descrizione": "Black Orc Bigboss — 91 pt; Goblin Oddnob (Livello 3, elementalism) — 135 pt; 38 Orc Mobs (lance, Big 'Uns) — 304 pt; 19 Black Orc Mobs (arma grande, fronte 7) — 266 pt",
+   "units": 4
+  },
+  {
+   "id": "r-skaven-collezione-800-1",
+   "name": "SKA collezione",
+   "fazione": "skaven",
+   "pool": "collezione",
+   "fonte": "ricerca",
+   "file": "skaven-collezione-800.json",
+   "points": 797,
+   "descrizione": "Grey Seer (Livello 4, daemonology) — 215 pt; Warlock Engineer (Livello 2, battle, moschetto) — 114 pt; 29 Clanrats (scudi, lance, campione, stendardo, musico, fronte 10) — 191 pt; 22 Clanrats (lance) — 110 pt; 3 Warplock Jezzails — 57 pt; Warp Lightning Cannon — 110 pt",
+   "units": 6
+  },
+  {
+   "id": "r-skaven-tutte-800-1",
+   "name": "SKA libera",
+   "fazione": "skaven",
+   "pool": "tutte",
+   "fonte": "ricerca",
+   "file": "skaven-tutte-800.json",
+   "points": 800,
+   "descrizione": "Grey Seer (Livello 4, daemonology) — 215 pt; 31 Clanrats (scudi, lance, stendardo, musico) — 196 pt; 40 Clanrats (scudi, lance, stendardo, musico, fronte 7) — 250 pt; 3 Warplock Jezzails — 57 pt; 10 Plague Monks (stendardo, musico) — 82 pt",
+   "units": 5
+  }
+ ],
+ "celle": {
+  "bm-rovine|r-liz-collezione-800-1|r-liz-tutte-800-1": {
+   "w": 5,
+   "l": 4,
+   "d": 1,
+   "n": 10
+  },
+  "bm-strada|r-liz-collezione-800-1|r-liz-tutte-800-1": {
+   "w": 5,
+   "l": 5,
+   "d": 0,
+   "n": 10
+  },
+  "flank|r-liz-collezione-800-1|r-liz-tutte-800-1": {
+   "w": 1,
+   "l": 9,
+   "d": 0,
+   "n": 10
+  },
+  "bm-guado|r-liz-collezione-800-1|r-liz-tutte-800-1": {
+   "w": 2,
+   "l": 8,
+   "d": 0,
+   "n": 10
+  },
+  "meeting|r-liz-collezione-800-1|r-liz-tutte-800-1": {
+   "w": 1,
+   "l": 9,
+   "d": 0,
+   "n": 10
+  },
+  "open|r-liz-collezione-800-1|r-liz-tutte-800-1": {
+   "w": 1,
+   "l": 9,
+   "d": 0,
+   "n": 10
+  },
+  "bm-monolite|r-liz-collezione-800-1|r-liz-tutte-800-1": {
+   "w": 7,
+   "l": 3,
+   "d": 0,
+   "n": 10
+  },
+  "pass|r-liz-collezione-800-1|r-liz-tutte-800-1": {
+   "w": 6,
+   "l": 2,
+   "d": 2,
+   "n": 10
+  },
+  "sxmttrgusdc7c|r-liz-collezione-800-1|r-liz-tutte-800-1": {
+   "w": 4,
+   "l": 6,
+   "d": 0,
+   "n": 10
+  },
+  "cross|r-liz-collezione-800-1|r-liz-tutte-800-1": {
+   "w": 3,
+   "l": 2,
+   "d": 5,
+   "n": 10
+  },
+  "sxprova-profondo|r-liz-collezione-800-1|r-liz-tutte-800-1": {
+   "w": 4,
+   "l": 5,
+   "d": 1,
+   "n": 10
+  },
+  "sxmu9q80qdc65|r-liz-collezione-800-1|r-liz-tutte-800-1": {
+   "w": 4,
+   "l": 6,
+   "d": 0,
+   "n": 10
+  },
+  "sxprova-boschi|r-liz-collezione-800-1|r-liz-tutte-800-1": {
+   "w": 2,
+   "l": 8,
+   "d": 0,
+   "n": 10
+  },
+  "bm-guado|r-liz-collezione-800-1|r-og-collezione-800-1": {
+   "w": 5,
+   "l": 5,
+   "d": 0,
+   "n": 10
+  },
+  "bm-strada|r-liz-collezione-800-1|r-og-collezione-800-1": {
+   "w": 6,
+   "l": 4,
+   "d": 0,
+   "n": 10
+  },
+  "bm-rovine|r-liz-collezione-800-1|r-og-collezione-800-1": {
+   "w": 6,
+   "l": 4,
+   "d": 0,
+   "n": 10
+  },
+  "open|r-liz-collezione-800-1|r-og-collezione-800-1": {
+   "w": 3,
+   "l": 3,
+   "d": 4,
+   "n": 10
+  },
+  "meeting|r-liz-collezione-800-1|r-og-collezione-800-1": {
+   "w": 3,
+   "l": 3,
+   "d": 4,
+   "n": 10
+  },
+  "bm-monolite|r-liz-collezione-800-1|r-og-collezione-800-1": {
+   "w": 6,
+   "l": 4,
+   "d": 0,
+   "n": 10
+  },
+  "flank|r-liz-collezione-800-1|r-og-collezione-800-1": {
+   "w": 3,
+   "l": 3,
+   "d": 4,
+   "n": 10
+  },
+  "bm-guado|r-liz-collezione-800-1|r-og-tutte-800-1": {
+   "w": 5,
+   "l": 5,
+   "d": 0,
+   "n": 10
+  },
+  "sxmttrgusdc7c|r-liz-collezione-800-1|r-og-collezione-800-1": {
+   "w": 7,
+   "l": 1,
+   "d": 2,
+   "n": 10
+  },
+  "sxprova-profondo|r-liz-collezione-800-1|r-og-collezione-800-1": {
+   "w": 5,
+   "l": 0,
+   "d": 5,
+   "n": 10
+  },
+  "pass|r-liz-collezione-800-1|r-og-collezione-800-1": {
+   "w": 3,
+   "l": 1,
+   "d": 6,
+   "n": 10
+  },
+  "sxprova-boschi|r-liz-collezione-800-1|r-og-collezione-800-1": {
+   "w": 5,
+   "l": 2,
+   "d": 3,
+   "n": 10
+  },
+  "sxmu9q80qdc65|r-liz-collezione-800-1|r-og-collezione-800-1": {
+   "w": 7,
+   "l": 1,
+   "d": 2,
+   "n": 10
+  },
+  "cross|r-liz-collezione-800-1|r-og-collezione-800-1": {
+   "w": 6,
+   "l": 1,
+   "d": 3,
+   "n": 10
+  },
+  "bm-monolite|r-liz-collezione-800-1|r-og-tutte-800-1": {
+   "w": 7,
+   "l": 3,
+   "d": 0,
+   "n": 10
+  },
+  "bm-strada|r-liz-collezione-800-1|r-og-tutte-800-1": {
+   "w": 2,
+   "l": 8,
+   "d": 0,
+   "n": 10
+  },
+  "bm-rovine|r-liz-collezione-800-1|r-og-tutte-800-1": {
+   "w": 8,
+   "l": 1,
+   "d": 1,
+   "n": 10
+  },
+  "open|r-liz-collezione-800-1|r-og-tutte-800-1": {
+   "w": 7,
+   "l": 2,
+   "d": 1,
+   "n": 10
+  },
+  "meeting|r-liz-collezione-800-1|r-og-tutte-800-1": {
+   "w": 7,
+   "l": 2,
+   "d": 1,
+   "n": 10
+  },
+  "flank|r-liz-collezione-800-1|r-og-tutte-800-1": {
+   "w": 7,
+   "l": 2,
+   "d": 1,
+   "n": 10
+  },
+  "pass|r-liz-collezione-800-1|r-og-tutte-800-1": {
+   "w": 4,
+   "l": 1,
+   "d": 5,
+   "n": 10
+  },
+  "sxmttrgusdc7c|r-liz-collezione-800-1|r-og-tutte-800-1": {
+   "w": 3,
+   "l": 6,
+   "d": 1,
+   "n": 10
+  },
+  "cross|r-liz-collezione-800-1|r-og-tutte-800-1": {
+   "w": 4,
+   "l": 4,
+   "d": 2,
+   "n": 10
+  },
+  "sxmu9q80qdc65|r-liz-collezione-800-1|r-og-tutte-800-1": {
+   "w": 3,
+   "l": 6,
+   "d": 1,
+   "n": 10
+  },
+  "sxprova-profondo|r-liz-collezione-800-1|r-og-tutte-800-1": {
+   "w": 4,
+   "l": 5,
+   "d": 1,
+   "n": 10
+  },
+  "sxprova-boschi|r-liz-collezione-800-1|r-og-tutte-800-1": {
+   "w": 2,
+   "l": 3,
+   "d": 5,
+   "n": 10
+  },
+  "bm-guado|r-liz-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 7,
+   "l": 3,
+   "d": 0,
+   "n": 10
+  },
+  "bm-strada|r-liz-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 6,
+   "l": 4,
+   "d": 0,
+   "n": 10
+  },
+  "bm-rovine|r-liz-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 6,
+   "l": 4,
+   "d": 0,
+   "n": 10
+  },
+  "open|r-liz-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 4,
+   "l": 1,
+   "d": 5,
+   "n": 10
+  },
+  "meeting|r-liz-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 4,
+   "l": 1,
+   "d": 5,
+   "n": 10
+  },
+  "bm-monolite|r-liz-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 8,
+   "l": 2,
+   "d": 0,
+   "n": 10
+  },
+  "flank|r-liz-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 4,
+   "l": 1,
+   "d": 5,
+   "n": 10
+  },
+  "pass|r-liz-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 5,
+   "l": 1,
+   "d": 4,
+   "n": 10
+  },
+  "bm-guado|r-liz-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 6,
+   "l": 4,
+   "d": 0,
+   "n": 10
+  },
+  "sxmttrgusdc7c|r-liz-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 2,
+   "l": 4,
+   "d": 4,
+   "n": 10
+  },
+  "sxprova-profondo|r-liz-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 4,
+   "l": 5,
+   "d": 1,
+   "n": 10
+  },
+  "sxprova-boschi|r-liz-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 5,
+   "l": 2,
+   "d": 3,
+   "n": 10
+  },
+  "sxmu9q80qdc65|r-liz-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 2,
+   "l": 4,
+   "d": 4,
+   "n": 10
+  },
+  "cross|r-liz-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 5,
+   "l": 2,
+   "d": 3,
+   "n": 10
+  },
+  "bm-strada|r-liz-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 8,
+   "l": 2,
+   "d": 0,
+   "n": 10
+  },
+  "bm-rovine|r-liz-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 7,
+   "l": 3,
+   "d": 0,
+   "n": 10
+  },
+  "bm-monolite|r-liz-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 5,
+   "l": 5,
+   "d": 0,
+   "n": 10
+  },
+  "open|r-liz-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 3,
+   "l": 2,
+   "d": 5,
+   "n": 10
+  },
+  "meeting|r-liz-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 3,
+   "l": 2,
+   "d": 5,
+   "n": 10
+  },
+  "flank|r-liz-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 3,
+   "l": 2,
+   "d": 5,
+   "n": 10
+  },
+  "pass|r-liz-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 2,
+   "l": 2,
+   "d": 6,
+   "n": 10
+  },
+  "bm-guado|r-liz-tutte-800-1|r-og-collezione-800-1": {
+   "w": 10,
+   "l": 0,
+   "d": 0,
+   "n": 10
+  },
+  "sxmttrgusdc7c|r-liz-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 8,
+   "l": 1,
+   "d": 1,
+   "n": 10
+  },
+  "sxmu9q80qdc65|r-liz-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 8,
+   "l": 1,
+   "d": 1,
+   "n": 10
+  },
+  "bm-monolite|r-liz-tutte-800-1|r-og-collezione-800-1": {
+   "w": 5,
+   "l": 5,
+   "d": 0,
+   "n": 10
+  },
+  "sxprova-profondo|r-liz-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 7,
+   "l": 1,
+   "d": 2,
+   "n": 10
+  },
+  "sxprova-boschi|r-liz-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 7,
+   "l": 2,
+   "d": 1,
+   "n": 10
+  },
+  "cross|r-liz-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 4,
+   "l": 3,
+   "d": 3,
+   "n": 10
+  },
+  "bm-strada|r-liz-tutte-800-1|r-og-collezione-800-1": {
+   "w": 9,
+   "l": 1,
+   "d": 0,
+   "n": 10
+  },
+  "bm-rovine|r-liz-tutte-800-1|r-og-collezione-800-1": {
+   "w": 9,
+   "l": 1,
+   "d": 0,
+   "n": 10
+  },
+  "open|r-liz-tutte-800-1|r-og-collezione-800-1": {
+   "w": 10,
+   "l": 0,
+   "d": 0,
+   "n": 10
+  },
+  "meeting|r-liz-tutte-800-1|r-og-collezione-800-1": {
+   "w": 10,
+   "l": 0,
+   "d": 0,
+   "n": 10
+  },
+  "flank|r-liz-tutte-800-1|r-og-collezione-800-1": {
+   "w": 10,
+   "l": 0,
+   "d": 0,
+   "n": 10
+  },
+  "pass|r-liz-tutte-800-1|r-og-collezione-800-1": {
+   "w": 5,
+   "l": 1,
+   "d": 4,
+   "n": 10
+  },
+  "cross|r-liz-tutte-800-1|r-og-collezione-800-1": {
+   "w": 10,
+   "l": 0,
+   "d": 0,
+   "n": 10
+  },
+  "bm-guado|r-liz-tutte-800-1|r-og-tutte-800-1": {
+   "w": 9,
+   "l": 1,
+   "d": 0,
+   "n": 10
+  },
+  "sxmttrgusdc7c|r-liz-tutte-800-1|r-og-collezione-800-1": {
+   "w": 6,
+   "l": 0,
+   "d": 4,
+   "n": 10
+  },
+  "sxmu9q80qdc65|r-liz-tutte-800-1|r-og-collezione-800-1": {
+   "w": 6,
+   "l": 0,
+   "d": 4,
+   "n": 10
+  },
+  "sxprova-profondo|r-liz-tutte-800-1|r-og-collezione-800-1": {
+   "w": 10,
+   "l": 0,
+   "d": 0,
+   "n": 10
+  },
+  "sxprova-boschi|r-liz-tutte-800-1|r-og-collezione-800-1": {
+   "w": 9,
+   "l": 1,
+   "d": 0,
+   "n": 10
+  },
+  "bm-strada|r-liz-tutte-800-1|r-og-tutte-800-1": {
+   "w": 10,
+   "l": 0,
+   "d": 0,
+   "n": 10
+  },
+  "bm-monolite|r-liz-tutte-800-1|r-og-tutte-800-1": {
+   "w": 7,
+   "l": 2,
+   "d": 1,
+   "n": 10
+  },
+  "bm-rovine|r-liz-tutte-800-1|r-og-tutte-800-1": {
+   "w": 6,
+   "l": 4,
+   "d": 0,
+   "n": 10
+  },
+  "open|r-liz-tutte-800-1|r-og-tutte-800-1": {
+   "w": 7,
+   "l": 0,
+   "d": 3,
+   "n": 10
+  },
+  "meeting|r-liz-tutte-800-1|r-og-tutte-800-1": {
+   "w": 7,
+   "l": 0,
+   "d": 3,
+   "n": 10
+  },
+  "flank|r-liz-tutte-800-1|r-og-tutte-800-1": {
+   "w": 7,
+   "l": 0,
+   "d": 3,
+   "n": 10
+  },
+  "cross|r-liz-tutte-800-1|r-og-tutte-800-1": {
+   "w": 8,
+   "l": 1,
+   "d": 1,
+   "n": 10
+  },
+  "pass|r-liz-tutte-800-1|r-og-tutte-800-1": {
+   "w": 6,
+   "l": 1,
+   "d": 3,
+   "n": 10
+  },
+  "sxmttrgusdc7c|r-liz-tutte-800-1|r-og-tutte-800-1": {
+   "w": 8,
+   "l": 2,
+   "d": 0,
+   "n": 10
+  },
+  "sxmu9q80qdc65|r-liz-tutte-800-1|r-og-tutte-800-1": {
+   "w": 8,
+   "l": 2,
+   "d": 0,
+   "n": 10
+  },
+  "sxprova-profondo|r-liz-tutte-800-1|r-og-tutte-800-1": {
+   "w": 10,
+   "l": 0,
+   "d": 0,
+   "n": 10
+  },
+  "sxprova-boschi|r-liz-tutte-800-1|r-og-tutte-800-1": {
+   "w": 9,
+   "l": 0,
+   "d": 1,
+   "n": 10
+  },
+  "bm-guado|r-liz-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 10,
+   "l": 0,
+   "d": 0,
+   "n": 10
+  },
+  "bm-strada|r-liz-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 10,
+   "l": 0,
+   "d": 0,
+   "n": 10
+  },
+  "bm-rovine|r-liz-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 6,
+   "l": 4,
+   "d": 0,
+   "n": 10
+  },
+  "bm-monolite|r-liz-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 8,
+   "l": 2,
+   "d": 0,
+   "n": 10
+  },
+  "open|r-liz-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 8,
+   "l": 1,
+   "d": 1,
+   "n": 10
+  },
+  "meeting|r-liz-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 8,
+   "l": 1,
+   "d": 1,
+   "n": 10
+  },
+  "flank|r-liz-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 8,
+   "l": 1,
+   "d": 1,
+   "n": 10
+  },
+  "sxmttrgusdc7c|r-liz-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 8,
+   "l": 1,
+   "d": 1,
+   "n": 10
+  },
+  "sxmu9q80qdc65|r-liz-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 8,
+   "l": 1,
+   "d": 1,
+   "n": 10
+  },
+  "sxprova-profondo|r-liz-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 7,
+   "l": 2,
+   "d": 1,
+   "n": 10
+  },
+  "pass|r-liz-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 5,
+   "l": 2,
+   "d": 3,
+   "n": 10
+  },
+  "bm-guado|r-liz-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 8,
+   "l": 2,
+   "d": 0,
+   "n": 10
+  },
+  "cross|r-liz-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 7,
+   "l": 3,
+   "d": 0,
+   "n": 10
+  },
+  "sxprova-boschi|r-liz-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 9,
+   "l": 0,
+   "d": 1,
+   "n": 10
+  },
+  "bm-rovine|r-liz-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 9,
+   "l": 1,
+   "d": 0,
+   "n": 10
+  },
+  "bm-strada|r-liz-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 7,
+   "l": 3,
+   "d": 0,
+   "n": 10
+  },
+  "bm-monolite|r-liz-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 5,
+   "l": 5,
+   "d": 0,
+   "n": 10
+  },
+  "flank|r-liz-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 5,
+   "l": 2,
+   "d": 3,
+   "n": 10
+  },
+  "meeting|r-liz-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 5,
+   "l": 2,
+   "d": 3,
+   "n": 10
+  },
+  "open|r-liz-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 5,
+   "l": 2,
+   "d": 3,
+   "n": 10
+  },
+  "pass|r-liz-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 4,
+   "l": 2,
+   "d": 4,
+   "n": 10
+  },
+  "sxmttrgusdc7c|r-liz-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 9,
+   "l": 1,
+   "d": 0,
+   "n": 10
+  },
+  "sxmu9q80qdc65|r-liz-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 9,
+   "l": 1,
+   "d": 0,
+   "n": 10
+  },
+  "sxprova-profondo|r-liz-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 8,
+   "l": 0,
+   "d": 2,
+   "n": 10
+  },
+  "sxprova-boschi|r-liz-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 6,
+   "l": 2,
+   "d": 2,
+   "n": 10
+  },
+  "cross|r-liz-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 4,
+   "l": 2,
+   "d": 4,
+   "n": 10
+  },
+  "bm-guado|r-og-collezione-800-1|r-og-tutte-800-1": {
+   "w": 2,
+   "l": 8,
+   "d": 0,
+   "n": 10
+  },
+  "bm-rovine|r-og-collezione-800-1|r-og-tutte-800-1": {
+   "w": 4,
+   "l": 6,
+   "d": 0,
+   "n": 10
+  },
+  "bm-monolite|r-og-collezione-800-1|r-og-tutte-800-1": {
+   "w": 6,
+   "l": 4,
+   "d": 0,
+   "n": 10
+  },
+  "bm-strada|r-og-collezione-800-1|r-og-tutte-800-1": {
+   "w": 8,
+   "l": 2,
+   "d": 0,
+   "n": 10
+  },
+  "open|r-og-collezione-800-1|r-og-tutte-800-1": {
+   "w": 1,
+   "l": 6,
+   "d": 3,
+   "n": 10
+  },
+  "meeting|r-og-collezione-800-1|r-og-tutte-800-1": {
+   "w": 1,
+   "l": 6,
+   "d": 3,
+   "n": 10
+  },
+  "flank|r-og-collezione-800-1|r-og-tutte-800-1": {
+   "w": 1,
+   "l": 6,
+   "d": 3,
+   "n": 10
+  },
+  "pass|r-og-collezione-800-1|r-og-tutte-800-1": {
+   "w": 1,
+   "l": 3,
+   "d": 6,
+   "n": 10
+  },
+  "sxmttrgusdc7c|r-og-collezione-800-1|r-og-tutte-800-1": {
+   "w": 5,
+   "l": 4,
+   "d": 1,
+   "n": 10
+  },
+  "sxmu9q80qdc65|r-og-collezione-800-1|r-og-tutte-800-1": {
+   "w": 5,
+   "l": 4,
+   "d": 1,
+   "n": 10
+  },
+  "sxprova-profondo|r-og-collezione-800-1|r-og-tutte-800-1": {
+   "w": 5,
+   "l": 3,
+   "d": 2,
+   "n": 10
+  },
+  "cross|r-og-collezione-800-1|r-og-tutte-800-1": {
+   "w": 3,
+   "l": 5,
+   "d": 2,
+   "n": 10
+  },
+  "sxprova-boschi|r-og-collezione-800-1|r-og-tutte-800-1": {
+   "w": 5,
+   "l": 1,
+   "d": 4,
+   "n": 10
+  },
+  "bm-guado|r-og-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 9,
+   "l": 1,
+   "d": 0,
+   "n": 10
+  },
+  "bm-rovine|r-og-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 6,
+   "l": 4,
+   "d": 0,
+   "n": 10
+  },
+  "bm-strada|r-og-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 7,
+   "l": 3,
+   "d": 0,
+   "n": 10
+  },
+  "open|r-og-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 3,
+   "l": 4,
+   "d": 3,
+   "n": 10
+  },
+  "meeting|r-og-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 3,
+   "l": 4,
+   "d": 3,
+   "n": 10
+  },
+  "bm-monolite|r-og-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 5,
+   "l": 5,
+   "d": 0,
+   "n": 10
+  },
+  "flank|r-og-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 3,
+   "l": 4,
+   "d": 3,
+   "n": 10
+  },
+  "pass|r-og-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 4,
+   "l": 3,
+   "d": 3,
+   "n": 10
+  },
+  "bm-guado|r-og-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 7,
+   "l": 3,
+   "d": 0,
+   "n": 10
+  },
+  "sxmttrgusdc7c|r-og-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 4,
+   "l": 6,
+   "d": 0,
+   "n": 10
+  },
+  "sxprova-profondo|r-og-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 6,
+   "l": 3,
+   "d": 1,
+   "n": 10
+  },
+  "sxmu9q80qdc65|r-og-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 4,
+   "l": 6,
+   "d": 0,
+   "n": 10
+  },
+  "sxprova-boschi|r-og-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 4,
+   "l": 2,
+   "d": 4,
+   "n": 10
+  },
+  "cross|r-og-collezione-800-1|r-skaven-collezione-800-1": {
+   "w": 6,
+   "l": 1,
+   "d": 3,
+   "n": 10
+  },
+  "bm-strada|r-og-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 8,
+   "l": 2,
+   "d": 0,
+   "n": 10
+  },
+  "bm-monolite|r-og-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 3,
+   "l": 7,
+   "d": 0,
+   "n": 10
+  },
+  "bm-rovine|r-og-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 5,
+   "l": 5,
+   "d": 0,
+   "n": 10
+  },
+  "open|r-og-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 5,
+   "l": 1,
+   "d": 4,
+   "n": 10
+  },
+  "meeting|r-og-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 5,
+   "l": 1,
+   "d": 4,
+   "n": 10
+  },
+  "flank|r-og-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 5,
+   "l": 1,
+   "d": 4,
+   "n": 10
+  },
+  "pass|r-og-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 1,
+   "l": 3,
+   "d": 6,
+   "n": 10
+  },
+  "sxmttrgusdc7c|r-og-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 6,
+   "l": 2,
+   "d": 2,
+   "n": 10
+  },
+  "bm-guado|r-og-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 8,
+   "l": 2,
+   "d": 0,
+   "n": 10
+  },
+  "sxmu9q80qdc65|r-og-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 6,
+   "l": 2,
+   "d": 2,
+   "n": 10
+  },
+  "sxprova-profondo|r-og-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 5,
+   "l": 2,
+   "d": 3,
+   "n": 10
+  },
+  "cross|r-og-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 4,
+   "l": 4,
+   "d": 2,
+   "n": 10
+  },
+  "sxprova-boschi|r-og-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 6,
+   "l": 1,
+   "d": 3,
+   "n": 10
+  },
+  "bm-monolite|r-og-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 6,
+   "l": 4,
+   "d": 0,
+   "n": 10
+  },
+  "bm-rovine|r-og-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 8,
+   "l": 2,
+   "d": 0,
+   "n": 10
+  },
+  "bm-strada|r-og-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 7,
+   "l": 3,
+   "d": 0,
+   "n": 10
+  },
+  "open|r-og-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 4,
+   "l": 3,
+   "d": 3,
+   "n": 10
+  },
+  "meeting|r-og-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 4,
+   "l": 3,
+   "d": 3,
+   "n": 10
+  },
+  "flank|r-og-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 4,
+   "l": 3,
+   "d": 3,
+   "n": 10
+  },
+  "pass|r-og-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 5,
+   "l": 1,
+   "d": 4,
+   "n": 10
+  },
+  "cross|r-og-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 6,
+   "l": 1,
+   "d": 3,
+   "n": 10
+  },
+  "sxmttrgusdc7c|r-og-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 6,
+   "l": 0,
+   "d": 4,
+   "n": 10
+  },
+  "sxmu9q80qdc65|r-og-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 6,
+   "l": 0,
+   "d": 4,
+   "n": 10
+  },
+  "sxprova-profondo|r-og-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 6,
+   "l": 3,
+   "d": 1,
+   "n": 10
+  },
+  "bm-guado|r-og-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 8,
+   "l": 2,
+   "d": 0,
+   "n": 10
+  },
+  "sxprova-boschi|r-og-tutte-800-1|r-skaven-collezione-800-1": {
+   "w": 9,
+   "l": 0,
+   "d": 1,
+   "n": 10
+  },
+  "bm-monolite|r-og-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 3,
+   "l": 7,
+   "d": 0,
+   "n": 10
+  },
+  "bm-strada|r-og-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 10,
+   "l": 0,
+   "d": 0,
+   "n": 10
+  },
+  "bm-rovine|r-og-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 7,
+   "l": 2,
+   "d": 1,
+   "n": 10
+  },
+  "open|r-og-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 6,
+   "l": 1,
+   "d": 3,
+   "n": 10
+  },
+  "meeting|r-og-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 6,
+   "l": 1,
+   "d": 3,
+   "n": 10
+  },
+  "flank|r-og-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 6,
+   "l": 1,
+   "d": 3,
+   "n": 10
+  },
+  "pass|r-og-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 3,
+   "l": 2,
+   "d": 5,
+   "n": 10
+  },
+  "sxmttrgusdc7c|r-og-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 9,
+   "l": 0,
+   "d": 1,
+   "n": 10
+  },
+  "sxmu9q80qdc65|r-og-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 9,
+   "l": 0,
+   "d": 1,
+   "n": 10
+  },
+  "cross|r-og-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 3,
+   "l": 3,
+   "d": 4,
+   "n": 10
+  },
+  "sxprova-profondo|r-og-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 8,
+   "l": 0,
+   "d": 2,
+   "n": 10
+  },
+  "sxprova-boschi|r-og-tutte-800-1|r-skaven-tutte-800-1": {
+   "w": 4,
+   "l": 3,
+   "d": 3,
+   "n": 10
+  },
+  "bm-guado|r-skaven-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 4,
+   "l": 6,
+   "d": 0,
+   "n": 10
+  },
+  "bm-strada|r-skaven-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 3,
+   "l": 7,
+   "d": 0,
+   "n": 10
+  },
+  "bm-rovine|r-skaven-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 7,
+   "l": 3,
+   "d": 0,
+   "n": 10
+  },
+  "bm-monolite|r-skaven-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 4,
+   "l": 6,
+   "d": 0,
+   "n": 10
+  },
+  "open|r-skaven-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 5,
+   "l": 4,
+   "d": 1,
+   "n": 10
+  },
+  "meeting|r-skaven-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 5,
+   "l": 4,
+   "d": 1,
+   "n": 10
+  },
+  "flank|r-skaven-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 5,
+   "l": 4,
+   "d": 1,
+   "n": 10
+  },
+  "sxmttrgusdc7c|r-skaven-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 4,
+   "l": 4,
+   "d": 2,
+   "n": 10
+  },
+  "sxmu9q80qdc65|r-skaven-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 4,
+   "l": 4,
+   "d": 2,
+   "n": 10
+  },
+  "pass|r-skaven-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 2,
+   "l": 4,
+   "d": 4,
+   "n": 10
+  },
+  "sxprova-profondo|r-skaven-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 6,
+   "l": 4,
+   "d": 0,
+   "n": 10
+  },
+  "sxprova-boschi|r-skaven-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 3,
+   "l": 6,
+   "d": 1,
+   "n": 10
+  },
+  "cross|r-skaven-collezione-800-1|r-skaven-tutte-800-1": {
+   "w": 3,
+   "l": 6,
+   "d": 1,
+   "n": 10
+  }
+ }
+}

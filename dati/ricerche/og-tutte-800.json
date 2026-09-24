@@ -1,0 +1,3487 @@
+{
+ "formato": "tow-ricerca/1",
+ "quando": "2026-09-24T09:47:58.359Z",
+ "fazione": "og",
+ "nome": "Orchi & Goblin",
+ "catalogue": "Orc and Goblin Tribes",
+ "pool": "tutte",
+ "punti": 800,
+ "scenari": [
+  "sxmu9q80qdc65",
+  "sxprova-profondo",
+  "sxprova-boschi",
+  "bm-strada",
+  "bm-rovine",
+  "open"
+ ],
+ "seme": 1001,
+ "etichette": {
+  "sxmu9q80qdc65": "Poligono di tiro (mio)",
+  "sxprova-profondo": "Poligono profondo",
+  "sxprova-boschi": "Boschi e rovine",
+  "bm-strada": "La Strada delle Pietre",
+  "bm-rovine": "Le Rovine di Xhotl",
+  "open": "Battaglia Campale"
+ },
+ "sforzo": "normale",
+ "parametri": {
+  "popolazione": 10,
+  "generazioni": 8,
+  "celle": 12,
+  "verifica": 2,
+  "finaliste": 4
+ },
+ "partite": 2784,
+ "secondi": 1237,
+ "unita": [
+  "Orc Warboss",
+  "Orc Bigboss",
+  "Black Orc Warboss",
+  "Black Orc Bigboss",
+  "Orc Weirdnob",
+  "Goblin Oddnob",
+  "Night Goblin Oddnob",
+  "Night Goblin Bigboss",
+  "Ogdruz Swampdigga",
+  "Orc Mobs",
+  "Black Orc Mobs",
+  "Night Goblin Mobs",
+  "Goblin Mobs",
+  "Stone Troll Mobs",
+  "Orc Boar Boy Mobs",
+  "Orc Boar Chariots"
+ ],
+ "escluse": [],
+ "esempi": false,
+ "provate": [
+  {
+   "k": "blackBigboss",
+   "nome": "Black Orc Bigboss",
+   "liste": 10,
+   "partite": 360,
+   "media": 50,
+   "finaliste": 4
+  },
+  {
+   "k": "oddnob",
+   "nome": "Goblin Oddnob",
+   "liste": 15,
+   "partite": 528,
+   "media": 47,
+   "finaliste": 4
+  },
+  {
+   "k": "blackOrcs",
+   "nome": "Black Orc Mobs",
+   "liste": 18,
+   "partite": 672,
+   "media": 46,
+   "finaliste": 4
+  },
+  {
+   "k": "warboss",
+   "nome": "Orc Warboss",
+   "liste": 20,
+   "partite": 840,
+   "media": 44,
+   "finaliste": 0
+  },
+  {
+   "k": "orcs",
+   "nome": "Orc Mobs",
+   "liste": 41,
+   "partite": 1608,
+   "media": 44,
+   "finaliste": 4
+  },
+  {
+   "k": "trolls",
+   "nome": "Stone Troll Mobs",
+   "liste": 24,
+   "partite": 1008,
+   "media": 44,
+   "finaliste": 0
+  },
+  {
+   "k": "blackWarboss",
+   "nome": "Black Orc Warboss",
+   "liste": 8,
+   "partite": 312,
+   "media": 43,
+   "finaliste": 0
+  },
+  {
+   "k": "nightGoblins",
+   "nome": "Night Goblin Mobs",
+   "liste": 40,
+   "partite": 1464,
+   "media": 38,
+   "finaliste": 0
+  },
+  {
+   "k": "goblins",
+   "nome": "Goblin Mobs",
+   "liste": 34,
+   "partite": 1248,
+   "media": 37,
+   "finaliste": 0
+  },
+  {
+   "k": "ngBigboss",
+   "nome": "Night Goblin Bigboss",
+   "liste": 4,
+   "partite": 120,
+   "media": 35,
+   "finaliste": 0
+  },
+  {
+   "k": "boarBoys",
+   "nome": "Orc Boar Boy Mobs",
+   "liste": 19,
+   "partite": 624,
+   "media": 33,
+   "finaliste": 0
+  },
+  {
+   "k": "chariot",
+   "nome": "Orc Boar Chariots",
+   "liste": 14,
+   "partite": 408,
+   "media": 32,
+   "finaliste": 0
+  },
+  {
+   "k": "ngOddnob",
+   "nome": "Night Goblin Oddnob",
+   "liste": 6,
+   "partite": 192,
+   "media": 31,
+   "finaliste": 0
+  },
+  {
+   "k": "ogdruz",
+   "nome": "Ogdruz Swampdigga",
+   "liste": 4,
+   "partite": 96,
+   "media": 28,
+   "finaliste": 0
+  },
+  {
+   "k": "weirdnob",
+   "nome": "Orc Weirdnob",
+   "liste": 2,
+   "partite": 48,
+   "media": 22,
+   "finaliste": 0
+  },
+  {
+   "k": "bigboss",
+   "nome": "Orc Bigboss",
+   "liste": 1,
+   "partite": 24,
+   "media": 17,
+   "finaliste": 0
+  }
+ ],
+ "contro": [
+  {
+   "id": "r-skaven-collezione-800-1",
+   "name": "SKA collezione 800 · 1",
+   "catalogue": "Skaven",
+   "points": 797,
+   "fonte": "ricerca",
+   "file": "skaven-collezione-800.json"
+  },
+  {
+   "id": "r-skaven-tutte-800-1",
+   "name": "SKA libera 800 · 1",
+   "catalogue": "Skaven",
+   "points": 800,
+   "fonte": "ricerca",
+   "file": "skaven-tutte-800.json"
+  },
+  {
+   "id": "lmubp2kimjzhw",
+   "name": "LIZ fun",
+   "catalogue": "Lizardmen - Renegades 2.0",
+   "points": 802,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmueliwuvm0ao",
+   "name": "O&G orda nera",
+   "catalogue": "Orc and Goblin Tribes",
+   "points": 798,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmuegsxz4wod0",
+   "name": "Skaven orda",
+   "catalogue": "Skaven",
+   "points": 804,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmueliwuytkl7",
+   "name": "LIZ guardia e sangue freddo",
+   "catalogue": "Lizardmen",
+   "points": 806,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmubp01267euf",
+   "name": "Skaven fun",
+   "catalogue": "Skaven",
+   "points": 807,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmucdz1grir4h",
+   "name": "O&G FUN",
+   "catalogue": "Orc and Goblin Tribes",
+   "points": 807,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmu9q4uo0cqys",
+   "name": "Battle march SKA",
+   "catalogue": "Skaven",
+   "points": 768,
+   "fonte": "archivio"
+  }
+ ],
+ "storia": [
+  {
+   "gen": 1,
+   "partite": 240,
+   "migliore": 48,
+   "vince": 42,
+   "n": 24,
+   "lista": "Orc Warboss (armatura pesante) — 113 pt; 38 Orc Mobs (stendardo, musico, lance, fronte 7) — 238 pt; 38 Night Goblin Mobs (campione, stendardo, musico, lance, fronte 6) — 169 pt; 26 Night Goblin Mobs (stendardo, musico, fronte 10) — 88 pt; 28 Goblin Mobs (campione, stendardo, musico, fronte 7) — 101 pt; 2 Stone Troll Mobs — 90 pt"
+  },
+  {
+   "gen": 2,
+   "partite": 480,
+   "migliore": 48,
+   "vince": 42,
+   "n": 48,
+   "lista": "Orc Warboss (armatura pesante) — 113 pt; 38 Orc Mobs (stendardo, musico, lance, fronte 7) — 238 pt; 38 Night Goblin Mobs (campione, stendardo, musico, lance, fronte 6) — 169 pt; 26 Night Goblin Mobs (stendardo, musico, fronte 10) — 88 pt; 28 Goblin Mobs (campione, stendardo, musico, fronte 7) — 101 pt; 2 Stone Troll Mobs — 90 pt"
+  },
+  {
+   "gen": 3,
+   "partite": 720,
+   "migliore": 52,
+   "vince": 50,
+   "n": 24,
+   "lista": "Black Orc Warboss — 135 pt; 31 Orc Mobs (lance, fronte 7) — 186 pt; 10 Black Orc Mobs (campione, stendardo, musico, fronte 5) — 138 pt; 17 Night Goblin Mobs (campione, stendardo, musico, fronte 5) — 68 pt; 17 Night Goblin Mobs (lance, fronte 5) — 68 pt; 21 Goblin Mobs (lance) — 84 pt; 1 Stone Troll Mobs — 45 pt; 5 Orc Boar Boy Mobs — 75 pt"
+  },
+  {
+   "gen": 4,
+   "partite": 960,
+   "migliore": 47,
+   "vince": 40,
+   "n": 48,
+   "lista": "Orc Warboss (armatura pesante) — 113 pt; 38 Orc Mobs (stendardo, musico, lance, fronte 7) — 238 pt; 39 Night Goblin Mobs (campione, stendardo, musico, lance, fronte 6) — 173 pt; 25 Night Goblin Mobs (stendardo, musico, fronte 10) — 85 pt; 28 Goblin Mobs (campione, stendardo, musico, fronte 7) — 101 pt; 2 Stone Troll Mobs — 90 pt"
+  },
+  {
+   "gen": 5,
+   "partite": 1200,
+   "migliore": 60,
+   "vince": 58,
+   "n": 24,
+   "lista": "Orc Warboss (armatura pesante) — 113 pt; 38 Orc Mobs (stendardo, musico, lance, fronte 7) — 238 pt; 37 Orc Mobs (lance, Big 'Uns, fronte 7) — 296 pt; 32 Night Goblin Mobs (stendardo, musico, fronte 10) — 106 pt; 1 Stone Troll Mobs — 45 pt"
+  },
+  {
+   "gen": 6,
+   "partite": 1440,
+   "migliore": 69,
+   "vince": 67,
+   "n": 24,
+   "lista": "Black Orc Bigboss — 91 pt; Goblin Oddnob (Livello 3, elementalism) — 135 pt; 45 Orc Mobs (lance, Big 'Uns) — 360 pt; 16 Black Orc Mobs (campione, stendardo, musico, fronte 5) — 210 pt"
+  },
+  {
+   "gen": 7,
+   "partite": 1680,
+   "migliore": 70,
+   "vince": 67,
+   "n": 48,
+   "lista": "Black Orc Bigboss — 91 pt; Goblin Oddnob (Livello 3, elementalism) — 135 pt; 45 Orc Mobs (lance, Big 'Uns) — 360 pt; 16 Black Orc Mobs (campione, stendardo, musico, fronte 5) — 210 pt"
+  },
+  {
+   "gen": 8,
+   "partite": 1920,
+   "migliore": 63,
+   "vince": 63,
+   "n": 24,
+   "lista": "Black Orc Bigboss — 91 pt; Goblin Oddnob (Livello 3, elementalism) — 135 pt; 38 Orc Mobs (lance, Big 'Uns) — 304 pt; 19 Black Orc Mobs (arma grande, fronte 7) — 266 pt"
+  }
+ ],
+ "migliori": [
+  {
+   "geni": [
+    {
+     "k": "blackBigboss",
+     "o": {}
+    },
+    {
+     "k": "oddnob",
+     "o": {
+      "l4": false
+     },
+     "lore": "elementalism"
+    },
+    {
+     "k": "orcs",
+     "o": {
+      "c": "",
+      "spears": true,
+      "big": true,
+      "f": null
+     },
+     "n": 38
+    },
+    {
+     "k": "blackOrcs",
+     "o": {
+      "c": "",
+      "great": true,
+      "f": 7
+     },
+     "n": 19
+    }
+   ],
+   "descrizione": "Black Orc Bigboss — 91 pt; Goblin Oddnob (Livello 3, elementalism) — 135 pt; 38 Orc Mobs (lance, Big 'Uns) — 304 pt; 19 Black Orc Mobs (arma grande, fronte 7) — 266 pt",
+   "punti": 796,
+   "ricerca": {
+    "w": 15,
+    "l": 8,
+    "d": 1,
+    "n": 24
+   },
+   "verifica": {
+    "w": 125,
+    "l": 78,
+    "d": 13,
+    "n": 216,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 20,
+      "l": 12,
+      "d": 4,
+      "n": 36
+     },
+     "sxprova-profondo": {
+      "w": 21,
+      "l": 10,
+      "d": 5,
+      "n": 36
+     },
+     "sxprova-boschi": {
+      "w": 21,
+      "l": 13,
+      "d": 2,
+      "n": 36
+     },
+     "bm-strada": {
+      "w": 23,
+      "l": 13,
+      "d": 0,
+      "n": 36
+     },
+     "bm-rovine": {
+      "w": 17,
+      "l": 19,
+      "d": 0,
+      "n": 36
+     },
+     "open": {
+      "w": 23,
+      "l": 11,
+      "d": 2,
+      "n": 36
+     }
+    },
+    "perAvversario": {
+     "r-skaven-collezione-800-1": {
+      "w": 15,
+      "l": 8,
+      "d": 1,
+      "n": 24
+     },
+     "r-skaven-tutte-800-1": {
+      "w": 16,
+      "l": 6,
+      "d": 2,
+      "n": 24
+     },
+     "lmubp2kimjzhw": {
+      "w": 8,
+      "l": 12,
+      "d": 4,
+      "n": 24
+     },
+     "lmueliwuvm0ao": {
+      "w": 8,
+      "l": 15,
+      "d": 1,
+      "n": 24
+     },
+     "lmuegsxz4wod0": {
+      "w": 19,
+      "l": 4,
+      "d": 1,
+      "n": 24
+     },
+     "lmueliwuytkl7": {
+      "w": 11,
+      "l": 12,
+      "d": 1,
+      "n": 24
+     },
+     "lmubp01267euf": {
+      "w": 4,
+      "l": 18,
+      "d": 2,
+      "n": 24
+     },
+     "lmucdz1grir4h": {
+      "w": 22,
+      "l": 2,
+      "d": 0,
+      "n": 24
+     },
+     "lmu9q4uo0cqys": {
+      "w": 22,
+      "l": 1,
+      "d": 1,
+      "n": 24
+     }
+    },
+    "celle": {
+     "r-skaven-collezione-800-1|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|sxprova-boschi": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmubp2kimjzhw|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp2kimjzhw|sxprova-profondo": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmubp2kimjzhw|sxprova-boschi": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmubp2kimjzhw|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp2kimjzhw|bm-rovine": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp2kimjzhw|open": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuvm0ao|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuvm0ao|sxprova-profondo": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmueliwuvm0ao|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuvm0ao|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuvm0ao|bm-rovine": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuvm0ao|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuegsxz4wod0|sxmu9q80qdc65": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmuegsxz4wod0|sxprova-profondo": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmuegsxz4wod0|sxprova-boschi": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmuegsxz4wod0|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuegsxz4wod0|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmuegsxz4wod0|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmueliwuytkl7|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmueliwuytkl7|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|sxmu9q80qdc65": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmubp01267euf|sxprova-profondo": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmubp01267euf|sxprova-boschi": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|sxmu9q80qdc65": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|sxprova-profondo": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|sxprova-boschi": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|bm-strada": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|open": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|sxmu9q80qdc65": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|sxprova-profondo": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|sxprova-boschi": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|bm-strada": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|open": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-og-tutte-800-1",
+    "name": "O&G libera 800 · 1",
+    "info": {
+     "catalogue": "Orc and Goblin Tribes",
+     "forceName": "Battle March",
+     "limit": 800
+    },
+    "points": 796,
+    "external": false,
+    "imported": "2026-09-24T09:47:58.357Z",
+    "units": [
+     {
+      "name": "Black Orc Bigboss",
+      "models": 1,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 1,
+      "loose": false,
+      "pts": 91,
+      "us": 0,
+      "troop": "Heavy Infantry",
+      "unitSize": "1",
+      "stats": {
+       "M": "4",
+       "WS": "6",
+       "BS": "3",
+       "S": "4",
+       "T": "5",
+       "W": "2",
+       "I": "5",
+       "A": "3",
+       "Ld": "8"
+      },
+      "rules": [
+       "Choppas",
+       "Furious Charge (does not apply to this model's mount should it have one)",
+       "Da Boyz",
+       "Quell Impetuosity",
+       "Ignore Panic",
+       "Rallying Cry",
+       "Waaagh!",
+       "Tusker Charge",
+       "Armoured Hide",
+       "Counter Charge",
+       "Swiftstride"
+      ],
+      "ruleText": {
+       "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
+       "Furious Charge (does not apply to this model's mount should it have one)": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
+       "Da Boyz": "Your army must include one Black Orc Boss for every Black Orc Mob it includes, and vice versa. In other words:\n\n \n• For each Black Orc Mob your army includes, it must also include one Black Orc War Boss or Big Boss.\n\n \n• For each Black Orc War Boss or Big Boss your army includes, it must also include one Black Orc Mob.",
+       "Quell Impetuosity": "Whilst within 6\" of a unit with this special rule, a friendly Impetuous unit may re-roll a failed Leadership test when testing to determine if it must declare a charge or act as normal.",
+       "Ignore Panic": "This unit does not have to make a Panic test when a friendly unit that does not also have this special rule is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly unit that does not have this special rule..",
+       "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+       "Waaagh!": "Once per game, during the Command sub-phase of their turn, this character may attempt to invoke the power of the Waaagh! by making a Leadership test (using their own Leadership). If this test is passed, until your next Start of Turn sub-phase this character, their mount and any Orc unit they have joined may re-roll any rolls To Hit of a natural 1 and, when calculating its combat result, may claim an additional bonus of +1 combat result point.\n\n Note that, for the purposes of this rule, an Orc unit is considered to be any unit that is made up entirely of Orcs or Black Orcs, mounted or otherwise. Should an Orc unit be joined by a Goblin character, it is no longer considered to be an Orc unit. This special rule is not cumulative.",
+       "Tusker Charge": "During a turn in which it charged, a War Boar’s Tusks (hand weapon) have a Strength characteristic of S+1 and an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to attacks made by a War Boar, not to their rider, a chariot or its crew.",
+       "Armoured Hide": "The hide of some creatures forms natural armour and improves their armour value ( and that of their rider). By how much armour value is improved varies from model to model, as shown in brackets after the name of this special rule.\n\n Note that a model that wears no armour is considerer to have an armour value of 7+ for the purposes of rules that improve armour value.",
+       "Counter Charge": "This special rule can only be used by units that consist entirely of models with this special rule. When a unit with this special rule is charged in its front arc by an enemy unit whose troop type is ‘cavalry,’ ‘chariot’ or ‘monster’, it may declare a ‘Counter Charge’ charge reaction:\n\n Counter Charge: The unit surges forward to meet the enemy charge. Measure the distance between the two units. If the distance is less than the Movement characteristic of the charging unit, the charged unit has not enough time to meet the enemy charge and must either Hold or Flee instead.\n\n Otherwise, pivot the unit about its centre so that it is facing directly towards the centre of the charging enemy unit. After pivoting, the unit moves D3+1\" directly towards the enemy unit. Both units are considered to have charged during this turn.\n\n Fleeing units and units already engaged in combat when charged cannot Counter Charge. A unit can only Counter Charge in response to one charge per turn, even if charged by multiple units. Once all charges have been declared, the inactive player can choose which charging unit to Counter Charge. The unit will then Hold against the other charging units.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Characters",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 4,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmttwumnm8axg"
+     },
+     {
+      "name": "Goblin Oddnob",
+      "models": 1,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 1,
+      "loose": false,
+      "pts": 135,
+      "us": 1,
+      "troop": "Regular Infantry",
+      "unitSize": "1",
+      "stats": {
+       "M": "4",
+       "WS": "4",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "3",
+       "I": "4",
+       "A": "2",
+       "Ld": "7"
+      },
+      "rules": [
+       "Fear of Elves",
+       "Warband",
+       "Lore of Mork"
+      ],
+      "ruleText": {
+       "Fear of Elves": "Elves of any type cause Fear in models with this special rule.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+       "Lore of Mork": "A wizard with the Lore of Mork special rule may discard one of their randomly generated spells as normal. When they do it they may select instead the signature spell of their chosen Lore of Magic, or one of the spell listed below."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Characters",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 0,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmttwupi8cano"
+     },
+     {
+      "name": "Orc Mobs",
+      "models": 38,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 10,
+      "loose": false,
+      "pts": 304,
+      "us": 38,
+      "troop": "Regular Infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "4",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "6"
+      },
+      "profiles": [
+       {
+        "name": "Orc Boy",
+        "stats": {
+         "M": "4",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "3",
+         "A": "1",
+         "Ld": "6"
+        }
+       }
+      ],
+      "mount": null,
+      "rules": [
+       "Choppas",
+       "Ignore Goblin Panic",
+       "Impetuous",
+       "Warband",
+       "Close Order",
+       "Furious Charge",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry",
+       "Big 'Uns"
+      ],
+      "ruleText": {
+       "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
+       "Ignore Goblin Panic": "This unit does not have to make a Panic test when a friendly Goblin unit is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly Goblin unit.\n\n Note that, for the purposes of this rule, a Goblin unit is considered to be any unit that is made up entirely of Goblins of any kind, mounted or otherwise. This includes any war machine or chariot that is crewed entirely by Goblins. Should a Goblin unit be joined by an Orc character, it is no longer considered to be a Goblin unit.",
+       "Impetuous": "If during the Declare Charges & Charge Reactions sub-phase of its turn, a unit that includes one or more Impetuous models is able to declare a charge, it must make a Leadership test. If this test is failed, the unit must declare a charge. If this test is passed, the unit may act as normal.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Thrusting Spear",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "Fight in Extra Rank"
+       },
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Core",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 6,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5r9bak4eg",
+      "shield": false
+     },
+     {
+      "name": "Black Orc Mobs",
+      "models": 19,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 7,
+      "loose": false,
+      "pts": 266,
+      "us": 19,
+      "troop": "Heavy Infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "4",
+       "WS": "4",
+       "BS": "3",
+       "S": "4",
+       "T": "4",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "8"
+      },
+      "rules": [
+       "Choppas",
+       "Close Order",
+       "Ignore Panic",
+       "Furious Charge",
+       "Da Boyz",
+       "Motley Crew",
+       "Quell Impetuosity",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "ruleText": {
+       "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Ignore Panic": "This unit does not have to make a Panic test when a friendly unit that does not also have this special rule is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly unit that does not have this special rule..",
+       "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
+       "Da Boyz": "Your army must include one Black Orc Boss for every Black Orc Mob it includes, and vice versa. In other words:\n\n \n• For each Black Orc Mob your army includes, it must also include one Black Orc War Boss or Big Boss.\n\n \n• For each Black Orc War Boss or Big Boss your army includes, it must also include one Black Orc Mob.",
+       "Motley Crew": "Units with this special rule may include models of the same type that are equipped differently to one another, and/or models of different types that fight together in a single unit. If necessary, the army list entry for such units will be accompanied by a brief explanation of the unit’s composition.\n\n Different Weapons: The fighting rank of a Motley Crew may contain models that are armed with different weapons. In such cases, the controlling player must roll different batches of dice for the different models, making it clear to their opponent which model’s attacks they represent and where they are being directed. These attacks are made in the Initiative order of the individual models, as usual.\n\n Different Armour: Models within a Motley Crew may have different armour values. In combat, use the armour value of the majority of the models in the fighting rank. Against enemy shooting, use the armour value of the majority of the models in the unit.\n\n Casualty Removal: Against enemy shooting, casualty removal should be divided as equally as possible between the different models within the unit. In combat, casualties should be removed from among the majority of the models that make up the fighting rank. In either case, available models are brought forward from rear ranks to fill any gaps, as chosen by the controlling player.",
+       "Quell Impetuosity": "Whilst within 6\" of a unit with this special rule, a friendly Impetuous unit may re-roll a failed Leadership test when testing to determine if it must declare a charge or act as normal.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Great Weapon",
+        "range": "Combat",
+        "S": "S+2",
+        "ap": "-2",
+        "rules": "Armour Bane (1), Requires Two Hands, Strike Last"
+       },
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Special",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 4,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5r88tb6qt",
+      "shield": false
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {
+      "1": {
+       "level": 3,
+       "lore": "elementalism"
+      }
+     },
+     "note": "Black Orc Bigboss — 91 pt; Goblin Oddnob (Livello 3, elementalism) — 135 pt; 38 Orc Mobs (lance, Big 'Uns) — 304 pt; 19 Black Orc Mobs (arma grande, fronte 7) — 266 pt"
+    },
+    "formerNames": []
+   }
+  },
+  {
+   "geni": [
+    {
+     "k": "blackBigboss",
+     "o": {}
+    },
+    {
+     "k": "oddnob",
+     "o": {
+      "l4": false
+     },
+     "lore": "elementalism"
+    },
+    {
+     "k": "orcs",
+     "o": {
+      "c": "",
+      "spears": true,
+      "big": true,
+      "f": null
+     },
+     "n": 44
+    },
+    {
+     "k": "blackOrcs",
+     "o": {
+      "c": "sm",
+      "great": true,
+      "f": 7
+     },
+     "n": 15
+    }
+   ],
+   "descrizione": "Black Orc Bigboss — 91 pt; Goblin Oddnob (Livello 3, elementalism) — 135 pt; 44 Orc Mobs (lance, Big 'Uns) — 352 pt; 15 Black Orc Mobs (stendardo, musico, arma grande, fronte 7) — 222 pt",
+   "punti": 800,
+   "ricerca": {
+    "w": 24,
+    "l": 12,
+    "d": 12,
+    "n": 48
+   },
+   "verifica": {
+    "w": 118,
+    "l": 72,
+    "d": 26,
+    "n": 216,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 22,
+      "l": 8,
+      "d": 6,
+      "n": 36
+     },
+     "sxprova-profondo": {
+      "w": 23,
+      "l": 8,
+      "d": 5,
+      "n": 36
+     },
+     "sxprova-boschi": {
+      "w": 17,
+      "l": 16,
+      "d": 3,
+      "n": 36
+     },
+     "bm-strada": {
+      "w": 22,
+      "l": 14,
+      "d": 0,
+      "n": 36
+     },
+     "bm-rovine": {
+      "w": 19,
+      "l": 16,
+      "d": 1,
+      "n": 36
+     },
+     "open": {
+      "w": 15,
+      "l": 10,
+      "d": 11,
+      "n": 36
+     }
+    },
+    "perAvversario": {
+     "r-skaven-collezione-800-1": {
+      "w": 12,
+      "l": 9,
+      "d": 3,
+      "n": 24
+     },
+     "r-skaven-tutte-800-1": {
+      "w": 17,
+      "l": 4,
+      "d": 3,
+      "n": 24
+     },
+     "lmubp2kimjzhw": {
+      "w": 14,
+      "l": 8,
+      "d": 2,
+      "n": 24
+     },
+     "lmueliwuvm0ao": {
+      "w": 8,
+      "l": 11,
+      "d": 5,
+      "n": 24
+     },
+     "lmuegsxz4wod0": {
+      "w": 10,
+      "l": 7,
+      "d": 7,
+      "n": 24
+     },
+     "lmueliwuytkl7": {
+      "w": 8,
+      "l": 14,
+      "d": 2,
+      "n": 24
+     },
+     "lmubp01267euf": {
+      "w": 5,
+      "l": 17,
+      "d": 2,
+      "n": 24
+     },
+     "lmucdz1grir4h": {
+      "w": 23,
+      "l": 0,
+      "d": 1,
+      "n": 24
+     },
+     "lmu9q4uo0cqys": {
+      "w": 21,
+      "l": 2,
+      "d": 1,
+      "n": 24
+     }
+    },
+    "celle": {
+     "r-skaven-collezione-800-1|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|sxprova-profondo": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|sxprova-boschi": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|sxprova-profondo": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmubp2kimjzhw|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp2kimjzhw|sxprova-profondo": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp2kimjzhw|sxprova-boschi": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp2kimjzhw|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp2kimjzhw|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp2kimjzhw|open": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "lmueliwuvm0ao|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmueliwuvm0ao|sxprova-profondo": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "lmueliwuvm0ao|sxprova-boschi": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuvm0ao|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuvm0ao|bm-rovine": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuvm0ao|open": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "lmuegsxz4wod0|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmuegsxz4wod0|sxprova-profondo": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmuegsxz4wod0|sxprova-boschi": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmuegsxz4wod0|bm-strada": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmuegsxz4wod0|bm-rovine": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmuegsxz4wod0|open": {
+      "w": 0,
+      "l": 1,
+      "d": 3,
+      "n": 4
+     },
+     "lmueliwuytkl7|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmueliwuytkl7|sxprova-profondo": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|sxprova-boschi": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|sxprova-profondo": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmubp01267euf|sxprova-boschi": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|open": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmucdz1grir4h|sxmu9q80qdc65": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|sxprova-profondo": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|sxprova-boschi": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|bm-strada": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|open": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|sxmu9q80qdc65": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|sxprova-profondo": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|sxprova-boschi": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|open": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-og-tutte-800-2",
+    "name": "O&G libera 800 · 2",
+    "info": {
+     "catalogue": "Orc and Goblin Tribes",
+     "forceName": "Battle March",
+     "limit": 800
+    },
+    "points": 800,
+    "external": false,
+    "imported": "2026-09-24T09:47:58.358Z",
+    "units": [
+     {
+      "name": "Black Orc Bigboss",
+      "models": 1,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 1,
+      "loose": false,
+      "pts": 91,
+      "us": 0,
+      "troop": "Heavy Infantry",
+      "unitSize": "1",
+      "stats": {
+       "M": "4",
+       "WS": "6",
+       "BS": "3",
+       "S": "4",
+       "T": "5",
+       "W": "2",
+       "I": "5",
+       "A": "3",
+       "Ld": "8"
+      },
+      "rules": [
+       "Choppas",
+       "Furious Charge (does not apply to this model's mount should it have one)",
+       "Da Boyz",
+       "Quell Impetuosity",
+       "Ignore Panic",
+       "Rallying Cry",
+       "Waaagh!",
+       "Tusker Charge",
+       "Armoured Hide",
+       "Counter Charge",
+       "Swiftstride"
+      ],
+      "ruleText": {
+       "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
+       "Furious Charge (does not apply to this model's mount should it have one)": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
+       "Da Boyz": "Your army must include one Black Orc Boss for every Black Orc Mob it includes, and vice versa. In other words:\n\n \n• For each Black Orc Mob your army includes, it must also include one Black Orc War Boss or Big Boss.\n\n \n• For each Black Orc War Boss or Big Boss your army includes, it must also include one Black Orc Mob.",
+       "Quell Impetuosity": "Whilst within 6\" of a unit with this special rule, a friendly Impetuous unit may re-roll a failed Leadership test when testing to determine if it must declare a charge or act as normal.",
+       "Ignore Panic": "This unit does not have to make a Panic test when a friendly unit that does not also have this special rule is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly unit that does not have this special rule..",
+       "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+       "Waaagh!": "Once per game, during the Command sub-phase of their turn, this character may attempt to invoke the power of the Waaagh! by making a Leadership test (using their own Leadership). If this test is passed, until your next Start of Turn sub-phase this character, their mount and any Orc unit they have joined may re-roll any rolls To Hit of a natural 1 and, when calculating its combat result, may claim an additional bonus of +1 combat result point.\n\n Note that, for the purposes of this rule, an Orc unit is considered to be any unit that is made up entirely of Orcs or Black Orcs, mounted or otherwise. Should an Orc unit be joined by a Goblin character, it is no longer considered to be an Orc unit. This special rule is not cumulative.",
+       "Tusker Charge": "During a turn in which it charged, a War Boar’s Tusks (hand weapon) have a Strength characteristic of S+1 and an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to attacks made by a War Boar, not to their rider, a chariot or its crew.",
+       "Armoured Hide": "The hide of some creatures forms natural armour and improves their armour value ( and that of their rider). By how much armour value is improved varies from model to model, as shown in brackets after the name of this special rule.\n\n Note that a model that wears no armour is considerer to have an armour value of 7+ for the purposes of rules that improve armour value.",
+       "Counter Charge": "This special rule can only be used by units that consist entirely of models with this special rule. When a unit with this special rule is charged in its front arc by an enemy unit whose troop type is ‘cavalry,’ ‘chariot’ or ‘monster’, it may declare a ‘Counter Charge’ charge reaction:\n\n Counter Charge: The unit surges forward to meet the enemy charge. Measure the distance between the two units. If the distance is less than the Movement characteristic of the charging unit, the charged unit has not enough time to meet the enemy charge and must either Hold or Flee instead.\n\n Otherwise, pivot the unit about its centre so that it is facing directly towards the centre of the charging enemy unit. After pivoting, the unit moves D3+1\" directly towards the enemy unit. Both units are considered to have charged during this turn.\n\n Fleeing units and units already engaged in combat when charged cannot Counter Charge. A unit can only Counter Charge in response to one charge per turn, even if charged by multiple units. Once all charges have been declared, the inactive player can choose which charging unit to Counter Charge. The unit will then Hold against the other charging units.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Characters",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 4,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmttwumnm8axg"
+     },
+     {
+      "name": "Goblin Oddnob",
+      "models": 1,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 1,
+      "loose": false,
+      "pts": 135,
+      "us": 1,
+      "troop": "Regular Infantry",
+      "unitSize": "1",
+      "stats": {
+       "M": "4",
+       "WS": "4",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "3",
+       "I": "4",
+       "A": "2",
+       "Ld": "7"
+      },
+      "rules": [
+       "Fear of Elves",
+       "Warband",
+       "Lore of Mork"
+      ],
+      "ruleText": {
+       "Fear of Elves": "Elves of any type cause Fear in models with this special rule.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+       "Lore of Mork": "A wizard with the Lore of Mork special rule may discard one of their randomly generated spells as normal. When they do it they may select instead the signature spell of their chosen Lore of Magic, or one of the spell listed below."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Characters",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 0,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmttwupi8cano"
+     },
+     {
+      "name": "Orc Mobs",
+      "models": 44,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 11,
+      "loose": false,
+      "pts": 352,
+      "us": 44,
+      "troop": "Regular Infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "4",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "6"
+      },
+      "profiles": [
+       {
+        "name": "Orc Boy",
+        "stats": {
+         "M": "4",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "3",
+         "A": "1",
+         "Ld": "6"
+        }
+       }
+      ],
+      "mount": null,
+      "rules": [
+       "Choppas",
+       "Ignore Goblin Panic",
+       "Impetuous",
+       "Warband",
+       "Close Order",
+       "Furious Charge",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry",
+       "Big 'Uns"
+      ],
+      "ruleText": {
+       "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
+       "Ignore Goblin Panic": "This unit does not have to make a Panic test when a friendly Goblin unit is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly Goblin unit.\n\n Note that, for the purposes of this rule, a Goblin unit is considered to be any unit that is made up entirely of Goblins of any kind, mounted or otherwise. This includes any war machine or chariot that is crewed entirely by Goblins. Should a Goblin unit be joined by an Orc character, it is no longer considered to be a Goblin unit.",
+       "Impetuous": "If during the Declare Charges & Charge Reactions sub-phase of its turn, a unit that includes one or more Impetuous models is able to declare a charge, it must make a Leadership test. If this test is failed, the unit must declare a charge. If this test is passed, the unit may act as normal.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Thrusting Spear",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "Fight in Extra Rank"
+       },
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Core",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 6,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5r9bak4eg",
+      "shield": false
+     },
+     {
+      "name": "Black Orc Mobs",
+      "models": 15,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 7,
+      "loose": false,
+      "pts": 222,
+      "us": 15,
+      "troop": "Heavy Infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "4",
+       "WS": "4",
+       "BS": "3",
+       "S": "4",
+       "T": "4",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "8"
+      },
+      "rules": [
+       "Choppas",
+       "Close Order",
+       "Ignore Panic",
+       "Furious Charge",
+       "Da Boyz",
+       "Motley Crew",
+       "Quell Impetuosity",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "ruleText": {
+       "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Ignore Panic": "This unit does not have to make a Panic test when a friendly unit that does not also have this special rule is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly unit that does not have this special rule..",
+       "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
+       "Da Boyz": "Your army must include one Black Orc Boss for every Black Orc Mob it includes, and vice versa. In other words:\n\n \n• For each Black Orc Mob your army includes, it must also include one Black Orc War Boss or Big Boss.\n\n \n• For each Black Orc War Boss or Big Boss your army includes, it must also include one Black Orc Mob.",
+       "Motley Crew": "Units with this special rule may include models of the same type that are equipped differently to one another, and/or models of different types that fight together in a single unit. If necessary, the army list entry for such units will be accompanied by a brief explanation of the unit’s composition.\n\n Different Weapons: The fighting rank of a Motley Crew may contain models that are armed with different weapons. In such cases, the controlling player must roll different batches of dice for the different models, making it clear to their opponent which model’s attacks they represent and where they are being directed. These attacks are made in the Initiative order of the individual models, as usual.\n\n Different Armour: Models within a Motley Crew may have different armour values. In combat, use the armour value of the majority of the models in the fighting rank. Against enemy shooting, use the armour value of the majority of the models in the unit.\n\n Casualty Removal: Against enemy shooting, casualty removal should be divided as equally as possible between the different models within the unit. In combat, casualties should be removed from among the majority of the models that make up the fighting rank. In either case, available models are brought forward from rear ranks to fill any gaps, as chosen by the controlling player.",
+       "Quell Impetuosity": "Whilst within 6\" of a unit with this special rule, a friendly Impetuous unit may re-roll a failed Leadership test when testing to determine if it must declare a charge or act as normal.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      },
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Great Weapon",
+        "range": "Combat",
+        "S": "S+2",
+        "ap": "-2",
+        "rules": "Armour Bane (1), Requires Two Hands, Strike Last"
+       },
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Special",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 4,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5r88tb6qt",
+      "shield": false
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {
+      "1": {
+       "level": 3,
+       "lore": "elementalism"
+      }
+     },
+     "note": "Black Orc Bigboss — 91 pt; Goblin Oddnob (Livello 3, elementalism) — 135 pt; 44 Orc Mobs (lance, Big 'Uns) — 352 pt; 15 Black Orc Mobs (stendardo, musico, arma grande, fronte 7) — 222 pt"
+    },
+    "formerNames": []
+   }
+  },
+  {
+   "geni": [
+    {
+     "k": "blackBigboss",
+     "o": {}
+    },
+    {
+     "k": "oddnob",
+     "o": {
+      "l4": false
+     },
+     "lore": "elementalism"
+    },
+    {
+     "k": "orcs",
+     "o": {
+      "c": "",
+      "spears": true,
+      "big": true,
+      "f": null
+     },
+     "n": 36
+    },
+    {
+     "k": "blackOrcs",
+     "o": {
+      "c": "csm",
+      "great": false,
+      "f": 5
+     },
+     "n": 22
+    }
+   ],
+   "descrizione": "Black Orc Bigboss — 91 pt; Goblin Oddnob (Livello 3, elementalism) — 135 pt; 36 Orc Mobs (lance, Big 'Uns) — 288 pt; 22 Black Orc Mobs (campione, stendardo, musico, fronte 5) — 282 pt",
+   "punti": 796,
+   "ricerca": {
+    "w": 25,
+    "l": 16,
+    "d": 7,
+    "n": 48
+   },
+   "verifica": {
+    "w": 120,
+    "l": 77,
+    "d": 19,
+    "n": 216,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 21,
+      "l": 9,
+      "d": 6,
+      "n": 36
+     },
+     "sxprova-profondo": {
+      "w": 20,
+      "l": 11,
+      "d": 5,
+      "n": 36
+     },
+     "sxprova-boschi": {
+      "w": 18,
+      "l": 16,
+      "d": 2,
+      "n": 36
+     },
+     "bm-strada": {
+      "w": 20,
+      "l": 16,
+      "d": 0,
+      "n": 36
+     },
+     "bm-rovine": {
+      "w": 24,
+      "l": 11,
+      "d": 1,
+      "n": 36
+     },
+     "open": {
+      "w": 17,
+      "l": 14,
+      "d": 5,
+      "n": 36
+     }
+    },
+    "perAvversario": {
+     "r-skaven-collezione-800-1": {
+      "w": 14,
+      "l": 9,
+      "d": 1,
+      "n": 24
+     },
+     "r-skaven-tutte-800-1": {
+      "w": 13,
+      "l": 7,
+      "d": 4,
+      "n": 24
+     },
+     "lmubp2kimjzhw": {
+      "w": 13,
+      "l": 8,
+      "d": 3,
+      "n": 24
+     },
+     "lmueliwuvm0ao": {
+      "w": 4,
+      "l": 11,
+      "d": 9,
+      "n": 24
+     },
+     "lmuegsxz4wod0": {
+      "w": 11,
+      "l": 12,
+      "d": 1,
+      "n": 24
+     },
+     "lmueliwuytkl7": {
+      "w": 13,
+      "l": 11,
+      "d": 0,
+      "n": 24
+     },
+     "lmubp01267euf": {
+      "w": 5,
+      "l": 18,
+      "d": 1,
+      "n": 24
+     },
+     "lmucdz1grir4h": {
+      "w": 23,
+      "l": 1,
+      "d": 0,
+      "n": 24
+     },
+     "lmu9q4uo0cqys": {
+      "w": 24,
+      "l": 0,
+      "d": 0,
+      "n": 24
+     }
+    },
+    "celle": {
+     "r-skaven-collezione-800-1|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|open": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmubp2kimjzhw|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmubp2kimjzhw|sxprova-profondo": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmubp2kimjzhw|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp2kimjzhw|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp2kimjzhw|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp2kimjzhw|open": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuvm0ao|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 0,
+      "d": 3,
+      "n": 4
+     },
+     "lmueliwuvm0ao|sxprova-profondo": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmueliwuvm0ao|sxprova-boschi": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmueliwuvm0ao|bm-strada": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuvm0ao|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuvm0ao|open": {
+      "w": 0,
+      "l": 1,
+      "d": 3,
+      "n": 4
+     },
+     "lmuegsxz4wod0|sxmu9q80qdc65": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmuegsxz4wod0|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuegsxz4wod0|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuegsxz4wod0|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuegsxz4wod0|bm-rovine": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmuegsxz4wod0|open": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|sxprova-profondo": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmubp01267euf|sxprova-boschi": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|sxmu9q80qdc65": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|sxprova-profondo": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|sxprova-boschi": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|bm-strada": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|open": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|sxmu9q80qdc65": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|sxprova-profondo": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|sxprova-boschi": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|bm-strada": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|open": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-og-tutte-800-3",
+    "name": "O&G libera 800 · 3",
+    "info": {
+     "catalogue": "Orc and Goblin Tribes",
+     "forceName": "Battle March",
+     "limit": 800
+    },
+    "points": 796,
+    "external": false,
+    "imported": "2026-09-24T09:47:58.358Z",
+    "units": [
+     {
+      "name": "Black Orc Bigboss",
+      "models": 1,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 1,
+      "loose": false,
+      "pts": 91,
+      "us": 0,
+      "troop": "Heavy Infantry",
+      "unitSize": "1",
+      "stats": {
+       "M": "4",
+       "WS": "6",
+       "BS": "3",
+       "S": "4",
+       "T": "5",
+       "W": "2",
+       "I": "5",
+       "A": "3",
+       "Ld": "8"
+      },
+      "rules": [
+       "Choppas",
+       "Furious Charge (does not apply to this model's mount should it have one)",
+       "Da Boyz",
+       "Quell Impetuosity",
+       "Ignore Panic",
+       "Rallying Cry",
+       "Waaagh!",
+       "Tusker Charge",
+       "Armoured Hide",
+       "Counter Charge",
+       "Swiftstride"
+      ],
+      "ruleText": {
+       "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
+       "Furious Charge (does not apply to this model's mount should it have one)": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
+       "Da Boyz": "Your army must include one Black Orc Boss for every Black Orc Mob it includes, and vice versa. In other words:\n\n \n• For each Black Orc Mob your army includes, it must also include one Black Orc War Boss or Big Boss.\n\n \n• For each Black Orc War Boss or Big Boss your army includes, it must also include one Black Orc Mob.",
+       "Quell Impetuosity": "Whilst within 6\" of a unit with this special rule, a friendly Impetuous unit may re-roll a failed Leadership test when testing to determine if it must declare a charge or act as normal.",
+       "Ignore Panic": "This unit does not have to make a Panic test when a friendly unit that does not also have this special rule is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly unit that does not have this special rule..",
+       "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+       "Waaagh!": "Once per game, during the Command sub-phase of their turn, this character may attempt to invoke the power of the Waaagh! by making a Leadership test (using their own Leadership). If this test is passed, until your next Start of Turn sub-phase this character, their mount and any Orc unit they have joined may re-roll any rolls To Hit of a natural 1 and, when calculating its combat result, may claim an additional bonus of +1 combat result point.\n\n Note that, for the purposes of this rule, an Orc unit is considered to be any unit that is made up entirely of Orcs or Black Orcs, mounted or otherwise. Should an Orc unit be joined by a Goblin character, it is no longer considered to be an Orc unit. This special rule is not cumulative.",
+       "Tusker Charge": "During a turn in which it charged, a War Boar’s Tusks (hand weapon) have a Strength characteristic of S+1 and an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to attacks made by a War Boar, not to their rider, a chariot or its crew.",
+       "Armoured Hide": "The hide of some creatures forms natural armour and improves their armour value ( and that of their rider). By how much armour value is improved varies from model to model, as shown in brackets after the name of this special rule.\n\n Note that a model that wears no armour is considerer to have an armour value of 7+ for the purposes of rules that improve armour value.",
+       "Counter Charge": "This special rule can only be used by units that consist entirely of models with this special rule. When a unit with this special rule is charged in its front arc by an enemy unit whose troop type is ‘cavalry,’ ‘chariot’ or ‘monster’, it may declare a ‘Counter Charge’ charge reaction:\n\n Counter Charge: The unit surges forward to meet the enemy charge. Measure the distance between the two units. If the distance is less than the Movement characteristic of the charging unit, the charged unit has not enough time to meet the enemy charge and must either Hold or Flee instead.\n\n Otherwise, pivot the unit about its centre so that it is facing directly towards the centre of the charging enemy unit. After pivoting, the unit moves D3+1\" directly towards the enemy unit. Both units are considered to have charged during this turn.\n\n Fleeing units and units already engaged in combat when charged cannot Counter Charge. A unit can only Counter Charge in response to one charge per turn, even if charged by multiple units. Once all charges have been declared, the inactive player can choose which charging unit to Counter Charge. The unit will then Hold against the other charging units.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Characters",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 4,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmttwumnm8axg"
+     },
+     {
+      "name": "Goblin Oddnob",
+      "models": 1,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 1,
+      "loose": false,
+      "pts": 135,
+      "us": 1,
+      "troop": "Regular Infantry",
+      "unitSize": "1",
+      "stats": {
+       "M": "4",
+       "WS": "4",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "3",
+       "I": "4",
+       "A": "2",
+       "Ld": "7"
+      },
+      "rules": [
+       "Fear of Elves",
+       "Warband",
+       "Lore of Mork"
+      ],
+      "ruleText": {
+       "Fear of Elves": "Elves of any type cause Fear in models with this special rule.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+       "Lore of Mork": "A wizard with the Lore of Mork special rule may discard one of their randomly generated spells as normal. When they do it they may select instead the signature spell of their chosen Lore of Magic, or one of the spell listed below."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Characters",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 0,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmttwupi8cano"
+     },
+     {
+      "name": "Orc Mobs",
+      "models": 36,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 9,
+      "loose": false,
+      "pts": 288,
+      "us": 36,
+      "troop": "Regular Infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "4",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "6"
+      },
+      "profiles": [
+       {
+        "name": "Orc Boy",
+        "stats": {
+         "M": "4",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "3",
+         "A": "1",
+         "Ld": "6"
+        }
+       }
+      ],
+      "mount": null,
+      "rules": [
+       "Choppas",
+       "Ignore Goblin Panic",
+       "Impetuous",
+       "Warband",
+       "Close Order",
+       "Furious Charge",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry",
+       "Big 'Uns"
+      ],
+      "ruleText": {
+       "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
+       "Ignore Goblin Panic": "This unit does not have to make a Panic test when a friendly Goblin unit is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly Goblin unit.\n\n Note that, for the purposes of this rule, a Goblin unit is considered to be any unit that is made up entirely of Goblins of any kind, mounted or otherwise. This includes any war machine or chariot that is crewed entirely by Goblins. Should a Goblin unit be joined by an Orc character, it is no longer considered to be a Goblin unit.",
+       "Impetuous": "If during the Declare Charges & Charge Reactions sub-phase of its turn, a unit that includes one or more Impetuous models is able to declare a charge, it must make a Leadership test. If this test is failed, the unit must declare a charge. If this test is passed, the unit may act as normal.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Thrusting Spear",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "Fight in Extra Rank"
+       },
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Core",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 6,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5r9bak4eg",
+      "shield": false
+     },
+     {
+      "name": "Black Orc Mobs",
+      "models": 22,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 5,
+      "loose": false,
+      "pts": 282,
+      "us": 22,
+      "troop": "Heavy Infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "4",
+       "WS": "4",
+       "BS": "3",
+       "S": "4",
+       "T": "4",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "8"
+      },
+      "rules": [
+       "Choppas",
+       "Close Order",
+       "Ignore Panic",
+       "Furious Charge",
+       "Da Boyz",
+       "Motley Crew",
+       "Quell Impetuosity",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "ruleText": {
+       "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Ignore Panic": "This unit does not have to make a Panic test when a friendly unit that does not also have this special rule is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly unit that does not have this special rule..",
+       "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
+       "Da Boyz": "Your army must include one Black Orc Boss for every Black Orc Mob it includes, and vice versa. In other words:\n\n \n• For each Black Orc Mob your army includes, it must also include one Black Orc War Boss or Big Boss.\n\n \n• For each Black Orc War Boss or Big Boss your army includes, it must also include one Black Orc Mob.",
+       "Motley Crew": "Units with this special rule may include models of the same type that are equipped differently to one another, and/or models of different types that fight together in a single unit. If necessary, the army list entry for such units will be accompanied by a brief explanation of the unit’s composition.\n\n Different Weapons: The fighting rank of a Motley Crew may contain models that are armed with different weapons. In such cases, the controlling player must roll different batches of dice for the different models, making it clear to their opponent which model’s attacks they represent and where they are being directed. These attacks are made in the Initiative order of the individual models, as usual.\n\n Different Armour: Models within a Motley Crew may have different armour values. In combat, use the armour value of the majority of the models in the fighting rank. Against enemy shooting, use the armour value of the majority of the models in the unit.\n\n Casualty Removal: Against enemy shooting, casualty removal should be divided as equally as possible between the different models within the unit. In combat, casualties should be removed from among the majority of the models that make up the fighting rank. In either case, available models are brought forward from rear ranks to fill any gaps, as chosen by the controlling player.",
+       "Quell Impetuosity": "Whilst within 6\" of a unit with this special rule, a friendly Impetuous unit may re-roll a failed Leadership test when testing to determine if it must declare a charge or act as normal.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      },
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Special",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 4,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5r88tb6qt",
+      "shield": false
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {
+      "1": {
+       "level": 3,
+       "lore": "elementalism"
+      }
+     },
+     "note": "Black Orc Bigboss — 91 pt; Goblin Oddnob (Livello 3, elementalism) — 135 pt; 36 Orc Mobs (lance, Big 'Uns) — 288 pt; 22 Black Orc Mobs (campione, stendardo, musico, fronte 5) — 282 pt"
+    },
+    "formerNames": []
+   }
+  },
+  {
+   "geni": [
+    {
+     "k": "blackBigboss",
+     "o": {}
+    },
+    {
+     "k": "oddnob",
+     "o": {
+      "l4": false
+     },
+     "lore": "elementalism"
+    },
+    {
+     "k": "orcs",
+     "o": {
+      "c": "",
+      "spears": true,
+      "big": true,
+      "f": null
+     },
+     "n": 45
+    },
+    {
+     "k": "blackOrcs",
+     "o": {
+      "c": "csm",
+      "great": false,
+      "f": 5
+     },
+     "n": 16
+    }
+   ],
+   "descrizione": "Black Orc Bigboss — 91 pt; Goblin Oddnob (Livello 3, elementalism) — 135 pt; 45 Orc Mobs (lance, Big 'Uns) — 360 pt; 16 Black Orc Mobs (campione, stendardo, musico, fronte 5) — 210 pt",
+   "punti": 796,
+   "ricerca": {
+    "w": 41,
+    "l": 25,
+    "d": 6,
+    "n": 72
+   },
+   "verifica": {
+    "w": 103,
+    "l": 84,
+    "d": 29,
+    "n": 216,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 18,
+      "l": 14,
+      "d": 4,
+      "n": 36
+     },
+     "sxprova-profondo": {
+      "w": 16,
+      "l": 14,
+      "d": 6,
+      "n": 36
+     },
+     "sxprova-boschi": {
+      "w": 18,
+      "l": 13,
+      "d": 5,
+      "n": 36
+     },
+     "bm-strada": {
+      "w": 17,
+      "l": 18,
+      "d": 1,
+      "n": 36
+     },
+     "bm-rovine": {
+      "w": 18,
+      "l": 14,
+      "d": 4,
+      "n": 36
+     },
+     "open": {
+      "w": 16,
+      "l": 11,
+      "d": 9,
+      "n": 36
+     }
+    },
+    "perAvversario": {
+     "r-skaven-collezione-800-1": {
+      "w": 14,
+      "l": 5,
+      "d": 5,
+      "n": 24
+     },
+     "r-skaven-tutte-800-1": {
+      "w": 13,
+      "l": 6,
+      "d": 5,
+      "n": 24
+     },
+     "lmubp2kimjzhw": {
+      "w": 4,
+      "l": 17,
+      "d": 3,
+      "n": 24
+     },
+     "lmueliwuvm0ao": {
+      "w": 4,
+      "l": 13,
+      "d": 7,
+      "n": 24
+     },
+     "lmuegsxz4wod0": {
+      "w": 11,
+      "l": 9,
+      "d": 4,
+      "n": 24
+     },
+     "lmueliwuytkl7": {
+      "w": 10,
+      "l": 13,
+      "d": 1,
+      "n": 24
+     },
+     "lmubp01267euf": {
+      "w": 2,
+      "l": 20,
+      "d": 2,
+      "n": 24
+     },
+     "lmucdz1grir4h": {
+      "w": 24,
+      "l": 0,
+      "d": 0,
+      "n": 24
+     },
+     "lmu9q4uo0cqys": {
+      "w": 21,
+      "l": 1,
+      "d": 2,
+      "n": 24
+     }
+    },
+    "celle": {
+     "r-skaven-collezione-800-1|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|sxprova-profondo": {
+      "w": 1,
+      "l": 0,
+      "d": 3,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|sxprova-boschi": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-collezione-800-1|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|sxprova-boschi": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|bm-strada": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|bm-rovine": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "r-skaven-tutte-800-1|open": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmubp2kimjzhw|sxmu9q80qdc65": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp2kimjzhw|sxprova-profondo": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp2kimjzhw|sxprova-boschi": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmubp2kimjzhw|bm-strada": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp2kimjzhw|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp2kimjzhw|open": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmueliwuvm0ao|sxmu9q80qdc65": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmueliwuvm0ao|sxprova-profondo": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmueliwuvm0ao|sxprova-boschi": {
+      "w": 0,
+      "l": 2,
+      "d": 2,
+      "n": 4
+     },
+     "lmueliwuvm0ao|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuvm0ao|bm-rovine": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmueliwuvm0ao|open": {
+      "w": 0,
+      "l": 2,
+      "d": 2,
+      "n": 4
+     },
+     "lmuegsxz4wod0|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmuegsxz4wod0|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuegsxz4wod0|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmuegsxz4wod0|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmuegsxz4wod0|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmuegsxz4wod0|open": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmueliwuytkl7|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|sxprova-boschi": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmueliwuytkl7|bm-rovine": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmueliwuytkl7|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|sxprova-profondo": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmubp01267euf|sxprova-boschi": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|bm-strada": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|bm-rovine": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmubp01267euf|open": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmucdz1grir4h|sxmu9q80qdc65": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|sxprova-profondo": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|sxprova-boschi": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|bm-strada": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmucdz1grir4h|open": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|sxmu9q80qdc65": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|sxprova-profondo": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|sxprova-boschi": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|bm-strada": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|bm-rovine": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmu9q4uo0cqys|open": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-og-tutte-800-4",
+    "name": "O&G libera 800 · 4",
+    "info": {
+     "catalogue": "Orc and Goblin Tribes",
+     "forceName": "Battle March",
+     "limit": 800
+    },
+    "points": 796,
+    "external": false,
+    "imported": "2026-09-24T09:47:58.358Z",
+    "units": [
+     {
+      "name": "Black Orc Bigboss",
+      "models": 1,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 1,
+      "loose": false,
+      "pts": 91,
+      "us": 0,
+      "troop": "Heavy Infantry",
+      "unitSize": "1",
+      "stats": {
+       "M": "4",
+       "WS": "6",
+       "BS": "3",
+       "S": "4",
+       "T": "5",
+       "W": "2",
+       "I": "5",
+       "A": "3",
+       "Ld": "8"
+      },
+      "rules": [
+       "Choppas",
+       "Furious Charge (does not apply to this model's mount should it have one)",
+       "Da Boyz",
+       "Quell Impetuosity",
+       "Ignore Panic",
+       "Rallying Cry",
+       "Waaagh!",
+       "Tusker Charge",
+       "Armoured Hide",
+       "Counter Charge",
+       "Swiftstride"
+      ],
+      "ruleText": {
+       "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
+       "Furious Charge (does not apply to this model's mount should it have one)": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
+       "Da Boyz": "Your army must include one Black Orc Boss for every Black Orc Mob it includes, and vice versa. In other words:\n\n \n• For each Black Orc Mob your army includes, it must also include one Black Orc War Boss or Big Boss.\n\n \n• For each Black Orc War Boss or Big Boss your army includes, it must also include one Black Orc Mob.",
+       "Quell Impetuosity": "Whilst within 6\" of a unit with this special rule, a friendly Impetuous unit may re-roll a failed Leadership test when testing to determine if it must declare a charge or act as normal.",
+       "Ignore Panic": "This unit does not have to make a Panic test when a friendly unit that does not also have this special rule is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly unit that does not have this special rule..",
+       "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+       "Waaagh!": "Once per game, during the Command sub-phase of their turn, this character may attempt to invoke the power of the Waaagh! by making a Leadership test (using their own Leadership). If this test is passed, until your next Start of Turn sub-phase this character, their mount and any Orc unit they have joined may re-roll any rolls To Hit of a natural 1 and, when calculating its combat result, may claim an additional bonus of +1 combat result point.\n\n Note that, for the purposes of this rule, an Orc unit is considered to be any unit that is made up entirely of Orcs or Black Orcs, mounted or otherwise. Should an Orc unit be joined by a Goblin character, it is no longer considered to be an Orc unit. This special rule is not cumulative.",
+       "Tusker Charge": "During a turn in which it charged, a War Boar’s Tusks (hand weapon) have a Strength characteristic of S+1 and an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to attacks made by a War Boar, not to their rider, a chariot or its crew.",
+       "Armoured Hide": "The hide of some creatures forms natural armour and improves their armour value ( and that of their rider). By how much armour value is improved varies from model to model, as shown in brackets after the name of this special rule.\n\n Note that a model that wears no armour is considerer to have an armour value of 7+ for the purposes of rules that improve armour value.",
+       "Counter Charge": "This special rule can only be used by units that consist entirely of models with this special rule. When a unit with this special rule is charged in its front arc by an enemy unit whose troop type is ‘cavalry,’ ‘chariot’ or ‘monster’, it may declare a ‘Counter Charge’ charge reaction:\n\n Counter Charge: The unit surges forward to meet the enemy charge. Measure the distance between the two units. If the distance is less than the Movement characteristic of the charging unit, the charged unit has not enough time to meet the enemy charge and must either Hold or Flee instead.\n\n Otherwise, pivot the unit about its centre so that it is facing directly towards the centre of the charging enemy unit. After pivoting, the unit moves D3+1\" directly towards the enemy unit. Both units are considered to have charged during this turn.\n\n Fleeing units and units already engaged in combat when charged cannot Counter Charge. A unit can only Counter Charge in response to one charge per turn, even if charged by multiple units. Once all charges have been declared, the inactive player can choose which charging unit to Counter Charge. The unit will then Hold against the other charging units.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Characters",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 4,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmttwumnm8axg"
+     },
+     {
+      "name": "Goblin Oddnob",
+      "models": 1,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 1,
+      "loose": false,
+      "pts": 135,
+      "us": 1,
+      "troop": "Regular Infantry",
+      "unitSize": "1",
+      "stats": {
+       "M": "4",
+       "WS": "4",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "3",
+       "I": "4",
+       "A": "2",
+       "Ld": "7"
+      },
+      "rules": [
+       "Fear of Elves",
+       "Warband",
+       "Lore of Mork"
+      ],
+      "ruleText": {
+       "Fear of Elves": "Elves of any type cause Fear in models with this special rule.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+       "Lore of Mork": "A wizard with the Lore of Mork special rule may discard one of their randomly generated spells as normal. When they do it they may select instead the signature spell of their chosen Lore of Magic, or one of the spell listed below."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Characters",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 0,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmttwupi8cano"
+     },
+     {
+      "name": "Orc Mobs",
+      "models": 45,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 12,
+      "loose": false,
+      "pts": 360,
+      "us": 45,
+      "troop": "Regular Infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "4",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "6"
+      },
+      "profiles": [
+       {
+        "name": "Orc Boy",
+        "stats": {
+         "M": "4",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "3",
+         "A": "1",
+         "Ld": "6"
+        }
+       }
+      ],
+      "mount": null,
+      "rules": [
+       "Choppas",
+       "Ignore Goblin Panic",
+       "Impetuous",
+       "Warband",
+       "Close Order",
+       "Furious Charge",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry",
+       "Big 'Uns"
+      ],
+      "ruleText": {
+       "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
+       "Ignore Goblin Panic": "This unit does not have to make a Panic test when a friendly Goblin unit is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly Goblin unit.\n\n Note that, for the purposes of this rule, a Goblin unit is considered to be any unit that is made up entirely of Goblins of any kind, mounted or otherwise. This includes any war machine or chariot that is crewed entirely by Goblins. Should a Goblin unit be joined by an Orc character, it is no longer considered to be a Goblin unit.",
+       "Impetuous": "If during the Declare Charges & Charge Reactions sub-phase of its turn, a unit that includes one or more Impetuous models is able to declare a charge, it must make a Leadership test. If this test is failed, the unit must declare a charge. If this test is passed, the unit may act as normal.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Thrusting Spear",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "Fight in Extra Rank"
+       },
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Core",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 6,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5r9bak4eg",
+      "shield": false
+     },
+     {
+      "name": "Black Orc Mobs",
+      "models": 16,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 5,
+      "loose": false,
+      "pts": 210,
+      "us": 16,
+      "troop": "Heavy Infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "4",
+       "WS": "4",
+       "BS": "3",
+       "S": "4",
+       "T": "4",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "8"
+      },
+      "rules": [
+       "Choppas",
+       "Close Order",
+       "Ignore Panic",
+       "Furious Charge",
+       "Da Boyz",
+       "Motley Crew",
+       "Quell Impetuosity",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "ruleText": {
+       "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Ignore Panic": "This unit does not have to make a Panic test when a friendly unit that does not also have this special rule is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly unit that does not have this special rule..",
+       "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
+       "Da Boyz": "Your army must include one Black Orc Boss for every Black Orc Mob it includes, and vice versa. In other words:\n\n \n• For each Black Orc Mob your army includes, it must also include one Black Orc War Boss or Big Boss.\n\n \n• For each Black Orc War Boss or Big Boss your army includes, it must also include one Black Orc Mob.",
+       "Motley Crew": "Units with this special rule may include models of the same type that are equipped differently to one another, and/or models of different types that fight together in a single unit. If necessary, the army list entry for such units will be accompanied by a brief explanation of the unit’s composition.\n\n Different Weapons: The fighting rank of a Motley Crew may contain models that are armed with different weapons. In such cases, the controlling player must roll different batches of dice for the different models, making it clear to their opponent which model’s attacks they represent and where they are being directed. These attacks are made in the Initiative order of the individual models, as usual.\n\n Different Armour: Models within a Motley Crew may have different armour values. In combat, use the armour value of the majority of the models in the fighting rank. Against enemy shooting, use the armour value of the majority of the models in the unit.\n\n Casualty Removal: Against enemy shooting, casualty removal should be divided as equally as possible between the different models within the unit. In combat, casualties should be removed from among the majority of the models that make up the fighting rank. In either case, available models are brought forward from rear ranks to fill any gaps, as chosen by the controlling player.",
+       "Quell Impetuosity": "Whilst within 6\" of a unit with this special rule, a friendly Impetuous unit may re-roll a failed Leadership test when testing to determine if it must declare a charge or act as normal.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      },
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Special",
+      "faction": "Orc and Goblin Tribes",
+      "armour": 4,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5r88tb6qt",
+      "shield": false
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {
+      "1": {
+       "level": 3,
+       "lore": "elementalism"
+      }
+     },
+     "note": "Black Orc Bigboss — 91 pt; Goblin Oddnob (Livello 3, elementalism) — 135 pt; 45 Orc Mobs (lance, Big 'Uns) — 360 pt; 16 Black Orc Mobs (campione, stendardo, musico, fronte 5) — 210 pt"
+    },
+    "formerNames": []
+   }
+  }
+ ]
+}
