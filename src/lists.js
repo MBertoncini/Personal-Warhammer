@@ -22,7 +22,9 @@ import { askText, askConfirm, askPick, say } from './uikit.js';
 import {
   catalogAll, catEntry, matchUnitName, candidatesFor,
   linkAlias, photoFor, upsertEntry, normalize, paintedOf,
+  siblingsOf, pickByWeapons, entryLabel,
 } from './catalog.js';
+import { armiKey, classeDi, assegna } from './armi.js';
 import { loadDoc, saveDoc } from './store.js';
 import { attachSuggest, closeSuggest } from './suggest.js';
 import { emit } from './bus.js';
@@ -107,7 +109,7 @@ export async function importListText(text, { external = false } = {}){
     /* una lista esterna non si aggancia alla collezione: l'aggancio
        serve a contare quante miniature ti mancano, e di una lista che
        non e' tua non te ne manca nessuna */
-    units: r.units.map(u => ({ ...u, catId: external ? null : matchUnitName(u.name) })),
+    units: r.units.map(u => ({ ...u, catId: external ? null : matchUnitName(u.name, u.weapons) })),
   };
   /* Il personaggio montato che il file esporta con la basetta e il tipo
      di truppa del cavaliere: si riconosce dalla firma della cavalcatura
@@ -131,7 +133,7 @@ export async function adoptList(src){
   const gia = lists.find(l => firma(l) === firma(src) && (l.info || {}).catalogue === (src.info || {}).catalogue);
   if (gia) return { list: gia, nuova: false };
   const list = { ...structuredClone(src), id: newId(), external: false, imported: new Date().toISOString(),
-                 units: src.units.map(u => ({ ...structuredClone(u), catId: u.catId || matchUnitName(u.name) })) };
+                 units: src.units.map(u => ({ ...structuredClone(u), catId: u.catId || matchUnitName(u.name, u.weapons) })) };
   lists.push(list);
   await persist();
   return { list, nuova: true };
@@ -291,8 +293,11 @@ export async function linkUnit(listId, unitIndex, catId){
   if (!l) return;
   const u = l.units[unitIndex];
   u.catId = catId || null;
-  /* sganciare a mano e' una scelta: healLinks non deve disfarla */
-  if (catId) delete u.noLink; else u.noLink = true;
+  /* sganciare a mano e' una scelta: healLinks non deve disfarla. E
+     nemmeno agganciare a mano: chi mette gli arcieri sulla voce senza
+     archi sa quello che fa, e le armi non lo spostano */
+  if (catId){ delete u.noLink; u.linkByHand = true; }
+  else { u.noLink = true; delete u.linkByHand; }
   if (catId) await linkAlias(catId, u.name);   // impara: non lo richiedera' piu'
   /* lo stesso nome in questa lista si aggancia da solo */
   for (const other of l.units) {
@@ -304,14 +309,25 @@ export async function linkUnit(listId, unitIndex, catId){
 /* Ri-aggancia quello che si puo' ri-agganciare: unita' rimaste senza voce
    (al momento dell'import il catalogo era vuoto) e unita' che puntano a una
    voce sparita (fusa nel suo doppione). Senza questo l'aggancio resta quello
-   del giorno dell'import e le foto aggiunte dopo non si vedono mai. */
+   del giorno dell'import e le foto aggiunte dopo non si vedono mai.
+   E un'unita' agganciata a una voce che ha sorelle con altre armi passa
+   a quella armata come lei: la voce degli archi arriva dopo le liste, e
+   gli arcieri stavano tutti sulla voce di base. Chi l'ha agganciata a
+   mano resta dov'e'. */
 export async function healLinks(){
   let changed = false;
   for (const l of lists){
     for (const u of l.units){
-      if (u.catId && catEntry(u.catId)) continue;
+      const e = u.catId && catEntry(u.catId);
+      if (e){
+        if (u.linkByHand || l.external) continue;
+        const sis = siblingsOf(e);
+        const best = sis.length > 1 ? pickByWeapons(sis, u.weapons) : e;
+        if (best && best.id !== e.id){ u.catId = best.id; changed = true; }
+        continue;
+      }
       if (!u.catId && u.noLink) continue;
-      const id = matchUnitName(u.name);
+      const id = matchUnitName(u.name, u.weapons);
       if (id !== (u.catId || null)){ u.catId = id; changed = true; }
     }
   }
@@ -332,31 +348,68 @@ export async function entryFromUnit(listId, unitIndex){
   if (id) await linkUnit(listId, unitIndex, id);
 }
 
-/* riepilogo di copertura di una lista rispetto alla collezione */
+/* La classe delle armi di un'unita' fra le voci del tipo a cui e'
+   agganciata, e la voce di quella classe (o la sua, se nessuna). */
+function unitClass(u, e){
+  const sis = siblingsOf(e);
+  const k = classeDi(u.weapons || [], sis.map(x => armiKey(x.armi)));
+  return { sis, k, home: sis.find(x => armiKey(x.armi) === k) || e };
+}
+
+/* Riepilogo di copertura di una lista rispetto alla collezione.
+   Le armi contano (armi.js): un'unita' si conta sulla voce del suo tipo
+   armata come lei, e le voci che si possono schierare con altre armi
+   coprono quello che manca alle altre. Una riga per tipo e classe di
+   armi; `prestate` dice quante vengono da voci sorelle. */
 export function coverage(list){
-  const need = new Map();
+  const types = new Map();   // capofila del tipo -> { sis, serve: Map classe -> modelli, home: Map classe -> voce }
   let unlinked = 0;
   /* una lista esterna non e' in vetrina: niente scoperto, niente da
      dipingere, niente da agganciare */
-  if (list && list.external) return { rows: [], unlinked: 0, missing: 0, toPaint: 0, external: true };
+  if (list && list.external) return { rows: [], unlinked: 0, missing: 0, toPaint: 0, external: true, rowOf: () => null };
+  const orphans = new Map();  // voce sparita -> modelli
   for (const u of list.units){
     if (!u.catId) { unlinked++; continue; }
-    need.set(u.catId, (need.get(u.catId) || 0) + u.models);
+    const e = catEntry(u.catId);
+    if (!e){ orphans.set(u.catId, (orphans.get(u.catId) || 0) + u.models); continue; }
+    const { sis, k, home } = unitClass(u, e);
+    const lead = (sis[0] || e).id;
+    if (!types.has(lead)) types.set(lead, { sis, serve: new Map(), home: new Map() });
+    const t = types.get(lead);
+    t.serve.set(k, (t.serve.get(k) || 0) + u.models);
+    if (!t.home.has(k)) t.home.set(k, home);
   }
-  const rows = [...need].map(([id, n]) => {
-    const e = catEntry(id);
+  /* `armi` e' la classe della riga: due classi possono finire sulla
+     stessa voce (i Night Goblin con le lance, quando in vetrina ci sono
+     solo quelli con l'arco), e sono due righe */
+  const row = (e, id, n, short, prestate, armi = "") => {
     const owned = e ? +e.owned || 0 : 0;
     const painted = paintedOf(e);
+    const sue = !e || armiKey(e.armi) === armi;
     return {
-      id, entry: e, need: n, owned, painted,
-      short: Math.max(0, n - owned),
+      id, entry: e, armi, need: n, owned, painted, short, prestate,
       /* quante ne resterebbero da dipingere per giocare questa lista:
-         non piu' di quante ne possiedi, il resto e' roba da comprare */
-      toPaint: Math.max(0, Math.min(n, owned) - painted),
+         non piu' di quante ne possiedi, il resto e' roba da comprare.
+         Una classe che la voce non ha non si dipinge: si compra. */
+      toPaint: sue ? Math.max(0, Math.min(n, owned) - painted) : 0,
     };
-  });
+  };
+  const rows = [...orphans].map(([id, n]) => row(null, id, n, n, 0));
+  for (const t of types.values()){
+    const r = assegna(t.serve, t.sis.map(x => ({ armi: armiKey(x.armi), libere: !!x.altreArmi, n: +x.owned || 0 })));
+    for (const [k, n] of t.serve){
+      const e = t.home.get(k);
+      rows.push(row(e, e.id, n, r.manca.get(k) || 0, r.prestate.get(k) || 0, k));
+    }
+  }
+  const rowOf = u => {
+    const e = u.catId && catEntry(u.catId);
+    if (!e) return null;
+    const { home, k } = unitClass(u, e);
+    return rows.find(x => x.id === home.id && x.armi === k) || null;
+  };
   return {
-    rows, unlinked,
+    rows, unlinked, rowOf,
     missing: rows.reduce((s, r) => s + r.short, 0),
     toPaint: rows.reduce((s, r) => s + r.toPaint, 0),
   };
@@ -615,7 +668,7 @@ export function renderLists(){
     /* diventando esterna perde l'aggancio alla collezione, e
        tornando tua se lo riprende: tenerlo a meta' vorrebbe dire una
        lista che conta un po' nella vetrina e un po' no */
-    for (const u of l.units) u.catId = l.external ? null : matchUnitName(u.name);
+    for (const u of l.units) u.catId = l.external ? null : matchUnitName(u.name, u.weapons);
     await persist();
     renderLists();
   }));
@@ -679,6 +732,22 @@ function facesOf(l){
     if (p && !out.includes(p)) out.push(p);
   }
   return out;
+}
+
+/* Il chip di un'unita': i suoi modelli su quanti ne hai. Rosso se alla
+   lista mancano miniature di quel tipo armate come lei; giallo se le
+   prende in prestito da una voce che si schiera con altre armi; il
+   perche' nel title. */
+function unitChipHTML(l, u, e){
+  const row = coverage(l).rowOf(u);
+  const why = [];
+  if (row && row.short) why.push(`nella lista ne mancano ${row.short}`);
+  if (row && row.prestate) why.push(`${row.prestate} prese da voci che si schierano con altre armi`);
+  if (armiKey(e.armi) && !classeDi(u.weapons || [], [armiKey(e.armi)]))
+    why.push(`queste miniature hanno ${e.armi}, l'unità no`);
+  const key = row && row.short ? "bad" : row && row.prestate ? "warn" : "ok";
+  return `<span class="chip ${key}"${why.length ? ` title="${esc(why.join(" · "))}"` : ""}>${
+    u.models}/${e.owned}${row && row.prestate ? "+" + row.prestate : ""}</span>`;
 }
 
 function listRowHTML(l){
@@ -951,10 +1020,10 @@ function detailHTML(l){
         const p = e && photoFor(e.id);
         const cands = u.catId ? [] : candidatesFor(u.name, 4);
         const options = cands.length
-          ? cands.map(c => `<option value="${c.entry.id}">${esc(c.entry.name)} (${Math.round(c.score * 100)}%)</option>`).join("")
+          ? cands.map(c => `<option value="${c.entry.id}">${esc(entryLabel(c.entry))} (${Math.round(c.score * 100)}%)</option>`).join("")
           : "";
         const rest = cat.filter(x => !cands.some(c => c.entry.id === x.id) && x.id !== u.catId)
-          .map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join("");
+          .map(x => `<option value="${x.id}">${esc(entryLabel(x))}</option>`).join("");
         return `
         <div class="row u-row">
           <span class="nm">
@@ -963,14 +1032,14 @@ function detailHTML(l){
               u.mountId ? " \u00b7 " + esc(MT.mountLabel(u)) : ""}</span>
           </span>
           ${e
-            ? `<span class="chip ${u.models > (+e.owned || 0) ? "bad" : "ok"}">${u.models}/${e.owned}</span>`
+            ? unitChipHTML(l, u, e)
             : `<span class="chip warn">da agganciare</span>`}
           <span class="minis">
             ${p ? Array.from({ length: Math.min(u.models, 24) },
                   () => `<img class="mdl" src="${p}" alt="" loading="lazy">`).join("") : ""}
           </span>
           <select class="link" data-link="${l.id}|${i}">
-            <option value="">${e ? esc(e.name) : "\u2014 scegli dal catalogo \u2014"}</option>
+            <option value="">${e ? esc(entryLabel(e)) : "\u2014 scegli dal catalogo \u2014"}</option>
             ${options}${rest}
             <option value="__new__">+ crea voce "${esc(u.name)}"</option>
           </select>

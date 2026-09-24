@@ -75,6 +75,9 @@ const ARMI = {
   censer: { name: 'Plague censer', range: 'Combat', S: 'S+2', ap: '-1', rules: 'Poisoned Attacks, Requires Two Hands' },
   wlc: { name: 'Warp Lightning Cannon', range: '8D6"', S: '*', ap: '-3', rules: 'Cumbersome, Lightning Strike, Move or Shoot' },
   catcher: { name: 'Things-catcher', range: 'Combat', S: 'S', ap: '-1', rules: 'Fight in Extra Rank, Killing Blow,Requires Two Hands' },
+  /* come le scrive New Recruit nelle liste dell'archivio */
+  warbow: { name: 'Warbow', range: '24"', S: 'S', ap: '-', rules: 'Volley Fire' },
+  shortbow: { name: 'Shortbow', range: '18"', S: '3', ap: '-', rules: 'Quick Shot, Volley Fire' },
 };
 const armi = l => l.map(w => typeof w === 'string' ? ARMI[w] : w);
 const gittata = ws => Math.max(0, ...ws.map(w => parseInt(w.range) || 0));
@@ -204,21 +207,28 @@ export const SK = {
 };
 
 /* ================= ORCHI & GOBLIN (Ravening Hordes) ================= */
+/* i boss di Orchi Neri si costruiscono da quello che l'archivio ha */
+const bossNero = () => ['Black Orc Bigboss', 'Black Orc Warboss'].find(haModello) || 'Black Orc Bigboss';
+const A_CAVALLO = ['Tusker Charge', 'Armoured Hide', 'Counter Charge', 'Swiftstride'];
 export const OG = {
   /* p. 22: 5 pt; Boss +7, stendardo +5, musico +5; lance +1; Frenesia al
-     posto dell'armatura leggera +1, Big 'Uns +2, Warpaint +1. Niente scudo. */
-  orcs: ({ n = 20, c = '', spears = false, frenzy = false, big = false, paint = false, f } = {}) => da('Orc Mobs', { n, f, c,
-    pts: n * (5 + (spears ? 1 : 0) + (frenzy ? 1 : 0) + (big ? 2 : 0) + (paint ? 1 : 0)) + costoComando(c, { c: 7, s: 5, m: 5 }),
-    shield: false, weapons: spears ? ['spear', 'hw'] : ['hw'], armour: (frenzy || paint) ? 0 : 6,
+     posto dell'armatura leggera +1, Big 'Uns +2, Warpaint +1. Niente scudo.
+     Archi da guerra gratis, al posto delle lance: una dotazione sola
+     per tutto il reggimento. */
+  orcs: ({ n = 20, c = '', spears = false, bows = false, frenzy = false, big = false, paint = false, f } = {}) => da('Orc Mobs', { n, f, c,
+    pts: n * (5 + (spears && !bows ? 1 : 0) + (frenzy ? 1 : 0) + (big ? 2 : 0) + (paint ? 1 : 0)) + costoComando(c, { c: 7, s: 5, m: 5 }),
+    shield: false, weapons: bows ? ['hw', 'warbow'] : spears ? ['spear', 'hw'] : ['hw'], armour: (frenzy || paint) ? 0 : 6,
     add: [...(frenzy ? ['Frenzy'] : []), ...(big ? ["Big 'Uns"] : []), ...(paint ? ['Warpaint'] : [])] }),
   /* p. 21: 12 pt, armatura a piastre; Boss/stendardo/musico +6; arma grande +2 */
   blackOrcs: ({ n = 10, c = '', great = false, f } = {}) => da('Black Orc Mobs', { n, f, c,
     pts: n * (12 + (great ? 2 : 0)) + costoComando(c, { c: 6, s: 6, m: 6 }), armour: 4, shield: false,
     add: BM, weapons: great ? ['great', 'hw'] : ['hw'] }),
-  /* p. 25: 3 pt con scudi, lance +1; Boss +7, stendardo +5, musico +5 */
-  nightGoblins: ({ n = 20, c = '', spears = false, f } = {}) => da('Night Goblin Mobs', { n, f, c,
-    pts: n * (3 + (spears ? 1 : 0)) + costoComando(c, { c: 7, s: 5, m: 5 }),
-    armour: 6, shield: true, add: BM, weapons: spears ? ['spear', 'hw'] : ['hw'],
+  /* p. 25: 3 pt con scudi, lance +1; Boss +7, stendardo +5, musico +5.
+     Oppure archi corti al posto degli scudi, +1: senza scudo niente
+     armatura. */
+  nightGoblins: ({ n = 20, c = '', spears = false, bows = false, f } = {}) => da('Night Goblin Mobs', { n, f, c,
+    pts: n * (3 + ((spears || bows) ? 1 : 0)) + costoComando(c, { c: 7, s: 5, m: 5 }),
+    armour: bows ? 0 : 6, shield: !bows, add: BM, weapons: bows ? ['hw', 'shortbow'] : spears ? ['spear', 'hw'] : ['hw'],
     del: ['Release the Fanatics!', 'Fanatic Ball & Chain'] }),
   /* p. 23: 3 pt con scudi, lance +1; Boss +7, stendardo +5, musico +5 */
   goblins: ({ n = 20, c = '', spears = false, f } = {}) => da('Goblin Mobs', { n, f, c,
@@ -241,12 +251,18 @@ export const OG = {
     pts: 55 + (great ? 4 : 0) + (heavy ? 3 : 0) + (bsb ? 25 : 0), armour: heavy ? 5 : 6, shield: false,
     weapons: great ? ['great', 'hw'] : ['hw'], add: bsb ? ['Battle Standard Bearer'] : [] }),
   /* p. 12: Black Orc Warboss 135, armatura a piastre; arma grande +4. Il
-     modello è il Bigboss importato, che era a cavallo: via le regole del
-     cinghiale. Da Boyz (p. 45) vuole un reggimento di Orchi Neri. */
-  blackWarboss: ({ great = true } = {}) => da('Black Orc Warboss', { modello: 'Black Orc Bigboss',
+     modello è un boss di Orchi Neri importato, anche a cavallo: via le
+     regole del cinghiale. Da Boyz (p. 45) vuole un reggimento di Orchi Neri. */
+  blackWarboss: ({ great = true } = {}) => da('Black Orc Warboss', { modello: bossNero(),
     stats: '4 7 3 5 5 3 6 4 9', pts: 135 + (great ? 4 : 0), armour: 4, shield: false,
     troop: 'Heavy Infantry (character)',
-    weapons: great ? ['great', 'hw'] : ['hw'], del: ['Tusker Charge', 'Armoured Hide', 'Counter Charge', 'Swiftstride'] }),
+    weapons: great ? ['great', 'hw'] : ['hw'], del: A_CAVALLO }),
+  /* p. 12: Black Orc Bigboss 75, a piedi. L'unico importato era il
+     Bigboss della collezione, che era un Orco sul cinghiale: ora e' un
+     Orc Bigboss, e il modello e' il Warboss. */
+  blackBigboss: () => da('Black Orc Bigboss', { modello: bossNero(),
+    stats: '4 6 3 4 5 2 5 3 8', pts: 75, armour: 4, shield: false,
+    troop: 'Heavy Infantry (character)', weapons: ['hw'], del: A_CAVALLO }),
   /* p. 14: Weirdnob 140 (Livello 3), Livello 4 +30: il Livello va anche
      nella scheda di preparazione, perché il file non lo dice */
   weirdnob: ({ l4 = true } = {}) => da('Orc Weirdnob', { pts: 140 + (l4 ? 30 : 0) }),

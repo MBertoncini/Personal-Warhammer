@@ -25,6 +25,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SK, OG, LZ, da, lista, avvisiComposizione } from './unita.mjs';
+import { armiKey, assegna, quanti } from '../../src/armi.js';
 
 const qui = path.dirname(fileURLToPath(import.meta.url));
 const dati = f => JSON.parse(fs.readFileSync(path.join(qui, '..', '..', 'dati', f), 'utf8'));
@@ -68,15 +69,18 @@ const ORCHI = [
   { k: 'warboss', pezzo: 'Orc Warboss', max: 1, opz: { great: [true, false], heavy: [true, false] }, crea: OG.warboss },
   { k: 'bigboss', pezzo: 'Orc Bigboss', max: 2, opz: { great: SI_NO, heavy: [true, false], bsb: SI_NO }, crea: OG.bigboss, bsb: o => o.bsb },
   { k: 'blackWarboss', pezzo: 'Black Orc Warboss', max: 1, opz: { great: [true, false] }, crea: OG.blackWarboss, nero: 'boss' },
-  { k: 'blackBigboss', pezzo: 'Black Orc Bigboss', max: 1, crea: () => da('Black Orc Bigboss'), nero: 'boss' },
+  { k: 'blackBigboss', pezzo: 'Black Orc Bigboss', max: 1, crea: OG.blackBigboss, nero: 'boss' },
   { k: 'weirdnob', pezzo: 'Orc Weirdnob', max: 1, opz: { l4: [true, false] }, crea: OG.weirdnob, mago: o => o.l4 ? 4 : 3 },
   { k: 'oddnob', pezzo: 'Goblin Oddnob', max: 1, opz: { l4: [true, false] }, crea: OG.oddnob, mago: o => o.l4 ? 4 : 3 },
   { k: 'ngOddnob', pezzo: 'Night Goblin Oddnob', max: 1, crea: () => da('Night Goblin Oddnob'), mago: () => 3 },
   { k: 'ngBigboss', pezzo: 'Night Goblin Bigboss', max: 1, crea: () => da('Night Goblin Bigboss') },
   { k: 'ogdruz', pezzo: 'Ogdruz Swampdigga', max: 1, crea: OG.ogdruz },
-  { k: 'orcs', pezzo: 'Orc Mobs', n: [10, 50], opz: { c: COMANDO, spears: SI_NO, big: SI_NO, f: FRONTI }, crea: OG.orcs },
+  /* gli archi sono un pezzo a sé nella collezione: `armi` dice quale (src/armi.js) */
+  { k: 'orcs', pezzo: 'Orc Mobs', n: [10, 50], opz: { c: COMANDO, spears: SI_NO, bows: SI_NO, big: SI_NO, f: FRONTI }, crea: OG.orcs,
+    armi: o => o.bows ? 'Warbows' : '' },
   { k: 'blackOrcs', pezzo: 'Black Orc Mobs', n: [10, 30], opz: { c: COMANDO, great: [true, false], f: FRONTI }, crea: OG.blackOrcs, nero: 'mob' },
-  { k: 'nightGoblins', pezzo: 'Night Goblin Mobs', n: [10, 40], opz: { c: COMANDO, spears: SI_NO, f: FRONTI }, crea: OG.nightGoblins },
+  { k: 'nightGoblins', pezzo: 'Night Goblin Mobs', n: [10, 40], opz: { c: COMANDO, spears: SI_NO, bows: SI_NO, f: FRONTI }, crea: OG.nightGoblins,
+    armi: o => o.bows ? 'Shortbows' : '' },
   { k: 'goblins', pezzo: 'Goblin Mobs', n: [10, 40], opz: { c: COMANDO, spears: SI_NO, f: FRONTI }, crea: OG.goblins },
   { k: 'trolls', pezzo: 'Stone Troll Mobs', n: [1, 6], crea: OG.trolls },
   { k: 'boarBoys', pezzo: 'Orc Boar Boy Mobs', n: [5, 10], opz: { c: COMANDO, spears: [true, false], shields: SI_NO }, crea: OG.boarBoys },
@@ -151,19 +155,31 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
   if (!fz) throw new Error(`Fazione «${fazione}» sconosciuta: ${Object.keys(FAZIONI).join(', ')}.`);
   margine = margine ?? Math.max(20, Math.round(punti * 0.04));
 
-  /* quante miniature hai, per nome (e alias) dentro la fazione */
-  const hai = new Map();
+  /* Quante miniature hai, per nome (e alias) dentro la fazione, e con
+     quali armi: 25 Orchi con l'arma a una mano e 15 con l'arco sono due
+     scorte, e un reggimento di arcieri pesca solo dalla seconda — o da
+     quelle che il catalogo dice schierabili con altre armi (src/armi.js). */
+  const scorte = new Map();
   if (pool === 'collezione'){
     for (const e of catalogo || dati('catalogo.json')){
       if (fazioneDi(e.faction) !== fazione) continue;
-      for (const nome of new Set([e.name, ...(e.aliases || [])].map(norm))) hai.set(nome, (hai.get(nome) || 0) + (+e.owned || 0));
+      const s = { armi: armiKey(e.armi), libere: !!e.altreArmi, n: +e.owned || 0 };
+      for (const nome of new Set([e.name, ...(e.aliases || [])].map(norm))){
+        if (!scorte.has(nome)) scorte.set(nome, []);
+        scorte.get(nome).push(s);
+      }
     }
   }
+  const quantiDi = (p, k = '') => quanti(k, scorte.get(norm(p)) || []);
+
+  /* i pezzi di un'unità: [pezzo, quanti, classe delle armi] */
+  const pezziDi = (v, n, o = {}) => v.pezzi ? v.pezzi(n).map(([p, q]) => [p, q, ''])
+    : [[v.pezzo, v.n ? n : 1, armiKey(v.armi ? v.armi(o) : '')]];
+  const bastano = (v, n, o) => pezziDi(v, n, o).every(([p, q, k]) => quantiDi(p, k) >= q);
 
   /* le voci che si possono costruire davvero: il modello importato
      c'è, e — per la collezione — le miniature pure */
   const voci = [], escluse = [];
-  const pezziDi = (v, n) => v.pezzi ? v.pezzi(n) : [[v.pezzo, v.n ? n : 1]];
   for (const v0 of fz.voci){
     let u;
     try { u = v0.crea({ ...Object.fromEntries(Object.entries(v0.opz || {}).map(([k, a]) => [k, a[0]])), ...(v0.n ? { n: v0.n[0] } : {}) }); }
@@ -171,9 +187,29 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
     const v = { ...v0, slot: u.slot, nome: v0.etichetta || u.name, opz: v0.opz || {} };
     v.max = v0.max ?? MAX[v.slot] ?? 2;
     if (pool === 'collezione'){
-      const manca = pezziDi(v, v.n ? v.n[0] : 1).filter(([p, q]) => (hai.get(norm(p)) || 0) < q);
-      if (manca.length){ escluse.push({ k: v.k, pezzo: v.pezzo, perche: manca.map(([p, q]) => `${p}: ne hai ${hai.get(norm(p)) || 0}, ne servono ${q}`).join('; ') }); continue; }
-      if (v.n) v.n = [v.n[0], Math.min(v.n[1], ...pezziDi(v, 1).map(([p, q]) => Math.floor((hai.get(norm(p)) || 0) / q)))];
+      const min = v.n ? v.n[0] : 1;
+      /* le opzioni che cambiano le armi restano se ci sono le miniature
+         armate così: con i Night Goblin tutti con l'arco, l'arco non è
+         più una scelta. Due giri, perché un'opzione si prova con le
+         altre già ristrette. */
+      const base = Object.fromEntries(Object.entries(v.opz).map(([k, a]) => [k, a[0]]));
+      if (v.armi) for (let giro = 0; giro < 2; giro++){
+        const opz = {};
+        for (const [k, a] of Object.entries(v.opz)){
+          const buone = a.filter(x => bastano(v, min, { ...base, [k]: x }));
+          opz[k] = buone.length ? buone : a;
+          base[k] = opz[k][0];
+        }
+        v.opz = opz;
+      }
+      const manca = pezziDi(v, min, base).filter(([p, q, k]) => quantiDi(p, k) < q);
+      if (manca.length){ escluse.push({ k: v.k, pezzo: v.pezzo, perche: manca.map(([p, q, k]) =>
+        `${p}${k ? ' (' + k + ')' : ''}: ne hai ${quantiDi(p, k)}, ne servono ${q}`).join('; ') }); continue; }
+      if (v.n){
+        const classi = [base, ...Object.entries(v.opz).flatMap(([k, a]) => a.map(x => ({ ...base, [k]: x })))];
+        const tetto = Math.max(...classi.map(o => Math.min(...pezziDi(v, 1, o).map(([p, q, k]) => Math.floor(quantiDi(p, k) / q)))));
+        v.n = [v.n[0], Math.min(v.n[1], tetto)];
+      }
     }
     voci.push(v);
   }
@@ -219,6 +255,29 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
       note: descrivi(geni) }, id);
   }
 
+  /* ---- le miniature bastano? ----
+     Per ogni pezzo, quanti ne servono per classe di armi; ogni classe
+     pesca dalle sue, e quelle schierabili con altre armi coprono il
+     resto (src/armi.js). */
+  function mancanze(geni){
+    if (pool !== 'collezione') return [];
+    const serve = new Map();
+    for (const g of geni){
+      if (!voce(g)) continue;
+      for (const [p, q, k] of pezziDi(voce(g), g.n || 1, g.o)){
+        if (!serve.has(norm(p))) serve.set(norm(p), new Map());
+        const m = serve.get(norm(p));
+        m.set(k, (m.get(k) || 0) + q);
+      }
+    }
+    const err = [];
+    for (const [p, m] of serve){
+      const r = assegna(m, scorte.get(p) || []);
+      for (const [k, b] of r.manca) err.push(`${p}${k ? ' (' + k + ')' : ''}: ne servono ${m.get(k)}, ne hai ${m.get(k) - b}`);
+    }
+    return err;
+  }
+
   /* ---- è una lista che si può giocare? ---- */
   function valida(geni){
     const err = [];
@@ -239,11 +298,7 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
     if (pts > punti) err.push(`${pts} punti su ${punti}`);
     if (pts < punti - margine) err.push(`solo ${pts} punti`);
     err.push(...fz.vincoli(geni, voce));
-    if (pool === 'collezione'){
-      const serve = new Map();
-      for (const g of geni) for (const [p, q] of pezziDi(voce(g), g.n || 1)) serve.set(norm(p), (serve.get(norm(p)) || 0) + q);
-      for (const [p, q] of serve) if (q > (hai.get(p) || 0)) err.push(`${p}: ne servono ${q}, ne hai ${hai.get(p) || 0}`);
-    }
+    err.push(...mancanze(geni));
     if (!err.length){
       err.push(...avvisiComposizione({ points: pts, info: { limit: punti }, units: geni.map(g => ({ slot: voce(g).slot, pts: costo(g) })) }));
     }
@@ -253,16 +308,17 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
   /* ---- geni a caso ---- */
   /* quanti modelli di questa voce ci stanno ancora, con le miniature che
      le altre unità della lista hanno già preso (senza collezione: tutti) */
-  const resto = (geni, v) => {
+  /* con le armi scelte (`o`): gli arcieri contano solo gli archi */
+  const resto = (geni, v, o = {}) => {
     if (pool !== 'collezione') return Infinity;
-    const usati = new Map();
-    for (const g of geni) for (const [p, q] of pezziDi(voce(g), g.n || 1)) usati.set(norm(p), (usati.get(norm(p)) || 0) + q);
-    return Math.min(...pezziDi(v, 1).map(([p, q]) => Math.floor(((hai.get(norm(p)) || 0) - (usati.get(norm(p)) || 0)) / q)));
+    for (let n = v.n ? v.n[1] : 1; n >= 1; n--)
+      if (!mancanze([...geni, { k: v.k, ...(v.n ? { n } : {}), o }]).length) return n;
+    return 0;
   };
   const geneCasuale = (v, rnd, altri = []) => {
-    const max = Math.min(v.n ? v.n[1] : 1, resto(altri, v));
-    if (max < (v.n ? v.n[0] : 1)) return null;
     const g = { k: v.k, o: Object.fromEntries(Object.entries(v.opz).map(([k, a]) => [k, scegli(a, rnd)])) };
+    const max = Math.min(v.n ? v.n[1] : 1, resto(altri, v, g.o));
+    if (max < (v.n ? v.n[0] : 1)) return null;
     if (v.n) g.n = intero(v.n[0], max, rnd);
     if (v.mago && v.mago(g.o) > 0) g.lore = scegli(loriDi(v.pezzo), rnd);
     if (g.o.f != null && g.n && g.o.f > g.n) g.o.f = null;
@@ -377,13 +433,14 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
   }
 
   /* ---- a parole, per chi legge ---- */
-  const PAROLE = { shields: 'scudi', spears: 'lance', great: 'arma grande', heavy: 'armatura pesante', shield: 'scudo',
+  const PAROLE = { shields: 'scudi', spears: 'lance', bows: 'archi', great: 'arma grande', heavy: 'armatura pesante', shield: 'scudo',
     bsb: 'stendardo da battaglia', censer: 'incensiere', catcher: 'Things-catcher', sling: 'fionde', big: "Big 'Uns" };
   function descrivi(geni){
     return ordina(geni).map(g => {
       const v = voce(g), o = g.o || {}, bit = [];
       for (const [k, x] of Object.entries(o)){
         if (x === false || x == null || x === '' || k === 'f' || k === 'l4' || k === 'l2' || k === 'level') continue;
+        if (k === 'spears' && o.bows) continue;   // l'arco prende il posto delle lance
         if (k === 'c') bit.push([...x].map(c => ({ c: 'campione', s: 'stendardo', m: 'musico' })[c]).join(', '));
         else if (k === 'weapon') bit.push(PAROLE[x] || { halberd: 'alabarda' }[x] || x);
         else if (k === 'gun') bit.push({ pistol: 'pistola', musket: 'moschetto' }[x] || x);

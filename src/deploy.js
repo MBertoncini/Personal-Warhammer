@@ -319,7 +319,7 @@ function healLinks(){
   let changed = false;
   for (const u of state.units){
     if (u.catId && catEntry(u.catId)) continue;
-    const id = matchUnitName(u.name);
+    const id = matchUnitName(u.name, u.weapons);
     if (id !== (u.catId || null)){ u.catId = id; changed = true; }
   }
   return changed;
@@ -5220,7 +5220,7 @@ function addRoster(parsed, armyId){
   army.info = { catalogue: parsed.catalogue, forceName: parsed.forceName, limit: parsed.limit, total: parsed.total };
   state.units = state.units.filter(u => u.army !== armyId);
   for (const p of parsed.units)
-    state.units.push({ uid: uidSeq++, army: armyId, ...p, catId: matchUnitName(p.name),
+    state.units.push({ uid: uidSeq++, army: armyId, ...p, catId: matchUnitName(p.name, p.weapons),
                        x:0, y:0, rot: armyId === "A" ? 0 : 180, placed:false,
                        lost:0, dead:false, fled:false });
 
@@ -5914,7 +5914,7 @@ function loadArmyFromList(list, armyId){
   for (const [i, p] of list.units.entries()){
     state.units.push({
       uid: uidSeq++, army: armyId, ...p, prepara: prep[i] || null,
-      catId: p.catId || matchUnitName(p.name),
+      catId: p.catId || matchUnitName(p.name, p.weapons),
       x:0, y:0, rot: armyId === "A" ? 0 : 180, placed:false,
       lost:0, dead:false, fled:false,
     });

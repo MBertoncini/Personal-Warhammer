@@ -5,7 +5,14 @@
  * da 25 in una lista e due mob da 12 in un'altra, quindi l'unico
  * conteggio che regge e' "tipo + quantita'".
  *
- *   { id, name, faction, baseId, baseW, baseH, owned, painted, aliases[], notes }
+ *   { id, name, faction, baseId, baseW, baseH, owned, painted, aliases[], notes,
+ *     armi, altreArmi }
+ *
+ * "armi" dice la dotazione quando distingue il pezzo: 25 Orchi con
+ * l'arma a una mano e 15 con l'arco sono due voci «Orc Mobs», una
+ * senza armi scritte e una con «Warbows». "altreArmi" dice se quelle
+ * miniature si possono schierare anche armate diversamente (braccia
+ * magnetizzate, procura): le regole stanno in armi.js.
  *
  * "painted" e' quante ne hai finite: la domanda vera prima di un
  * torneo non e' "ce le ho?" ma "sono dipinte?".
@@ -20,6 +27,7 @@ import { loadDoc, saveDoc, deleteDoc, pickImage, shrinkImage, readImage,
          dataUrlBytes, FULL_MAX_PX, usage, isPersisted } from './store.js';
 import { emit } from './bus.js';
 import { askConfirm, askPick, say } from './uikit.js';
+import { armiKey, classeDi } from './armi.js';
 
 const CAT_KEY = "catalog:entries";
 
@@ -95,8 +103,28 @@ function score(rawName, entry){
    La fazione passa dai token perche' New Recruit scrive "Orc and Goblin
    Tribes" e il catalogo "Orc & Goblin Tribes": senza questo ogni import
    creerebbe un doppione. */
-const kindKey = (name, faction) => normalize(name) + "|" + tokens(faction).join(" ");
-const kindOf  = e => kindKey(e.name, e.faction);
+const typeKey = (name, faction) => normalize(name) + "|" + tokens(faction).join(" ");
+const typeOf  = e => typeKey(e.name, e.faction);
+/* Lo stesso TIPO con armi diverse e' un altro pezzo: non un doppione */
+const kindKey = (name, faction, armi = "") => typeKey(name, faction) + "|" + armiKey(armi);
+const kindOf  = e => kindKey(e.name, e.faction, e.armi);
+
+/* le voci dello stesso tipo, con qualunque arma: fra queste si sceglie
+   guardando le armi dell'unita' */
+export const siblingsOf = e => e ? entries.filter(x => typeOf(x) === typeOf(e)) : [];
+/* il nome da mostrare: con le armi, se la voce le dice */
+export const entryLabel = e => !e ? "" : e.name + (armiKey(e.armi) ? " · " + e.armi : "");
+
+/* Fra voci dello stesso tipo, quella che l'unita' porta: la classe
+   delle sue armi fra quelle delle voci, poi la migliore di quella
+   classe. Senza armi da guardare, la voce di base. */
+function byWeapons(list, weapons){
+  if (list.length < 2) return list[0] || null;
+  const k = classeDi(weapons || [], list.map(e => armiKey(e.armi)));
+  const same = list.filter(e => armiKey(e.armi) === k);
+  return bestOf(same.length ? same : list);
+}
+export const pickByWeapons = byWeapons;
 
 /* Fra voci dello stesso tipo vince quella con la foto, poi la piu' fornita:
    e' l'unica che ha qualcosa da mostrare nelle liste e sul tavolo. */
@@ -107,29 +135,39 @@ function bestOf(list){
 }
 
 /* la voce gia' esistente per questo tipo, se c'e' */
-export const findKind = (name, faction) =>
-  bestOf(entries.filter(e => kindOf(e) === kindKey(name, faction)));
+export const findKind = (name, faction, armi = "") =>
+  bestOf(entries.filter(e => kindOf(e) === kindKey(name, faction, armi)));
 
 /* ritorna l'id se l'aggancio e' sicuro, altrimenti null:
-   meglio chiedere una volta che sbagliare in silenzio */
-export function matchUnitName(name){
+   meglio chiedere una volta che sbagliare in silenzio.
+   Con le armi dell'unita', fra voci dello stesso tipo sceglie quella
+   armata come lei: gli arcieri sulla voce degli arcieri. */
+export function matchUnitName(name, weapons = null){
   const n = normalize(name);
   if (!n) return null;
 
   const exact = entries.filter(e =>
     normalize(e.name) === n || (e.aliases || []).includes(n));
-  if (exact.length) return bestOf(exact).id;
+  if (exact.length){
+    /* un alias uguale su due tipi diversi: vince il nome, poi il resto */
+    const own = exact.filter(e => normalize(e.name) === n);
+    const pool = own.length ? own : exact;
+    const types = new Set(pool.map(typeOf));
+    return (types.size === 1 ? byWeapons(pool, weapons) : bestOf(pool)).id;
+  }
 
   /* un tipo = un candidato, altrimenti due doppioni a pari punteggio
-     si annullano a vicenda e non aggancia mai niente */
+     si annullano a vicenda e non aggancia mai niente; le voci dello
+     stesso tipo con armi diverse sono un candidato solo, e fra loro
+     sceglie l'arma */
   const byKind = new Map();
   for (const r of candidatesFor(name, 12)){
-    const k = kindOf(r.entry);
+    const k = typeOf(r.entry);
     if (byKind.has(k)) byKind.get(k).list.push(r.entry);
     else byKind.set(k, { score: r.score, list: [r.entry] });
   }
   const ranked = [...byKind.values()]
-    .map(g => ({ entry: bestOf(g.list), score: g.score }))
+    .map(g => ({ entry: byWeapons(g.list, weapons), score: g.score }))
     .sort((a, b) => b.score - a.score);
 
   if (ranked.length && ranked[0].score >= 0.75 &&
@@ -241,7 +279,7 @@ export async function upsertEntry(data, { merge = false } = {}){
     return e.id;
   }
 
-  const twin = merge ? findKind(data.name, data.faction) : null;
+  const twin = merge ? findKind(data.name, data.faction, data.armi) : null;
   if (twin){
     twin.owned = (+twin.owned || 0) + (+data.owned || 0);
     twin.painted = (+twin.painted || 0) + (+data.painted || 0);
@@ -553,6 +591,8 @@ function cardHTML(e){
       </button>
       <div class="cat-body">
         <b>${esc(e.name)}</b>
+        ${armiKey(e.armi) || e.altreArmi ? `<span class="mono">${armiKey(e.armi) ? "armi: " + esc(e.armi) : "dotazione di base"}${
+          e.altreArmi ? " · anche con altre armi" : ""}</span>` : ""}
         <span class="mono">${esc(e.faction)} \u00b7 ${e.baseW}\u00d7${e.baseH} mm</span>
         <span class="owned">${e.owned} in collezione \u00b7 <span class="${paintedOf(e) >= (+e.owned || 0) ? "done" : "todo"}">${paintedOf(e)} dipinte</span></span>
         ${(e.aliases || []).length
@@ -575,6 +615,9 @@ function editorHTML(){
         <label class="field">Quantit\u00e0 posseduta<input type="number" id="ed-owned" min="0" max="999" value="${+e.owned || 0}"></label>
       </div>
       <label class="field">Quante ne hai dipinte<input type="number" id="ed-painted" min="0" max="999" value="${paintedOf(e)}"></label>
+      <label class="field">Armi, se distinguono il pezzo<input type="text" id="ed-armi" value="${esc(e.armi || "")}" placeholder="Warbows, Shortbows… vuoto = dotazione di base"></label>
+      <label class="dice-anim" title="Braccia magnetizzate, o al circolo si gioca per procura: queste miniature coprono anche unità armate diversamente">
+        <input type="checkbox" id="ed-altre"${e.altreArmi ? " checked" : ""}> si possono schierare anche con altre armi</label>
       <label class="field">Basetta<select id="ed-base">
         ${BASES.map(b => `<option value="${b.id}" ${b.id === e.baseId ? "selected" : ""}>${esc(b.label)}</option>`).join("")}
       </select></label>
@@ -595,12 +638,13 @@ function wireEditor(){
     const name = $("#ed-name").value.trim();
     if (!name) return say("Una voce di catalogo senza nome non si ritrova più.", { title:"Serve un nome" });
     const faction = $("#ed-faction").value;
+    const armi = $("#ed-armi").value.trim();
 
     /* una seconda voce con lo stesso nome spezza la collezione in due:
        si puo' fare, ma solo dicendolo */
     let merge = false;
     if (!editing.id){
-      const twin = findKind(name, faction);
+      const twin = findKind(name, faction, armi);
       if (twin){
         const pick = await askPick({
           title: "Questa voce c'\u00e8 gi\u00e0",
@@ -617,7 +661,7 @@ function wireEditor(){
 
     await upsertEntry({
       id: editing.id || undefined,
-      name, faction,
+      name, faction, armi, altreArmi: $("#ed-altre").checked,
       baseId: $("#ed-base").value, baseW: b.w, baseH: b.h,
       owned: Math.max(0, +$("#ed-owned").value || 0),
       painted: Math.max(0, +$("#ed-painted").value || 0),

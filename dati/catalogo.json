@@ -188,8 +188,10 @@
     "aliases": [
       "night goblin mobs"
     ],
-    "notes": "Con archi corti (shortbow).",
-    "painted": 0
+    "notes": "Con archi corti (Shortbows) al posto degli scudi.",
+    "painted": 0,
+    "armi": "Shortbows",
+    "altreArmi": false
   },
   {
     "id": "cmtl5s189osz2",
@@ -235,7 +237,7 @@
   },
   {
     "id": "cmug2y3o63cg5",
-    "name": "Orc Mobs with Shortbows",
+    "name": "Orc Mobs",
     "faction": "Orc & Goblin Tribes",
     "baseId": "30x30",
     "baseW": 30,
@@ -243,10 +245,11 @@
     "owned": 15,
     "painted": 0,
     "aliases": [
-      "orc mobs with shortbows",
       "orc mobs"
     ],
-    "notes": "Con archi corti (shortbow)."
+    "notes": "Con archi da guerra (Warbows).",
+    "armi": "Warbows",
+    "altreArmi": false
   },
   {
     "id": "cmttwumnm8axg",
