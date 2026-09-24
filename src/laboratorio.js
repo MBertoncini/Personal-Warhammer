@@ -29,7 +29,7 @@ const SEI = ["sxmu9q80qdc65", "sxprova-profondo", "sxprova-boschi", "bm-strada",
 const TUTTI = "__tutti";
 const KEY = "tow-lab";
 
-let v = { punti: 800, scenario: TUTTI, filtro: "tutte", fazione: "tutte", pool: "entrambe", sforzo: "normale", dove: "sei" };
+let v = { punti: 800, scenario: TUTTI, filtro: "tutte", fazione: "tutte", pool: "entrambe", sforzo: "normale", dove: "sei", esempi: "si", capo: "no" };
 try { v = { ...v, ...JSON.parse(localStorage.getItem(KEY) || "{}") }; } catch { /* la prima volta */ }
 const ricorda = () => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* niente */ } };
 
@@ -183,6 +183,11 @@ function ricercaHTML({ file, doc }){
         ${doc.escluse.length ? `<p class="note">Rimaste fuori: ${doc.escluse.map(e => `${esc(e.pezzo)} (${esc(e.perche)})`).join("; ")}.</p>` : ""}
         <p class="note">Andamento, la prima in classifica a ogni generazione: ${doc.storia.map(s => `${s.migliore}%`).join(" → ")}.</p>
       </details>
+      ${(doc.provate || []).length ? `<details><summary class="note">Le unità: quante volte provate, e come sono andate</summary>
+        <p class="note">Per ogni unità, in quante liste la ricerca l'ha messa e la media dei risultati di quelle liste (le vinte, più metà dei pareggi). Un'unità che manca dalle migliori con tante liste alle spalle è andata male; con zero o una non è stata provata abbastanza.</p>
+        <div class="tray">${doc.provate.map(t => `<div class="row u-row"><span class="nm"><b><span class="txt">${esc(t.nome)}</span></b>
+          <span class="mono">${t.liste ? `${t.liste} liste · ${t.partite} partite${t.finaliste ? ` · in ${t.finaliste} finaliste` : ""}` : "mai provata"}</span></span>
+          <span class="chip ${t.media == null ? "idle" : ""}">${t.media == null ? "–" : t.media + "%"}</span></div>`).join("")}</div></details>` : ""}
     </div>`;
 }
 
@@ -190,7 +195,8 @@ function ricercaHTML({ file, doc }){
 function comandi(tor){
   const scen = v.dove === "sei" ? SEI : v.dove === "tutti" ? scenariNoti().map(s => s.id) : [v.scenario === TUTTI ? "bm-strada" : v.scenario];
   const arg = v.dove === "sei" ? "" : v.dove === "tutti" ? " --scenari tutti" : ` --scenari ${scen[0]}`;
-  const cerca = `node tools/liste/cerca.mjs --fazione ${v.fazione} --pool ${v.pool} --punti ${v.punti}${arg} --sforzo ${v.sforzo}`;
+  const cerca = `node tools/liste/cerca.mjs --fazione ${v.fazione} --pool ${v.pool} --punti ${v.punti}${arg} --sforzo ${v.sforzo}` +
+                (v.esempi === "no" ? " --senza-esempi" : "") + (v.capo === "si" ? " --da-capo" : "");
   const nScen = scenariNoti().length;
   const torneo = `node tools/liste/torneo.mjs --punti ${v.punti}`;
   /* la stima: gli avversari sono le liste d'archivio vicine ai punti e le
@@ -198,7 +204,7 @@ function comandi(tor){
   const nf = v.fazione === "tutte" ? 3 : 1, np = v.pool === "entrambe" ? 2 : 1;
   const avv = Math.min(10, 6 + (ricercheA(v.punti).length ? 3 : 0));
   const p = SFORZI[v.sforzo], celle = avv * scen.length;
-  const perRicerca = 2 * (p.popolazione * p.generazioni * Math.min(p.celle, celle) + p.finaliste * celle * p.verifica);
+  const perRicerca = 2 * ((p.popolazione * p.generazioni + 12) * Math.min(p.celle, celle) + p.finaliste * celle * p.verifica);
   const quanteDopo = Math.max(ricercheA(v.punti).length, nf * np);
   const perTorneo = quanteDopo * (quanteDopo - 1) / 2 * nScen * 5 * 2;
   const tot = nf * np * perRicerca + perTorneo;
@@ -216,6 +222,8 @@ function comandiHTML(tor){
       <label class="field">Unità${sel("lab-pool", v.pool, [["entrambe", "Tutte, e la mia collezione"], ["tutte", "Tutte quelle che si sanno costruire"], ["collezione", "Solo la mia collezione"]])}</label>
       <label class="field">Scenari su cui cercarla${sel("lab-dove", v.dove, [["sei", "I sei di prova (una lista buona ovunque)"], ["questo", "Solo lo scenario scelto"], ["tutti", "Tutti gli scenari"]])}</label>
       <label class="field">Sforzo${sel("lab-sforzo", v.sforzo, [["rapido", "Rapido"], ["normale", "Normale"], ["accurato", "Accurato"]])}</label>
+      <label class="field">Liste note (esempi.mjs)${sel("lab-esempi", v.esempi, [["si", "Anche da loro"], ["no", "Senza: solo liste a tema e a caso"]])}</label>
+      <label class="field">Ricerca di prima${sel("lab-capo", v.capo, [["no", "Riparti dalle sue migliori"], ["si", "Buttala: da capo"]])}</label>
     </div>
     <pre class="mono lab-cmd" id="lab-cmd">${esc(c.testo)}</pre>
     <p class="note">Circa ${c.tot.toLocaleString("it-IT")} partite in tutto: a due o tre al secondo, ${c.minuti < 90 ? `un'ora scarsa o meno (${c.minuti} minuti)` : `${Math.round(c.minuti / 60)} ore`}.
@@ -271,6 +279,7 @@ export async function renderLaboratorio(){
   const cambia = (id, k, num = false) => { const el = $(id); if (el) el.addEventListener("change", () => { v[k] = num ? +el.value : el.value; ricorda(); renderLaboratorio(); }); };
   cambia("#lab-sc", "scenario"); cambia("#lab-pt", "punti", true); cambia("#lab-filtro", "filtro");
   cambia("#lab-fz", "fazione"); cambia("#lab-pool", "pool"); cambia("#lab-dove", "dove"); cambia("#lab-sforzo", "sforzo");
+  cambia("#lab-esempi", "esempi"); cambia("#lab-capo", "capo");
   const usa = $("#lab-usa-pt");
   if (usa) usa.addEventListener("click", () => { v.punti = sc.pts; ricorda(); renderLaboratorio(); });
   $("#lab-ricarica").addEventListener("click", async () => { docs = null; await renderLaboratorio(); });

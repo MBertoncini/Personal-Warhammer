@@ -465,6 +465,7 @@ Quello che si faceva a mano con `valuta.mjs` — scrivere candidate, giocarle, t
 ```bash
 npm run cerca -- --sforzo rapido                     # le tre fazioni, tutte le unità e la collezione, 800 punti, i sei scenari
 npm run cerca -- --fazione skaven --pool collezione --punti 750 --scenari bm-strada
+npm run cerca -- --fazione liz --senza-esempi --da-capo   # senza le liste note, e senza riprendere la ricerca di prima
 npm run torneo -- --punti 800                        # chi batte chi, su ogni scenario (--archivio aggiunge le liste da 800 dell'archivio)
 ```
 
@@ -473,6 +474,7 @@ npm run torneo -- --punti 800                        # chi batte chi, su ogni sc
 - Gli avversari sono le liste dell'archivio vicine ai punti e la migliore di ogni ricerca delle altre fazioni: rifare la ricerca riparte dalle liste migliori della volta prima e gioca contro quello che le altre hanno trovato nel frattempo. È il giro da ripetere: ricerca, torneo, ricerca.
 - I risultati vanno in `dati/ricerche/` (un file per ricerca, uno per torneo, e l'indice). La Nuvola non li tocca; su GitHub Pages arrivano con un commit. Dal Laboratorio una lista trovata entra nelle tue con **Aggiungi alle mie liste**.
 - Lo sforzo: `rapido` (qualche centinaio di partite a ricerca), `normale` (un paio di migliaia), `accurato`. Il Laboratorio scrive il comando e dice quante partite costa.
+- **Perché non vince sempre la fanteria per costruzione.** Le prime ricerche davano solo blocchi di fanteria e un personaggio, e le cause erano due. La ricerca: metà delle unità si pescava fra le truppe base, i punti avanzati finivano tutti in modelli dei reggimenti, e la popolazione partiva dalle liste di `esempi.mjs`, tutte fanteria; con lo sforzo rapido non se ne allontanava. Adesso le unità si pescano alla pari, i punti avanzati comprano prima un'unità nuova, la prima generazione ha **una lista a tema per ogni unità** e `--senza-esempi` lascia fuori le liste note. Nel file e nel Laboratorio c'è **la tabella delle unità**: in quante liste è stata provata ognuna e come sono andate — si vede se un'unità manca perché va male o perché nessuno l'ha provata. L'altra causa è nel simulatore, ed è ancora lì: a parità di punti, 18 Saurus al posto di 5 Terradon vincono 47% contro 19% su 144 partite, perché un pezzo su basetta grande che girandosi sul posto toccherebbe qualcosa non si gira e va dritto (`pianoAvanzata` in `arbitro.js`), e i volanti restano spesso fermi.
 
 ## Installarla
 

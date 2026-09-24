@@ -86,7 +86,8 @@ const ORCHI = [
 const LUCERTOLE = [
   { k: 'oldblood', pezzo: 'Saurus Oldblood', max: 1, opz: { weapon: ['great', 'halberd', null] }, crea: LZ.oldblood },
   /* la cavalcatura è un pezzo a sé: senza il Carnosauro in vetrina non si schiera */
-  { k: 'carnoOldblood', pezzo: 'Saurus Oldblood', pezzi: () => [['Saurus Oldblood', 1], ['Carnosaur', 1]], max: 1, crea: LZ.carnoOldblood },
+  { k: 'carnoOldblood', pezzo: 'Saurus Oldblood', pezzi: () => [['Saurus Oldblood', 1], ['Carnosaur', 1]], max: 1, crea: LZ.carnoOldblood,
+    etichetta: 'Saurus Oldblood sul Carnosauro' },
   { k: 'scarVet', pezzo: 'Saurus Scar-Veteran', max: 2, opz: { weapon: ['great', 'halberd', null], bsb: SI_NO }, crea: LZ.scarVet, bsb: o => o.bsb },
   { k: 'priest', pezzo: 'Skink Priest', max: 2, opz: { l2: [true, false] }, crea: LZ.priest, mago: o => o.l2 ? 2 : 1 },
   { k: 'chief', pezzo: 'Skink Chief', max: 2, crea: LZ.chief },
@@ -106,6 +107,16 @@ const daBoyz = (geni, voce) => {
   const boss = geni.filter(g => voce(g).nero === 'boss').length, mob = geni.filter(g => voce(g).nero === 'mob').length;
   return boss === mob ? [] : [`Da Boyz: ${boss} boss di Orchi Neri e ${mob} reggimenti`];
 };
+/* e la metà che manca: chi scrive liste a caso mette un reggimento di
+   Orchi Neri senza il suo boss quasi sempre, e la lista si butta */
+const daBoyzCompleta = (geni, voce, nuovo) => {
+  const conta = r => geni.filter(g => voce(g).nero === r).length;
+  for (let giri = 0; giri < 4 && conta('boss') !== conta('mob'); giri++){
+    const g = nuovo(conta('boss') < conta('mob') ? 'boss' : 'mob');
+    if (!g) break;
+    geni.push(g);
+  }
+};
 
 /* le liste già trovate a mano (esempi.mjs), scritte come geni: la
    ricerca parte anche da loro, e deve fare almeno altrettanto */
@@ -115,6 +126,7 @@ export const FAZIONI = {
     partenze: [[G('greySeer', 0, { level: 4 }, 'battle'), G('clanrats', 40, { shields: true, c: 'csm', f: 8 }),
                 G('clanrats', 40, { shields: true, c: 'csm', f: 8 }), G('clanrats', 29, { shields: true, c: 'sm', f: 6 })]] },
   og: { sigla: 'O&G', nome: 'Orchi & Goblin', cat: 'Orc and Goblin Tribes', voci: ORCHI, vincoli: daBoyz,
+    completa: (geni, voce, nuovo) => daBoyzCompleta(geni, voce, nuovo),
     partenze: [[G('blackWarboss', 0, { great: true }), G('weirdnob', 0, { l4: true }, 'battle'),
                 G('blackOrcs', 10, { c: 'cs', great: true }), G('orcs', 50, { c: 'csm' }), G('orcs', 12, { c: 'sm' })]] },
   liz: { sigla: 'LIZ', nome: 'Lucertole', cat: 'Lizardmen', voci: LUCERTOLE, vincoli: () => [],
@@ -156,7 +168,7 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
     let u;
     try { u = v0.crea({ ...Object.fromEntries(Object.entries(v0.opz || {}).map(([k, a]) => [k, a[0]])), ...(v0.n ? { n: v0.n[0] } : {}) }); }
     catch (e){ escluse.push({ k: v0.k, pezzo: v0.pezzo, perche: 'nessun modello importato' }); continue; }
-    const v = { ...v0, slot: u.slot, nome: u.name, opz: v0.opz || {} };
+    const v = { ...v0, slot: u.slot, nome: v0.etichetta || u.name, opz: v0.opz || {} };
     v.max = v0.max ?? MAX[v.slot] ?? 2;
     if (pool === 'collezione'){
       const manca = pezziDi(v, v.n ? v.n[0] : 1).filter(([p, q]) => (hai.get(norm(p)) || 0) < q);
@@ -239,16 +251,34 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
   }
 
   /* ---- geni a caso ---- */
-  const geneCasuale = (v, rnd) => {
+  /* quanti modelli di questa voce ci stanno ancora, con le miniature che
+     le altre unità della lista hanno già preso (senza collezione: tutti) */
+  const resto = (geni, v) => {
+    if (pool !== 'collezione') return Infinity;
+    const usati = new Map();
+    for (const g of geni) for (const [p, q] of pezziDi(voce(g), g.n || 1)) usati.set(norm(p), (usati.get(norm(p)) || 0) + q);
+    return Math.min(...pezziDi(v, 1).map(([p, q]) => Math.floor(((hai.get(norm(p)) || 0) - (usati.get(norm(p)) || 0)) / q)));
+  };
+  const geneCasuale = (v, rnd, altri = []) => {
+    const max = Math.min(v.n ? v.n[1] : 1, resto(altri, v));
+    if (max < (v.n ? v.n[0] : 1)) return null;
     const g = { k: v.k, o: Object.fromEntries(Object.entries(v.opz).map(([k, a]) => [k, scegli(a, rnd)])) };
-    if (v.n) g.n = intero(v.n[0], v.n[1], rnd);
+    if (v.n) g.n = intero(v.n[0], max, rnd);
     if (v.mago && v.mago(g.o) > 0) g.lore = scegli(loriDi(v.pezzo), rnd);
     if (g.o.f != null && g.n && g.o.f > g.n) g.o.f = null;
     return g;
   };
 
   /* i punti che avanzano vanno nei reggimenti, un modello alla volta */
+  /* Prima un'unità nuova, se ci sta: prima questo passo mancava e ogni
+     punto avanzato finiva in un modello in più nei reggimenti, cioè
+     quasi sempre in fanteria. Poi un modello alla volta, a caso fra chi
+     può crescere. */
   function riempi(geni, rnd){
+    for (let prove = 0; prove < 6; prove++){
+      const g = geneCasuale(scegli(truppe, rnd), rnd, geni);
+      if (g && totale([...geni, g]) <= punti && (voce(g).max ?? 9) > geni.filter(x => x.k === g.k).length) geni.push(g);
+    }
     const aperti = geni.filter(g => voce(g).n);
     while (aperti.length){
       const i = Math.floor(rnd() * aperti.length), g = aperti[i];
@@ -275,16 +305,38 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
   const personaggi = voci.filter(isChar), truppe = voci.filter(v => !isChar(v));
   const base = truppe.filter(v => v.slot === 'Core');
 
-  function casuale(rnd){
+  /* un gene che rispetta le miniature rimaste, o niente */
+  const aggiungi = (geni, scelta, rnd) => { const g = geneCasuale(scegli(scelta, rnd), rnd, geni); if (g) geni.push(g); return g; };
+  /* la metà mancante di una coppia che la fazione vuole (Da Boyz) */
+  const completa = (geni, rnd) => fz.completa && fz.completa(geni, voce, ruolo => {
+    const scelta = voci.filter(w => w.nero === ruolo);
+    return scelta.length ? geneCasuale(scegli(scelta, rnd), rnd, geni) : null;
+  });
+
+  /* Una lista a caso. Le unità si pescano tutte con la stessa
+     probabilità: prima metà delle pescate andava alle truppe base, e le
+     liste a caso erano per due terzi fanteria. Una truppa base c'è
+     sempre, perché senza il 25% la lista non vale.
+     `con`: la voce attorno a cui costruirla — la lista «a tema» con cui
+     la ricerca comincia, una per ogni unità, perché nessuna resti fuori
+     solo perché nessuno l'ha mai pescata. */
+  function casuale(rnd, { con = null } = {}){
+    const tema = con && perK[con];
+    if (con && !tema) return null;
     for (let t = 0; t < 400; t++){
-      const geni = [geneCasuale(scegli(personaggi, rnd), rnd)];
-      if (rnd() < 0.35) geni.push(geneCasuale(scegli(personaggi, rnd), rnd));
-      if (base.length) geni.push(geneCasuale(scegli(base, rnd), rnd));
+      const geni = [];
+      if (tema && isChar(tema)){ const g = geneCasuale(tema, rnd, geni); if (g) geni.push(g); }
+      else aggiungi(geni, personaggi, rnd);
+      if (rnd() < 0.35) aggiungi(geni, personaggi, rnd);
+      if (tema && !isChar(tema)){ const g = geneCasuale(tema, rnd, geni); if (g) geni.push(g); }
+      if (base.length && !geni.some(g => voce(g).slot === 'Core')) aggiungi(geni, base, rnd);
       for (let prove = 0; prove < 25; prove++){
-        const g = geneCasuale(scegli(rnd() < 0.5 && base.length ? base : truppe, rnd), rnd);
-        if (totale([...geni, g]) <= punti) geni.push(g);
+        const g = geneCasuale(scegli(truppe, rnd), rnd, geni);
+        if (g && totale([...geni, g]) <= punti) geni.push(g);
       }
+      completa(geni, rnd);
       ripara(geni, rnd);
+      if (tema && !geni.some(g => g.k === con)) continue;
       if (!valida(geni).length) return ordina(geni);
     }
     return null;
@@ -308,14 +360,16 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
           g.lore = scegli(loriDi(v.pezzo), rnd);
         } else if (mossa === 'scambia'){
           const pari = voci.filter(w => isChar(w) === isChar(v) && (isChar(v) || w.slot === v.slot || rnd() < 0.4));
-          geni[geni.indexOf(g)] = geneCasuale(scegli(pari, rnd), rnd);
+          const altri = geni.filter(x => x !== g), nuovo = geneCasuale(scegli(pari, rnd), rnd, altri);
+          if (nuovo) geni[geni.indexOf(g)] = nuovo;
         } else if (mossa === 'aggiungi'){
-          geni.push(geneCasuale(scegli(rnd() < 0.2 ? personaggi : truppe, rnd), rnd));
+          aggiungi(geni, rnd() < 0.2 ? personaggi : truppe, rnd);
         } else if (mossa === 'togli' && geni.length > 2){
           geni.splice(geni.indexOf(g), 1);
         }
         if (g.o && g.o.f != null && g.n && g.o.f > g.n) g.o.f = null;
       }
+      completa(geni, rnd);
       ripara(geni, rnd);
       if (!valida(geni).length && chiave(geni) !== chiave(padre)) return ordina(geni);
     }
@@ -350,5 +404,5 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
   const partenze = (fz.partenze || []).map(p => structuredClone(p)).filter(p => p.every(voce))
     .map(p => ordina(ripara(p, fisso))).filter(p => !valida(p).length);
 
-  return { fazione, fz, pool, punti, margine, voci, escluse, costruisci, valida, casuale, muta, chiave, totale, descrivi, ordina, partenze };
+  return { fazione, fz, pool, punti, margine, voci, escluse, costruisci, valida, casuale, muta, chiave, totale, descrivi, ordina, partenze, voce };
 }

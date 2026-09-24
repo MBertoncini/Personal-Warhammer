@@ -4,15 +4,21 @@
  *        [--punti 800] [--scenari sei|tutti|bm-strada,...] [--contro auto|liz,og,...]
  *        [--sforzo rapido|normale|accurato] [--generazioni 8] [--popolazione 10] [--celle 12]
  *        [--verifica 2] [--finaliste 4] [--max-avversari 10] [--seme 1001] [--lavori 7] [--da-capo]
+ *        [--senza-esempi]
  *
  * Quello che valuta.mjs fa a mano — scrivere trenta candidate, giocarle,
  * tenere le migliori, cambiarle un poco e rigiocarle — qui lo fa un giro
  * di generazioni:
  *
- *   1. la popolazione parte dalle liste note (esempi.mjs, se in questo
- *      serbatoio si possono schierare), dalle migliori della ricerca di
- *      prima con gli stessi parametri (la ricerca riprende da dove era
- *      arrivata; --da-capo la fa ripartire) e da liste a caso;
+ *   1. la popolazione parte dalle migliori della ricerca di prima con gli
+ *      stessi parametri (la ricerca riprende da dove era arrivata;
+ *      --da-capo la fa ripartire), dalla lista nota di esempi.mjs se in
+ *      questo serbatoio si schiera (--senza-esempi la lascia fuori), da
+ *      una lista A TEMA per ogni unità che non c'è ancora — costruita
+ *      attorno a lei — e da liste a caso. La prima generazione è quindi
+ *      più larga delle altre: le liste note erano tutte fanteria, e con
+ *      solo loro e il caso i mostri e la cavalleria non entravano quasi
+ *      mai nella gara;
  *   2. ogni generazione tutte le candidate giocano le STESSE celle — un
  *      avversario su uno scenario, un seme nuovo, a specchio — estratte
  *      fra tutte le coppie avversario × scenario (--celle, e ogni
@@ -35,7 +41,9 @@
  * altre hanno trovato la prima.
  *
  * Il risultato va in dati/ricerche/<fazione>-<pool>-<punti>.json, e la
- * scheda Laboratorio dell'app lo legge da lì.
+ * scheda Laboratorio dell'app lo legge da lì. Con le liste c'è la
+ * tabella delle unità: in quante liste è stata provata ognuna, e come
+ * sono andate in media.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -53,7 +61,7 @@ const SFORZI = {
 };
 /* quante partite, per chi deve decidere se lanciarla: ogni cella e ogni
    seme di verifica sono due partite, a specchio */
-const stimaPartite = (p, celleTutte) => 2 * (p.popolazione * p.generazioni * Math.min(p.celle, celleTutte) + p.finaliste * celleTutte * p.verifica);
+const stimaPartite = (p, celleTutte, temi = 0) => 2 * ((p.popolazione * p.generazioni + temi) * Math.min(p.celle, celleTutte) + p.finaliste * celleTutte * p.verifica);
 const sforzo = String(arg('sforzo', 'normale'));
 if (!SFORZI[sforzo]){ console.error(`Sforzo «${sforzo}»: rapido, normale o accurato.`); process.exit(1); }
 const P = { ...SFORZI[sforzo] };
@@ -62,6 +70,7 @@ for (const k of Object.keys(P)) if (arg(k, null) != null) P[k] = Math.max(1, +ar
 const punti = +arg('punti', 800);
 const seme = +arg('seme', 1001);
 const daCapo = arg('da-capo', false) === true;
+const esempi = arg('senza-esempi', false) !== true;
 const fazioni = arg('fazione', 'tutte') === 'tutte' ? Object.keys(FAZIONI) : String(arg('fazione')).split(',');
 for (const f of fazioni) if (!FAZIONI[f]){ console.error(`Fazione «${f}»: ${Object.keys(FAZIONI).join(', ')} o tutte.`); process.exit(1); }
 const pools = { tutte: ['tutte'], collezione: ['collezione'], entrambe: ['tutte', 'collezione'] }[arg('pool', 'entrambe')];
@@ -117,7 +126,7 @@ for (const fazione of fazioni) for (const pool of pools){
   console.log(`  unità: ${S.voci.map(v => v.nome).join(', ')}`);
   if (S.escluse.length) console.log(`  fuori: ${S.escluse.map(e => `${e.pezzo} (${e.perche})`).join('; ')}`);
   console.log(`  avversari: ${contro.map(a => a.lista.name + (a.fonte === 'ricerca' ? ' [trovata]' : '')).join(', ')}`);
-  console.log(`  scenari: ${scenari.join(', ')} — circa ${stimaPartite(P, celleTutte)} partite`);
+  console.log(`  scenari: ${scenari.join(', ')} — circa ${stimaPartite(P, celleTutte, S.voci.length)} partite`);
   if (!contro.length){ console.log('  nessun avversario: salto.'); continue; }
 
   /* chi gioca: una candidata sulle celle date, gli stessi semi per tutte */
@@ -148,12 +157,22 @@ for (const fazione of fazioni) for (const pool of pools){
   /* la popolazione iniziale */
   const visti = new Map();          // chiave -> { geni, w, l, d, n }
   const pop = [];
-  const entra = geni => { const k = S.chiave(geni); if (!geni || pop.some(g => S.chiave(g) === k)) return false; pop.push(geni); return true; };
+  /* `casuale` e `muta` danno null quando non trovano una lista valida */
+  const entra = geni => { if (!geni) return false; const k = S.chiave(geni); if (pop.some(g => S.chiave(g) === k)) return false; pop.push(geni); return true; };
   const prima = !daCapo && leggi(file);
   const riprese = [];
   for (const m of (prima && prima.migliori) || []) if (m.geni && !S.valida(m.geni).length && entra(m.geni)) riprese.push(m);
-  for (const p of S.partenze) entra(p);
+  if (esempi) for (const p of S.partenze) entra(p);
+  /* una lista a tema per ogni unità che nella popolazione non c'è
+     ancora: la prima generazione è più larga delle altre, ma nessuna
+     unità esce dalla ricerca solo perché il caso non l'ha mai pescata */
+  const temi = [];
+  for (const v of [...S.voci].sort(() => rnd() - 0.5)){
+    if (pop.some(g => g.some(x => x.k === v.k))) continue;
+    if (entra(S.casuale(rnd, { con: v.k }))) temi.push(v.nome);
+  }
   for (let t = 0; pop.length < P.popolazione && t < 200; t++) entra(S.casuale(rnd));
+  console.log(`  prima generazione: ${pop.length} liste${esempi && S.partenze.length ? ', con la lista nota' : ''}; a tema: ${temi.join(', ') || 'nessuna'}`);
   if (riprese.length) console.log(`  riprende da ${riprese.length} liste della ricerca del ${String(prima.quando).slice(0, 10)}`);
   if (!pop.length){ console.log('  non riesco a scrivere nessuna lista valida con queste unità: salto.'); continue; }
 
@@ -215,12 +234,33 @@ for (const fazione of fazioni) for (const pool of pools){
     }
   }
 
+  /* ogni unità, in quante liste provate e come sono andate quelle liste:
+     dice se un'unità manca dalle migliori perché va male o perché non
+     l'ha provata nessuno. La media è fra le liste, non fra le partite:
+     altrimenti le migliori, che giocano di più, peserebbero per tutte. */
+  function provate(){
+    const per = new Map(S.voci.map(v => [v.k, { k: v.k, nome: v.nome, liste: 0, partite: 0, somma: 0 }]));
+    for (const s of visti.values()){
+      if (!s.n) continue;
+      for (const k of new Set(s.geni.map(g => g.k))){
+        const t = per.get(k); if (!t) continue;
+        t.liste++; t.partite += s.n; t.somma += (s.w + s.d / 2) / s.n;
+      }
+    }
+    return [...per.values()].map(({ somma, ...t }) => ({ ...t, media: t.liste ? Math.round(100 * somma / t.liste) : null,
+      finaliste: migliori.filter(m => m.geni.some(g => g.k === t.k)).length }))
+      .sort((a, b) => (b.media ?? -1) - (a.media ?? -1));
+  }
+  const tab = provate();
+  console.log('  le unità, per media delle liste che le avevano: ' + tab.filter(t => t.liste).map(t => `${t.nome} ${t.media}% (${t.liste})`).join(', '));
+
   scrivi(file, {
     formato: 'tow-ricerca/1', quando: new Date().toISOString(),
     fazione, nome: S.fz.nome, catalogue: S.fz.cat, pool, punti, scenari, seme,
     etichette: Object.fromEntries(scenari.map(s => [s, TUTTI[s].label || s])),
     sforzo, parametri: P, partite, secondi: Math.round((Date.now() - t0) / 1000),
-    unita: S.voci.map(v => v.nome), escluse: S.escluse,
+    unita: S.voci.map(v => v.nome), escluse: S.escluse, esempi,
+    provate: provate(),
     contro: contro.map(a => ({ id: a.lista.id, name: a.lista.name, catalogue: (a.lista.info || {}).catalogue, points: a.lista.points, fonte: a.fonte, file: a.file })),
     storia, migliori,
   });

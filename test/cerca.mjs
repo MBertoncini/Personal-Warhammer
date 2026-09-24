@@ -50,6 +50,16 @@ for (const f of Object.keys(FAZIONI)){
   ok(`${f}: la lista nota dell'archivio è fra le partenze`, S.partenze.length === 1);
 }
 
+/* --- le liste a tema: ogni unità ne ha una, tranne chi non entra per
+   regola (la Hell Pit Abomination costa 210, e le Rare a 800 punti si
+   fermano a 200) --- */
+for (const f of Object.keys(FAZIONI)){
+  const S = spazio(f, { pool: 'tutte', punti: 800 });
+  const senza = S.voci.filter(v => { const g = S.casuale(rnd, { con: v.k }); return !g || !g.some(x => x.k === v.k); }).map(v => v.k);
+  ok(`${f}: una lista a tema per ogni unità${senza.length ? ' (tranne ' + senza.join(', ') + ')' : ''}`,
+     senza.every(k => k === 'hpa'));
+}
+
 /* --- i maghi portano Livello e dominio nella scheda di preparazione --- */
 {
   const S = spazio('skaven', { pool: 'tutte', punti: 800 });
@@ -91,6 +101,28 @@ for (const f of Object.keys(FAZIONI)){
     if (topi > 50 || jez > 3) sforano++;
   }
   ok('le liste a caso non usano più miniature di quante ne hai', sforano === 0);
+}
+
+/* --- la collezione degli Orchi: poche miniature per voce, e Da Boyz ---
+   Il 24/09/2026 la ricerca si fermava qui: le liste a caso mettevano tre
+   reggimenti di Goblin con dieci Goblin in vetrina, o gli Orchi Neri
+   senza il loro boss, e in quattrocento tentativi non ne usciva una. */
+{
+  const catalogo = [
+    ['Orc Mobs', 25], ['Night Goblin Mobs', 30], ['Goblin Mobs', 10], ['Black Orc Mobs', 11], ['Orc Boar Boy Mobs', 10],
+    ['Stone Troll Mobs', 4], ['Orc Boar Chariots', 1], ['Black Orc Warboss', 1], ['Black Orc Bigboss', 1],
+    ['Orc Warboss', 1], ['Orc Weirdnob', 1], ['Goblin Oddnob', 1],
+  ].map(([name, owned]) => ({ name, owned, faction: 'Orc and Goblin Tribes', aliases: [name.toLowerCase()] }));
+  const S = spazio('og', { pool: 'collezione', punti: 800, catalogo });
+  let scritte = 0, figlie = 0;
+  for (let i = 0; i < 20; i++){
+    const g = S.casuale(rnd);
+    if (!g) continue;
+    scritte++;
+    if (S.muta(g, rnd)) figlie++;
+  }
+  ok('con la collezione degli Orchi si scrivono liste a caso', scritte === 20);
+  ok('e hanno figlie', figlie >= 15);
 }
 
 /* ================================================================= */
