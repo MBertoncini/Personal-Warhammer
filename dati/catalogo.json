@@ -27,18 +27,33 @@
     "painted": 0
   },
   {
-    "id": "cmttwt5q1icif",
-    "name": "Saurus Oldblood",
+    "id": "cmug2rvkhxxfp",
+    "name": "Carnosaur",
     "faction": "Lizardmen",
-    "baseId": "30x30",
-    "baseW": 30,
-    "baseH": 30,
+    "baseId": "50x100",
+    "baseW": 50,
+    "baseH": 100,
     "owned": 2,
     "painted": 0,
     "aliases": [
-      "saurus oldblood"
+      "carnosaur"
     ],
-    "notes": ""
+    "notes": "Le cavalcature dei due Saurus Oldblood."
+  },
+  {
+    "id": "cmttwt5q1icif",
+    "name": "Saurus Oldblood",
+    "faction": "Lizardmen",
+    "baseId": "50x100",
+    "baseW": 50,
+    "baseH": 100,
+    "owned": 2,
+    "painted": 0,
+    "aliases": [
+      "saurus oldblood",
+      "saurus oldblood on carnosaur"
+    ],
+    "notes": "Tutti e due sul Carnosauro."
   },
   {
     "id": "cmtl5ricw9o8o",
@@ -88,9 +103,24 @@
     "baseH": 25,
     "owned": 1,
     "aliases": [
-      "skink priest"
+      "skink priest",
+      "skink priest on ancient stegadon"
     ],
-    "notes": ""
+    "notes": "Può salire sull'Ancient Stegadon."
+  },
+  {
+    "id": "cmug2y3o8piet",
+    "name": "Ancient Stegadon",
+    "faction": "Lizardmen",
+    "baseId": "60x100",
+    "baseW": 60,
+    "baseH": 100,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "ancient stegadon"
+    ],
+    "notes": "Ci può salire lo Skink Priest, o giocare da solo."
   },
   {
     "id": "cmtl5rlxm62jk",
@@ -158,7 +188,7 @@
     "aliases": [
       "night goblin mobs"
     ],
-    "notes": "",
+    "notes": "Con archi corti (shortbow).",
     "painted": 0
   },
   {
@@ -204,18 +234,34 @@
     "painted": 0
   },
   {
-    "id": "cmttwumnm8axg",
-    "name": "Black Orc Bigboss",
-    "faction": "Orc and Goblin Tribes",
+    "id": "cmug2y3o63cg5",
+    "name": "Orc Mobs with Shortbows",
+    "faction": "Orc & Goblin Tribes",
     "baseId": "30x30",
     "baseW": 30,
     "baseH": 30,
+    "owned": 15,
+    "painted": 0,
+    "aliases": [
+      "orc mobs with shortbows",
+      "orc mobs"
+    ],
+    "notes": "Con archi corti (shortbow)."
+  },
+  {
+    "id": "cmttwumnm8axg",
+    "name": "Orc Bigboss",
+    "faction": "Orc and Goblin Tribes",
+    "baseId": "30x60",
+    "baseW": 30,
+    "baseH": 60,
     "owned": 1,
     "painted": 0,
     "aliases": [
-      "black orc bigboss"
+      "orc bigboss",
+      "orc bigboss on war boar"
     ],
-    "notes": ""
+    "notes": "Sul cinghiale (War Boar)."
   },
   {
     "id": "cmtl5r88tb6qt",
@@ -424,15 +470,30 @@
     "id": "cmu8ebc4u8xca",
     "name": "Grey Seer",
     "faction": "Skaven",
-    "baseId": "25x25",
-    "baseW": 25,
-    "baseH": 25,
+    "baseId": "60x100",
+    "baseW": 60,
+    "baseH": 100,
     "owned": 1,
     "painted": 0,
     "aliases": [
-      "grey seer"
+      "grey seer",
+      "grey seer on screaming bell"
     ],
-    "notes": ""
+    "notes": "Sulla Screaming Bell."
+  },
+  {
+    "id": "cmug2y3o70j93",
+    "name": "Screaming Bell",
+    "faction": "Skaven",
+    "baseId": "60x100",
+    "baseW": 60,
+    "baseH": 100,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "screaming bell"
+    ],
+    "notes": "La cavalcatura del Grey Seer."
   },
   {
     "id": "cmtt5ynmxl3z4",
