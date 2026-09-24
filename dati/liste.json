@@ -4203,7 +4203,7 @@
       "forceName": "Open War",
       "limit": 2000
     },
-    "points": 1793,
+    "points": 1773,
     "imported": "2026-09-09T09:43:07.464Z",
     "units": [
       {
@@ -4271,54 +4271,50 @@
         "catId": "cmttwuk7yjr59"
       },
       {
-        "name": "Black Orc Bigboss",
+        "name": "Orc Bigboss",
         "models": 1,
         "crew": 0,
-        "baseId": "30x30",
+        "baseId": "30x60",
         "baseW": 30,
-        "baseH": 30,
+        "baseH": 60,
         "frontage": 1,
         "loose": false,
-        "pts": 91,
+        "pts": 71,
         "us": 0,
-        "troop": "Heavy Infantry",
+        "troop": "Heavy cavalry (character)",
         "unitSize": "1",
         "stats": {
-          "M": "4",
-          "WS": "6",
-          "BS": "3",
+          "M": "7",
+          "WS": "5",
+          "BS": "2",
           "S": "4",
           "T": "5",
           "W": "2",
-          "I": "5",
+          "I": "4",
           "A": "3",
-          "Ld": "8"
+          "Ld": "7"
         },
         "rules": [
           "Choppas",
-          "Furious Charge (does not apply to this model's mount should it have one)",
-          "Da Boyz",
-          "Quell Impetuosity",
-          "Ignore Panic",
+          "Furious Charge",
+          "Impetuous",
+          "Ignore Goblin Panic",
           "Rallying Cry",
           "Waaagh!",
-          "Tusker Charge",
-          "Armoured Hide",
+          "Warband",
+          "Armoured Hide (1)",
           "Counter Charge",
-          "Swiftstride"
+          "Swiftstride",
+          "Tusker Charge"
         ],
         "ruleText": {
           "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
-          "Furious Charge (does not apply to this model's mount should it have one)": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
-          "Da Boyz": "Your army must include one Black Orc Boss for every Black Orc Mob it includes, and vice versa. In other words:\n\n \n• For each Black Orc Mob your army includes, it must also include one Black Orc War Boss or Big Boss.\n\n \n• For each Black Orc War Boss or Big Boss your army includes, it must also include one Black Orc Mob.",
-          "Quell Impetuosity": "Whilst within 6\" of a unit with this special rule, a friendly Impetuous unit may re-roll a failed Leadership test when testing to determine if it must declare a charge or act as normal.",
-          "Ignore Panic": "This unit does not have to make a Panic test when a friendly unit that does not also have this special rule is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly unit that does not have this special rule..",
+          "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
+          "Impetuous": "If during the Declare Charges & Charge Reactions sub-phase of its turn, a unit that includes one or more Impetuous models is able to declare a charge, it must make a Leadership test. If this test is failed, the unit must declare a charge. If this test is passed, the unit may act as normal.",
+          "Ignore Goblin Panic": "This unit does not have to make a Panic test when a friendly Goblin unit is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly Goblin unit.\n\n Note that, for the purposes of this rule, a Goblin unit is considered to be any unit that is made up entirely of Goblins of any kind, mounted or otherwise. This includes any war machine or chariot that is crewed entirely by Goblins. Should a Goblin unit be joined by an Orc character, it is no longer considered to be a Goblin unit.",
           "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
           "Waaagh!": "Once per game, during the Command sub-phase of their turn, this character may attempt to invoke the power of the Waaagh! by making a Leadership test (using their own Leadership). If this test is passed, until your next Start of Turn sub-phase this character, their mount and any Orc unit they have joined may re-roll any rolls To Hit of a natural 1 and, when calculating its combat result, may claim an additional bonus of +1 combat result point.\n\n Note that, for the purposes of this rule, an Orc unit is considered to be any unit that is made up entirely of Orcs or Black Orcs, mounted or otherwise. Should an Orc unit be joined by a Goblin character, it is no longer considered to be an Orc unit. This special rule is not cumulative.",
-          "Tusker Charge": "During a turn in which it charged, a War Boar’s Tusks (hand weapon) have a Strength characteristic of S+1 and an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to attacks made by a War Boar, not to their rider, a chariot or its crew.",
-          "Armoured Hide": "The hide of some creatures forms natural armour and improves their armour value ( and that of their rider). By how much armour value is improved varies from model to model, as shown in brackets after the name of this special rule.\n\n Note that a model that wears no armour is considerer to have an armour value of 7+ for the purposes of rules that improve armour value.",
-          "Counter Charge": "This special rule can only be used by units that consist entirely of models with this special rule. When a unit with this special rule is charged in its front arc by an enemy unit whose troop type is ‘cavalry,’ ‘chariot’ or ‘monster’, it may declare a ‘Counter Charge’ charge reaction:\n\n Counter Charge: The unit surges forward to meet the enemy charge. Measure the distance between the two units. If the distance is less than the Movement characteristic of the charging unit, the charged unit has not enough time to meet the enemy charge and must either Hold or Flee instead.\n\n Otherwise, pivot the unit about its centre so that it is facing directly towards the centre of the charging enemy unit. After pivoting, the unit moves D3+1\" directly towards the enemy unit. Both units are considered to have charged during this turn.\n\n Fleeing units and units already engaged in combat when charged cannot Counter Charge. A unit can only Counter Charge in response to one charge per turn, even if charged by multiple units. Once all charges have been declared, the inactive player can choose which charging unit to Counter Charge. The unit will then Hold against the other charging units.",
-          "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+          "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher."
         },
         "command": {
           "standard": false,
@@ -4337,10 +4333,142 @@
         "maxRange": 0,
         "slot": "Characters",
         "faction": "Orc and Goblin Tribes",
-        "armour": 4,
+        "armour": 5,
         "ward": 0,
         "regen": 0,
-        "catId": "cmttwumnm8axg"
+        "catId": "cmttwumnm8axg",
+        "shield": false,
+        "foot": {
+          "stats": {
+            "M": "4",
+            "WS": "5",
+            "BS": "2",
+            "S": "4",
+            "T": "5",
+            "W": "2",
+            "I": "4",
+            "A": "3",
+            "Ld": "7"
+          },
+          "baseId": "30x30",
+          "baseW": 30,
+          "baseH": 30,
+          "troop": "Regular Infantry",
+          "slot": "Characters",
+          "frontage": 1,
+          "loose": false,
+          "rules": [
+            "Choppas",
+            "Furious Charge",
+            "Impetuous",
+            "Ignore Goblin Panic",
+            "Rallying Cry",
+            "Waaagh!",
+            "Warband"
+          ],
+          "ruleText": {
+            "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
+            "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
+            "Impetuous": "If during the Declare Charges & Charge Reactions sub-phase of its turn, a unit that includes one or more Impetuous models is able to declare a charge, it must make a Leadership test. If this test is failed, the unit must declare a charge. If this test is passed, the unit may act as normal.",
+            "Ignore Goblin Panic": "This unit does not have to make a Panic test when a friendly Goblin unit is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly Goblin unit.\n\n Note that, for the purposes of this rule, a Goblin unit is considered to be any unit that is made up entirely of Goblins of any kind, mounted or otherwise. This includes any war machine or chariot that is crewed entirely by Goblins. Should a Goblin unit be joined by an Orc character, it is no longer considered to be a Goblin unit.",
+            "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+            "Waaagh!": "Once per game, during the Command sub-phase of their turn, this character may attempt to invoke the power of the Waaagh! by making a Leadership test (using their own Leadership). If this test is passed, until your next Start of Turn sub-phase this character, their mount and any Orc unit they have joined may re-roll any rolls To Hit of a natural 1 and, when calculating its combat result, may claim an additional bonus of +1 combat result point.\n\n Note that, for the purposes of this rule, an Orc unit is considered to be any unit that is made up entirely of Orcs or Black Orcs, mounted or otherwise. Should an Orc unit be joined by a Goblin character, it is no longer considered to be an Orc unit. This special rule is not cumulative.",
+            "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher."
+          },
+          "weapons": [
+            {
+              "name": "Hand Weapon",
+              "range": "Combat",
+              "S": "S",
+              "ap": "-",
+              "rules": "-"
+            }
+          ],
+          "maxRange": 0,
+          "armour": 6,
+          "ward": 0,
+          "us": 1,
+          "models": 1
+        },
+        "mountId": "war-boar",
+        "mountFromFile": false,
+        "mountPts": 16,
+        "mount": {
+          "id": "war-boar",
+          "name": "War Boar",
+          "genere": "cavalcatura",
+          "stats": {
+            "M": "7",
+            "WS": "3",
+            "BS": "-",
+            "S": "3",
+            "T": "-",
+            "W": "-",
+            "I": "3",
+            "A": "1",
+            "Ld": "-"
+          },
+          "row": "War Boar",
+          "righe": [
+            {
+              "chi": "War Boar",
+              "n": 1,
+              "stats": {
+                "M": "7",
+                "WS": "3",
+                "BS": "-",
+                "S": "3",
+                "T": "-",
+                "W": "-",
+                "I": "3",
+                "A": "1",
+                "Ld": "-"
+              },
+              "arma": {
+                "name": "Tusks",
+                "S": "S",
+                "ap": "-",
+                "rules": ""
+              }
+            }
+          ],
+          "forzaUrto": 0,
+          "random": "",
+          "armour": 0,
+          "libro": "Ravening Hordes",
+          "pagina": 19,
+          "nota": ""
+        },
+        "profiles": [
+          {
+            "name": "Orc Bigboss",
+            "stats": {
+              "M": "4",
+              "WS": "5",
+              "BS": "2",
+              "S": "4",
+              "T": "5",
+              "W": "2",
+              "I": "4",
+              "A": "3",
+              "Ld": "7"
+            }
+          },
+          {
+            "name": "War Boar",
+            "stats": {
+              "M": "7",
+              "WS": "3",
+              "BS": "-",
+              "S": "3",
+              "T": "-",
+              "W": "-",
+              "I": "3",
+              "A": "1",
+              "Ld": "-"
+            }
+          }
+        ]
       },
       {
         "name": "Goblin Oddnob",
