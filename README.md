@@ -443,6 +443,21 @@ E per arrivare a sparare le servivano altre tre regole che l'app non aveva. **«
 
 **I dadi con il seme** vengono da `D.seeded(seme)` in `dice.js`, uno solo per tutti. Il generatore che c'era prima — un lineare congruenziale scritto a mano in `partita.mjs` e nelle prove — in JavaScript perdeva i bit bassi: una partita intera di 1, 3 e 5, con un sei ogni trecento dadi. Le partite registrate prima di questa correzione non valgono come partite.
 
+### Cercare una lista
+
+Le liste «Skaven orda», «O&G orda nera» e «LIZ guardia e sangue freddo» non vengono da New Recruit: sono uscite da qualche decina di candidate, ognuna giocata a specchio su sei scenari contro le altre liste da 800 punti dell'archivio. Gli strumenti stanno in `tools/liste/`:
+
+```bash
+node tools/liste/valuta.mjs --file tools/liste/esempi.mjs --cand ogOrdaNera,lizGuardia   # contro le quattro liste da 800, sei scenari, 16 semi
+node tools/liste/valuta.mjs --file mie.mjs --contro liz,"Skaven fun" --scenari bm-strada,open --partite 8
+node tools/liste/gioca.mjs --x lmueliwuvm0ao --y "Skaven fun" --scenario bm-strada   # una serie sola, e che fine fa ogni unità
+node tools/liste/salva.mjs --file mie.mjs --cand miaLista   # la candidata che resta, in dati/liste.json
+```
+
+Una candidata si scrive con i costruttori di `unita.mjs` — `OG.orcs({ n: 40, c: 'csm' })` sono quaranta Orchi con campione, stendardo e musico, e i punti li conta dal libro — e si prova **senza toccare l'archivio**: `valuta.mjs` la mette in un file temporaneo, e `gioca.mjs` gioca la stessa serie che giocherebbe `partita.mjs --partite N --specchio --estro`, con gli stessi numeri. `esempi.mjs` ha le tre liste dell'archivio riscritte così, con le alternative arrivate vicine e i loro numeri: è il file da copiare per cominciare.
+
+Tre cose imparate cercandole, che i default ricordano. Fra due serie di semi diversi **la stessa lista cambia anche di 10-15 punti**, e tutte le candidate insieme: si sceglie con 16 semi o più e la vincitrice si riprova su semi mai usati. L'**arma aggiuntiva** non si compra: l'arbitro non ne conta l'attacco in più, e fra due armi che perforano uguale impugna la prima dell'elenco. E i **Fanatici** e gli attacchi del **Gigante** sono regole che il tavolo gioca a mano: in una serie sono punti che non fanno niente.
+
 ## Installarla
 
 C'è un manifest e un service worker: Chrome, Edge e Safari propongono **Installa app**. Ne guadagni due cose, e la seconda vale più della prima:
@@ -638,6 +653,11 @@ tools/
   heatmap.mjs         la mappa di tante partite: per ogni unità dove parte, dove sta, combatte e muore
   serie.mjs           tante partite: lo specchio, i conti, quali piani contano, l'esperimento
   statistica.mjs      i conti di un campione: Wilson, regressioni, restringimento, Benjamini-Hochberg
+  liste/unita.mjs     le unità scritte a mano per provare liste: Skaven, Orchi & Goblin, Lucertole, con i punti del libro
+  liste/gioca.mjs     una serie a specchio fra due liste, anche candidate, e che fine fa ogni unità
+  liste/valuta.mjs    tante candidate contro tante liste su più scenari, in parallelo
+  liste/salva.mjs     la candidata scelta, in dati/liste.json
+  liste/esempi.mjs    le liste da 800 punti cercate così, e le alternative
 dati/
   eserciti/           un file per esercito: regole, oggetti, domini
   profili.json        i profili letti sul libro: cavalcature, servitori, liste scritte a mano
