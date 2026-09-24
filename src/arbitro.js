@@ -91,8 +91,8 @@ export const LIMITI = [
     why:"il libro dice «draw a straight line, 8D6\" in length, from the model's base edge» e non dice né che serva la linea di vista né che il guasto ritiri la lunghezza (Legends: Skaven, p. 19): l'arbitro mira a un nemico che vede, e sul guasto tiene la linea già tirata e le cambia direzione" },
   { id:"indiretto", what:"la Bombardata si spara sempre a vista", page:225,
     why:"il tiro indiretto non chiede la linea di vista e devia di meno — l'Artiglieria meno l'Abilità Balistica dell'equipaggio — ed è una scelta che si dichiara prima di sparare: l'arbitro non la offre" },
-  { id:"ruota",     what:"la ruota si paga giusta, ma si fa una volta sola, all'inizio, e sul centro", page:124,
-    why:"il libro la fa girare su uno spigolo del fronte e lascia alternare ruote e passi avanti: l'arbitro conta quanto cammina il modello esterno, gira il pezzo sul posto e poi va dritto. Il giro libero dei Lumbering (p. 195) si fa prima di muovere invece che dopo" },
+  { id:"ruota",     what:"la ruota si paga giusta, ma si fa una volta sola, all'inizio", page:124,
+    why:"il libro lascia alternare ruote e passi avanti: l'arbitro conta quanto cammina il modello esterno, gira il pezzo sullo spigolo del fronte verso cui gira e poi va dritto. Se lì non ci sta prova sul centro, e poi dopo un passo dritto di uno, due o tre pollici — il riassunto di più ruote, non la sequenza vera. Il giro libero dei Lumbering (p. 195) si fa prima di muovere invece che dopo" },
   { id:"manovre",   what:"chi riordina le file o si riforma non usa il resto del movimento, e la riforma tiene il fronte che aveva", page:125,
     why:"il riordino costa metà del Movimento e l'altra metà si potrebbe camminare; la riforma può anche cambiare la formazione. Dopo un giro si va solo dritti" },
   { id:"vagante",   what:"il Movimento che si tira si gioca nelle mosse, e l'inseguimento non carica", page:176,
@@ -113,8 +113,8 @@ export const LIMITI = [
     why:"l'arbitro prova le cinque colonne, poi i varchi fra le unità già schierate, poi un fronte più largo; se niente basta la lascia fuori e lo scrive nel registro. Non combatte, e nei punti vittoria conta come intera: l'avversario non ne prende. Che cosa dica il manuale di un'unità che nella zona non ci sta non è stato controllato" },
   { id:"bordo",     what:"chi cede terreno contro il bordo del tavolo si ferma lì", page:134,
     why:"il libro dice dove si ferma chi cede terreno — un'unità, il terreno, un pollice da un nemico — e del bordo non dice niente" },
-  { id:"volo",      what:"chi vola scavalca il terreno ma non le unità", page:0,
-    why:"il numero lo dà `profiles.js`, e il terreno lo ignora — impassabile, difficile, pericoloso, ostacolo difeso; sorvolare le unità e atterrare vogliono la geometria del volo, che non c'è" },
+  { id:"volo",      what:"chi vola sorvola unità e terreno quando avanza o marcia, non quando fallisce una carica, fugge o insegue", page:170,
+    why:"il numero lo dà `profiles.js`, e il terreno lo ignora — impassabile, difficile, pericoloso, ostacolo difeso. Avanzando e marciando si cerca il posto libero più avanti sulla linea, fuori dalle unità e a un pollice dai nemici (p. 170); gli altri spostamenti usano la strada di chi cammina" },
   { id:"pericoloso", what:"il test di terreno pericoloso lo tirano tutti i modelli dell'unità", page:269,
     why:"il libro lo fa tirare a ogni modello che ci comincia, ci passa o ci finisce dentro: l'arbitro misura il percorso con cinque linee — il centro e i quattro angoli — e non sa dire quali modelli ci siano passati davvero, quindi li conta tutti" },
   { id:"cammino",   what:"il terreno attraversato si misura su cinque linee, non sulla sagoma che scorre", page:269,
@@ -514,10 +514,22 @@ export function ingombro(S, u, box, { ignora = [], unPollice = true, bordo = tru
    prova qualche grado a destra e a sinistra, e vince la direzione che
    avvicina di piu' alla meta. `verso` e' il punto da raggiungere;
    `rot` la rotazione con cui si viaggia. Torna i pollici fatti e,
-   quando ci si ferma prima, cosa ha fermato. */
+   quando ci si ferma prima, cosa ha fermato.
+
+   `sorvola` e' il volo (p. 170): chi vola «pass freely above other
+   models, units and terrain features», e non puo' solo FINIRE sopra
+   un'unita' o entro un pollice da un nemico. Quindi non si cammina a
+   passi fermandosi al primo ostacolo: si cerca il posto libero piu'
+   avanti sulla linea, senza andare oltre la meta'. Prima i Terradon
+   restavano dietro i propri Skink come un reggimento di fanteria.
+
+   `bordo: "fine"` e' la fine del mondo di p. 125: durante una manovra
+   un angolo puo' uscire dal tavolo, «provided the unit is able to end
+   its movement completely upon the battlefield». Si cammina senza
+   guardare il bordo, e poi si torna indietro fin dove si sta dentro. */
 const PASSO = MM / 4;
 function percorso(S, u, verso, pollici, { rot = u.rot || 0, ignora = [], unPollice = true,
-                                         devia = true, bordo = true } = {}){
+                                         devia = true, bordo = true, sorvola = false } = {}){
   const lay = layoutOf(u, S.units);
   const dx0 = verso[0] - u.x, dy0 = verso[1] - u.y;
   const base = Math.atan2(dy0, dx0);
@@ -537,13 +549,42 @@ function percorso(S, u, verso, pollici, { rot = u.rot || 0, ignora = [], unPolli
       if (d < MM) gia.set(o.uid, d);
     }
   }
-  const opts = { ignora: salta, unPollice, bordo, gia };
+  const opts = { ignora: salta, unPollice, bordo: bordo === true, gia };
+  const rientra = (at, fatto) => {
+    if (bordo !== "fine") return fatto;
+    while (fatto > 0 && !dentroTavolo(S, boxCorners(at(fatto)))) fatto -= PASSO;
+    return Math.max(0, fatto);
+  };
   const prova = ang => {
     const cx = Math.cos(ang), cy = Math.sin(ang);
     const at = s => ({ x: u.x + cx * s, y: u.y + cy * s, w: lay.w, h: lay.h, rot });
     /* l'ultimo passo arriva fino in fondo: prima il ciclo si fermava
        all'ultimo quarto di pollice intero, e 1,94″ diventavano 1,75 */
     let fatto = 0, stop = null;
+    if (sorvola){
+      const lungo = Math.min(max, Math.hypot(dx0, dy0));
+      let s = lungo;
+      for (; s > 0.01; s -= PASSO){
+        const blocco = ingombro(S, u, at(s), opts);
+        if (!blocco) break;
+        stop = stop || blocco;
+      }
+      fatto = Math.max(0, s);
+      /* fra l'ultimo posto libero e il primo occupato, a filo */
+      if (stop && fatto > 0.01){
+        let lo = fatto, hi = Math.min(fatto + PASSO, lungo);
+        for (let k = 0; k < 6; k++){
+          const mid = (lo + hi) / 2;
+          if (ingombro(S, u, at(mid), opts)) hi = mid; else lo = mid;
+        }
+        fatto = lo;
+      }
+      if (fatto <= 0.01) fatto = 0;
+      fatto = rientra(at, fatto);
+      const p = at(fatto);
+      return { x: p.x, y: p.y, mm: fatto, stop: fatto < lungo - 0.5 ? stop : null,
+               resta: Math.hypot(verso[0] - p.x, verso[1] - p.y), ang };
+    }
     for (let s = PASSO; max > 0.01; s += PASSO){
       const q = Math.min(s, max);
       const blocco = ingombro(S, u, at(q), opts);
@@ -560,11 +601,12 @@ function percorso(S, u, verso, pollici, { rot = u.rot || 0, ignora = [], unPolli
       }
       fatto = lo;
     }
+    fatto = rientra(at, fatto);
     const p = at(fatto);
     return { x: p.x, y: p.y, mm: fatto, stop, resta: Math.hypot(verso[0] - p.x, verso[1] - p.y), ang };
   };
   let best = prova(base);
-  if (devia && best.stop && best.mm < max - 0.5){
+  if (devia && !sorvola && best.stop && best.mm < max - 0.5){
     for (const g of [15, -15, 30, -30, 45, -45]){
       const alt = prova(base + g * Math.PI / 180);
       if (alt.resta < best.resta - 1) best = alt;
@@ -1611,10 +1653,10 @@ function opzioniMossa(S){
         page: 122 });
     }
     if (!bandiera(u, "noMarch") && !macchina(u)) out.push({ id:"marcia", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
-               dist: d, pollici: r1(vm ? vm.pollici : pm.resta), muro: !!(vm && vm.muro), provaComando: d <= CH.MARCH_WATCH,
+               dist: d, pollici: r1(vm ? vm.pollici : pm.resta), muro: !!(vm && vm.muro), provaComando: d <= CH.MARCH_WATCH && !vola(u),
                ...gm.campi,
                why: `${t.name} è a ${d}″: ${testoRuota(pm, move * 2, "marcia")}` +
-                    (d <= CH.MARCH_WATCH ? `, ma a ${CH.MARCH_WATCH}″ da un nemico serve un test di Comando (p. 123)` : "") +
+                    (d <= CH.MARCH_WATCH && !vola(u) ? `, ma a ${CH.MARCH_WATCH}″ da un nemico serve un test di Comando (p. 123)` : "") +
                     muroTesto(vm) + gm.testo,
                page: vm && vm.muro ? 270 : 123 });
     /* e se la strada e' chiusa, si offre di girarci attorno */
@@ -2869,8 +2911,10 @@ function mossa(S, a, marcia){
   let quanti = move;
   if (marcia && bandiera(u, "noMarch")) return no("un incantesimo le impedisce di marciare");
   if (marcia){
-    /* Marcia sotto gli occhi del nemico: test di Comando (p. 123). */
-    const vicino = nemiciDi(S, u).some(e => distanza(S, u, e) <= CH.MARCH_WATCH);
+    /* Marcia sotto gli occhi del nemico: test di Comando (p. 123).
+       Chi vola no: «they can march whilst within 8" of an enemy unit
+       without first having to make a Leadership test» (p. 170). */
+    const vicino = !vola(u) && nemiciDi(S, u).some(e => distanza(S, u, e) <= CH.MARCH_WATCH);
     if (vicino){
       const dadi = roll(2);
       const ld = ldOf(S, u) + (u.command && u.command.musician ? 1 : 0);
@@ -2942,19 +2986,128 @@ const giaAddosso = (S, u) => {
    lascia zero (`stradaVera`). */
 function pianoAvanzata(S, u, t, pr, quanti){
   const da = u.rot || 0;
-  let rot = pr.rot, resta = pr.resta, bloccata = false;
-  if (Math.abs(giroDi(da, rot)) > 0.5 &&
-      ingombro(S, u, { ...boxOf(u, S.units), rot }, { unPollice: false, ignora: giaAddosso(S, u) })){
-    rot = da; bloccata = true;
+  const sorvola = vola(u);
+  let rot = pr.rot, resta = pr.resta, bloccata = false, ruota = null;
+  const dritta = () => {
+    rot = da; bloccata = true; ruota = null;
     resta = Math.abs(giroDi(da, versoDi(t.x - u.x, t.y - u.y))) <= 90 ? quanti : 0;
+  };
+  if (Math.abs(giroDi(da, rot)) > 0.5){
+    ruota = dopoLaRuota(S, u, rot, resta);
+    /* chi vola si gira in aria: conta solo dove atterra (p. 170) */
+    if (!ruota && sorvola) ruota = { x: u.x, y: u.y, extra: 0, perno: "in volo", inAria: true };
+    if (ruota) resta -= ruota.extra;
+    else dritta();
   }
-  let p = { x: u.x, y: u.y, mm: 0, pollici: 0, stop: null };
-  if (resta > 0.01){
+  const corsa = () => {
+    const x0 = ruota ? ruota.x : u.x, y0 = ruota ? ruota.y : u.y;
+    if (resta <= 0.01) return { x: x0, y: y0, mm: 0, pollici: 0, stop: null };
     const a = rot * Math.PI / 180;
-    const meta = bloccata ? [u.x + Math.sin(a) * resta * MM, u.y - Math.cos(a) * resta * MM] : [t.x, t.y];
-    p = percorso(S, u, meta, resta, { rot, devia: !bloccata });
+    const meta = bloccata ? [x0 + Math.sin(a) * resta * MM, y0 - Math.cos(a) * resta * MM] : [t.x, t.y];
+    return inPosa(u, x0, y0, rot, () => percorso(S, u, meta, resta,
+      { rot, devia: !bloccata, sorvola, bordo: ruota ? "fine" : true }));
+  };
+  let p = corsa();
+  /* girato in aria e senza un posto dove atterrare, o girato con un
+     angolo fuori dal tavolo e senza pollici per rientrare (p. 125):
+     resta com'era */
+  if (ruota && ((ruota.inAria && !p.mm) ||
+                !dentroTavolo(S, boxCorners({ ...boxOf(u, S.units), x: p.x, y: p.y, rot })))){ dritta(); p = corsa(); }
+  /* il passo avanti prima della ruota e' movimento fatto, e si conta */
+  const extra = ruota ? ruota.extra : 0;
+  return { ...p, pollici: r1(p.pollici + extra), rot, bloccata, voluti: resta + extra,
+           giro: bloccata ? 0 : pr.giro };
+}
+
+/* Il pezzo messo per un momento altrove, per chiedere al tavolo come
+   starebbe li': `percorso` e `ingombro` guardano `u.x`, `u.y` e
+   `u.rot`, e rifarli per una posa ipotetica voleva dire duplicarli. */
+function inPosa(u, x, y, rot, f){
+  const prima = [u.x, u.y, u.rot];
+  u.x = x; u.y = y; u.rot = rot;
+  try { return f(); } finally { [u.x, u.y, u.rot] = prima; }
+}
+
+/* DOVE FINISCE LA RUOTA (p. 124). «The leading edge of the unit moves
+   forward, pivoting round one of its front corners»: il perno e'
+   l'angolo davanti dalla parte verso cui si gira, e il resto del
+   reggimento gli gira attorno andando AVANTI. Prima l'arbitro girava
+   il pezzo sul suo centro, che e' il perno della riforma (p. 125) e
+   non della ruota: un pezzo profondo spazzava coi suoi angoli di dietro
+   lo spazio dei vicini, e un Carnosauro su 50×100 schierato in fila non
+   si girava quasi mai — nelle partite di «LIZ fun» marciava dritto una
+   volta su due, e con lui gli Skink e la Temple Guard.
+
+   Le pose si provano in ordine, e vince la prima che ci sta:
+   - l'angolo davanti, che e' la ruota del libro;
+   - il centro, com'era prima: il libro lascia ruotare piu' volte e
+     alternare ruota e passi avanti (p. 124), e girare sul centro ne e'
+     il riassunto quando davanti c'e' qualcuno;
+   - un passo dritto di uno, due o tre pollici e POI la ruota: e' la
+     stessa alternanza, per chi e' schierato spalla a spalla e deve
+     prima uscire dalla fila. Il passo si paga con il Movimento.
+   Chi e' in formazione sciolta non ruota affatto (p. 185): per lui il
+   centro viene prima, e l'angolo costa quanto il centro si sposta.
+   I Lumbering girano sul centro (p. 195), e anche per loro il centro
+   viene prima. Della ruota si guarda la posa d'arrivo e quella a meta'
+   giro, perche' l'angolo esterno non passi attraverso un pezzo sottile.
+   Il bordo del tavolo non si guarda: un angolo puo' uscirne durante la
+   manovra (p. 125), e che si finisca dentro lo guarda `pianoAvanzata`.
+   Era il bordo, e non i vicini, a tenere dritto il Carnosauro: schierato
+   nella colonna di destra a un pollice dal bordo, girandosi a sinistra
+   metteva la coda fuori dal tavolo, e marciava dritto lungo il bordo
+   fino a superare il nemico. Torna null se nessuna posa ci sta. */
+function dopoLaRuota(S, u, rot, resta){
+  const b = boxOf(u, S.units), da = u.rot || 0, giro = giroDi(da, rot);
+  const ignora = giaAddosso(S, u);
+  const libera = (x, y, r) => !ingombro(S, u, { ...b, x, y, rot: r }, { unPollice: false, ignora, bordo: false });
+  const sc = sciolta(u), centroPrima = sc || FM.isLumbering(u);
+  const lato = Math.sign(giro) || 1;
+  /* attorno a P, di `g` gradi in senso orario sul tavolo (y in giu') */
+  const gira = (x, y, P, g) => {
+    const r = g * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+    const dx = x - P[0], dy = y - P[1];
+    return [P[0] + dx * c - dy * s, P[1] + dx * s + dy * c];
+  };
+  const a = da * Math.PI / 180;
+  const destra = [Math.cos(a), Math.sin(a)], avanti = [Math.sin(a), -Math.cos(a)];
+  const angolo = (x, y, sg) => [x + destra[0] * sg * b.w / 2 + avanti[0] * b.h / 2,
+                                y + destra[1] * sg * b.w / 2 + avanti[1] * b.h / 2];
+  const perno = (x, y, sg) => {
+    const P = angolo(x, y, sg);
+    const [mx, my] = gira(x, y, P, giro / 2);
+    if (!libera(mx, my, da + giro / 2)) return null;
+    const [ex, ey] = gira(x, y, P, giro);
+    return libera(ex, ey, rot) ? [ex, ey] : null;
+  };
+  const centro = (x, y) => libera(x, y, rot) ? [x, y] : null;
+  const prove = (x, y, passo) => {
+    const conAngolo = () => {
+      for (const sg of sc ? [lato, -lato] : [lato]){
+        const q = perno(x, y, sg);
+        if (q) return { q, perno: "angolo", costo: sc ? inch(Math.hypot(q[0] - x, q[1] - y)) : 0 };
+      }
+      return null;
+    };
+    const conCentro = () => { const q = centro(x, y); return q && { q, perno: "centro", costo: 0 }; };
+    for (const f of centroPrima ? [conCentro, conAngolo] : [conAngolo, conCentro]){
+      const r = f();
+      if (r && passo + r.costo <= resta + 1e-9)
+        return { x: r.q[0], y: r.q[1], extra: passo + r.costo, perno: passo ? `${r.perno} dopo ${passo}″` : r.perno };
+    }
+    return null;
+  };
+  const qui = prove(u.x, u.y, 0);
+  if (qui) return qui;
+  for (const passo of [1, 2, 3]){
+    if (passo > resta) break;
+    const meta = [u.x + avanti[0] * passo * MM, u.y + avanti[1] * passo * MM];
+    const p = percorso(S, u, meta, passo, { rot: da, devia: false });
+    if (p.pollici < passo - 0.05) break;
+    const r = inPosa(u, p.x, p.y, da, () => prove(p.x, p.y, passo));
+    if (r) return r;
   }
-  return { ...p, rot, bloccata, voluti: resta, giro: bloccata ? 0 : pr.giro };
+  return null;
 }
 
 function avanzaRuotando(S, u, t, pr, quanti){

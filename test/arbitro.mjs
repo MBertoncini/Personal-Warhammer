@@ -1325,6 +1325,14 @@ console.log('\nle manovre (pp. 124-125)');
   };
   const spostato = (u, x, y) => Math.hypot(u.x - x, u.y - y) / MM;
   const quasi = (a, b, tol = 0.1) => Math.abs(a - b) <= tol;
+  /* dove sta il centro dopo la ruota del libro (p. 124): il perno è
+     l'angolo davanti dalla parte verso cui si gira, e il pezzo gli gira
+     attorno. Si parte guardando in su (rot 0). */
+  const dopoRuota = (G, u, x, y, g) => {
+    const b = AR.boxOf(u, G.units), P = [x + Math.sign(g) * b.w / 2, y - b.h / 2];
+    const r = g * Math.PI / 180, dx = x - P[0], dy = y - P[1];
+    return [P[0] + dx * Math.cos(r) - dy * Math.sin(r), P[1] + dx * Math.sin(r) + dy * Math.cos(r)];
+  };
 
   /* la ruota costa quanto cammina il modello esterno (p. 124):
      150 mm per 20° sono 2,06″, e ne restano 1,94 per andare avanti */
@@ -1335,8 +1343,8 @@ console.log('\nle manovre (pp. 124-125)');
     const av = AR.options(G).list.find(x => x.id === 'avanza' && x.uid === tg.uid);
     ok('l avanzata dice quanto costa la ruota', av && /ruota di 20°/.test(av.why) && /2\.1″/.test(av.why));
     AR.apply(G, { id:'avanza', uid: tg.uid, verso: orc.uid });
-    ok('e la paga: gira di 20° e avanza di quello che resta',
-       quasi(tg.rot, 20, 0.5) && quasi(spostato(tg, 600, 600), 1.94));
+    ok('e la paga: gira di 20° attorno all angolo davanti e avanza di quello che resta',
+       quasi(tg.rot, 20, 0.5) && quasi(spostato(tg, ...dopoRuota(G, tg, 600, 600, 20)), 1.94));
     ok('il registro scrive la ruota con la pagina', G.log.some(r => /ruota di 20°/.test(r.text) && r.page === 124));
     ok('e dichiara quello che della ruota semplifica', G.log.some(r => /\[limite\]/.test(r.text) && /ruota/.test(r.text)));
   }
@@ -1347,7 +1355,10 @@ console.log('\nle manovre (pp. 124-125)');
     const orc = verso(G, tg, 45, 400);
     AR.apply(G, { id:'avanza', uid: tg.uid, verso: orc.uid });
     ok('chi non ha abbastanza Movimento ruota quanto può e non avanza',
-       quasi(tg.rot, 38.8, 0.3) && spostato(tg, 600, 600) < 0.05);
+       quasi(tg.rot, 38.8, 0.3) && spostato(tg, ...dopoRuota(G, tg, 600, 600, tg.rot)) < 0.05);
+    const b = AR.boxOf(tg, G.units);
+    ok('e l angolo davanti a destra, il perno, resta dov era',
+       AR.cornersOf(tg, G.units).some(c => Math.hypot(c[0] - 600 - b.w / 2, c[1] - 600 + b.h / 2) < 0.5));
   }
   /* marciando si ruota (p. 123), e la ruota si paga sul doppio */
   {
@@ -1355,7 +1366,61 @@ console.log('\nle manovre (pp. 124-125)');
     const tg = metti(G, uid(G, 6), 600, 600);
     const orc = verso(G, tg, 20, 400);
     AR.apply(G, { id:'marcia', uid: tg.uid, verso: orc.uid });
-    ok('chi marcia paga la ruota sugli otto pollici', quasi(spostato(tg, 600, 600), 5.94));
+    ok('chi marcia paga la ruota sugli otto pollici', quasi(spostato(tg, ...dopoRuota(G, tg, 600, 600, 20)), 5.94));
+  }
+  /* Un pezzo grande accanto a un vicino. I Troll in colonna sono 40×160:
+     girati sul centro, l'angolo davanti a destra entrava nel reggimento
+     accanto, e l'arbitro rinunciava alla ruota — «non ha posto per
+     girarsi», e dritti. Con il perno sull'angolo del libro il pezzo gira
+     in avanti, lontano dal vicino. */
+  {
+    const G = nuova(); G.casella = casella('mosse'); G.army = 'B';
+    const tr = metti(G, uid(G, 506), 600, 500, 0);
+    const bt = AR.boxOf(tr, G.units);
+    const vicino = metti(G, uid(G, 505), 600 + bt.w / 2 + 5 + 75, 500, 0);
+    const tg = metti(G, uid(G, 6), 600 + 400 * Math.sin(Math.PI / 6), 500 - 400 * Math.cos(Math.PI / 6), 180);
+    ok('girati sul centro i Troll entrerebbero nel vicino',
+       polysOverlap(boxCorners({ ...bt, rot: 30 }), AR.cornersOf(vicino, G.units)));
+    AR.apply(G, { id:'avanza', uid: tr.uid, verso: tg.uid });
+    ok('e invece ruotano, di 30°, e vanno verso il nemico',
+       quasi(tr.rot, 30, 0.5) && tr.y < 500 && !G.log.some(r => /non ha posto per girarsi/.test(r.text)));
+    ok('senza entrare nel vicino', !dentro(G, tr, vicino));
+  }
+  /* La fine del mondo (p. 125): durante una manovra un angolo può uscire
+     dal tavolo, purché il pezzo finisca dentro. Il Carnosauro schierato
+     a un pollice dal bordo destro, girandosi a sinistra, metteva la coda
+     fuori, e l'arbitro lo faceva marciare dritto lungo il bordo per tutta
+     la partita. Qui il Bastiladon, 60×100, a due millimetri dal bordo. */
+  {
+    const G = inMosse(nuova());
+    const bas = metti(G, uid(G, 7), G.table.w - 32, 600);
+    const a = -67 * Math.PI / 180;
+    const orc = metti(G, uid(G, 505), bas.x + 400 * Math.sin(a), 600 - 400 * Math.cos(a));
+    AR.apply(G, { id:'avanza', uid: bas.uid, verso: orc.uid });
+    ok('accanto al bordo il Bastiladon si gira lo stesso verso il nemico',
+       quasi(bas.rot, 293, 0.5) && !G.log.some(r => /non ha posto per girarsi/.test(r.text)));
+    ok('e finisce tutto dentro il tavolo', AR.sulTavolo(G, bas));
+  }
+  /* Il volo (p. 170): chi vola passa sopra le unità, e non può solo
+     finirci sopra. Prima i Terradon si fermavano dietro i propri Skink
+     come un reggimento di fanteria. Qui un capo a cui si dà Fly (10),
+     con la Temple Guard amica proprio davanti. */
+  {
+    const G = inMosse(nuova());
+    const capo = metti(G, uid(G, 2), 600, 700);
+    capo.rules = [...(capo.rules || []), 'Fly (10)'];
+    const tg = metti(G, uid(G, 6), 600, 600);
+    const orc = metti(G, uid(G, 505), 600, 100);
+    AR.apply(G, { id:'avanza', uid: capo.uid, verso: orc.uid });
+    ok('chi vola scavalca il reggimento amico e atterra oltre',
+       capo.y < 600 - 45 - 12 && !dentro(G, capo, tg) && quasi(spostato(capo, 600, 700), 10, 0.3));
+    ok('e non atterra entro un pollice dal nemico', AR.distanza(G, capo, orc) >= 1);
+    const H = inMosse(nuova());
+    const c2 = metti(H, uid(H, 2), 600, 700);
+    c2.rules = [...(c2.rules || []), 'Fly (10)'];
+    metti(H, uid(H, 505), 600, 700 - 12.5 - 60 - 6 * MM);
+    const ma = AR.options(H).list.find(x => x.id === 'marcia' && x.uid === c2.uid);
+    ok('e marcia a meno di otto pollici dal nemico senza test di Comando', ma && !ma.provaComando);
   }
   /* gli schermagliatori non ruotano: ogni modello va dove vuole (p. 185) */
   {
