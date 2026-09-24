@@ -5,12 +5,14 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "test": "node test/smoke.mjs && node test/battle.mjs && node test/regole.mjs && node test/motore.mjs && node test/movimento.mjs && node test/mischia.mjs && node test/tiro.mjs && node test/dadi.mjs && node test/psicologia.mjs && node test/magia.mjs && node test/vittoria.mjs && node test/liste.mjs && node test/cavalcature.mjs && node test/arbitro.mjs && node test/statistica.mjs && node test/serie.mjs && node test/minacce.mjs && node test/ricerca.mjs && node test/sync.mjs && node test/spiega.mjs && node test/boot.mjs",
+    "test": "node test/smoke.mjs && node test/battle.mjs && node test/regole.mjs && node test/motore.mjs && node test/movimento.mjs && node test/mischia.mjs && node test/tiro.mjs && node test/dadi.mjs && node test/psicologia.mjs && node test/magia.mjs && node test/vittoria.mjs && node test/liste.mjs && node test/cerca.mjs && node test/cavalcature.mjs && node test/arbitro.mjs && node test/statistica.mjs && node test/serie.mjs && node test/minacce.mjs && node test/ricerca.mjs && node test/sync.mjs && node test/spiega.mjs && node test/boot.mjs",
     "start": "python3 -m http.server 8080",
     "icons": "node tools/make-icons.mjs",
     "partita": "node tools/partita.mjs",
     "controlla": "node tools/controlla-partita.mjs",
-    "prova-chiave": "node tools/prova-chiave.mjs"
+    "prova-chiave": "node tools/prova-chiave.mjs",
+    "cerca": "node tools/liste/cerca.mjs",
+    "torneo": "node tools/liste/torneo.mjs"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.0.0",

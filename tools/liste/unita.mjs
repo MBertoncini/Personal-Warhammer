@@ -46,6 +46,9 @@ const peso = u => (u.rules || []).length * 10 + ((u.rules || []).includes('Parry
 for (const l of archivio) for (const u of l.units || [])
   if (!MODELLI[u.name] || peso(u) > peso(MODELLI[u.name])) MODELLI[u.name] = u;
 
+/* c'è un'unità con questo nome da usare come modello? */
+export const haModello = nome => !!MODELLI[nome];
+
 const testiDi = rules => Object.fromEntries(rules.filter(r => TESTI[r]).map(r => [r, TESTI[r]]));
 
 /* le regole che New Recruit aggiunge alla fanteria in Battle March */
@@ -77,7 +80,7 @@ const armi = l => l.map(w => typeof w === 'string' ? ARMI[w] : w);
 const gittata = ws => Math.max(0, ...ws.map(w => parseInt(w.range) || 0));
 
 /* ---- dal modello importato: Orchi & Goblin, Lucertole ---- */
-function da(nome, o = {}){
+export function da(nome, o = {}){
   const m = MODELLI[o.modello || nome];
   if (!m) throw new Error(`nell'archivio non c'è nessuna «${o.modello || nome}» da usare come modello`);
   const u = structuredClone(m);

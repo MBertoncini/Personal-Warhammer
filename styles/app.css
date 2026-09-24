@@ -1310,3 +1310,54 @@ label.field.inline{flex-direction:row;align-items:center;gap:6px;text-transform:
 .sp-pila .sp-voce:hover .sp-testo, .sp-pila .sp-voce.sp-fissa .sp-testo{-webkit-line-clamp:unset;display:block;}
 .sf-guarda{align-items:center;margin:4px 0 8px;}
 .sf-guarda .dim{color:var(--muted);font-size:11.5px;}
+
+/* ---------- laboratorio delle liste (`laboratorio.js`) ----------
+   La tabella di chi batte chi: una scala divergente, blu se vince la
+   riga e rosso se vince la colonna, grigia a metà. I poli sono chiari
+   abbastanza da tenere il testo scuro leggibile anche al massimo, e al
+   buio hanno i loro passi, non l'inverso di quelli chiari. */
+:root{ --lab-pos:#3f8ad8; --lab-neg:#d0665a; --lab-mid:#eeebe2; }
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --lab-pos:#2f77c2; --lab-neg:#b04f41; --lab-mid:#2a2a23; }
+}
+:root[data-theme="dark"]{ --lab-pos:#2f77c2; --lab-neg:#b04f41; --lab-mid:#2a2a23; }
+
+#laboratorio{display:flex;flex-direction:column;gap:10px;}
+#laboratorio .bar{align-items:flex-end;}
+#laboratorio .bar .field{min-width:160px;}
+.lab-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);}
+.lab-tab{border-collapse:separate;border-spacing:2px;font-size:13px;min-width:100%;}
+.lab-tab th{font-weight:500;text-align:left;padding:6px 8px;white-space:nowrap;color:var(--ink);}
+.lab-tab thead th{text-align:center;color:var(--muted);font-size:11.5px;}
+.lab-tab .lab-corner{text-align:left;font-weight:400;}
+.lab-tab th .mono{font-size:11px;color:var(--muted);margin-left:4px;}
+.lab-col{display:inline-grid;place-items:center;min-width:20px;height:20px;border-radius:10px;
+  background:var(--panel-3);font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink);}
+.lab-cell,.lab-self,.lab-na{min-width:52px;height:38px;text-align:center;border-radius:4px;
+  font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink);cursor:default;}
+.lab-cell b{font-size:14px;font-weight:600;}
+.lab-cell span{font-size:10.5px;opacity:.8;margin-left:3px;}
+.lab-cell:hover{outline:2px solid var(--ink);outline-offset:-2px;}
+.lab-poche{font-style:italic;}
+.lab-poche b{font-weight:500;}
+.lab-self{background:repeating-linear-gradient(135deg,var(--panel-2) 0 4px,var(--panel) 4px 8px);}
+.lab-na{color:var(--muted);background:var(--panel-2);}
+.lab-media{text-align:center;color:var(--muted);padding:0 8px;}
+.lab-legenda{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted);}
+.lab-legenda span{display:inline-flex;align-items:center;gap:6px;}
+.lab-sw{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid var(--line);vertical-align:-2px;}
+.lab-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px;}
+.lab-card{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:12px;display:flex;flex-direction:column;gap:8px;}
+.lab-card-head{display:flex;flex-direction:column;gap:2px;}
+.lab-card-head .mono{font-size:11px;color:var(--muted);}
+.lab-unita{margin:0;padding-left:18px;font-size:13px;line-height:1.45;}
+.lab-opp{display:flex;flex-wrap:wrap;gap:4px;}
+.lab-alt{border-top:1px solid var(--line);padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px;}
+.lab-cmd{white-space:pre-wrap;word-break:break-all;margin:6px 0;padding:8px;border:1px solid var(--line);border-radius:6px;font-size:12px;background:var(--panel);}
+@media (max-width:600px){
+  .lab-cards{grid-template-columns:1fr;}
+  #laboratorio .bar .field{min-width:0;flex:1 1 100%;}
+  #laboratorio .u-row{flex-wrap:wrap;gap:6px;}
+  .lab-tab th .mono{display:none;}
+  .lab-tab tbody th{position:sticky;left:0;z-index:1;background:var(--panel);white-space:normal;min-width:110px;}
+}

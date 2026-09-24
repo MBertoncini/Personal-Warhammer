@@ -458,6 +458,22 @@ Una candidata si scrive con i costruttori di `unita.mjs` — `OG.orcs({ n: 40, c
 
 Tre cose imparate cercandole, che i default ricordano. Fra due serie di semi diversi **la stessa lista cambia anche di 10-15 punti**, e tutte le candidate insieme: si sceglie con 16 semi o più e la vincitrice si riprova su semi mai usati. L'**arma aggiuntiva** non si compra: l'arbitro non ne conta l'attacco in più, e fra due armi che perforano uguale impugna la prima dell'elenco. E i **Fanatici** e gli attacchi del **Gigante** sono regole che il tavolo gioca a mano: in una serie sono punti che non fanno niente.
 
+### Cercare una lista a macchina, e il Laboratorio
+
+Quello che si faceva a mano con `valuta.mjs` — scrivere candidate, giocarle, tenere le migliori, cambiarle un poco — lo fa `cerca.mjs` da sé, per ogni fazione e in due serbatoi: **tutte le unità** che `unita.mjs` sa costruire, e **solo la tua collezione**, contata da `dati/catalogo.json` (due reggimenti di Clanrats da 40 ne vogliono 80 in vetrina). Poi `torneo.mjs` fa giocare le liste trovate tutte contro tutte, scenario per scenario, e la scheda **Laboratorio** dell'app lo disegna: scegli lo scenario e la tabella dice quali partite vengono equilibrate e quali a senso unico.
+
+```bash
+npm run cerca -- --sforzo rapido                     # le tre fazioni, tutte le unità e la collezione, 800 punti, i sei scenari
+npm run cerca -- --fazione skaven --pool collezione --punti 750 --scenari bm-strada
+npm run torneo -- --punti 800                        # chi batte chi, su ogni scenario (--archivio aggiunge le liste da 800 dell'archivio)
+```
+
+- Una lista è un elenco di **geni** (`spazio.mjs`): un'unità, quanti modelli, le opzioni, il dominio del mago. Da lì si costruisce la lista vera con la scheda di preparazione già compilata: generale (il Comando più alto fra chi non porta lo stendardo), stendardo da battaglia, Livello e dominio. Vale solo se sta nei punti senza lasciarne più del 4%, rispetta le percentuali della Grand Army, i limiti di ogni voce e Da Boyz.
+- Ogni generazione **tutte le candidate giocano le stesse celle** — un avversario su uno scenario, un seme nuovo, a specchio — estratte fra tutte le coppie: giocarle tutte ogni volta costerebbe troppo (su un portatile le partite sono due o tre al secondo). Le migliori restano e rigiocano su celle nuove, e i conti si sommano; le altre si rimpiazzano con figlie e con una lista a caso. Alla fine le finaliste giocano **tutte** le celle su semi mai usati per scegliere, ed è con quei numeri che si ordinano.
+- Gli avversari sono le liste dell'archivio vicine ai punti e la migliore di ogni ricerca delle altre fazioni: rifare la ricerca riparte dalle liste migliori della volta prima e gioca contro quello che le altre hanno trovato nel frattempo. È il giro da ripetere: ricerca, torneo, ricerca.
+- I risultati vanno in `dati/ricerche/` (un file per ricerca, uno per torneo, e l'indice). La Nuvola non li tocca; su GitHub Pages arrivano con un commit. Dal Laboratorio una lista trovata entra nelle tue con **Aggiungi alle mie liste**.
+- Lo sforzo: `rapido` (qualche centinaio di partite a ricerca), `normale` (un paio di migliaia), `accurato`. Il Laboratorio scrive il comando e dice quante partite costa.
+
 ## Installarla
 
 C'è un manifest e un service worker: Chrome, Edge e Safari propongono **Installa app**. Ne guadagni due cose, e la seconda vale più della prima:
@@ -620,6 +636,7 @@ src/
   controai.js         la sfida sul tavolo: tu contro l'AI, con l'arbitro in mezzo
   spiega.js           il perché di un tiro: dalla riga del registro alla scheda, per la sfida e per la pagina da guardare
   matchup.js          disponibilità, confronto, schieramenti salvati
+  laboratorio.js      le liste cercate a macchina e il torneo fra loro: chi batte chi, scenario per scenario
   reports.js          archivio delle partite e scheda Partite
   deploy.js           stato del tavolo, pannelli, campo di battaglia
   main.js             avvio, schede, registrazione del service worker
@@ -658,6 +675,11 @@ tools/
   liste/valuta.mjs    tante candidate contro tante liste su più scenari, in parallelo
   liste/salva.mjs     la candidata scelta, in dati/liste.json
   liste/esempi.mjs    le liste da 800 punti cercate così, e le alternative
+  liste/spazio.mjs    le liste che si possono scrivere: unità, opzioni, vincoli, collezione
+  liste/cerca.mjs     la ricerca a generazioni, per fazione, con tutte le unità o con la collezione
+  liste/torneo.mjs    le liste trovate tutte contro tutte, scenario per scenario
+  liste/motore.mjs    i lavoratori che giocano le serie senza rilanciare un processo ogni volta
+  liste/ricerche.mjs  i file di dati/ricerche/ e il loro indice
 dati/
   eserciti/           un file per esercito: regole, oggetti, domini
   profili.json        i profili letti sul libro: cavalcature, servitori, liste scritte a mano

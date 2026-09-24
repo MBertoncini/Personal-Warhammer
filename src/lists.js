@@ -122,6 +122,21 @@ export async function importListText(text, { external = false } = {}){
   return list;
 }
 
+/* Una lista che arriva già nello schema dell'archivio: quelle trovate
+   dalla ricerca (tools/liste/cerca.mjs), che il Laboratorio mostra. Ha
+   un id nuovo, perché la stessa ricerca rifatta riusa i suoi; se c'è già
+   una lista con le stesse unità non se ne fa una seconda. */
+export async function adoptList(src){
+  const firma = l => JSON.stringify((l.units || []).map(u => [u.name, u.models, u.pts]));
+  const gia = lists.find(l => firma(l) === firma(src) && (l.info || {}).catalogue === (src.info || {}).catalogue);
+  if (gia) return { list: gia, nuova: false };
+  const list = { ...structuredClone(src), id: newId(), external: false, imported: new Date().toISOString(),
+                 units: src.units.map(u => ({ ...structuredClone(u), catId: u.catId || matchUnitName(u.name) })) };
+  lists.push(list);
+  await persist();
+  return { list, nuova: true };
+}
+
 /* ============================================================
    1b · LISTE SCRITTE A MANO
    ============================================================ */

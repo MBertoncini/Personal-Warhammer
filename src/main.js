@@ -9,6 +9,7 @@ import { $ } from './util.js';
 import { initCatalog, renderCatalog } from './catalog.js';
 import { initLists, renderLists, healLinks as healListLinks } from './lists.js';
 import { initMatchup, renderMatchup } from './matchup.js';
+import { renderLaboratorio } from './laboratorio.js';
 import { initReports, renderReports } from './reports.js';
 import { bootDeploy, renderAll, refreshLinks as refreshBoardLinks, toast } from './deploy.js';
 import { exportAll, importAll, requestPersistence } from './store.js';
@@ -44,6 +45,7 @@ const TABS = {
   catalog: () => renderCatalog(),
   lists:   () => renderLists(),
   matchup: () => renderMatchup(),
+  laboratorio: () => renderLaboratorio(),
   report:  () => renderReports(),
 };
 
