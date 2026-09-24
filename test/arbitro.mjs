@@ -151,6 +151,37 @@ console.log('\nil combattimento a più di due, in partita');
 }
 
 /* ================================================================= */
+console.log('\nle perdite dalla fila di dietro: il fronte resta dov era (p. 143)');
+{
+  /* La partita del seme 1, Skaven contro Orchi, turno 6: i Clanrats
+     caricano i Night Goblin, i Familiars ne tolgono l'ultima fila, il
+     rettangolo si accorcia intorno al centro e fra i due si aprono
+     12,8 mm. Il combattimento spariva prima di menarsi. */
+  seme(3);
+  const G = AR.newBattle({ A, B, scenario:'bm-strada' });
+  const chi = AR.unitsOf(G, 'A').find(u => (u.models || 1) > 1);
+  const bersaglio = AR.unitsOf(G, 'B').slice().sort((a, b) => (b.models || 0) - (a.models || 0))[0];
+  for (const u of [chi, bersaglio]) u.placed = true;
+  bersaglio.x = 600; bersaglio.y = 450; bersaglio.rot = 205;
+  chi.x = 620; chi.y = 650; chi.rot = 25;
+  const al = CH.alignTo(AR.boxOf(chi, G.units), AR.boxOf(bersaglio, G.units));
+  chi.x = al.x; chi.y = al.y; chi.rot = al.rot;
+  const toccano = () => AR.gruppiInMischia(G).length === 1;
+  ok('i due partono a contatto', toccano());
+  const h0 = AR.layoutOf(bersaglio, G.units).h;
+  let persa = false, sempre = true;
+  while (!persa && AR.interni.perdite && (bersaglio.models - (bersaglio.lost || 0)) > 1){
+    AR.interni.perdite(G, bersaglio, 1);
+    persa = AR.layoutOf(bersaglio, G.units).h < h0 - 0.01;
+    if (!toccano()) sempre = false;
+  }
+  ok(`${bersaglio.name} perde una fila intera`, persa);
+  ok('e resta a contatto, perdita dopo perdita', sempre);
+  ok('e il fronte non si muove di un decimo di millimetro',
+     AR.distanza(G, chi, bersaglio) < 0.01);
+}
+
+/* ================================================================= */
 console.log('\nla magia in partita (pp. 106-111)');
 const M = MG.makeMagic(dati('magia/domini.json'));
 /* le due liste del Monolite: uno Skink Priest contro un Night Goblin
@@ -519,6 +550,25 @@ console.log('\nil movimento non attraversa nessuno (p. 118)');
   const e2 = metti(G2, uid(G2, 505), 600, 380);
   AR.apply(G2, { id:'marcia', uid: tg.uid, verso: e2.uid });
   ok('chi marcia verso un nemico si ferma a un pollice', AR.distanza(G2, tg, e2) >= 0.98 && AR.distanza(G2, tg, e2) < 1.3);
+}
+
+console.log('\nil musico nella marcia: +1, ma non oltre 10');
+{
+  /* gli Orc Mobs della partita del seme 1 tiravano con Comando 11: il
+     +1 del musico si sommava dopo il tetto della Warband */
+  const marcia = ld => {
+    const G = nuova();
+    const tg = metti(G, uid(G, 6), 600, 600);
+    const e = metti(G, uid(G, 505), 600, 420);
+    tg.stats = { ...(tg.stats || {}), Ld: ld };
+    tg.command = { ...(tg.command || {}), musician: true };
+    AR.apply(G, { id:'marcia', uid: tg.uid, verso: e.uid });
+    const r = G.log.find(x => x.x && x.x.k === 'marcia');
+    return r ? r.x.vs.v : null;
+  };
+  const sette = marcia(7), dieci = marcia(10);
+  ok(`con Comando 7 il musico porta a 8 (${sette})`, sette === 8);
+  ok(`con Comando 10 resta 10 (${dieci})`, dieci === 10);
 }
 
 console.log('\nla carica che trova il posto occupato');
@@ -1035,6 +1085,41 @@ console.log('\nla pagina da guardare');
      pagina.split('</script>').length === 2 && !/<img src=x/.test(pagina));
   const dentroP = JSON.parse(pagina.split('\n').find(l => l.startsWith('const P = ')).slice(10).replace(/;\s*$/, ''));
   ok('e i dati si rileggono uguali', /<\/script>/.test(dentroP.frames[0].perche));
+
+  /* le basette, le foto, il terreno che si spiega */
+  const sv = metti(G, uid(G, 1), 300, 300);
+  const f3 = RP.fotogramma(G, { AR, testo:[{ t:'x', p:0, d:null, fx:{ k:'magia', da: sv.uid, su: bas.uid, nome:'Fireball', tipo:'missile' } }] });
+  const f4 = RP.fotogramma(G, { AR });
+  const foto = RP.fotoDellaCollezione(G.units.map(u => u.catId));
+  const conFoto = Object.keys(foto);
+  ok(`le foto della collezione entrano nella pagina (${conFoto.length})`,
+     conFoto.length > 0 && conFoto.every(id => /^data:image\/jpeg;base64,/.test(foto[id])));
+  const terreno = RP.terrenoDellaPagina(G);
+  ok('ogni pezzo di terreno dice che cos è e che cosa fa, una cosa per riga',
+     terreno.length === G.terrain.length && terreno.every(t => t.label && Array.isArray(t.righe)) &&
+     terreno.some(t => t.righe.some(r => /riparo/.test(r))));
+  const p2 = RP.paginaHTML({ meta: { titolo:'t', sotto:'', piede:'', w: G.table.w, h: G.table.h, nomi:{ A:'a', B:'b' },
+                                     terreno, zone: [], pezzi: RP.pezziDellaPagina(G), foto },
+                             frames: [f3, f4] });
+  const D2 = JSON.parse(p2.split('\n').find(l => l.startsWith('const P = ')).slice(10).replace(/;\s*$/, ''));
+  ok('la forma delle basette si tiene una volta sola, non in ogni fotogramma',
+     D2.meta.forme.length === D2.frames[0].unita.length &&
+     D2.frames.every(f => f.unita.every(u => Number.isInteger(u.fo) && !u.s)));
+  ok('e ogni pezzo sa che truppa è', Object.values(D2.meta.pezzi).every(p => p.tp));
+  ok('l effetto della riga arriva alla pagina', D2.frames[0].testo[0].fx.k === 'magia');
+  ok('una sola riga «</script>» anche con il codice della pagina dentro', p2.split('</script>').length === 2);
+
+  /* gli effetti li scrive l'arbitro, nelle righe del registro: una
+     partita con i maghi ne lascia di incantesimi e di mischie */
+  const ska = lista('lmufgrzknvou8'), oeg = lista('lmufgs2ffjhhe');
+  if (ska && oeg){
+    seme(1);
+    const Gm = AR.newBattle({ A: ska, B: oeg, scenario:'bm-strada', magia: M });
+    await AG.giocaPartita(AR, Gm, { A: AG.agenteEuristico({}), B: AG.agenteEuristico({}) });
+    const tipi = new Set(Gm.log.filter(r => r.fx).map(r => r.fx.k));
+    ok(`una partita lascia gli effetti da disegnare (${[...tipi].join(', ')})`, tipi.has('magia') && tipi.has('mischia'));
+    ok('e ogni effetto dice chi lo fa', Gm.log.filter(r => r.fx && r.fx.k !== 'fulmine').every(r => r.fx.da != null || r.fx.a));
+  }
 }
 
 console.log('\nla partita nel diario');
@@ -1195,6 +1280,23 @@ console.log('\nla carica su chi fugge come reazione (pp. 120-121)');
   ok('e non può né dichiarare di nuovo né marciare altrove',
      !AR.options(G).list.some(x => x.uid === sv.uid));
   ok('senza passo lungo si fugge di 2D6', G.log.some(r => /reagisce fuggendo: 1 \+ 1 = 2″/.test(r.text)));
+  D.setSource(D.seeded(1));
+  ok('la fuga dice quanto è lontano il bordo', /il bordo è a [\d.]+″/.test(fuga.why) && fuga.fuori === 0);
+
+  /* a due passi dal bordo la fuga lo dice, con la probabilità: la
+     partita del seme 1 ha regalato 224 punti fuggendo «per salvarli» */
+  const Gb = nuova();
+  const sb = metti(Gb, uid(Gb, 1), 600, 330);
+  const wbb = metti(Gb, uid(Gb, 501), 600, 160);
+  Gb.casella = casella('cariche'); Gb.army = 'A';
+  AR.apply(Gb, { id:'carica', uid: sb.uid, target: wbb.uid });
+  const fb = AR.options(Gb).list.find(x => x.kind === 'flee');
+  ok(`vicino al bordo la fuga dice che si esce e che cosa costa (${fb && Math.round(fb.fuori * 100)}%)`,
+     !!fb && fb.fuori > 0.5 && /esce dal tavolo/.test(fb.why) && /punti vanno all'avversario/.test(fb.why));
+  const r = AR.rischioDiFuga(Gb, wbb, sb);
+  D.setSource(() => 5);                                   // 6 + 6: si fugge di 12″
+  AR.apply(Gb, fb);
+  ok('e con un tiro sopra la soglia esce davvero', r.pollici <= 12 && wbb.fledOff === true);
   D.setSource(D.seeded(1));
 
   /* Swiftstride vale anche per il tiro di fuga (p. 178): prima le fughe

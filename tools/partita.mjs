@@ -48,7 +48,8 @@ import * as CB from '../src/combat.js';
 import * as MG from '../src/magic.js';
 import { SCENARIOS } from '../src/scenarios.js';
 import * as FM from '../src/formation.js';
-import { paginaHTML, fotogramma, coloreTerreno, stessoTavolo, COLORI } from './replay.mjs';
+import { paginaHTML, fotogramma, coloreTerreno, stessoTavolo, COLORI,
+         pezziDellaPagina, fotoDellaCollezione, terrenoDellaPagina } from './replay.mjs';
 import { raccoglitore, paginaHeatmap } from './heatmap.mjs';
 import * as ARCH from './archivia.mjs';
 import * as SE from './serie.mjs';
@@ -499,6 +500,8 @@ const esito = await AG.giocaPartita(AR, S, {
       const testo = righe.map(r => ({ t: r.text, p: r.page || 0, d: r.dice && r.dice.length ? r.dice : null,
                                       ...(r.groups ? { g: r.groups.map(g => ({ w: g.what, d: g.dice })) } : {}),
                                       ...(r.kind ? { k: r.kind } : {}),
+                                      /* l'effetto da disegnare: la freccia, il fulmine, la mischia */
+                                      ...(r.fx ? { fx: r.fx } : {}),
                                       /* la spiegazione, che la pagina fa diventare una scheda */
                                       ...(r.x ? { x: r.x } : {}) }));
       if (rifiutata) testo.push({ t: `mossa rifiutata dall'arbitro: ${esito.text}`, p: 0, d: null, k: 'limite' });
@@ -550,8 +553,13 @@ if (html){
       piede: 'Ogni riga porta la pagina del manuale da cui viene. Quello che questa partita non ha giocato: ' +
              ([...S.detto].map(id => (AR.LIMITI.find(x => x.id === id) || {}).what).filter(Boolean).join('; ') || 'niente') + '.',
       w: S.table.w, h: S.table.h, nomi,
-      terreno: S.terrain.map(t => ({ x: t.x, y: t.y, w: t.w, h: t.h, rot: t.rot, colore: coloreTerreno(t.kind) })),
+      /* il terreno con il suo nome e quello che fa, per chi ci passa
+         sopra col mouse */
+      terreno: terrenoDellaPagina(S),
       zone: [...(S.zones.A || []).map(z => ({ ...z, army:'A' })), ...(S.zones.B || []).map(z => ({ ...z, army:'B' }))],
+      /* chi c'e', personaggi compresi, e le foto della collezione */
+      pezzi: pezziDellaPagina(S),
+      foto: fotoDellaCollezione(S.units.map(u => u.catId)),
     },
     frames,
   });

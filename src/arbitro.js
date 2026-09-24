@@ -372,14 +372,26 @@ const totalUS = (S, army) => S.units
    sapere perche': i dadi, il numero da battere e le cose che li hanno
    spostati, ognuna con la sua fonte. La forma e' scritta in cima a
    `spiega.js`, che ne fa la scheda sul tavolo. */
-function say(S, text, { page = 0, dice = null, groups = null, army = "", kind = "", x = null } = {}){
+function say(S, text, { page = 0, dice = null, groups = null, army = "", kind = "", x = null, fx = null } = {}){
   const riga = { turno: S.turno, army: army || S.army, casella: CASELLE[S.casella] ? CASELLE[S.casella].id : "",
                  text, page, dice, kind };
   if (groups && groups.length) riga.groups = groups;
   if (x) riga.x = x;
+  if (fx) riga.fx = fx;
   S.log.push(riga);
   return riga;
 }
+/* Che cosa si vede sul tavolo quando succede: chi colpisce chi, e con
+   che cosa. Non cambia niente della partita: lo legge solo la partita
+   da guardare (tools/replay.mjs), che ne fa una freccia, una palla di
+   fuoco, un fulmine. Si appende alla prima riga scritta da `da` in poi,
+   perche' certe cose (un incantesimo, un combattimento) scrivono piu'
+   righe e l'effetto e' uno solo. */
+function segna(S, da, fx){
+  const r = S.log[da];
+  if (r && !r.fx) r.fx = fx;
+}
+const puntoFx = p => [Math.round(p[0]), Math.round(p[1])];
 /* un limite si dice una volta sola, quando conta */
 function limite(S, id){
   if (S.detto.has(id)) return;
@@ -2674,6 +2686,14 @@ const GESTI = {
     /* chi sta gia' fuggendo non sceglie niente: prima gli si offriva
        «tiene la posizione», e il registro diceva che teneva un'unita'
        in piena fuga */
+    /* Fuggire costa quanto il bordo e' vicino: chi esce dal tavolo conta
+       come distrutto e i suoi punti vanno all'avversario (p. 132). Nella
+       partita del seme 1 i Clanrats 2, a due passi dal loro bordo, sono
+       fuggiti all'ultimo turno «per salvare i punti» e ne hanno regalati
+       224: l'opzione non diceva che cosa rischiava. */
+    const rischio = rischioDiFuga(S, t, u);
+    for (const x of S.pending.list)
+      if (x.kind === "flee"){ x.why = `${x.why}; ${rischio.testo}`; x.fuori = rischio.p; }
     if (t.fled)
       S.pending.list = [{ id:"reazione", kind:"fleeing", uid: t.uid, nome: t.name,
                           why:"sta già fuggendo", page:120 }];
@@ -2689,7 +2709,8 @@ const GESTI = {
       const res = testPsico(S, t, "terror", pt, terrore.why, 179);
       if (!res.passed)
         S.pending.list = [{ id:"reazione", kind:"flee", uid: t.uid, nome: t.name,
-                            why:"ha fallito il Terrore: deve fuggire (p. 179)", page:179 }];
+                            why:`ha fallito il Terrore: deve fuggire (p. 179); ${rischio.testo}`,
+                            fuori: rischio.p, page:179 }];
     }
     return si(`carica dichiarata su ${t.name}`);
   },
@@ -2917,7 +2938,12 @@ function mossa(S, a, marcia){
     const vicino = !vola(u) && nemiciDi(S, u).some(e => distanza(S, u, e) <= CH.MARCH_WATCH);
     if (vicino){
       const dadi = roll(2);
-      const ld = ldOf(S, u) + (u.command && u.command.musician ? 1 : 0);
+      /* il musico non porta il Comando oltre 10, come la Warband e come
+         il raduno (p. 201): prima si sommava dopo il tetto, e gli Orc
+         Mobs della partita del seme 1 tiravano con Comando 11 */
+      const base = ldOf(S, u);
+      const musico = !!(u.command && u.command.musician) && base < PS.LD_CAP;
+      const ld = base + (musico ? 1 : 0);
       const tot = dadi.reduce((s, v) => s + v, 0);
       const passa = tot <= ld || (dadi[0] === 1 && dadi[1] === 1);
       say(S, `${u.name} vuole marciare a ${CH.MARCH_WATCH}″ dal nemico: Comando ${ld}, ` +
@@ -2926,7 +2952,8 @@ function mossa(S, a, marcia){
             x: { k: "marcia", u: u.name, uid: u.uid, tot, vs: { v: ld, op: "<=", t: "Comando" },
                  f: [{ t: `un nemico entro ${CH.MARCH_WATCH}″: per marciare serve un test di Comando (p. 123)`, f: "distanza" },
                      ...fontiComando(S, u),
-                     ...(u.command && u.command.musician ? [{ t: "il musico: +1 al Comando", f: "regola" }] : [])],
+                     ...(musico ? [{ t: "il musico: +1 al Comando", f: "regola" }]
+                        : u.command && u.command.musician ? [{ t: "il musico non aggiunge niente: il Comando è già 10", f: "regola" }] : [])],
                  e: passa ? `marcia: ${move * 2}″` : `niente marcia: solo ${move}″`, ok: passa } });
       quanti = passa ? move * 2 : move;
     } else quanti = move * 2;
@@ -3392,6 +3419,35 @@ function tiroDiFuga(u){
   return { dadi, via, testo };
 }
 
+/* Quanti pollici di fuga bastano a uscire dal tavolo, e con che
+   probabilita' il tiro di fuga ci arriva: la stessa strada di `fuggi`,
+   dritta lontano da chi carica e girata di spalle, senza le unita' che
+   la allungherebbero. */
+export function rischioDiFuga(S, u, da){
+  const dx = u.x - da.x, dy = u.y - da.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len, uy = dy / len, rot = versoDi(dx, dy);
+  const box = boxOf(u, S.units);
+  let soglia = null;
+  for (let p = 0; p <= 40 && soglia == null; p += 0.25)
+    if (!dentroTavolo(S, boxCorners({ ...box, x: u.x + ux * p * MM, y: u.y + uy * p * MM, rot }))) soglia = p;
+  if (soglia == null) return { p: 0, pollici: null, testo: "fuggendo resta sul tavolo" };
+  /* 2D6, o 3D6 con Swiftstride, piu' i bonus di fuga: tutte le facce */
+  const n = MV.swiftOf(u) ? 3 : 2, mod = CB.fleeBonusOf(u).mod;
+  let dist = [1];
+  for (let k = 0; k < n; k++){
+    const nuova = new Array(dist.length + 6).fill(0);
+    dist.forEach((q, s) => { for (let f = 1; f <= 6; f++) nuova[s + f] += q / 6; });
+    dist = nuova;
+  }
+  const p = dist.reduce((t, q, s) => t + (s + mod >= soglia ? q : 0), 0);
+  const pct = Math.round(p * 100);
+  return { p, pollici: soglia,
+           testo: pct <= 0 ? `il bordo è a ${r1(soglia)}″: fuggendo resta sul tavolo`
+             : `il bordo è a ${r1(soglia)}″: fuggendo esce dal tavolo ${pct >= 100 ? "di sicuro" : `con il ${pct}%`}, ` +
+               "e chi esce conta come distrutto: i suoi punti vanno all'avversario (p. 132)" };
+}
+
 function fuggi(S, u, da, pollici){
   const dx = u.x - da.x, dy = u.y - da.y;
   const len = Math.hypot(dx, dy) || 1;
@@ -3630,7 +3686,9 @@ function bombarda(S, u, t, arma, row){
          `Sotto la sagoma: ${colpi.full} del tutto, ${colpi.partial} in parte` +
          (detta ? ` — colpiti ${detta}.` : " — nessuno."),
       { dice: [...(dev.die ? [dev.die.raw] : []), ...(dadi || [])],
-        army: u.army, page: row.page });
+        army: u.army, page: row.page,
+        fx: { k: "sagoma", da: u.uid, su: t.uid, arma: arma.name, p: [puntoFx(out.shape.c || out.to)],
+              r: Math.round(out.shape.r || 40) } });
 
   /* 4. e i colpi si tirano come tutti gli altri: per ferire, e poi le
         salvezze. La Forza e la perforazione sono quelle del profilo,
@@ -3707,7 +3765,7 @@ function colpiInLinea(S, u, da, a, forza, ap, comeMai){
   const detta = [...mucchi.values()].map(g => `${g.u.name}: ${g.n}`).join(", ");
   say(S, `${u.name} ${comeMai}: una linea di ${r1(inch(Math.hypot(a[0] - da[0], a[1] - da[1])))}″, ` +
          `Forza ${forza}. Sotto la linea: ${detta || "nessuno"}.`,
-      { army: u.army, page: 19 });
+      { army: u.army, page: 19, fx: { k: "fulmine", da: u.uid, p: [puntoFx(da), puntoFx(a)] } });
   const chiSpara = CB.combatant(u);
   for (const g of mucchi.values()){
     if (g.u.dead) continue;
@@ -3780,7 +3838,10 @@ function perdite(S, u, kills, left = null, { zitto = false } = {}){
   let sparita = false;
   if (kills > 0){
     const prima = usConCapi(S, u);
+    const pezzo = isJoined(u) ? byUid(S, FM.joinedHost(u)) : u;
+    const fondo = pezzo && pezzo.placed ? layoutOf(pezzo, S.units).h : null;
     u.lost = Math.min(u.models, (u.lost || 0) + kills);
+    if (fondo != null && !pezzo.dead && alive(pezzo) > 0) tieniIlFronte(S, pezzo, fondo);
     if (alive(u) <= 0){
       /* i capi restano in piedi, da soli, dove stava il reggimento: ognuno
          al suo posto nella fila. Prima restavano tutti nel centro, uno
@@ -3798,6 +3859,22 @@ function perdite(S, u, kills, left = null, { zitto = false } = {}){
   }
   if (left != null) u.wounds = left;
   return sparita;
+}
+
+/* Le perdite si tolgono dalla fila di dietro (p. 143): il fronte resta
+   dov'era. Il pezzo pero' e' posato sul suo centro, e quando una fila
+   spariva il rettangolo si accorciava da tutti e due i lati — il fronte
+   arretrava di mezza fila. Nella partita del seme 1 (Skaven contro
+   Orchi, turno 6) i Familiars hanno tolto l'ultima fila ai Night Goblin
+   appena caricati, fra le due unita' si sono aperti 12,8 mm e il
+   combattimento non si e' mai menato. Adesso il centro va avanti di
+   quanto la profondita' si e' accorciata, a meta'. */
+function tieniIlFronte(S, u, prima){
+  const dopo = layoutOf(u, S.units).h;
+  const d = (prima - dopo) / 2;
+  if (!(Math.abs(d) > 0.01)) return;
+  const a = (u.rot || 0) * Math.PI / 180;
+  posa(S, u, u.x + d * Math.sin(a), u.y - d * Math.cos(a));
 }
 
 /* I capi di un reggimento caduto, ognuno al suo posto nella fila e
@@ -4271,8 +4348,13 @@ function lancia(S, a){
   if (res.perfect) return si(risolvi(S, lancio));
   const list = opzioniDissolvi(S, lancio);
   if (list.length === 1){
-    say(S, `${S.nomi[altro(u.army)]} non può provare a dissolvere ${sp.name}: ` +
-           `nessun mago a portata, e la sorte è già stata tentata in questo turno.`,
+    /* il perche' vero: dopo il Barely Controlled Power il mago c'e' ed
+       e' a portata, e il registro diceva lo stesso «nessun mago» */
+    const lui = altro(u.army);
+    const motivo = fermo(S, lui, "dissolvi")
+      ? "un mago surclassato ha chiuso i dissolvimenti per il resto del turno (p. 110)"
+      : `nessun mago a portata${S.magia.fato[lui] === castKey(S) ? ", e la sorte è già stata tentata in questo turno" : ""}`;
+    say(S, `${S.nomi[lui]} non può provare a dissolvere ${sp.name}: ${motivo}.`,
         { army: altro(u.army), page: MG.PAGE.dispel });
     return si(risolvi(S, lancio));
   }
@@ -4354,7 +4436,11 @@ function dissolvi(S, a){
     if (out.dispelled) res = { ...res, dispelled: true };
   }
   if (res.dispelled){
-    say(S, `${sp.name} è dissolto e non fa niente.`, { army: lui, page: MG.PAGE.dispel });
+    const w = byUid(S, l.caster), host = w ? ospite(S, w) : null;
+    say(S, `${sp.name} è dissolto e non fa niente.`,
+        { army: lui, page: MG.PAGE.dispel,
+          fx: { k: "dissolto", da: host ? host.uid : l.caster, su: l.target != null ? l.target : null,
+                dal: d ? ospite(S, d).uid : null, nome: sp.name, tipo: sp.type || "" } });
     return si(continua(S, l.dopo) || "dissolto");
   }
   return si(risolvi(S, l));
@@ -4380,6 +4466,9 @@ function risolvi(S, l){
   const t = l.target != null ? byUid(S, l.target) : null;
   const e = sp.effetto || {};
   let testo = `${sp.name} fa effetto`;
+  const prima = S.log.length;
+  const fx = { k: "magia", da: host ? host.uid : w.uid, su: t ? t.uid : (host ? host.uid : w.uid),
+               nome: sp.name, tipo: sp.type || "", colpi: !!e.colpi };
 
   if (e.colpi && t && !t.dead){
     const spec = MG.parseDice(e.colpi.dadi);
@@ -4422,6 +4511,7 @@ function risolvi(S, l){
   const aMano = MG.manualOf(sp);
   if (aMano) say(S, `${sp.name}, da leggere sul libro: ${aMano}. L'arbitro non lo applica.`,
                  { army: w.army, page: sp.page || 0, kind: "limite" });
+  segna(S, prima, fx);
   return continua(S, l.dopo) || testo;
 }
 const FLAG_LABEL = { noMarch: "non marcia", noCharge: "non carica", frenzy: "Frenesia", hatred: "Odio" };
@@ -4436,11 +4526,13 @@ function colpisci(S, t, h, quanti, fonte, { panico: conPanico = true, da = null 
   const v = CB.strike({ name: fonte }, side, { attacks: quanti, auto: true, strength: h.S, ap: h.AP || 0, label: fonte });
   const toll = CB.woundsToll(t, v.wounds);
   inizioFase(S, t);
-  perdite(S, t, toll.kills, toll.left);
+  /* prima i colpi, poi chi cade: il registro diceva «non resta nessuno
+     in piedi» e solo dopo i sette colpi che l'avevano fatto */
   say(S, `${t.name}: ${quanti} colp${quanti === 1 ? "o" : "i"} a Forza ${h.S}` +
          (h.AP ? `, perforazione ${h.AP}` : "") + (h.noArmour ? ", senza armatura" : "") +
          ` — ${v.wounds} ferit${v.wounds === 1 ? "a" : "e"}, ${toll.kills} a terra.`,
       { dice: v.wound.dice, army: da ? da.army : t.army, page: MG.PAGE.resolution });
+  perdite(S, t, toll.kills, toll.left);
   if (conPanico && toll.kills > 0 && !t.dead) panico(S, t, fonte, da);
   return toll.kills;
 }
@@ -4942,7 +5034,15 @@ function terrenoInMischia(S, g){
   }
 }
 
+/* il combattimento, e sul tavolo il segno che si mena: chi contro chi */
 function mischia(S, g){
+  const prima = S.log.length;
+  const fx = { k: "mischia", a: g.A.map(u => u.uid), b: g.B.map(u => u.uid) };
+  const r = menaLaMischia(S, g);
+  segna(S, prima, fx);
+  return r;
+}
+function menaLaMischia(S, g){
   for (const u of [...g.A, ...g.B]) u.fought = chiave(S);
   terrenoInMischia(S, g);
   /* La Paura quando il combattimento viene scelto: chi tocca un nemico

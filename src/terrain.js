@@ -195,6 +195,11 @@ export function combatCat(t){
    o «wood» ma vedono in modo diverso), e per questo si legge `los` di
    qui e non da `CATS`. */
 export function testoCat(t){
+  return righeCat(t).join(", ");
+}
+/* le stesse cose una per riga: la pagina della partita le mette in fila
+   sotto il nome del pezzo, e le frasi hanno le loro virgole */
+export function righeCat(t){
   const c = catOf(t);
   const cfg = TERRAIN[t && t.kind] || {};
   const los = t && t.los != null ? t.los : cfg.los;
@@ -218,7 +223,7 @@ export function testoCat(t){
      in piu' (p. 152). Il landmark di Battle March e' un obiettivo. */
   if (cfg.los === "crest") dice.push("chi ci combatte sopra conta una fila in più (p. 152)");
   if (t && (t.objective ?? cfg.objective)) dice.push("è un obiettivo: chi lo tiene a fine turno fa punti");
-  return dice.join(", ");
+  return dice;
 }
 
 /* ============================================================

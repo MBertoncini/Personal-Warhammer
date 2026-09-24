@@ -370,6 +370,8 @@ Rispondi SOLO con un oggetto JSON su una riga:
 
 Come si ragiona in questo gioco:
 - si vince facendo più punti vittoria, e i punti vengono dalle unità nemiche distrutte o in fuga;
+- fuggire non salva i punti: chi esce dal tavolo fuggendo conta come distrutto e regala all'avversario tutti i suoi
+  punti, e chi è ancora in fuga a fine partita ne regala metà — la reazione «fuggi» dice quanto è vicino il bordo;
 - una carica presa di fianco o di retro vale punti nel risultato del combattimento e toglie i ranghi al nemico;
 - i ranghi contano: un reggimento largo e profondo vince i combattimenti anche senza uccidere;
 - chi perde un combattimento tira un test di rotta, e chi rompe viene inseguito e travolto;
