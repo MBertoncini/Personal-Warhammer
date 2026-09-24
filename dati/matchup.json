@@ -1,13 +1,16 @@
 {
-  "listA": "lmubp2kimjzhw",
-  "listB": "lmubp01267euf",
+  "listA": "lmufgrzknvou8",
+  "listB": "lmufgs2ffjhhe",
   "mine": "both",
   "note": "",
   "aiai": {
-    "scenario": "bm-strada",
+    "scenario": "sxprova-boschi",
     "chi": "euristica",
     "seme": 1,
     "html": true,
-    "archivia": true
+    "archivia": true,
+    "estro": true,
+    "mappa": true,
+    "partite": 150
   }
 }
