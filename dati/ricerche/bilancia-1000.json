@@ -1,6 +1,6 @@
 {
  "formato": "tow-bilancia/1",
- "quando": "2026-09-25T05:58:39.579Z",
+ "quando": "2026-09-25T07:09:08.847Z",
  "punti": 1000,
  "scenari": [
   "sxmu9q80qdc65",
@@ -59,7 +59,7 @@
    ],
    "descrizione": "Grey Seer sulla Screaming Bell (Livello 3, dark) — 370 pt; 30 Clanrats (scudi, campione, stendardo, musico, fronte 5) — 167 pt; 20 Clanrats (scudi, fronte 5) — 100 pt; 3 Rat Ogres (1 Packmaster) — 149 pt; Hell Pit Abomination — 210 pt",
    "punti": 996,
-   "media": 0.48660714285714285
+   "media": 0.4791666666666667
   },
   {
    "fazione": "skaven",
@@ -113,7 +113,7 @@
    ],
    "descrizione": "Grey Seer sulla Screaming Bell (Livello 4, daemonology) — 400 pt; Warlock Engineer (Livello 1, battle) — 75 pt; 35 Clanrats (scudi, lance, campione, stendardo, musico, fronte 6) — 227 pt; 22 Clanrats (scudi, campione, stendardo, musico, fronte 5) — 127 pt; 3 Warplock Jezzails — 57 pt; Warp Lightning Cannon — 110 pt",
    "punti": 996,
-   "media": 0.46875
+   "media": 0.4114583333333333
   },
   {
    "fazione": "og",
@@ -200,7 +200,7 @@
    ],
    "descrizione": "Orc Weirdnob (Livello 4, battle) — 170 pt; Goblin Oddnob (Livello 4, elementalism) — 165 pt; Night Goblin Bigboss (arma grande, scudo) — 39 pt; 23 Orc Mobs (stendardo, musico, fronte 7) — 125 pt; 14 Orc Mobs (stendardo, musico, archi, fronte 7) — 80 pt; 10 Goblin Mobs (campione, stendardo, musico, fronte 8) — 47 pt; 1 Stone Troll Mobs — 45 pt; 1 Stone Troll Mobs — 45 pt; 16 Cave Squig nella Squig Herd — 172 pt; 6 Orc Boar Boy Mobs (stendardo, musico, lance) — 108 pt",
    "punti": 996,
-   "media": 0.4895833333333333
+   "media": 0.41796875
   },
   {
    "fazione": "og",
@@ -277,7 +277,7 @@
    ],
    "descrizione": "Orc Bigboss sul cinghiale (arma grande) — 75 pt; Black Orc Warboss (arma grande) — 139 pt; 15 Orc Mobs (campione, stendardo, musico, archi, fronte 5) — 92 pt; 25 Orc Mobs (stendardo, musico, Big 'Uns, fronte 6) — 185 pt; 11 Black Orc Mobs (stendardo, musico, arma grande, fronte 6) — 166 pt; 10 Goblin Mobs (campione, stendardo, musico, fronte 6) — 47 pt; 10 Orc Boar Boy Mobs (campione, stendardo, musico, lance, scudi) — 190 pt; Orc Boar Chariots — 90 pt",
    "punti": 984,
-   "media": 0.5856481481481481
+   "media": 0.5729166666666666
   },
   {
    "fazione": "liz",
@@ -321,7 +321,7 @@
    ],
    "descrizione": "Saurus Oldblood sul Carnosauro — 310 pt; Skink Chief — 45 pt; 16 Saurus Warriors (fronte 10) — 224 pt; 10 Saurus Warriors (fronte 8) — 140 pt; 20 Skink Skirmishers — 100 pt; 5 Terradon Riders — 160 pt",
    "punti": 979,
-   "media": 0.47291666666666665
+   "media": 0.5559895833333334
   },
   {
    "fazione": "liz",
@@ -363,7 +363,7 @@
    ],
    "descrizione": "Skink Priest sull'Ancient Stegadon (Livello 2, illusion) — 320 pt; 17 Saurus Warriors (fronte 7) — 238 pt; 18 Skink Skirmishers — 90 pt; 14 Skink Skirmishers — 70 pt; 8 Cold One Riders — 272 pt",
    "punti": 990,
-   "media": 0.43333333333333335
+   "media": 0.5625
   }
  ],
  "matrice": [
@@ -387,22 +387,22 @@
     "n": 96
    },
    {
-    "w": 53,
-    "l": 75,
-    "d": 16,
-    "n": 144
+    "w": 31,
+    "l": 56,
+    "d": 9,
+    "n": 96
    },
    {
-    "w": 19,
-    "l": 22,
-    "d": 7,
-    "n": 48
+    "w": 38,
+    "l": 44,
+    "d": 14,
+    "n": 96
    },
    {
-    "w": 21,
-    "l": 19,
-    "d": 8,
-    "n": 48
+    "w": 41,
+    "l": 40,
+    "d": 15,
+    "n": 96
    }
   ],
   [
@@ -419,28 +419,28 @@
     "n": 0
    },
    {
-    "w": 17,
-    "l": 20,
-    "d": 11,
-    "n": 48
-   },
-   {
-    "w": 29,
-    "l": 58,
-    "d": 9,
+    "w": 31,
+    "l": 53,
+    "d": 12,
     "n": 96
    },
    {
     "w": 26,
-    "l": 17,
-    "d": 5,
-    "n": 48
+    "l": 66,
+    "d": 4,
+    "n": 96
    },
    {
-    "w": 25,
-    "l": 17,
-    "d": 6,
-    "n": 48
+    "w": 44,
+    "l": 42,
+    "d": 10,
+    "n": 96
+   },
+   {
+    "w": 37,
+    "l": 45,
+    "d": 14,
+    "n": 96
    }
   ],
   [
@@ -451,10 +451,10 @@
     "n": 96
    },
    {
-    "w": 20,
-    "l": 17,
-    "d": 11,
-    "n": 48
+    "w": 53,
+    "l": 31,
+    "d": 12,
+    "n": 96
    },
    {
     "w": 0,
@@ -470,28 +470,28 @@
    },
    {
     "w": 22,
-    "l": 20,
-    "d": 6,
-    "n": 48
+    "l": 64,
+    "d": 10,
+    "n": 96
    },
    {
-    "w": 22,
-    "l": 18,
-    "d": 8,
-    "n": 48
+    "w": 27,
+    "l": 56,
+    "d": 13,
+    "n": 96
    }
   ],
   [
    {
-    "w": 75,
-    "l": 53,
-    "d": 16,
-    "n": 144
+    "w": 56,
+    "l": 31,
+    "d": 9,
+    "n": 96
    },
    {
-    "w": 58,
-    "l": 29,
-    "d": 9,
+    "w": 66,
+    "l": 26,
+    "d": 4,
     "n": 96
    },
    {
@@ -508,78 +508,78 @@
    },
    {
     "w": 46,
-    "l": 41,
-    "d": 9,
-    "n": 96
-   },
-   {
-    "w": 52,
-    "l": 34,
-    "d": 10,
-    "n": 96
-   }
-  ],
-  [
-   {
-    "w": 22,
-    "l": 19,
+    "l": 43,
     "d": 7,
-    "n": 48
-   },
-   {
-    "w": 17,
-    "l": 26,
-    "d": 5,
-    "n": 48
-   },
-   {
-    "w": 20,
-    "l": 22,
-    "d": 6,
-    "n": 48
-   },
-   {
-    "w": 41,
-    "l": 46,
-    "d": 9,
     "n": 96
-   },
-   {
-    "w": 0,
-    "l": 0,
-    "d": 0,
-    "n": 0
-   },
-   {
-    "w": 0,
-    "l": 0,
-    "d": 0,
-    "n": 0
-   }
-  ],
-  [
-   {
-    "w": 19,
-    "l": 21,
-    "d": 8,
-    "n": 48
-   },
-   {
-    "w": 17,
-    "l": 25,
-    "d": 6,
-    "n": 48
-   },
-   {
-    "w": 18,
-    "l": 22,
-    "d": 8,
-    "n": 48
    },
    {
     "w": 34,
-    "l": 52,
+    "l": 46,
+    "d": 16,
+    "n": 96
+   }
+  ],
+  [
+   {
+    "w": 44,
+    "l": 38,
+    "d": 14,
+    "n": 96
+   },
+   {
+    "w": 42,
+    "l": 44,
     "d": 10,
+    "n": 96
+   },
+   {
+    "w": 64,
+    "l": 22,
+    "d": 10,
+    "n": 96
+   },
+   {
+    "w": 43,
+    "l": 46,
+    "d": 7,
+    "n": 96
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   }
+  ],
+  [
+   {
+    "w": 40,
+    "l": 41,
+    "d": 15,
+    "n": 96
+   },
+   {
+    "w": 45,
+    "l": 37,
+    "d": 14,
+    "n": 96
+   },
+   {
+    "w": 56,
+    "l": 27,
+    "d": 13,
+    "n": 96
+   },
+   {
+    "w": 46,
+    "l": 34,
+    "d": 16,
     "n": 96
    },
    {
@@ -702,6 +702,11 @@
   },
   {
    "passo": 5,
+   "lista": "O&G orchineri",
+   "cambiata": false
+  },
+  {
+   "passo": 1,
    "lista": "O&G orchineri",
    "cambiata": false
   }

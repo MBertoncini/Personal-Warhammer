@@ -1,11 +1,11 @@
 {
  "formato": "tow-torneo/1",
- "quando": "2026-09-25T04:39:25.317Z",
+ "quando": "2026-09-25T07:09:08.879Z",
  "punti": 1000,
  "semi": 8,
  "seme": 70001,
- "partite": 1296,
- "secondi": 1078,
+ "partite": 2496,
+ "secondi": 2073,
  "bilanciato": true,
  "scenari": [
   {
@@ -64,8 +64,8 @@
    "pool": "collezione",
    "fonte": "ricerca",
    "file": "bilancia-1000.json",
-   "points": 999,
-   "descrizione": "Grey Seer sulla Screaming Bell (Livello 4, daemonology) — 400 pt; Warlock Engineer (Livello 1, battle) — 75 pt; 34 Clanrats (scudi, lance, campione, stendardo, musico, fronte 6) — 221 pt; 22 Clanrats (stendardo, musico, fronte 5) — 98 pt; 5 Warplock Jezzails — 95 pt; Warp Lightning Cannon — 110 pt",
+   "points": 996,
+   "descrizione": "Grey Seer sulla Screaming Bell (Livello 4, daemonology) — 400 pt; Warlock Engineer (Livello 1, battle) — 75 pt; 35 Clanrats (scudi, lance, campione, stendardo, musico, fronte 6) — 227 pt; 22 Clanrats (scudi, campione, stendardo, musico, fronte 5) — 127 pt; 3 Warplock Jezzails — 57 pt; Warp Lightning Cannon — 110 pt",
    "units": 6
   },
   {
@@ -97,8 +97,8 @@
    "pool": "collezione",
    "fonte": "ricerca",
    "file": "bilancia-1000.json",
-   "points": 999,
-   "descrizione": "Saurus Oldblood sul Carnosauro — 310 pt; Skink Chief — 45 pt; 16 Saurus Warriors (fronte 10) — 224 pt; 20 Skink Skirmishers — 100 pt; Bastiladon — 160 pt; 5 Terradon Riders — 160 pt",
+   "points": 979,
+   "descrizione": "Saurus Oldblood sul Carnosauro — 310 pt; Skink Chief — 45 pt; 16 Saurus Warriors (fronte 10) — 224 pt; 10 Saurus Warriors (fronte 8) — 140 pt; 20 Skink Skirmishers — 100 pt; 5 Terradon Riders — 160 pt",
    "units": 6
   },
   {
@@ -108,8 +108,8 @@
    "pool": "collezione",
    "fonte": "ricerca",
    "file": "bilancia-1000.json",
-   "points": 997,
-   "descrizione": "Skink Priest sull'Ancient Stegadon (Livello 2, illusion) — 320 pt; 16 Saurus Warriors (fronte 7) — 224 pt; 18 Skink Skirmishers — 90 pt; 14 Skink Skirmishers — 70 pt; 8 Cold One Riders (campione, stendardo, musico) — 293 pt",
+   "points": 990,
+   "descrizione": "Skink Priest sull'Ancient Stegadon (Livello 2, illusion) — 320 pt; 17 Saurus Warriors (fronte 7) — 238 pt; 18 Skink Skirmishers — 90 pt; 14 Skink Skirmishers — 70 pt; 8 Cold One Riders — 272 pt",
    "units": 5
   }
  ],
@@ -132,16 +132,16 @@
    "d": 2,
    "n": 16
   },
-  "sxmu9q80qdc65|b-0|b-2": {
-   "w": 7,
-   "l": 3,
-   "d": 6,
-   "n": 16
-  },
   "bm-rovine|b-0|b-2": {
    "w": 9,
    "l": 7,
    "d": 0,
+   "n": 16
+  },
+  "sxmu9q80qdc65|b-0|b-2": {
+   "w": 7,
+   "l": 3,
+   "d": 6,
    "n": 16
   },
   "sxprova-boschi|b-0|b-2": {
@@ -163,15 +163,15 @@
    "n": 16
   },
   "sxmu9q80qdc65|b-0|b-4": {
-   "w": 8,
-   "l": 6,
-   "d": 2,
+   "w": 6,
+   "l": 7,
+   "d": 3,
    "n": 16
   },
   "sxprova-profondo|b-0|b-4": {
-   "w": 3,
-   "l": 11,
-   "d": 2,
+   "w": 5,
+   "l": 7,
+   "d": 4,
    "n": 16
   },
   "bm-strada|b-0|b-3": {
@@ -199,87 +199,81 @@
    "n": 16
   },
   "sxprova-boschi|b-0|b-4": {
-   "w": 2,
-   "l": 12,
-   "d": 2,
+   "w": 8,
+   "l": 7,
+   "d": 1,
    "n": 16
   },
   "bm-strada|b-0|b-4": {
-   "w": 4,
-   "l": 12,
+   "w": 9,
+   "l": 7,
    "d": 0,
    "n": 16
   },
   "bm-rovine|b-0|b-4": {
-   "w": 8,
-   "l": 8,
+   "w": 7,
+   "l": 9,
    "d": 0,
    "n": 16
   },
   "open|b-0|b-4": {
-   "w": 6,
+   "w": 3,
    "l": 7,
-   "d": 3,
+   "d": 6,
    "n": 16
   },
   "sxprova-profondo|b-0|b-5": {
-   "w": 6,
-   "l": 8,
+   "w": 5,
+   "l": 9,
    "d": 2,
    "n": 16
   },
   "sxmu9q80qdc65|b-0|b-5": {
    "w": 9,
-   "l": 4,
-   "d": 3,
+   "l": 2,
+   "d": 5,
    "n": 16
   },
   "sxprova-boschi|b-0|b-5": {
    "w": 7,
-   "l": 4,
-   "d": 5,
+   "l": 3,
+   "d": 6,
    "n": 16
   },
   "bm-strada|b-0|b-5": {
+   "w": 8,
+   "l": 8,
+   "d": 0,
+   "n": 16
+  },
+  "bm-rovine|b-0|b-5": {
    "w": 5,
    "l": 11,
    "d": 0,
    "n": 16
   },
-  "bm-rovine|b-0|b-5": {
-   "w": 3,
-   "l": 13,
-   "d": 0,
-   "n": 16
-  },
   "open|b-0|b-5": {
-   "w": 5,
+   "w": 7,
    "l": 7,
-   "d": 4,
+   "d": 2,
    "n": 16
   },
   "sxmu9q80qdc65|b-1|b-2": {
-   "w": 3,
-   "l": 10,
-   "d": 3,
+   "w": 4,
+   "l": 8,
+   "d": 4,
    "n": 16
   },
   "sxprova-profondo|b-1|b-2": {
-   "w": 4,
-   "l": 10,
+   "w": 3,
+   "l": 11,
    "d": 2,
    "n": 16
   },
   "sxprova-boschi|b-1|b-2": {
-   "w": 4,
-   "l": 9,
-   "d": 3,
-   "n": 16
-  },
-  "bm-rovine|b-1|b-2": {
-   "w": 7,
-   "l": 9,
-   "d": 0,
+   "w": 6,
+   "l": 8,
+   "d": 2,
    "n": 16
   },
   "bm-strada|b-1|b-2": {
@@ -288,34 +282,40 @@
    "d": 0,
    "n": 16
   },
+  "bm-rovine|b-1|b-2": {
+   "w": 9,
+   "l": 7,
+   "d": 0,
+   "n": 16
+  },
   "sxmu9q80qdc65|b-1|b-3": {
-   "w": 3,
-   "l": 8,
-   "d": 5,
+   "w": 7,
+   "l": 9,
+   "d": 0,
    "n": 16
   },
   "open|b-1|b-2": {
-   "w": 5,
-   "l": 7,
+   "w": 4,
+   "l": 8,
    "d": 4,
    "n": 16
   },
   "sxprova-profondo|b-1|b-3": {
-   "w": 2,
+   "w": 4,
+   "l": 10,
+   "d": 2,
+   "n": 16
+  },
+  "sxprova-boschi|b-1|b-3": {
+   "w": 1,
    "l": 14,
-   "d": 0,
+   "d": 1,
    "n": 16
   },
   "bm-strada|b-1|b-3": {
    "w": 5,
    "l": 11,
    "d": 0,
-   "n": 16
-  },
-  "sxprova-boschi|b-1|b-3": {
-   "w": 2,
-   "l": 13,
-   "d": 1,
    "n": 16
   },
   "sxmu9q80qdc65|b-1|b-4": {
@@ -325,33 +325,27 @@
    "n": 16
   },
   "bm-rovine|b-1|b-3": {
-   "w": 9,
-   "l": 7,
+   "w": 3,
+   "l": 13,
    "d": 0,
    "n": 16
   },
   "sxprova-profondo|b-1|b-4": {
-   "w": 6,
-   "l": 7,
-   "d": 3,
+   "w": 7,
+   "l": 5,
+   "d": 4,
    "n": 16
   },
   "open|b-1|b-3": {
-   "w": 4,
+   "w": 6,
    "l": 9,
-   "d": 3,
+   "d": 1,
    "n": 16
   },
   "sxprova-boschi|b-1|b-4": {
-   "w": 3,
-   "l": 11,
-   "d": 2,
-   "n": 16
-  },
-  "bm-rovine|b-1|b-4": {
-   "w": 8,
-   "l": 8,
-   "d": 0,
+   "w": 7,
+   "l": 6,
+   "d": 3,
    "n": 16
   },
   "bm-strada|b-1|b-4": {
@@ -360,16 +354,22 @@
    "d": 0,
    "n": 16
   },
+  "bm-rovine|b-1|b-4": {
+   "w": 5,
+   "l": 11,
+   "d": 0,
+   "n": 16
+  },
   "open|b-1|b-4": {
-   "w": 2,
-   "l": 7,
-   "d": 7,
+   "w": 8,
+   "l": 6,
+   "d": 2,
    "n": 16
   },
   "sxprova-profondo|b-1|b-5": {
-   "w": 6,
-   "l": 5,
-   "d": 5,
+   "w": 4,
+   "l": 8,
+   "d": 4,
    "n": 16
   },
   "sxmu9q80qdc65|b-1|b-5": {
@@ -379,9 +379,9 @@
    "n": 16
   },
   "sxprova-boschi|b-1|b-5": {
-   "w": 6,
-   "l": 9,
-   "d": 1,
+   "w": 8,
+   "l": 4,
+   "d": 4,
    "n": 16
   },
   "bm-strada|b-1|b-5": {
@@ -391,39 +391,39 @@
    "n": 16
   },
   "bm-rovine|b-1|b-5": {
-   "w": 7,
-   "l": 9,
+   "w": 4,
+   "l": 12,
    "d": 0,
    "n": 16
   },
   "open|b-1|b-5": {
-   "w": 4,
-   "l": 7,
-   "d": 5,
+   "w": 7,
+   "l": 5,
+   "d": 4,
    "n": 16
   },
   "sxprova-profondo|b-2|b-4": {
-   "w": 4,
-   "l": 9,
+   "w": 3,
+   "l": 10,
    "d": 3,
    "n": 16
   },
   "sxmu9q80qdc65|b-2|b-4": {
-   "w": 5,
-   "l": 10,
-   "d": 1,
-   "n": 16
-  },
-  "sxprova-boschi|b-2|b-4": {
-   "w": 4,
-   "l": 11,
+   "w": 3,
+   "l": 12,
    "d": 1,
    "n": 16
   },
   "bm-strada|b-2|b-4": {
-   "w": 6,
-   "l": 10,
+   "w": 5,
+   "l": 11,
    "d": 0,
+   "n": 16
+  },
+  "sxprova-boschi|b-2|b-4": {
+   "w": 3,
+   "l": 11,
+   "d": 2,
    "n": 16
   },
   "bm-rovine|b-2|b-4": {
@@ -434,25 +434,37 @@
   },
   "open|b-2|b-4": {
    "w": 3,
-   "l": 7,
-   "d": 6,
+   "l": 9,
+   "d": 4,
    "n": 16
   },
   "sxmu9q80qdc65|b-2|b-5": {
-   "w": 2,
+   "w": 3,
    "l": 12,
-   "d": 2,
+   "d": 1,
    "n": 16
   },
   "sxprova-profondo|b-2|b-5": {
-   "w": 7,
-   "l": 7,
-   "d": 2,
+   "w": 6,
+   "l": 4,
+   "d": 6,
+   "n": 16
+  },
+  "sxprova-boschi|b-2|b-5": {
+   "w": 3,
+   "l": 13,
+   "d": 0,
    "n": 16
   },
   "bm-strada|b-2|b-5": {
-   "w": 6,
-   "l": 10,
+   "w": 7,
+   "l": 9,
+   "d": 0,
+   "n": 16
+  },
+  "sxprova-profondo|b-3|b-4": {
+   "w": 7,
+   "l": 9,
    "d": 0,
    "n": 16
   },
@@ -462,34 +474,22 @@
    "d": 0,
    "n": 16
   },
-  "sxprova-boschi|b-2|b-5": {
-   "w": 3,
-   "l": 9,
-   "d": 4,
-   "n": 16
-  },
   "sxmu9q80qdc65|b-3|b-4": {
-   "w": 8,
-   "l": 7,
+   "w": 10,
+   "l": 5,
    "d": 1,
-   "n": 16
-  },
-  "sxprova-profondo|b-3|b-4": {
-   "w": 6,
-   "l": 8,
-   "d": 2,
    "n": 16
   },
   "open|b-2|b-5": {
    "w": 2,
-   "l": 11,
-   "d": 3,
+   "l": 8,
+   "d": 6,
    "n": 16
   },
   "sxprova-boschi|b-3|b-4": {
-   "w": 7,
-   "l": 9,
-   "d": 0,
+   "w": 6,
+   "l": 7,
+   "d": 3,
    "n": 16
   },
   "bm-strada|b-3|b-4": {
@@ -499,27 +499,27 @@
    "n": 16
   },
   "sxprova-profondo|b-3|b-5": {
-   "w": 8,
-   "l": 6,
+   "w": 9,
+   "l": 5,
    "d": 2,
+   "n": 16
+  },
+  "bm-rovine|b-3|b-4": {
+   "w": 12,
+   "l": 4,
+   "d": 0,
    "n": 16
   },
   "sxmu9q80qdc65|b-3|b-5": {
    "w": 4,
-   "l": 9,
-   "d": 3,
-   "n": 16
-  },
-  "bm-rovine|b-3|b-4": {
-   "w": 6,
-   "l": 10,
-   "d": 0,
+   "l": 8,
+   "d": 4,
    "n": 16
   },
   "open|b-3|b-4": {
-   "w": 5,
-   "l": 9,
-   "d": 2,
+   "w": 6,
+   "l": 7,
+   "d": 3,
    "n": 16
   },
   "sxprova-boschi|b-3|b-5": {
@@ -529,21 +529,21 @@
    "n": 16
   },
   "bm-strada|b-3|b-5": {
-   "w": 7,
-   "l": 9,
-   "d": 0,
-   "n": 16
-  },
-  "bm-rovine|b-3|b-5": {
    "w": 6,
    "l": 10,
    "d": 0,
    "n": 16
   },
-  "open|b-3|b-5": {
-   "w": 3,
+  "bm-rovine|b-3|b-5": {
+   "w": 7,
    "l": 9,
-   "d": 4,
+   "d": 0,
+   "n": 16
+  },
+  "open|b-3|b-5": {
+   "w": 5,
+   "l": 6,
+   "d": 5,
    "n": 16
   }
  }
