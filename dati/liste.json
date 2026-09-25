@@ -9637,7 +9637,7 @@
         "armour": 6,
         "ward": 0,
         "regen": 0,
-        "catId": "cmtl5r9bak4eg"
+        "catId": "cmug2y3o63cg5"
       },
       {
         "name": "Orc Mobs",
@@ -14158,22 +14158,22 @@
         "name": "Night Goblin Bigboss",
         "models": 1,
         "crew": 0,
-        "baseId": "25x25",
-        "baseW": 25,
-        "baseH": 25,
+        "baseId": "50x50",
+        "baseW": 50,
+        "baseH": 50,
         "frontage": 1,
         "loose": false,
         "pts": 39,
-        "us": 1,
-        "troop": "Regular infantry (character)",
+        "us": 0,
+        "troop": "Monstrous cavalry (character)",
         "unitSize": "1",
         "stats": {
-          "M": "4",
+          "M": "3D6",
           "WS": "4",
           "BS": "3",
           "S": "4",
           "T": "4",
-          "W": "2",
+          "W": "3",
           "I": "4",
           "A": "3",
           "Ld": "5"
@@ -14182,7 +14182,11 @@
           "Fear of Elves",
           "Hatred (Dwarfs)",
           "Rallying Cry",
-          "Warband"
+          "Warband",
+          "Armoured Hide (1)",
+          "Impact Hits (D3)",
+          "Loner",
+          "Random Movement"
         ],
         "weapons": [
           {
@@ -14198,13 +14202,66 @@
             "S": "S",
             "ap": "-",
             "rules": "-"
+          },
+          {
+            "name": "Massive Gob",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-1",
+            "rules": "Armour Bane (1), Killing Blow",
+            "di": "Giant Cave Squig"
           }
         ],
         "maxRange": 0,
         "slot": "Characters",
         "faction": "Orc and Goblin Tribes",
         "catId": "cmtl5rxae4yxy",
-        "mount": null,
+        "mount": {
+          "id": "giant-cave-squig",
+          "name": "Giant Cave Squig",
+          "genere": "cavalcatura",
+          "stats": {
+            "M": "-",
+            "WS": "4",
+            "BS": "-",
+            "S": "5",
+            "T": "-",
+            "W": "-",
+            "I": "3",
+            "A": "3",
+            "Ld": "-"
+          },
+          "row": "Giant Cave Squig",
+          "righe": [
+            {
+              "chi": "Giant Cave Squig",
+              "n": 1,
+              "stats": {
+                "M": "3D6",
+                "WS": "4",
+                "BS": "-",
+                "S": "5",
+                "T": "-",
+                "W": "-",
+                "I": "3",
+                "A": "3",
+                "Ld": "-"
+              },
+              "arma": {
+                "name": "Massive Gob",
+                "S": "S",
+                "ap": "-1",
+                "rules": "Armour Bane (1), Killing Blow"
+              }
+            }
+          ],
+          "forzaUrto": 5,
+          "random": "3D6",
+          "armour": 0,
+          "libro": "Ravening Hordes",
+          "pagina": 20,
+          "nota": ""
+        },
         "profiles": [
           {
             "name": "Night Goblin Bigboss",
@@ -14235,7 +14292,7 @@
             }
           }
         ],
-        "armour": 5,
+        "armour": 4,
         "ward": 0,
         "ruleText": {
           "Fear of Elves": "Elves of any type cause Fear in models with this special rule.",
@@ -14243,7 +14300,94 @@
           "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
           "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher."
         },
-        "shield": true
+        "shield": true,
+        "foot": {
+          "stats": {
+            "M": "4",
+            "WS": "4",
+            "BS": "3",
+            "S": "4",
+            "T": "4",
+            "W": "2",
+            "I": "4",
+            "A": "3",
+            "Ld": "5"
+          },
+          "profiles": [
+            {
+              "name": "Night Goblin Bigboss",
+              "stats": {
+                "M": "4",
+                "WS": "4",
+                "BS": "3",
+                "S": "4",
+                "T": "4",
+                "W": "2",
+                "I": "4",
+                "A": "3",
+                "Ld": "5"
+              }
+            },
+            {
+              "name": "Giant Cave Squig",
+              "stats": {
+                "M": "3D6",
+                "WS": "4",
+                "BS": "-",
+                "S": "5",
+                "T": "-",
+                "W": "-",
+                "I": "3",
+                "A": "3",
+                "Ld": "-"
+              }
+            }
+          ],
+          "mount": null,
+          "baseId": "25x25",
+          "baseW": 25,
+          "baseH": 25,
+          "troop": "Regular infantry (character)",
+          "slot": "Characters",
+          "frontage": 1,
+          "loose": false,
+          "rules": [
+            "Fear of Elves",
+            "Hatred (Dwarfs)",
+            "Rallying Cry",
+            "Warband"
+          ],
+          "ruleText": {
+            "Fear of Elves": "Elves of any type cause Fear in models with this special rule.",
+            "Hatred (Dwarfs)": "A model with this special rule may re-roll any failed rolls To Hit made against a hatred enemy during the first round of combat.\n\n Which enemies are hated varies from model to model and will be shown in brackets after the name of this special rule. Some models hate 'all enemies' meaning they hate all enemy models equally.",
+            "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+            "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher."
+          },
+          "weapons": [
+            {
+              "name": "Great Weapon",
+              "range": "Combat",
+              "S": "S+2",
+              "ap": "-2",
+              "rules": "Armour Bane (1), Requires Two Hands, Strike Last"
+            },
+            {
+              "name": "Hand Weapon",
+              "range": "Combat",
+              "S": "S",
+              "ap": "-",
+              "rules": "-"
+            }
+          ],
+          "maxRange": 0,
+          "armour": 5,
+          "ward": 0,
+          "us": 1,
+          "models": 1
+        },
+        "mountId": "giant-cave-squig",
+        "mountFromFile": true,
+        "mountPts": 0
       },
       {
         "name": "Orc Mobs",
@@ -14423,7 +14567,7 @@
         "armour": 6,
         "ward": 0,
         "regen": 0,
-        "catId": "cmtl5r9bak4eg",
+        "catId": "cmug2y3o63cg5",
         "shield": false
       },
       {
@@ -15302,7 +15446,7 @@
         "armour": 6,
         "ward": 0,
         "regen": 0,
-        "catId": "cmtl5r9bak4eg",
+        "catId": "cmug2y3o63cg5",
         "shield": false
       },
       {
