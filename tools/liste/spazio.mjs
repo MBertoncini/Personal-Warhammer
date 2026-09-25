@@ -48,6 +48,8 @@ const SI_NO = [false, true];
 /* ================= le voci ================= */
 const SKAVEN = [
   { k: 'greySeer', pezzo: 'Grey Seer', max: 1, opz: { level: [4, 3] }, crea: SK.greySeer, mago: o => o.level },
+  { k: 'seerBell', pezzo: 'Grey Seer', pezzi: () => [['Grey Seer', 1], ['Screaming Bell', 1]], max: 1, opz: { level: [4, 3] },
+    crea: SK.seerBell, mago: o => o.level, etichetta: 'Grey Seer sulla Screaming Bell' },
   { k: 'engineer', pezzo: 'Warlock Engineer', max: 2, opz: { level: [2, 1, 0], gun: [null, 'pistol', 'musket'] }, crea: SK.engineer, mago: o => o.level },
   { k: 'plaguePriest', pezzo: 'Plague Priest', max: 1, opz: { level: [2, 1, 0], censer: SI_NO }, crea: SK.plaguePriest, mago: o => o.level },
   { k: 'warlord', pezzo: 'Skaven Warlord', max: 1, opz: { weapon: [null, 'great', 'halberd'], heavy: SI_NO, shield: SI_NO },
@@ -68,12 +70,14 @@ const SKAVEN = [
 const ORCHI = [
   { k: 'warboss', pezzo: 'Orc Warboss', max: 1, opz: { great: [true, false], heavy: [true, false] }, crea: OG.warboss },
   { k: 'bigboss', pezzo: 'Orc Bigboss', max: 2, opz: { great: SI_NO, heavy: [true, false], bsb: SI_NO }, crea: OG.bigboss, bsb: o => o.bsb },
+  { k: 'bigbossBoar', pezzo: 'Orc Bigboss', max: 2, opz: { great: SI_NO, heavy: [true, false], bsb: SI_NO }, crea: OG.bigbossBoar, bsb: o => o.bsb,
+    etichetta: 'Orc Bigboss sul cinghiale' },
   { k: 'blackWarboss', pezzo: 'Black Orc Warboss', max: 1, opz: { great: [true, false] }, crea: OG.blackWarboss, nero: 'boss' },
   { k: 'blackBigboss', pezzo: 'Black Orc Bigboss', max: 1, crea: OG.blackBigboss, nero: 'boss' },
   { k: 'weirdnob', pezzo: 'Orc Weirdnob', max: 1, opz: { l4: [true, false] }, crea: OG.weirdnob, mago: o => o.l4 ? 4 : 3 },
   { k: 'oddnob', pezzo: 'Goblin Oddnob', max: 1, opz: { l4: [true, false] }, crea: OG.oddnob, mago: o => o.l4 ? 4 : 3 },
-  { k: 'ngOddnob', pezzo: 'Night Goblin Oddnob', max: 1, crea: () => da('Night Goblin Oddnob'), mago: () => 3 },
-  { k: 'ngBigboss', pezzo: 'Night Goblin Bigboss', max: 1, crea: () => da('Night Goblin Bigboss') },
+  { k: 'ngOddnob', pezzo: 'Night Goblin Oddnob', max: 1, opz: { l4: [false, true] }, crea: OG.ngOddnob, mago: o => o.l4 ? 4 : 3 },
+  { k: 'ngBigboss', pezzo: 'Night Goblin Bigboss', max: 1, opz: { great: SI_NO, light: [true, false], shield: SI_NO }, crea: OG.ngBigboss },
   { k: 'ogdruz', pezzo: 'Ogdruz Swampdigga', max: 1, crea: OG.ogdruz },
   /* gli archi sono un pezzo a sé nella collezione: `armi` dice quale (src/armi.js) */
   { k: 'orcs', pezzo: 'Orc Mobs', n: [10, 50], opz: { c: COMANDO, spears: SI_NO, bows: SI_NO, big: SI_NO, f: FRONTI }, crea: OG.orcs,
@@ -83,6 +87,10 @@ const ORCHI = [
     armi: o => o.bows ? 'Shortbows' : '' },
   { k: 'goblins', pezzo: 'Goblin Mobs', n: [10, 40], opz: { c: COMANDO, spears: SI_NO, f: FRONTI }, crea: OG.goblins },
   { k: 'trolls', pezzo: 'Stone Troll Mobs', n: [1, 6], crea: OG.trolls },
+  /* una mandria di n Squig porta un Herder ogni cinque (p. 27) */
+  { k: 'squigHerd', pezzo: 'Night Goblin Squig Herds', n: [5, 30], pezzi: n => [['Night Goblin Squig Herds', n + Math.ceil(n / 5)]],
+    crea: OG.squigHerd, etichetta: 'Cave Squig nella Squig Herd' },
+  { k: 'squigHoppers', pezzo: 'Night Goblin Squig Hopper Mobs', n: [5, 10], crea: OG.squigHoppers },
   { k: 'boarBoys', pezzo: 'Orc Boar Boy Mobs', n: [5, 10], opz: { c: COMANDO, spears: [true, false], shields: SI_NO }, crea: OG.boarBoys },
   { k: 'chariot', pezzo: 'Orc Boar Chariots', crea: OG.chariot },
 ];
@@ -94,6 +102,8 @@ const LUCERTOLE = [
     etichetta: 'Saurus Oldblood sul Carnosauro' },
   { k: 'scarVet', pezzo: 'Saurus Scar-Veteran', max: 2, opz: { weapon: ['great', 'halberd', null], bsb: SI_NO }, crea: LZ.scarVet, bsb: o => o.bsb },
   { k: 'priest', pezzo: 'Skink Priest', max: 2, opz: { l2: [true, false] }, crea: LZ.priest, mago: o => o.l2 ? 2 : 1 },
+  { k: 'priestSteg', pezzo: 'Skink Priest', pezzi: () => [['Skink Priest', 1], ['Ancient Stegadon', 1]], max: 1, opz: { l2: [true, false] },
+    crea: LZ.priestSteg, mago: o => o.l2 ? 2 : 1, etichetta: "Skink Priest sull'Ancient Stegadon" },
   { k: 'chief', pezzo: 'Skink Chief', max: 2, crea: LZ.chief },
   { k: 'slann', pezzo: 'Slann Mage-Priests', max: 1, crea: () => da('Slann Mage-Priests'), mago: () => 4 },
   { k: 'saurus', pezzo: 'Saurus Warriors', n: [10, 30], opz: { c: COMANDO, f: FRONTI }, crea: LZ.saurus },
@@ -101,6 +111,7 @@ const LUCERTOLE = [
   { k: 'skinks', pezzo: 'Skink Skirmishers', n: [10, 20], crea: LZ.skinks },
   { k: 'krox', pezzo: 'Kroxigor', n: [3, 6], opz: { c: ['', 'c'] }, crea: LZ.krox },
   { k: 'bastiladon', pezzo: 'Bastiladon', max: 1, crea: LZ.bastiladon },
+  { k: 'ancientSteg', pezzo: 'Ancient Stegadon', max: 1, crea: LZ.ancientSteg },
   { k: 'terradons', pezzo: 'Terradon Riders', n: [3, 6], crea: LZ.terradons },
   { k: 'coldOnes', pezzo: 'Cold One Riders', n: [5, 10], opz: { c: COMANDO }, crea: LZ.coldOnes },
 ];
@@ -122,18 +133,68 @@ const daBoyzCompleta = (geni, voce, nuovo) => {
   }
 };
 
+/* Le righe della Grand Army Composition List che le percentuali non
+   dicono: «0-1 per 1.000 punti», «uno per ogni eroe Skink», «solo se
+   c'è un Warlock Engineer». Ogni regola conta voci della lista: `al`
+   (al massimo), `almeno`, con `per` (ogni 1.000 punti) o `ogni` (per
+   ogni voce di quest'altro elenco). Le pagine sono stampate. */
+const REGOLE_SKAVEN = [
+  { k: ['greySeer', 'seerBell', 'warlord'], al: 1, per: true, t: 'Warlord o Grey Seer, 0-1 ogni 1.000 punti (Legends: Skaven p. 2)' },
+  { k: ['engineer', 'plaguePriest'], al: 1, per: true, t: 'Warlock Engineer o Plague Priest, 0-1 ogni 1.000 punti (p. 2)' },
+  { k: ['clanrats'], almeno: 1, per: true, t: 'almeno un reggimento di Clanrats ogni 1.000 punti (p. 2)' },
+  { k: ['stormvermin'], al: 1, per: true, t: 'Stormvermin, 0-1 ogni 1.000 punti (p. 2)' },
+  { k: ['ratOgres'], al: 2, per: true, t: 'Rat Ogres, 0-2 ogni 1.000 punti (p. 2)' },
+  { k: ['hpa'], al: 1, per: true, t: 'Hell Pit Abomination, 0-1 ogni 1.000 punti (p. 2)' },
+  { k: ['jezzails'], ogni: ['engineer'], t: 'Warplock Jezzails, uno per Warlock Engineer (p. 2)' },
+  { k: ['globadiers'], ogni: ['engineer'], t: 'Globadiers, uno per Warlock Engineer (p. 2)' },
+  { k: ['plagueMonks'], ogni: ['plaguePriest'], t: 'Plague Monks, uno per Plague Priest (p. 2)' },
+  { k: ['wlc', 'doomwheel'], al: 1, per: true, se: ['engineer'], t: 'Doomwheel o Warp Lightning Cannon, 0-1 ogni 1.000 punti e solo con un Warlock Engineer (p. 2)' },
+];
+const REGOLE_ORCHI = [
+  { k: ['warboss', 'blackWarboss', 'weirdnob'], al: 1, per: true, t: 'Black Orc Warboss, Orc Warboss o Orc Weirdnob, 0-1 ogni 1.000 punti (Ravening Hordes p. 11)' },
+  { k: ['nightGoblins'], ogni: ['ngBigboss', 'ngOddnob'], t: 'Night Goblin Mobs, uno per capo o sciamano Night Goblin (p. 11)' },
+  { k: ['squigHerd'], ogni: ['ngBigboss', 'ngOddnob'], t: 'Squig Herd, una per capo o sciamano Night Goblin (p. 11)' },
+  { k: ['squigHoppers'], ogni: ['ngBigboss', 'ngOddnob'], t: 'Squig Hopper, uno per capo o sciamano Night Goblin (p. 11)' },
+];
+const REGOLE_LUCERTOLE = [
+  { k: ['slann'], al: 1, t: 'Slann, 0-1 (Legends: Lizardmen p. 2)' },
+  { k: ['oldblood', 'carnoOldblood', 'priest', 'priestSteg'], al: 1, per: true, t: 'Saurus Oldblood o Skink Priest, 0-1 ogni 1.000 punti (p. 2)' },
+  { k: ['saurus'], almeno: 1, t: 'almeno un reggimento di Saurus Warriors (p. 2)' },
+  { k: ['templeGuard'], al: 1, t: 'Temple Guard, 0-1 (p. 2)' },
+  { k: ['terradons'], ogni: ['chief', 'priest', 'priestSteg'], t: 'Terradon Riders, uno per eroe Skink (p. 2)' },
+  { k: ['bastiladon'], al: 2, per: true, t: 'Bastiladon, 0-2 ogni 1.000 punti (p. 2)' },
+  { k: ['ancientSteg'], al: 1, per: true, t: 'Stegadon, 0-1 ogni 1.000 punti (p. 2)' },
+];
+function composizione(geni, punti, regole){
+  const quanti = ks => geni.filter(g => ks.includes(g.k)).length;
+  const mille = Math.max(1, Math.floor(punti / 1000));
+  const err = [];
+  for (const r of regole){
+    const n = quanti(r.k);
+    let tetto = r.ogni ? quanti(r.ogni) : r.al != null ? r.al * (r.per ? mille : 1) : Infinity;
+    if (r.se && !quanti(r.se)) tetto = 0;
+    if (n > tetto) err.push(r.t);
+    if (r.almeno && n < r.almeno * (r.per ? mille : 1)) err.push(r.t);
+  }
+  return err;
+}
+
 /* le liste già trovate a mano (esempi.mjs), scritte come geni: la
    ricerca parte anche da loro, e deve fare almeno altrettanto */
 const G = (k, n, o = {}, lore) => ({ k, ...(n ? { n } : {}), o, ...(lore ? { lore } : {}) });
 export const FAZIONI = {
-  skaven: { sigla: 'SKA', nome: 'Skaven', cat: 'Skaven', voci: SKAVEN, vincoli: () => [],
+  skaven: { sigla: 'SKA', nome: 'Skaven', cat: 'Skaven', voci: SKAVEN, regole: REGOLE_SKAVEN, vincoli: (g, v, p) => composizione(g, p, REGOLE_SKAVEN),
     partenze: [[G('greySeer', 0, { level: 4 }, 'battle'), G('clanrats', 40, { shields: true, c: 'csm', f: 8 }),
                 G('clanrats', 40, { shields: true, c: 'csm', f: 8 }), G('clanrats', 29, { shields: true, c: 'sm', f: 6 })]] },
-  og: { sigla: 'O&G', nome: 'Orchi & Goblin', cat: 'Orc and Goblin Tribes', voci: ORCHI, vincoli: daBoyz,
+  og: { sigla: 'O&G', nome: 'Orchi & Goblin', cat: 'Orc and Goblin Tribes', voci: ORCHI, regole: REGOLE_ORCHI,
+    vincoli: (g, v, p) => [...daBoyz(g, v), ...composizione(g, p, REGOLE_ORCHI)],
     completa: (geni, voce, nuovo) => daBoyzCompleta(geni, voce, nuovo),
-    partenze: [[G('blackWarboss', 0, { great: true }), G('weirdnob', 0, { l4: true }, 'battle'),
+    /* la «O&G orda nera» aveva il Weirdnob accanto al Black Orc Warboss,
+       e la Grand Army ne concede uno solo dei due fino a 1.000 punti
+       (Ravening Hordes p. 11): qui il mago è un Goblin Oddnob */
+    partenze: [[G('blackWarboss', 0, { great: true }), G('oddnob', 0, { l4: true }, 'battle'),
                 G('blackOrcs', 10, { c: 'cs', great: true }), G('orcs', 50, { c: 'csm' }), G('orcs', 12, { c: 'sm' })]] },
-  liz: { sigla: 'LIZ', nome: 'Lucertole', cat: 'Lizardmen', voci: LUCERTOLE, vincoli: () => [],
+  liz: { sigla: 'LIZ', nome: 'Lucertole', cat: 'Lizardmen', voci: LUCERTOLE, regole: REGOLE_LUCERTOLE, vincoli: (g, v, p) => composizione(g, p, REGOLE_LUCERTOLE),
     partenze: [[G('oldblood', 0, { weapon: 'great' }), G('scarVet', 0, { weapon: 'great', bsb: true }),
                 G('templeGuard', 16, { c: 'csm' }), G('saurus', 18, { c: 'cs' })]] },
 };
@@ -149,11 +210,17 @@ const MAX = { Characters: 2, 'Named Characters': 1, Core: 4, Special: 2, Rare: 1
 const scegli = (a, rnd) => a[Math.floor(rnd() * a.length)];
 const intero = (a, b, rnd) => a + Math.floor(rnd() * (b - a + 1));
 
-/* `pool`: 'tutte' o 'collezione'. `catalogo`: le voci di dati/catalogo.json. */
-export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, catalogo = null } = {}){
+/* `pool`: 'tutte' o 'collezione'. `catalogo`: le voci di dati/catalogo.json.
+   Il TEMA di una ricerca: `con` sono le voci che ogni lista deve avere
+   («carnoOldblood», o «wlc|hpa» per una delle due), `senza` quelle che
+   non deve avere mai. Serve a cercare due liste diverse della stessa
+   fazione — la campana con l'Abominio, la campana con i Jezzail — invece
+   della sola più forte, che le ricerche libere trovano tutte uguali. */
+export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, catalogo = null, con = [], senza = [] } = {}){
   const fz = FAZIONI[fazione];
   if (!fz) throw new Error(`Fazione «${fazione}» sconosciuta: ${Object.keys(FAZIONI).join(', ')}.`);
   margine = margine ?? Math.max(20, Math.round(punti * 0.04));
+  const obblighi = con.map(c => String(c).split('|').filter(Boolean)).filter(a => a.length);
 
   /* Quante miniature hai, per nome (e alias) dentro la fazione, e con
      quali armi: 25 Orchi con l'arma a una mano e 15 con l'arco sono due
@@ -163,7 +230,7 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
   if (pool === 'collezione'){
     for (const e of catalogo || dati('catalogo.json')){
       if (fazioneDi(e.faction) !== fazione) continue;
-      const s = { armi: armiKey(e.armi), libere: !!e.altreArmi, n: +e.owned || 0 };
+      const s = { armi: armiKey(e.armi), libere: !!e.altreArmi, n: +e.owned || 0, area: (+e.baseW || 0) * (+e.baseH || 0) };
       for (const nome of new Set([e.name, ...(e.aliases || [])].map(norm))){
         if (!scorte.has(nome)) scorte.set(nome, []);
         scorte.get(nome).push(s);
@@ -181,6 +248,7 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
      c'è, e — per la collezione — le miniature pure */
   const voci = [], escluse = [];
   for (const v0 of fz.voci){
+    if (senza.includes(v0.k)){ escluse.push({ k: v0.k, pezzo: v0.pezzo, perche: 'tolta dal tema della ricerca' }); continue; }
     let u;
     try { u = v0.crea({ ...Object.fromEntries(Object.entries(v0.opz || {}).map(([k, a]) => [k, a[0]])), ...(v0.n ? { n: v0.n[0] } : {}) }); }
     catch (e){ escluse.push({ k: v0.k, pezzo: v0.pezzo, perche: 'nessun modello importato' }); continue; }
@@ -205,9 +273,23 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
       const manca = pezziDi(v, min, base).filter(([p, q, k]) => quantiDi(p, k) < q);
       if (manca.length){ escluse.push({ k: v.k, pezzo: v.pezzo, perche: manca.map(([p, q, k]) =>
         `${p}${k ? ' (' + k + ')' : ''}: ne hai ${quantiDi(p, k)}, ne servono ${q}`).join('; ') }); continue; }
+      /* Com'è montato in vetrina. Il Grey Seer della collezione sta sulla
+         Screaming Bell e gli Oldblood sul Carnosauro: la basetta del
+         catalogo è quella della cavalcatura, e il modello a piedi non
+         esiste. Un personaggio la cui basetta in vetrina è più grande di
+         quella dell'unità costruita non si schiera così. */
+      const [cav] = pezziDi(v, min, base), area = (+u.baseW || 25) * (+u.baseH || 25);
+      const scorta = scorte.get(norm(cav[0])) || [];
+      if (!v.n && scorta.length && scorta.every(s => s.area > area)){
+        escluse.push({ k: v.k, pezzo: v.pezzo, perche: `in vetrina è montato (basetta più grande della ${u.baseW}×${u.baseH})` }); continue;
+      }
       if (v.n){
+        /* il reggimento più grande che le miniature permettono: con i
+           pezzi che crescono a scatti (un Herder ogni cinque Squig) non è
+           una divisione */
         const classi = [base, ...Object.entries(v.opz).flatMap(([k, a]) => a.map(x => ({ ...base, [k]: x })))];
-        const tetto = Math.max(...classi.map(o => Math.min(...pezziDi(v, 1, o).map(([p, q, k]) => Math.floor(quantiDi(p, k) / q)))));
+        let tetto = min;
+        for (let n = v.n[1]; n > min; n--) if (classi.some(o => bastano(v, n, o))){ tetto = n; break; }
         v.n = [v.n[0], Math.min(v.n[1], tetto)];
       }
     }
@@ -290,6 +372,8 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
     }
     if (err.length) return err;
     for (const [k, c] of Object.entries(conta)) if (c > perK[k].max) err.push(`${perK[k].nome} ×${c}`);
+    for (const alt of obblighi) if (!geni.some(g => alt.includes(g.k)))
+      err.push(`il tema vuole ${alt.map(k => perK[k] ? perK[k].nome : k).join(' o ')}`);
     const chars = geni.filter(g => isChar(voce(g)));
     if (!chars.some(g => !bsb(g))) err.push('nessun generale');
     if (geni.filter(bsb).length > 1) err.push('due stendardi da battaglia');
@@ -297,7 +381,7 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
     const pts = totale(geni);
     if (pts > punti) err.push(`${pts} punti su ${punti}`);
     if (pts < punti - margine) err.push(`solo ${pts} punti`);
-    err.push(...fz.vincoli(geni, voce));
+    err.push(...fz.vincoli(geni, voce, punti));
     err.push(...mancanze(geni));
     if (!err.length){
       err.push(...avvisiComposizione({ points: pts, info: { limit: punti }, units: geni.map(g => ({ slot: voce(g).slot, pts: costo(g) })) }));
@@ -345,11 +429,34 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
     }
     return geni;
   }
-  /* e se sono troppi, si tolgono: prima modelli, poi unità che non siano personaggi */
+  /* Il 25% di truppe base. Con un tema che vieta qualcosa, o con poche
+     miniature di base in vetrina, le liste a caso non ci arrivavano
+     quasi mai: il Black Orc Warboss con i suoi Orchi Neri e i cinghiali
+     lascia agli Orchi e ai Goblin il resto, e la ricerca non trovava
+     nessuna lista valida in quattrocento tentativi. Qui si fanno
+     crescere le truppe base che ci sono, e se non bastano se ne aggiunge
+     una, prima di riparare i punti. */
+  const puntiBase = geni => geni.filter(g => voce(g).slot === 'Core').reduce((t, g) => t + costo(g), 0);
+  function nucleo(geni, rnd){
+    for (let giri = 0; giri < 12 && puntiBase(geni) < punti * 0.25; giri++){
+      const crescono = geni.filter(g => voce(g).slot === 'Core' && voce(g).n && g.n < voce(g).n[1]);
+      if (crescono.length && rnd() < 0.7){
+        const g = scegli(crescono, rnd), prima = g.n;
+        g.n = Math.min(voce(g).n[1], g.n + intero(2, 8, rnd));
+        while (g.n > prima && mancanze(geni).length) g.n--;
+        if (g.n > prima) continue;
+      }
+      const v = base.filter(w => geni.filter(x => x.k === w.k).length < w.max);
+      if (v.length) aggiungi(geni, v, rnd);
+    }
+  }
+  /* e se sono troppi, si tolgono: prima modelli, poi unità che non siano
+     personaggi — e dalle truppe base solo se restano sopra il 25% */
   function ripara(geni, rnd){
     let giri = 0;
     while (totale(geni) > punti && giri++ < 500){
-      const piccoli = geni.filter(g => voce(g).n && g.n > voce(g).n[0]);
+      const stretto = puntiBase(geni) <= punti * 0.27;
+      const piccoli = geni.filter(g => voce(g).n && g.n > voce(g).n[0] && !(stretto && voce(g).slot === 'Core'));
       if (piccoli.length && rnd() < 0.8){ const g = scegli(piccoli, rnd); g.n = Math.max(voce(g).n[0], g.n - intero(1, 4, rnd)); continue; }
       const via = geni.filter(g => !isChar(voce(g)));
       if (via.length > 1) geni.splice(geni.indexOf(scegli(via, rnd)), 1);
@@ -369,6 +476,25 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
     return scelta.length ? geneCasuale(scegli(scelta, rnd), rnd, geni) : null;
   });
 
+  /* Le unità che ne vogliono un'altra (i Jezzail il Warlock Engineer, i
+     Terradon un eroe Skink, p. 2 dei Legends): senza questo passo quasi
+     ogni lista a caso con i Jezzail si buttava. Si aggiunge chi manca,
+     e se non si può si toglie chi lo chiedeva. */
+  function prerequisiti(geni, rnd){
+    for (const r of fz.regole || []){
+      const req = r.ogni || r.se;
+      if (!req) continue;
+      for (let giri = 0; giri < 4; giri++){
+        const n = geni.filter(g => r.k.includes(g.k)).length;
+        if (!n || geni.filter(g => req.includes(g.k)).length >= (r.ogni ? n : 1)) break;
+        const possibili = voci.filter(v => req.includes(v.k) && geni.filter(x => x.k === v.k).length < v.max);
+        const g = possibili.length ? geneCasuale(scegli(possibili, rnd), rnd, geni) : null;
+        if (g) geni.push(g);
+        else geni.splice(geni.findIndex(x => r.k.includes(x.k)), 1);
+      }
+    }
+  }
+
   /* Una lista a caso. Le unità si pescano tutte con la stessa
      probabilità: prima metà delle pescate andava alle truppe base, e le
      liste a caso erano per due terzi fanteria. Una truppa base c'è
@@ -381,8 +507,13 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
     if (con && !tema) return null;
     for (let t = 0; t < 400; t++){
       const geni = [];
+      /* prima quello che il tema vuole */
+      for (const alt of obblighi){
+        const v = perK[scegli(alt, rnd)];
+        if (v && !geni.some(g => alt.includes(g.k))){ const g = geneCasuale(v, rnd, geni); if (g) geni.push(g); }
+      }
       if (tema && isChar(tema)){ const g = geneCasuale(tema, rnd, geni); if (g) geni.push(g); }
-      else aggiungi(geni, personaggi, rnd);
+      else if (!geni.some(g => isChar(voce(g)))) aggiungi(geni, personaggi, rnd);
       if (rnd() < 0.35) aggiungi(geni, personaggi, rnd);
       if (tema && !isChar(tema)){ const g = geneCasuale(tema, rnd, geni); if (g) geni.push(g); }
       if (base.length && !geni.some(g => voce(g).slot === 'Core')) aggiungi(geni, base, rnd);
@@ -391,6 +522,8 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
         if (g && totale([...geni, g]) <= punti) geni.push(g);
       }
       completa(geni, rnd);
+      prerequisiti(geni, rnd);
+      nucleo(geni, rnd);
       ripara(geni, rnd);
       if (tema && !geni.some(g => g.k === con)) continue;
       if (!valida(geni).length) return ordina(geni);
@@ -426,6 +559,8 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
         if (g.o && g.o.f != null && g.n && g.o.f > g.n) g.o.f = null;
       }
       completa(geni, rnd);
+      prerequisiti(geni, rnd);
+      nucleo(geni, rnd);
       ripara(geni, rnd);
       if (!valida(geni).length && chiave(geni) !== chiave(padre)) return ordina(geni);
     }

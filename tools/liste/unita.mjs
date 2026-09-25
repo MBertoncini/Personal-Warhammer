@@ -31,9 +31,22 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { useMounts, mountById, mountUnit } from '../../src/mounts.js';
 
 const qui = path.dirname(fileURLToPath(import.meta.url));
 const archivio = JSON.parse(fs.readFileSync(path.join(qui, '..', '..', 'dati', 'liste.json'), 'utf8'));
+useMounts(JSON.parse(fs.readFileSync(path.join(qui, '..', '..', 'dati', 'cavalcature.json'), 'utf8')));
+
+/* Il personaggio montato come lo monta la scheda della lista
+   (src/mounts.js): basetta, tipo di truppa, Ferite, righe che menano e
+   punti della bestia sommati, dai numeri di dati/cavalcature.json. */
+const monta = (u, id) => {
+  const m = mountById(id);
+  if (!m) throw new Error(`cavalcatura «${id}» sconosciuta`);
+  mountUnit(u, m);
+  u.ruleText = testiDi(u.rules);
+  return u;
+};
 
 /* i testi delle regole, presi da tutte le liste importate */
 const TESTI = {};
@@ -133,6 +146,9 @@ const base = o => {
 
 /* ================= SKAVEN (Legends: Skaven) ================= */
 export const SK = {
+  /* p. 15: sulla Screaming Bell, +185. Il Grey Seer della collezione ci
+     sta sopra (la sua basetta in vetrina è la 60×100). */
+  seerBell: ({ level = 4 } = {}) => monta(SK.greySeer({ level }), 'screaming-bell'),
   greySeer: ({ level = 4 } = {}) => base({
     name: 'Grey Seer', models: 1, baseId: '25x25', baseW: 25, baseH: 25, frontage: 1,
     pts: 185 + (level === 4 ? 30 : 0), us: 1, troop: 'Regular infantry (character)', unitSize: '1',
@@ -245,6 +261,46 @@ export const OG = {
   warboss: ({ great = true, heavy = true } = {}) => da('Orc Warboss', {
     pts: 110 + (great ? 4 : 0) + (heavy ? 3 : 0), armour: heavy ? 5 : 6, shield: false,
     weapons: great ? ['great', 'hw'] : ['hw'] }),
+  /* p. 19: sul War Boar, +16. È il Bigboss della collezione. */
+  bigbossBoar: ({ great = false, heavy = true, bsb = false } = {}) => monta(OG.bigboss({ great, heavy, bsb }), 'war-boar'),
+  /* p. 16: Night Goblin Bigboss 30, a piedi (quello della collezione sta
+     su una 25×25); arma grande +4, armatura leggera +3, scudo +2. Il
+     modello importato è sul Giant Cave Squig: si prende la sua metà a
+     piedi, e le regole di p. 16. */
+  ngBigboss: ({ great = false, light = true, shield = false } = {}) => {
+    const u = da('Night Goblin Bigboss');
+    const piedi = u.foot || {};
+    Object.assign(u, { stats: { ...piedi.stats }, baseId: '25x25', baseW: 25, baseH: 25, troop: 'Regular infantry (character)',
+      frontage: 1, loose: false, us: 1, mount: null, foot: undefined, mountId: undefined,
+      pts: 30 + (great ? 4 : 0) + (light ? 3 : 0) + (shield ? 2 : 0),
+      armour: 7 - (light ? 1 : 0) - (shield ? 1 : 0), shield,
+      rules: ['Fear of Elves', 'Hatred (Dwarfs)', 'Rallying Cry', 'Warband'],
+      weapons: armi(great ? ['great', 'hw'] : ['hw']) });
+    if (u.armour > 6) u.armour = 0;
+    delete u.foot; delete u.mountId; delete u.mountPts; delete u.mountFromFile;
+    u.maxRange = 0; u.ruleText = testiDi(u.rules);
+    return u;
+  },
+  /* p. 17: Night Goblin Oddnob 130, Livello 3; Livello 4 +30. Il file
+     importato portava solo Fear of Elves. */
+  ngOddnob: ({ l4 = false } = {}) => da('Night Goblin Oddnob', { pts: 130 + (l4 ? 30 : 0), troop: 'Regular infantry (character)', armour: 0,
+    rules: ['Fear of Elves', 'Hatred (Dwarfs)', 'Lore of Mork', 'Warband'] }),
+  /* p. 27: Cave Squig 10, Squig Herder 3, almeno un Herder ogni cinque
+     Squig. Il motore tiene un profilo per unità: si gioca quello degli
+     Squig, che stanno sempre nelle prime file (Huge gob: Forza S, −1,
+     Armour Bane 1), con il Comando degli Herder (6). Gli Herder qui
+     menano come Squig, e «Squigs Go Wild» resta una regola a mano. */
+  squigHerd: ({ n = 10 } = {}) => {
+    const herder = Math.ceil(n / 5);
+    return da('Night Goblin Squig Herds', { n: n + herder, pts: 10 * n + 3 * herder, stats: '4 4 0 5 3 1 4 2 6',
+      troop: 'Regular infantry', armour: 0, shield: false,
+      rules: ['Hatred (Dwarfs)', 'Immune To Psychology', 'Impetuous', 'Loner', 'Motley Crew', 'Open Order', 'Skirmishers', 'Squigs Go Wild', 'Warband'],
+      weapons: [{ name: 'Huge gob', range: 'Combat', S: 'S', ap: '-1', rules: 'Armour Bane (1)' }] });
+  },
+  /* p. 32: Squig Hopper 12; il Movimento è 3D6 e si tira (Random
+     Movement). In mischia il motore fa menare il solo cavaliere. */
+  squigHoppers: ({ n = 5 } = {}) => da('Night Goblin Squig Hopper Mobs', { n, pts: 12 * n,
+    add: ['Random Movement', 'Hatred (Dwarfs)', 'Loner', 'Warband'] }),
   /* p. 13: Bigboss 55; stendardo da battaglia +25 (p. 11) */
   bigboss: ({ great = false, heavy = true, bsb = false } = {}) => da('Orc Bigboss', { modello: 'Orc Warboss',
     name: 'Orc Bigboss', stats: '4 5 2 4 5 2 4 3 7',
@@ -308,6 +364,27 @@ export const LZ = {
   priest: ({ l2 = true } = {}) => da('Skink Priest', { modello: 'Skink Chief', stats: '6 2 3 3 2 2 4 1 6',
     pts: 60 + (l2 ? 30 : 0), armour: 6, shield: false,
     rules: ['Aquatic', 'Cold Blooded', 'Lore Of Lustria'], weapons: ['hw'] }),
+  /* p. 13: sull'Ancient Stegadon, +230 */
+  priestSteg: ({ l2 = true } = {}) => monta(LZ.priest({ l2 }), 'ancient-stegadon'),
+  /* p. 13: l'Ancient Stegadon da solo, 230 (Rara, 0-1 ogni 1000 punti
+     con lo Stegadon, p. 2). La riga della bestia è quella del modello, e
+     i cinque Skink dell'equipaggio menano come riga a parte, come fanno
+     sotto un personaggio (src/mounts.js): tirano l'arco gigante con la
+     loro Abilità Balistica e danno il loro Comando. */
+  ancientSteg: () => {
+    const m = mountById('ancient-stegadon');
+    const bestia = m.righe[0].stats, crew = m.righe.find(r => /crew/i.test(r.chi));
+    const u = base({
+      name: 'Ancient Stegadon', models: 1, crew: 5, baseId: '60x100', baseW: 60, baseH: 100, frontage: 1,
+      pts: 230, us: 0, troop: 'Behemoth', unitSize: '1', faction: 'Lizardmen',
+      stats: { ...bestia, BS: crew.stats.BS, Ld: crew.stats.Ld }, armour: 4,
+      rules: [...m.regole, 'Poisoned Attacks (javelins only)'], weapons: m.armi.map(w => ({ ...w })), slot: 'Rare' });
+    Object.assign(u, { mountId: m.id, mountPts: 0, mountFromFile: true,
+      mount: { id: m.id, name: m.nome, genere: m.genere, stats: bestia, row: '', righe: [structuredClone(crew)],
+               forzaUrto: +m.forzaUrto || 0, random: '', armour: 4, libro: m.libro, pagina: m.pagina, nota: '' } });
+    u.ruleText = testiDi(u.rules);
+    return u;
+  },
   /* p. 4: Skink Chief 45 */
   chief: () => da('Skink Chief', { pts: 45, weapons: ['hw'], armour: 6 }),
   /* p. 14: Bastiladon 160 */

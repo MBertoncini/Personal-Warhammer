@@ -51,13 +51,13 @@ for (const f of Object.keys(FAZIONI)){
 }
 
 /* --- le liste a tema: ogni unità ne ha una, tranne chi non entra per
-   regola (la Hell Pit Abomination costa 210, e le Rare a 800 punti si
-   fermano a 200) --- */
+   regola (la Hell Pit Abomination costa 210, l'Ancient Stegadon 230, e
+   le Rare a 800 punti si fermano a 200) --- */
 for (const f of Object.keys(FAZIONI)){
   const S = spazio(f, { pool: 'tutte', punti: 800 });
   const senza = S.voci.filter(v => { const g = S.casuale(rnd, { con: v.k }); return !g || !g.some(x => x.k === v.k); }).map(v => v.k);
   ok(`${f}: una lista a tema per ogni unità${senza.length ? ' (tranne ' + senza.join(', ') + ')' : ''}`,
-     senza.every(k => k === 'hpa'));
+     senza.every(k => k === 'hpa' || k === 'ancientSteg'));
 }
 
 /* --- i maghi portano Livello e dominio nella scheda di preparazione --- */
@@ -123,6 +123,75 @@ for (const f of Object.keys(FAZIONI)){
   }
   ok('con la collezione degli Orchi si scrivono liste a caso', scritte === 20);
   ok('e hanno figlie', figlie >= 15);
+}
+
+/* --- le righe della Grand Army che le percentuali non dicono ---
+   Legends: Skaven e Legends: Lizardmen p. 2, Ravening Hordes p. 11 */
+{
+  const sk = spazio('skaven', { pool: 'tutte', punti: 1000 });
+  const topi = { k: 'clanrats', n: 40, o: { shields: true, c: 'csm' } };
+  ok('i Jezzail senza un Warlock Engineer non si schierano',
+     sk.valida([{ k: 'greySeer', o: { level: 4 }, lore: 'battle' }, topi, { k: 'clanrats', n: 40, o: { shields: true } }, { k: 'jezzails', n: 9, o: {} },
+                { k: 'ratOgres', n: 3, o: { pm: 1 } }]).some(e => /Jezzails, uno per Warlock Engineer/.test(e)));
+  ok('il cannone nemmeno',
+     sk.valida([{ k: 'greySeer', o: { level: 4 }, lore: 'battle' }, topi, { k: 'clanrats', n: 40, o: { shields: true } }, { k: 'wlc', o: {} },
+                { k: 'ratOgres', n: 6, o: { pm: 1 } }]).some(e => /Warp Lightning Cannon, 0-1/.test(e)));
+  const liz = spazio('liz', { pool: 'tutte', punti: 1000 });
+  ok("a 1.000 punti l'Oldblood sul Carnosauro e lo Skink Priest non stanno insieme",
+     liz.valida([{ k: 'carnoOldblood', o: {} }, { k: 'priest', o: { l2: true }, lore: 'battle' }, { k: 'saurus', n: 30, o: { c: 'csm' } },
+                 { k: 'skinks', n: 20, o: {} }]).some(e => /Oldblood o Skink Priest/.test(e)));
+  ok('e senza Saurus Warriors non è una lista',
+     liz.valida([{ k: 'oldblood', o: { weapon: 'great' } }, { k: 'templeGuard', n: 30, o: { c: 'csm' } }, { k: 'skinks', n: 20, o: {} },
+                 { k: 'bastiladon', o: {} }]).some(e => /Saurus Warriors/.test(e)));
+  const og = spazio('og', { pool: 'tutte', punti: 1000 });
+  ok('i Night Goblin vogliono un capo o uno sciamano Night Goblin',
+     og.valida([{ k: 'warboss', o: { great: true, heavy: true } }, { k: 'nightGoblins', n: 40, o: { c: 'csm' } }, { k: 'orcs', n: 50, o: { c: 'csm' } },
+                { k: 'trolls', n: 6, o: {} }]).some(e => /Night Goblin Mobs, uno per/.test(e)));
+  let dentro = 0, jez = 0;
+  for (let i = 0; i < 20; i++){
+    const g = sk.casuale(rnd);
+    if (!g) continue;
+    dentro++;
+    if (g.some(x => x.k === 'jezzails')) jez++;
+  }
+  ok('le liste a caso Skaven si scrivono lo stesso, e i Jezzail ci entrano col loro Engineer', dentro === 20 && jez > 0);
+}
+
+/* --- com'è montato in vetrina, e i temi --- */
+{
+  const catalogo = [
+    { name: 'Grey Seer', faction: 'Skaven', owned: 1, baseW: 60, baseH: 100 },
+    { name: 'Screaming Bell', faction: 'Skaven', owned: 1, baseW: 60, baseH: 100 },
+    { name: 'Clanrats', faction: 'Skaven', owned: 60, baseW: 25, baseH: 25 },
+    { name: 'Hell Pit Abomination', faction: 'Skaven', owned: 1, baseW: 60, baseH: 100 },
+    { name: 'Warlock Engineer', faction: 'Skaven', owned: 1, baseW: 25, baseH: 25 },
+    { name: 'Warp Lightning Cannon', faction: 'Skaven', owned: 1, baseW: 50, baseH: 100 },
+  ];
+  const S = spazio('skaven', { pool: 'collezione', punti: 1000, catalogo });
+  ok('il Grey Seer che in vetrina sta sulla campana non si schiera a piedi',
+     !S.voci.some(v => v.k === 'greySeer') && S.voci.some(v => v.k === 'seerBell') && S.escluse.some(e => e.k === 'greySeer' && /montato/.test(e.perche)));
+  const c = S.costruisci([{ k: 'seerBell', o: { level: 4 }, lore: 'battle' }], { id: 'x' }).units[0];
+  ok('sulla campana: 400 punti, carro pesante su 60×100, otto Ferite',
+     c.pts === 400 && /Heavy chariot/.test(c.troop) && c.baseW === 60 && c.baseH === 100 && +c.stats.W === 8);
+  const T = spazio('skaven', { pool: 'collezione', punti: 1000, catalogo, con: ['seerBell', 'wlc|hpa'], senza: ['engineer'] });
+  let tutte = 0, buone = 0;
+  for (let i = 0; i < 10; i++){
+    const g = T.casuale(rnd);
+    if (!g) continue;
+    tutte++;
+    if (g.some(x => x.k === 'seerBell') && g.some(x => x.k === 'hpa') && !g.some(x => x.k === 'engineer' || x.k === 'wlc')) buone++;
+  }
+  ok('il tema: la campana e l\'Abominio sempre, e senza Engineer il cannone mai', tutte === 10 && buone === 10);
+  ok('una lista fuori tema non vale', T.valida([{ k: 'seerBell', o: { level: 4 }, lore: 'battle' }, { k: 'clanrats', n: 40, o: {} },
+                                                { k: 'clanrats', n: 20, o: {} }]).some(e => /il tema vuole/.test(e)));
+}
+{
+  const catalogo = [['Night Goblin Squig Herds', 21], ['Night Goblin Oddnob', 1], ['Night Goblin Mobs', 30], ['Orc Mobs', 25]]
+    .map(([name, owned]) => ({ name, owned, faction: 'Orc and Goblin Tribes', baseW: 25, baseH: 25 }));
+  const S = spazio('og', { pool: 'collezione', punti: 1000, catalogo });
+  ok('ventuno miniature fanno una mandria di 17 Squig e 4 Herder (p. 27)', (S.voci.find(v => v.k === 'squigHerd') || {}).n?.[1] === 17);
+  const u = S.costruisci([{ k: 'ngOddnob', o: { l4: false }, lore: 'illusion' }, { k: 'squigHerd', n: 17, o: {} }], { id: 'x' }).units[1];
+  ok('e costa 182 punti, con il profilo degli Squig', u.pts === 182 && u.models === 21 && +u.stats.S === 5 && +u.stats.A === 2);
 }
 
 /* ================================================================= */

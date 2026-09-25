@@ -1,0 +1,550 @@
+{
+ "formato": "tow-torneo/1",
+ "quando": "2026-09-25T04:39:25.317Z",
+ "punti": 1000,
+ "semi": 8,
+ "seme": 70001,
+ "partite": 1296,
+ "secondi": 1078,
+ "bilanciato": true,
+ "scenari": [
+  {
+   "id": "sxmu9q80qdc65",
+   "label": "Poligono di tiro (mio)",
+   "group": "Miei",
+   "pts": null
+  },
+  {
+   "id": "sxprova-profondo",
+   "label": "Poligono profondo",
+   "group": "Miei",
+   "pts": null
+  },
+  {
+   "id": "sxprova-boschi",
+   "label": "Boschi e rovine",
+   "group": "Miei",
+   "pts": null
+  },
+  {
+   "id": "bm-strada",
+   "label": "La Strada delle Pietre",
+   "group": "Battle March",
+   "pts": 750
+  },
+  {
+   "id": "bm-rovine",
+   "label": "Le Rovine di Xhotl",
+   "group": "Battle March",
+   "pts": 750
+  },
+  {
+   "id": "open",
+   "label": "Battaglia Campale",
+   "group": "Generici",
+   "pts": null
+  }
+ ],
+ "liste": [
+  {
+   "id": "b-0",
+   "name": "SKA abominio",
+   "fazione": "skaven",
+   "pool": "collezione",
+   "fonte": "ricerca",
+   "file": "bilancia-1000.json",
+   "points": 996,
+   "descrizione": "Grey Seer sulla Screaming Bell (Livello 3, dark) — 370 pt; 30 Clanrats (scudi, campione, stendardo, musico, fronte 5) — 167 pt; 20 Clanrats (scudi, fronte 5) — 100 pt; 3 Rat Ogres (1 Packmaster) — 149 pt; Hell Pit Abomination — 210 pt",
+   "units": 5
+  },
+  {
+   "id": "b-1",
+   "name": "SKA skryre",
+   "fazione": "skaven",
+   "pool": "collezione",
+   "fonte": "ricerca",
+   "file": "bilancia-1000.json",
+   "points": 999,
+   "descrizione": "Grey Seer sulla Screaming Bell (Livello 4, daemonology) — 400 pt; Warlock Engineer (Livello 1, battle) — 75 pt; 34 Clanrats (scudi, lance, campione, stendardo, musico, fronte 6) — 221 pt; 22 Clanrats (stendardo, musico, fronte 5) — 98 pt; 5 Warplock Jezzails — 95 pt; Warp Lightning Cannon — 110 pt",
+   "units": 6
+  },
+  {
+   "id": "b-2",
+   "name": "O&G notte",
+   "fazione": "og",
+   "pool": "collezione",
+   "fonte": "ricerca",
+   "file": "bilancia-1000.json",
+   "points": 996,
+   "descrizione": "Orc Weirdnob (Livello 4, battle) — 170 pt; Goblin Oddnob (Livello 4, elementalism) — 165 pt; Night Goblin Bigboss (arma grande, scudo) — 39 pt; 23 Orc Mobs (stendardo, musico, fronte 7) — 125 pt; 14 Orc Mobs (stendardo, musico, archi, fronte 7) — 80 pt; 10 Goblin Mobs (campione, stendardo, musico, fronte 8) — 47 pt; 1 Stone Troll Mobs — 45 pt; 1 Stone Troll Mobs — 45 pt; 16 Cave Squig nella Squig Herd — 172 pt; 6 Orc Boar Boy Mobs (stendardo, musico, lance) — 108 pt",
+   "units": 10
+  },
+  {
+   "id": "b-3",
+   "name": "O&G orchineri",
+   "fazione": "og",
+   "pool": "collezione",
+   "fonte": "ricerca",
+   "file": "bilancia-1000.json",
+   "points": 984,
+   "descrizione": "Orc Bigboss sul cinghiale (arma grande) — 75 pt; Black Orc Warboss (arma grande) — 139 pt; 15 Orc Mobs (campione, stendardo, musico, archi, fronte 5) — 92 pt; 25 Orc Mobs (stendardo, musico, Big 'Uns, fronte 6) — 185 pt; 11 Black Orc Mobs (stendardo, musico, arma grande, fronte 6) — 166 pt; 10 Goblin Mobs (campione, stendardo, musico, fronte 6) — 47 pt; 10 Orc Boar Boy Mobs (campione, stendardo, musico, lance, scudi) — 190 pt; Orc Boar Chariots — 90 pt",
+   "units": 8
+  },
+  {
+   "id": "b-4",
+   "name": "LIZ carnosauro",
+   "fazione": "liz",
+   "pool": "collezione",
+   "fonte": "ricerca",
+   "file": "bilancia-1000.json",
+   "points": 999,
+   "descrizione": "Saurus Oldblood sul Carnosauro — 310 pt; Skink Chief — 45 pt; 16 Saurus Warriors (fronte 10) — 224 pt; 20 Skink Skirmishers — 100 pt; Bastiladon — 160 pt; 5 Terradon Riders — 160 pt",
+   "units": 6
+  },
+  {
+   "id": "b-5",
+   "name": "LIZ stegadonte",
+   "fazione": "liz",
+   "pool": "collezione",
+   "fonte": "ricerca",
+   "file": "bilancia-1000.json",
+   "points": 997,
+   "descrizione": "Skink Priest sull'Ancient Stegadon (Livello 2, illusion) — 320 pt; 16 Saurus Warriors (fronte 7) — 224 pt; 18 Skink Skirmishers — 90 pt; 14 Skink Skirmishers — 70 pt; 8 Cold One Riders (campione, stendardo, musico) — 293 pt",
+   "units": 5
+  }
+ ],
+ "celle": {
+  "sxmu9q80qdc65|b-0|b-3": {
+   "w": 8,
+   "l": 6,
+   "d": 2,
+   "n": 16
+  },
+  "bm-strada|b-0|b-2": {
+   "w": 7,
+   "l": 9,
+   "d": 0,
+   "n": 16
+  },
+  "sxprova-profondo|b-0|b-2": {
+   "w": 5,
+   "l": 9,
+   "d": 2,
+   "n": 16
+  },
+  "sxmu9q80qdc65|b-0|b-2": {
+   "w": 7,
+   "l": 3,
+   "d": 6,
+   "n": 16
+  },
+  "bm-rovine|b-0|b-2": {
+   "w": 9,
+   "l": 7,
+   "d": 0,
+   "n": 16
+  },
+  "sxprova-boschi|b-0|b-2": {
+   "w": 10,
+   "l": 4,
+   "d": 2,
+   "n": 16
+  },
+  "open|b-0|b-2": {
+   "w": 10,
+   "l": 2,
+   "d": 4,
+   "n": 16
+  },
+  "sxprova-profondo|b-0|b-3": {
+   "w": 3,
+   "l": 12,
+   "d": 1,
+   "n": 16
+  },
+  "sxmu9q80qdc65|b-0|b-4": {
+   "w": 8,
+   "l": 6,
+   "d": 2,
+   "n": 16
+  },
+  "sxprova-profondo|b-0|b-4": {
+   "w": 3,
+   "l": 11,
+   "d": 2,
+   "n": 16
+  },
+  "bm-strada|b-0|b-3": {
+   "w": 6,
+   "l": 10,
+   "d": 0,
+   "n": 16
+  },
+  "bm-rovine|b-0|b-3": {
+   "w": 6,
+   "l": 10,
+   "d": 0,
+   "n": 16
+  },
+  "sxprova-boschi|b-0|b-3": {
+   "w": 4,
+   "l": 10,
+   "d": 2,
+   "n": 16
+  },
+  "open|b-0|b-3": {
+   "w": 4,
+   "l": 8,
+   "d": 4,
+   "n": 16
+  },
+  "sxprova-boschi|b-0|b-4": {
+   "w": 2,
+   "l": 12,
+   "d": 2,
+   "n": 16
+  },
+  "bm-strada|b-0|b-4": {
+   "w": 4,
+   "l": 12,
+   "d": 0,
+   "n": 16
+  },
+  "bm-rovine|b-0|b-4": {
+   "w": 8,
+   "l": 8,
+   "d": 0,
+   "n": 16
+  },
+  "open|b-0|b-4": {
+   "w": 6,
+   "l": 7,
+   "d": 3,
+   "n": 16
+  },
+  "sxprova-profondo|b-0|b-5": {
+   "w": 6,
+   "l": 8,
+   "d": 2,
+   "n": 16
+  },
+  "sxmu9q80qdc65|b-0|b-5": {
+   "w": 9,
+   "l": 4,
+   "d": 3,
+   "n": 16
+  },
+  "sxprova-boschi|b-0|b-5": {
+   "w": 7,
+   "l": 4,
+   "d": 5,
+   "n": 16
+  },
+  "bm-strada|b-0|b-5": {
+   "w": 5,
+   "l": 11,
+   "d": 0,
+   "n": 16
+  },
+  "bm-rovine|b-0|b-5": {
+   "w": 3,
+   "l": 13,
+   "d": 0,
+   "n": 16
+  },
+  "open|b-0|b-5": {
+   "w": 5,
+   "l": 7,
+   "d": 4,
+   "n": 16
+  },
+  "sxmu9q80qdc65|b-1|b-2": {
+   "w": 3,
+   "l": 10,
+   "d": 3,
+   "n": 16
+  },
+  "sxprova-profondo|b-1|b-2": {
+   "w": 4,
+   "l": 10,
+   "d": 2,
+   "n": 16
+  },
+  "sxprova-boschi|b-1|b-2": {
+   "w": 4,
+   "l": 9,
+   "d": 3,
+   "n": 16
+  },
+  "bm-rovine|b-1|b-2": {
+   "w": 7,
+   "l": 9,
+   "d": 0,
+   "n": 16
+  },
+  "bm-strada|b-1|b-2": {
+   "w": 5,
+   "l": 11,
+   "d": 0,
+   "n": 16
+  },
+  "sxmu9q80qdc65|b-1|b-3": {
+   "w": 3,
+   "l": 8,
+   "d": 5,
+   "n": 16
+  },
+  "open|b-1|b-2": {
+   "w": 5,
+   "l": 7,
+   "d": 4,
+   "n": 16
+  },
+  "sxprova-profondo|b-1|b-3": {
+   "w": 2,
+   "l": 14,
+   "d": 0,
+   "n": 16
+  },
+  "bm-strada|b-1|b-3": {
+   "w": 5,
+   "l": 11,
+   "d": 0,
+   "n": 16
+  },
+  "sxprova-boschi|b-1|b-3": {
+   "w": 2,
+   "l": 13,
+   "d": 1,
+   "n": 16
+  },
+  "sxmu9q80qdc65|b-1|b-4": {
+   "w": 8,
+   "l": 7,
+   "d": 1,
+   "n": 16
+  },
+  "bm-rovine|b-1|b-3": {
+   "w": 9,
+   "l": 7,
+   "d": 0,
+   "n": 16
+  },
+  "sxprova-profondo|b-1|b-4": {
+   "w": 6,
+   "l": 7,
+   "d": 3,
+   "n": 16
+  },
+  "open|b-1|b-3": {
+   "w": 4,
+   "l": 9,
+   "d": 3,
+   "n": 16
+  },
+  "sxprova-boschi|b-1|b-4": {
+   "w": 3,
+   "l": 11,
+   "d": 2,
+   "n": 16
+  },
+  "bm-rovine|b-1|b-4": {
+   "w": 8,
+   "l": 8,
+   "d": 0,
+   "n": 16
+  },
+  "bm-strada|b-1|b-4": {
+   "w": 9,
+   "l": 7,
+   "d": 0,
+   "n": 16
+  },
+  "open|b-1|b-4": {
+   "w": 2,
+   "l": 7,
+   "d": 7,
+   "n": 16
+  },
+  "sxprova-profondo|b-1|b-5": {
+   "w": 6,
+   "l": 5,
+   "d": 5,
+   "n": 16
+  },
+  "sxmu9q80qdc65|b-1|b-5": {
+   "w": 6,
+   "l": 8,
+   "d": 2,
+   "n": 16
+  },
+  "sxprova-boschi|b-1|b-5": {
+   "w": 6,
+   "l": 9,
+   "d": 1,
+   "n": 16
+  },
+  "bm-strada|b-1|b-5": {
+   "w": 8,
+   "l": 8,
+   "d": 0,
+   "n": 16
+  },
+  "bm-rovine|b-1|b-5": {
+   "w": 7,
+   "l": 9,
+   "d": 0,
+   "n": 16
+  },
+  "open|b-1|b-5": {
+   "w": 4,
+   "l": 7,
+   "d": 5,
+   "n": 16
+  },
+  "sxprova-profondo|b-2|b-4": {
+   "w": 4,
+   "l": 9,
+   "d": 3,
+   "n": 16
+  },
+  "sxmu9q80qdc65|b-2|b-4": {
+   "w": 5,
+   "l": 10,
+   "d": 1,
+   "n": 16
+  },
+  "sxprova-boschi|b-2|b-4": {
+   "w": 4,
+   "l": 11,
+   "d": 1,
+   "n": 16
+  },
+  "bm-strada|b-2|b-4": {
+   "w": 6,
+   "l": 10,
+   "d": 0,
+   "n": 16
+  },
+  "bm-rovine|b-2|b-4": {
+   "w": 5,
+   "l": 11,
+   "d": 0,
+   "n": 16
+  },
+  "open|b-2|b-4": {
+   "w": 3,
+   "l": 7,
+   "d": 6,
+   "n": 16
+  },
+  "sxmu9q80qdc65|b-2|b-5": {
+   "w": 2,
+   "l": 12,
+   "d": 2,
+   "n": 16
+  },
+  "sxprova-profondo|b-2|b-5": {
+   "w": 7,
+   "l": 7,
+   "d": 2,
+   "n": 16
+  },
+  "bm-strada|b-2|b-5": {
+   "w": 6,
+   "l": 10,
+   "d": 0,
+   "n": 16
+  },
+  "bm-rovine|b-2|b-5": {
+   "w": 6,
+   "l": 10,
+   "d": 0,
+   "n": 16
+  },
+  "sxprova-boschi|b-2|b-5": {
+   "w": 3,
+   "l": 9,
+   "d": 4,
+   "n": 16
+  },
+  "sxmu9q80qdc65|b-3|b-4": {
+   "w": 8,
+   "l": 7,
+   "d": 1,
+   "n": 16
+  },
+  "sxprova-profondo|b-3|b-4": {
+   "w": 6,
+   "l": 8,
+   "d": 2,
+   "n": 16
+  },
+  "open|b-2|b-5": {
+   "w": 2,
+   "l": 11,
+   "d": 3,
+   "n": 16
+  },
+  "sxprova-boschi|b-3|b-4": {
+   "w": 7,
+   "l": 9,
+   "d": 0,
+   "n": 16
+  },
+  "bm-strada|b-3|b-4": {
+   "w": 5,
+   "l": 11,
+   "d": 0,
+   "n": 16
+  },
+  "sxprova-profondo|b-3|b-5": {
+   "w": 8,
+   "l": 6,
+   "d": 2,
+   "n": 16
+  },
+  "sxmu9q80qdc65|b-3|b-5": {
+   "w": 4,
+   "l": 9,
+   "d": 3,
+   "n": 16
+  },
+  "bm-rovine|b-3|b-4": {
+   "w": 6,
+   "l": 10,
+   "d": 0,
+   "n": 16
+  },
+  "open|b-3|b-4": {
+   "w": 5,
+   "l": 9,
+   "d": 2,
+   "n": 16
+  },
+  "sxprova-boschi|b-3|b-5": {
+   "w": 3,
+   "l": 8,
+   "d": 5,
+   "n": 16
+  },
+  "bm-strada|b-3|b-5": {
+   "w": 7,
+   "l": 9,
+   "d": 0,
+   "n": 16
+  },
+  "bm-rovine|b-3|b-5": {
+   "w": 6,
+   "l": 10,
+   "d": 0,
+   "n": 16
+  },
+  "open|b-3|b-5": {
+   "w": 3,
+   "l": 9,
+   "d": 4,
+   "n": 16
+  }
+ }
+}

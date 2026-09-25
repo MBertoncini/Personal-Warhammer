@@ -43,14 +43,14 @@ export function indicizza(){
 
 /* il nome del file di una ricerca: i sei scenari non si scrivono, uno
    solo sì, un altro gruppo con quanti sono e un'impronta */
-export function nomeRicerca({ fazione, pool, punti, scenari, sei }){
+export function nomeRicerca({ fazione, pool, punti, scenari, sei, tema = null }){
   const uguali = sei.length === scenari.length && sei.every(s => scenari.includes(s));
   let coda = '';
   if (!uguali){
     if (scenari.length === 1) coda = '-' + scenari[0];
     else { let h = 0; for (const c of [...scenari].sort().join(',')) h = (h * 31 + c.charCodeAt(0)) >>> 0; coda = `-${scenari.length}sc-${h.toString(36).slice(0, 5)}`; }
   }
-  return `${fazione}-${pool}-${punti}${coda}.json`.replace(/[^a-zA-Z0-9._-]/g, '_');
+  return `${fazione}-${pool}-${punti}${coda}${tema ? '-' + tema : ''}.json`.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
 /* la migliore di ogni ricerca a questi punti: sono gli avversari delle

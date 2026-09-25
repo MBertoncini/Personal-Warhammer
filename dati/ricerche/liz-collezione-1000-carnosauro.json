@@ -1,0 +1,2858 @@
+{
+ "formato": "tow-ricerca/1",
+ "quando": "2026-09-25T00:06:47.549Z",
+ "fazione": "liz",
+ "nome": "Lucertole · carnosauro",
+ "catalogue": "Lizardmen",
+ "pool": "collezione",
+ "punti": 1000,
+ "scenari": [
+  "sxmu9q80qdc65",
+  "sxprova-profondo",
+  "sxprova-boschi",
+  "bm-strada",
+  "bm-rovine",
+  "open"
+ ],
+ "seme": 2001,
+ "tema": {
+  "nome": "carnosauro",
+  "con": [
+   "carnoOldblood"
+  ],
+  "senza": []
+ },
+ "etichette": {
+  "sxmu9q80qdc65": "Poligono di tiro (mio)",
+  "sxprova-profondo": "Poligono profondo",
+  "sxprova-boschi": "Boschi e rovine",
+  "bm-strada": "La Strada delle Pietre",
+  "bm-rovine": "Le Rovine di Xhotl",
+  "open": "Battaglia Campale"
+ },
+ "sforzo": "rapido",
+ "parametri": {
+  "popolazione": 8,
+  "generazioni": 4,
+  "celle": 8,
+  "verifica": 1,
+  "finaliste": 3
+ },
+ "partite": 656,
+ "secondi": 441,
+ "unita": [
+  "Saurus Oldblood sul Carnosauro",
+  "Saurus Scar-Veteran",
+  "Skink Priest",
+  "Skink Priest sull'Ancient Stegadon",
+  "Skink Chief",
+  "Slann Mage-Priests",
+  "Saurus Warriors",
+  "Temple Guard",
+  "Skink Skirmishers",
+  "Bastiladon",
+  "Ancient Stegadon",
+  "Terradon Riders",
+  "Cold One Riders"
+ ],
+ "escluse": [
+  {
+   "k": "oldblood",
+   "pezzo": "Saurus Oldblood",
+   "perche": "in vetrina è montato (basetta più grande della 30×30)"
+  },
+  {
+   "k": "krox",
+   "pezzo": "Kroxigor",
+   "perche": "Kroxigor: ne hai 0, ne servono 3"
+  }
+ ],
+ "esempi": true,
+ "provate": [
+  {
+   "k": "ancientSteg",
+   "nome": "Ancient Stegadon",
+   "liste": 11,
+   "partite": 288,
+   "media": 88,
+   "finaliste": 3
+  },
+  {
+   "k": "carnoOldblood",
+   "nome": "Saurus Oldblood sul Carnosauro",
+   "liste": 23,
+   "partite": 512,
+   "media": 79,
+   "finaliste": 3
+  },
+  {
+   "k": "saurus",
+   "nome": "Saurus Warriors",
+   "liste": 23,
+   "partite": 512,
+   "media": 79,
+   "finaliste": 3
+  },
+  {
+   "k": "skinks",
+   "nome": "Skink Skirmishers",
+   "liste": 16,
+   "partite": 384,
+   "media": 78,
+   "finaliste": 2
+  },
+  {
+   "k": "templeGuard",
+   "nome": "Temple Guard",
+   "liste": 4,
+   "partite": 80,
+   "media": 77,
+   "finaliste": 0
+  },
+  {
+   "k": "chief",
+   "nome": "Skink Chief",
+   "liste": 11,
+   "partite": 224,
+   "media": 76,
+   "finaliste": 1
+  },
+  {
+   "k": "terradons",
+   "nome": "Terradon Riders",
+   "liste": 9,
+   "partite": 176,
+   "media": 75,
+   "finaliste": 1
+  },
+  {
+   "k": "bastiladon",
+   "nome": "Bastiladon",
+   "liste": 4,
+   "partite": 64,
+   "media": 73,
+   "finaliste": 0
+  },
+  {
+   "k": "scarVet",
+   "nome": "Saurus Scar-Veteran",
+   "liste": 3,
+   "partite": 80,
+   "media": 71,
+   "finaliste": 0
+  },
+  {
+   "k": "coldOnes",
+   "nome": "Cold One Riders",
+   "liste": 5,
+   "partite": 80,
+   "media": 69,
+   "finaliste": 0
+  },
+  {
+   "k": "priest",
+   "nome": "Skink Priest",
+   "liste": 0,
+   "partite": 0,
+   "media": null,
+   "finaliste": 0
+  },
+  {
+   "k": "priestSteg",
+   "nome": "Skink Priest sull'Ancient Stegadon",
+   "liste": 0,
+   "partite": 0,
+   "media": null,
+   "finaliste": 0
+  },
+  {
+   "k": "slann",
+   "nome": "Slann Mage-Priests",
+   "liste": 0,
+   "partite": 0,
+   "media": null,
+   "finaliste": 0
+  }
+ ],
+ "contro": [
+  {
+   "id": "r-og-collezione-1000-notte-1",
+   "name": "O&G collezione 1000 notte · 1",
+   "catalogue": "Orc and Goblin Tribes",
+   "points": 997,
+   "fonte": "ricerca",
+   "file": "og-collezione-1000-notte.json"
+  },
+  {
+   "id": "r-og-collezione-1000-orchineri-1",
+   "name": "O&G collezione 1000 orchineri · 1",
+   "catalogue": "Orc and Goblin Tribes",
+   "points": 1000,
+   "fonte": "ricerca",
+   "file": "og-collezione-1000-orchineri.json"
+  },
+  {
+   "id": "r-skaven-collezione-1000-abominio-1",
+   "name": "SKA collezione 1000 abominio · 1",
+   "catalogue": "Skaven",
+   "points": 982,
+   "fonte": "ricerca",
+   "file": "skaven-collezione-1000-abominio.json"
+  },
+  {
+   "id": "r-skaven-collezione-1000-skryre-1",
+   "name": "SKA collezione 1000 skryre · 1",
+   "catalogue": "Skaven",
+   "points": 999,
+   "fonte": "ricerca",
+   "file": "skaven-collezione-1000-skryre.json"
+  }
+ ],
+ "storia": [
+  {
+   "gen": 1,
+   "partite": 128,
+   "migliore": 89,
+   "vince": 94,
+   "n": 16,
+   "lista": "Saurus Oldblood sul Carnosauro — 310 pt; 26 Saurus Warriors (stendardo, musico, fronte 7) — 378 pt; 16 Skink Skirmishers — 80 pt; Ancient Stegadon — 230 pt"
+  },
+  {
+   "gen": 2,
+   "partite": 256,
+   "migliore": 92,
+   "vince": 94,
+   "n": 16,
+   "lista": "Saurus Oldblood sul Carnosauro — 310 pt; 24 Saurus Warriors (stendardo, musico, fronte 7) — 350 pt; 20 Skink Skirmishers — 100 pt; Ancient Stegadon — 230 pt"
+  },
+  {
+   "gen": 3,
+   "partite": 384,
+   "migliore": 90,
+   "vince": 84,
+   "n": 32,
+   "lista": "Saurus Oldblood sul Carnosauro — 310 pt; 24 Saurus Warriors (stendardo, musico, fronte 7) — 350 pt; 20 Skink Skirmishers — 100 pt; Ancient Stegadon — 230 pt"
+  },
+  {
+   "gen": 4,
+   "partite": 512,
+   "migliore": 94,
+   "vince": 100,
+   "n": 16,
+   "lista": "Saurus Oldblood sul Carnosauro — 310 pt; 25 Saurus Warriors (stendardo, musico, fronte 7) — 364 pt; 19 Skink Skirmishers — 95 pt; Ancient Stegadon — 230 pt"
+  }
+ ],
+ "migliori": [
+  {
+   "geni": [
+    {
+     "k": "carnoOldblood",
+     "o": {}
+    },
+    {
+     "k": "saurus",
+     "o": {
+      "c": "sm",
+      "f": 7
+     },
+     "n": 25
+    },
+    {
+     "k": "skinks",
+     "o": {},
+     "n": 19
+    },
+    {
+     "k": "ancientSteg",
+     "o": {}
+    }
+   ],
+   "descrizione": "Saurus Oldblood sul Carnosauro — 310 pt; 25 Saurus Warriors (stendardo, musico, fronte 7) — 364 pt; 19 Skink Skirmishers — 95 pt; Ancient Stegadon — 230 pt",
+   "punti": 999,
+   "ricerca": {
+    "w": 16,
+    "l": 0,
+    "d": 0,
+    "n": 16
+   },
+   "verifica": {
+    "w": 46,
+    "l": 0,
+    "d": 2,
+    "n": 48,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 7,
+      "l": 0,
+      "d": 1,
+      "n": 8
+     },
+     "sxprova-profondo": {
+      "w": 8,
+      "l": 0,
+      "d": 0,
+      "n": 8
+     },
+     "sxprova-boschi": {
+      "w": 8,
+      "l": 0,
+      "d": 0,
+      "n": 8
+     },
+     "bm-strada": {
+      "w": 8,
+      "l": 0,
+      "d": 0,
+      "n": 8
+     },
+     "bm-rovine": {
+      "w": 8,
+      "l": 0,
+      "d": 0,
+      "n": 8
+     },
+     "open": {
+      "w": 7,
+      "l": 0,
+      "d": 1,
+      "n": 8
+     }
+    },
+    "perAvversario": {
+     "r-og-collezione-1000-notte-1": {
+      "w": 12,
+      "l": 0,
+      "d": 0,
+      "n": 12
+     },
+     "r-og-collezione-1000-orchineri-1": {
+      "w": 11,
+      "l": 0,
+      "d": 1,
+      "n": 12
+     },
+     "r-skaven-collezione-1000-abominio-1": {
+      "w": 12,
+      "l": 0,
+      "d": 0,
+      "n": 12
+     },
+     "r-skaven-collezione-1000-skryre-1": {
+      "w": 11,
+      "l": 0,
+      "d": 1,
+      "n": 12
+     }
+    },
+    "celle": {
+     "r-og-collezione-1000-notte-1|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-notte-1|sxprova-profondo": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-notte-1|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-notte-1|bm-strada": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-notte-1|bm-rovine": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-notte-1|open": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|sxprova-profondo": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|bm-strada": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|bm-rovine": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|open": {
+      "w": 1,
+      "l": 0,
+      "d": 1,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|sxprova-profondo": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|bm-strada": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|bm-rovine": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|open": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 0,
+      "d": 1,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|sxprova-profondo": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|bm-strada": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|bm-rovine": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|open": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-liz-collezione-1000-carnosauro-1",
+    "name": "LIZ collezione 1000 carnosauro · 1",
+    "info": {
+     "catalogue": "Lizardmen",
+     "forceName": "Battle March",
+     "limit": 1000
+    },
+    "points": 999,
+    "external": false,
+    "imported": "2026-09-25T00:06:47.547Z",
+    "units": [
+     {
+      "name": "Saurus Oldblood",
+      "models": 1,
+      "crew": 0,
+      "baseId": "50x100",
+      "baseW": 50,
+      "baseH": 100,
+      "frontage": 1,
+      "loose": false,
+      "pts": 310,
+      "us": 0,
+      "troop": "Behemoth (character)",
+      "unitSize": "1",
+      "stats": {
+       "M": "7",
+       "WS": "6",
+       "BS": "0",
+       "S": "5",
+       "T": "6",
+       "W": "7",
+       "I": "3",
+       "A": "5",
+       "Ld": "8"
+      },
+      "profiles": [
+       {
+        "name": "Saurus Oldblood",
+        "stats": {
+         "M": "4",
+         "WS": "6",
+         "BS": "0",
+         "S": "5",
+         "T": "5",
+         "W": "3",
+         "I": "3",
+         "A": "5",
+         "Ld": "8"
+        }
+       },
+       {
+        "name": "Carnosaur",
+        "stats": {
+         "M": "7",
+         "WS": "3",
+         "BS": "0",
+         "S": "7",
+         "T": "-",
+         "W": "-",
+         "I": "2",
+         "A": "4",
+         "Ld": "-"
+        }
+       }
+      ],
+      "mount": {
+       "id": "carnosaur",
+       "name": "Carnosaur",
+       "genere": "mostro",
+       "stats": {
+        "M": "7",
+        "WS": "3",
+        "BS": "0",
+        "S": "7",
+        "T": "-",
+        "W": "-",
+        "I": "2",
+        "A": "4",
+        "Ld": "-"
+       },
+       "row": "Carnosaur",
+       "righe": [
+        {
+         "chi": "Carnosaur",
+         "n": 1,
+         "stats": {
+          "M": "7",
+          "WS": "3",
+          "BS": "0",
+          "S": "7",
+          "T": "-",
+          "W": "-",
+          "I": "2",
+          "A": "4",
+          "Ld": "-"
+         },
+         "arma": {
+          "name": "Slashing talons",
+          "S": "S",
+          "ap": "-3",
+          "rules": ""
+         }
+        }
+       ],
+       "forzaUrto": 7,
+       "random": "",
+       "armour": 5,
+       "libro": "Legends: Lizardmen",
+       "pagina": 12,
+       "nota": "La pelle squamosa vale armatura pesante (5+). Le Ferite Multiple (D3) degli artigli valgono solo contro i mostri, e la Blood Frenzy si accende quando il Carnosauro (non il cavaliere) ferisce: tutte e due a mano."
+      },
+      "rules": [
+       "Cold Blooded",
+       "Obsidian Blades",
+       "Rallying Cry",
+       "Blood Frenzy",
+       "Close Order",
+       "Large Target",
+       "Stomp Attacks (2)",
+       "Swiftstride",
+       "Terror",
+       "Furious Charge (does not apply to this model's mount should it have one)"
+      ],
+      "ruleText": {
+       "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
+       "Obsidian Blades": "Lizardmen favour weapons studded with shards of razor sharp volcanic glass that cut through flesh and armour with ease.\n\nA hand weapon carried by a model with this special rule has an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to a single, non-magical hand weapon and does not apply to a model’s mount (should it have one). If the model is using two hand weapons or any other sort of weapon, this special rule ceases to apply.",
+       "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+       "Blood Frenzy": "When this model (but not its rider) inflicts an unsaved wound upon an enemy model, it becomes subject to the Frenzy special rule. A model with this special rule may become Frenzied in this way even if it has lost Frenzy earlier in the game.\n\nNote that this model’s rider does not gain a +1 modifier to their Attacks characteristic.\n\nCharacter Mount: A Carnosaur may only be included in your army as a character’s mount. Its points are added to that of its rider.",
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
+       "Stomp Attacks (2)": "The number of Stomp Attacks caused varies from model to model and will be shown in brackets after the name of this special rule. Often, this is determined by the roll of a dice.\n\n**Resolving Stomp Attacks:** Stomp Attacks can only be made by a model that is in base contact with the enemy. Stomp Attacks are attacks made in combat that must be made last, after all other attacks have been made, including attacks made at Initiative 1. They hit automatically and use the unmodified Strength of the model making them.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result.",
+       "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does.",
+       "Furious Charge (does not apply to this model's mount should it have one)": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Slashing talons",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-3",
+        "rules": "Multiple Wounds (D3)",
+        "di": "Carnosaur"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Characters",
+      "faction": "Lizardmen",
+      "armour": 5,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmttwt5q1icif",
+      "foot": {
+       "stats": {
+        "M": "4",
+        "WS": "6",
+        "BS": "0",
+        "S": "5",
+        "T": "5",
+        "W": "3",
+        "I": "3",
+        "A": "5",
+        "Ld": "8"
+       },
+       "profiles": [
+        {
+         "name": "Saurus Oldblood",
+         "stats": {
+          "M": "4",
+          "WS": "6",
+          "BS": "0",
+          "S": "5",
+          "T": "5",
+          "W": "3",
+          "I": "3",
+          "A": "5",
+          "Ld": "8"
+         }
+        },
+        {
+         "name": "Carnosaur",
+         "stats": {
+          "M": "7",
+          "WS": "4",
+          "BS": "0",
+          "S": "7",
+          "T": "(+1)",
+          "W": "(+4)",
+          "I": "2",
+          "A": "4",
+          "Ld": "-"
+         }
+        }
+       ],
+       "mount": {
+        "name": "Carnosaur",
+        "stats": {
+         "M": "7",
+         "WS": "4",
+         "BS": "0",
+         "S": "7",
+         "T": "(+1)",
+         "W": "(+4)",
+         "I": "2",
+         "A": "4",
+         "Ld": "-"
+        }
+       },
+       "baseId": "50x50",
+       "baseW": 50,
+       "baseH": 50,
+       "troop": "Heavy infantry",
+       "slot": "Characters",
+       "frontage": 1,
+       "loose": false,
+       "rules": [
+        "Cold Blooded",
+        "Obsidian Blades",
+        "Rallying Cry",
+        "Predatory Fighter",
+        "Armoured Hide (2)",
+        "General",
+        "Blood Frenzy",
+        "Close Order",
+        "Large Target",
+        "Stomp Attacks (2)",
+        "Swiftstride",
+        "Terror"
+       ],
+       "ruleText": {
+        "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Leadership or Break Test, models with this special rule may roll an extra D6 and discard the highest result.",
+        "Obsidian Blades": "Lizardmen favour weapons studded with shards of razor sharp volcanic glass that cut through flesh and armour with ease.\n\nA hand weapon carried by a model with this special rule has an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to a single, non-magical hand weapon and does not apply to a model’s mount (should it have one). If the model is using two hand weapons or any other sort of weapon, this special rule ceases to apply.",
+        "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+        "Predatory Fighter": "A model with this special rule (but not its mount) generates one additional Attack on any natural roll of a 6 made when rolling To Hit in close combat. Roll To Hit and To Wound for this additional Attack as normal. Additional Attacks generated by this special rule cannot themselves generate further Attacks.",
+        "Armoured Hide (2)": "The hide of some creatures forms natural armour and improves their armour value ( and that of their rider). By how much armour value is improved varies from model to model, as shown in brackets after the name of this special rule.\n\n Note that a model that wears no armour is considerer to have an armour value of 7+ for the purposes of rules that improve armour value.",
+        "General": "Inspiring Presence: Warriors fight all the better under the stern gaze of their General. Unless your General is fleeing, all friendly units within their Command range can use their Leadership characteristic instead of their own (so rally your General first!).",
+        "Blood Frenzy": "When this model (but not its rider) inflicts an unsaved wound upon an enemy model, it becomes subject to the Frenzy special rule. A model with this special rule may become Frenzied in this way even if it has lost Frenzy earlier in the game.\n\nNote that this model’s rider does not gain a +1 modifier to their Attacks characteristic.\n\nCharacter Mount: A Carnosaur may only be included in your army as a character’s mount. Its points are added to that of its rider.",
+        "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+        "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
+        "Stomp Attacks (2)": "The number of Stomp Attacks caused varies from model to model and will be shown in brackets after the name of this special rule. Often, this is determined by the roll of a dice.\n\n**Resolving Stomp Attacks:** Stomp Attacks can only be made by a model that is in base contact with the enemy. Stomp Attacks are attacks made in combat that must be made last, after all other attacks have been made, including attacks made at Initiative 1. They hit automatically and use the unmodified Strength of the model making them.",
+        "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result.",
+        "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does."
+       },
+       "weapons": [
+        {
+         "name": "Hand Weapon",
+         "range": "Combat",
+         "S": "S",
+         "ap": "-",
+         "rules": "-"
+        },
+        {
+         "name": "Slashing talons",
+         "range": "Combat",
+         "S": "S",
+         "ap": "-3",
+         "rules": "Multiple Wounds (D3)"
+        }
+       ],
+       "maxRange": 0,
+       "armour": 3,
+       "ward": 0,
+       "us": 4,
+       "models": 1
+      },
+      "mountId": "carnosaur",
+      "mountFromFile": true,
+      "mountPts": 0
+     },
+     {
+      "name": "Saurus Warriors",
+      "models": 25,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 7,
+      "loose": false,
+      "pts": 364,
+      "us": 35,
+      "troop": "Heavy infantry",
+      "unitSize": "10+",
+      "stats": {
+       "M": "4",
+       "WS": "3",
+       "BS": "0",
+       "S": "4",
+       "T": "4",
+       "W": "1",
+       "I": "1",
+       "A": "2",
+       "Ld": "8"
+      },
+      "rules": [
+       "Close Order",
+       "Cold Blooded",
+       "Obsidian Blades",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
+       "Obsidian Blades": "Lizardmen favour weapons studded with shards of razor sharp volcanic glass that cut through flesh and armour with ease.\n\nA hand weapon carried by a model with this special rule has an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to a single, non-magical hand weapon and does not apply to a model’s mount (should it have one). If the model is using two hand weapons or any other sort of weapon, this special rule ceases to apply.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      },
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Core",
+      "faction": "Lizardmen",
+      "armour": 4,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5rksor06z",
+      "shield": true
+     },
+     {
+      "name": "Skink Skirmishers",
+      "models": 19,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 10,
+      "loose": true,
+      "pts": 95,
+      "us": 19,
+      "troop": "Regular infantry",
+      "unitSize": "10+",
+      "stats": {
+       "M": "6",
+       "WS": "2",
+       "BS": "3",
+       "S": "3",
+       "T": "2",
+       "W": "1",
+       "I": "4",
+       "A": "1",
+       "Ld": "5"
+      },
+      "profiles": [
+       {
+        "name": "Skink",
+        "stats": {
+         "M": "6",
+         "WS": "2",
+         "BS": "3",
+         "S": "3",
+         "T": "2",
+         "W": "1",
+         "I": "4",
+         "A": "1",
+         "Ld": "5"
+        }
+       }
+      ],
+      "mount": null,
+      "rules": [
+       "Aquatic",
+       "Cold Blooded",
+       "Move Through Cover",
+       "Poisoned Attacks (javelins only)",
+       "Skirmishers",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "ruleText": {
+       "Aquatic": "Many of Lustria’s denizens have an affinity for water, moving with equal ease through swamp and river as they do over land.\n\nModels with this special rule do not suffer any modifiers to their Movement characteristic when moving through any difficult or dangerous terrain feature which has been designated a ‘water feature’. This might include shallow streams or fords, swampy ground, fast flowing rivers, ponds or lakes, and players should agree prior to the game if any terrain is a water feature.",
+       "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
+       "Move Through Cover": "Models with this special rule do not suffer any modifiers to their Movement characteristic for moving through difficult or dangerous terrain. In addition, a model with this special rule may re-roll any rolls of 1 when making Dangerous Terrain tests.",
+       "Poisoned Attacks (javelins only)": "If a model with Poisoned Attacks rolls a natural 6 when making a roll To Hit, it may apply a +2 modifier to that hit’s roll To Wound. Unless otherwise stated, a model with this special rule may use it when making both shooting and combat attacks. Any spells cast by the model are unaffected, as are any attacks made with magic weapons. Note that if an attack needs a To Hit roll of 7+, or hits automatically, this special rule cannot be used.",
+       "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Javelin",
+        "range": "12\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Move & Shoot, Quick Shot"
+       }
+      ],
+      "maxRange": 12,
+      "slot": "Core",
+      "faction": "Lizardmen - Renegades v2",
+      "armour": 5,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5rlxm62jk",
+      "shield": false
+     },
+     {
+      "crew": 5,
+      "loose": false,
+      "mount": {
+       "id": "ancient-stegadon",
+       "name": "Ancient Stegadon",
+       "genere": "carro",
+       "stats": {
+        "M": "6",
+        "WS": "4",
+        "BS": "-",
+        "S": "6",
+        "T": "6",
+        "W": "5",
+        "I": "1",
+        "A": "3",
+        "Ld": "-"
+       },
+       "row": "",
+       "righe": [
+        {
+         "chi": "Skink Crew",
+         "n": 5,
+         "stats": {
+          "M": "-",
+          "WS": "2",
+          "BS": "3",
+          "S": "3",
+          "T": "-",
+          "W": "-",
+          "I": "4",
+          "A": "1",
+          "Ld": "6"
+         },
+         "arma": {
+          "name": "Hand weapon",
+          "S": "S",
+          "ap": "-",
+          "rules": ""
+         }
+        }
+       ],
+       "forzaUrto": 6,
+       "random": "",
+       "armour": 4,
+       "libro": "Legends: Lizardmen",
+       "pagina": 13,
+       "nota": ""
+      },
+      "profiles": [
+       {
+        "name": "Ancient Stegadon",
+        "stats": {
+         "M": "6",
+         "WS": "4",
+         "BS": "3",
+         "S": "6",
+         "T": "6",
+         "W": "5",
+         "I": "1",
+         "A": "3",
+         "Ld": "6"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Lizardmen",
+      "ward": 0,
+      "regen": 0,
+      "name": "Ancient Stegadon",
+      "models": 1,
+      "baseId": "60x100",
+      "baseW": 60,
+      "baseH": 100,
+      "frontage": 1,
+      "pts": 230,
+      "us": 0,
+      "troop": "Behemoth",
+      "unitSize": "1",
+      "stats": {
+       "M": "6",
+       "WS": "4",
+       "BS": "3",
+       "S": "6",
+       "T": "6",
+       "W": "5",
+       "I": "1",
+       "A": "3",
+       "Ld": "6"
+      },
+      "armour": 4,
+      "rules": [
+       "Close Order",
+       "Cold Blooded",
+       "Howdah",
+       "Immune to Psychology",
+       "Impact Hits (D3+1)",
+       "Large Target",
+       "Stomp Attacks (D3+2)",
+       "Stubborn",
+       "Terror",
+       "Poisoned Attacks (javelins only)"
+      ],
+      "weapons": [
+       {
+        "name": "Great horns",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-3",
+        "rules": ""
+       },
+       {
+        "name": "Giant bow",
+        "range": "36\"",
+        "S": "5",
+        "ap": "-2",
+        "rules": "Multiple Wounds (D3), Poisoned Attacks"
+       },
+       {
+        "name": "Javelin",
+        "range": "12\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Move & Shoot, Quick Shot, Poisoned Attacks"
+       }
+      ],
+      "slot": "Rare",
+      "maxRange": 36,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
+       "Impact Hits (D3+1)": "The number of Impact Hits caused varies from model to model, and will be shown in brackets after the name of this special rile. Often, this is determined by the roll of a dice.\n\n**Resolving Impact Hits:** Impact Hits can only be made by a charging model that moved 3\" or more and that is in base contact with the enemy. Impact Hits are resolved against the charged unit when the combat is chosen during Step 1.1 of the Choose Combat & Fight sub-phase, before issuing challenges. They hit automatically and use the unmodified Strength of the model making them.",
+       "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
+       "Stomp Attacks (D3+2)": "The number of Stomp Attacks caused varies from model to model and will be shown in brackets after the name of this special rule. Often, this is determined by the roll of a dice.\n\n**Resolving Stomp Attacks:** Stomp Attacks can only be made by a model that is in base contact with the enemy. Stomp Attacks are attacks made in combat that must be made last, after all other attacks have been made, including attacks made at Initiative 1. They hit automatically and use the unmodified Strength of the model making them.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
+       "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does.",
+       "Poisoned Attacks (javelins only)": "If a model with Poisoned Attacks rolls a natural 6 when making a roll To Hit, it may apply a +2 modifier to that hit’s roll To Wound. Unless otherwise stated, a model with this special rule may use it when making both shooting and combat attacks. Any spells cast by the model are unaffected, as are any attacks made with magic weapons. Note that if an attack needs a To Hit roll of 7+, or hits automatically, this special rule cannot be used."
+      },
+      "mountId": "ancient-stegadon",
+      "mountPts": 0,
+      "mountFromFile": true
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {},
+     "note": "Saurus Oldblood sul Carnosauro — 310 pt; 25 Saurus Warriors (stendardo, musico, fronte 7) — 364 pt; 19 Skink Skirmishers — 95 pt; Ancient Stegadon — 230 pt"
+    },
+    "formerNames": []
+   }
+  },
+  {
+   "geni": [
+    {
+     "k": "carnoOldblood",
+     "o": {}
+    },
+    {
+     "k": "chief",
+     "o": {}
+    },
+    {
+     "k": "saurus",
+     "o": {
+      "c": "sm",
+      "f": 7
+     },
+     "n": 21
+    },
+    {
+     "k": "ancientSteg",
+     "o": {}
+    },
+    {
+     "k": "terradons",
+     "o": {},
+     "n": 3
+    }
+   ],
+   "descrizione": "Saurus Oldblood sul Carnosauro — 310 pt; Skink Chief — 45 pt; 21 Saurus Warriors (stendardo, musico, fronte 7) — 308 pt; Ancient Stegadon — 230 pt; 3 Terradon Riders — 96 pt",
+   "punti": 989,
+   "ricerca": {
+    "w": 14,
+    "l": 0,
+    "d": 2,
+    "n": 16
+   },
+   "verifica": {
+    "w": 44,
+    "l": 2,
+    "d": 2,
+    "n": 48,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 7,
+      "l": 0,
+      "d": 1,
+      "n": 8
+     },
+     "sxprova-profondo": {
+      "w": 8,
+      "l": 0,
+      "d": 0,
+      "n": 8
+     },
+     "sxprova-boschi": {
+      "w": 8,
+      "l": 0,
+      "d": 0,
+      "n": 8
+     },
+     "bm-strada": {
+      "w": 7,
+      "l": 1,
+      "d": 0,
+      "n": 8
+     },
+     "bm-rovine": {
+      "w": 8,
+      "l": 0,
+      "d": 0,
+      "n": 8
+     },
+     "open": {
+      "w": 6,
+      "l": 1,
+      "d": 1,
+      "n": 8
+     }
+    },
+    "perAvversario": {
+     "r-og-collezione-1000-notte-1": {
+      "w": 11,
+      "l": 0,
+      "d": 1,
+      "n": 12
+     },
+     "r-og-collezione-1000-orchineri-1": {
+      "w": 9,
+      "l": 2,
+      "d": 1,
+      "n": 12
+     },
+     "r-skaven-collezione-1000-abominio-1": {
+      "w": 12,
+      "l": 0,
+      "d": 0,
+      "n": 12
+     },
+     "r-skaven-collezione-1000-skryre-1": {
+      "w": 12,
+      "l": 0,
+      "d": 0,
+      "n": 12
+     }
+    },
+    "celle": {
+     "r-og-collezione-1000-notte-1|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 0,
+      "d": 1,
+      "n": 2
+     },
+     "r-og-collezione-1000-notte-1|sxprova-profondo": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-notte-1|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-notte-1|bm-strada": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-notte-1|bm-rovine": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-notte-1|open": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|sxprova-profondo": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|bm-strada": {
+      "w": 1,
+      "l": 1,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|bm-rovine": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|open": {
+      "w": 0,
+      "l": 1,
+      "d": 1,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|sxprova-profondo": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|bm-strada": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|bm-rovine": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|open": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|sxprova-profondo": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|bm-strada": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|bm-rovine": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|open": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-liz-collezione-1000-carnosauro-2",
+    "name": "LIZ collezione 1000 carnosauro · 2",
+    "info": {
+     "catalogue": "Lizardmen",
+     "forceName": "Battle March",
+     "limit": 1000
+    },
+    "points": 989,
+    "external": false,
+    "imported": "2026-09-25T00:06:47.547Z",
+    "units": [
+     {
+      "name": "Saurus Oldblood",
+      "models": 1,
+      "crew": 0,
+      "baseId": "50x100",
+      "baseW": 50,
+      "baseH": 100,
+      "frontage": 1,
+      "loose": false,
+      "pts": 310,
+      "us": 0,
+      "troop": "Behemoth (character)",
+      "unitSize": "1",
+      "stats": {
+       "M": "7",
+       "WS": "6",
+       "BS": "0",
+       "S": "5",
+       "T": "6",
+       "W": "7",
+       "I": "3",
+       "A": "5",
+       "Ld": "8"
+      },
+      "profiles": [
+       {
+        "name": "Saurus Oldblood",
+        "stats": {
+         "M": "4",
+         "WS": "6",
+         "BS": "0",
+         "S": "5",
+         "T": "5",
+         "W": "3",
+         "I": "3",
+         "A": "5",
+         "Ld": "8"
+        }
+       },
+       {
+        "name": "Carnosaur",
+        "stats": {
+         "M": "7",
+         "WS": "3",
+         "BS": "0",
+         "S": "7",
+         "T": "-",
+         "W": "-",
+         "I": "2",
+         "A": "4",
+         "Ld": "-"
+        }
+       }
+      ],
+      "mount": {
+       "id": "carnosaur",
+       "name": "Carnosaur",
+       "genere": "mostro",
+       "stats": {
+        "M": "7",
+        "WS": "3",
+        "BS": "0",
+        "S": "7",
+        "T": "-",
+        "W": "-",
+        "I": "2",
+        "A": "4",
+        "Ld": "-"
+       },
+       "row": "Carnosaur",
+       "righe": [
+        {
+         "chi": "Carnosaur",
+         "n": 1,
+         "stats": {
+          "M": "7",
+          "WS": "3",
+          "BS": "0",
+          "S": "7",
+          "T": "-",
+          "W": "-",
+          "I": "2",
+          "A": "4",
+          "Ld": "-"
+         },
+         "arma": {
+          "name": "Slashing talons",
+          "S": "S",
+          "ap": "-3",
+          "rules": ""
+         }
+        }
+       ],
+       "forzaUrto": 7,
+       "random": "",
+       "armour": 5,
+       "libro": "Legends: Lizardmen",
+       "pagina": 12,
+       "nota": "La pelle squamosa vale armatura pesante (5+). Le Ferite Multiple (D3) degli artigli valgono solo contro i mostri, e la Blood Frenzy si accende quando il Carnosauro (non il cavaliere) ferisce: tutte e due a mano."
+      },
+      "rules": [
+       "Cold Blooded",
+       "Obsidian Blades",
+       "Rallying Cry",
+       "Blood Frenzy",
+       "Close Order",
+       "Large Target",
+       "Stomp Attacks (2)",
+       "Swiftstride",
+       "Terror",
+       "Furious Charge (does not apply to this model's mount should it have one)"
+      ],
+      "ruleText": {
+       "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
+       "Obsidian Blades": "Lizardmen favour weapons studded with shards of razor sharp volcanic glass that cut through flesh and armour with ease.\n\nA hand weapon carried by a model with this special rule has an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to a single, non-magical hand weapon and does not apply to a model’s mount (should it have one). If the model is using two hand weapons or any other sort of weapon, this special rule ceases to apply.",
+       "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+       "Blood Frenzy": "When this model (but not its rider) inflicts an unsaved wound upon an enemy model, it becomes subject to the Frenzy special rule. A model with this special rule may become Frenzied in this way even if it has lost Frenzy earlier in the game.\n\nNote that this model’s rider does not gain a +1 modifier to their Attacks characteristic.\n\nCharacter Mount: A Carnosaur may only be included in your army as a character’s mount. Its points are added to that of its rider.",
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
+       "Stomp Attacks (2)": "The number of Stomp Attacks caused varies from model to model and will be shown in brackets after the name of this special rule. Often, this is determined by the roll of a dice.\n\n**Resolving Stomp Attacks:** Stomp Attacks can only be made by a model that is in base contact with the enemy. Stomp Attacks are attacks made in combat that must be made last, after all other attacks have been made, including attacks made at Initiative 1. They hit automatically and use the unmodified Strength of the model making them.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result.",
+       "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does.",
+       "Furious Charge (does not apply to this model's mount should it have one)": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Slashing talons",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-3",
+        "rules": "Multiple Wounds (D3)",
+        "di": "Carnosaur"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Characters",
+      "faction": "Lizardmen",
+      "armour": 5,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmttwt5q1icif",
+      "foot": {
+       "stats": {
+        "M": "4",
+        "WS": "6",
+        "BS": "0",
+        "S": "5",
+        "T": "5",
+        "W": "3",
+        "I": "3",
+        "A": "5",
+        "Ld": "8"
+       },
+       "profiles": [
+        {
+         "name": "Saurus Oldblood",
+         "stats": {
+          "M": "4",
+          "WS": "6",
+          "BS": "0",
+          "S": "5",
+          "T": "5",
+          "W": "3",
+          "I": "3",
+          "A": "5",
+          "Ld": "8"
+         }
+        },
+        {
+         "name": "Carnosaur",
+         "stats": {
+          "M": "7",
+          "WS": "4",
+          "BS": "0",
+          "S": "7",
+          "T": "(+1)",
+          "W": "(+4)",
+          "I": "2",
+          "A": "4",
+          "Ld": "-"
+         }
+        }
+       ],
+       "mount": {
+        "name": "Carnosaur",
+        "stats": {
+         "M": "7",
+         "WS": "4",
+         "BS": "0",
+         "S": "7",
+         "T": "(+1)",
+         "W": "(+4)",
+         "I": "2",
+         "A": "4",
+         "Ld": "-"
+        }
+       },
+       "baseId": "50x50",
+       "baseW": 50,
+       "baseH": 50,
+       "troop": "Heavy infantry",
+       "slot": "Characters",
+       "frontage": 1,
+       "loose": false,
+       "rules": [
+        "Cold Blooded",
+        "Obsidian Blades",
+        "Rallying Cry",
+        "Predatory Fighter",
+        "Armoured Hide (2)",
+        "General",
+        "Blood Frenzy",
+        "Close Order",
+        "Large Target",
+        "Stomp Attacks (2)",
+        "Swiftstride",
+        "Terror"
+       ],
+       "ruleText": {
+        "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Leadership or Break Test, models with this special rule may roll an extra D6 and discard the highest result.",
+        "Obsidian Blades": "Lizardmen favour weapons studded with shards of razor sharp volcanic glass that cut through flesh and armour with ease.\n\nA hand weapon carried by a model with this special rule has an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to a single, non-magical hand weapon and does not apply to a model’s mount (should it have one). If the model is using two hand weapons or any other sort of weapon, this special rule ceases to apply.",
+        "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+        "Predatory Fighter": "A model with this special rule (but not its mount) generates one additional Attack on any natural roll of a 6 made when rolling To Hit in close combat. Roll To Hit and To Wound for this additional Attack as normal. Additional Attacks generated by this special rule cannot themselves generate further Attacks.",
+        "Armoured Hide (2)": "The hide of some creatures forms natural armour and improves their armour value ( and that of their rider). By how much armour value is improved varies from model to model, as shown in brackets after the name of this special rule.\n\n Note that a model that wears no armour is considerer to have an armour value of 7+ for the purposes of rules that improve armour value.",
+        "General": "Inspiring Presence: Warriors fight all the better under the stern gaze of their General. Unless your General is fleeing, all friendly units within their Command range can use their Leadership characteristic instead of their own (so rally your General first!).",
+        "Blood Frenzy": "When this model (but not its rider) inflicts an unsaved wound upon an enemy model, it becomes subject to the Frenzy special rule. A model with this special rule may become Frenzied in this way even if it has lost Frenzy earlier in the game.\n\nNote that this model’s rider does not gain a +1 modifier to their Attacks characteristic.\n\nCharacter Mount: A Carnosaur may only be included in your army as a character’s mount. Its points are added to that of its rider.",
+        "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+        "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
+        "Stomp Attacks (2)": "The number of Stomp Attacks caused varies from model to model and will be shown in brackets after the name of this special rule. Often, this is determined by the roll of a dice.\n\n**Resolving Stomp Attacks:** Stomp Attacks can only be made by a model that is in base contact with the enemy. Stomp Attacks are attacks made in combat that must be made last, after all other attacks have been made, including attacks made at Initiative 1. They hit automatically and use the unmodified Strength of the model making them.",
+        "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result.",
+        "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does."
+       },
+       "weapons": [
+        {
+         "name": "Hand Weapon",
+         "range": "Combat",
+         "S": "S",
+         "ap": "-",
+         "rules": "-"
+        },
+        {
+         "name": "Slashing talons",
+         "range": "Combat",
+         "S": "S",
+         "ap": "-3",
+         "rules": "Multiple Wounds (D3)"
+        }
+       ],
+       "maxRange": 0,
+       "armour": 3,
+       "ward": 0,
+       "us": 4,
+       "models": 1
+      },
+      "mountId": "carnosaur",
+      "mountFromFile": true,
+      "mountPts": 0
+     },
+     {
+      "name": "Skink Chief",
+      "models": 1,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 1,
+      "loose": false,
+      "pts": 45,
+      "us": 1,
+      "troop": "Regular infantry",
+      "unitSize": "1",
+      "stats": {
+       "M": "6",
+       "WS": "4",
+       "BS": "5",
+       "S": "4",
+       "T": "3",
+       "W": "2",
+       "I": "6",
+       "A": "3",
+       "Ld": "6"
+      },
+      "rules": [
+       "Aquatic",
+       "Cold Blooded",
+       "Poisoned Attacks"
+      ],
+      "ruleText": {
+       "Aquatic": "Many of Lustria’s denizens have an affinity for water, moving with equal ease through swamp and river as they do over land.\n\nModels with this special rule do not suffer any modifiers to their Movement characteristic when moving through any difficult or dangerous terrain feature which has been designated a ‘water feature’. This might include shallow streams or fords, swampy ground, fast flowing rivers, ponds or lakes, and players should agree prior to the game if any terrain is a water feature.",
+       "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
+       "Poisoned Attacks": "If a model with Poisoned Attacks rolls a natural 6 when making a roll To Hit, it may apply a +2 modifier to that hit’s roll To Wound. Unless otherwise stated, a model with this special rule may use it when making both shooting and combat attacks. Any spells cast by the model are unaffected, as are any attacks made with magic weapons. Note that if an attack needs a To Hit roll of 7+, or hits automatically, this special rule cannot be used."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Characters",
+      "faction": "Lizardmen",
+      "armour": 6,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5sccvalla"
+     },
+     {
+      "name": "Saurus Warriors",
+      "models": 21,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 7,
+      "loose": false,
+      "pts": 308,
+      "us": 29,
+      "troop": "Heavy infantry",
+      "unitSize": "10+",
+      "stats": {
+       "M": "4",
+       "WS": "3",
+       "BS": "0",
+       "S": "4",
+       "T": "4",
+       "W": "1",
+       "I": "1",
+       "A": "2",
+       "Ld": "8"
+      },
+      "rules": [
+       "Close Order",
+       "Cold Blooded",
+       "Obsidian Blades",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
+       "Obsidian Blades": "Lizardmen favour weapons studded with shards of razor sharp volcanic glass that cut through flesh and armour with ease.\n\nA hand weapon carried by a model with this special rule has an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to a single, non-magical hand weapon and does not apply to a model’s mount (should it have one). If the model is using two hand weapons or any other sort of weapon, this special rule ceases to apply.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      },
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Core",
+      "faction": "Lizardmen",
+      "armour": 4,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5rksor06z",
+      "shield": true
+     },
+     {
+      "crew": 5,
+      "loose": false,
+      "mount": {
+       "id": "ancient-stegadon",
+       "name": "Ancient Stegadon",
+       "genere": "carro",
+       "stats": {
+        "M": "6",
+        "WS": "4",
+        "BS": "-",
+        "S": "6",
+        "T": "6",
+        "W": "5",
+        "I": "1",
+        "A": "3",
+        "Ld": "-"
+       },
+       "row": "",
+       "righe": [
+        {
+         "chi": "Skink Crew",
+         "n": 5,
+         "stats": {
+          "M": "-",
+          "WS": "2",
+          "BS": "3",
+          "S": "3",
+          "T": "-",
+          "W": "-",
+          "I": "4",
+          "A": "1",
+          "Ld": "6"
+         },
+         "arma": {
+          "name": "Hand weapon",
+          "S": "S",
+          "ap": "-",
+          "rules": ""
+         }
+        }
+       ],
+       "forzaUrto": 6,
+       "random": "",
+       "armour": 4,
+       "libro": "Legends: Lizardmen",
+       "pagina": 13,
+       "nota": ""
+      },
+      "profiles": [
+       {
+        "name": "Ancient Stegadon",
+        "stats": {
+         "M": "6",
+         "WS": "4",
+         "BS": "3",
+         "S": "6",
+         "T": "6",
+         "W": "5",
+         "I": "1",
+         "A": "3",
+         "Ld": "6"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Lizardmen",
+      "ward": 0,
+      "regen": 0,
+      "name": "Ancient Stegadon",
+      "models": 1,
+      "baseId": "60x100",
+      "baseW": 60,
+      "baseH": 100,
+      "frontage": 1,
+      "pts": 230,
+      "us": 0,
+      "troop": "Behemoth",
+      "unitSize": "1",
+      "stats": {
+       "M": "6",
+       "WS": "4",
+       "BS": "3",
+       "S": "6",
+       "T": "6",
+       "W": "5",
+       "I": "1",
+       "A": "3",
+       "Ld": "6"
+      },
+      "armour": 4,
+      "rules": [
+       "Close Order",
+       "Cold Blooded",
+       "Howdah",
+       "Immune to Psychology",
+       "Impact Hits (D3+1)",
+       "Large Target",
+       "Stomp Attacks (D3+2)",
+       "Stubborn",
+       "Terror",
+       "Poisoned Attacks (javelins only)"
+      ],
+      "weapons": [
+       {
+        "name": "Great horns",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-3",
+        "rules": ""
+       },
+       {
+        "name": "Giant bow",
+        "range": "36\"",
+        "S": "5",
+        "ap": "-2",
+        "rules": "Multiple Wounds (D3), Poisoned Attacks"
+       },
+       {
+        "name": "Javelin",
+        "range": "12\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Move & Shoot, Quick Shot, Poisoned Attacks"
+       }
+      ],
+      "slot": "Rare",
+      "maxRange": 36,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
+       "Impact Hits (D3+1)": "The number of Impact Hits caused varies from model to model, and will be shown in brackets after the name of this special rile. Often, this is determined by the roll of a dice.\n\n**Resolving Impact Hits:** Impact Hits can only be made by a charging model that moved 3\" or more and that is in base contact with the enemy. Impact Hits are resolved against the charged unit when the combat is chosen during Step 1.1 of the Choose Combat & Fight sub-phase, before issuing challenges. They hit automatically and use the unmodified Strength of the model making them.",
+       "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
+       "Stomp Attacks (D3+2)": "The number of Stomp Attacks caused varies from model to model and will be shown in brackets after the name of this special rule. Often, this is determined by the roll of a dice.\n\n**Resolving Stomp Attacks:** Stomp Attacks can only be made by a model that is in base contact with the enemy. Stomp Attacks are attacks made in combat that must be made last, after all other attacks have been made, including attacks made at Initiative 1. They hit automatically and use the unmodified Strength of the model making them.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
+       "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does.",
+       "Poisoned Attacks (javelins only)": "If a model with Poisoned Attacks rolls a natural 6 when making a roll To Hit, it may apply a +2 modifier to that hit’s roll To Wound. Unless otherwise stated, a model with this special rule may use it when making both shooting and combat attacks. Any spells cast by the model are unaffected, as are any attacks made with magic weapons. Note that if an attack needs a To Hit roll of 7+, or hits automatically, this special rule cannot be used."
+      },
+      "mountId": "ancient-stegadon",
+      "mountPts": 0,
+      "mountFromFile": true
+     },
+     {
+      "name": "Terradon Riders",
+      "models": 3,
+      "crew": 0,
+      "baseId": "40x40",
+      "baseW": 40,
+      "baseH": 40,
+      "frontage": 3,
+      "loose": true,
+      "pts": 96,
+      "us": 9,
+      "troop": "Monstrous cavalry",
+      "unitSize": "3+",
+      "stats": {
+       "M": "-",
+       "WS": "2",
+       "BS": "3",
+       "S": "3",
+       "T": "3",
+       "W": "2",
+       "I": "4",
+       "A": "1",
+       "Ld": "5"
+      },
+      "profiles": [
+       {
+        "name": "Terradon Rider",
+        "stats": {
+         "M": "-",
+         "WS": "2",
+         "BS": "3",
+         "S": "3",
+         "T": "3",
+         "W": "2",
+         "I": "4",
+         "A": "1",
+         "Ld": "5"
+        }
+       },
+       {
+        "name": "Terradon",
+        "stats": {
+         "M": "2",
+         "WS": "3",
+         "BS": "-",
+         "S": "4",
+         "T": "-",
+         "W": "-",
+         "I": "2",
+         "A": "2",
+         "Ld": "-"
+        }
+       }
+      ],
+      "mount": {
+       "name": "Terradon",
+       "stats": {
+        "M": "2",
+        "WS": "3",
+        "BS": "-",
+        "S": "4",
+        "T": "-",
+        "W": "-",
+        "I": "2",
+        "A": "2",
+        "Ld": "-"
+       }
+      },
+      "rules": [
+       "Armoured Hide (1)",
+       "Cold Blooded",
+       "Drop Rocks",
+       "Fear",
+       "Fly (10)",
+       "Poisoned Attacks (javelins only)",
+       "Skirmishers",
+       "Swiftstride",
+       "Clumsy"
+      ],
+      "ruleText": {
+       "Armoured Hide (1)": "The hide of some creatures forms natural armour and improves their armour value ( and that of their rider). By how much armour value is improved varies from model to model, as shown in brackets after the name of this special rule.\n\n Note that a model that wears no armour is considerer to have an armour value of 7+ for the purposes of rules that improve armour value.",
+       "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
+       "Drop Rocks": "Skinks train Terradons to glide over the battlefield clutching great rocks in their talons.\n\nOnce per game, a unit with this special rule may perform a ‘Drop Rocks’ attack against a single enemy unit that is not engaged in combat. To do so, this unit must move (by flying) over the unit it wishes to attack during the Remaining Moves sub-phase. Once this unit’s movement is complete, the enemy unit suffers D3 Strength 4 hits, each with an AP of -, for each model in this unit that moved over it.",
+       "Fear": "Models with this special rule cause Fear:\n\n \n• \tIf a unit wishes to declare a charge against an enemy unit that both causes Fear and has a higher Unit Strength, it must first make a Leadership test. If this test is failed, the unit cannot charge. It does not move and is considered to have made a failed charge. If this test is passed, the unit can charge as normal.\n\n \n• \tIf a unit is engaged with an enemy unit that both causes Fear and has a higher Unit Strength when its combat is chosen during any Choose & Fight Combat sub-phase, it must make a Leadership test. If this test is failed, any models in the unit that direct their attacks against the Fear-causing enemy suffer a -1 modifier to their rolls To Hit.\n\n A unit only needs to make one Fear test per turn. Models that cause Fear are immune to Fear. A unit that does not cause Fear does not become immune to Fear when joined by a character that does.",
+       "Fly (10)": "Except when following up or pursuing, a model with this special rule can choose to move by flying through the air, rather than moving across the ground as normal. When a model flies it uses a special ‘Fly Movement’ characteristic, shown in brackets after the name of this special rule (shown here as ‘X’). Models that choose to move by flying:\n\n- May move as normal (i.e. they may charge, march and manoeuvre as if moving on the ground), except that they are able to pass freely above other models, units and terrain features without any penalty, and they can march whilst within 8\" of an enemy unit without first having to make a Leadership test.\n\n- May end their movement in terrain, but will suffer its effects if they do. They cannot end their movement 'on top' of impassable terrain or another unit, or within 1\" of an enemy unit.\n\nModels that can Fly must begin and end all their movement on the ground. A character with this special rule cannot join a unit without this special rule, and vice versa.",
+       "Poisoned Attacks (javelins only)": "If a model with Poisoned Attacks rolls a natural 6 when making a roll To Hit, it may apply a +2 modifier to that hit’s roll To Wound. Unless otherwise stated, a model with this special rule may use it when making both shooting and combat attacks. Any spells cast by the model are unaffected, as are any attacks made with magic weapons. Note that if an attack needs a To Hit roll of 7+, or hits automatically, this special rule cannot be used.",
+       "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result.",
+       "Clumsy": "A unit with this rule can only be joined by a  character  that also has this rule. Smaller characters are unwilling to risk being trampled.\n\n\nRelated: Monstrous Infantry"
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Javelin",
+        "range": "12\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Move & Shoot, Quick Shot"
+       }
+      ],
+      "maxRange": 12,
+      "slot": "Special",
+      "faction": "Lizardmen - Renegades v2",
+      "armour": 6,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5ro8mphs3"
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {},
+     "note": "Saurus Oldblood sul Carnosauro — 310 pt; Skink Chief — 45 pt; 21 Saurus Warriors (stendardo, musico, fronte 7) — 308 pt; Ancient Stegadon — 230 pt; 3 Terradon Riders — 96 pt"
+    },
+    "formerNames": []
+   }
+  },
+  {
+   "geni": [
+    {
+     "k": "carnoOldblood",
+     "o": {}
+    },
+    {
+     "k": "saurus",
+     "o": {
+      "c": "csm",
+      "f": 10
+     },
+     "n": 24
+    },
+    {
+     "k": "skinks",
+     "o": {},
+     "n": 20
+    },
+    {
+     "k": "ancientSteg",
+     "o": {}
+    }
+   ],
+   "descrizione": "Saurus Oldblood sul Carnosauro — 310 pt; 24 Saurus Warriors (campione, stendardo, musico, fronte 10) — 357 pt; 20 Skink Skirmishers — 100 pt; Ancient Stegadon — 230 pt",
+   "punti": 997,
+   "ricerca": {
+    "w": 15,
+    "l": 1,
+    "d": 0,
+    "n": 16
+   },
+   "verifica": {
+    "w": 41,
+    "l": 5,
+    "d": 2,
+    "n": 48,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 7,
+      "l": 1,
+      "d": 0,
+      "n": 8
+     },
+     "sxprova-profondo": {
+      "w": 6,
+      "l": 0,
+      "d": 2,
+      "n": 8
+     },
+     "sxprova-boschi": {
+      "w": 7,
+      "l": 1,
+      "d": 0,
+      "n": 8
+     },
+     "bm-strada": {
+      "w": 7,
+      "l": 1,
+      "d": 0,
+      "n": 8
+     },
+     "bm-rovine": {
+      "w": 8,
+      "l": 0,
+      "d": 0,
+      "n": 8
+     },
+     "open": {
+      "w": 6,
+      "l": 2,
+      "d": 0,
+      "n": 8
+     }
+    },
+    "perAvversario": {
+     "r-og-collezione-1000-notte-1": {
+      "w": 11,
+      "l": 1,
+      "d": 0,
+      "n": 12
+     },
+     "r-og-collezione-1000-orchineri-1": {
+      "w": 9,
+      "l": 3,
+      "d": 0,
+      "n": 12
+     },
+     "r-skaven-collezione-1000-abominio-1": {
+      "w": 10,
+      "l": 1,
+      "d": 1,
+      "n": 12
+     },
+     "r-skaven-collezione-1000-skryre-1": {
+      "w": 11,
+      "l": 0,
+      "d": 1,
+      "n": 12
+     }
+    },
+    "celle": {
+     "r-og-collezione-1000-notte-1|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 1,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-notte-1|sxprova-profondo": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-notte-1|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-notte-1|bm-strada": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-notte-1|bm-rovine": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-notte-1|open": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|sxprova-profondo": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|sxprova-boschi": {
+      "w": 1,
+      "l": 1,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|bm-strada": {
+      "w": 1,
+      "l": 1,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|bm-rovine": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-og-collezione-1000-orchineri-1|open": {
+      "w": 1,
+      "l": 1,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|sxprova-profondo": {
+      "w": 1,
+      "l": 0,
+      "d": 1,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|bm-strada": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|bm-rovine": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-abominio-1|open": {
+      "w": 1,
+      "l": 1,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|sxprova-profondo": {
+      "w": 1,
+      "l": 0,
+      "d": 1,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|bm-strada": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|bm-rovine": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     },
+     "r-skaven-collezione-1000-skryre-1|open": {
+      "w": 2,
+      "l": 0,
+      "d": 0,
+      "n": 2
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-liz-collezione-1000-carnosauro-3",
+    "name": "LIZ collezione 1000 carnosauro · 3",
+    "info": {
+     "catalogue": "Lizardmen",
+     "forceName": "Battle March",
+     "limit": 1000
+    },
+    "points": 997,
+    "external": false,
+    "imported": "2026-09-25T00:06:47.547Z",
+    "units": [
+     {
+      "name": "Saurus Oldblood",
+      "models": 1,
+      "crew": 0,
+      "baseId": "50x100",
+      "baseW": 50,
+      "baseH": 100,
+      "frontage": 1,
+      "loose": false,
+      "pts": 310,
+      "us": 0,
+      "troop": "Behemoth (character)",
+      "unitSize": "1",
+      "stats": {
+       "M": "7",
+       "WS": "6",
+       "BS": "0",
+       "S": "5",
+       "T": "6",
+       "W": "7",
+       "I": "3",
+       "A": "5",
+       "Ld": "8"
+      },
+      "profiles": [
+       {
+        "name": "Saurus Oldblood",
+        "stats": {
+         "M": "4",
+         "WS": "6",
+         "BS": "0",
+         "S": "5",
+         "T": "5",
+         "W": "3",
+         "I": "3",
+         "A": "5",
+         "Ld": "8"
+        }
+       },
+       {
+        "name": "Carnosaur",
+        "stats": {
+         "M": "7",
+         "WS": "3",
+         "BS": "0",
+         "S": "7",
+         "T": "-",
+         "W": "-",
+         "I": "2",
+         "A": "4",
+         "Ld": "-"
+        }
+       }
+      ],
+      "mount": {
+       "id": "carnosaur",
+       "name": "Carnosaur",
+       "genere": "mostro",
+       "stats": {
+        "M": "7",
+        "WS": "3",
+        "BS": "0",
+        "S": "7",
+        "T": "-",
+        "W": "-",
+        "I": "2",
+        "A": "4",
+        "Ld": "-"
+       },
+       "row": "Carnosaur",
+       "righe": [
+        {
+         "chi": "Carnosaur",
+         "n": 1,
+         "stats": {
+          "M": "7",
+          "WS": "3",
+          "BS": "0",
+          "S": "7",
+          "T": "-",
+          "W": "-",
+          "I": "2",
+          "A": "4",
+          "Ld": "-"
+         },
+         "arma": {
+          "name": "Slashing talons",
+          "S": "S",
+          "ap": "-3",
+          "rules": ""
+         }
+        }
+       ],
+       "forzaUrto": 7,
+       "random": "",
+       "armour": 5,
+       "libro": "Legends: Lizardmen",
+       "pagina": 12,
+       "nota": "La pelle squamosa vale armatura pesante (5+). Le Ferite Multiple (D3) degli artigli valgono solo contro i mostri, e la Blood Frenzy si accende quando il Carnosauro (non il cavaliere) ferisce: tutte e due a mano."
+      },
+      "rules": [
+       "Cold Blooded",
+       "Obsidian Blades",
+       "Rallying Cry",
+       "Blood Frenzy",
+       "Close Order",
+       "Large Target",
+       "Stomp Attacks (2)",
+       "Swiftstride",
+       "Terror",
+       "Furious Charge (does not apply to this model's mount should it have one)"
+      ],
+      "ruleText": {
+       "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
+       "Obsidian Blades": "Lizardmen favour weapons studded with shards of razor sharp volcanic glass that cut through flesh and armour with ease.\n\nA hand weapon carried by a model with this special rule has an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to a single, non-magical hand weapon and does not apply to a model’s mount (should it have one). If the model is using two hand weapons or any other sort of weapon, this special rule ceases to apply.",
+       "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+       "Blood Frenzy": "When this model (but not its rider) inflicts an unsaved wound upon an enemy model, it becomes subject to the Frenzy special rule. A model with this special rule may become Frenzied in this way even if it has lost Frenzy earlier in the game.\n\nNote that this model’s rider does not gain a +1 modifier to their Attacks characteristic.\n\nCharacter Mount: A Carnosaur may only be included in your army as a character’s mount. Its points are added to that of its rider.",
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
+       "Stomp Attacks (2)": "The number of Stomp Attacks caused varies from model to model and will be shown in brackets after the name of this special rule. Often, this is determined by the roll of a dice.\n\n**Resolving Stomp Attacks:** Stomp Attacks can only be made by a model that is in base contact with the enemy. Stomp Attacks are attacks made in combat that must be made last, after all other attacks have been made, including attacks made at Initiative 1. They hit automatically and use the unmodified Strength of the model making them.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result.",
+       "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does.",
+       "Furious Charge (does not apply to this model's mount should it have one)": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Slashing talons",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-3",
+        "rules": "Multiple Wounds (D3)",
+        "di": "Carnosaur"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Characters",
+      "faction": "Lizardmen",
+      "armour": 5,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmttwt5q1icif",
+      "foot": {
+       "stats": {
+        "M": "4",
+        "WS": "6",
+        "BS": "0",
+        "S": "5",
+        "T": "5",
+        "W": "3",
+        "I": "3",
+        "A": "5",
+        "Ld": "8"
+       },
+       "profiles": [
+        {
+         "name": "Saurus Oldblood",
+         "stats": {
+          "M": "4",
+          "WS": "6",
+          "BS": "0",
+          "S": "5",
+          "T": "5",
+          "W": "3",
+          "I": "3",
+          "A": "5",
+          "Ld": "8"
+         }
+        },
+        {
+         "name": "Carnosaur",
+         "stats": {
+          "M": "7",
+          "WS": "4",
+          "BS": "0",
+          "S": "7",
+          "T": "(+1)",
+          "W": "(+4)",
+          "I": "2",
+          "A": "4",
+          "Ld": "-"
+         }
+        }
+       ],
+       "mount": {
+        "name": "Carnosaur",
+        "stats": {
+         "M": "7",
+         "WS": "4",
+         "BS": "0",
+         "S": "7",
+         "T": "(+1)",
+         "W": "(+4)",
+         "I": "2",
+         "A": "4",
+         "Ld": "-"
+        }
+       },
+       "baseId": "50x50",
+       "baseW": 50,
+       "baseH": 50,
+       "troop": "Heavy infantry",
+       "slot": "Characters",
+       "frontage": 1,
+       "loose": false,
+       "rules": [
+        "Cold Blooded",
+        "Obsidian Blades",
+        "Rallying Cry",
+        "Predatory Fighter",
+        "Armoured Hide (2)",
+        "General",
+        "Blood Frenzy",
+        "Close Order",
+        "Large Target",
+        "Stomp Attacks (2)",
+        "Swiftstride",
+        "Terror"
+       ],
+       "ruleText": {
+        "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Leadership or Break Test, models with this special rule may roll an extra D6 and discard the highest result.",
+        "Obsidian Blades": "Lizardmen favour weapons studded with shards of razor sharp volcanic glass that cut through flesh and armour with ease.\n\nA hand weapon carried by a model with this special rule has an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to a single, non-magical hand weapon and does not apply to a model’s mount (should it have one). If the model is using two hand weapons or any other sort of weapon, this special rule ceases to apply.",
+        "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+        "Predatory Fighter": "A model with this special rule (but not its mount) generates one additional Attack on any natural roll of a 6 made when rolling To Hit in close combat. Roll To Hit and To Wound for this additional Attack as normal. Additional Attacks generated by this special rule cannot themselves generate further Attacks.",
+        "Armoured Hide (2)": "The hide of some creatures forms natural armour and improves their armour value ( and that of their rider). By how much armour value is improved varies from model to model, as shown in brackets after the name of this special rule.\n\n Note that a model that wears no armour is considerer to have an armour value of 7+ for the purposes of rules that improve armour value.",
+        "General": "Inspiring Presence: Warriors fight all the better under the stern gaze of their General. Unless your General is fleeing, all friendly units within their Command range can use their Leadership characteristic instead of their own (so rally your General first!).",
+        "Blood Frenzy": "When this model (but not its rider) inflicts an unsaved wound upon an enemy model, it becomes subject to the Frenzy special rule. A model with this special rule may become Frenzied in this way even if it has lost Frenzy earlier in the game.\n\nNote that this model’s rider does not gain a +1 modifier to their Attacks characteristic.\n\nCharacter Mount: A Carnosaur may only be included in your army as a character’s mount. Its points are added to that of its rider.",
+        "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+        "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
+        "Stomp Attacks (2)": "The number of Stomp Attacks caused varies from model to model and will be shown in brackets after the name of this special rule. Often, this is determined by the roll of a dice.\n\n**Resolving Stomp Attacks:** Stomp Attacks can only be made by a model that is in base contact with the enemy. Stomp Attacks are attacks made in combat that must be made last, after all other attacks have been made, including attacks made at Initiative 1. They hit automatically and use the unmodified Strength of the model making them.",
+        "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result.",
+        "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does."
+       },
+       "weapons": [
+        {
+         "name": "Hand Weapon",
+         "range": "Combat",
+         "S": "S",
+         "ap": "-",
+         "rules": "-"
+        },
+        {
+         "name": "Slashing talons",
+         "range": "Combat",
+         "S": "S",
+         "ap": "-3",
+         "rules": "Multiple Wounds (D3)"
+        }
+       ],
+       "maxRange": 0,
+       "armour": 3,
+       "ward": 0,
+       "us": 4,
+       "models": 1
+      },
+      "mountId": "carnosaur",
+      "mountFromFile": true,
+      "mountPts": 0
+     },
+     {
+      "name": "Saurus Warriors",
+      "models": 24,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 10,
+      "loose": false,
+      "pts": 357,
+      "us": 33,
+      "troop": "Heavy infantry",
+      "unitSize": "10+",
+      "stats": {
+       "M": "4",
+       "WS": "3",
+       "BS": "0",
+       "S": "4",
+       "T": "4",
+       "W": "1",
+       "I": "1",
+       "A": "2",
+       "Ld": "8"
+      },
+      "rules": [
+       "Close Order",
+       "Cold Blooded",
+       "Obsidian Blades",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
+       "Obsidian Blades": "Lizardmen favour weapons studded with shards of razor sharp volcanic glass that cut through flesh and armour with ease.\n\nA hand weapon carried by a model with this special rule has an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to a single, non-magical hand weapon and does not apply to a model’s mount (should it have one). If the model is using two hand weapons or any other sort of weapon, this special rule ceases to apply.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      },
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "slot": "Core",
+      "faction": "Lizardmen",
+      "armour": 4,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5rksor06z",
+      "shield": true
+     },
+     {
+      "name": "Skink Skirmishers",
+      "models": 20,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 10,
+      "loose": true,
+      "pts": 100,
+      "us": 20,
+      "troop": "Regular infantry",
+      "unitSize": "10+",
+      "stats": {
+       "M": "6",
+       "WS": "2",
+       "BS": "3",
+       "S": "3",
+       "T": "2",
+       "W": "1",
+       "I": "4",
+       "A": "1",
+       "Ld": "5"
+      },
+      "profiles": [
+       {
+        "name": "Skink",
+        "stats": {
+         "M": "6",
+         "WS": "2",
+         "BS": "3",
+         "S": "3",
+         "T": "2",
+         "W": "1",
+         "I": "4",
+         "A": "1",
+         "Ld": "5"
+        }
+       }
+      ],
+      "mount": null,
+      "rules": [
+       "Aquatic",
+       "Cold Blooded",
+       "Move Through Cover",
+       "Poisoned Attacks (javelins only)",
+       "Skirmishers",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "ruleText": {
+       "Aquatic": "Many of Lustria’s denizens have an affinity for water, moving with equal ease through swamp and river as they do over land.\n\nModels with this special rule do not suffer any modifiers to their Movement characteristic when moving through any difficult or dangerous terrain feature which has been designated a ‘water feature’. This might include shallow streams or fords, swampy ground, fast flowing rivers, ponds or lakes, and players should agree prior to the game if any terrain is a water feature.",
+       "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
+       "Move Through Cover": "Models with this special rule do not suffer any modifiers to their Movement characteristic for moving through difficult or dangerous terrain. In addition, a model with this special rule may re-roll any rolls of 1 when making Dangerous Terrain tests.",
+       "Poisoned Attacks (javelins only)": "If a model with Poisoned Attacks rolls a natural 6 when making a roll To Hit, it may apply a +2 modifier to that hit’s roll To Wound. Unless otherwise stated, a model with this special rule may use it when making both shooting and combat attacks. Any spells cast by the model are unaffected, as are any attacks made with magic weapons. Note that if an attack needs a To Hit roll of 7+, or hits automatically, this special rule cannot be used.",
+       "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      },
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Javelin",
+        "range": "12\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Move & Shoot, Quick Shot"
+       }
+      ],
+      "maxRange": 12,
+      "slot": "Core",
+      "faction": "Lizardmen - Renegades v2",
+      "armour": 5,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5rlxm62jk",
+      "shield": false
+     },
+     {
+      "crew": 5,
+      "loose": false,
+      "mount": {
+       "id": "ancient-stegadon",
+       "name": "Ancient Stegadon",
+       "genere": "carro",
+       "stats": {
+        "M": "6",
+        "WS": "4",
+        "BS": "-",
+        "S": "6",
+        "T": "6",
+        "W": "5",
+        "I": "1",
+        "A": "3",
+        "Ld": "-"
+       },
+       "row": "",
+       "righe": [
+        {
+         "chi": "Skink Crew",
+         "n": 5,
+         "stats": {
+          "M": "-",
+          "WS": "2",
+          "BS": "3",
+          "S": "3",
+          "T": "-",
+          "W": "-",
+          "I": "4",
+          "A": "1",
+          "Ld": "6"
+         },
+         "arma": {
+          "name": "Hand weapon",
+          "S": "S",
+          "ap": "-",
+          "rules": ""
+         }
+        }
+       ],
+       "forzaUrto": 6,
+       "random": "",
+       "armour": 4,
+       "libro": "Legends: Lizardmen",
+       "pagina": 13,
+       "nota": ""
+      },
+      "profiles": [
+       {
+        "name": "Ancient Stegadon",
+        "stats": {
+         "M": "6",
+         "WS": "4",
+         "BS": "3",
+         "S": "6",
+         "T": "6",
+         "W": "5",
+         "I": "1",
+         "A": "3",
+         "Ld": "6"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Lizardmen",
+      "ward": 0,
+      "regen": 0,
+      "name": "Ancient Stegadon",
+      "models": 1,
+      "baseId": "60x100",
+      "baseW": 60,
+      "baseH": 100,
+      "frontage": 1,
+      "pts": 230,
+      "us": 0,
+      "troop": "Behemoth",
+      "unitSize": "1",
+      "stats": {
+       "M": "6",
+       "WS": "4",
+       "BS": "3",
+       "S": "6",
+       "T": "6",
+       "W": "5",
+       "I": "1",
+       "A": "3",
+       "Ld": "6"
+      },
+      "armour": 4,
+      "rules": [
+       "Close Order",
+       "Cold Blooded",
+       "Howdah",
+       "Immune to Psychology",
+       "Impact Hits (D3+1)",
+       "Large Target",
+       "Stomp Attacks (D3+2)",
+       "Stubborn",
+       "Terror",
+       "Poisoned Attacks (javelins only)"
+      ],
+      "weapons": [
+       {
+        "name": "Great horns",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-3",
+        "rules": ""
+       },
+       {
+        "name": "Giant bow",
+        "range": "36\"",
+        "S": "5",
+        "ap": "-2",
+        "rules": "Multiple Wounds (D3), Poisoned Attacks"
+       },
+       {
+        "name": "Javelin",
+        "range": "12\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Move & Shoot, Quick Shot, Poisoned Attacks"
+       }
+      ],
+      "slot": "Rare",
+      "maxRange": 36,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
+       "Impact Hits (D3+1)": "The number of Impact Hits caused varies from model to model, and will be shown in brackets after the name of this special rile. Often, this is determined by the roll of a dice.\n\n**Resolving Impact Hits:** Impact Hits can only be made by a charging model that moved 3\" or more and that is in base contact with the enemy. Impact Hits are resolved against the charged unit when the combat is chosen during Step 1.1 of the Choose Combat & Fight sub-phase, before issuing challenges. They hit automatically and use the unmodified Strength of the model making them.",
+       "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
+       "Stomp Attacks (D3+2)": "The number of Stomp Attacks caused varies from model to model and will be shown in brackets after the name of this special rule. Often, this is determined by the roll of a dice.\n\n**Resolving Stomp Attacks:** Stomp Attacks can only be made by a model that is in base contact with the enemy. Stomp Attacks are attacks made in combat that must be made last, after all other attacks have been made, including attacks made at Initiative 1. They hit automatically and use the unmodified Strength of the model making them.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
+       "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does.",
+       "Poisoned Attacks (javelins only)": "If a model with Poisoned Attacks rolls a natural 6 when making a roll To Hit, it may apply a +2 modifier to that hit’s roll To Wound. Unless otherwise stated, a model with this special rule may use it when making both shooting and combat attacks. Any spells cast by the model are unaffected, as are any attacks made with magic weapons. Note that if an attack needs a To Hit roll of 7+, or hits automatically, this special rule cannot be used."
+      },
+      "mountId": "ancient-stegadon",
+      "mountPts": 0,
+      "mountFromFile": true
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {},
+     "note": "Saurus Oldblood sul Carnosauro — 310 pt; 24 Saurus Warriors (campione, stendardo, musico, fronte 10) — 357 pt; 20 Skink Skirmishers — 100 pt; Ancient Stegadon — 230 pt"
+    },
+    "formerNames": []
+   }
+  }
+ ]
+}

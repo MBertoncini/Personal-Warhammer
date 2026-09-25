@@ -1,0 +1,709 @@
+{
+ "formato": "tow-bilancia/1",
+ "quando": "2026-09-25T05:58:39.579Z",
+ "punti": 1000,
+ "scenari": [
+  "sxmu9q80qdc65",
+  "sxprova-profondo",
+  "sxprova-boschi",
+  "bm-strada",
+  "bm-rovine",
+  "open"
+ ],
+ "semi": 4,
+ "liste": [
+  {
+   "fazione": "skaven",
+   "tema": "abominio",
+   "nome": "SKA abominio",
+   "geni": [
+    {
+     "k": "seerBell",
+     "o": {
+      "level": 3
+     },
+     "lore": "dark"
+    },
+    {
+     "k": "clanrats",
+     "o": {
+      "shields": true,
+      "spears": false,
+      "c": "csm",
+      "f": 5
+     },
+     "n": 30
+    },
+    {
+     "k": "clanrats",
+     "o": {
+      "shields": true,
+      "spears": false,
+      "c": "",
+      "f": 5
+     },
+     "n": 20
+    },
+    {
+     "k": "ratOgres",
+     "o": {
+      "pm": 1,
+      "catcher": false
+     },
+     "n": 3
+    },
+    {
+     "k": "hpa",
+     "o": {}
+    }
+   ],
+   "descrizione": "Grey Seer sulla Screaming Bell (Livello 3, dark) — 370 pt; 30 Clanrats (scudi, campione, stendardo, musico, fronte 5) — 167 pt; 20 Clanrats (scudi, fronte 5) — 100 pt; 3 Rat Ogres (1 Packmaster) — 149 pt; Hell Pit Abomination — 210 pt",
+   "punti": 996,
+   "media": 0.48660714285714285
+  },
+  {
+   "fazione": "skaven",
+   "tema": "skryre",
+   "nome": "SKA skryre",
+   "geni": [
+    {
+     "k": "seerBell",
+     "o": {
+      "level": 4
+     },
+     "lore": "daemonology"
+    },
+    {
+     "k": "engineer",
+     "o": {
+      "level": 1,
+      "gun": null
+     },
+     "lore": "battle"
+    },
+    {
+     "k": "clanrats",
+     "o": {
+      "shields": true,
+      "spears": true,
+      "c": "csm",
+      "f": 6
+     },
+     "n": 35
+    },
+    {
+     "k": "clanrats",
+     "o": {
+      "shields": true,
+      "spears": false,
+      "c": "csm",
+      "f": 5
+     },
+     "n": 22
+    },
+    {
+     "k": "jezzails",
+     "o": {},
+     "n": 3
+    },
+    {
+     "k": "wlc",
+     "o": {}
+    }
+   ],
+   "descrizione": "Grey Seer sulla Screaming Bell (Livello 4, daemonology) — 400 pt; Warlock Engineer (Livello 1, battle) — 75 pt; 35 Clanrats (scudi, lance, campione, stendardo, musico, fronte 6) — 227 pt; 22 Clanrats (scudi, campione, stendardo, musico, fronte 5) — 127 pt; 3 Warplock Jezzails — 57 pt; Warp Lightning Cannon — 110 pt",
+   "punti": 996,
+   "media": 0.46875
+  },
+  {
+   "fazione": "og",
+   "tema": "notte",
+   "nome": "O&G notte",
+   "geni": [
+    {
+     "k": "weirdnob",
+     "o": {
+      "l4": true
+     },
+     "lore": "battle"
+    },
+    {
+     "k": "oddnob",
+     "o": {
+      "l4": true
+     },
+     "lore": "elementalism"
+    },
+    {
+     "k": "ngBigboss",
+     "o": {
+      "great": true,
+      "light": true,
+      "shield": true
+     }
+    },
+    {
+     "k": "orcs",
+     "o": {
+      "c": "sm",
+      "spears": false,
+      "bows": false,
+      "big": false,
+      "f": 7
+     },
+     "n": 23
+    },
+    {
+     "k": "orcs",
+     "o": {
+      "c": "sm",
+      "spears": false,
+      "bows": true,
+      "big": false,
+      "f": 7
+     },
+     "n": 14
+    },
+    {
+     "k": "goblins",
+     "o": {
+      "c": "csm",
+      "spears": false,
+      "f": 8
+     },
+     "n": 10
+    },
+    {
+     "k": "trolls",
+     "o": {},
+     "n": 1
+    },
+    {
+     "k": "trolls",
+     "o": {},
+     "n": 1
+    },
+    {
+     "k": "squigHerd",
+     "o": {},
+     "n": 16
+    },
+    {
+     "k": "boarBoys",
+     "o": {
+      "c": "sm",
+      "spears": true,
+      "shields": false
+     },
+     "n": 6
+    }
+   ],
+   "descrizione": "Orc Weirdnob (Livello 4, battle) — 170 pt; Goblin Oddnob (Livello 4, elementalism) — 165 pt; Night Goblin Bigboss (arma grande, scudo) — 39 pt; 23 Orc Mobs (stendardo, musico, fronte 7) — 125 pt; 14 Orc Mobs (stendardo, musico, archi, fronte 7) — 80 pt; 10 Goblin Mobs (campione, stendardo, musico, fronte 8) — 47 pt; 1 Stone Troll Mobs — 45 pt; 1 Stone Troll Mobs — 45 pt; 16 Cave Squig nella Squig Herd — 172 pt; 6 Orc Boar Boy Mobs (stendardo, musico, lance) — 108 pt",
+   "punti": 996,
+   "media": 0.4895833333333333
+  },
+  {
+   "fazione": "og",
+   "tema": "orchineri",
+   "nome": "O&G orchineri",
+   "geni": [
+    {
+     "k": "bigbossBoar",
+     "o": {
+      "great": true,
+      "heavy": false,
+      "bsb": false
+     }
+    },
+    {
+     "k": "blackWarboss",
+     "o": {
+      "great": true
+     }
+    },
+    {
+     "k": "orcs",
+     "o": {
+      "c": "csm",
+      "spears": false,
+      "bows": true,
+      "big": false,
+      "f": 5
+     },
+     "n": 15
+    },
+    {
+     "k": "orcs",
+     "o": {
+      "c": "sm",
+      "spears": false,
+      "bows": false,
+      "big": true,
+      "f": 6
+     },
+     "n": 25
+    },
+    {
+     "k": "blackOrcs",
+     "o": {
+      "c": "sm",
+      "great": true,
+      "f": 6
+     },
+     "n": 11
+    },
+    {
+     "k": "goblins",
+     "o": {
+      "c": "csm",
+      "spears": false,
+      "f": 6
+     },
+     "n": 10
+    },
+    {
+     "k": "boarBoys",
+     "o": {
+      "c": "csm",
+      "spears": true,
+      "shields": true
+     },
+     "n": 10
+    },
+    {
+     "k": "chariot",
+     "o": {}
+    }
+   ],
+   "descrizione": "Orc Bigboss sul cinghiale (arma grande) — 75 pt; Black Orc Warboss (arma grande) — 139 pt; 15 Orc Mobs (campione, stendardo, musico, archi, fronte 5) — 92 pt; 25 Orc Mobs (stendardo, musico, Big 'Uns, fronte 6) — 185 pt; 11 Black Orc Mobs (stendardo, musico, arma grande, fronte 6) — 166 pt; 10 Goblin Mobs (campione, stendardo, musico, fronte 6) — 47 pt; 10 Orc Boar Boy Mobs (campione, stendardo, musico, lance, scudi) — 190 pt; Orc Boar Chariots — 90 pt",
+   "punti": 984,
+   "media": 0.5856481481481481
+  },
+  {
+   "fazione": "liz",
+   "tema": "carnosauro",
+   "nome": "LIZ carnosauro",
+   "geni": [
+    {
+     "k": "carnoOldblood",
+     "o": {}
+    },
+    {
+     "k": "chief",
+     "o": {}
+    },
+    {
+     "k": "saurus",
+     "o": {
+      "c": "",
+      "f": 10
+     },
+     "n": 16
+    },
+    {
+     "k": "saurus",
+     "o": {
+      "c": "",
+      "f": 8
+     },
+     "n": 10
+    },
+    {
+     "k": "skinks",
+     "o": {},
+     "n": 20
+    },
+    {
+     "k": "terradons",
+     "o": {},
+     "n": 5
+    }
+   ],
+   "descrizione": "Saurus Oldblood sul Carnosauro — 310 pt; Skink Chief — 45 pt; 16 Saurus Warriors (fronte 10) — 224 pt; 10 Saurus Warriors (fronte 8) — 140 pt; 20 Skink Skirmishers — 100 pt; 5 Terradon Riders — 160 pt",
+   "punti": 979,
+   "media": 0.47291666666666665
+  },
+  {
+   "fazione": "liz",
+   "tema": "stegadonte",
+   "nome": "LIZ stegadonte",
+   "geni": [
+    {
+     "k": "priestSteg",
+     "o": {
+      "l2": true
+     },
+     "lore": "illusion"
+    },
+    {
+     "k": "saurus",
+     "o": {
+      "c": "",
+      "f": 7
+     },
+     "n": 17
+    },
+    {
+     "k": "skinks",
+     "o": {},
+     "n": 18
+    },
+    {
+     "k": "skinks",
+     "o": {},
+     "n": 14
+    },
+    {
+     "k": "coldOnes",
+     "o": {
+      "c": ""
+     },
+     "n": 8
+    }
+   ],
+   "descrizione": "Skink Priest sull'Ancient Stegadon (Livello 2, illusion) — 320 pt; 17 Saurus Warriors (fronte 7) — 238 pt; 18 Skink Skirmishers — 90 pt; 14 Skink Skirmishers — 70 pt; 8 Cold One Riders — 272 pt",
+   "punti": 990,
+   "media": 0.43333333333333335
+  }
+ ],
+ "matrice": [
+  [
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 48,
+    "l": 34,
+    "d": 14,
+    "n": 96
+   },
+   {
+    "w": 53,
+    "l": 75,
+    "d": 16,
+    "n": 144
+   },
+   {
+    "w": 19,
+    "l": 22,
+    "d": 7,
+    "n": 48
+   },
+   {
+    "w": 21,
+    "l": 19,
+    "d": 8,
+    "n": 48
+   }
+  ],
+  [
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 17,
+    "l": 20,
+    "d": 11,
+    "n": 48
+   },
+   {
+    "w": 29,
+    "l": 58,
+    "d": 9,
+    "n": 96
+   },
+   {
+    "w": 26,
+    "l": 17,
+    "d": 5,
+    "n": 48
+   },
+   {
+    "w": 25,
+    "l": 17,
+    "d": 6,
+    "n": 48
+   }
+  ],
+  [
+   {
+    "w": 34,
+    "l": 48,
+    "d": 14,
+    "n": 96
+   },
+   {
+    "w": 20,
+    "l": 17,
+    "d": 11,
+    "n": 48
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 22,
+    "l": 20,
+    "d": 6,
+    "n": 48
+   },
+   {
+    "w": 22,
+    "l": 18,
+    "d": 8,
+    "n": 48
+   }
+  ],
+  [
+   {
+    "w": 75,
+    "l": 53,
+    "d": 16,
+    "n": 144
+   },
+   {
+    "w": 58,
+    "l": 29,
+    "d": 9,
+    "n": 96
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 46,
+    "l": 41,
+    "d": 9,
+    "n": 96
+   },
+   {
+    "w": 52,
+    "l": 34,
+    "d": 10,
+    "n": 96
+   }
+  ],
+  [
+   {
+    "w": 22,
+    "l": 19,
+    "d": 7,
+    "n": 48
+   },
+   {
+    "w": 17,
+    "l": 26,
+    "d": 5,
+    "n": 48
+   },
+   {
+    "w": 20,
+    "l": 22,
+    "d": 6,
+    "n": 48
+   },
+   {
+    "w": 41,
+    "l": 46,
+    "d": 9,
+    "n": 96
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   }
+  ],
+  [
+   {
+    "w": 19,
+    "l": 21,
+    "d": 8,
+    "n": 48
+   },
+   {
+    "w": 17,
+    "l": 25,
+    "d": 6,
+    "n": 48
+   },
+   {
+    "w": 18,
+    "l": 22,
+    "d": 8,
+    "n": 48
+   },
+   {
+    "w": 34,
+    "l": 52,
+    "d": 10,
+    "n": 96
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   }
+  ]
+ ],
+ "storia": [
+  {
+   "passo": 1,
+   "lista": "SKA skryre",
+   "cambiata": true,
+   "descrizione": "Grey Seer sulla Screaming Bell (Livello 4, daemonology) — 400 pt; Warlock Engineer (Livello 1, battle) — 75 pt; 38 Clanrats (scudi, lance, campione, stendardo, musico, fronte 6) — 245 pt; 21 Clanrats (stendardo, musico, fronte 5) — 94 pt; 4 Warplock Jezzails — 76 pt; Warp Lightning Cannon — 110 pt",
+   "media": 0.22916666666666666
+  },
+  {
+   "passo": 2,
+   "lista": "LIZ stegadonte",
+   "cambiata": true,
+   "descrizione": "Skink Priest sull'Ancient Stegadon (Livello 2, illusion) — 320 pt; 16 Saurus Warriors (fronte 7) — 224 pt; 18 Skink Skirmishers — 90 pt; 14 Skink Skirmishers — 70 pt; 8 Cold One Riders (campione, stendardo, musico) — 293 pt",
+   "media": 0.390625
+  },
+  {
+   "passo": 3,
+   "lista": "LIZ carnosauro",
+   "cambiata": true,
+   "descrizione": "Saurus Oldblood sul Carnosauro — 310 pt; Skink Chief — 45 pt; 16 Saurus Warriors (fronte 10) — 224 pt; 20 Skink Skirmishers — 100 pt; Bastiladon — 160 pt; 5 Terradon Riders — 160 pt",
+   "media": 0.421875
+  },
+  {
+   "passo": 4,
+   "lista": "O&G orchineri",
+   "cambiata": false
+  },
+  {
+   "passo": 1,
+   "lista": "SKA skryre",
+   "cambiata": false
+  },
+  {
+   "passo": 2,
+   "lista": "O&G orchineri",
+   "cambiata": false,
+   "provata": "Orc Bigboss sul cinghiale (arma grande) — 75 pt; Black Orc Warboss (arma grande) — 139 pt; 15 Orc Mobs (campione, stendardo, musico, archi, fronte 5) — 92 pt; 25 Orc Mobs (stendardo, musico, Big 'Uns, fronte 6) — 185 pt; 11 Black Orc Mobs (stendardo, musico, arma grande, fronte 6) — 166 pt; 10 Goblin Mobs (campione, stendardo, musico, fronte 6) — 47 pt; 1 Stone Troll Mobs — 45 pt; 8 Orc Boar Boy Mobs (campione, stendardo, musico, lance, scudi) — 156 pt; Orc Boar Chariots — 90 pt"
+  },
+  {
+   "passo": 3,
+   "lista": "O&G notte",
+   "cambiata": true,
+   "descrizione": "Orc Weirdnob (Livello 4, battle) — 170 pt; Goblin Oddnob (Livello 4, elementalism) — 165 pt; Night Goblin Bigboss (arma grande, scudo) — 39 pt; 22 Orc Mobs (stendardo, musico, fronte 7) — 120 pt; 14 Orc Mobs (stendardo, musico, archi, fronte 7) — 80 pt; 10 Goblin Mobs (campione, stendardo, musico, fronte 8) — 47 pt; 1 Stone Troll Mobs — 45 pt; 1 Stone Troll Mobs — 45 pt; 14 Cave Squig nella Squig Herd — 149 pt; 8 Orc Boar Boy Mobs (stendardo, musico, lance) — 140 pt",
+   "media": 0.5052083333333334
+  },
+  {
+   "passo": 4,
+   "lista": "SKA skryre",
+   "cambiata": true,
+   "descrizione": "Grey Seer sulla Screaming Bell (Livello 4, daemonology) — 400 pt; Warlock Engineer (Livello 1, battle) — 75 pt; 34 Clanrats (scudi, lance, campione, stendardo, musico, fronte 6) — 221 pt; 22 Clanrats (stendardo, musico, fronte 5) — 98 pt; 5 Warplock Jezzails — 95 pt; Warp Lightning Cannon — 110 pt",
+   "media": 0.5625
+  },
+  {
+   "passo": 5,
+   "lista": "SKA abominio",
+   "cambiata": true,
+   "descrizione": "Grey Seer sulla Screaming Bell (Livello 3, dark) — 370 pt; 30 Clanrats (scudi, campione, stendardo, musico, fronte 5) — 167 pt; 20 Clanrats (scudi, fronte 5) — 100 pt; 3 Rat Ogres (1 Packmaster) — 149 pt; Hell Pit Abomination — 210 pt",
+   "media": 0.5260416666666666
+  },
+  {
+   "passo": 6,
+   "lista": "SKA skryre",
+   "cambiata": false
+  },
+  {
+   "passo": 7,
+   "lista": "SKA abominio",
+   "cambiata": false,
+   "provata": "Grey Seer sulla Screaming Bell (Livello 3, daemonology) — 370 pt; 30 Clanrats (scudi, campione, stendardo, musico, fronte 5) — 167 pt; 20 Clanrats (scudi, fronte 5) — 100 pt; 3 Rat Ogres (1 Packmaster) — 149 pt; Hell Pit Abomination — 210 pt"
+  },
+  {
+   "passo": 8,
+   "lista": "O&G notte",
+   "cambiata": true,
+   "descrizione": "Orc Weirdnob (Livello 4, battle) — 170 pt; Goblin Oddnob (Livello 4, elementalism) — 165 pt; Night Goblin Bigboss (arma grande, scudo) — 39 pt; 23 Orc Mobs (stendardo, musico, fronte 7) — 125 pt; 14 Orc Mobs (stendardo, musico, archi, fronte 7) — 80 pt; 10 Goblin Mobs (campione, stendardo, musico, fronte 8) — 47 pt; 1 Stone Troll Mobs — 45 pt; 1 Stone Troll Mobs — 45 pt; 16 Cave Squig nella Squig Herd — 172 pt; 6 Orc Boar Boy Mobs (stendardo, musico, lance) — 108 pt",
+   "media": 0.4791666666666667
+  },
+  {
+   "passo": 1,
+   "lista": "SKA skryre",
+   "cambiata": false,
+   "provata": "Grey Seer sulla Screaming Bell (Livello 4, daemonology) — 400 pt; Warlock Engineer (Livello 1, battle) — 75 pt; 30 Clanrats (scudi, lance, campione, stendardo, musico, fronte 6) — 197 pt; 22 Clanrats (stendardo, musico, fronte 5) — 98 pt; 4 Warplock Jezzails — 76 pt; 3 Rat Ogres (1 Packmaster, Things-catcher) — 154 pt"
+  },
+  {
+   "passo": 2,
+   "lista": "LIZ carnosauro",
+   "cambiata": true,
+   "descrizione": "Saurus Oldblood sul Carnosauro — 310 pt; Skink Chief — 45 pt; 16 Saurus Warriors (fronte 10) — 224 pt; 10 Saurus Warriors (fronte 8) — 140 pt; 20 Skink Skirmishers — 100 pt; 5 Terradon Riders — 160 pt",
+   "media": 0.53125
+  },
+  {
+   "passo": 3,
+   "lista": "SKA skryre",
+   "cambiata": true,
+   "descrizione": "Grey Seer sulla Screaming Bell (Livello 4, daemonology) — 400 pt; Warlock Engineer (Livello 1, battle) — 75 pt; 35 Clanrats (scudi, lance, campione, stendardo, musico, fronte 6) — 227 pt; 22 Clanrats (scudi, campione, stendardo, musico, fronte 5) — 127 pt; 3 Warplock Jezzails — 57 pt; Warp Lightning Cannon — 110 pt",
+   "media": 0.4583333333333333
+  },
+  {
+   "passo": 4,
+   "lista": "LIZ stegadonte",
+   "cambiata": true,
+   "descrizione": "Skink Priest sull'Ancient Stegadon (Livello 2, illusion) — 320 pt; 17 Saurus Warriors (fronte 7) — 238 pt; 18 Skink Skirmishers — 90 pt; 14 Skink Skirmishers — 70 pt; 8 Cold One Riders — 272 pt",
+   "media": 0.4479166666666667
+  },
+  {
+   "passo": 5,
+   "lista": "O&G orchineri",
+   "cambiata": false
+  }
+ ]
+}

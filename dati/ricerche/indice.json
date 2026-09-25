@@ -1,7 +1,45 @@
 {
  "formato": "tow-ricerche/1",
- "aggiornato": "2026-09-24T10:47:04.346Z",
+ "aggiornato": "2026-09-25T05:58:39.627Z",
  "file": [
+  {
+   "file": "bilancia-1000.json",
+   "formato": "tow-bilancia/1",
+   "quando": "2026-09-25T05:58:39.579Z",
+   "punti": 1000
+  },
+  {
+   "file": "liz-collezione-1000-carnosauro.json",
+   "formato": "tow-ricerca/1",
+   "quando": "2026-09-25T00:06:47.549Z",
+   "punti": 1000,
+   "fazione": "liz",
+   "pool": "collezione",
+   "scenari": [
+    "sxmu9q80qdc65",
+    "sxprova-profondo",
+    "sxprova-boschi",
+    "bm-strada",
+    "bm-rovine",
+    "open"
+   ]
+  },
+  {
+   "file": "liz-collezione-1000-stegadonte.json",
+   "formato": "tow-ricerca/1",
+   "quando": "2026-09-25T00:15:42.094Z",
+   "punti": 1000,
+   "fazione": "liz",
+   "pool": "collezione",
+   "scenari": [
+    "sxmu9q80qdc65",
+    "sxprova-profondo",
+    "sxprova-boschi",
+    "bm-strada",
+    "bm-rovine",
+    "open"
+   ]
+  },
   {
    "file": "liz-collezione-800.json",
    "formato": "tow-ricerca/1",
@@ -25,6 +63,38 @@
    "punti": 800,
    "fazione": "liz",
    "pool": "tutte",
+   "scenari": [
+    "sxmu9q80qdc65",
+    "sxprova-profondo",
+    "sxprova-boschi",
+    "bm-strada",
+    "bm-rovine",
+    "open"
+   ]
+  },
+  {
+   "file": "og-collezione-1000-notte.json",
+   "formato": "tow-ricerca/1",
+   "quando": "2026-09-25T01:41:29.996Z",
+   "punti": 1000,
+   "fazione": "og",
+   "pool": "collezione",
+   "scenari": [
+    "sxmu9q80qdc65",
+    "sxprova-profondo",
+    "sxprova-boschi",
+    "bm-strada",
+    "bm-rovine",
+    "open"
+   ]
+  },
+  {
+   "file": "og-collezione-1000-orchineri.json",
+   "formato": "tow-ricerca/1",
+   "quando": "2026-09-25T00:25:23.134Z",
+   "punti": 1000,
+   "fazione": "og",
+   "pool": "collezione",
    "scenari": [
     "sxmu9q80qdc65",
     "sxprova-profondo",
@@ -67,6 +137,38 @@
    ]
   },
   {
+   "file": "skaven-collezione-1000-abominio.json",
+   "formato": "tow-ricerca/1",
+   "quando": "2026-09-24T23:50:03.856Z",
+   "punti": 1000,
+   "fazione": "skaven",
+   "pool": "collezione",
+   "scenari": [
+    "sxmu9q80qdc65",
+    "sxprova-profondo",
+    "sxprova-boschi",
+    "bm-strada",
+    "bm-rovine",
+    "open"
+   ]
+  },
+  {
+   "file": "skaven-collezione-1000-skryre.json",
+   "formato": "tow-ricerca/1",
+   "quando": "2026-09-25T01:04:16.674Z",
+   "punti": 1000,
+   "fazione": "skaven",
+   "pool": "collezione",
+   "scenari": [
+    "sxmu9q80qdc65",
+    "sxprova-profondo",
+    "sxprova-boschi",
+    "bm-strada",
+    "bm-rovine",
+    "open"
+   ]
+  },
+  {
    "file": "skaven-collezione-800.json",
    "formato": "tow-ricerca/1",
    "quando": "2026-09-24T09:27:21.223Z",
@@ -97,6 +199,21 @@
     "bm-rovine",
     "open"
    ]
+  },
+  {
+   "file": "torneo-1000.json",
+   "formato": "tow-torneo/1",
+   "quando": "2026-09-25T04:39:25.317Z",
+   "punti": 1000,
+   "scenari": [
+    "sxmu9q80qdc65",
+    "sxprova-profondo",
+    "sxprova-boschi",
+    "bm-strada",
+    "bm-rovine",
+    "open"
+   ],
+   "liste": 6
   },
   {
    "file": "torneo-800.json",

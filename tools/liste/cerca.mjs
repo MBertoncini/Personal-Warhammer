@@ -4,7 +4,7 @@
  *        [--punti 800] [--scenari sei|tutti|bm-strada,...] [--contro auto|liz,og,...]
  *        [--sforzo rapido|normale|accurato] [--generazioni 8] [--popolazione 10] [--celle 12]
  *        [--verifica 2] [--finaliste 4] [--max-avversari 10] [--seme 1001] [--lavori 7] [--da-capo]
- *        [--senza-esempi]
+ *        [--senza-esempi] [--tema nome --con voce,voce|voce --senza voce,voce]
  *
  * Quello che valuta.mjs fa a mano — scrivere trenta candidate, giocarle,
  * tenere le migliori, cambiarle un poco e rigiocarle — qui lo fa un giro
@@ -40,7 +40,14 @@
  * rincorrono: la seconda volta ogni fazione gioca contro quello che le
  * altre hanno trovato la prima.
  *
- * Il risultato va in dati/ricerche/<fazione>-<pool>-<punti>.json, e la
+ * Il TEMA (--tema, con --con e --senza) restringe la ricerca a un'idea di
+ * lista: `--tema campana --con seerBell,hpa` cerca solo liste con la
+ * Screaming Bell e l'Abominio, `--senza wlc` le vieta il cannone. Una
+ * ricerca libera trova la lista più forte, e due ricerche libere della
+ * stessa fazione trovano la stessa lista: con i temi se ne cercano due
+ * diverse, e ognuna gioca contro le migliori degli altri temi.
+ *
+ * Il risultato va in dati/ricerche/<fazione>-<pool>-<punti>[-<tema>].json, e la
  * scheda Laboratorio dell'app lo legge da lì. Con le liste c'è la
  * tabella delle unità: in quante liste è stata provata ognuna, e come
  * sono andate in media.
@@ -74,6 +81,9 @@ const esempi = arg('senza-esempi', false) !== true;
 const fazioni = arg('fazione', 'tutte') === 'tutte' ? Object.keys(FAZIONI) : String(arg('fazione')).split(',');
 for (const f of fazioni) if (!FAZIONI[f]){ console.error(`Fazione «${f}»: ${Object.keys(FAZIONI).join(', ')} o tutte.`); process.exit(1); }
 const pools = { tutte: ['tutte'], collezione: ['collezione'], entrambe: ['tutte', 'collezione'] }[arg('pool', 'entrambe')];
+const lista_ = k => arg(k, null) == null || arg(k) === true ? [] : String(arg(k)).split(',').filter(Boolean);
+const tema = { nome: arg('tema', null) === true ? null : arg('tema', null), con: lista_('con'), senza: lista_('senza') };
+if ((tema.con.length || tema.senza.length) && !tema.nome){ console.error('--con e --senza vogliono un --tema: è il nome che distingue il file.'); process.exit(1); }
 if (!pools){ console.error('--pool: tutte, collezione o entrambe.'); process.exit(1); }
 
 const TUTTI = await scenariTutti();
@@ -118,11 +128,12 @@ console.log(`${motore.lavori} lavoratori · sforzo ${sforzo}: popolazione ${P.po
 
 for (const fazione of fazioni) for (const pool of pools){
   const t0 = Date.now();
-  const S = spazio(fazione, { pool, punti });
-  const file = nomeRicerca({ fazione, pool, punti, scenari, sei: SEI });
+  const S = spazio(fazione, { pool, punti, con: tema.con, senza: tema.senza });
+  const file = nomeRicerca({ fazione, pool, punti, scenari, sei: SEI, tema: tema.nome });
   const contro = avversari(file, fazione);
   const celleTutte = contro.length * scenari.length;
-  console.log(`\n=== ${S.fz.nome}, ${pool === 'collezione' ? 'con la collezione' : 'con tutte le unità'}, ${punti} punti → dati/ricerche/${file}`);
+  console.log(`\n=== ${S.fz.nome}, ${pool === 'collezione' ? 'con la collezione' : 'con tutte le unità'}, ${punti} punti${tema.nome ? ', tema «' + tema.nome + '»' : ''} → dati/ricerche/${file}`);
+  if (tema.con.length || tema.senza.length) console.log(`  tema: ${tema.con.length ? 'con ' + tema.con.join(', ') : ''}${tema.con.length && tema.senza.length ? '; ' : ''}${tema.senza.length ? 'senza ' + tema.senza.join(', ') : ''}`);
   console.log(`  unità: ${S.voci.map(v => v.nome).join(', ')}`);
   if (S.escluse.length) console.log(`  fuori: ${S.escluse.map(e => `${e.pezzo} (${e.perche})`).join('; ')}`);
   console.log(`  avversari: ${contro.map(a => a.lista.name + (a.fonte === 'ricerca' ? ' [trovata]' : '')).join(', ')}`);
@@ -221,7 +232,7 @@ for (const fazione of fazioni) for (const pool of pools){
              ricerca: { w: s.w, l: s.l, d: s.d, n: s.n }, verifica: v };
   }));
   migliori.sort((a, b) => (b.verifica.w + b.verifica.d / 2) / b.verifica.n - (a.verifica.w + a.verifica.d / 2) / a.verifica.n);
-  const etichetta = `${S.fz.sigla} ${pool === 'collezione' ? 'collezione' : 'libera'} ${punti}`;
+  const etichetta = `${S.fz.sigla} ${pool === 'collezione' ? 'collezione' : 'libera'} ${punti}${tema.nome ? ' ' + tema.nome : ''}`;
   migliori.forEach((m, i) => { m.lista = S.costruisci(m.geni, { id: `r-${file.replace(/\.json$/, '')}-${i + 1}`, name: `${etichetta} · ${i + 1}` }); });
 
   for (const [i, m] of migliori.entries()){
@@ -256,7 +267,8 @@ for (const fazione of fazioni) for (const pool of pools){
 
   scrivi(file, {
     formato: 'tow-ricerca/1', quando: new Date().toISOString(),
-    fazione, nome: S.fz.nome, catalogue: S.fz.cat, pool, punti, scenari, seme,
+    fazione, nome: S.fz.nome + (tema.nome ? ` · ${tema.nome}` : ''), catalogue: S.fz.cat, pool, punti, scenari, seme,
+    ...(tema.nome ? { tema } : {}),
     etichette: Object.fromEntries(scenari.map(s => [s, TUTTI[s].label || s])),
     sforzo, parametri: P, partite, secondi: Math.round((Date.now() - t0) / 1000),
     unita: S.voci.map(v => v.nome), escluse: S.escluse, esempi,
