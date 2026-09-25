@@ -1,6 +1,6 @@
 {
  "formato": "tow-bilancia/1",
- "quando": "2026-09-25T07:09:08.847Z",
+ "quando": "2026-09-25T17:29:52.714Z",
  "punti": 1000,
  "scenari": [
   "sxmu9q80qdc65",
@@ -59,7 +59,7 @@
    ],
    "descrizione": "Grey Seer sulla Screaming Bell (Livello 3, dark) — 370 pt; 30 Clanrats (scudi, campione, stendardo, musico, fronte 5) — 167 pt; 20 Clanrats (scudi, fronte 5) — 100 pt; 3 Rat Ogres (1 Packmaster) — 149 pt; Hell Pit Abomination — 210 pt",
    "punti": 996,
-   "media": 0.4791666666666667
+   "media": 0.4875
   },
   {
    "fazione": "skaven",
@@ -113,7 +113,7 @@
    ],
    "descrizione": "Grey Seer sulla Screaming Bell (Livello 4, daemonology) — 400 pt; Warlock Engineer (Livello 1, battle) — 75 pt; 35 Clanrats (scudi, lance, campione, stendardo, musico, fronte 6) — 227 pt; 22 Clanrats (scudi, campione, stendardo, musico, fronte 5) — 127 pt; 3 Warplock Jezzails — 57 pt; Warp Lightning Cannon — 110 pt",
    "punti": 996,
-   "media": 0.4114583333333333
+   "media": 0.40520833333333334
   },
   {
    "fazione": "og",
@@ -200,7 +200,7 @@
    ],
    "descrizione": "Orc Weirdnob (Livello 4, battle) — 170 pt; Goblin Oddnob (Livello 4, elementalism) — 165 pt; Night Goblin Bigboss (arma grande, scudo) — 39 pt; 23 Orc Mobs (stendardo, musico, fronte 7) — 125 pt; 14 Orc Mobs (stendardo, musico, archi, fronte 7) — 80 pt; 10 Goblin Mobs (campione, stendardo, musico, fronte 8) — 47 pt; 1 Stone Troll Mobs — 45 pt; 1 Stone Troll Mobs — 45 pt; 16 Cave Squig nella Squig Herd — 172 pt; 6 Orc Boar Boy Mobs (stendardo, musico, lance) — 108 pt",
    "punti": 996,
-   "media": 0.41796875
+   "media": 0.378125
   },
   {
    "fazione": "og",
@@ -277,7 +277,54 @@
    ],
    "descrizione": "Orc Bigboss sul cinghiale (arma grande) — 75 pt; Black Orc Warboss (arma grande) — 139 pt; 15 Orc Mobs (campione, stendardo, musico, archi, fronte 5) — 92 pt; 25 Orc Mobs (stendardo, musico, Big 'Uns, fronte 6) — 185 pt; 11 Black Orc Mobs (stendardo, musico, arma grande, fronte 6) — 166 pt; 10 Goblin Mobs (campione, stendardo, musico, fronte 6) — 47 pt; 10 Orc Boar Boy Mobs (campione, stendardo, musico, lance, scudi) — 190 pt; Orc Boar Chariots — 90 pt",
    "punti": 984,
-   "media": 0.5729166666666666
+   "media": 0.5166666666666667
+  },
+  {
+   "fazione": "liz",
+   "tema": "bastiladon",
+   "nome": "LIZ bastiladon",
+   "geni": [
+    {
+     "k": "priest",
+     "o": {
+      "l2": true
+     },
+     "lore": "battle"
+    },
+    {
+     "k": "saurus",
+     "o": {
+      "c": "",
+      "f": 7
+     },
+     "n": 20
+    },
+    {
+     "k": "templeGuard",
+     "o": {
+      "c": "",
+      "f": 6
+     },
+     "n": 19
+    },
+    {
+     "k": "skinks",
+     "o": {},
+     "n": 18
+    },
+    {
+     "k": "skinks",
+     "o": {},
+     "n": 14
+    },
+    {
+     "k": "bastiladon",
+     "o": {}
+    }
+   ],
+   "descrizione": "Skink Priest (Livello 2, battle) — 90 pt; 20 Saurus Warriors (fronte 7) — 280 pt; 19 Temple Guard (fronte 6) — 304 pt; 18 Skink Skirmishers — 90 pt; 14 Skink Skirmishers — 70 pt; Bastiladon — 160 pt",
+   "punti": 994,
+   "media": 0.6471354166666666
   },
   {
    "fazione": "liz",
@@ -393,6 +440,12 @@
     "n": 96
    },
    {
+    "w": 43,
+    "l": 39,
+    "d": 14,
+    "n": 96
+   },
+   {
     "w": 38,
     "l": 44,
     "d": 14,
@@ -428,6 +481,12 @@
     "w": 26,
     "l": 66,
     "d": 4,
+    "n": 96
+   },
+   {
+    "w": 33,
+    "l": 56,
+    "d": 7,
     "n": 96
    },
    {
@@ -469,6 +528,12 @@
     "n": 0
    },
    {
+    "w": 18,
+    "l": 72,
+    "d": 6,
+    "n": 96
+   },
+   {
     "w": 22,
     "l": 64,
     "d": 10,
@@ -507,6 +572,12 @@
     "n": 0
    },
    {
+    "w": 24,
+    "l": 64,
+    "d": 8,
+    "n": 96
+   },
+   {
     "w": 46,
     "l": 43,
     "d": 7,
@@ -517,6 +588,50 @@
     "l": 46,
     "d": 16,
     "n": 96
+   }
+  ],
+  [
+   {
+    "w": 39,
+    "l": 43,
+    "d": 14,
+    "n": 96
+   },
+   {
+    "w": 56,
+    "l": 33,
+    "d": 7,
+    "n": 96
+   },
+   {
+    "w": 72,
+    "l": 18,
+    "d": 6,
+    "n": 96
+   },
+   {
+    "w": 64,
+    "l": 24,
+    "d": 8,
+    "n": 96
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
    }
   ],
   [
@@ -555,6 +670,12 @@
     "l": 0,
     "d": 0,
     "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
    }
   ],
   [
@@ -581,6 +702,12 @@
     "l": 34,
     "d": 16,
     "n": 96
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
    },
    {
     "w": 0,
@@ -709,6 +836,38 @@
    "passo": 1,
    "lista": "O&G orchineri",
    "cambiata": false
+  },
+  {
+   "passo": 1,
+   "lista": "LIZ bastiladon",
+   "cambiata": false,
+   "provata": "Skink Chief — 45 pt; 11 Saurus Warriors (campione, stendardo, musico, fronte 10) — 175 pt; 22 Temple Guard (campione, stendardo, musico) — 373 pt; 14 Skink Skirmishers — 70 pt; 16 Skink Skirmishers — 80 pt; Bastiladon — 160 pt; 3 Terradon Riders — 96 pt"
+  },
+  {
+   "passo": 1,
+   "lista": "LIZ bastiladon",
+   "cambiata": true,
+   "descrizione": "Skink Priest (Livello 2, battle) — 90 pt; Skink Chief — 45 pt; 18 Saurus Warriors (fronte 7) — 252 pt; 19 Temple Guard (fronte 6) — 304 pt; 16 Skink Skirmishers — 80 pt; 13 Skink Skirmishers — 65 pt; Bastiladon — 160 pt",
+   "media": 0.453125
+  },
+  {
+   "passo": 2,
+   "lista": "LIZ bastiladon",
+   "cambiata": true,
+   "descrizione": "Skink Priest (Livello 2, battle) — 90 pt; 20 Saurus Warriors (fronte 7) — 280 pt; 19 Temple Guard (fronte 6) — 304 pt; 18 Skink Skirmishers — 90 pt; 14 Skink Skirmishers — 70 pt; Bastiladon — 160 pt",
+   "media": 0.5078125
+  },
+  {
+   "passo": 3,
+   "lista": "LIZ bastiladon",
+   "cambiata": false,
+   "provata": "Skink Priest (Livello 2, battle) — 90 pt; 20 Saurus Warriors (fronte 7) — 280 pt; 19 Temple Guard (fronte 6) — 304 pt; 19 Skink Skirmishers — 95 pt; 13 Skink Skirmishers — 65 pt; Bastiladon — 160 pt"
+  },
+  {
+   "passo": 4,
+   "lista": "LIZ bastiladon",
+   "cambiata": false,
+   "provata": "Skink Priest (Livello 2, battle) — 90 pt; 21 Saurus Warriors (fronte 7) — 294 pt; 18 Temple Guard (fronte 6) — 288 pt; 18 Skink Skirmishers — 90 pt; 14 Skink Skirmishers — 70 pt; Bastiladon — 160 pt"
   }
  ]
 }

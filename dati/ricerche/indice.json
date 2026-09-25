@@ -1,12 +1,28 @@
 {
  "formato": "tow-ricerche/1",
- "aggiornato": "2026-09-25T07:09:08.905Z",
+ "aggiornato": "2026-09-25T17:29:52.771Z",
  "file": [
   {
    "file": "bilancia-1000.json",
    "formato": "tow-bilancia/1",
-   "quando": "2026-09-25T07:09:08.847Z",
+   "quando": "2026-09-25T17:29:52.714Z",
    "punti": 1000
+  },
+  {
+   "file": "liz-collezione-1000-bastiladon.json",
+   "formato": "tow-ricerca/1",
+   "quando": "2026-09-25T10:58:06.640Z",
+   "punti": 1000,
+   "fazione": "liz",
+   "pool": "collezione",
+   "scenari": [
+    "sxmu9q80qdc65",
+    "sxprova-profondo",
+    "sxprova-boschi",
+    "bm-strada",
+    "bm-rovine",
+    "open"
+   ]
   },
   {
    "file": "liz-collezione-1000-carnosauro.json",
@@ -203,7 +219,7 @@
   {
    "file": "torneo-1000.json",
    "formato": "tow-torneo/1",
-   "quando": "2026-09-25T07:09:08.879Z",
+   "quando": "2026-09-25T17:29:52.747Z",
    "punti": 1000,
    "scenari": [
     "sxmu9q80qdc65",
@@ -213,7 +229,7 @@
     "bm-rovine",
     "open"
    ],
-   "liste": 6
+   "liste": 7
   },
   {
    "file": "torneo-800.json",

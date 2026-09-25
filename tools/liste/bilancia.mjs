@@ -168,7 +168,7 @@ for (let p = 0; p < passi; p++){
   /* chi ritoccare: la più lontana dal 50% (media e partite), che non sia
      appena rimasta com'era */
   const lontane = L.map(l => ({ a: l.i, d: distanza(L.filter(b => incrocio(l.i, b.i)).map(b => M[l.i][b.i]), l.S, l.geni) }))
-    .filter(x => (tabu.get(x.a) || 0) <= p && (!solo || solo.some(([f, t]) => f === L[x.a].fazione && t === L[x.a].tema))).sort((x, y) => y.d - x.d);
+    .filter(x => (solo || (tabu.get(x.a) || 0) <= p) && (!solo || solo.some(([f, t]) => f === L[x.a].fazione && t === L[x.a].tema))).sort((x, y) => y.d - x.d);
   if (!lontane.length) break;
   const a = lontane[0].a, avv = L.filter(b => incrocio(a, b.i)).map(b => b.i);
   const semeP = semeBase + 100 * (p + 1);
