@@ -1,11 +1,11 @@
 {
  "formato": "tow-ricerche/1",
- "aggiornato": "2026-09-25T17:29:52.771Z",
+ "aggiornato": "2026-09-25T18:26:14.364Z",
  "file": [
   {
    "file": "bilancia-1000.json",
    "formato": "tow-bilancia/1",
-   "quando": "2026-09-25T17:29:52.714Z",
+   "quando": "2026-09-25T18:25:53.772Z",
    "punti": 1000
   },
   {
@@ -219,7 +219,7 @@
   {
    "file": "torneo-1000.json",
    "formato": "tow-torneo/1",
-   "quando": "2026-09-25T17:29:52.747Z",
+   "quando": "2026-09-25T18:25:53.824Z",
    "punti": 1000,
    "scenari": [
     "sxmu9q80qdc65",

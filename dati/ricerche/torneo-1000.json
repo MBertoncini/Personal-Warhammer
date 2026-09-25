@@ -1,11 +1,11 @@
 {
  "formato": "tow-torneo/1",
- "quando": "2026-09-25T17:29:52.747Z",
+ "quando": "2026-09-25T18:25:53.824Z",
  "punti": 1000,
  "semi": 8,
  "seme": 70001,
- "partite": 7680,
- "secondi": 21945,
+ "partite": 1728,
+ "secondi": 1293,
  "bilanciato": true,
  "scenari": [
   {
@@ -48,7 +48,7 @@
  "liste": [
   {
    "id": "b-0",
-   "name": "SKA abominio",
+   "name": "La Campana e l'Abominio SKA",
    "fazione": "skaven",
    "pool": "collezione",
    "fonte": "ricerca",
@@ -59,7 +59,7 @@
   },
   {
    "id": "b-1",
-   "name": "SKA skryre",
+   "name": "Il Fulmine di Skryre SKA",
    "fazione": "skaven",
    "pool": "collezione",
    "fonte": "ricerca",
@@ -70,7 +70,7 @@
   },
   {
    "id": "b-2",
-   "name": "O&G notte",
+   "name": "Squig e sciamani O&G",
    "fazione": "og",
    "pool": "collezione",
    "fonte": "ricerca",
@@ -81,7 +81,7 @@
   },
   {
    "id": "b-3",
-   "name": "O&G orchineri",
+   "name": "Orchi Neri e cinghiali O&G",
    "fazione": "og",
    "pool": "collezione",
    "fonte": "ricerca",
@@ -92,18 +92,18 @@
   },
   {
    "id": "b-4",
-   "name": "LIZ bastiladon",
+   "name": "Il Bastiladon e la Guardia del Tempio LIZ",
    "fazione": "liz",
    "pool": "collezione",
    "fonte": "ricerca",
    "file": "bilancia-1000.json",
-   "points": 994,
-   "descrizione": "Skink Priest (Livello 2, battle) — 90 pt; 20 Saurus Warriors (fronte 7) — 280 pt; 19 Temple Guard (fronte 6) — 304 pt; 18 Skink Skirmishers — 90 pt; 14 Skink Skirmishers — 70 pt; Bastiladon — 160 pt",
+   "points": 964,
+   "descrizione": "Skink Priest (Livello 1, battle) — 60 pt; 20 Saurus Warriors (fronte 7) — 280 pt; 19 Temple Guard (fronte 6) — 304 pt; 18 Skink Skirmishers — 90 pt; 14 Skink Skirmishers — 70 pt; Bastiladon — 160 pt",
    "units": 6
   },
   {
    "id": "b-5",
-   "name": "LIZ carnosauro",
+   "name": "Il Carnosauro e i Terradon LIZ",
    "fazione": "liz",
    "pool": "collezione",
    "fonte": "ricerca",
@@ -114,7 +114,7 @@
   },
   {
    "id": "b-6",
-   "name": "LIZ stegadonte",
+   "name": "Lo Stegadonte e i Cold One LIZ",
    "fazione": "liz",
    "pool": "collezione",
    "fonte": "ricerca",
@@ -149,12 +149,6 @@
    "d": 0,
    "n": 16
   },
-  "sxprova-boschi|b-0|b-2": {
-   "w": 10,
-   "l": 4,
-   "d": 2,
-   "n": 16
-  },
   "sxmu9q80qdc65|b-0|b-2": {
    "w": 7,
    "l": 3,
@@ -167,22 +161,16 @@
    "d": 4,
    "n": 16
   },
+  "sxprova-boschi|b-0|b-2": {
+   "w": 10,
+   "l": 4,
+   "d": 2,
+   "n": 16
+  },
   "sxprova-profondo|b-0|b-3": {
    "w": 3,
    "l": 12,
    "d": 1,
-   "n": 16
-  },
-  "sxmu9q80qdc65|b-0|b-4": {
-   "w": 8,
-   "l": 4,
-   "d": 4,
-   "n": 16
-  },
-  "sxprova-profondo|b-0|b-4": {
-   "w": 6,
-   "l": 7,
-   "d": 3,
    "n": 16
   },
   "bm-strada|b-0|b-3": {
@@ -203,33 +191,33 @@
    "d": 0,
    "n": 16
   },
+  "sxmu9q80qdc65|b-0|b-4": {
+   "w": 8,
+   "l": 6,
+   "d": 2,
+   "n": 16
+  },
+  "sxprova-profondo|b-0|b-4": {
+   "w": 6,
+   "l": 6,
+   "d": 4,
+   "n": 16
+  },
   "open|b-0|b-3": {
    "w": 4,
    "l": 8,
    "d": 4,
    "n": 16
   },
-  "sxprova-boschi|b-0|b-4": {
-   "w": 6,
-   "l": 6,
-   "d": 4,
-   "n": 16
-  },
-  "sxprova-profondo|b-0|b-5": {
-   "w": 5,
-   "l": 7,
-   "d": 4,
-   "n": 16
-  },
   "bm-strada|b-0|b-4": {
-   "w": 11,
-   "l": 5,
+   "w": 7,
+   "l": 9,
    "d": 0,
    "n": 16
   },
   "bm-rovine|b-0|b-4": {
-   "w": 8,
-   "l": 8,
+   "w": 10,
+   "l": 6,
    "d": 0,
    "n": 16
   },
@@ -239,9 +227,9 @@
    "d": 3,
    "n": 16
   },
-  "sxprova-boschi|b-0|b-5": {
-   "w": 8,
-   "l": 7,
+  "sxprova-boschi|b-0|b-4": {
+   "w": 10,
+   "l": 5,
    "d": 1,
    "n": 16
   },
@@ -249,6 +237,18 @@
    "w": 4,
    "l": 9,
    "d": 3,
+   "n": 16
+  },
+  "sxprova-profondo|b-0|b-5": {
+   "w": 5,
+   "l": 7,
+   "d": 4,
+   "n": 16
+  },
+  "sxprova-boschi|b-0|b-5": {
+   "w": 8,
+   "l": 7,
+   "d": 1,
    "n": 16
   },
   "bm-strada|b-0|b-5": {
@@ -269,16 +269,16 @@
    "d": 6,
    "n": 16
   },
-  "sxmu9q80qdc65|b-0|b-6": {
-   "w": 9,
-   "l": 2,
-   "d": 5,
-   "n": 16
-  },
   "sxprova-profondo|b-0|b-6": {
    "w": 5,
    "l": 9,
    "d": 2,
+   "n": 16
+  },
+  "sxmu9q80qdc65|b-0|b-6": {
+   "w": 9,
+   "l": 2,
+   "d": 5,
    "n": 16
   },
   "sxprova-boschi|b-0|b-6": {
@@ -311,12 +311,6 @@
    "d": 4,
    "n": 16
   },
-  "bm-strada|b-1|b-2": {
-   "w": 5,
-   "l": 11,
-   "d": 0,
-   "n": 16
-  },
   "sxprova-profondo|b-1|b-2": {
    "w": 3,
    "l": 11,
@@ -329,15 +323,21 @@
    "d": 2,
    "n": 16
   },
-  "bm-rovine|b-1|b-2": {
-   "w": 9,
-   "l": 7,
+  "bm-strada|b-1|b-2": {
+   "w": 5,
+   "l": 11,
    "d": 0,
    "n": 16
   },
   "sxmu9q80qdc65|b-1|b-3": {
    "w": 7,
    "l": 9,
+   "d": 0,
+   "n": 16
+  },
+  "bm-rovine|b-1|b-2": {
+   "w": 9,
+   "l": 7,
    "d": 0,
    "n": 16
   },
@@ -365,6 +365,18 @@
    "d": 0,
    "n": 16
   },
+  "sxmu9q80qdc65|b-1|b-4": {
+   "w": 4,
+   "l": 10,
+   "d": 2,
+   "n": 16
+  },
+  "sxprova-profondo|b-1|b-4": {
+   "w": 6,
+   "l": 7,
+   "d": 3,
+   "n": 16
+  },
   "bm-rovine|b-1|b-3": {
    "w": 3,
    "l": 13,
@@ -377,33 +389,21 @@
    "d": 1,
    "n": 16
   },
-  "sxmu9q80qdc65|b-1|b-4": {
-   "w": 2,
-   "l": 12,
-   "d": 2,
-   "n": 16
-  },
-  "sxprova-profondo|b-1|b-4": {
-   "w": 7,
-   "l": 7,
-   "d": 2,
+  "sxprova-boschi|b-1|b-4": {
+   "w": 5,
+   "l": 6,
+   "d": 5,
    "n": 16
   },
   "bm-strada|b-1|b-4": {
-   "w": 5,
-   "l": 11,
+   "w": 7,
+   "l": 9,
    "d": 0,
    "n": 16
   },
-  "sxprova-boschi|b-1|b-4": {
-   "w": 7,
-   "l": 8,
-   "d": 1,
-   "n": 16
-  },
   "bm-rovine|b-1|b-4": {
-   "w": 6,
-   "l": 10,
+   "w": 9,
+   "l": 7,
    "d": 0,
    "n": 16
   },
@@ -414,14 +414,8 @@
    "n": 16
   },
   "open|b-1|b-4": {
-   "w": 6,
-   "l": 8,
-   "d": 2,
-   "n": 16
-  },
-  "sxprova-profondo|b-1|b-5": {
-   "w": 7,
-   "l": 5,
+   "w": 8,
+   "l": 4,
    "d": 4,
    "n": 16
   },
@@ -429,6 +423,12 @@
    "w": 7,
    "l": 6,
    "d": 3,
+   "n": 16
+  },
+  "sxprova-profondo|b-1|b-5": {
+   "w": 7,
+   "l": 5,
+   "d": 4,
    "n": 16
   },
   "bm-strada|b-1|b-5": {
@@ -455,16 +455,16 @@
    "d": 4,
    "n": 16
   },
-  "sxmu9q80qdc65|b-1|b-6": {
-   "w": 6,
-   "l": 8,
-   "d": 2,
-   "n": 16
-  },
   "bm-strada|b-1|b-6": {
    "w": 8,
    "l": 8,
    "d": 0,
+   "n": 16
+  },
+  "sxmu9q80qdc65|b-1|b-6": {
+   "w": 6,
+   "l": 8,
+   "d": 2,
    "n": 16
   },
   "sxprova-boschi|b-1|b-6": {
@@ -492,9 +492,15 @@
    "n": 16
   },
   "sxprova-profondo|b-2|b-4": {
-   "w": 3,
+   "w": 2,
    "l": 12,
-   "d": 1,
+   "d": 2,
+   "n": 16
+  },
+  "bm-rovine|b-2|b-4": {
+   "w": 4,
+   "l": 12,
+   "d": 0,
    "n": 16
   },
   "bm-strada|b-2|b-4": {
@@ -504,27 +510,21 @@
    "n": 16
   },
   "sxprova-boschi|b-2|b-4": {
-   "w": 3,
-   "l": 11,
-   "d": 2,
+   "w": 1,
+   "l": 12,
+   "d": 3,
    "n": 16
   },
-  "bm-rovine|b-2|b-4": {
-   "w": 3,
-   "l": 13,
-   "d": 0,
+  "open|b-2|b-4": {
+   "w": 6,
+   "l": 9,
+   "d": 1,
    "n": 16
   },
   "sxmu9q80qdc65|b-2|b-5": {
    "w": 3,
    "l": 12,
    "d": 1,
-   "n": 16
-  },
-  "open|b-2|b-4": {
-   "w": 2,
-   "l": 12,
-   "d": 2,
    "n": 16
   },
   "sxprova-profondo|b-2|b-5": {
@@ -551,28 +551,22 @@
    "d": 0,
    "n": 16
   },
-  "open|b-2|b-5": {
-   "w": 3,
-   "l": 9,
-   "d": 4,
-   "n": 16
-  },
   "sxmu9q80qdc65|b-2|b-6": {
    "w": 3,
    "l": 12,
    "d": 1,
    "n": 16
   },
+  "open|b-2|b-5": {
+   "w": 3,
+   "l": 9,
+   "d": 4,
+   "n": 16
+  },
   "sxprova-profondo|b-2|b-6": {
    "w": 6,
    "l": 4,
    "d": 6,
-   "n": 16
-  },
-  "sxprova-boschi|b-2|b-6": {
-   "w": 3,
-   "l": 13,
-   "d": 0,
    "n": 16
   },
   "bm-rovine|b-2|b-6": {
@@ -588,21 +582,27 @@
    "n": 16
   },
   "sxprova-profondo|b-3|b-4": {
-   "w": 5,
+   "w": 7,
    "l": 9,
-   "d": 2,
+   "d": 0,
    "n": 16
   },
   "sxmu9q80qdc65|b-3|b-4": {
+   "w": 4,
+   "l": 9,
+   "d": 3,
+   "n": 16
+  },
+  "sxprova-boschi|b-2|b-6": {
    "w": 3,
-   "l": 12,
-   "d": 1,
+   "l": 13,
+   "d": 0,
    "n": 16
   },
   "sxprova-boschi|b-3|b-4": {
-   "w": 1,
-   "l": 11,
-   "d": 4,
+   "w": 4,
+   "l": 10,
+   "d": 2,
    "n": 16
   },
   "open|b-2|b-6": {
@@ -611,15 +611,15 @@
    "d": 6,
    "n": 16
   },
-  "bm-strada|b-3|b-4": {
-   "w": 3,
-   "l": 13,
-   "d": 0,
-   "n": 16
-  },
   "sxprova-profondo|b-3|b-5": {
    "w": 7,
    "l": 9,
+   "d": 0,
+   "n": 16
+  },
+  "bm-strada|b-3|b-4": {
+   "w": 6,
+   "l": 10,
    "d": 0,
    "n": 16
   },
@@ -630,21 +630,9 @@
    "n": 16
   },
   "bm-rovine|b-3|b-4": {
-   "w": 6,
-   "l": 10,
-   "d": 0,
-   "n": 16
-  },
-  "open|b-3|b-4": {
-   "w": 6,
+   "w": 7,
    "l": 9,
-   "d": 1,
-   "n": 16
-  },
-  "sxprova-boschi|b-3|b-5": {
-   "w": 6,
-   "l": 7,
-   "d": 3,
+   "d": 0,
    "n": 16
   },
   "bm-strada|b-3|b-5": {
@@ -653,16 +641,28 @@
    "d": 0,
    "n": 16
   },
+  "open|b-3|b-4": {
+   "w": 5,
+   "l": 8,
+   "d": 3,
+   "n": 16
+  },
+  "sxprova-boschi|b-3|b-5": {
+   "w": 6,
+   "l": 7,
+   "d": 3,
+   "n": 16
+  },
   "bm-rovine|b-3|b-5": {
    "w": 12,
    "l": 4,
    "d": 0,
    "n": 16
   },
-  "sxprova-profondo|b-3|b-6": {
-   "w": 9,
-   "l": 5,
-   "d": 2,
+  "sxmu9q80qdc65|b-3|b-6": {
+   "w": 4,
+   "l": 8,
+   "d": 4,
    "n": 16
   },
   "open|b-3|b-5": {
@@ -671,10 +671,10 @@
    "d": 3,
    "n": 16
   },
-  "sxmu9q80qdc65|b-3|b-6": {
-   "w": 4,
-   "l": 8,
-   "d": 4,
+  "sxprova-profondo|b-3|b-6": {
+   "w": 9,
+   "l": 5,
+   "d": 2,
    "n": 16
   },
   "bm-strada|b-3|b-6": {
