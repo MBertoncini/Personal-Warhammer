@@ -456,20 +456,6 @@
     "notes": ""
   },
   {
-    "id": "cmtt5yjqto375",
-    "name": "Doomwheel",
-    "faction": "Skaven",
-    "baseId": "50x100",
-    "baseW": 50,
-    "baseH": 100,
-    "owned": 1,
-    "painted": 0,
-    "aliases": [
-      "doomwheel"
-    ],
-    "notes": ""
-  },
-  {
     "id": "cmu8ebc4u8xca",
     "name": "Grey Seer",
     "faction": "Skaven",
