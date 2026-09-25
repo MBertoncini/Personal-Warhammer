@@ -41,7 +41,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { apriMotore, SEI, scenariTutti } from './motore.mjs';
+import { apriMotore, SEI, scenariTutti, REPO } from './motore.mjs';
 import { spazio, FAZIONI } from './spazio.mjs';
 import { scrivi, leggi, tutte } from './ricerche.mjs';
 
@@ -236,12 +236,18 @@ salva(storia);
 for (const l of L) console.log(`\n${l.nome} (${l.S.totale(l.geni)} pt, media ${pc(media(l.i))}%)\n  ${l.S.descrivi(l.geni).replace(/; /g, '\n  ')}`);
 
 /* e la tabella per la scheda Laboratorio, nel formato del torneo: le
-   coppie della stessa fazione restano vuote, perché non si schierano */
+   coppie della stessa fazione restano vuote, perché non si schierano.
+   Una lista già salvata in archivio (salva.mjs --bilancia) si chiama
+   come là: nel Laboratorio si legge «La Campana e l'Abominio», non il
+   nome del tema. */
+const firma = l => JSON.stringify((l.units || []).map(u => [u.name, u.models, u.pts]));
+const archivio = JSON.parse(fs.readFileSync(path.join(REPO, 'dati', 'liste.json'), 'utf8'));
+const nomeVero = l => { const f = firma(l.lista); const a = archivio.find(x => firma(x) === f); return a ? a.name : l.nome; };
 scrivi(`torneo-${punti}.json`, {
   formato: 'tow-torneo/1', quando: new Date().toISOString(), punti, semi: semiVerifica, seme: 70001, partite: giocate,
   secondi: Math.round((Date.now() - t0) / 1000), bilanciato: true,
   scenari: scenari.map(id => ({ id, label: TUTTI[id].label || id, group: TUTTI[id].group || 'Miei', pts: TUTTI[id].pts || null })),
-  liste: L.map(l => ({ id: `b-${l.i}`, name: l.nome, fazione: l.fazione, pool: 'collezione', fonte: 'ricerca', file: FILE,
+  liste: L.map(l => ({ id: `b-${l.i}`, name: nomeVero(l), fazione: l.fazione, pool: 'collezione', fonte: 'ricerca', file: FILE,
     points: l.S.totale(l.geni), descrizione: l.S.descrivi(l.geni), units: l.geni.length })),
   celle: perScenario,
 });

@@ -29,7 +29,7 @@ const SEI = ["sxmu9q80qdc65", "sxprova-profondo", "sxprova-boschi", "bm-strada",
 const TUTTI = "__tutti";
 const KEY = "tow-lab";
 
-let v = { punti: 800, scenario: TUTTI, filtro: "tutte", fazione: "tutte", pool: "entrambe", sforzo: "normale", dove: "sei", esempi: "si", capo: "no" };
+let v = { punti: 800, scenario: TUTTI, filtro: "tutte", fazione: "tutte", pool: "entrambe", sforzo: "normale", dove: "sei", esempi: "si", capo: "no", sfida: "" };
 try { v = { ...v, ...JSON.parse(localStorage.getItem(KEY) || "{}") }; } catch { /* la prima volta */ }
 const ricorda = () => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* niente */ } };
 
@@ -151,6 +151,105 @@ function tabellaHTML(tor){
     ${storte.length ? `<div class="panel-title">A senso unico</div><div class="tray">${storte.map(riga).join("")}</div>` : ""}`;
 }
 
+/* ---------------- quale scenario per ogni sfida ----------------
+   La tabella dice chi batte chi su uno scenario. Chi deve giocare una
+   sfida precisa ha la domanda rovesciata: queste due liste, su quale
+   tavolo vengono alla pari? Per ogni coppia una barra per scenario, che
+   parte dal 50% e va verso chi è favorito; lo scenario consigliato è il
+   più vicino al 50%, e fra due vicini quello con meno pareggi — una
+   partita pari per sei turni di stallo non è una bella serata.
+
+   Due liste della stessa fazione fatte con la collezione non si
+   giocano: pescano dalle stesse miniature. Qui non compaiono. */
+const quota = c => (c.w + c.d / 2) / c.n;
+const EQUA = 0.1, EVITA = 0.25;          // entro 10 punti dal 50% è alla pari; oltre 25 è a senso unico
+const punteggio = c => Math.abs(quota(c) - 0.5) + 0.1 * c.d / c.n;
+const giocabili = (a, b) => !(a.pool === "collezione" && b.pool === "collezione" && a.fazione && a.fazione === b.fazione);
+
+function sfide(tor, liste){
+  const out = [];
+  for (let i = 0; i < liste.length; i++) for (let j = i + 1; j < liste.length; j++){
+    const a = liste[i], b = liste[j];
+    if (!giocabili(a, b)) continue;
+    const per = tor.scenari.map(s => ({ s, c: cella(tor, a.id, b.id, s.id) })).filter(x => x.c.n);
+    if (per.length < 2) continue;
+    const best = [...per].sort((x, y) => punteggio(x.c) - punteggio(y.c))[0];
+    out.push({ a, b, per, best });
+  }
+  return out;
+}
+
+function scenariHTML(tor, elenco){
+  const righe = tor.scenari.map(s => {
+    let scarto = 0, k = 0; const t = vuoto();
+    for (const { per } of elenco){ const x = per.find(p => p.s.id === s.id); if (x){ scarto += Math.abs(quota(x.c) - 0.5); k++; add(t, x.c); } }
+    return k ? { s, scarto: 100 * scarto / k, pari: pc(t.d, t.n), n: t.n, k } : null;
+  }).filter(Boolean).sort((x, y) => x.scarto - y.scarto);
+  if (!righe.length) return "";
+  /* la barra piena è 50 punti: il favorito vince sempre */
+  const max = 50;
+  return `
+    <div class="lab-scen" role="list">
+      ${righe.map((r, i) => `<div class="lab-scen-riga" role="listitem"
+          title="${esc(r.s.label)}: in media il favorito è a ${Math.round(r.scarto)} punti dal 50%, pareggi ${r.pari}% — ${r.k} sfide, ${r.n} partite">
+        <span class="lab-scen-nome">${esc(r.s.label)}${i === 0 ? ` <span class="chip ok">il più equilibrato</span>` : ""}</span>
+        <span class="lab-scen-track"><i style="width:${(100 * r.scarto / max).toFixed(1)}%"></i></span>
+        <span class="lab-scen-val mono">${Math.round(r.scarto)} punti · pari ${r.pari}%</span>
+      </div>`).join("")}
+    </div>
+    <p class="note">Quanto è lontano dal 50%, in media, il favorito di ogni sfida: barra corta, partite equilibrate; la barra piena sarebbe il favorito che vince sempre. I pareggi a parte, perché una partita che finisce pari non è per forza una partita combattuta.</p>`;
+}
+
+function sfidaHTML({ a, b, per, best }){
+  const qb = quota(best.c), senza = Math.abs(qb - 0.5) > EQUA;
+  const favorita = qb >= 0.5 ? a.name : b.name;
+  const barra = ({ s, c }) => {
+    const q = quota(c), d = q - 0.5, lontano = Math.abs(d) >= EVITA, scelto = s.id === best.s.id;
+    const dove = d >= 0 ? `left:50%;width:${(100 * d).toFixed(1)}%` : `left:${(100 * q).toFixed(1)}%;width:${(-100 * d).toFixed(1)}%`;
+    return `<div class="lab-sf-riga${scelto ? " lab-sf-scelto" : ""}${lontano ? " lab-sf-evita" : ""}"
+        title="${esc(s.label)}: ${esc(a.name)} vince ${pc(c.w, c.n)}%, ${esc(b.name)} ${pc(c.l, c.n)}%, pari ${pc(c.d, c.n)}% — ${c.n} partite">
+      <span class="lab-sf-nome">${esc(s.label)}</span>
+      <span class="lab-sf-track"><i class="${d >= 0 ? "pos" : "neg"}" style="${dove}"></i></span>
+      <span class="lab-sf-val mono">${pc(c.w, c.n)}–${pc(c.l, c.n)}</span>
+      <span class="lab-sf-tag">${scelto ? `<span class="chip ok">consigliato</span>` : lontano ? `<span class="chip warn">a senso unico</span>` : ""}</span>
+    </div>`;
+  };
+  return `
+    <div class="lab-sf">
+      <div class="lab-sf-head">
+        <b>${esc(a.name)} <span class="lab-sf-vs">contro</span> ${esc(b.name)}</b>
+        <span class="note">${senza
+          ? `Nessuno scenario la porta alla pari: ${esc(favorita)} è favorita ovunque. Il meno sbilanciato è <b>${esc(best.s.label)}</b> (${pc(best.c.w, best.c.n)}–${pc(best.c.l, best.c.n)}).`
+          : `Giocatela su <b>${esc(best.s.label)}</b>: ${pc(best.c.w, best.c.n)}–${pc(best.c.l, best.c.n)}, pari ${pc(best.c.d, best.c.n)}%.`}</span>
+      </div>
+      <div class="lab-sf-chiave"><span><i class="lab-sw neg"></i>meglio ${esc(b.name)}</span><span><i class="lab-sw pos"></i>meglio ${esc(a.name)}</span></div>
+      ${per.map(barra).join("")}
+    </div>`;
+}
+
+function sfideHTML(tor){
+  if (tor.scenari.length < 2) return "";
+  const liste = tor.liste.filter(l => v.filtro === "tutte" || (v.filtro === "collezione" ? l.pool === "collezione" : l.fonte === "ricerca"));
+  const tutte = sfide(tor, liste);
+  if (!tutte.length) return "";
+  const chi = liste.some(l => l.id === v.sfida) ? v.sfida : "";
+  const elenco = chi ? tutte.filter(x => x.a.id === chi || x.b.id === chi) : tutte;
+  const n = Math.round(tutte.reduce((s, x) => s + x.per.reduce((t, p) => t + p.c.n, 0) / x.per.length, 0) / tutte.length);
+  return `
+    <div class="panel-title">Gli scenari, dal più equilibrato</div>
+    ${scenariHTML(tor, tutte)}
+    <div class="panel-title">Quale scenario per ogni sfida</div>
+    <div class="bar">
+      <label class="field">Le sfide di
+        <select id="lab-sfida">
+          <option value="">tutte le liste</option>
+          ${liste.map(l => `<option value="${esc(l.id)}" ${l.id === chi ? "selected" : ""}>${esc(l.name)}</option>`).join("")}
+        </select></label>
+    </div>
+    <p class="note">Ogni barra parte dal 50% e va verso chi vince più spesso su quello scenario; i numeri sono le vinte dell'una e dell'altra. Ogni barra sono circa ${n} partite: una sola può sbagliare di una decina di punti, e il consiglio vale come tendenza. Le liste della stessa fazione fatte con la collezione non si affrontano, perché usano le stesse miniature.</p>
+    <div class="lab-sfide">${elenco.map(sfidaHTML).join("")}</div>`;
+}
+
 /* ---------------- le ricerche ---------------- */
 function ricercaHTML({ file, doc }){
   const [best, ...altre] = doc.migliori || [];
@@ -270,6 +369,7 @@ export async function renderLaboratorio(){
     <div class="panel-title">Chi batte chi${v.scenario === TUTTI ? ", su tutti gli scenari" : ` su «${esc(sc ? sc.label : v.scenario)}»`}</div>
     ${tor ? `<p class="note mono">torneo del ${giorno(tor.quando)} · ${tor.liste.length} liste · ${tor.partite} partite · ${tor.semi * 2} per coppia e scenario</p>${tabellaHTML(tor)}`
           : `<p class="empty">Non c'è ancora un torneo a ${v.punti} punti${ric.length ? "" : ", e nemmeno una ricerca"}: i comandi sono qui sotto.</p>`}
+    ${tor ? sfideHTML(tor) : ""}
 
     <div class="panel-title">Le liste trovate a ${v.punti} punti</div>
     ${ric.length ? `<div class="lab-cards">${ric.map(ricercaHTML).join("")}</div>` : `<p class="empty">Nessuna ricerca a ${v.punti} punti.</p>`}
@@ -279,7 +379,7 @@ export async function renderLaboratorio(){
   const cambia = (id, k, num = false) => { const el = $(id); if (el) el.addEventListener("change", () => { v[k] = num ? +el.value : el.value; ricorda(); renderLaboratorio(); }); };
   cambia("#lab-sc", "scenario"); cambia("#lab-pt", "punti", true); cambia("#lab-filtro", "filtro");
   cambia("#lab-fz", "fazione"); cambia("#lab-pool", "pool"); cambia("#lab-dove", "dove"); cambia("#lab-sforzo", "sforzo");
-  cambia("#lab-esempi", "esempi"); cambia("#lab-capo", "capo");
+  cambia("#lab-esempi", "esempi"); cambia("#lab-capo", "capo"); cambia("#lab-sfida", "sfida");
   const usa = $("#lab-usa-pt");
   if (usa) usa.addEventListener("click", () => { v.punti = sc.pts; ricorda(); renderLaboratorio(); });
   $("#lab-ricarica").addEventListener("click", async () => { docs = null; await renderLaboratorio(); });

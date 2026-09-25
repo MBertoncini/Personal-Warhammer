@@ -1354,8 +1354,46 @@ label.field.inline{flex-direction:row;align-items:center;gap:6px;text-transform:
 .lab-opp{display:flex;flex-wrap:wrap;gap:4px;}
 .lab-alt{border-top:1px solid var(--line);padding-top:8px;margin-top:8px;display:flex;flex-direction:column;gap:6px;}
 .lab-cmd{white-space:pre-wrap;word-break:break-all;margin:6px 0;padding:8px;border:1px solid var(--line);border-radius:6px;font-size:12px;background:var(--panel);}
+/* gli scenari, dal più equilibrato: una barra sola, lo scarto medio dal 50% */
+.lab-scen{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:8px 10px;}
+.lab-scen-riga{display:grid;grid-template-columns:minmax(150px,1.2fr) 2fr minmax(120px,auto);gap:10px;align-items:center;min-height:30px;font-size:13px;}
+.lab-scen-riga:hover{background:var(--panel-2);border-radius:4px;}
+.lab-scen-nome{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
+.lab-scen-track{height:10px;background:var(--panel-2);border-radius:4px;overflow:hidden;}
+.lab-scen-track i{display:block;height:100%;background:var(--accent);border-radius:0 4px 4px 0;}
+.lab-scen-val{font-size:11.5px;color:var(--muted);text-align:right;}
+/* quale scenario per ogni sfida: una barra per scenario, dal 50% verso il favorito */
+.lab-sfide{display:grid;grid-template-columns:repeat(auto-fill,minmax(500px,1fr));gap:10px;}
+.lab-sf{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:10px 12px;display:flex;flex-direction:column;gap:2px;}
+.lab-sf-head{display:flex;flex-direction:column;gap:3px;margin-bottom:6px;}
+.lab-sf-head b{font-size:14px;}
+.lab-sf-vs{font-weight:400;color:var(--muted);}
+.lab-sf-riga{display:grid;grid-template-columns:minmax(150px,1fr) 1.5fr 52px 108px;gap:8px;align-items:center;}
+.lab-sf-riga{min-height:28px;font-size:12.5px;border-radius:4px;padding:0 4px;}
+.lab-sf-riga:hover{background:var(--panel-2);}
+.lab-sf-chiave{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11.5px;color:var(--muted);padding:0 4px 4px;}
+.lab-sf-chiave span{display:inline-flex;align-items:center;gap:6px;}
+.lab-sw.pos{background:var(--lab-pos);} .lab-sw.neg{background:var(--lab-neg);}
+.lab-sf-track{position:relative;height:12px;background:var(--panel-2);border-radius:4px;}
+.lab-sf-track::after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--line-strong);}
+.lab-sf-track i{position:absolute;top:0;bottom:0;}
+.lab-sf-track i.pos{background:var(--lab-pos);border-radius:0 4px 4px 0;}
+.lab-sf-track i.neg{background:var(--lab-neg);border-radius:4px 0 0 4px;}
+.lab-sf-val{font-size:11.5px;text-align:right;color:var(--ink);}
+.lab-sf-tag{display:flex;justify-content:flex-end;}
+.lab-sf-tag .chip{text-transform:none;letter-spacing:0;padding:1px 6px;}
+.lab-sf-scelto{background:var(--accent-soft);}
+.lab-sf-scelto .lab-sf-nome{font-weight:600;}
+.lab-sf-evita .lab-sf-nome,.lab-sf-evita .lab-sf-val{color:var(--muted);}
 @media (max-width:600px){
   .lab-cards{grid-template-columns:1fr;}
+  .lab-sfide{grid-template-columns:1fr;}
+  .lab-sf-riga{grid-template-columns:minmax(90px,1fr) 1.3fr 44px;}
+  .lab-sf-tag{grid-column:1 / -1;justify-content:flex-start;}
+  .lab-sf-tag:empty{display:none;}
+  .lab-scen-riga{grid-template-columns:1fr auto;gap:4px 10px;padding:6px 0;border-bottom:1px solid var(--line);}
+  .lab-scen-riga:last-child{border-bottom:0;}
+  .lab-scen-nome{grid-column:1 / -1;}
   #laboratorio .bar .field{min-width:0;flex:1 1 100%;}
   #laboratorio .u-row{flex-wrap:wrap;gap:6px;}
   .lab-tab th .mono{display:none;}
