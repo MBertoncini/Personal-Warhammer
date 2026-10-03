@@ -90,6 +90,42 @@ export function splitStat(u, key){
   return null;
 }
 
+/* Le righe della bestia di un reggimento di cavalleria: il cinghiale
+   dei Boar Boyz, la lucertola dei Cold One Riders. Sul libro sono la
+   seconda meta' del profilo diviso (p. 192, «Split Profile
+   (Cavalry)»): la bestia mena con la sua Abilita', la sua Forza, la sua
+   Iniziativa, i suoi Attacchi e la sua arma. Nella tavola sono le righe
+   marcate `bestia`; quelle dei servitori di un carro non lo sono, e
+   restano numeri da cui pescare quello che la riga dell'unita' non ha.
+
+   La cavalcatura di un PERSONAGGIO non passa da qui: la monta la
+   tendina della lista (`mounts.js`), e porta le sue righe con se'. */
+export function beastRows(u){
+  if (!u || u.mountId) return [];
+  const p = profileFor(u);
+  return ((p && p.righe) || []).filter(r => r.bestia);
+}
+
+/* Tutte le righe che menano accanto a quella dell'unita': la bestia e,
+   quando c'e', l'EQUIPAGGIO — i servitori del carro, gli skink sul
+   Bastiladon. Le righe marcate `equipaggio` portano `n`, quanti sono
+   sul modello. L'equipaggio prima, perche' e' sulla sua Abilita' che
+   si colpisce un carro (p. 194), e `splitStat` prende la prima riga che
+   un numero ce l'ha. */
+export function strikerRows(u){
+  if (!u || u.mountId) return [];
+  const p = profileFor(u);
+  return ((p && p.righe) || []).filter(r => r.bestia || r.equipaggio);
+}
+
+/* Un numero della bestia, o `null` se non c'e' bestia o se la sua riga
+   quel numero non lo porta. */
+export function beastStat(u, key){
+  const r = beastRows(u)[0];
+  const v = r && (r.stats || {})[key];
+  return v != null && /^\d+$/.test(String(v)) ? +v : null;
+}
+
 /* «Fly (10)» fra le regole: il numero fra parentesi e' quanto vola, ed
    e' il movimento che quell'unita' fa davvero. Il volo l'app non lo sa
    ancora giocare — niente sorvoli, niente atterraggi — ma il numero si

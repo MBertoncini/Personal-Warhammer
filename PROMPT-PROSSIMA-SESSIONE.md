@@ -261,9 +261,9 @@ a `test/arbitro.mjs` («l ultima partita…»):
 9. Il registro scriveva «a 6+» per i tiri a 7+ (il conto era giusto) e
    «+1 per la collina» a tutte e due le parti quando si annulla.
 
-Dichiarati nel registro, quando contano: `cavalleria` (un reggimento di
-cavalleria mena con la sola riga del cavaliere: le Cold One e i War Boar
-dei reggimenti non attaccano) e `ostinati` (Stubborn sceglie da solo).
+Dichiarati nel registro, quando contano: ~~`cavalleria` (un reggimento
+di cavalleria mena con la sola riga del cavaliere)~~ — fatto, vedi sotto
+«La cavalleria del libro» — e `ostinati` (Stubborn sceglie da solo).
 
 **Il piu' grosso che resta, e va fatto con il libro aperto (pp. 145-146):
 chi combatte.** `contact()` in `combat.js` da' a ogni reggimento una
@@ -278,6 +278,46 @@ hanno menato con 24 attacchi come se fossero presi di fronte (la fila
 che combatte di fianco e' la colonna, p. 145, e di fianco non si
 appoggia). Cambia il peso di ogni mischia, e quindi i conti del
 Laboratorio: le liste bilanciate vanno riverificate dopo.
+
+## Fatto: la cavalleria del libro (p. 192), 2026-10-03
+
+La bestia di un reggimento di cavalleria mena. Il racconto sta nel
+piano (§13, «La cavalleria del libro»); qui quello che serve a chi
+riprende:
+
+- **le righe** stanno in `dati/profili.json`, marcate `bestia`, per le
+  quattro cavallerie del catalogo (Cold One Riders, Orc Boar Boy Mobs,
+  Terradon Riders, Night Goblin Squig Hopper Mobs), lette sul libro.
+  `PR.beastRows`/`PR.beastStat` le leggono, `MT.herdRows` le mette nella
+  forma di `attackRows`, ed `EF.statOf(u, k, { who: "mount" })` parte
+  dalla riga della bestia quando non c'è una cavalcatura montata;
+- **in `meleeFight`** la bestia di un reggimento (`herd`) ha un conto
+  per nemico: `front` di `contact()` per la sua `a`. Chi cade prima che
+  lei meni toglie la sua (`stillTouching`, lo stesso conto di
+  `fallenCut`). Mai d'appoggio, e chi non tocca fa l'attacco solo con il
+  cavaliere — anche il personaggio a cavallo (`oneAttack`);
+- **`meleeBoosts(..., { mount })`**: `who: "mount"` solo alla bestia
+  (Tusker Charge, ora applicata, p. 46 e non 45), `notMount` solo al
+  cavaliere (Choppas);
+- **il capo unito carica con il reggimento** (`schieraDi`): prima no, e
+  menava senza bonus d'Iniziativa, urto e regole di carica. Questo pesa
+  in ogni partita con personaggi uniti, non solo a cavallo.
+
+Il peso delle mischie con cavalleria è cambiato parecchio (una lucertola
+per cavaliere, due attacchi a Forza 4 con l'Armour Bane): **le liste
+bilanciate del Laboratorio con Cold One Riders o Boar Boyz vanno
+riverificate**, sui semi nuovi (vedi la memoria sul rumore).
+
+Subito dopo, **l'equipaggio** (righe `equipaggio` con `n`, `PR.strikerRows`):
+l'Orc Boar Chariot mena con i due Orchi e i due cinghiali e non con la
+sua riga (p. 194), il Bastiladon con i suoi tre e i tre skink (lettura,
+limite `equipaggio`: niente Howdah, e su chi si colpisca il libro tace).
+`meleeBoosts` guarda `beastRow`, non `mountRow`: gli skink dello
+Stegadon non sono la bestia.
+
+Resta: le regole dell'unità che la bestia non prende perché il file non
+dice a chi vanno (limite `cavalleria`), e i servitori o gli skink
+comprati in più come opzione, che il file non scrive.
 
 ## Quello che è uscito dalla prima sfida vera (Michele contro Gemini)
 

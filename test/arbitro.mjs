@@ -1715,6 +1715,23 @@ console.log('\ni personaggi che si uniscono (pp. 206-208)');
   ok('esce, e sta accanto senza sovrapporsi', hc.join === null && !dentro(H, hc, hs) && AR.inCampo(H, 'A').includes(hc));
   ok('e il reggimento si muove ancora', AR.options(H).list.some(x => x.id === 'avanza' && x.uid === hs.uid));
 }
+{
+  /* il capo unito carica con il suo reggimento: «il personaggio e'
+     arrivato con lei». La carica si scriveva solo sul reggimento, e il
+     capo menava senza il bonus d'Iniziativa (p. 146), senza urto e senza
+     le regole di carica — le Choppas del Bigboss sul cinghiale */
+  const G = nuova();
+  const sk = metti(G, uid(G, 3), 600, 700), ch = metti(G, uid(G, 2), 600, 700);
+  ch.join = { host: sk.uid };
+  sk.charged = { target: 'X', uid: 505, inches: 6, arc: 'fronte' };
+  sk.disordered = true;
+  const s = AR.interni.schieraDi(G, ch, { attached: true, host: sk });
+  ok('il capo dentro un reggimento che ha caricato ha caricato anche lui',
+     s.charged === true && s.chargeInches === 6 && s.chargeArc === 'fronte');
+  ok('e se la carica e disordinata, lo e anche per lui', s.disordered === true);
+  sk.charged = null; sk.disordered = false;
+  ok('e senza carica niente', AR.interni.schieraDi(G, ch, { attached: true, host: sk }).charged === false);
+}
 
 /* Un reggimento con due capi dentro cade: i capi restavano tutti nel
    centro, uno sopra l'altro, e il primo che provava a girarsi non aveva

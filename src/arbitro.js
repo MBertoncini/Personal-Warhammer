@@ -56,7 +56,7 @@ import { roll, d3, leadershipTest, stat, rankBonus, woundOn, saveOn, hitMelee, c
 import { scatter as deviazione, rollDice, contesto as contestoDadi } from './dice.js';
 import { SCENARIOS, geometry } from './scenarios.js';
 import { troopType, unitStrength } from './troops.js';
-import { troopOf } from './mounts.js';
+import { troopOf, herdRows } from './mounts.js';
 import { readRules, splitWeaponRules } from './rulebook.js';
 import { TERRAIN } from './terrain.js';
 import * as TR from './terrain.js';
@@ -71,8 +71,10 @@ import { objectiveHolder, OBJECTIVE_RANGE, OBJECTIVE_US } from './battlemarch.js
    lavoro futuro, non una scusa.
    ============================================================ */
 export const LIMITI = [
-  { id:"cavalleria", what:"un reggimento di cavalleria mena con la sola riga del cavaliere", page:204,
-    why:"il file di New Recruit porta una riga sola per modello, e le righe delle cavalcature dei reggimenti (Cold One, War Boar…) non stanno ancora in `dati/profili.json`: gli attacchi della bestia non si tirano. I personaggi montati dalla tendina «Cavalcatura» menano invece con tutte le loro righe" },
+  { id:"cavalleria", what:"un modello a cavallo nella fila che combatte che non tocca il nemico fa il suo attacco solo con il cavaliere, e la bestia di un reggimento mena con le sole regole della sua riga", page:192,
+    why:"la bestia mena dai modelli che toccano il nemico e mai d'appoggio (p. 192); chi sta nella fila senza toccare «can make only one attack» (p. 146), e il libro non dice se sia del cavaliere o della bestia. Le regole dell'unità valgono per tutte e due le metà «salvo dove è detto», e il file di New Recruit le scrive senza il «solo per…» che il libro mette accanto: la bestia prende quelle che la sua riga in `dati/profili.json` porta. Senza quella riga, il reggimento mena con il solo cavaliere" },
+  { id:"equipaggio", what:"gli skink sopra un bestione senza Howdah menano con la loro riga, e i colpi nemici vanno sull'Abilità del bestione", page:97,
+    why:"il Bastiladon (Legends: Lizardmen p. 14) ha una riga di equipaggio e non ha la Howdah, e il Core Rulebook descrive il profilo diviso solo per cavalleria, carri, Howdah, mostri cavalcati e macchine da guerra (pp. 192-205): in tutti ogni riga mena con i suoi numeri, e l'app fa lo stesso. Su chi si colpisca il libro non dice niente — sul carro è l'equipaggio, sul mostro cavalcato il personaggio —, e l'app colpisce il bestione. Gli skink sono tre: il quarto comprato come opzione il file non lo scrive" },
   { id:"ostinati", what:"chi è Stubborn sceglie da solo se tirare il test di rotta", page:178,
     why:"il libro lascia la scelta a chi gioca («may choose not to»); l'arbitro ripiega in ordine quando la rotta è più probabile del cedere terreno, e non guarda quanto è lontano il bordo del tavolo" },
   { id:"domini",    what:"la magia non si gioca in questa partita", page:106,
@@ -5399,6 +5401,9 @@ function menaLaMischia(S, g){
   /* quello che l'assalto non tira si dice quando conta, non nel README */
   if ([...g.A, ...g.B].some(u => (u.models || 1) > 1 && /cavalry/i.test(troopType(u.troop).id)))
     limite(S, "cavalleria");
+  if ([...g.A, ...g.B].some(u => /monstrousCreature|behemoth/.test(troopType(u.troop).id) &&
+                                  !haRegola(u, /^howdah/i) && herdRows(u).some(r => r.crew)))
+    limite(S, "equipaggio");
   if ([...g.A, ...g.B].some(u => haRegola(u, /^stubborn/i))) limite(S, "ostinati");
   /* La Paura quando il combattimento viene scelto: chi tocca un nemico
      che la fa ed e' piu' grosso tira, una volta per turno, e se
@@ -5658,7 +5663,16 @@ function aContatto(S, u, loro){
 /* La schiera che combatte, con addosso quello che il tavolo sa: chi ha
    caricato e da che faccia, il terreno, i personaggi uniti. */
 function schieraDi(S, u, { attached = false, host = null, feared = false } = {}){
-  const c = CB.combatant(u, { joined: capiInFila(S, u), feared });
+  /* Il capo unito carica con il reggimento in cui sta: la carica la
+     scrive `muoviCarica` sul reggimento, e il capo non si muove da
+     solo. Prima la sua schiera non lo sapeva, e un Bigboss dentro i
+     Boar Boyz menava senza il bonus d'Iniziativa della carica (p. 146),
+     senza le Choppas e senza la Tusker Charge del suo cinghiale. Il
+     fianco no: lo conta il reggimento, una volta per nemico (p. 153). */
+  const ch = attached && host && host.charged && typeof host.charged === "object" ? host.charged : null;
+  const carica = ch ? { charged: true, chargeInches: ch.inches || 0, chargeArc: ch.arc || "fronte",
+                        disordered: !!host.disordered } : {};
+  const c = CB.combatant(u, { joined: capiInFila(S, u), feared, ...carica });
   /* il test di rotta si tira con il Comando piu' alto fra i modelli
      (p. 97) o con quello del generale, se e' vicino: si rifa' il conto
      della Warband sopra il valore nuovo */
@@ -6383,4 +6397,4 @@ export const interni = { indietreggia, seguire, fuggi, postoAContatto, percorso,
                          sullaCollina, filaPiuAlta, quantiTirano, terrenoDiCarica,
                          testPanico, ondaPanico, ripulisciSfide, sfidanti, puoRifiutare,
                          /* chi combatte, contato sulle basette (p. 145) */
-                         filaCheCombatte };
+                         filaCheCombatte, schieraDi };

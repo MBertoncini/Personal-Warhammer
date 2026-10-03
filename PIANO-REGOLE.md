@@ -1356,8 +1356,9 @@ Quello che resta fuori, detto per non lasciarlo scoprire a una partita:
 - **Lo Shieldwall non guarda gli scudi.** Il conto controlla che l'unità
   sia stata caricata e non sia in ordine aperto; lo scudo in uso lo
   guarda chi gioca, e il pannello glielo ricorda.
-- **Le regole a mano che contano di più**: la *Tusker Charge* e la
-  *Howdah* aspettano che l'assalto meni con due profili; il Comando di
+- **Le regole a mano che contano di più**: ~~la *Tusker Charge*~~ — fatta
+  (2026-10-03), adesso che la bestia del reggimento mena da sé (§13); la
+  *Howdah* aspetta che l'assalto meni con due profili; il Comando di
   Ogdruz prestato ai Troll aspetta quello del Generale; gli attacchi
   alternativi del Gigante, i Fanatici e gli *Squigs Go Wild* aspettano
   un pulsante loro; *Guardians*, *Safe From Harm* e *Protect Da Boss*
@@ -1907,6 +1908,37 @@ cominciare un esercito comunque (gli Orchi di L'Anguille, p. 289) non
 sono fra quelli dell'app; `newBattle({ primo: "A" })` fissa una parte
 per chi ne ha bisogno.
 
+**La cavalleria del libro** (p. 192). Un reggimento di cavalleria
+menava con la sola riga del cavaliere: le lucertole dei Cold One
+Riders, i cinghiali dei Boar Boyz non tiravano un dado, ed era il primo
+dei `LIMITI`. Adesso la bestia ha la sua riga in `dati/profili.json`
+(marcata `bestia`, letta su Ravening Hordes pp. 29 e 32 e su Legends:
+Lizardmen p. 10) e mena come dice «Split Profile (Cavalry)»: con i suoi
+numeri e la sua arma, da ogni modello della fila che **tocca** il
+nemico, mai d'appoggio («Cavalry Support»), e chi cade prima di menare
+se la porta via (`stillTouching`). L'urto e i pestoni usano la sua
+Forza: gli Squig Hopper urtano a 5. Le decisioni, perché si rifacciano
+solo se si trova di meglio:
+
+- **chi sta nella fila senza toccare fa un attacco solo** (p. 146), e il
+  libro non dice se sia del cavaliere o della bestia: l'app lo dà al
+  cavaliere, e lo stesso per un personaggio a cavallo (prima il suo
+  cinghiale menava lo stesso con tutti i suoi);
+- **la bestia mena con le regole della sua riga.** Il libro le dà
+  tutte e due le metà «salvo dove è detto», e il file di New Recruit
+  scrive «Furious Charge» dove il libro scrive «Furious Charge (Orc
+  Boar Boys & Boss only)»: regalarle tutte alla bestia vorrebbe dire
+  sbagliare proprio dove il libro fa eccezione. Limite `cavalleria`;
+- **le regole d'esercito sanno di chi sono**: `meleeBoosts` ha `mount`,
+  e una regola `who: "mount"` vale solo per la bestia (la Tusker
+  Charge, p. 46, che da «a mano» diventa applicata), una `notMount` solo
+  per chi la cavalca (le Choppas, p. 45).
+
+E un difetto trovato guardando la prima partita: **il capo unito non
+caricava con il suo reggimento.** La carica si scriveva sul reggimento,
+e la schiera del capo (`schieraDi`) non la vedeva — niente bonus
+d'Iniziativa, niente urto, niente regole di carica.
+
 ### Cosa resta
 
 - **La magia che resta testo.** Vortici, trasporti, sagome, linee: un
@@ -1933,6 +1965,15 @@ per chi ne ha bisogno.
   Bombardata vale solo per il buco (pp. 224, 228). E con lei una
   correzione che valeva per tutti: nel risultato entrano le ferite
   **perse** e non quelle non salvate (p. 152), anche senza la regola.
+- ~~**Le bestie dei carri**~~ — fatte (2026-10-03): righe `equipaggio`
+  con `n` accanto a quelle `bestia`. L'Orc Boar Chariot mena con due
+  Orchi (Forza 3, non la 5 del carro) e due cinghiali, la sua riga non
+  mena (`noAttacks`), l'urto resta a Forza 5 (p. 194). Il Bastiladon,
+  che non ha la Howdah, fa menare anche i tre skink: è una lettura
+  (limite `equipaggio`), perché il Core non descrive il profilo diviso
+  di una creatura mostruosa con un equipaggio. Lo Stegadon delle liste
+  è sempre la cavalcatura di un personaggio, e menava già con il
+  bestione e i cinque skink.
 - Il **profilo diviso** di una macchina da guerra (p. 97): Resistenza
   e Ferite dell'equipaggio in combattimento, quelle della macchina
   fuori, e il modello che se ne va se uno dei due arriva a zero.

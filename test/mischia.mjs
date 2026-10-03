@@ -530,6 +530,16 @@ console.log('\nil capo che occupa un posto, nell assalto a gruppi (p. 207)');
   const r3 = C.meleeFight([lontano], [nemico]);
   ok('il capo in prima fila che non tocca mena con un attacco solo', colpiDi(r3, 'Orc Big Boss') === 1);
   ok('e i soldati menano con quelli che toccano, piu uno per chi non tocca', colpiDi(r3, 'Orc Mob') === 3 + 1);
+  /* e se sta sul cinghiale, il modello che non tocca fa UN attacco
+     (p. 146): quello del capo, e il cinghiale sta a guardare — come la
+     bestia del reggimento, che mena solo da chi tocca (p. 192) */
+  const sulCinghiale = { ...capoU, mountId: 'war-boar',
+    mount: { name: 'War Boar', row: 'War Boar', righe: [{ chi: 'War Boar', n: 1, stats: { WS:'3', S:'3', I:'3', A:'1' } }] } };
+  const r3c = C.meleeFight([C.combatant(mobU, { joined: [sulCinghiale], touching: { models: 3, chars: [] } })], [nemico]);
+  ok('il capo sul cinghiale che non tocca: un attacco suo, e il cinghiale niente',
+     colpiDi(r3c, 'Orc Big Boss') === 1 && !r3c.steps.some(s => s.mount));
+  const r3d = C.meleeFight([C.combatant(mobU, { joined: [sulCinghiale] })], [nemico]);
+  ok('e quando tocca, il cinghiale mena', r3d.steps.some(s => s.mount && s.attacks === 1));
   /* preso di fianco, il capo in mezzo al primo rango non sta nella
      colonna che combatte: e' nella mischia e non mena */
   const fianco = C.combatant(mobU, { joined: [capoU], touching: { models: 3, chars: [], face: 'fianco',
@@ -1031,6 +1041,144 @@ console.log('\nchi cade prima di menare non mena (pp. 146 e 150)');
   /* chi mena a Iniziativa 10 mena insieme all'urto, e non perde niente */
   const svelto10 = C.meleeFight(carri, C.combatant({ ...lenti(10, 5), i: 10 }));
   ok('a Iniziativa 10 si mena insieme all urto: quindici colpi', menati(svelto10, 'B') === 15);
+  D.setSource(D.seeded(1));
+}
+
+/* ================================================================= */
+console.log('\nla cavalleria del libro: il cavaliere e la bestia (p. 192)');
+{
+  const fs = await import('node:fs');
+  const D = await import('../src/dice.js');
+  const PR = await import('../src/profiles.js');
+  const EF = await import('../src/effects.js');
+  PR.useProfiles(JSON.parse(fs.readFileSync(new URL('../dati/profili.json', import.meta.url), 'utf8')));
+  D.setSource(() => 5);                                  // tutti sei: ogni colpo ferisce, niente armature
+
+  /* i Cold One Riders come li porta il file: la riga del cavaliere e
+     basta, con il Movimento a «-» */
+  const cavalieri = (n, fronte, extra = {}) => unit('Cold One Riders',
+    { M:'-',WS:'4',BS:'0',S:'4',T:'4',W:'1',I:'2',A:'2',Ld:'8' }, n, fronte,
+    { faction: 'Lizardmen', troop: 'Heavy cavalry', weapons: [{ name: 'Hand Weapon', range: 'Combat' }], ...extra });
+  const fanti = (n, fronte, extra = {}) => unit('Fanti',
+    { M:'4',WS:'3',BS:'3',S:'3',T:'3',W:'1',I:'1',A:'1',Ld:'7' }, n, fronte, extra);
+  const bestia = r => r.steps.filter(s => s.side === 'A' && s.mount);
+  const somma = list => list.reduce((n, s) => n + s.attacks, 0);
+
+  ok('la bestia ha la sua riga: Abilita 3 della lucertola, non 4 del cavaliere',
+     EF.val(cavalieri(5, 5), 'WS', { who: 'mount' }) === 3 && EF.val(cavalieri(5, 5), 'WS') === 4);
+
+  /* cinque a contatto: il cavaliere mena con due attacchi a testa, la
+     lucertola con i suoi due, a Forza 4 e con l'Armour Bane suo */
+  const pieno = C.meleeFight(C.combatant(cavalieri(5, 5)), C.combatant(fanti(20, 5)));
+  ok('cinque a contatto: le lucertole menano con dieci attacchi', somma(bestia(pieno)) === 10);
+  ok('e i cavalieri con i loro dieci',
+     somma(pieno.steps.filter(s => s.side === 'A' && !s.mount && s.label === 'colpi')) === 10);
+  ok('l Armour Bane e della lucertola sola',
+     bestia(pieno).every(s => /Cold One/.test(s.name)) &&
+     C.mountStrikers(C.combatant(cavalieri(5, 5)))[0].flags.armourBane === 1 &&
+     !C.combatant(cavalieri(5, 5)).flags.armourBane);
+
+  /* contro un fronte di tre: tre toccano, due stanno nella fila senza
+     toccare e fanno un attacco solo, del cavaliere (p. 146) */
+  const stretto = C.meleeFight(C.combatant(cavalieri(5, 5)), C.combatant(fanti(9, 3)));
+  ok('tre a contatto: la bestia mena da quei tre soli', somma(bestia(stretto)) === 6);
+  ok('e chi non tocca fa il suo attacco solo con il cavaliere',
+     somma(stretto.steps.filter(s => s.side === 'A' && !s.mount && s.label === 'colpi')) === 3 * 2 + 2);
+
+  /* Cavalry Support: d'appoggio mena solo il cavaliere */
+  const lance = C.meleeFight(C.combatant(cavalieri(10, 5, { rules: ['Fight in Extra Rank'] })), C.combatant(fanti(20, 5)));
+  ok('d appoggio la bestia non mena', somma(bestia(lance)) === 10 &&
+     somma(lance.steps.filter(s => s.side === 'A' && !s.mount && s.label === 'colpi')) === 10 + 5);
+
+  /* chi cade prima di menare si porta via anche la bestia: tre svelti
+     abbattono tre cavalieri, e le lucertole che restano a toccare sono due */
+  const svelti = C.combatant(unit('Svelti', { M:'5',WS:'4',BS:'3',S:'4',T:'3',W:'1',I:'5',A:'1',Ld:'8' }, 3, 3));
+  const caduti = C.meleeFight(svelti, C.combatant({ ...cavalieri(5, 5), name: 'Cold One Riders' }));
+  const loro = caduti.steps.filter(s => s.side === 'B' && s.mount);
+  ok('tre cavalieri caduti prima di menare: menano due lucertole', caduti.kills.B[0] === 3 &&
+     loro.reduce((n, s) => n + s.attacks, 0) === 2 * 2);
+
+  /* la previsione conta la bestia come l'assalto */
+  const prev = C.meleeForecast(C.combatant(cavalieri(5, 5)), C.combatant(fanti(20, 5)));
+  ok('la previsione mette in conto le lucertole', prev.groups && prev.groups.some(g => g.mount && g.attacks === 10) &&
+     prev.attacks === 20);
+
+  /* Impact Hits usa la Forza della cavalcatura (p. 192): lo squig, 5 */
+  const squig = C.combatant(unit('Night Goblin Squig Hopper Mobs',
+    { M:'-',WS:'2',BS:'3',S:'3',T:'3',W:'1',I:'3',A:'1',Ld:'5' }, 5, 5,
+    { faction: 'Orc and Goblin Tribes', troop: 'Light Cavalry', rules: ['Impact Hits (1)'] }));
+  ok('l urto degli Squig Hopper ha la Forza dello squig', squig.autoS === 5);
+  const gob = C.mountStrikers(squig)[0];
+  ok('e lo squig morde con la Huge gob: Forza 5, perforazione 1, Armour Bane',
+     gob && gob.s === 5 && gob.ap === 1 && gob.flags.armourBane === 1);
+
+  /* un personaggio senza tavola dei profili resta com'era */
+  ok('chi non ha una bestia nella tavola non ne ha una', C.mountStrikers(C.combatant(fanti(10, 5))).length === 0);
+
+  /* La Tusker Charge e' del cinghiale (Ravening Hordes p. 46), le
+     Choppas del cavaliere (p. 45): con l'assalto che li separa, ognuna
+     va a chi spetta. Contro Resistenza 4: Forza 3 ferisce col 5, 4 col 4. */
+  const AR = await import('../src/armies.js');
+  const dir = new URL('../dati/eserciti/', import.meta.url);
+  AR.useArmies(AR.makeArmies(fs.readdirSync(dir).filter(f => f !== 'indice.json')
+    .map(f => JSON.parse(fs.readFileSync(new URL(f, dir), 'utf8')))));
+  const boyz = over => C.combatant(unit('Orc Boar Boy Mobs',
+    { M:'-',WS:'3',BS:'3',S:'3',T:'4',W:'1',I:'3',A:'1',Ld:'6' }, 5, 5,
+    { faction: 'Orc and Goblin Tribes', troop: 'Heavy cavalry', rules: ['Choppas'],
+      weapons: [{ name: 'Hand Weapon', range: 'Combat' }] }), over);
+  const muro = C.combatant(unit('Muro', { M:'4',WS:'3',BS:'3',S:'3',T:'4',W:'1',I:'1',A:'1',Ld:'7' }, 20, 5));
+  const gruppi = att => C.meleeForecast(att, muro).groups;
+  const inCarica = gruppi(boyz({ charged: true, chargeInches: 6 }));
+  const fermi = gruppi(boyz());
+  const cinghiale = g => g.find(x => x.mount), orco = g => g.find(x => !x.mount);
+  ok('in carica il cinghiale mena a Forza 4 e perfora di 1',
+     cinghiale(inCarica).woundNeed === 4 && cinghiale(inCarica).boost.ap === 1);
+  ok('fuori dalla carica no', cinghiale(fermi).woundNeed === 5 && cinghiale(fermi).boost.ap === 0);
+  ok('e il cavaliere non la prende: le sue sono le Choppas',
+     orco(inCarica).woundNeed === 5 && orco(inCarica).boost.rerollWound === 'ones' &&
+     !cinghiale(inCarica).boost.rerollWound);
+
+  /* Il carro (Core p. 194, Ravening Hordes p. 33): la riga del carro
+     non mena, menano i due Orchi e i due cinghiali, ognuno con i suoi
+     numeri; si colpisce l'Abilita' dell'equipaggio, e l'urto ha la
+     Forza del carro */
+  const carro = over => C.combatant(unit('Orc Boar Chariots',
+    { M:'-',WS:'-',BS:'-',S:'5',T:'5',W:'4',I:'-',A:'-',Ld:'-' }, 1, 1,
+    { faction: 'Orc and Goblin Tribes', troop: 'Heavy chariot',
+      rules: ['Choppas', 'Impact Hits (D6+1)', 'Tusker Charge', 'Scythed Wheels'],
+      weapons: [{ name: 'Hand Weapon', range: 'Combat' }] }), over);
+  const corsa = C.meleeFight(carro(), C.combatant(fanti(20, 5)));
+  const delCarro = corsa.steps.filter(s => s.side === 'A' && s.label === 'colpi');
+  ok('il carro mena con due Orchi e due cinghiali, e la sua riga no',
+     delCarro.length === 2 && delCarro.every(s => s.mount) &&
+     delCarro.find(s => /Orc Crew/.test(s.name)).attacks === 2 &&
+     delCarro.find(s => /War Boars/.test(s.name)).attacks === 2);
+  const servi = C.mountStrikers(carro()).find(m => /Orc Crew/.test(m.name));
+  ok('i servitori menano a Forza 3, non con la Forza 5 del carro', servi.s === 3);
+  ok('si colpisce l Abilita dell equipaggio, e l urto ha la Forza del carro',
+     carro().ws === 3 && (carro().autoS || carro().baseS) === 5);
+  const gCarro = C.meleeForecast(carro({ charged: true, chargeInches: 6 }), muro).groups;
+  const gServi = gCarro.find(g => /Orc Crew/.test(g.name)), gBestie = gCarro.find(g => /War Boars/.test(g.name));
+  ok('in carica i cinghiali hanno la Tusker Charge e gli Orchi le Choppas',
+     gBestie.woundNeed === 4 && gBestie.boost.ap === 1 && !gBestie.boost.rerollWound &&
+     gServi.woundNeed === 5 && gServi.boost.rerollWound === 'ones');
+
+  /* Il Bastiladon (Legends: Lizardmen p. 14): il bestione mena con i
+     suoi tre, e i tre skink con uno a testa (la lettura e' scritta in
+     `notaRighe`) */
+  const bas = C.combatant(unit('Bastiladon',
+    { M:'4',WS:'3',BS:'-',S:'4',T:'5',W:'4',I:'1',A:'3',Ld:'-' }, 1, 1,
+    { faction: 'Lizardmen', troop: 'Monstrous creature',
+      weapons: [{ name: 'Thunderous bludgeon', range: 'Combat', S: 'S', ap: '-3', rules: 'Strike Last' },
+                { name: 'Hand Weapon', range: 'Combat' }] }));
+  const pesta = C.meleeFight(bas, C.combatant(fanti(20, 5)));
+  const daBas = pesta.steps.filter(s => s.side === 'A' && s.label === 'colpi');
+  ok('il Bastiladon mena con i suoi tre attacchi e i tre skink con i loro',
+     daBas.find(s => s.name === 'Bastiladon').attacks === 3 &&
+     daBas.find(s => /Skink Crew/.test(s.name)).attacks === 3);
+  const skink = C.mountStrikers(bas)[0];
+  ok('gli skink con la loro riga: Iniziativa 4, Forza 3, l arma a una mano',
+     skink.i === 4 && skink.s === 3 && skink.ap === 0 && bas.ws === 3);
   D.setSource(D.seeded(1));
 }
 

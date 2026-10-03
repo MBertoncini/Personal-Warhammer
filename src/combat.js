@@ -20,13 +20,14 @@ import { hitMelee, woundOn, saveOn, pool, roll, chance, expected, rankBonus,
          stat, weaponStrength, weaponAP, IMPOSSIBLE } from './rules.js';
 import { readRules, splitWeaponRules, emptyFlags } from './rulebook.js';
 import { troopType, usPerModel } from './troops.js';
-import { flagsOf, spent, val, statOf } from './effects.js';
+import { flagsOf, spent, val, statOf, baseOf } from './effects.js';
 import { woundsOf } from './extras.js';
 import { armyFor, meleeBoosts, fleeBonus } from './armies.js';
 import * as ML from './melee.js';
 import * as SH from './shoot.js';
 import * as PS from './psych.js';
-import { attackRows } from './mounts.js';
+import { attackRows, herdRows } from './mounts.js';
+import { beastStat } from './profiles.js';
 
 /* ============================================================
    1 · DALL'UNITA' DEL TAVOLO ALLA SCHIERA CHE COMBATTE
@@ -172,6 +173,15 @@ export function combatant(u, over = {}){
      bestia, non quella del cavaliere (pp. 204-205): il Grey Seer ha
      Forza 3, la campana 5. */
   c.autoS = (u.mount && +u.mount.forzaUrto) || 0;
+  /* e nel reggimento di cavalleria «Impact Hits and/or Stomp Attacks use
+     the mount's Strength» (p. 192): gli Squig Hopper urtano a 5, non a 3 */
+  if (!c.autoS && !u.mountId && /cavalry/i.test(c.troop ? c.troop.id : "") && beastStat(u, "S") != null)
+    c.autoS = val(u, "S", { who: "mount" });
+  /* Il carro non mena con la sua riga, che sul libro ha «-» negli
+     Attacchi: menano l'equipaggio e le bestie, ognuno con la sua (p. 194,
+     `mountStrikers`). Prima la riga del carro pescava gli Attacchi dei
+     servitori e menava con la Forza 5 del carro. */
+  if (!u.mountId && !/^\s*\d/.test(String(st.A ?? "")) && herdRows(u).some(r => r.crew)) c.noAttacks = true;
 
   /* Le regole: quelle dell'unita' e quelle dell'arma che sta davvero
      impugnando. Le seconde stavano nel file da sempre, lette e mai
@@ -360,16 +370,34 @@ export function retinueOf(joined = [], host = null){
    colpisce e non incassa niente: i colpi nemici vanno sull'Abilita' del
    personaggio e le ferite sul modello intero, che e' la schiera ospite.
    ============================================================ */
+/* E la bestia di un REGGIMENTO di cavalleria (p. 192): la stessa riga,
+   ma per modello. `a` e' quanto mena UNA bestia, e quante ne menano lo
+   dice la fila che combatte — `herd` lo segna, e `meleeFight` moltiplica
+   per chi tocca il nemico. Chi sta nella fila senza toccare fa un
+   attacco solo (p. 146), e l'app lo da' al cavaliere; d'appoggio la
+   bestia non mena mai («Cavalry Support», p. 192). Le regole della
+   bestia sono quelle della sua riga: quelle dell'unita' il file le
+   scrive senza dire a chi vanno («Furious Charge (Orc Boar Boys & Boss
+   only)» diventa «Furious Charge»), e regalarle tutte alla bestia
+   vorrebbe dire sbagliare proprio dove il libro fa eccezione. */
 export function mountStrikers(c){
   const u = c && c.ref;
   if (!u) return [];
-  const rows = attackRows(u);
+  const own = attackRows(u);
+  const rows = own.length ? own : herdRows(u);
   if (!rows.length) return [];
   const army = armyFor(u);
   return rows.map(r => {
-    const w = r.arma;
+    /* l'equipaggio senza un'arma sua impugna quella dell'unita': le armi
+       del file di un carro sono dei servitori */
+    const w = r.arma || (r.crew ? meleeWeapon(u) : null);
     const read = readRules(r.regole || [], splitWeaponRules(w && w.rules), w ? w.name : "", null, army);
-    const flags = { ...read.flags, army: (c.flags || {}).army };
+    /* le regole d'esercito sono quelle del modello, piu' quelle che la
+       riga della bestia porta lei: la Tusker Charge dei Boar Boyz sta
+       sul libro fra le regole dell'unita', e il file non la scrive */
+    const mine = (c.flags || {}).army || [];
+    const tutte = [...mine, ...(read.flags.army || []).filter(y => !mine.some(x => x.id === y.id))];
+    const flags = { ...read.flags, army: tutte };
     /* la Frenzy del modello (quella della Plague Furnace) da' un
        attacco in piu' a ciascuno dell'equipaggio; la carica furiosa
        della bestia — «solo il Ripperdactyl» — vuole i suoi tre pollici */
@@ -377,10 +405,13 @@ export function mountStrikers(c){
     /* la riga della bestia passa dagli effetti a tempo, come il
        cavaliere: la Carica delle Zanne e' un effetto «della
        cavalcatura», e senza questo lo si vedeva scritto e non pesava */
-    const mv = (k, raw) => (r.beast ? val(u, k, { who: "mount" }) || raw : raw);
+    /* e l'equipaggio di un reggimento sente gli effetti dell'unita'
+       (un incantesimo che toglie un punto di Forza), sopra la sua riga */
+    const mv = (k, raw) => (r.beast ? val(u, k, { who: "mount" }) || raw
+                          : r.crew ? Math.max(0, raw + val(u, k) - baseOf(u, k)) : raw);
     const S = mv("S", r.s);
     return {
-      ...c, name: `${r.chi} (${c.name})`, mountRow: r.chi,
+      ...c, name: `${r.chi} (${c.name})`, mountRow: r.chi, beastRow: !!r.beast, herd: !!r.herd,
       ws: mv("WS", r.ws), i: mv("I", r.i),
       a: r.a * r.n + extra * r.n,
       baseS: S, s: w ? weaponStrength(w, S) : S,
@@ -662,9 +693,7 @@ export function contact(att, def, { touching = null, frontage = null, withChars 
    loro da un modello, e quando cadono smettono di menare da soli.
    Torna, per ogni nemico di `cts`, quanti attacchi si sono persi.
    ------------------------------------------------------------------ */
-export function fallenCut(att, cts, fallen){
-  const out = cts.map(() => 0);
-  if (!(fallen > 0) || !cts.some(Boolean)) return out;
+function fallenSplit(cts, fallen){
   const tot = v => v.reduce((s, x) => s + x, 0);
   /* chi tocca, chi e' nella fila senza toccare, chi appoggia */
   const tocca = cts.map(ct => (ct ? ct.front : 0));
@@ -676,7 +705,21 @@ export function fallenCut(att, cts, fallen){
   const persiTocca = Math.min(fallen - persiFuori, tot(tocca));
   const persiDietro = Math.min(fallen - persiFuori - persiTocca, tot(dietro));
   /* con piu' nemici davanti, la perdita si divide come la fila */
-  const lf = spread(persiFuori, fuori), lt = spread(persiTocca, tocca), ld = spread(persiDietro, dietro);
+  return { tocca, fuori, dietro,
+           lf: spread(persiFuori, fuori), lt: spread(persiTocca, tocca), ld: spread(persiDietro, dietro) };
+}
+/* Quanti della fila toccano ancora il nemico, nemico per nemico, dopo
+   `fallen` caduti: e' da li' che mena la bestia di un reggimento di
+   cavalleria (p. 192), che non ha l'attacco solo di chi non tocca. */
+export function stillTouching(cts, fallen){
+  if (!(fallen > 0)) return cts.map(ct => (ct ? ct.front : 0));
+  const { tocca, lt } = fallenSplit(cts, fallen);
+  return cts.map((ct, k) => (ct ? Math.max(0, tocca[k] - lt[k]) : 0));
+}
+export function fallenCut(att, cts, fallen){
+  const out = cts.map(() => 0);
+  if (!(fallen > 0) || !cts.some(Boolean)) return out;
+  const { tocca, fuori, dietro, lf, lt, ld } = fallenSplit(cts, fallen);
   const one = att.noAttacks ? 0 : 1;
   cts.forEach((ct, k) => {
     if (!ct) return;
@@ -766,7 +809,8 @@ export function engagements(A = [], B = []){
    «Ha caricato» qui non vuole i tre pollici dell'urto: la Choppa dice
    «nel turno in cui ha caricato» e basta. */
 function boostsOf(att){
-  const b = meleeBoosts((att.flags && att.flags.army) || [], { charged: !!att.charged, weapon: att.weapon });
+  const b = meleeBoosts((att.flags && att.flags.army) || [],
+                        { charged: !!att.charged, weapon: att.weapon, mount: !!att.beastRow });
   const e = att.eff || {}, why = att.effWhy || {};
   const by = () => (why.reroll || [])[0] || "effetto";
   if (e.reroll && e.reroll.toHit && !b.rerollHit){ b.rerollHit = e.reroll.toHit; b.from.hit = by(); }
@@ -1301,6 +1345,24 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
   for (const e of all.slice()){
     const rows = mountStrikers(e.c);
     if (!rows.length) continue;
+    /* La bestia di un reggimento mena da ogni modello che tocca il
+       nemico, contro il nemico che quel modello tocca (p. 192): il conto
+       e' quello della fila (`cts`), e i colpi diretti sui capi nemici
+       restano dei cavalieri. `perModel` e' quanto mena una bestia, e
+       serve dopo, quando cade qualcuno prima che lei meni. */
+    if (rows[0].herd){
+      if (!e.cts) continue;
+      for (const m of rows){
+        const budget = e.cts.map(ct => (ct ? ct.front * m.a : 0));
+        if (!budget.some(v => v > 0)) continue;
+        all.push({ ...e, c: m, host: e, budget, base: budget.slice(), fronts: e.fronts.slice(), perModel: m.a });
+      }
+      continue;
+    }
+    /* il capo nella fila che non tocca il nemico fa UN attacco, e il
+       modello e' uno solo: quell'attacco e' suo, e la cavalcatura non
+       mena (p. 146; la stessa lettura della bestia di un reggimento) */
+    if (e.c.oneAttack) continue;
     const k = e.budget.findIndex(v => v > 0);
     if (k < 0) continue;
     for (const m of rows){
@@ -1412,6 +1474,21 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
      modello solo: quando cadono smettono di menare da soli. */
   const init = { A: initA, B: initB };
   const cut = e => {
+    /* la bestia di un reggimento cade con il suo cavaliere: mena da chi
+       della fila tocca ancora, e i caduti si tolgono prima dalle
+       estremita' che non toccano (p. 150) */
+    if (e.host && e.perModel != null){
+      const h = e.host, sp = ML.speedOf(e.c);
+      if (sp.rank > 1 || sp.i >= 10) return;          // insieme all'urto
+      const fallen = init[h.tag][h.at].models - h.c.models;
+      if (!(fallen > 0)) return;
+      const left = stillTouching(e.cts, fallen);
+      const now = e.base.map((b, k) => Math.min(b, left[k] * e.perModel));
+      const meno = e.base.reduce((s, b, k) => s + b - now[k], 0);
+      e.budget = now;
+      if (meno) e.caduti = { models: fallen, attacks: meno };
+      return;
+    }
     if (e.host || e.c.attached || !e.cts || !e.base) return;
     const sp = ML.speedOf(e.c);
     if (sp.rank > 1 || sp.i >= 10) return;          // insieme all'urto
@@ -1669,8 +1746,12 @@ export function meleeForecast(att, def, attacks){
     const n = att.forcedAttacks ?? contact(att, def).troop;
     parts.push({ x: { who: att, g: { character: false, attacks: n } }, f: oneForecast(att, def, n) });
   }
-  for (const m of rows)
-    parts.push({ x: { who: m, g: { character: false, mount: true, attacks: m.a } }, f: oneForecast(m, def, m.a) });
+  /* la bestia di un reggimento mena da chi tocca il nemico, e basta */
+  const touch = rows.some(m => m.herd) ? contact(att, def).front : 0;
+  for (const m of rows){
+    const n = m.herd ? m.a * touch : m.a;
+    parts.push({ x: { who: m, g: { character: false, mount: true, attacks: n } }, f: oneForecast(m, def, n) });
+  }
   if (parts.length){
     const rank = parts.find(p => !p.x.g.character) || parts[0];
     return {

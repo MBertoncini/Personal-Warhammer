@@ -27,7 +27,7 @@
 /* ============================================================
    1 · LE CARATTERISTICHE
    ============================================================ */
-import { splitStat } from './profiles.js';
+import { splitStat, beastStat } from './profiles.js';
 
 export const CHARS = ["M","WS","BS","S","T","W","I","A","Ld"];
 export const CHAR_LABEL = {
@@ -152,9 +152,14 @@ export function sweepExpired(u, now){
    domanda della Carica delle Zanne degli Orchi. */
 export function statOf(u, key, { who = null, now = null } = {}){
   const owner = who || whoOwns(u, key);
+  /* la bestia di un reggimento di cavalleria non e' una cavalcatura
+     montata dalla lista: la sua riga sta nella tavola dei profili, e
+     gli effetti «della cavalcatura» vanno sopra quella, non sopra il
+     numero del cavaliere */
+  const herd = owner === "mount" && !hasMount(u) ? beastStat(u, key) : null;
   const base = owner === "mount" && hasMount(u)
     ? num((profileOf(u, "mount") || {})[key])
-    : baseOf(u, key);
+    : herd != null ? herd : baseOf(u, key);
   const mods = [];
   let value = base;
 

@@ -358,8 +358,8 @@ ok('quelle che l app non applica dicono tutte perche', cov.manual.length > 0 && 
 ok('Warpaint e Big Uns sono da verificare, e lo dicono',
    cov.unverified.map(x => x.name).join(',') === "Warpaint,Big 'Uns");
 const tuskRule = og.rules.find(r => r.id === 'tuskerCharge');
-ok('la Tusker Charge si sa dire ma non si applica: il conto non separa il cinghiale',
-   expressible(tuskRule) && !applies(tuskRule) && cov.manual.some(m => m.name === 'Tusker Charge'));
+ok('la Tusker Charge si applica: l assalto separa il cinghiale dal cavaliere (p. 192)',
+   expressible(tuskRule) && applies(tuskRule) && cov.applied.some(m => m.name === 'Tusker Charge'));
 ok('le regole che gioca la psicologia contano come applicate',
    ['Fear of Elves', 'Ignore Panic', 'Ignore Goblin Panic'].every(n => cov.applied.some(a => a.name === n)));
 ok('una regola si riconosce dal nome con cui la scrive New Recruit',

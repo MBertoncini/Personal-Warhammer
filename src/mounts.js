@@ -28,6 +28,7 @@
  */
 
 import { BASES } from './bases.js';
+import { strikerRows } from './profiles.js';
 
 let TAVOLA = null;
 
@@ -310,6 +311,32 @@ export function attackRows(u){
         /* la riga della bestia e' quella che gli effetti chiamano «mount»:
            la Carica delle Zanne alza la Forza a lei, non all'equipaggio */
         beast: !!u.mount.row && r.chi === u.mount.row,
+        ws: num(s.WS), s: num(s.S), i: num(s.I), a: num(s.A),
+        arma: r.arma || null, regole: r.regole || [],
+      };
+    })
+    .filter(r => r.a > 0);
+}
+
+/* Le righe della bestia di un REGGIMENTO di cavalleria, nella stessa
+   forma di `attackRows`. Qui i numeri sono per modello: quanti modelli
+   menano lo sa la fila che combatte, e lo conta `combat.js` — la bestia
+   mena solo da chi tocca il nemico, e mai d'appoggio (p. 192, «Cavalry
+   Support»). Le righe vengono dalla tavola dei profili (`profiles.js`),
+   lette sul libro con la pagina accanto.
+
+   Con la bestia vengono le righe dell'EQUIPAGGIO (`crew`): i due Orchi
+   del carro, i tre skink del Bastiladon. Ognuna mena con i suoi numeri
+   (p. 194), e `n` dice quanti ce ne sono per modello. Un equipaggio
+   senza arma sua impugna quella che la lista da' all'unita'. */
+export function herdRows(u){
+  if (!u || u.mountId) return [];
+  return strikerRows(u)
+    .map(r => {
+      const s = r.stats || {};
+      return {
+        chi: r.chi || "cavalcatura", n: Math.max(1, +r.n || 1),
+        beast: !!r.bestia, crew: !!r.equipaggio, herd: true,
         ws: num(s.WS), s: num(s.S), i: num(s.I), a: num(s.A),
         arma: r.arma || null, regole: r.regole || [],
       };

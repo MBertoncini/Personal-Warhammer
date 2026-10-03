@@ -12,7 +12,30 @@
       "da": "War Boar",
       "libro": "Ravening Hordes",
       "pagina": 29,
-      "nota": "il cavaliere ha «-» anche sul libro: il Movimento è quello del cinghiale"
+      "nota": "il cavaliere ha «-» anche sul libro: il Movimento è quello del cinghiale",
+      "righe": [
+        {
+          "chi": "War Boar",
+          "bestia": true,
+          "stats": {
+            "M": 7,
+            "WS": 3,
+            "S": 3,
+            "I": 3,
+            "A": 1
+          },
+          "arma": {
+            "name": "Tusks",
+            "S": "S",
+            "ap": "-",
+            "rules": ""
+          },
+          "regole": [
+            "Tusker Charge"
+          ]
+        }
+      ],
+      "notaRighe": "La riga del cinghiale: ogni modello della fila che combatte che tocca il nemico mena anche con lui, con i suoi numeri e le zanne, che contano come arma a una mano (p. 192, «Split Profile (Cavalry)»). D’appoggio mena solo il cavaliere. La Tusker Charge sta sul libro fra le regole dell’unità e vale per il cinghiale soltanto (p. 46): il file della lista non la scrive, e la porta questa riga."
     },
     {
       "nomi": [
@@ -28,27 +51,40 @@
       "righe": [
         {
           "chi": "Orc Crew (x2)",
+          "equipaggio": true,
+          "n": 2,
           "stats": {
             "WS": 3,
             "BS": 3,
             "S": 3,
             "I": 3,
-            "A": 2,
+            "A": 1,
             "Ld": 7
           }
         },
         {
           "chi": "War Boars (x2)",
+          "bestia": true,
+          "n": 2,
           "stats": {
             "M": 7,
             "WS": 3,
             "S": 3,
             "I": 3,
-            "A": 2
-          }
+            "A": 1
+          },
+          "arma": {
+            "name": "Tusks",
+            "S": "S",
+            "ap": "-",
+            "rules": ""
+          },
+          "regole": [
+            "Tusker Charge"
+          ]
         }
       ],
-      "notaRighe": "La riga del carro ha «-» su Abilità Combattimento, Iniziativa, Attacchi e Comando: quei numeri stanno sulle due righe sotto, e senza di loro l'app faceva combattere il carro con Abilità 0 e Comando 0. L'app tiene un profilo solo per modello e il carro è un modello solo, quindi mena con i servitori: due attacchi, uno a testa. I due cinghiali ne portano altri due, a Forza 3, e quelli non li tira nessuno — è il limite del profilo unico, detto qui invece che taciuto. La Forza resta quella che il file dichiara, 5, che è del carro: i colpi dei servitori sarebbero a 3."
+      "notaRighe": "Il carro non ha Abilità, Iniziativa, Attacchi né Comando suoi: quei numeri stanno sulle righe sotto (p. 33), e senza di loro l’app faceva combattere il carro con Abilità 0 e Comando 0. Come dice «Split Profile (Chariots)» (Core p. 194) menano l’equipaggio e i cinghiali, ognuno con i suoi numeri e le sue armi — i servitori con l’arma che la lista dà all’unità, i cinghiali con le zanne —, i colpi nemici vanno sull’Abilità dell’equipaggio, e l’urto usa la Forza del carro, 5. La riga del carro non mena. La Tusker Charge vale per i cinghiali e non per l’equipaggio (Ravening Hordes p. 46). Il terzo servitore che si può comprare il file non lo dice: ne contano due."
     },
     {
       "nomi": [
@@ -62,7 +98,26 @@
       "da": "Bounder Squig",
       "libro": "Ravening Hordes",
       "pagina": 32,
-      "nota": "non ha un Movimento fisso: si tirano tre D6 e si va per quello che esce"
+      "nota": "non ha un Movimento fisso: si tirano tre D6 e si va per quello che esce",
+      "righe": [
+        {
+          "chi": "Bounder Squig",
+          "bestia": true,
+          "stats": {
+            "WS": 4,
+            "S": 5,
+            "I": 4,
+            "A": 2
+          },
+          "arma": {
+            "name": "Huge gob",
+            "S": "S",
+            "ap": "-1",
+            "rules": "Armour Bane (1)"
+          }
+        }
+      ],
+      "notaRighe": "La riga dello squig, con la sua «Huge gob» (Forza S, PA −1, Armour Bane (1), stessa pagina). È anche la Forza dell’urto: Impact Hits usa la Forza della cavalcatura (p. 192). Il Movimento resta un tiro, ed è scritto sopra."
     },
     {
       "nomi": [
@@ -74,7 +129,30 @@
       "da": "Cold One",
       "libro": "Legends: Lizardmen",
       "pagina": 10,
-      "nota": "il cavaliere ha «-»: il Movimento è quello della lucertola"
+      "nota": "il cavaliere ha «-»: il Movimento è quello della lucertola",
+      "righe": [
+        {
+          "chi": "Cold One",
+          "bestia": true,
+          "stats": {
+            "M": 7,
+            "WS": 3,
+            "S": 4,
+            "I": 2,
+            "A": 2
+          },
+          "arma": {
+            "name": "Claws and teeth",
+            "S": "S",
+            "ap": "-",
+            "rules": ""
+          },
+          "regole": [
+            "Armour Bane (1)"
+          ]
+        }
+      ],
+      "notaRighe": "La riga della lucertola: denti e artigli contano come arma a una mano, e l’Armour Bane (1) è suo soltanto («Cold One only», stessa pagina)."
     },
     {
       "nomi": [
@@ -86,7 +164,27 @@
       "da": "Terradon",
       "libro": "Legends: Lizardmen",
       "pagina": 10,
-      "nota": "a terra fa 2″; in volo dieci, ed è quello che fa sempre — Fly (10) sta fra le sue regole speciali"
+      "nota": "a terra fa 2″; in volo dieci, ed è quello che fa sempre — Fly (10) sta fra le sue regole speciali",
+      "righe": [
+        {
+          "chi": "Terradon",
+          "bestia": true,
+          "stats": {
+            "M": 2,
+            "WS": 3,
+            "S": 4,
+            "I": 2,
+            "A": 1
+          },
+          "arma": {
+            "name": "Claws and teeth",
+            "S": "S",
+            "ap": "-",
+            "rules": ""
+          }
+        }
+      ],
+      "notaRighe": "La riga del terradonte: artigli e denti contano come arma a una mano."
     },
     {
       "nomi": [
@@ -100,13 +198,25 @@
       "righe": [
         {
           "chi": "Skink Crew (x3)",
+          "equipaggio": true,
+          "n": 3,
           "stats": {
+            "WS": 2,
             "BS": 3,
+            "S": 3,
+            "I": 4,
+            "A": 1,
             "Ld": 6
+          },
+          "arma": {
+            "name": "Hand weapon",
+            "S": "S",
+            "ap": "-",
+            "rules": ""
           }
         }
       ],
-      "notaRighe": "Dalla riga dei servitori arrivano l'Abilità Balistica e il Comando, che sulla riga del bestione sono «-». Gli attacchi restano i suoi tre: i tre skink ne porterebbero uno a testa, e l'app tiene un profilo solo per modello."
+      "notaRighe": "Dalla riga dei servitori arrivano l’Abilità Balistica e il Comando, che sulla riga del bestione sono «-». In mischia i tre skink menano con la loro riga e le loro armi a una mano, accanto al bestione: il Bastiladon non ha la Howdah, e il Core Rulebook non descrive il profilo diviso di una creatura mostruosa con un equipaggio, ma ogni profilo diviso che descrive — cavalleria, carri, Howdah, mostri cavalcati, macchine da guerra (pp. 192-205) — fa menare ogni riga con i suoi numeri. È una lettura dell’app, e i colpi nemici restano sull’Abilità del bestione. Il quarto skink che si può comprare il file non lo dice: ne contano tre."
     },
     {
       "nomi": [

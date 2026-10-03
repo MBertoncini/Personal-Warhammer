@@ -44,13 +44,12 @@
       "name": "Tusker Charge",
       "nomi": ["Tusker Charge"],
       "testo": "lista",
-      "page": 45,
+      "page": 46,
       "when": "charge",
-      "what": "nel turno in cui carica il cinghiale mena a Forza +1 e perfora di 1; il cavaliere no",
+      "what": "nel turno in cui carica il cinghiale mena a Forza +1 e perfora di 1; il cavaliere no, e nemmeno il carro e i suoi servitori",
       "who": "mount",
       "mods": { "S": 1 },
-      "ap": 1,
-      "perche": "vale per gli attacchi del cinghiale, e il conto dell'assalto non li separa ancora da quelli di chi lo cavalca"
+      "ap": 1
     },
     {
       "id": "waaagh",

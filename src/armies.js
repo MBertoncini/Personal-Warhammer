@@ -63,9 +63,10 @@ export const expressible = r => !!r && EFFECT_KEYS.some(k => r[k] != null);
 
 /* E si applica quando e' esprimibile e nessuno ha scritto perche' non
    si puo' — oppure quando la applica un altro modulo. La differenza con
-   `expressible` e' la Tusker Charge: il file sa dire cosa fa (+1 Forza
-   al cinghiale), ma il conto dell'assalto non separa ancora il
-   cinghiale dal cavaliere, e dire «applicata» sarebbe mentire. */
+   `expressible` e' una regola che il file sa dire ma che porta un
+   `perche`: quello che dice non arriva ai dadi, e dire «applicata»
+   sarebbe mentire. Lo era la Tusker Charge, finche' l'assalto non ha
+   separato il cinghiale dal cavaliere. */
 export const applies = r => !!r && (!!r.gioca || (expressible(r) && !r.perche));
 
 /* ============================================================
@@ -194,10 +195,16 @@ export function rulesNow(army, when = "always", { spent = [] } = {}){
 
    `charged` e' «ha caricato in questo turno», senza i tre pollici
    dell'urto: la Choppa li' non li chiede. `weapon` e' il nome dell'arma
-   impugnata, per le regole che valgono su una sola. */
+   impugnata, per le regole che valgono su una sola.
+
+   `mount` dice che a menare e' la bestia, non chi la cavalca: da quando
+   l'assalto le da' colpi suoi (p. 192), le regole che il libro scrive
+   per una sola delle due meta' vanno a quella giusta. La Tusker Charge
+   e' del cinghiale e non del cavaliere (p. 46); le Choppas sono del
+   cavaliere e non della sua cavalcatura (p. 45). */
 const HAND = /hand weapon|arma a una mano/i;
 
-export function meleeBoosts(rules = [], { charged = false, weapon = "" } = {}){
+export function meleeBoosts(rules = [], { charged = false, weapon = "", mount = false } = {}){
   const out = { rerollHit: null, rerollWound: null, ap: 0, s: 0, ward: 0,
                 magical: false, from: {}, notes: [], off: [] };
   for (const r of rules || []){
@@ -206,6 +213,8 @@ export function meleeBoosts(rules = [], { charged = false, weapon = "" } = {}){
     if (!["always", "melee", "charge"].includes(when)) continue;
     if (when === "charge" && !charged) continue;
     const f = r.flags || {};
+    if (r.who === "mount" && !mount) continue;
+    if (f.notMount && mount) continue;
     if (f.handWeaponOnly && !HAND.test(String(weapon || ""))){
       out.off.push(r.name + ": vale solo con l'arma a una mano");
       continue;
