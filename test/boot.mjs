@@ -1839,7 +1839,8 @@ console.log('\nla sfida contro l\'AI');
      DP.state.units.filter(u => u.placed).length >= 10);
   ok('il registro scorre nel pannello', doc.querySelectorAll('#sfida .sf-riga').length > 10);
   ok('le righe con i dadi si aprono sul loro perché', doc.querySelectorAll('#sfida .sf-perche .sp').length > 0);
-  ok('e le schede del perché compaiono sopra il tavolo', doc.querySelectorAll('.board-scroll .sp-pila .sp').length > 0);
+  ok('e le schede del perché compaiono in una striscia sotto il tavolo, non sopra',
+     doc.querySelectorAll('.board-wrap > .sp-striscia .sp').length > 0 && !doc.querySelector('.board-scroll .sp-pila'));
   /* un pezzo non si trascina: lo muove l'arbitro */
   const u = DP.state.units.find(x => x.placed && !x.join);
   const prima = [u.x, u.y];
@@ -1863,6 +1864,16 @@ console.log('\nla sfida contro l\'AI');
      !S.schierando && doc.querySelectorAll('#sfida .sf-mossa').length === 0);
   ok('il pannello dice chi gioca contro chi, e che sono tutti e due l AI',
      /tutti e due/.test(doc.querySelector('#sfida .sf-testa').textContent));
+  /* a schermo intero: solo il tavolo, la striscia del perché e una barra */
+  ok('nell angolo del tavolo c è il pulsante per guardarla a schermo intero', !!doc.querySelector('.board-scroll #sf-cinema-entra'));
+  doc.querySelector('#sf-cinema-entra').dispatchEvent(new window.Event('click'));
+  await settle(60);
+  ok('a schermo intero c è la barra con il turno e il punteggio',
+     doc.body.classList.contains('sf-cinema') && /Turno|Schieramento|Incantesimi/.test(doc.querySelector('#sf-cinema-barra').textContent) &&
+     !!doc.querySelector('#sf-cinema-barra [data-c="esci"]') && !doc.querySelector('#sf-cinema-entra'));
+  doc.querySelector('#sf-cinema-barra [data-c="esci"]').dispatchEvent(new window.Event('click'));
+  await settle(30);
+  ok('e si esce', !doc.body.classList.contains('sf-cinema') && !doc.querySelector('#sf-cinema-barra'));
   doc.querySelector('#sf-ferma').dispatchEvent(new window.Event('click'));
   await settle(600);
   const fermo = S.log.length;
@@ -1881,6 +1892,45 @@ console.log('\nla sfida contro l\'AI');
   CA.abbandona();
   await settle(30);
   ok('nessun errore guardando', errors.length === 0 && !CA.inCorso());
+
+  /* AI contro AI dal telefono: il seme di `tools/partita.mjs`, la
+     velocita' «di corsa», e alla fine nel diario da sola, da rivedere */
+  const RP = await import('../src/reports.js');
+  window.localStorage.setItem('tow-sfida-velocita', '0');
+  window.localStorage.setItem('tow-sfida-spiega', '0');
+  const quante = RP.allReports().length;
+  const gioca = async salva => {
+    CA.startSfida({ listA: la, listB: lb, mia: 'guarda', seme: 7, agenti: { A: 'euristica', B: 'euristica' }, salva });
+    const S2 = CA.statoSfida();
+    for (let i = 0; i < 6000 && !(S2.finita && (!salva || RP.allReports().length > quante)); i++) await settle(5);
+    await settle(60);
+    return S2;
+  };
+  const S2 = await gioca(true);
+  ok('con il seme e di corsa la partita da guardare arriva in fondo', S2.finita);
+  const salvata = RP.allReports()[0];
+  ok('e finisce da sola nel diario, con il tavolo passo per passo',
+     RP.allReports().length === quante + 1 && !!salvata.replay && salvata.replay.frames.length > 20 && salvata.meta.simulata === true);
+  ok('con le fotografie di ogni mezzo turno e il verdetto nelle note',
+     salvata.turns.filter(t => t.kind === 'turn').length >= 2 && /Verdetto dell'arbitro/.test(salvata.notes));
+  ok('e il pannello dice che è nel diario', /Nel diario ✓/.test(doc.querySelector('#sf-salva').textContent));
+  await RP.rivedi(salvata.id);
+  const fr = doc.querySelector('#rivedi-velo iframe');
+  ok('si rivede: la pagina animata si apre sopra l app', !!fr && /const P = /.test(fr.srcdoc) && /▶ Guarda/.test(fr.srcdoc));
+  ok('con il pulsante dello schermo intero, che il riquadro concede',
+     /id="cinema"/.test(fr.srcdoc) && /fullscreen/.test(fr.getAttribute('allow') || ''));
+  doc.querySelector('#rivedi-velo .rivedi-chiudi').dispatchEvent(new window.Event('click'));
+  ok('e si chiude', !doc.querySelector('#rivedi-velo'));
+  const registro = S2.log.map(r => r.text).join('|');
+  CA.abbandona();
+  await settle(30);
+  const S3 = await gioca(false);
+  ok('lo stesso seme rigioca la stessa partita', S3.finita && S3.log.map(r => r.text).join('|') === registro);
+  CA.abbandona();
+  await settle(30);
+  window.localStorage.removeItem('tow-sfida-velocita');
+  window.localStorage.removeItem('tow-sfida-spiega');
+  ok('nessun errore nella partita salvata e rivista', errors.length === 0);
 }
 
 console.log('\nil guscio per stare senza rete');

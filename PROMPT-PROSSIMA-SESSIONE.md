@@ -199,14 +199,85 @@ sopravvive a un ricaricamento — se serve, `S` va reso serializzabile
 (`detto` è un `Set`, il terreno ha funzioni `contains`). Prove in
 `test/boot.mjs`, sezione «la sfida contro l'AI».
 
-Da fare: salvare la sfida finita nel diario **dall'app** — oggi la
-salva `tools/archivia-registro.mjs`, che rilegge il testo di *Copia il
-registro* e ne fa una voce di `dati/partite.json` (perdite, cadute,
-fughe, i capi che un reggimento travolto si porta via), ma senza le
-posizioni, che il registro non scrive. Nella scheda lo stato c'è: basta
-chiamare `BL.turnRecord` a ogni passaggio di mano come fa
-`tools/archivia.mjs`. E scegliere un bersaglio o un posto cliccando sul
-tavolo invece che nell'elenco.
+~~Salvare la sfida finita nel diario dall'app~~ — fatto (2026-10-03):
+*Salva nel diario* nel pannello Sfida, con i fotogrammi del tavolo
+(`src/replay.js`, il motore della pagina di `tools/replay.mjs`) e le
+fotografie dei mezzi turni (`src/archivio.js`, `registro`, che adesso
+si chiude senza toccare niente e si puo' salvare anche a meta'). Nella
+scheda Partite *▶ Rivedi* apre la pagina animata in un riquadro;
+*Importa un registro…* fa quello che faceva solo
+`tools/archivia-registro.mjs` (`dalRegistro`). AI contro AI si gioca
+dalla scheda Matchup senza terminale: una partita dal vivo con il seme
+e la velocita', tante in un Web Worker (`src/simulatore-lavoro.js`) con
+il conto di `--partite`. `serie`, `statistica` e `heatmap` stanno in
+`src/*.js` perche' il browser carica come moduli solo i `.js` (il
+server di Python serve i `.mjs` con il tipo sbagliato); `tools/*.mjs`
+li riesportano.
+
+Resta da fare: scegliere un bersaglio o un posto cliccando sul tavolo
+invece che nell'elenco.
+
+## L'ultima partita di Michele (orchi contro lucertole, 2026-10-03), riletta
+
+Il registro e' in `ULTIMA PARTITA.txt`. Corretto, con le prove in fondo
+a `test/arbitro.mjs` («l ultima partita…»):
+
+1. **La carica nel terreno difficile perdeva DUE pollici.** `declareCharge`
+   toglie il pollice e lo mette in `d.move`, e `muoviCarica` passava
+   `d.move` a `chargeOutcome`, che lo toglieva di nuovo. I Goblin Mobs
+   (M4, 1 e 4) facevano 3″ invece di 4″ contro i 3,8″ che servivano: la
+   carica sui Cold One doveva arrivare. Adesso si passa `d.base`.
+2. **La carica fallita muoveva di tutta la portata**, Movimento compreso:
+   il libro muove di quello che hanno detto i dadi (p. 121, l'esempio
+   con M4 e i dadi 1 e 5 muove di 5″). I Boar Boyz hanno fatto 10″
+   invece di 5″. Anche il tavolo (`shortCharge` in `deploy.js`).
+3. **Il pollice del terreno si guardava sui primi M pollici** di una
+   linea dritta: chi marciava trovava la palude nella seconda meta' senza
+   rallentare (Black Orc Mobs al turno 2). Adesso `pianoConTerreno`
+   guarda il percorso vero, ruota compresa, e se con il pollice in meno
+   il terreno non si raggiunge piu' si va fino al bordo senza perderlo.
+4. **Le manovre** (indietro, di lato, giro sul posto) non pagavano il
+   terreno: niente pollice in meno e niente test pericoloso.
+5. **Chi «marciava» di zero pollici** tirava il test della palude e
+   contava come mosso: i Boar Boyz ci hanno perso un modello a turno per
+   tre turni. Le avanzate che non spostano e non girano non si offrono
+   piu', e senza movimento non c'e' test.
+6. **Move Through Cover e Aquatic** erano «riguarda il movimento» e
+   nessuno li applicava: gli Skink perdevano il pollice nella palude e
+   nel bosco e non ritiravano gli 1.
+7. **La Warband saliva sul Comando del generale**: Goblin Mobs con
+   Comando 10 vicino al Black Orc Warboss (9, niente Warband). Il libro
+   (p. 180): il proprio modificato, quello di un capo Warband
+   modificato, o quello di chiunque altro com'e'. `comandoConWarband`
+   nell'arbitro, e lo stesso in `combatant`.
+8. **La Forza d'Unita' rimasta indietro**: cambiare i modelli di
+   un'unita' nella scheda Liste non riscalava `us` (tre Troll con la
+   Forza d'Unita' di uno, undici Saurus con quella di quindici — e la
+   ricerca delle liste l'ha copiata in tutte le liste nuove a 1,4 a
+   modello). `updateUnit` la riscala, il fronte da un modello solo non
+   resta 1, e `usPerModel` non vale mai meno della tabella. I Troll
+   scappavano invece di ripiegare perche' i Cold One sembravano piu' del
+   doppio.
+9. Il registro scriveva «a 6+» per i tiri a 7+ (il conto era giusto) e
+   «+1 per la collina» a tutte e due le parti quando si annulla.
+
+Dichiarati nel registro, quando contano: `cavalleria` (un reggimento di
+cavalleria mena con la sola riga del cavaliere: le Cold One e i War Boar
+dei reggimenti non attaccano) e `ostinati` (Stubborn sceglie da solo).
+
+**Il piu' grosso che resta, e va fatto con il libro aperto (pp. 145-146):
+chi combatte.** `contact()` in `combat.js` da' a ogni reggimento una
+fila d'appoggio con un attacco a testa, come nel Warhammer di prima: nel
+Old World l'attacco d'appoggio c'e' solo con Fight in Extra Rank («Some
+models are equipped with weapons that allow them to make a supporting
+attack», p. 145). Press of Battle fa menare la seconda fila con tutti
+gli attacchi, ma chi e' nella fila che combatte senza toccare il nemico
+fa un attacco solo (p. 145, «it can make only one attack»). E l'arbitro
+non sa da che faccia e' preso il difensore: i Saurus presi di fianco
+hanno menato con 24 attacchi come se fossero presi di fronte (la fila
+che combatte di fianco e' la colonna, p. 145, e di fianco non si
+appoggia). Cambia il peso di ogni mischia, e quindi i conti del
+Laboratorio: le liste bilanciate vanno riverificate dopo.
 
 ## Quello che è uscito dalla prima sfida vera (Michele contro Gemini)
 

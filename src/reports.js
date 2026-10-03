@@ -15,6 +15,14 @@
  *    precedente cosi' si scrive solo quello che e' cambiato.
  *
  * I conti stanno in battlelog.js; qui c'e' l'archivio e il pannello.
+ *
+ * Una partita tenuta dall'arbitro — la sfida sul tavolo, o AI contro AI
+ * — porta con se' anche `replay`: i fotogrammi del tavolo passo per
+ * passo. «▶ Rivedi» la apre nella stessa pagina animata di
+ * `tools/partita.mjs --html`, con le foto della collezione. E una sfida
+ * di cui e' rimasto solo il testo di «Copia il registro» si importa da
+ * qui (`archivio.js`, `dalRegistro`): perdite, fughe e punteggio sì, le
+ * posizioni no, perche' il registro non le scrive.
  */
 
 import { $, esc } from './util.js';
@@ -31,6 +39,11 @@ import * as V from './victory.js';
 import { tallyUnknown } from './rulebook.js';
 import { armyFor } from './armies.js';
 import { shotFromTurn, shotSVG, shotCaption } from './tableshot.js';
+import * as RP from './replay.js';
+import * as ARCH from './archivio.js';
+import * as AR from './arbitro.js';
+import * as MG from './magic.js';
+import { photoFor } from './catalog.js';
 
 const REP_KEY = "reports:all";
 
@@ -163,6 +176,111 @@ function blankDeploy(rep){
   return { kind:"deploy", n:0, army:"", at: Date.now(), units, events: [], note: "" };
 }
 
+/* Una voce fatta altrove — la sfida dell'app, un registro importato —
+   entra in testa, o sostituisce quella con lo stesso id: la sfida
+   salvata a meta' e poi alla fine e' una partita sola. */
+export async function addReport(rep){
+  normalize(rep);
+  rep.saved = new Date().toISOString();
+  const i = reports.findIndex(r => r.id === rep.id);
+  if (i >= 0) reports[i] = rep; else reports.unshift(rep);
+  openId = rep.id;
+  openTurn = 0;
+  await persist();
+  return rep;
+}
+
+/* ============================================================
+   1b · RIVEDERE UNA PARTITA
+   La pagina e' quella di `tools/replay.mjs`: la costruisce `replay.js`,
+   con il sorgente delle schede del perche' e le foto della collezione
+   prese adesso, e si apre sopra l'app in un riquadro a tutto schermo.
+   ============================================================ */
+let sorgenteSchede = null;
+async function schedeDelPerche(){
+  if (sorgenteSchede != null) return sorgenteSchede;
+  try { sorgenteSchede = await (await fetch("src/spiega.js")).text(); }
+  catch (_){ sorgenteSchede = ""; }
+  return sorgenteSchede;
+}
+export async function rivedi(idOrRep){
+  const rep = typeof idOrRep === "string" ? getReport(idOrRep) : idOrRep;
+  if (!rep || !rep.replay || !Array.isArray(rep.replay.frames))
+    return say("Questa partita non ha il tavolo passo per passo: si rivede solo quella giocata con l'arbitro " +
+               "(la sfida sul tavolo, o AI contro AI) e salvata nel diario.", { title: "Niente da rivedere" });
+  const meta = { ...rep.replay.meta };
+  const foto = {};
+  for (const p of Object.values(meta.pezzi || {})){
+    const src = p && p.k ? photoFor(p.k) : null;
+    if (src) foto[p.k] = src;
+  }
+  meta.foto = foto;
+  const html = RP.paginaHTML({ meta, frames: rep.replay.frames, spiega: await schedeDelPerche(), compattato: true });
+  apriVelo(html, rep.title);
+}
+function apriVelo(html, titolo){
+  const vecchio = document.getElementById("rivedi-velo");
+  if (vecchio) vecchio.remove();
+  const velo = document.createElement("div");
+  velo.id = "rivedi-velo";
+  velo.className = "rivedi-velo";
+  velo.setAttribute("role", "dialog");
+  velo.setAttribute("aria-label", titolo || "La partita");
+  /* una barra sua sopra la pagina: il pulsante non copre il titolo
+     della partita, che su un telefono va a capo e arriva fin lassu' */
+  velo.innerHTML = `<div class="rivedi-barra"><span class="rivedi-titolo">${esc(titolo || "La partita")}</span>
+    <button class="btn tiny rivedi-chiudi" title="Chiudi (Esc)" aria-label="Chiudi">✕ Chiudi</button></div>`;
+  const fr = document.createElement("iframe");
+  fr.className = "rivedi-pagina";
+  fr.title = titolo || "La partita";
+  /* lo schermo intero della pagina («⛶») lo deve concedere il riquadro */
+  fr.setAttribute("allow", "fullscreen");
+  fr.setAttribute("allowfullscreen", "");
+  fr.srcdoc = html;
+  velo.appendChild(fr);
+  const chiudi = () => { velo.remove(); document.removeEventListener("keydown", tasto); };
+  const tasto = e => { if (e.key === "Escape") chiudi(); };
+  velo.querySelector(".rivedi-chiudi").addEventListener("click", chiudi);
+  document.addEventListener("keydown", tasto);
+  document.body.appendChild(velo);
+  fr.focus();
+}
+/* Una pagina gia' fatta — la mappa di tante partite del simulatore — nel
+   riquadro dove si rivedono le partite */
+export const apriPagina = (html, titolo) => apriVelo(html, titolo);
+
+/* ============================================================
+   1c · UN REGISTRO DA IMPORTARE
+   ============================================================ */
+const scenariGiocabili = () => Object.entries(allScenarios()).filter(([, s]) => s.table && s.deploy);
+const nomiDi = (la, lb) => {
+  const n = { A: (la.info && la.info.catalogue) || la.name, B: (lb.info && lb.info.catalogue) || lb.name };
+  if (n.A === n.B){ n.A += " (A)"; n.B += " (B)"; }
+  return n;
+};
+export function importaRegistro({ idA, idB, scenario, testo, mia = "" }){
+  const la = getList(idA), lb = getList(idB);
+  if (!la || !lb) return { guasti: ["servono tutte e due le liste, A e B, come erano nella partita"] };
+  const def = allScenarios()[scenario];
+  if (!def || !def.table) return { guasti: ["lo scenario non si gioca con l'arbitro: scegline uno con il tavolo"] };
+  const nomi = nomiDi(la, lb);
+  const S = AR.newBattle({ A: la, B: lb, scenario, def, nomi, magia: MG.magicNow() });
+  const r = ARCH.dalRegistro({ S, liste: { A: la, B: lb }, nomi, sc: def, testo,
+    title: `${def.label}: ${nomi.A} contro ${nomi.B}`,
+    meta: { event: "Sfida sul tavolo contro l'AI, importata dal registro", mine: mia,
+            playerA: mia === "A" ? "tu" : "l'AI", playerB: mia === "B" ? "tu" : "l'AI" } });
+  if (!r.rep) return r;
+  const v = BL.verdict(r.rep);
+  r.rep.notes = [
+    "Importata dal testo di «Copia il registro» (scheda Partite, «Importa un registro»): di ogni turno c'è quello " +
+      "che il registro dice — perdite, cadute, fughe, e le righe con la pagina del manuale — e NON ci sono le " +
+      "posizioni, che il registro non scrive. Le fotografie sono senza tavolo, e la partita non si rivede animata.",
+    `Punteggio rifatto dal ruolino: ${nomi.A} ${v.A} — ${nomi.B} ${v.B}.`,
+    r.verdettoArbitro ? `In coda al registro l'arbitro aveva scritto: «${r.verdettoArbitro}».` : "",
+  ].filter(Boolean).join("\n\n");
+  return r;
+}
+
 export async function removeReport(id){
   reports = reports.filter(r => r.id !== id);
   if (openId === id) openId = null;
@@ -240,6 +358,25 @@ export function renderReports(){
         Archivia la partita del tavolo${played ? ` (${played} turni)` : shots.length ? " (solo schieramento)" : ""}</button>
       <button class="btn" id="rp-new" ${ls.length ? "" : "disabled"}
         title="${ls.length ? "Registra una partita giocata altrove" : "Servono due liste salvate"}">Nuova partita a mano…</button>
+      <button class="btn" id="rp-imp" ${ls.length ? "" : "disabled"}
+        title="Il testo di «Copia il registro» di una sfida contro l'AI">Importa un registro…</button>
+    </div>
+    <div id="rp-imp-box" hidden>
+      <p class="note">Una sfida contro l'AI chiusa senza salvarla: incolla qui il testo di <b>Copia il registro</b>, scegli
+        le due liste come erano in partita (A quella che ha schierato per prima nell'elenco della sfida) e lo scenario.
+        Diventa una partita del diario con perdite, fughe e punteggio turno per turno; le posizioni no — il registro non
+        le scrive — e quindi non si rivede animata. Le prossime le salvi dalla sfida con <b>Salva nel diario</b>.</p>
+      <div class="grid3">
+        <label class="field">Esercito A<select id="rp-imp-a">${listOpts(ls)}</select></label>
+        <label class="field">Esercito B<select id="rp-imp-b">${listOpts(ls)}</select></label>
+        <label class="field">Io ero
+          <select id="rp-imp-mia"><option value="A">A</option><option value="B">B</option><option value="">nessuno</option></select></label>
+      </div>
+      <label class="field">Scenario
+        <select id="rp-imp-sc">${scenariGiocabili().map(([id, s]) => `<option value="${id}">${esc(s.label)}${s.pts ? ` · ${s.pts} pt` : ""}</option>`).join("")}</select></label>
+      <textarea id="rp-imp-txt" rows="6" placeholder="T1 Tiro per lo schieramento: …"></textarea>
+      <div class="btn-row" style="margin-top:6px"><button class="btn primary" id="rp-imp-go">Importa nel diario</button></div>
+      <div id="rp-imp-esito"></div>
     </div>
     <div id="rp-new-box" hidden>
       <div class="grid3" style="margin-top:8px">
@@ -304,7 +441,7 @@ function sideRow(r){
           r.turns.filter(t => t.kind === "turn").length
             ? r.turns.filter(t => t.kind === "turn").length + " turni"
             : "solo il risultato"} · ${esc(r.scenario.label || "")}${
-          r.meta.simulata ? " · simulata, fuori dal palmarès" : ""}</span></span>
+          r.meta.simulata ? " · simulata, fuori dal palmarès" : ""}${r.replay ? " · ▶ si rivede" : ""}</span></span>
       <span class="chip ${key}">${v.A}–${v.B}</span>
     </div>`;
 }
@@ -316,6 +453,8 @@ function detailHTML(rep){
   return `
     <div class="panel-title">Partita
       <button class="btn tiny ghost" data-del="${rep.id}" style="color:var(--bad);float:right">Elimina</button></div>
+    ${rep.replay ? `
+      <button class="btn primary" id="rp-rivedi" style="width:100%;margin:4px 0 8px">▶ Rivedi la partita, con le animazioni</button>` : ""}
 
     <label class="field">Titolo<input type="text" data-f="title" value="${esc(rep.title)}"></label>
     <div class="grid3">
@@ -549,6 +688,27 @@ function wireTop(host, ls){
   $("#rp-new").addEventListener("click", () => {
     const b = $("#rp-new-box"); b.hidden = !b.hidden;
   });
+  $("#rp-imp").addEventListener("click", () => {
+    const b = $("#rp-imp-box"); b.hidden = !b.hidden;
+  });
+  $("#rp-imp-go").addEventListener("click", async () => {
+    const out = $("#rp-imp-esito");
+    const testo = $("#rp-imp-txt").value;
+    if (!testo.trim()){ out.innerHTML = `<p class="note warn">Incolla prima il registro.</p>`; return; }
+    let r;
+    try {
+      r = importaRegistro({ idA: $("#rp-imp-a").value, idB: $("#rp-imp-b").value,
+                            scenario: $("#rp-imp-sc").value, testo, mia: $("#rp-imp-mia").value });
+    } catch (e){ r = { guasti: [e.message] }; }
+    if (!r.rep || (r.guasti && r.guasti.length)){
+      out.innerHTML = `<p class="note warn">Il registro non torna con queste liste: vuol dire che non sono quelle della
+        partita, o non nell'ordine giusto. Archiviarla così sarebbe una partita finta.</p>
+        <ul class="mono">${(r.guasti || []).slice(0, 12).map(g => `<li>${esc(g)}</li>`).join("")}</ul>`;
+      return;
+    }
+    await addReport(r.rep);
+    renderReports();
+  });
   const make = async turns => {
     const a = $("#rp-la").value, b = $("#rp-lb").value;
     if (!a && !b) return say("Una partita a mano parte da almeno una lista salvata.", { title:"Scegli una lista" });
@@ -609,6 +769,8 @@ async function askWhoPlayed(rep){
 }
 
 function wireDetail(host, rep){
+  const riv = host.querySelector("#rp-rivedi");
+  if (riv) riv.addEventListener("click", () => rivedi(rep));
   const save = async ({ render = true } = {}) => {
     rep.saved = new Date().toISOString();
     await persist();

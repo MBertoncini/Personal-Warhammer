@@ -201,15 +201,28 @@ export async function updateUnit(listId, i, patch){
   const l = getList(listId);
   const u = l && l.units[i];
   if (!u) return;
+  if (patch.models != null) u.__modelsPrima = u.models;
   Object.assign(u, patch);
   if (patch.baseId){
     const b = baseById(patch.baseId);
     if (b){ u.baseW = b.w; u.baseH = b.h; }
   }
   if (patch.models != null){
+    const prima = Math.max(1, +u.__modelsPrima || 1);
     u.models = Math.max(1, Math.round(+patch.models || 1));
-    u.frontage = Math.min(u.frontage || 1, u.models);
+    /* La Forza d'Unita' del file e' per l'unita' intera: cambiando i
+       modelli va riscalata, altrimenti resta quella di prima. Quattro
+       Troll fusi in uno tenevano la Forza d'Unita' di un Troll solo, e
+       undici Saurus quella di quindici — e da li' la ricerca delle liste
+       l'ha copiata in tutte le liste nuove (1,4 a modello). */
+    if (u.us > 0) u.us = Math.round(u.us / prima * u.models);
+    /* il fronte di un'unita' da un modello e' 1, e restava 1: quattro
+       Troll in colonna, uno solo a menare. Se prima stavano tutti in una
+       fila, il fronte nuovo e' quello che l'app propone per il tipo. */
+    const tuttiInFila = (u.frontage || 1) >= prima;
+    u.frontage = tuttiInFila ? defaultFrontage(u.troop, u.models, !!u.loose) : Math.min(u.frontage || 1, u.models);
   }
+  delete u.__modelsPrima;
   if (patch.pts != null) u.pts = Math.max(0, Math.round(+patch.pts || 0));
   recount(l);
   await persist();

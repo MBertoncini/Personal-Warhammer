@@ -105,11 +105,19 @@ export const maxRankOf   = t => troopType(t).maxRank;
 /* `wounds` sono le Ferite iniziali del modello: servono ai tre tipi per
    cui il libro dice «come le Ferite iniziali». Senza, si conta 1, che e'
    il minimo e non finge di sapere. */
+/* Il file vince quando dice DI PIU' — sa della cavalcatura e degli
+   oggetti — ma non quando dice di meno: allora e' una Forza d'Unita'
+   rimasta indietro da quando l'unita' aveva meno modelli (tre Troll con
+   la Forza d'Unita' di uno, sei Boar Boyz a uno a testa), e la tabella
+   dice il vero. Contava nel test di rotta: i Cold One Riders vincevano
+   «con piu' del doppio» contro tre Troll che valevano tre punti invece
+   di nove, e i Troll scappavano invece di ripiegare. */
 export const usPerModel  = (t, fromFile = 0, models = 1, wounds = 0) => {
   const n = Math.max(0, +fromFile || 0), m = Math.max(1, +models || 1);
-  if (n > 0) return n / m;
   const row = troopType(t);
-  return row.usWounds ? Math.max(1, +wounds || 0) : row.us;
+  const tabella = row.usWounds ? Math.max(1, +wounds || 0) : row.us;
+  if (n > 0) return row.unknown ? n / m : Math.max(n / m, tabella || 0);
+  return tabella;
 };
 
 /* Quanta Forza d'Unita' ha un'unita' adesso: i modelli ancora in piedi

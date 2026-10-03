@@ -243,6 +243,11 @@ export const ELSEWHERE = [
   { re:/^magical attacks/i,
     why:"conta contro chi ha regole sugli attacchi magici: nessuna, nel conto di un assalto" },
   { re:/^(skirmish|loose formation|open order|close order)/i, why:"e' una formazione: cambia la sagoma sul tavolo, non i dadi" },
+  /* la fanteria pesante non perde i ranghi preso di fianco o alle spalle
+     da chi ha Forza d'Unita' sotto dieci (p. 101): e' un'eccezione al
+     disordine del fianco, che il conto dell'assalto non fa ancora */
+  { re:/^steady in the ranks/i,
+    why:"riguarda i ranghi persi presi di fianco o alle spalle, che il conto dell'assalto non toglie ancora: decidilo al tavolo" },
   { re:/^(fly|swiftstride|fast cavalry|move through cover|aquatic|scout|vanguard|ambush|swim)/i,
     why:"riguarda il movimento" },
   { re:/^(requires two hands)/i, why:"e' una scelta di equipaggiamento: decidi tu quale arma impugna" },

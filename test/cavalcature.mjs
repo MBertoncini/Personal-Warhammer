@@ -144,6 +144,12 @@ console.log('il file di New Recruit che lo esporta gia montato');
 
 const tutto = saved.find(l => l.units.some(u => u.name === 'Skink Priest' && u.pts === 290));
 const oldPriest = copy(tutto.units.find(u => u.name === 'Skink Priest' && u.pts === 290));
+/* Nell'archivio la lista e' gia' stata montata con «Applica»: smontata
+   torna com'era nel file di New Recruit, che e' quello che qui si prova.
+   Prima la prova leggeva la lista com'era il giorno in cui e' stata
+   scritta, e l'Archivio l'ha fatta diventare rossa senza che il codice
+   cambiasse. */
+if (oldPriest.mountId) MT.dismountUnit(oldPriest);
 ok('lo Skink Priest da 290 punti arriva su una 25×25 con le corna fra le armi',
    oldPriest.baseId === '25x25' && oldPriest.weapons.some(w => w.name === 'Great horns'));
 const g = MT.guessMount(oldPriest, 'Lizardmen');
@@ -157,6 +163,7 @@ ok('e il prete mena con la sua arma', C.meleeWeapon(oldPriest).name === 'Hand We
 ok('le regole non si doppiano', oldPriest.rules.filter(r => r === 'Terror').length === 1);
 
 const oldblood = copy(saved.flatMap(l => l.units).find(u => u.name === 'Saurus Oldblood'));
+if (oldblood.mountId) MT.dismountUnit(oldblood);
 const gc = MT.guessMount(oldblood, 'Lizardmen');
 ok('l Oldblood con gli artigli fra le armi e sul Carnosauro', gc && gc.id === 'carnosaur');
 MT.mountUnit(oldblood, gc, { fromFile: true });
