@@ -21,6 +21,9 @@ import { emit } from './bus.js';
 import { askText, askConfirm } from './uikit.js';
 import { snapshot, applySnapshot, loadArmyFromList, renderAll, history, state as board } from './deploy.js';
 import { startSfida, scenariGiocabili, scenarioPer, inCorso } from './controai.js';
+import { avviaSerie } from './simulatore.js';
+import { apriPagina } from './reports.js';
+import { customScenarioMap } from './scenariokit.js';
 import { SCENARIOS } from './scenarios.js';
 
 const MU_KEY = "matchup:current";
@@ -253,8 +256,9 @@ export function aiaiCommand(){
   /* l'estro vale per l'euristica: con Gemini da tutte e due le parti
      non c'e' nessuna euristica a cui darlo */
   const estro = o.estro && (quante() > 1 || o.chi !== "gemini") ? ["--estro"] : [];
-  if (quante() > 1) return [...parti, `--partite ${quante()}`, ...estro, ...(o.mappa ? ["--heatmap mappa.html"] : [])].join(" ");
-  parti.push(...estro);
+  const avanti = o.chi === "ricerca" ? ["--ricerca"] : [];
+  if (quante() > 1) return [...parti, `--partite ${quante()}`, ...estro, ...avanti, ...(o.mappa ? ["--heatmap mappa.html"] : [])].join(" ");
+  parti.push(...estro, ...avanti);
   if (o.chi === "gemini") parti.push("--gemini");
   if (o.chi === "gemini-A") parti.push("--gemini A");
   if (o.chi === "gemini-B") parti.push("--gemini B");
@@ -269,13 +273,16 @@ function aiaiHTML(){
   const sc = aiaiCommand().match(/--scenario (\S+)/)[1];
   const serie = quante() > 1;
   const chi = [["euristica", "L'euristica, da tutte e due le parti"],
+               ["ricerca", "Chi guarda una mossa avanti, da tutte e due le parti"],
                ["gemini", "Gemini contro Gemini"],
                ["gemini-A", `Gemini con A · ${A.name}`],
                ["gemini-B", `Gemini con B · ${B.name}`]];
   return `
     <div class="panel-title" style="margin-top:16px">AI contro AI</div>
-    <p class="note">Una partita intera senza nessuno al tavolo, giocata da <span class="mono">tools/partita.mjs</span>
-      nel terminale. Qui scrivi il comando e lo copi. Le liste devono essere già in <span class="mono">dati/liste.json</span>
+    <p class="note">Una partita intera senza nessuno al tavolo. <b>Si gioca qui</b>, anche dal telefono: una partita
+      la guardi dal vivo sul tavolo, con la velocità che scegli, e alla fine — se spunti <i>nel diario</i> — la ritrovi
+      nella scheda Partite da rivedere con le animazioni; tante partite girano in sottofondo e danno il conto.
+      Oppure la fa girare <span class="mono">tools/partita.mjs</span> nel terminale: qui sotto c'è il comando da copiare. Le liste devono essere già in <span class="mono">dati/liste.json</span>
       (con l'Archivio); per Gemini serve <span class="mono">GEMINI_API_KEY</span> nell'ambiente.
       Con più di una partita gioca l'euristica, un seme dopo l'altro, e stampa solo il conto: chi vince quante volte.
       Senza estro l'euristica si schiera sempre uguale e le partite cambiano solo per i dadi; con l'estro ogni partita
@@ -287,7 +294,7 @@ function aiaiHTML(){
           ${opzioniScenari(sc)}
         </select></label>
       <label class="field">Chi gioca
-        <select id="mu-aiai-chi" ${serie ? "disabled" : ""}>
+        <select id="mu-aiai-chi">
           ${chi.map(([v, t]) => `<option value="${v}" ${o.chi === v ? "selected" : ""}>${esc(t)}</option>`).join("")}
         </select></label>
     </div>
@@ -300,11 +307,107 @@ function aiaiHTML(){
     <div style="display:flex;gap:14px;flex-wrap:wrap">
       <label title="ogni partita un piano diverso: dove schiera, da che probabilità carica, quando marcia"><input type="checkbox" id="mu-aiai-estro" ${o.estro ? "checked" : ""}> euristica con estro</label>
       <label title="con più partite: per ogni unità dove parte, dove passa i turni, dove combatte, e come va in ciascun caso"><input type="checkbox" id="mu-aiai-mappa" ${o.mappa ? "checked" : ""} ${serie ? "" : "disabled"}> mappa delle posizioni</label>
-      <label><input type="checkbox" id="mu-aiai-html" ${o.html ? "checked" : ""} ${serie ? "disabled" : ""}> pagina da guardare</label>
+      <label title="solo nel comando: dall'app la partita si rivede dal diario"><input type="checkbox" id="mu-aiai-html" ${o.html ? "checked" : ""} ${serie ? "disabled" : ""}> pagina da guardare</label>
       <label><input type="checkbox" id="mu-aiai-arch" ${o.archivia ? "checked" : ""} ${serie ? "disabled" : ""}> nel diario delle partite</label>
     </div>
-    <pre class="mono" id="mu-aiai-cmd" style="white-space:pre-wrap;word-break:break-all;margin:6px 0;padding:8px;border:1px solid var(--line);border-radius:6px;font-size:12px">${esc(aiaiCommand())}</pre>
-    <button class="btn primary" id="mu-aiai" style="width:100%">Copia il comando</button>`;
+    <button class="btn primary" id="mu-aiai-qui" style="width:100%;margin-top:6px">${bottoneQui()}</button>
+    <div id="mu-sim" class="sim-esito">${simHTML()}</div>
+    <details style="margin-top:6px">
+      <summary class="note">Il comando per il terminale</summary>
+      <pre class="mono" id="mu-aiai-cmd" style="white-space:pre-wrap;word-break:break-all;margin:6px 0;padding:8px;border:1px solid var(--line);border-radius:6px;font-size:12px">${esc(aiaiCommand())}</pre>
+      <button class="btn" id="mu-aiai" style="width:100%">Copia il comando</button>
+    </details>`;
+}
+
+/* ============================================================
+   AI CONTRO AI, QUI
+   Una partita: la sfida sul tavolo con nessuno dei due eserciti tuo,
+   con il seme e gli agenti del comando. Tante: il simulatore in
+   sottofondo (`simulatore.js`), che fa il lavoro di `--partite`.
+   ============================================================ */
+const bottoneQui = () => quante() > 1 ? `▶ Gioca qui le ${quante()} partite` : "▶ Guarda qui la partita, dal vivo";
+
+/* chi gioca, dal menu del comando agli agenti della sfida */
+function agentiDi(o){
+  const eur = o.estro ? "estro" : "euristica";
+  switch (o.chi){
+    case "ricerca": return { A: "ricerca", B: "ricerca" };
+    case "gemini": return { A: "gemini", B: "gemini" };
+    case "gemini-A": return { A: "gemini", B: eur };
+    case "gemini-B": return { A: eur, B: "gemini" };
+    default: return { A: eur, B: eur };
+  }
+}
+
+let sim = null;          // { gestore, k, n, esito, errore, titolo }
+function simHTML(){
+  if (!sim) return "";
+  const pc = sim.n ? Math.round(100 * sim.k / sim.n) : 0;
+  if (sim.errore) return `<p class="note warn">Il simulatore si è fermato: ${esc(sim.errore)}</p>`;
+  if (!sim.esito) return `
+    <div class="sim-barra" role="progressbar" aria-valuenow="${pc}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pc}%"></i></div>
+    <div class="btn-row"><span class="note">${sim.k} partite su ${sim.n}…</span>
+      <button class="btn tiny" id="mu-sim-ferma" ${sim.fermando ? "disabled" : ""}>${sim.fermando ? "si ferma alla fine di questa…" : "❚❚ Ferma qui e fai il conto"}</button></div>`;
+  const e = sim.esito;
+  return `
+    <div class="panel-title" style="margin-top:8px">${esc(sim.titolo)}</div>
+    <pre class="mono">${esc(e.righe.join("\n"))}</pre>
+    <div class="btn-row">
+      ${e.pagina ? `<button class="btn tiny primary" id="mu-sim-mappa">Apri la mappa delle posizioni</button>` : ""}
+      ${Object.entries(e.nette || {}).map(([t, s]) =>
+        `<button class="btn tiny" data-sim-seme="${s}">▶ Guarda il seme ${s} (la più netta di ${t === "x" ? "A" : "B"})</button>`).join("")}
+      <button class="btn tiny ghost" id="mu-sim-via">Togli il conto</button>
+    </div>`;
+}
+function disegnaSim(){
+  const box = $("#mu-sim");
+  if (!box) return;
+  box.innerHTML = simHTML();
+  const f = $("#mu-sim-ferma");
+  if (f) f.addEventListener("click", () => { sim.fermando = true; sim.gestore.ferma(); disegnaSim(); });
+  const m = $("#mu-sim-mappa");
+  if (m) m.addEventListener("click", () => apriPagina(sim.esito.pagina, "La mappa delle posizioni"));
+  const v = $("#mu-sim-via");
+  if (v) v.addEventListener("click", () => { sim = null; disegnaSim(); });
+  box.querySelectorAll("[data-sim-seme]").forEach(b => b.addEventListener("click", () => guardaQui(+b.dataset.simSeme)));
+}
+
+async function guardaQui(seme = null){
+  const A = getList(mu.listA), B = getList(mu.listB);
+  if (!A || !B) return;
+  const o = mu.aiai;
+  const sc = aiaiCommand().match(/--scenario (\S+)/)[1];
+  if (inCorso() && !await askConfirm("C'è già una sfida in corso: la abbandono e ne comincio un'altra?",
+                                    { title:"Nuova partita?" })) return;
+  startSfida({ listA: A, listB: B, mia: "guarda", scenario: sc, agenti: agentiDi(o),
+               seme: seme || Math.max(1, +o.seme || 1), salva: !!o.archivia });
+  emit("sfida:show");
+}
+
+function giocaQui(){
+  if (quante() <= 1) return guardaQui();
+  if (sim && !sim.esito && !sim.errore) return;          // ce n'e' gia' una che gira
+  const A = getList(mu.listA), B = getList(mu.listB);
+  if (!A || !B) return;
+  const o = mu.aiai;
+  const sc = aiaiCommand().match(/--scenario (\S+)/)[1];
+  const def = { ...SCENARIOS, ...customScenarioMap() }[sc];
+  const faz = l => (l.info && l.info.catalogue) || l.name;
+  const nomi = { x: faz(A), y: faz(B) };
+  if (nomi.x === nomi.y){ nomi.x += " (x)"; nomi.y += " (y)"; }
+  const n = quante();
+  sim = { k: 0, n, esito: null, errore: null,
+          titolo: `${n} partite su «${def ? def.label : sc}», semi ${Math.max(1, +o.seme || 1)}–${Math.max(1, +o.seme || 1) + n - 1}` +
+                  `${o.estro ? ", con l'estro" : ""}${o.chi === "ricerca" ? ", guardando avanti" : ""}` };
+  sim.gestore = avviaSerie({
+    liste: { x: A, y: B }, nomi, scenario: sc, def, partite: n, seme: Math.max(1, +o.seme || 1),
+    specchio: false, estro: !!o.estro, ricerca: o.chi === "ricerca", mappa: !!o.mappa,
+  }, {
+    onAvanza: (k, tot) => { if (!sim) return; sim.k = k; sim.n = tot; disegnaSim(); },
+    onFine: r => { if (!sim) return; sim.esito = r; sim.k = r.fatte; disegnaSim(); },
+    onErrore: m => { if (!sim) return; sim.errore = m; disegnaSim(); },
+  });
+  disegnaSim();
 }
 
 export function renderMatchup(){
@@ -408,13 +511,16 @@ export function renderMatchup(){
                   estro: $("#mu-aiai-estro").checked, mappa: $("#mu-aiai-mappa").checked,
                   partite: Math.max(1, Math.floor(+$("#mu-aiai-n").value) || 1) };
       const serie = quante() > 1;
-      ["#mu-aiai-chi", "#mu-aiai-html", "#mu-aiai-arch"].forEach(id => { $(id).disabled = serie; });
+      ["#mu-aiai-html", "#mu-aiai-arch"].forEach(id => { $(id).disabled = serie; });
+      $("#mu-aiai-qui").textContent = bottoneQui();
       $("#mu-aiai-mappa").disabled = !serie;
       $("#mu-aiai-cmd").textContent = aiaiCommand();
       await persist();
     };
     ["#mu-aiai-sc", "#mu-aiai-chi", "#mu-aiai-seme", "#mu-aiai-n", "#mu-aiai-estro", "#mu-aiai-mappa", "#mu-aiai-html", "#mu-aiai-arch"]
       .forEach(id => $(id).addEventListener("change", aggiorna));
+    $("#mu-aiai-qui").addEventListener("click", () => giocaQui());
+    disegnaSim();
     aiai.addEventListener("click", async () => {
       const ok = await copyText(aiaiCommand());
       aiai.textContent = ok ? "Comando copiato ✓" : "Non riesco a copiare";

@@ -96,8 +96,12 @@ export const BACKWARD = {
    D6 e' 161/36, cioe' 4,47; quella del minore — il caso del terreno
    difficile — e' 91/36, cioe' 2,53.
    ============================================================ */
-export function chargeBands(move, swift = false, worst = false){
-  const m = Math.max(1, (+move || 0) - (worst ? 1 : 0));
+/* `slow` e' il pollice in meno, `worst` il dado rovesciato: di solito
+   vanno insieme (p. 128), ma chi ha Move Through Cover — o Aquatic in
+   una palude — non perde il pollice e il dado lo rovescia lo stesso,
+   perche' il dado non e' un modificatore al Movimento. */
+export function chargeBands(move, swift = false, worst = false, slow = worst){
+  const m = Math.max(1, (+move || 0) - (slow ? 1 : 0));
   const avg = worst ? 91 / 36 : 161 / 36;
   return {
     move: m, base: +move || 0, worst: !!worst, swift: !!swift,
@@ -139,7 +143,7 @@ export function chargeChance(need, swift = false, worst = false){
    «non puoi» e «guarda che sono quattordici pollici» e' tutta la
    differenza fra un arbitro e un aiuto.
    ============================================================ */
-export function declareCharge({ charger, target, pieces = [], worst = false, sight = null } = {}){
+export function declareCharge({ charger, target, pieces = [], worst = false, slow = worst, sight = null } = {}){
   if (!charger || !target || !charger.box || !target.box) return null;
   const bA = charger.box, pA = cornersOf(charger);
   const bB = target.box, pB = cornersOf(target);
@@ -149,7 +153,7 @@ export function declareCharge({ charger, target, pieces = [], worst = false, sig
      rovescia il dado, quindi cambia sia la portata massima — che e' il
      numero con cui si decide se la carica si puo' dichiarare — sia la
      probabilita' che arrivi */
-  const bands = chargeBands(charger.move, charger.swift, worst);
+  const bands = chargeBands(charger.move, charger.swift, worst, slow);
   const arc = arcOfPoly(pB, bA);
   /* gli schermagliatori caricano in ogni direzione (p. 184) */
   const inArc = !!charger.loose || arc.has.includes("fronte");
@@ -184,7 +188,7 @@ export function declareCharge({ charger, target, pieces = [], worst = false, sig
     dist: r1(dist), arc: arc.arc, inArc, side,
     blocked: !!blocker, blockedBy: blocker ? blocker.label : "",
     move: bands.move, base: bands.base, max: bands.max, avg: bands.avg, swift: bands.swift,
-    worst: !!worst, penalty: worst ? 1 : 0,
+    worst: !!worst, slow: !!slow, penalty: slow ? 1 : 0,
     need, chance: r2(chance), impossible,
     can: inArc && !blocker && !impossible,
     reasons,
@@ -260,12 +264,12 @@ export function reactions({ dist = 0, chargerMove = 0, shots = 0,
    non un dado da scartare, e nel vassoio i due gesti non si devono
    confondere: per questo il terzo cubo non entra nella scelta.
    ============================================================ */
-export function chargeDice({ swift = false, worst = false } = {}){
+export function chargeDice({ swift = false, worst = false, slow = worst } = {}){
   return {
     n: 2 + (swift ? 1 : 0),
     keep: swift ? 2 : 1,
     drop: worst ? "highest" : "lowest",
-    swift: !!swift, worst: !!worst,
+    swift: !!swift, worst: !!worst, slow: !!slow,
     why: worst && swift ? "nel terreno difficile si tiene il peggiore, piu' il D6 del passo lungo"
        : worst ? "terreno difficile: dei due dadi si tiene il peggiore (p. 128)"
        : swift ? "due dadi, si tiene il maggiore, piu' il D6 del passo lungo (p. 178)"
@@ -304,12 +308,14 @@ export function chargeOutcome({ dice = [], spec = null, move = 0, dist = 0 } = {
   const kept = keepDice(dice, s);
   const total = kept.reduce((a, v) => a + v, 0);
   /* il terreno difficile toglie un pollice al Movimento, e non scende
-     mai sotto uno (p. 128) */
-  const m = Math.max(1, (+move || 0) - (s.worst ? 1 : 0));
+     mai sotto uno (p. 128). `move` e' il Movimento del profilo: chi
+     passa quello gia' scalato lo scala due volte. */
+  const lento = s.slow != null ? !!s.slow : !!s.worst;
+  const m = Math.max(1, (+move || 0) - (lento ? 1 : 0));
   const reach = m + total;
   return {
     dice: [...dice], kept, dropped: droppedDie(dice, s), total,
-    move: m, penalty: s.worst ? 1 : 0,
+    move: m, penalty: lento ? 1 : 0,
     reach: r1(reach),
     made: reach + 0.01 >= dist,
     short: r1(Math.max(0, dist - reach)),

@@ -263,16 +263,23 @@ export function combatant(u, over = {}){
      un capo unito e' uno dei suoi modelli. Serve da quando il capo non
      tira piu' un test di rotta suo: lo tira il reggimento, con il suo
      Comando. L'arbitro lo faceva gia' (`ldProprio`), il pannello no. */
-  for (const ch of over.joined || []){
-    if (!ch || ch.dead) continue;
-    const l = val(ch, "Ld");
-    if (l > c.ld){ c.ld = l; c.ldFrom = ch.name; }
-  }
+  /* La Warband sale sul Comando del reggimento e su quello di un capo
+     che e' Warband anche lui; il capo che non lo e' presta il suo
+     Comando com'e' (p. 180). Prima si prendeva il piu' alto e poi si
+     sommavano i ranghi a quello. */
   c.psych = PS.psychOf(u, { joined: over.joined || [] });
   const ranks = c.disrupted ? 0 : rankBonus(c.models, c.frontage,
     c.troop ? c.troop.maxRank : 2, c.troop ? c.troop.perRank : 5);
-  const lead = PS.leadershipOf(c.ld, c.psych, { rankBonus: ranks, fleeing: !!u.fled });
-  c.ldBase = c.ld; c.ld = lead.value; c.ldWhy = lead.why;
+  const ldOpts = { rankBonus: ranks, fleeing: !!u.fled };
+  let lead = PS.leadershipOf(c.ld, c.psych, ldOpts), crudo = c.ld;
+  for (const ch of over.joined || []){
+    if (!ch || ch.dead) continue;
+    const l = val(ch, "Ld");
+    const suo = PS.psychOf(ch).warband ? PS.leadershipOf(l, c.psych, ldOpts) : { value: l, why: "" };
+    if (l > crudo) crudo = l;
+    if (suo.value > lead.value){ lead = suo; c.ldFrom = ch.name; }
+  }
+  c.ldBase = crudo; c.ld = lead.value; c.ldWhy = lead.why;
   c.feared = false;
 
   const out = Object.assign(c, over);

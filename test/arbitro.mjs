@@ -2158,8 +2158,13 @@ console.log('\nil terreno, in partita (pp. 269-272 e 159)');
   sauri.x = 229; sauri.y = 860; sauri.rot = 0;
   ok('attraversare il bosco toglie un pollice al Movimento',
      AR.interni.rallenta(G, sauri, [229, 700], 4) === 3);
+  /* in aperto: dritti verso la piramide, che sta ben piu' in la'. Prima
+     la prova girava a destra accanto al bosco, e la ruota sullo spigolo
+     ci passa dentro: il pollice adesso si guarda sul percorso vero. */
+  sauri.x = 600; sauri.y = 850;
   ok('e in aperto il Movimento resta quello',
-     AR.interni.rallenta(G, sauri, [900, 860], 4) === 4);
+     AR.interni.rallenta(G, sauri, [600, 700], 4) === 4);
+  sauri.x = 229; sauri.y = 860;
   ok('il Movimento non scende mai sotto uno', AR.interni.rallenta(G, sauri, [229, 700], 1) === 1);
 
   /* Il test di terreno pericoloso (p. 269): la palude in basso a destra
@@ -2169,8 +2174,10 @@ console.log('\nil terreno, in partita (pp. 269-272 e 159)');
   ok('la palude sul cammino si vede',
      AR.interni.pezziSulCammino(G, sauri, [914, 660], 8).some(t => t.kind === 'marsh'));
   const persi = sauri.lost || 0, prima = G.log.length;
+  /* dritti nella palude: con il pollice in meno ci si arriva */
+  sauri.y = 800; mob.x = 914; mob.y = 200; mob.rot = 180;
   D.setSource(() => 0);                       // tutti 1: nessuno mette il piede giusto
-  AR.apply(G, { id: 'avanza', uid: sauri.uid, verso: mob.uid, x: 914, y: 660 });
+  AR.apply(G, { id: 'avanza', uid: sauri.uid, verso: mob.uid });
   seme(1);
   ok('chi la attraversa tira un dado per modello, e con gli 1 perde ferite',
      (sauri.lost || 0) > persi &&
@@ -2499,6 +2506,141 @@ console.log('\ni campi di ogni gesto (CAMPI)');
   const e2 = await AG.giocaPartita(AR, G2, { A: muto(AG.agenteEuristico({})), B: muto(AG.agenteEuristico({})) });
   ok('l euristica non legge le frasi: con tutti i «why» vuoti gioca la stessa partita',
      e1.A === e2.A && e1.B === e2.B && G1.log.length === G2.log.length);
+}
+
+/* =================================================================
+   L'ultima partita di Michele (orchi contro lucertole, 2026-10-03):
+   cinque cose che il registro raccontava e il libro no.
+   ================================================================= */
+console.log('\nl ultima partita: la carica, la marcia, il terreno, la Warband');
+{
+  const OG = lista('lmugl4zwpzy5r'), LZ = lista('lmugl4zwyicwd');   // «Orchi Neri e cinghiali», «Lo Stegadonte e i Cold One»
+  const fresca = () => { const G = AR.newBattle({ A: LZ, B: OG, scenario: 'bm-rovine', primo: 'A' });
+                         G.schierando = false; G.preparando = false; G.pending = null; return G; };
+  const di = (G, n) => G.units.find(u => u.name === n);
+
+  /* 1 · la carica nel difficile perde UN pollice (p. 128), e la carica
+     fallita muove di quanto hanno detto i dadi (p. 121) */
+  {
+    const G = fresca();
+    const sv = metti(G, di(G, 'Saurus Warriors'), 600, 860);
+    const gb = metti(G, di(G, 'Goblin Mobs'), 600, 400);
+    const d = CH.declareCharge({ charger: { name: sv.name, box: AR.boxOf(sv, G.units), move: 4 },
+                                 target: { name: gb.name, box: AR.boxOf(gb, G.units) }, worst: true });
+    ok('la dichiarazione nel difficile conta Movimento 3', d.move === 3 && d.base === 4);
+    D.setSource(() => 3);                                // tutti 4
+    const y0 = sv.y;
+    IN.muoviCarica(G, sv, gb, d);
+    const riga = G.log.find(r => /Saurus Warriors carica Goblin Mobs/.test(r.text));
+    ok('il tiro col dado peggiore arriva a 3 + 4 = 7″, non a 6″', !!riga && /→ 7″/.test(riga.text));
+    const fatti = (y0 - sv.y) / 25.4;
+    ok('e la carica fallita muove di 4″, il risultato dei dadi, non di 7″',
+       sv.moved.kind === 'failedCharge' && Math.abs(fatti - 4) < 0.15);
+    seme(1);
+  }
+
+  /* 2 · la marcia che trova la palude nella seconda meta' rallenta: il
+     pollice si guarda sul percorso vero, non sui primi M pollici */
+  {
+    const G = fresca();
+    /* la palude in alto a sinistra sta fra 6″ e 14″ di profondita':
+       i Saurus partono a 5″ dal suo bordo, oltre il loro Movimento */
+    const sv = metti(G, di(G, 'Saurus Warriors'), 304, 528);
+    metti(G, di(G, 'Goblin Mobs'), 304, 60);
+    const prima = G.log.length;
+    seme(3);
+    AR.apply(G, { id: 'marcia', uid: sv.uid, verso: di(G, 'Goblin Mobs').uid });
+    const righe = G.log.slice(prima).map(r => r.text);
+    ok('chi marcia nella palude perde il pollice anche se la trova dopo il Movimento',
+       righe.some(t => /^Saurus Warriors: Palude: −1 al Movimento, 3″ invece di 4″/.test(t)));
+    ok('e marcia di 6″, non di 8″', sv.moved.inches <= 6.05);
+  }
+
+  /* 3 · Move Through Cover: niente pollice in meno, e gli 1 del
+     pericoloso si ritirano */
+  {
+    const G = fresca();
+    const sk = metti(G, di(G, 'Skink Skirmishers 1'), 304, 528);
+    metti(G, di(G, 'Goblin Mobs'), 304, 60);
+    const prima = G.log.length;
+    D.setSource(() => 0);                                // tutti 1, anche al ritiro
+    AR.apply(G, { id: 'marcia', uid: sk.uid, verso: di(G, 'Goblin Mobs').uid });
+    const righe = G.log.slice(prima).map(r => r.text);
+    ok('gli Skink con Move Through Cover non perdono il pollice nella palude',
+       !righe.some(t => /^Skink Skirmishers 1: Palude: −1/.test(t)));
+    ok('e ritirano gli 1 del terreno pericoloso',
+       righe.some(t => /attraversa Palude: .*ritirat\w \(Move Through Cover\)/.test(t)));
+    seme(1);
+  }
+
+  /* 4 · la Warband non sale sul Comando di un generale che non lo e'
+     (p. 180): i Goblin Mobs con il Black Orc Warboss vicino */
+  {
+    const G = fresca();
+    const gb = metti(G, di(G, 'Goblin Mobs'), 600, 500);
+    gb.frontage = 5;                                     // due file piene: +1 di ranghi
+    const capo = metti(G, di(G, 'Black Orc Warboss'), 800, 500);
+    G.generale.B = capo.uid;
+    const ld = IN.ldOf(G, gb);
+    ok('i Goblin Mobs tirano con il Comando 9 del Warboss, non con 9 più i ranghi', ld === 9);
+    capo.x = 2000;                                       // lontano: torna la Warband sul loro
+    const suo = IN.ldOf(G, gb);
+    ok('lontano dal generale tirano con il loro Comando più i ranghi', suo === 6);
+  }
+
+  /* 5 · la Forza d'Unita' rimasta indietro non vale meno della tabella */
+  {
+    const G = fresca();
+    const sv = di(G, 'Saurus Warriors');
+    ok('tre Troll scritti con la Forza d Unità di uno ne valgono nove',
+       AR.usOf({ troop: 'Monstrous Infantry', us: 3, models: 3, lost: 0, stats: { W: '3' } }) === 9);
+    ok('e un reggimento normale resta com è', AR.usOf(sv) >= sv.models - (sv.lost || 0));
+  }
+}
+
+/* =================================================================
+   Il diario: la partita registrata mentre si gioca, e quella rifatta
+   dal testo di «Copia il registro» (src/archivio.js)
+   ================================================================= */
+console.log('\nil diario della partita, mentre si gioca e dal registro');
+{
+  const ARCH = await import('../src/archivio.js');
+  const BL = await import('../src/battlelog.js');
+  seme(5);
+  const G = AR.newBattle({ A, B, scenario: 'bm-strada', magia: MG.magicNow() });
+  const diario = ARCH.registro(G, { liste: { A, B }, meta: { simulata: true } });
+  let visto = 0, meta = null;
+  await AG.giocaPartita(AR, G, {
+    A: AG.agenteEuristico({}), B: AG.agenteEuristico({}),
+    onPasso: ({ player }) => {
+      diario.passo({ chi: G.nomi[player], righe: G.log.slice(visto) });
+      visto = G.log.length;
+      if (!meta && G.turno >= 3) meta = diario.chiudi({ title: 'a metà' });
+    },
+  });
+  ok('salvare a metà non cambia il diario: chiudere non tocca niente',
+     !!meta && meta.turns.length < diario.gioco.turns.length + 1 && diario.chiudi().turns.length === diario.chiudi().turns.length);
+  const rep = diario.chiudi({ title: 'fine', id: 'b-prova' });
+  ok('e alla fine ha una fotografia per mezzo turno', rep.id === 'b-prova' &&
+     rep.turns.filter(t => t.kind === 'turn').length >= G.turno * 2 - 2);
+
+  /* lo stesso registro, come lo copia la sfida: la partita rifatta */
+  const testo = G.log.map(r => `T${r.turno} ${r.text}${r.page ? ` (p. ${r.page})` : ''}`).join('\n');
+  const G2 = AR.newBattle({ A, B, scenario: 'bm-strada', nomi: G.nomi });
+  const r = ARCH.dalRegistro({ S: G2, liste: { A, B }, nomi: G.nomi, sc: G.sc, testo });
+  ok('dal registro si rifà la partita senza guasti', !!r.rep && r.guasti.length === 0);
+  const vere = Object.fromEntries(G.units.map(u => [u.uid, u]));
+  const finali = BL.finalUnits(r.rep);
+  const sbagliate = finali.filter(f => {
+    const u = vere[f.uid];
+    const vive = Math.max(0, (u.models || 0) - (u.lost || 0));
+    return u && !u.dead && f.alive !== vive;
+  }).map(f => `${f.name} ${f.alive}/${vere[f.uid].models - (vere[f.uid].lost || 0)}`);
+  if (sbagliate.length) console.log('       ' + sbagliate.join(', '));
+  ok('e i modelli in piedi alla fine sono quelli veri, anche quelli persi nella palude', sbagliate.length === 0);
+  const r2 = ARCH.dalRegistro({ S: G2, liste: { A, B }, nomi: { A: 'Qualcun altro', B: G.nomi.B }, sc: G.sc, testo });
+  ok('con le liste sbagliate lo dice, invece di archiviare una partita finta', r2.guasti.length > 0);
+  seme(1);
 }
 
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');

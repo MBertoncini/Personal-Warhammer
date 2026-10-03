@@ -251,24 +251,32 @@ Nella scheda **Matchup**, con le due liste scelte, *Gioca contro l'AI* chiede co
 - **L'ultima mossa dell'AI** resta in vista con il suo perché, e sotto scorre il registro con dadi e pagine: le righe con una scheda si aprono con *perché?*. *Copia il registro* lo porta via; *Abbandona* chiude la sfida e lascia il tavolo com'è.
 - **Chi gioca contro di te**: Gemini, con una chiave di Google AI Studio scritta nel pannello (e il modello, se non vuoi `gemini-2.5-flash`). La chiave **resta in questo browser** — non entra nei backup né nell'archivio su GitHub — e parte solo verso Google. Senza chiave gioca l'euristica che guarda una mossa avanti (vedi sotto), e il pannello lo dice; se Gemini risponde male o non risponde, quella mossa la gioca l'euristica e il pannello conta gli intoppi.
 
-**AI contro AI, sul tavolo.** In *Giochi con* c'è anche *Nessuno: guardo l'AI contro l'AI*: l'arbitro fa giocare tutti e due gli eserciti a due agenti separati (l'euristica che guarda avanti, o Gemini se c'è la chiave) e tu guardi la partita sul tavolo mentre succede, con le schede del perché di ogni scelta e di ogni tiro. Con *L'AI aspetta* spuntato si ferma il tempo di leggerle; *❚❚ Ferma* la blocca dov'è, *Una mossa* la fa andare avanti di una scelta, *▶ Riprendi* la lascia andare. È la partita di `tools/partita.mjs`, ma guardata dal vivo invece che dopo.
+**AI contro AI, sul tavolo.** In *Giochi con* c'è anche *Nessuno: guardo l'AI contro l'AI*: l'arbitro fa giocare tutti e due gli eserciti a due agenti separati (l'euristica che guarda avanti, o Gemini se c'è la chiave) e tu guardi la partita sul tavolo mentre succede, con le schede del perché di ogni scelta e di ogni tiro. Con *L'AI aspetta* spuntato si ferma il tempo di leggerle; *❚❚ Ferma* la blocca dov'è, *Una mossa* la fa andare avanti di una scelta, *▶ Riprendi* la lascia andare, e il menu **velocità** va da *lentissima* a *di corsa*. È la partita di `tools/partita.mjs`, ma guardata dal vivo invece che dopo.
 
-La sfida **vive nella scheda del browser**: ricaricando la pagina si ricomincia.
+**A schermo intero.** *⛶ Schermo intero* — nell'angolo del tavolo, o nel pannello — lascia solo il tavolo, la striscia del perché e una barra in fondo con punteggio, turno, ferma/riprendi e velocità; mentre la partita scorre la barra sparisce, e torna toccando lo schermo. Lo stesso pulsante c'è nella partita da rivedere (tasto **F**). Dove il browser non concede il vero schermo intero — l'iPhone, a una pagina — occupa comunque tutta la finestra. Con il telefono dritto il tavolo prende la sua altezza e le schede si leggono una sotto l'altra nello spazio che resta; girato, gli stanno di fianco. Le schede del perché, a schermo intero e no, stanno in quella striscia **sotto** il campo: sopra coprivano proprio i pezzi di cui parlavano.
 
-**Una sfida finita, nel diario.** L'app non la salva da sola: quello che resta quando hai finito è il registro, che *Copia il registro* mette negli appunti. `tools/archivia-registro.mjs` prende quel testo e ne fa una voce di `dati/partite.json`, nella stessa forma di ogni altra partita:
+**I comandi di `tools/partita.mjs`, senza terminale.** Il riquadro *AI contro AI* della scheda Matchup — scenario, chi gioca, seme, quante partite, estro, mappa — non serve più solo a copiare il comando: **▶ Guarda qui la partita, dal vivo** la gioca sul tavolo con lo stesso seme (la stessa partita del terminale, mossa per mossa), e con *nel diario delle partite* spuntato alla fine la salva da sola. Con più di una partita, **▶ Gioca qui le N partite** le fa girare in sottofondo, in un Web Worker (`src/simulatore-lavoro.js`), con la barra che avanza e *Ferma qui e fai il conto*: il conto è quello di `--partite` — chi vince quante volte con l'intervallo, il peso del primo turno, i piani dell'estro — e sotto ci sono *Apri la mappa delle posizioni* e *▶ Guarda il seme…* della vittoria più netta di ciascuno. Funziona dal telefono: il codice delle partite e dei conti è lo stesso dello strumento (`src/serie.js`, `src/statistica.js`, `src/heatmap.js`, che `tools/*.mjs` riesportano). Con Gemini resta una partita sola, come nel terminale.
+
+La sfida **vive nella scheda del browser**: ricaricando la pagina si ricomincia — per questo c'è *Salva nel diario*.
+
+**Una sfida nel diario, da rivedere.** Mentre si gioca il pannello registra due cose a ogni mossa: un fotogramma del tavolo con le righe nuove del registro (`src/replay.js`, lo stesso di `tools/partita.mjs --html`) e le fotografie di fine mezzo turno (`src/archivio.js`). **Salva nel diario** — anche a metà: la voce si aggiorna — mette la partita nella scheda **Partite** con il verdetto dell'arbitro nelle note, e da lì **▶ Rivedi la partita** la riapre nella pagina animata: i pezzi che scivolano, le frecce e gli incantesimi, le schede del perché, le foto della collezione, avanti e indietro mossa per mossa. Una partita finita e non salvata chiede conferma prima di chiudersi. Le partite AI contro AI finiscono nel diario marcate *simulata*, fuori dal palmarès.
+
+**Una sfida di cui resta solo il registro.** Quelle chiuse senza salvarle si recuperano dal testo di *Copia il registro*: nella scheda **Partite**, *Importa un registro…*, si incolla il testo, si scelgono le due liste come erano in partita e lo scenario. Lo fa anche `tools/archivia-registro.mjs`, che prende quel testo e ne fa una voce di `dati/partite.json`, nella stessa forma di ogni altra partita:
 
 ```bash
 node tools/archivia-registro.mjs partita.txt --liste 3,4          # cosa ne capisce, senza scrivere
 node tools/archivia-registro.mjs partita.txt --liste 3,4 --mia A --tu Michele --archivia
 ```
 
-Dal registro si leggono le perdite mezzo turno per mezzo turno, chi è caduto, chi è scappato e chi si è radunato — e i capi che un reggimento **travolto** si è portato via, che il registro non nomina (p. 207). Il punteggio non lo copia: lo rifà `battlelog.js` dal ruolino, ed è il modo in cui la ricostruzione si controlla da sola — se i punti non tornano con quelli che l'arbitro aveva scritto, qualcosa non è stato letto. Quello che **non** c'è sono le posizioni: la sfida non salva il tavolo, e le fotografie hanno le coordinate a zero. Sta scritto nelle note della partita, perché un tavolo inventato è peggio di un tavolo assente. Se il registro nomina unità che le due liste non hanno, lo strumento si ferma invece di archiviare una partita finta.
+Dal registro si leggono le perdite mezzo turno per mezzo turno — al tiro, in mischia, ai pestoni e nel terreno pericoloso —, chi è caduto, chi è uscito dal tavolo, chi è scappato e chi si è radunato — e i capi che un reggimento **travolto** si è portato via, che il registro non nomina (p. 207). Il punteggio non lo copia: lo rifà `battlelog.js` dal ruolino, ed è il modo in cui la ricostruzione si controlla da sola — se i punti non tornano con quelli che l'arbitro aveva scritto, qualcosa non è stato letto. Quello che **non** c'è sono le posizioni: il registro non le scrive, e le fotografie hanno le coordinate a zero — una partita importata così non si rivede animata. Sta scritto nelle note della partita, perché un tavolo inventato è peggio di un tavolo assente. Se il registro nomina unità che le due liste non hanno, lo strumento si ferma invece di archiviare una partita finta.
 
 ### 6. Partite
 
 La scheda **Partite** è il diario. Ci si arriva in due modi.
 
 **Dal tavolo.** Finita la partita (o anche a metà), *Archivia il report*: la partita registrata diventa una voce dell'archivio, con liste, terreno, schieramento, tutte le fotografie di fine turno e il registro.
+
+**Dalla sfida contro l'AI**, con *Salva nel diario* (vedi *5 bis*): oltre alle fotografie porta il tavolo passo per passo, e **▶ Rivedi la partita, con le animazioni** la riapre a tutto schermo nella stessa pagina di `tools/partita.mjs --html`. Nell'elenco quelle partite dicono *▶ si rivede*. Una sfida chiusa senza salvarla si recupera con **Importa un registro…**, dal testo di *Copia il registro*: perdite, fughe e punteggio sì, posizioni e animazioni no.
 
 **A mano**, per una partita giocata altrove: *Nuova partita a mano*, si scelgono due liste salvate e si compila. Ogni turno si porta avanti da solo la situazione di quello prima, quindi si scrive **solo quello che è cambiato**: le perdite del turno, i pollici percorsi, chi è andato in rotta. Correggere un numero al turno 2 risistema superstiti e stato di tutti i turni successivi.
 
@@ -635,7 +643,14 @@ src/
   agente.js           chi gioca quando non c'è nessuno: euristica e modello di linguaggio
   ricerca.js          chi guarda una mossa avanti: cariche come assegnazione, mosse provate su una copia
   minacce.js          dove ti possono caricare: la dichiarazione di p. 119 fatta da ogni nemico, e la griglia
-  controai.js         la sfida sul tavolo: tu contro l'AI, con l'arbitro in mezzo
+  controai.js         la sfida sul tavolo: tu contro l'AI, o AI contro AI dal vivo con seme e velocità; Salva nel diario
+  replay.js           la partita da guardare: i fotogrammi dell'arbitro e la pagina animata, per l'app e per tools/replay.mjs
+  archivio.js         una partita dell'arbitro nel diario: mentre si gioca (registro), o dal testo del registro (dalRegistro)
+  simulatore.js       tante partite in sottofondo, dalla pagina: accende il Web Worker e ne riporta l'avanzamento
+  simulatore-lavoro.js  il Web Worker: le partite di --partite, il conto e la mappa, senza terminale
+  serie.js            tante partite: lo specchio, i conti, quali piani contano, l'esperimento (tools/serie.mjs lo riesporta)
+  statistica.js       i conti di un campione: Wilson, regressioni, restringimento, Benjamini-Hochberg
+  heatmap.js          la mappa di tante partite: per ogni unità dove parte, dove sta, combatte e muore
   spiega.js           il perché di un tiro: dalla riga del registro alla scheda, per la sfida e per la pagina da guardare
   matchup.js          disponibilità, confronto, schieramenti salvati
   laboratorio.js      le liste cercate a macchina e il torneo fra loro: chi batte chi, scenario per scenario
@@ -668,10 +683,10 @@ tools/
   make-icons.mjs      scrive i PNG del manifest senza dipendenze
   partita.mjs         una partita intera dalla lista al verdetto, commentata
   prova-chiave.mjs    una domanda sola al modello, per sapere se la chiave funziona
-  replay.mjs          la stessa partita da guardare: una pagina sola, con la barra del tempo
-  heatmap.mjs         la mappa di tante partite: per ogni unità dove parte, dove sta, combatte e muore
-  serie.mjs           tante partite: lo specchio, i conti, quali piani contano, l'esperimento
-  statistica.mjs      i conti di un campione: Wilson, regressioni, restringimento, Benjamini-Hochberg
+  replay.mjs          la stessa partita da guardare, in un file con le foto della cartella (il motore è src/replay.js)
+  archivia.mjs        una partita di partita.mjs in dati/partite.json (il registro è src/archivio.js)
+  archivia-registro.mjs  il testo di «Copia il registro» in dati/partite.json, come «Importa un registro» dell'app
+  heatmap.mjs, serie.mjs, statistica.mjs   riesportano i moduli di src/, che usa anche il simulatore dell'app
   liste/unita.mjs     le unità scritte a mano per provare liste: Skaven, Orchi & Goblin, Lucertole, con i punti del libro
   liste/gioca.mjs     una serie a specchio fra due liste, anche candidate, e che fine fa ogni unità
   liste/valuta.mjs    tante candidate contro tante liste su più scenari, in parallelo

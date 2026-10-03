@@ -47,6 +47,11 @@ ok('le bestie da guerra ci sono', troopType('War Beasts').id === 'warBeasts');
 
 ok('la Forza d Unita del file vince sulla tabella', usPerModel('Regular Infantry', 3, 1) === 3);
 ok('senza il file si legge la tabella', usPerModel('Monstrous Infantry', 0, 1) === 3);
+/* la Forza d'Unita' rimasta indietro: tre Troll con quella di uno, sei
+   Boar Boyz a uno a testa. Il file vince quando dice di piu', non meno. */
+ok('tre Troll con la Forza d Unita di uno valgono comunque tre a testa',
+   usPerModel('Monstrous Infantry', 3, 3) === 3 && unitStrength('Monstrous Infantry', 3, 3, 3) === 9);
+ok('sei cavalieri scritti a uno a testa valgono due', usPerModel('Heavy Cavalry', 6, 6) === 2);
 ok('il carro pesante vale cinque, non quattro', usPerModel('Heavy chariot', 0, 1) === 5);
 ok('un mostro vale quanto le sue Ferite iniziali', usPerModel('Behemoth', 0, 1, 6) === 6 &&
    usPerModel('Monstrous creature', 0, 1, 4) === 4);
@@ -76,10 +81,16 @@ ok('nessuna unita salvata ha un tipo di truppa sconosciuto',
    preciso e durerebbe fino alla prossima partita archiviata, perche'
    `dati/liste.json` lo riscrive la Nuvola ogni volta che si sincronizza. */
 const tableUS = u => usPerModel(u.troop, 0, u.models, +((u.stats || {}).W || 0));
+const playedUS = u => usPerModel(u.troop, u.us, u.models, +((u.stats || {}).W || 0));
 const disagree = withTroop.filter(u => u.us && u.models &&
   Math.abs(u.us / u.models - tableUS(u)) > 0.001);
-ok('dove il file e la tabella non concordano, e sempre il file a dire di piu',
-   disagree.every(u => u.us / u.models > tableUS(u)));
+/* Prima la prova guardava il file, e il file lo riscrive la Nuvola: una
+   lista ritoccata nell'app (i modelli cambiati, la Forza d'Unita' no)
+   la faceva diventare rossa e fermava tutta la catena di `npm test`.
+   Adesso guarda quello che si gioca: se il file dice meno, vale la
+   tabella. */
+ok('dove il file e la tabella non concordano, si gioca sempre il numero piu alto',
+   disagree.every(u => playedUS(u) >= tableUS(u) - 0.001));
 ok('e i casi sono quelli con una cavalcatura o un personaggio unito',
    disagree.length > 0 && disagree.length < withTroop.length / 4);
 

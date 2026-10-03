@@ -71,6 +71,10 @@ import { objectiveHolder, OBJECTIVE_RANGE, OBJECTIVE_US } from './battlemarch.js
    lavoro futuro, non una scusa.
    ============================================================ */
 export const LIMITI = [
+  { id:"cavalleria", what:"un reggimento di cavalleria mena con la sola riga del cavaliere", page:204,
+    why:"il file di New Recruit porta una riga sola per modello, e le righe delle cavalcature dei reggimenti (Cold One, War Boar…) non stanno ancora in `dati/profili.json`: gli attacchi della bestia non si tirano. I personaggi montati dalla tendina «Cavalcatura» menano invece con tutte le loro righe" },
+  { id:"ostinati", what:"chi è Stubborn sceglie da solo se tirare il test di rotta", page:178,
+    why:"il libro lascia la scelta a chi gioca («may choose not to»); l'arbitro ripiega in ordine quando la rotta è più probabile del cedere terreno, e non guarda quanto è lontano il bordo del tavolo" },
   { id:"domini",    what:"la magia non si gioca in questa partita", page:106,
     why:"i domini (`dati/magia/domini.json`) non sono stati passati all'arbitro: chi lo usa li carica con `useMagic` o li dà a `newBattle`" },
   { id:"amano",     what:"gli incantesimi che l'app non sa applicare non si offrono", page:107,
@@ -349,7 +353,7 @@ function comandoGenerale(S, u){
   if (d > (grande(g) ? RAGGIO_GENERALE_GRANDE : RAGGIO_GENERALE)) return null;
   const c = CB.combatant(g);
   const ld = +(c.ldBase != null ? c.ldBase : c.ld) || 0;
-  return ld ? { ld, nome: g.name, d } : null;
+  return ld ? { ld, nome: g.name, d, warband: !!PS.psychOf(g).warband } : null;
 }
 /* il Comando con cui l'unita' tira, e da dove viene. `zitto` e' per
    le opzioni, che guardano e non scrivono nel registro. */
@@ -1183,7 +1187,7 @@ function opzioniCarica(S){
       const d = CH.declareCharge({
         charger: { name: u.name, box: boxOf(u, S.units), move, swift: MV.swiftOf(u), loose: !!u.loose },
         target:  { name: t.name, box: boxOf(t, S.units) },
-        pieces: S.terrain, worst: tc.eff.worstDie,
+        pieces: S.terrain, worst: tc.eff.worstDie, slow: tc.lento,
       });
       if (!d || !d.can) continue;
       /* Il posto a contatto c'e'? Una carica su un nemico che ha gia'
@@ -1195,7 +1199,9 @@ function opzioniCarica(S){
       if (!posto || posto.pieno) continue;
       const extra = r1(posto.extra || 0);
       const need = Math.max(0, r1(d.need + extra));
-      let chance = extra ? CH.chargeChance(need, MV.swiftOf(u)) : d.chance;
+      /* con il terreno di mezzo il dado e' il peggiore anche qui: prima
+         lo scorrere lungo la faccia rifaceva il conto con il migliore */
+      let chance = extra ? CH.chargeChance(need, MV.swiftOf(u), !!d.worst) : d.chance;
       if (chance <= 0) continue;
       /* la Paura prima di dichiarare: entra nella probabilita' */
       let nota = "";
@@ -1495,11 +1501,9 @@ function guardia(S, u, box, nemici, t, tb, move){
 function stradaVera(S, u, meta, { marcia = false, fino = null } = {}){
   const { move: pieno } = movimento(S, u);
   if (!pieno) return null;
-  const move = vola(u) ? pieno : TR.slowMove(pieno, pezziSulCammino(S, u, meta, pieno)).move;
-  const quanti = fino != null ? Math.min(fino, marcia ? move * 2 : move) : marcia ? move * 2 : move;
-  const pr = pianoRuota(S, u, versoDi(meta[0] - u.x, meta[1] - u.y), quanti, { marcia });
-  const p = pianoAvanzata(S, u, { x: meta[0], y: meta[1] }, pr, quanti);
-  return { pr, quanti, move, pollici: p.pollici, bloccata: p.bloccata,
+  const quantiDi = m => fino != null ? Math.min(fino, marcia ? m * 2 : m) : marcia ? m * 2 : m;
+  const { pr, p, quanti, move } = pianoConTerreno(S, u, meta, pieno, { marcia, quanti: quantiDi });
+  return { pr, quanti, move, pollici: p.pollici, bloccata: p.bloccata, giro: p.giro,
            stop: p.stop, muro: p.stop && p.stop.terreno ? p.stop.terreno : null,
            /* dove arriva: serve a chiedersi, prima di andarci, chi ci
               puo' caricare (`guardia`) */
@@ -1639,7 +1643,14 @@ function opzioniMossa(S){
        «ma» per il test di Comando, e due «ma» di fila non si leggono */
     const muroTesto = v => v && v.muro && v.pollici < v.pr.resta - 0.05
       ? ` — però ${v.muro.label} chiude la strada: di pollici ne fa ${r1(v.pollici)} e si ferma lì (p. 270)` : "";
-    out.push({ id:"avanza", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
+    /* Un'avanzata che non sposta il pezzo di un pollice e non lo gira
+       di un grado non e' una mossa: contava come movimento (niente
+       tiro, e da marcia niente tiro per tutto il turno) e nella palude
+       costava il test di terreno pericoloso. I Boar Boyz dell'ultima
+       partita l'hanno «fatta» tre turni di fila, perdendo un modello a
+       turno per stare fermi. */
+    const fermoDavvero = v => !!v && v.pollici < 0.05 && Math.abs(v.giro || 0) < 0.5;
+    if (!fermoDavvero(va)) out.push({ id:"avanza", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
                dist: d, pollici: r1(va ? va.pollici : pa.resta), muro: !!(va && va.muro), ...ga.campi,
                why: `${t.name} è a ${d}″: ${testoRuota(pa, move)}` + (mv.why ? ` (${mv.why})` : "") +
                     muroTesto(va) + ga.testo,
@@ -1664,7 +1675,7 @@ function opzioniMossa(S){
              ` — con tutti i ${r1(va.pollici)}″ il rischio sarebbe ${pc(ga.campi.rischio)}`,
         page: 122 });
     }
-    if (!bandiera(u, "noMarch") && !macchina(u)) out.push({ id:"marcia", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
+    if (!bandiera(u, "noMarch") && !macchina(u) && !fermoDavvero(vm)) out.push({ id:"marcia", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
                dist: d, pollici: r1(vm ? vm.pollici : pm.resta), muro: !!(vm && vm.muro), provaComando: d <= CH.MARCH_WATCH && !vola(u),
                ...gm.campi,
                why: `${t.name} è a ${d}″: ${testoRuota(pm, move * 2, "marcia")}` +
@@ -1941,16 +1952,31 @@ function manovra(S, a){
   if (u.unito === chiave(S)) return no("un personaggio le si è unito: non si muove più in questo turno (p. 207)");
   if (stupida(S, u)) return no("è in preda alla Stupidità: non si muove");
   if (sciolta(u)) return no("in formazione sciolta non si manovra: ogni modello va dove vuole (p. 185)");
-  const { move } = movimento(S, u);
-  if (!move) return no("non sa di quanto si muove: il profilo non porta il Movimento");
+  const { move: pieno } = movimento(S, u);
+  if (!pieno) return no("non sa di quanto si muove: il profilo non porta il Movimento");
   const r = (u.rot || 0) * Math.PI / 180;
   const avanti = [Math.sin(r), -Math.cos(r)], destra = [Math.cos(r), Math.sin(r)];
-  const dritto = (dir, pollici) => {
-    const p = percorso(S, u, [u.x + dir[0] * pollici * MM, u.y + dir[1] * pollici * MM], pollici,
-                       { rot: u.rot || 0, devia: false });
-    posa(S, u, p.x, p.y, u.rot);
-    return p;
+  const partenza = postiDi(S, u);
+  /* Anche le manovre si fanno con il Movimento, e il terreno lo scala
+     come per chi avanza (p. 269): prima chi arretrava o si spostava di
+     lato in una palude non perdeva il pollice e non tirava il test, e
+     un carro con le ruote ferrate ci girava dentro gratis. */
+  let move = pieno;
+  const dritto = (dir, quantiDi) => {
+    const piano = m => {
+      const q = quantiDi(m);
+      return { q, p: percorso(S, u, [u.x + dir[0] * q * MM, u.y + dir[1] * q * MM], q,
+                              { rot: u.rot || 0, devia: false }) };
+    };
+    let x = piano(pieno);
+    if (!vola(u)){
+      const eff = TR.slowMove(pieno, lentiPer(u, pezziDelPercorso(S, u, x.p)));
+      if (eff.slowed){ diciRallenta(S, u, eff); move = eff.move; x = piano(move); }
+    }
+    posa(S, u, x.p.x, x.p.y, u.rot);
+    return { ...x.p, quanti: x.q };
   };
+  const pericoli = p => { if (!vola(u) && p && p.pollici > 0.01) dopoIlMovimento(S, u, partenza); };
   const fermo = (p, quanti) => p.stop && p.pollici < quanti - 0.05 ? `, e si ferma: c'è ${p.stop.perche}` : "";
   const f0 = layoutOf(u, S.units).front;
 
@@ -1959,6 +1985,11 @@ function manovra(S, a){
     if (![90, -90, 180].includes(gradi)) return no("si gira di 90° o di 180° (p. 124)");
     const g = giroSulPosto(S, u, gradi);
     if (!g) return no("girata non ci sta: toccherebbe un'altra unità o il bordo");
+    /* il giro si fa sul posto: conta il terreno in cui si comincia */
+    if (!vola(u)){
+      const eff = TR.slowMove(pieno, lentiPer(u, pezziFra(S, partenza, partenza)));
+      if (eff.slowed){ diciRallenta(S, u, eff); move = eff.move; }
+    }
     const costo = move * MV.TURN_COST[Math.abs(gradi)];
     u.frontage = g.fronte;
     posa(S, u, u.x, u.y, g.rot);
@@ -1975,6 +2006,8 @@ function manovra(S, a){
            `(${r1(costo)}″)` + (g.fronte !== f0 ? `: il fronte passa da ${f0} a ${g.fronte}` : "") +
            (p.pollici ? `, e avanza dritta di ${p.pollici}″` : "") + fermo(p, resta) + ".",
         { army: u.army, page: 124 });
+    /* girarsi sul posto e' un movimento: nel pericoloso si tira */
+    if (!vola(u)) dopoIlMovimento(S, u, partenza);
     return si("girata");
   }
 
@@ -1995,21 +2028,21 @@ function manovra(S, a){
   }
 
   if (a.id === "indietro"){
-    const quanti = move / 2;
-    const p = dritto([-avanti[0], -avanti[1]], quanti);
+    const p = dritto([-avanti[0], -avanti[1]], m => m / 2);
     u.moved = { kind: "back", inches: p.pollici };
     say(S, `${u.name} arretra di ${p.pollici}″, sempre girata verso il nemico (metà del Movimento)` +
-           fermo(p, quanti) + ".", { army: u.army, page: 125 });
+           fermo(p, p.quanti) + ".", { army: u.army, page: 125 });
+    pericoli(p);
     return si("indietro");
   }
 
   if (a.id === "lato"){
     const segno = +a.segno > 0 ? 1 : -1;
-    const quanti = Math.min(move / 2, +a.pollici > 0 ? +a.pollici : move / 2);
-    const p = dritto([destra[0] * segno, destra[1] * segno], quanti);
+    const p = dritto([destra[0] * segno, destra[1] * segno], m => Math.min(m / 2, +a.pollici > 0 ? +a.pollici : m / 2));
     u.moved = { kind: "side", inches: p.pollici };
     say(S, `${u.name} si sposta di lato di ${p.pollici}″ a ${segno > 0 ? "destra" : "sinistra"} (metà del Movimento)` +
-           fermo(p, quanti) + ".", { army: u.army, page: 125 });
+           fermo(p, p.quanti) + ".", { army: u.army, page: 125 });
+    pericoli(p);
     return si("di lato");
   }
 
@@ -2162,10 +2195,39 @@ export function gruppiInMischia(S){
 /* ============================================================
    6 · I NUMERI CHE SERVONO A DECIDERE
    ============================================================ */
-function ldOf(S, u, { zitto = false } = {}){
+function ldOf(S, u){
+  return comandoConWarband(S, u).ld;
+}
+/* Il Comando con cui l'unita' tira: il suo, quello di un capo che ci
+   sta dentro (p. 97), quello del generale vicino (p. 202) — e sopra la
+   Warband, che pero' non sale su tutti e tre. «A Warband can use either
+   its own modified Leadership, the modified Leadership of a Warband
+   character, or the unmodified Leadership of a non-Warband character,
+   whichever is the higher» (p. 180). Prima si prendeva il piu' alto e
+   POI si sommavano i ranghi: i Goblin Mobs dell'ultima partita, con il
+   Black Orc Warboss (Comando 9, niente Warband) a nove pollici, hanno
+   tirato la Paura con Comando 10. Torna il valore, da dove viene, e la
+   frase della Warband se e' lei a deciderlo. */
+function comandoConWarband(S, u, { ranks = null } = {}){
   const p = PS.psychOf(u, { joined: capiInFila(S, u) });
-  const base = comandoDi(S, u, ldProprio(S, u).ld, { zitto }).ld;
-  return PS.leadershipOf(base, p, { rankBonus: ranghiAdesso(S, u), fleeing: !!u.fled }).value;
+  const opts = { rankBonus: ranks != null ? ranks : ranghiAdesso(S, u), fleeing: !!u.fled };
+  const crudo = x => { const c = CB.combatant(x); return +(c.ldBase != null ? c.ldBase : c.ld) || 0; };
+  const conW = (ld, warband) => warband ? PS.leadershipOf(ld, p, opts) : { value: ld, why: "" };
+  const suo = crudo(u);
+  let best = { ...conW(suo, true), base: suo, da: "suo", chi: "", why: "" };
+  for (const c of capiInFila(S, u)){
+    const l = crudo(c), w = conW(l, PS.psychOf(c).warband);
+    if (w.value > best.value) best = { ...w, base: l, da: "capo", chi: c.name,
+                                       why: `Comando ${l} di ${c.name}, che ci sta dentro (p. 97)` };
+  }
+  const g = comandoGenerale(S, u);
+  if (g){
+    const w = conW(g.ld, g.warband);
+    if (w.value > best.value) best = { ...w, base: g.ld, da: "generale", chi: g.nome,
+                                       why: `Comando ${g.ld} di ${g.nome}, a ${g.d}″` };
+  }
+  return { ld: best.value, base: best.base, da: best.da, chi: best.chi, why: best.why,
+           warband: best.value > best.base ? PS.leadershipOf(best.base, p, opts).why : "" };
 }
 /* Il bonus di ranghi che la Warband somma al Comando: quello di adesso,
    che il disordine azzera. Prima `ldOf` non lo passava, e la Warband
@@ -2197,14 +2259,11 @@ function ldProprio(S, u){
 function fontiComando(S, u){
   const c = CB.combatant(u);
   const suo = +(c.ldBase != null ? c.ldBase : c.ld) || 0;
-  const pr = ldProprio(S, u);
   const out = [{ t: `Comando ${suo} dal profilo`, f: "profilo" }];
-  if (pr.chi) out.push({ t: `Comando ${pr.ld} di ${pr.chi}, che ci sta dentro (p. 97)`, f: "regola" });
-  const g = comandoDi(S, u, pr.ld, { zitto: true });
-  if (g.why) out.push({ t: `${g.why}: si usa il suo (p. 202)`, f: "generale" });
-  const w = PS.leadershipOf(g.ld, PS.psychOf(u, { joined: capiInFila(S, u) }),
-                            { rankBonus: ranghiAdesso(S, u), fleeing: !!u.fled });
-  if (w.mods && w.mods.length) out.push({ t: w.why, f: "regola" });
+  const b = comandoConWarband(S, u);
+  if (b.da === "capo") out.push({ t: b.why, f: "regola" });
+  if (b.da === "generale") out.push({ t: `${b.why}: si usa il suo (p. 202)`, f: "generale" });
+  if (b.warband) out.push({ t: b.warband, f: "regola" });
   return out;
 }
 
@@ -2316,15 +2375,76 @@ function pezziSulCammino(S, u, verso, pollici){
   return pezziFra(S, da, da.map(p => [p[0] + ux, p[1] + uy]));
 }
 
+/* Chi il pollice non lo perde. Move Through Cover: «do not suffer any
+   modifiers to their Movement characteristic for moving through
+   difficult or dangerous terrain», e ritira gli 1 del terreno
+   pericoloso. Aquatic: lo stesso, ma solo nelle acque — «swampy
+   ground» e' scritto nella regola, e la palude e' l'unica acqua che il
+   tavolo conosce. Erano tutte e due «riguarda il movimento» nel
+   registro delle regole e nessuno le applicava: gli Skink Skirmishers
+   attraversavano la palude e il bosco con un pollice in meno, e
+   pagavano il test senza ritirare niente. */
+const passaCoperto = u => haRegola(u, /^move through cover/i);
+const acquatico = u => haRegola(u, /^aquatic/i);
+const ACQUE = new Set(["marsh"]);
+function lentiPer(u, pezzi){
+  if (passaCoperto(u)) return [];
+  if (acquatico(u)) return (pezzi || []).filter(p => !ACQUE.has(p.kind));
+  return pezzi || [];
+}
+
 /* Il pollice in meno (p. 269): si applica al Movimento, non ai pollici
-   gia' raddoppiati della marcia, e per questo si passa `move` e non
-   `quanti` — una marcia nel bosco ne perde due, ed e' giusto cosi'. */
-function rallenta(S, u, verso, pollici){
-  const eff = TR.slowMove(pollici, pezziSulCammino(S, u, verso, pollici));
-  if (eff.slowed) say(S, `${u.name}: ${eff.text}.`, { army: u.army, page: eff.page,
+   gia' raddoppiati della marcia — una marcia nel bosco ne perde due, ed
+   e' giusto cosi'. E si guarda sul percorso VERO, da dove si parte a
+   dove si arriva con tutti i pollici: prima si guardavano solo i primi
+   M pollici di una linea dritta, e chi marciava trovava la palude nella
+   seconda meta' della marcia senza rallentare (gli Black Orc Mobs al
+   turno 2 dell'ultima partita: 6″ di marcia con Movimento 3, e il test
+   della palude subito dopo). Se il percorso pieno tocca il terreno si
+   rifa' il piano con il Movimento scalato. Torna anche `eff`, che chi
+   muove davvero scrive nel registro con `diciRallenta`. */
+function pianoConTerreno(S, u, meta, pieno, { marcia = false, quanti = m => m } = {}){
+  const t = { x: meta[0], y: meta[1] };
+  const rot = versoDi(meta[0] - u.x, meta[1] - u.y);
+  const conQuanti = (move, q) => {
+    const pr = pianoRuota(S, u, rot, q, { marcia });
+    return { move, quanti: q, pr, p: pianoAvanzata(S, u, t, pr, q) };
+  };
+  const prova = move => conQuanti(move, quanti(move));
+  const pieno0 = prova(pieno);
+  if (vola(u)) return { ...pieno0, eff: null };
+  const tocca = x => TR.slowMove(pieno, lentiPer(u, pezziDelPercorso(S, u, x.p)));
+  const eff = tocca(pieno0);
+  if (!eff.slowed) return { ...pieno0, eff };
+  const lento = prova(eff.move);
+  if (tocca(lento).slowed) return { ...lento, eff };
+  /* Con il pollice in meno il terreno non lo si raggiunge piu': allora
+     non lo si attraversa, e il pollice non si perde. Il libro lascia
+     andare con tutto il Movimento fino al bordo del bosco; si cerca il
+     piu' lungo dei movimenti pieni che non lo toccano, che e' almeno
+     quello lento. */
+  let lo = lento.quanti, hi = pieno0.quanti, meglio = lento;
+  for (let i = 0; i < 6 && hi - lo > 0.1; i++){
+    const mezzo = (lo + hi) / 2;
+    const x = conQuanti(pieno, mezzo);
+    if (tocca(x).slowed) hi = mezzo; else { lo = mezzo; meglio = x; }
+  }
+  return { ...meglio, eff: null };
+}
+/* i pezzi fra dove l'unita' sta e una posa {x, y, rot} */
+function pezziDelPercorso(S, u, posa){
+  const da = postiDi(S, u);
+  const a = inPosa(u, posa.x, posa.y, posa.rot != null ? posa.rot : u.rot, () => postiDi(S, u));
+  return pezziFra(S, da, a);
+}
+/* il Movimento che resta andando verso `verso` con `pollici`: e' quello
+   che le prove chiedono, senza muovere niente */
+const rallenta = (S, u, verso, pollici) => pianoConTerreno(S, u, verso, pollici).move;
+function diciRallenta(S, u, eff){
+  if (!eff || !eff.slowed) return;
+  say(S, `${u.name}: ${eff.text}.`, { army: u.army, page: eff.page,
       x: { k: "terreno", t: "Terreno difficile", u: u.name, uid: u.uid,
-           f: [{ t: eff.text, f: "terreno" }], e: `si muove di ${eff.move}″ invece di ${pollici}″`, ok: false } });
-  return eff.move;
+           f: [{ t: eff.text, f: "terreno" }], e: `si muove di ${eff.move}″ invece di ${eff.base}″`, ok: false } });
 }
 
 /* Il test di terreno pericoloso (p. 269): un D6 per modello per ogni
@@ -2343,6 +2463,14 @@ function terrenoPericoloso(S, u, pezzi){
   if (!ask) return 0;
   limite(S, "pericoloso");
   const dadi = roll(ask.n);
+  /* Move Through Cover: «may re-roll any rolls of 1 when making
+     Dangerous Terrain tests». Il secondo dado vale anche se e' un altro
+     1 (p. 93). */
+  const ritiro = passaCoperto(u) ? roll(dadi.filter(d => d === 1).length) : [];
+  if (ritiro.length){
+    let k = 0;
+    for (let i = 0; i < dadi.length; i++) if (dadi[i] === 1) dadi[i] = ritiro[k++];
+  }
   const uni = TR.dangerousLosses(dadi);
   const d3 = fer && uni ? roll(uni) : [];
   const ferite = fer ? d3.reduce((s, d) => s + Math.ceil(d / 2), 0) : uni;
@@ -2358,6 +2486,7 @@ function terrenoPericoloso(S, u, pezzi){
                    (conto.kills ? `, ${conto.kills} a terra` : ", nessuno a terra")
                  : "nessuna ferita") +
          (fer ? ", D3 ferite per ogni 1 (Iron Shod Wheels)" : "") +
+         (ritiro.length ? `, ${ritiro.length} ${ritiro.length === 1 ? "1 ritirato" : "1 ritirati"} (Move Through Cover)` : "") +
          ` (p. ${ask.page}).`,
       { dice: dadi, army: u.army, page: ask.page,
         x: { k: "pericoloso", u: u.name, uid: u.uid, d: [],
@@ -2394,7 +2523,10 @@ function terrenoDiCarica(S, u, t){
   const muro = CH.defendedLine(boxOf(u, S.units), { box: boxOf(t, S.units), poly: cornersOf(t, S.units) },
                                S.terrain);
   const strada = CH.crossed([u.x, u.y], [t.x, t.y], S.terrain).filter(p => p !== muro);
-  return { eff: CH.terrainEffect(strada), muro, strada };
+  /* `lento`: il pollice in meno. Il dado si rovescia per tutti, il
+     pollice no — Move Through Cover e Aquatic (`lentiPer`) non lo
+     perdono, perche' il dado non e' un modificatore al Movimento */
+  return { eff: CH.terrainEffect(strada), muro, strada, lento: CH.terrainEffect(lentiPer(u, strada)).slow };
 }
 
 /* Chi sta sulla collina, e quanto (p. 272). Serve due volte: alla vista
@@ -2638,7 +2770,7 @@ const GESTI = {
     const d = CH.declareCharge({
       charger: { name: u.name, box: boxOf(u, S.units), move, swift: MV.swiftOf(u), loose: !!u.loose },
       target:  { name: t.name, box: boxOf(t, S.units) },
-      pieces: S.terrain, worst: tc.eff.worstDie,
+      pieces: S.terrain, worst: tc.eff.worstDie, slow: tc.lento,
     });
     if (!d || !d.can) return no(`carica impossibile: ${d ? d.why : "?"}`);
     /* la Paura si tira prima di dichiarare (p. 168) */
@@ -2922,15 +3054,11 @@ function mossa(S, a, marcia){
   if (stupida(S, u)) return no("è in preda alla Stupidità: non si muove");
   const { move: pieno } = movimento(S, u);
   if (!pieno) return no("non sa di quanto si muove: il profilo non porta il Movimento");
-  /* Il terreno difficile toglie UN POLLICE al Movimento, e vale sia a
-     cominciarci dentro, sia ad attraversarlo, sia a finirci (p. 269).
-     Si toglie qui, prima di raddoppiare per la marcia: il −1 e' su M,
-     quindi una marcia nel bosco ne perde due, ed e' quello che dice il
-     libro. Prima l'arbitro attraversava una palude alla stessa
-     velocita' con cui attraversava un prato. */
-  const move = vola(u) ? pieno : rallenta(S, u, [t.x, t.y], pieno);
-  let quanti = move;
   if (marcia && bandiera(u, "noMarch")) return no("un incantesimo le impedisce di marciare");
+  /* raddoppia: la marcia c'e' (senza nemici vicini, o con il test
+     passato). Il pollice del terreno si toglie dopo, sul percorso vero
+     (`pianoConTerreno`), e prima di raddoppiare. */
+  let raddoppia = marcia;
   if (marcia){
     /* Marcia sotto gli occhi del nemico: test di Comando (p. 123).
        Chi vola no: «they can march whilst within 8" of an enemy unit
@@ -2954,9 +3082,9 @@ function mossa(S, a, marcia){
                      ...fontiComando(S, u),
                      ...(musico ? [{ t: "il musico: +1 al Comando", f: "regola" }]
                         : u.command && u.command.musician ? [{ t: "il musico non aggiunge niente: il Comando è già 10", f: "regola" }] : [])],
-                 e: passa ? `marcia: ${move * 2}″` : `niente marcia: solo ${move}″`, ok: passa } });
-      quanti = passa ? move * 2 : move;
-    } else quanti = move * 2;
+                 e: passa ? "marcia: il doppio del Movimento" : "niente marcia: solo il Movimento", ok: passa } });
+      raddoppia = passa;
+    }
   }
   /* Il pollice dal nemico (p. 118), le unita' in mezzo e il bordo li
      guarda il percorso: prima si fermava a «distanza meno uno» misurata
@@ -2968,10 +3096,17 @@ function mossa(S, a, marcia){
      ha marciato, e non ha il giro libero dei Lumbering. */
   /* «accosta»: ci si ferma prima, dove si e' deciso (p. 122: il
      Movimento e' un massimo, non un obbligo) */
-  if (a.fino != null && a.fino >= 0) quanti = Math.min(quanti, a.fino);
+  const quantiDi = m => {
+    const q = raddoppia ? m * 2 : m;
+    return a.fino != null && a.fino >= 0 ? Math.min(q, a.fino) : q;
+  };
   const partenza = postiDi(S, u);
-  const pr = pianoRuota(S, u, versoDi(t.x - u.x, t.y - u.y), quanti, { marcia });
-  const p = avanzaRuotando(S, u, t, pr, quanti);
+  const pc = pianoConTerreno(S, u, [t.x, t.y], pieno, { marcia, quanti: quantiDi });
+  diciRallenta(S, u, pc.eff);
+  const pr = pc.pr, p = pc.p;
+  if (!p.bloccata && Math.abs(pr.giro) >= 0.5 && !pr.sciolta) limite(S, "ruota");
+  if (p.stop && p.pollici < p.voluti - 0.05) limite(S, "ingombro");
+  posa(S, u, p.x, p.y, p.rot);
   /* anche con il test fallito e' una marcia: «it is considered to have
      marched, even if its controlling player then elects to not move the
      unit at all» (p. 123). Quindi non tira. Sembrava un errore, e lo
@@ -2989,7 +3124,10 @@ function mossa(S, a, marcia){
                                     : `${verbo} di ${p.pollici}″ ${p.bloccata ? "dritta" : "verso " + t.name}`) +
          (p.stop && p.pollici < p.voluti - 0.05 ? `, e si ferma: c'è ${p.stop.perche}` : "") + ".",
       { army: u.army, page: pr.costo && g ? 124 : marcia ? 123 : 122 });
-  if (!vola(u)) dopoIlMovimento(S, u, partenza);
+  /* chi non si e' spostato non ha attraversato niente: il test e' per
+     chi «begins its movement» nel pericoloso, e un movimento di zero
+     pollici non comincia */
+  if (!vola(u) && (p.pollici > 0.01 || g >= 1)) dopoIlMovimento(S, u, partenza);
   return si("mossa");
 }
 
@@ -3218,7 +3356,7 @@ function muoviCarica(S, u, t, d){
      anche attraversando una palude. */
   const tc = terrenoDiCarica(S, u, t);
   const partenza = postiDi(S, u);
-  const spec = CH.chargeDice({ swift: MV.swiftOf(u), worst: !!d.worst });
+  const spec = CH.chargeDice({ swift: MV.swiftOf(u), worst: !!d.worst, slow: d.slow != null ? !!d.slow : !!d.worst });
   const dadi = roll(spec.n);
   /* il bersaglio puo' essere scappato: si misura adesso, non alla
      dichiarazione (p. 121) */
@@ -3227,14 +3365,25 @@ function muoviCarica(S, u, t, d){
   const dist = scappato ? distanza(S, u, t) : d.dist;
   const posto = scappato ? null : postoAContatto(S, u, t);
   const serve = r1(dist + (posto && posto.extra ? posto.extra : 0));
-  const out = CH.chargeOutcome({ dice: dadi, spec, move: d.move, dist: serve });
+  /* `d.move` e' gia' scalato del pollice del terreno (`chargeBands`), e
+     `chargeOutcome` lo scala da se': gli si passa il Movimento del
+     profilo. Prima il pollice si toglieva due volte, e i Goblin Mobs
+     dell'ultima partita (Movimento 4, palude, 1 e 4 ai dadi) sono
+     arrivati a 3″ invece di 4″ contro i 3,8″ che servivano. */
+  const out = CH.chargeOutcome({ dice: dadi, spec, move: d.base != null ? d.base : d.move, dist: serve });
   /* chi e' fuggito fuori dal tavolo non si raggiunge piu' */
   const uscito = scappato && !!t.dead;
   const arriva = out.made && !uscito && !(posto && posto.pieno) && (scappato || posto);
   if (!arriva){
     /* la carica fallita muove comunque di quello che ha tirato (p. 121),
-       e si ferma dove si fermerebbe chiunque */
-    const p = muoviVerso(S, u, t, Math.min(out.reach, Math.max(0, dist)), { unPollice: true });
+       e si ferma dove si fermerebbe chiunque. Di quello che ha TIRATO:
+       «moves directly towards the target a distance equal to the result
+       of the Charge roll», e l'esempio del libro (Movimento 4, dadi 1 e
+       5) muove di 5″, non di 9″. Prima si muoveva di tutta la portata,
+       Movimento compreso: i Boar Boyz dell'ultima partita hanno fatto
+       10″ invece di 5″ e si sono trovati a un pollice e mezzo dagli
+       Skink. */
+    const p = muoviVerso(S, u, t, Math.min(out.total, Math.max(0, dist)), { unPollice: true });
     u.moved = { kind:"failedCharge", inches: p.pollici };
     const perche = uscito ? `ma ${t.name} è già fuori dal tavolo`
       : posto && posto.pieno && out.made
@@ -3535,7 +3684,11 @@ function tiro(S, u, t, arma, { standAndShoot = false } = {}){
   const fase = faseDi(S);
   inizioFase(S, t);
   const tutti = mucchi(r);
-  say(S, `${u.name} tira su ${t.name} con ${arma.name} da ${d}″: ${r.shots} tiri a ${r.hitNeed}+, ` +
+  /* oltre il 6 il punteggio e' un 6 e poi un secondo dado (p. 139): il
+     registro scriveva «a 6+» e sembrava che i modificatori non
+     contassero */
+  const punteggio = r.hitThen ? `${r.hitRaw}+ (un 6 e poi ${r.hitThen}+)` : `${r.hitNeed}+`;
+  say(S, `${u.name} tira su ${t.name} con ${arma.name} da ${d}″: ${r.shots} tiri a ${punteggio}, ` +
          `${r.hit.hits} ${r.hit.hits === 1 ? "colpo" : "colpi"}, ${r.wounds} ferit${r.wounds === 1 ? "a" : "e"}, ${r.kills} a terra` +
          (mods.list && mods.list.length ? ` [${mods.list.map(m => m.why).join(", ")}]` : "") + ".",
       { dice: tutti.flat, groups: tutti.groups, army: u.army, page: 136,
@@ -5032,6 +5185,11 @@ function terrenoInMischia(S, g){
                  e: "+1 al risultato del combattimento", ok: true } });
     u.highGround = alto;
   }
+  /* il registro diceva «+1 al risultato» a tutti e due, e poi nel
+     risultato il punto non c'era: si annulla in parita' (p. 153) */
+  if (g.A.some(u => u.highGround) && g.B.some(u => u.highGround))
+    say(S, `Tutte e due le parti combattono dall'alto della collina: il +1 si annulla (p. 153).`,
+        { page: 153 });
 }
 
 /* il combattimento, e sul tavolo il segno che si mena: chi contro chi */
@@ -5045,6 +5203,10 @@ function mischia(S, g){
 function menaLaMischia(S, g){
   for (const u of [...g.A, ...g.B]) u.fought = chiave(S);
   terrenoInMischia(S, g);
+  /* quello che l'assalto non tira si dice quando conta, non nel README */
+  if ([...g.A, ...g.B].some(u => (u.models || 1) > 1 && /cavalry/i.test(troopType(u.troop).id)))
+    limite(S, "cavalleria");
+  if ([...g.A, ...g.B].some(u => haRegola(u, /^stubborn/i))) limite(S, "ostinati");
   /* La Paura quando il combattimento viene scelto: chi tocca un nemico
      che la fa ed e' piu' grosso tira, una volta per turno, e se
      fallisce ha −1 per colpire (p. 168). */
@@ -5274,14 +5436,18 @@ function schieraDi(S, u, { attached = false, host = null, feared = false } = {})
   /* il test di rotta si tira con il Comando piu' alto fra i modelli
      (p. 97) o con quello del generale, se e' vicino: si rifa' il conto
      della Warband sopra il valore nuovo */
-  const proprio = attached ? { ld: +(c.ldBase || c.ld) || 0, chi: "" } : ldProprio(S, u);
-  const gen = comandoDi(S, attached && host ? host : u, proprio.ld);
-  if (!gen.why && proprio.chi) gen.why = `Comando ${proprio.ld} di ${proprio.chi}, che ci sta dentro (p. 97)`;
-  if (gen.why){
+  if (!attached){
+    /* la Warband sale sul Comando suo e su quello dei capi Warband, non
+       su quello del generale che non lo e' (`comandoConWarband`) */
     const ranks = c.disrupted ? 0 : rankBonus(c.models, c.frontage,
       c.troop ? c.troop.maxRank : 2, c.troop ? c.troop.perRank : 5);
-    const lead = PS.leadershipOf(gen.ld, c.psych, { rankBonus: ranks, fleeing: !!u.fled });
-    if (lead.value > c.ld){ c.ld = lead.value; c.ldGen = gen.why; }
+    const b = comandoConWarband(S, u, { ranks });
+    c.ld = b.ld;
+    if (b.why) c.ldGen = b.why;
+  } else {
+    const proprio = { ld: +(c.ldBase || c.ld) || 0, chi: "" };
+    const gen = comandoDi(S, host || u, proprio.ld);
+    if (gen.why && gen.ld > c.ld){ c.ld = gen.ld; c.ldGen = gen.why; }
   }
   if (attached){
     c.attached = true; c.shielded = true;

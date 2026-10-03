@@ -102,9 +102,15 @@ export function da(nome, o = {}){
   const u = structuredClone(m);
   const n = o.n ?? u.models;
   /* la Forza d'Unità: quella del file per un modello solo (un Behemoth
-     ce l'ha a zero e la calcola l'app), in proporzione per i reggimenti */
-  const usPer = (u.us || u.models) / (u.models || 1);
-  Object.assign(u, { models: n, us: u.models === n ? u.us : Math.round(usPer * n) });
+     ce l'ha a zero e la calcola l'app), in proporzione per i reggimenti.
+     In proporzione solo se e' un numero intero a modello: undici Saurus
+     con la Forza d'Unita' di quindici (una lista ritoccata nell'app) la
+     davano a 1,4 a modello a tutte le liste cercate. E zero resta zero —
+     prima diventava uno a modello, e i Boar Boyz valevano la meta'. In
+     tutti e due i casi decide la tabella dei tipi di truppa. */
+  const usPer = (u.us || 0) / (u.models || 1);
+  const intero = usPer > 0 && Math.abs(usPer - Math.round(usPer)) < 0.01;
+  Object.assign(u, { models: n, us: u.models === n ? u.us : intero ? Math.round(usPer * n) : 0 });
   u.name = o.name || nome;
   if (o.pts != null) u.pts = o.pts;
   if (o.f) u.frontage = o.f;

@@ -2688,15 +2688,17 @@ function alignBlockers(u, t){
 }
 /* La carica corta non torna indietro: si avanza di quello che i dadi
    hanno detto, e ci si ferma a un pollice buono da chiunque, che e' la
-   regola di p. 118. */
+   regola di p. 118. Di quello che hanno detto i DADI (p. 121: «a
+   distance equal to the result of the Charge roll»), non del Movimento
+   piu' i dadi: con Movimento 4 e un 5 si fanno 5″, non 9″. */
 function shortCharge(u, t, out){
   const from = boxOf(u);
   const dx = t.x - u.x, dy = t.y - u.y, len = Math.hypot(dx, dy) || 1;
-  const step = out.reach * MM;
+  const step = out.total * MM;
   const at = { x: u.x + dx / len * step, y: u.y + dy / len * step, rot: u.rot };
   const fix = CH.nudgeClear(at, from, enemiesOf(u).map(asPiece));
   u.x = fix.x; u.y = fix.y;
-  u.moved = { kind:"failedCharge", inches: out.reach };
+  u.moved = { kind:"failedCharge", inches: out.total };
   /* la prima carica della partita e' questa, anche se non e' arrivata */
   if (psychFor(u).firstCharge) EF.spend(u, "firstCharge");
   if (fix.moved > 0)

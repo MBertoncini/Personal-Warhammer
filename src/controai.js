@@ -21,11 +21,24 @@
  * lo dice.
  *
  * La partita vive in questa scheda: ricaricando la pagina si ricomincia.
+ * Per tenerla c'e' «Salva nel diario»: mentre si gioca si registrano i
+ * fotogrammi del tavolo (`replay.js`) e le fotografie di ogni mezzo
+ * turno (`archivio.js`), e la voce che finisce nella scheda Partite si
+ * rivede con la stessa pagina animata di `tools/partita.mjs --html`.
+ *
+ * AI contro AI e' anche il modo di far girare `tools/partita.mjs` senza
+ * terminale — dal telefono, per esempio: lo stesso seme, l'euristica con
+ * o senza estro, chi guarda avanti, e la partita si guarda dal vivo con
+ * la velocita' che si sceglie, invece di aspettare una pagina alla fine.
  */
 
 import { $, esc } from './util.js';
 import * as AR from './arbitro.js';
 import * as AG from './agente.js';
+import * as D from './dice.js';
+import * as RP from './replay.js';
+import * as ARCH from './archivio.js';
+import { addReport, rivedi } from './reports.js';
 import { agenteRicerca } from './ricerca.js';
 import * as MG from './magic.js';
 import * as PR from './profiles.js';
@@ -33,6 +46,7 @@ import * as PREP from './prep.js';
 import { SCENARIOS } from './scenarios.js';
 import { customScenarioMap } from './scenariokit.js';
 import { mostraSfida, chiudiSfida, evidenzia, toast } from './deploy.js';
+import { askConfirm } from './uikit.js';
 import { rigaHTML, SPIEGA_CSS } from './spiega.js';
 
 const KEY = "tow-gemini-key";
@@ -40,6 +54,11 @@ const MODEL = "tow-gemini-model";
 const SALTA = "tow-sfida-salta";
 const SPIEGA = "tow-sfida-spiega";
 const CALMA = "tow-sfida-calma";
+const VELOCITA = "tow-sfida-velocita";
+/* la velocita' di chi guarda: moltiplica le pause fra una mossa e
+   l'altra. «Di corsa» non aspetta niente, ma lascia disegnare il tavolo. */
+export const VELOCITA_SCELTE = [[0.25, "lentissima"], [0.5, "lenta"], [1, "normale"], [2, "veloce"], [4, "velocissima"], [0, "di corsa"]];
+const velocita = () => { const v = +leggi(VELOCITA, "1"); return VELOCITA_SCELTE.some(([x]) => x === v) ? v : 1; };
 const MODELLO_DI_SOLITO = "gemini-2.5-flash";
 
 const leggi = (k, d = "") => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
@@ -79,7 +98,12 @@ export function scenarioPer(listA, listB, voluto = "", riserva = ""){
 /* ============================================================
    2 · COMINCIARE E FINIRE
    ============================================================ */
-export function startSfida({ listA, listB, mia = "A", scenario = "" } = {}){
+/* `agenti`: chi gioca ciascuna parte quando non sei tu — "ricerca" (di
+   suo senza chiave), "euristica", "estro", "gemini". `seme`: in una
+   partita da guardare i dadi vengono dal seme, e la stessa partita si
+   rigioca uguale, come con `tools/partita.mjs --seme`. `salva`: alla
+   fine finisce da sola nel diario. */
+export function startSfida({ listA, listB, mia = "A", scenario = "", agenti = null, seme = null, salva = false } = {}){
   if (!listA || !listB) return toast("Servono tutte e due le liste.");
   const avvisi = [];
   for (const [tag, l] of [["A", listA], ["B", listB]]){
@@ -90,33 +114,57 @@ export function startSfida({ listA, listB, mia = "A", scenario = "" } = {}){
   const nomi = { A: (listA.info && listA.info.catalogue) || listA.name,
                  B: (listB.info && listB.info.catalogue) || listB.name };
   if (nomi.A === nomi.B){ nomi.A += " (A)"; nomi.B += " (B)"; }
-  const S = AR.newBattle({ A: listA, B: listB, scenario: sc, def: tuttiGliScenari()[sc], nomi, magia: MG.magicNow() });
   /* `mia` vuota: nessuno dei due eserciti e' tuo, e si guarda l'AI
      giocare contro se stessa. E' la partita di `tools/partita.mjs`, ma
      sul tavolo vero e con le schede del perche' che compaiono mentre
      succede, invece che dopo in una pagina da scorrere. */
   const guarda = mia !== "A" && mia !== "B";
+  /* il seme vale solo per chi guarda: con te al tavolo i dadi sono
+     quelli veri, e un seme li renderebbe prevedibili */
+  const conSeme = guarda && seme != null && +seme >= 1 ? Math.floor(+seme) : null;
+  if (conSeme != null) D.setSource(D.seeded(conSeme));
+  const S = AR.newBattle({ A: listA, B: listB, scenario: sc, def: tuttiGliScenari()[sc], nomi, magia: MG.magicNow() });
   partita = { id: ++serie, S, mia: guarda ? null : mia, attesa: null, pensa: false,
               ultima: null, avvisi, errori: [], agente: null, agenti: null, visto: 0,
-              fermo: false, unPasso: false };
+              fermo: false, unPasso: false, seme: conSeme, salva: !!salva, tipi: agenti || null,
+              liste: { A: listA, B: listB } };
   svuotaPila();
-  partita.agente = faiAgente();
+  const lui = mia === "A" ? "B" : "A";
+  partita.agente = faiAgente(agenti && !guarda ? agenti[lui] : null, lui, conSeme);
   /* due agenti e non uno: quello che guarda avanti si tiene le sue
      prove, e Gemini la sua conversazione — mescolarle vorrebbe dire
      che un esercito ricorda i pensieri dell'altro */
-  if (guarda) partita.agenti = { A: faiAgente(), B: faiAgente() };
+  if (guarda) partita.agenti = { A: faiAgente(agenti && agenti.A, "A", conSeme),
+                                 B: faiAgente(agenti && agenti.B, "B", conSeme) };
+  registra(partita);
   mostraSfida(S, { nuova: true });
+  if (leggi(SPIEGA, "1") === "1") contenitore();
   renderSfida();
   gira();
 }
 
-function faiAgente(){
+/* L'estro dell'euristica nasce dal seme e dalla parte, come in
+   `tools/partita.mjs`: la partita col seme 42 e l'estro e' la stessa
+   qui e nel terminale. */
+const semeEstro = (s, tag) => ((s * 2654435761) ^ (tag === "A" ? 0x51ed27 : 0xa3c1f5)) >>> 0;
+export const TIPI_AGENTE = [
+  ["ricerca", "l'euristica che guarda avanti"],
+  ["euristica", "l'euristica"],
+  ["estro", "l'euristica con estro"],
+  ["gemini", "Gemini (con la chiave)"],
+];
+function faiAgente(tipo = null, tag = "B", seme = null){
   const chiave = leggi(KEY);
-  const nome = chiave ? "Gemini" : "l'euristica che guarda avanti";
+  const vuole = tipo || (chiave ? "gemini" : "ricerca");
+  const s = seme || 1;
+  if (vuole === "euristica") return AG.agenteEuristico({ nome: "l'euristica" });
+  if (vuole === "estro")
+    return AG.agenteEuristico({ nome: "l'euristica con estro", estro: D.seeded(semeEstro(s, tag)) });
   /* senza chiave, chi guarda una mossa avanti: prova le mosse su una
      copia della partita e sceglie con i numeri (src/ricerca.js). Sei
      volte piu' lento dell'euristica sola, cioe' un attimo per mossa. */
-  if (!chiave) return agenteRicerca({ AR, nome });
+  if (vuole === "ricerca" || !chiave) return agenteRicerca({ AR, nome: "l'euristica che guarda avanti", ...(seme ? { seme } : {}) });
+  const nome = "Gemini";
   return AG.agenteGemini({
     apiKey: chiave, model: leggi(MODEL) || MODELLO_DI_SOLITO, nome,
     /* il ritmo: tu sei lento di tuo, ma l'AI fa molte domande di fila
@@ -127,8 +175,10 @@ function faiAgente(){
 }
 
 export function abbandona(){
+  if (partita && partita.seme != null) D.setSource(null);
   partita = null;
-  svuotaPila();
+  esciCinema();
+  togliPila();
   chiudiSfida();
   renderSfida();
 }
@@ -198,10 +248,15 @@ async function gira(){
          ferma un attimo anche senza dadi: i pezzi devono vedersi muovere. */
       const calma = leggi(CALMA, "1") === "1";
       const leggere = schede && leggi(SPIEGA, "1") === "1" && calma ? Math.min(4500, 700 + schede * 1100) : 0;
-      const ms = Math.max(leggere, p.mia ? 0 : calma ? 450 : 120);
-      if (ms && !p.S.finita){
-        renderSfida();
-        await pausa(ms);
+      const v = velocita();
+      /* la velocita' scala le pause di chi guarda; «di corsa» non ne fa,
+         ma un giro del browser lo lascia lo stesso, se no il tavolo non
+         si disegna finche' la partita non e' finita */
+      const ms = v === 0 ? 0 : Math.max(leggere, p.mia ? 0 : calma ? 450 : 120) / (p.mia ? 1 : v);
+      if (!p.S.finita){
+        if (ms || !p.mia) renderSfida();
+        if (ms) await pausa(ms);
+        else if (!p.mia) await pausa(0);
         if (partita !== p) return;
       }
     }
@@ -209,11 +264,23 @@ async function gira(){
     if (partita === p) p.errori.push(e.message);
   } finally {
     p.gira = false; p.pensa = false;
-    if (partita === p){ mostraSfida(p.S); renderSfida(); }
+    if (partita === p){
+      if (p.S.finita) await finita(p);
+      mostraSfida(p.S); renderSfida();
+    }
   }
 }
 
+/* la partita e' finita: i dadi tornano veri, e se era chiesto si salva */
+async function finita(p){
+  if (p.chiusa) return;
+  p.chiusa = true;
+  if (p.seme != null) D.setSource(null);
+  if (p.salva && !p.salvata) await salvaNelDiario(p);
+}
+
 function applica(p, o, mossa, perche, chi){
+  const prima = p.S.log.length;
   const r = AR.apply(p.S, mossa);
   if (chi === "ai" && mossa && mossa.id !== "avanti")
     p.ultima = { mossa: AG.descrivi(mossa), perche, ok: r.ok, casella: o.fase, army: o.player };
@@ -224,6 +291,7 @@ function applica(p, o, mossa, perche, chi){
     AR.apply(p.S, { id: "avanti" });
   }
   AR.controllaFine(p.S);
+  regista(p, o, mossa, chi === "ai" ? perche : "", prima, r);
   mostraSfida(p.S);
   /* le schede delle righe nuove, e davanti il perche' dell'AI */
   const scelta = chi === "ai" && mossa && mossa.id !== "avanti" && perche
@@ -232,6 +300,104 @@ function applica(p, o, mossa, perche, chi){
   return raccogli(p, scelta);
 }
 const pausa = ms => new Promise(r => setTimeout(r, ms));
+
+/* ============================================================
+   3b · LA REGISTRAZIONE
+   Due cose per ogni mossa, le stesse di `tools/partita.mjs`: un
+   fotogramma del tavolo con le righe nuove del registro (per rivederla
+   animata) e il passo del diario (le fotografie di fine mezzo turno, il
+   punteggio, il resoconto per l'AI). Costa poco: i fotogrammi senza
+   foto stanno in un centinaio di KB per una partita intera.
+   ============================================================ */
+function registra(p){
+  const S = p.S, guarda = !p.mia;
+  const chi = t => guarda ? agenteDi(p, t).nome : t === p.mia ? "tu" : p.agente.nome;
+  p.rec = {
+    frames: [], id: null,
+    diario: ARCH.registro(S, { liste: p.liste, meta: {
+      event: guarda ? `AI contro AI sul tavolo (${p.seme != null ? "seme " + p.seme : "dadi veri"})`
+                    : "Sfida sul tavolo contro l'AI",
+      playerA: chi("A"), playerB: chi("B"), mine: p.mia || "",
+      pts: (S.sc && S.sc.pts) || 0, rounds: S.rounds,
+      ...(guarda ? { simulata: true } : {}), ...(p.seme != null ? { seme: p.seme } : {}),
+    } }),
+  };
+}
+function regista(p, o, mossa, perche, prima, esito){
+  const rec = p.rec;
+  if (!rec) return;
+  const S = p.S;
+  const righe = S.log.slice(prima);
+  const c = o.fase === "Incantesimi" ? "incantesimi" : o.fase === "Schieramento" ? "schieramento" : (o.casella || "");
+  const passa = mossa && mossa.id === "avanti";
+  const detto = !mossa ? "" : passa ? (perche && o.list.length > 1 ? `passa: ${perche}` : "") : perche;
+  try {
+    rec.diario.passo({ chi: S.nomi[o.player], perche: detto, righe });
+    const testo = righe.map(r => ({ t: r.text, p: r.page || 0, d: r.dice && r.dice.length ? r.dice : null,
+                                    ...(r.groups ? { g: r.groups.map(g => ({ w: g.what, d: g.dice })) } : {}),
+                                    ...(r.kind ? { k: r.kind } : {}),
+                                    ...(r.fx ? { fx: r.fx } : {}),
+                                    ...(r.x ? { x: r.x } : {}) }));
+    if (esito && !esito.ok && mossa && mossa.id !== "avanti")
+      testo.push({ t: `mossa rifiutata dall'arbitro: ${esito.text}`, p: 0, d: null, k: "limite" });
+    const f = RP.fotogramma(S, { AR, testo, chi: S.nomi[o.player], perche: detto, army: o.player, casella: c,
+                                 turno: righe.length ? righe[0].turno : S.turno });
+    if (testo.length || detto || !RP.stessoTavolo(rec.frames[rec.frames.length - 1], f)) rec.frames.push(f);
+  } catch (e){
+    /* la registrazione non deve mai fermare la partita */
+    p.errori.push(`registrazione: ${e.message}`);
+  }
+}
+
+/* La voce del diario, con dentro la partita da rivedere. Si puo' salvare
+   anche a meta': la voce e' la stessa, e si aggiorna a ogni salvataggio. */
+export async function salvaNelDiario(p = partita){
+  if (!p || !p.rec) return null;
+  const S = p.S, guarda = !p.mia;
+  const sc = S.sc || {};
+  const titolo = `${sc.label || S.scenario}: ${S.nomi.A} contro ${S.nomi.B}` +
+                 (guarda ? " (AI contro AI)" : "");
+  const rep = p.rec.diario.chiudi({ title: titolo, id: p.rec.id || "" });
+  const non = [...S.detto].map(id => (AR.LIMITI.find(x => x.id === id) || {}).what).filter(Boolean);
+  const esito = S.finita && S.esito ? S.esito : null;
+  rep.notes = [
+    guarda ? `Partita giocata dall'arbitro dell'app, AI contro AI: ${agenteDi(p, "A").nome} contro ${agenteDi(p, "B").nome}` +
+             (p.seme != null ? `, seme ${p.seme} (la stessa con tools/partita.mjs --seme ${p.seme}).` : ", con i dadi veri.")
+          : `Sfida sul tavolo: ${S.nomi[p.mia]} l'hai giocato tu, ${S.nomi[p.mia === "A" ? "B" : "A"]} ${p.agente.nome}.`,
+    esito ? `Verdetto dell'arbitro: ${esito.winner ? S.nomi[esito.winner] + ", " + esito.label : esito.label} — ` +
+            `${S.nomi.A} ${esito.A} punti vittoria, ${S.nomi.B} ${esito.B} (${esito.why}).`
+          : `Salvata a metà: turno ${S.turno}${S.rounds ? " di " + S.rounds : ""}.`,
+    p.avvisi.length ? "Avvisi: " + p.avvisi.join(" · ") : "",
+    non.length ? "Quello che questa partita non ha giocato: " + non.join("; ") + "." : "",
+  ].filter(Boolean).join("\n\n");
+  /* la partita da rivedere: senza foto, che l'app ha nel catalogo e
+     mette dentro quando la si apre */
+  const pt = AR.punteggio(S);
+  rep.replay = RP.compatta({
+    titolo: titolo,
+    sotto: `${S.punti.A} contro ${S.punti.B} punti · ${guarda ? `${agenteDi(p, "A").nome} contro ${agenteDi(p, "B").nome}` : `tu con ${S.nomi[p.mia]}`}` +
+           (p.seme != null ? ` · seme ${p.seme}` : "") +
+           ` · ${esito ? (esito.winner ? S.nomi[esito.winner] + ", " + esito.label : esito.label) : `punti vittoria ${pt.A} a ${pt.B}, a metà`}`,
+    avvisi: p.avvisi.slice(),
+    piede: "Ogni riga porta la pagina del manuale da cui viene. Quello che questa partita non ha giocato: " +
+           (non.join("; ") || "niente") + ".",
+    w: S.table.w, h: S.table.h, nomi: { ...S.nomi },
+    terreno: RP.terrenoDellaPagina(S),
+    zone: [...(S.zones.A || []).map(z => ({ ...z, army: "A" })), ...(S.zones.B || []).map(z => ({ ...z, army: "B" }))],
+    pezzi: RP.pezziDellaPagina(S),
+  }, p.rec.frames);
+  try {
+    const salvato = await addReport(rep);
+    p.rec.id = salvato.id;
+    p.salvata = true;
+    toast(`Nel diario delle partite: «${titolo}» (${p.rec.frames.length} fotogrammi).`);
+    renderSfida();
+    return salvato;
+  } catch (e){
+    toast("Non riesco a salvarla: " + e.message);
+    return null;
+  }
+}
 
 /* il tuo clic */
 function scegli(i){
@@ -305,6 +471,10 @@ function righeRegistro(S, n = 40){
 const VITA = 9000, QUANTE = 3;
 let pila = null;
 
+/* La striscia del perche' sta SOTTO il campo, non sopra: le schede in
+   alto a destra coprivano proprio i pezzi di cui parlavano, e a schermo
+   intero su un telefono coprivano mezzo tavolo. Ha un'altezza fissa,
+   cosi' il tavolo non salta a ogni scheda che entra o esce. */
 function contenitore(){
   if (pila && pila.isConnected) return pila;
   const campo = document.querySelector(".board-scroll");
@@ -315,12 +485,15 @@ function contenitore(){
     document.head.appendChild(st);
   }
   pila = document.createElement("div");
-  pila.className = "sp-pila";
+  pila.className = "sp-pila sp-striscia";
   pila.setAttribute("aria-live", "polite");
-  campo.appendChild(pila);
+  pila.setAttribute("aria-label", "il perché delle ultime mosse");
+  campo.after(pila);
   return pila;
 }
 function svuotaPila(){ if (pila) pila.innerHTML = ""; }
+/* finita la sfida la striscia se ne va, e il tavolo torna grande */
+function togliPila(){ if (pila){ pila.remove(); pila = null; } }
 
 function vattene(v){
   if (!v.isConnected) return;
@@ -348,9 +521,131 @@ function aggiungiScheda(riga){
     v.classList.toggle("sp-fissa");
   });
   box.appendChild(v);
-  /* le piu' vecchie lasciano il posto, tranne quelle fissate */
+  /* le piu' vecchie lasciano il posto, tranne quelle fissate; l'ultima
+     arrivata resta in vista anche su un telefono stretto */
   const libere = [...box.children].filter(x => !x.classList.contains("sp-fissa") && !x.classList.contains("sp-via"));
   for (const x of libere.slice(0, Math.max(0, libere.length - QUANTE))) vattene(x);
+  /* in fondo, dopo che le vecchie se ne sono andate: la striscia scorre
+     di lato sul telefono dritto e in giu' a schermo intero */
+  const inFondo = () => {
+    if (!box.isConnected) return;
+    if (typeof box.scrollTo === "function") box.scrollTo({ left: box.scrollWidth, top: box.scrollHeight, behavior: "smooth" });
+    else { box.scrollLeft = box.scrollWidth; box.scrollTop = box.scrollHeight; }
+  };
+  setTimeout(inFondo, 30); setTimeout(inFondo, 320);
+}
+
+/* ============================================================
+   5b · A SCHERMO INTERO
+   Per guardare: solo il tavolo, la striscia del perche' sotto e una
+   barra in fondo con il turno, il punteggio, ferma/riprendi e la
+   velocita'. Mentre la partita scorre da sola la barra sparisce, e
+   torna toccando lo schermo o muovendo il mouse. Il vero schermo
+   intero quando il browser lo concede; dove non lo concede (l'iPhone,
+   a una pagina) la stessa cosa fatta con lo stile, sopra tutta l'app.
+   ============================================================ */
+let cinema = false, veroSchermo = false, quiete = null;
+const svegliaCinema = () => {
+  if (!cinema) return;
+  document.body.classList.remove("sfc-quieta");
+  clearTimeout(quiete);
+  quiete = setTimeout(() => {
+    const p = partita;
+    if (cinema && p && !p.mia && !p.fermo && !p.S.finita) document.body.classList.add("sfc-quieta");
+  }, 2600);
+};
+export function entraCinema(){
+  const wrap = document.querySelector(".board-wrap");
+  if (!wrap || !partita) return;
+  cinema = true;
+  document.body.classList.add("sf-cinema");
+  if (leggi(SPIEGA, "1") === "1") contenitore();
+  let barra = document.getElementById("sf-cinema-barra");
+  if (!barra){
+    barra = document.createElement("div");
+    barra.id = "sf-cinema-barra";
+    barra.className = "sf-cinema-barra";
+    wrap.appendChild(barra);
+  }
+  disegnaCinema();
+  pulsanteCinema();
+  if (wrap.requestFullscreen && document.fullscreenEnabled !== false)
+    wrap.requestFullscreen().then(() => { veroSchermo = true; }, () => {});
+  for (const ev of ["pointermove", "pointerdown", "touchstart"]) wrap.addEventListener(ev, svegliaCinema, { passive: true });
+  svegliaCinema();
+  /* chi entra per guardare vuole vederla andare */
+  if (partita && !partita.mia && partita.fermo) riprendi();
+}
+export function esciCinema(){
+  if (!cinema) return;
+  cinema = false;
+  clearTimeout(quiete);
+  document.body.classList.remove("sf-cinema", "sfc-quieta");
+  const barra = document.getElementById("sf-cinema-barra");
+  if (barra) barra.remove();
+  if (veroSchermo && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+  veroSchermo = false;
+  renderSfida();
+}
+if (typeof document !== "undefined"){
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement && veroSchermo){ veroSchermo = false; esciCinema(); }
+  });
+  document.addEventListener("keydown", e => {
+    if (!cinema) return;
+    if (e.key === "Escape" && !veroSchermo) esciCinema();
+    else svegliaCinema();
+  });
+}
+function disegnaCinema(){
+  const barra = document.getElementById("sf-cinema-barra");
+  const p = partita;
+  if (!barra || !p) return;
+  const S = p.S, pt = AR.punteggio(S);
+  const fase = S.finita ? (S.esito && S.esito.winner ? `Ha vinto ${S.nomi[S.esito.winner]}: ${S.esito.label}` : "Partita finita")
+             : S.preparando ? "Incantesimi" : S.schierando ? "Schieramento"
+             : `Turno ${S.turno}${S.rounds ? "/" + S.rounds : ""} · ${(AR.CASELLE[S.casella] || {}).fase || ""}`;
+  const guarda = !p.mia;
+  barra.innerHTML = `
+    <div class="sfc-info">
+      <b class="sfc-es" style="background:var(--armyA)">${esc(S.nomi.A)} ${pt.A}</b>
+      <b class="sfc-es" style="background:var(--armyB)">${esc(S.nomi.B)} ${pt.B}</b>
+      <span class="sfc-fase">${esc(fase)}${p.pensa && p.chiPensa ? ` · pensa ${esc(S.nomi[p.chiPensa])}` : ""}</span>
+    </div>
+    <div class="sfc-comandi">
+      ${guarda && !S.finita ? (p.fermo
+        ? `<button class="btn tiny primary" data-c="riprendi">▶</button>
+           <button class="btn tiny" data-c="passo" ${p.gira ? "disabled" : ""} title="una mossa">⏭</button>`
+        : `<button class="btn tiny" data-c="ferma" title="ferma">❚❚</button>`) : ""}
+      ${guarda ? `<select data-c="velocita" aria-label="velocità">${VELOCITA_SCELTE.map(([v, t]) =>
+        `<option value="${v}" ${v === velocita() ? "selected" : ""}>${t}</option>`).join("")}</select>` : ""}
+      ${S.finita && p.rec && p.rec.frames.length && !p.salvata ? `<button class="btn tiny primary" data-c="salva">Salva nel diario</button>` : ""}
+      <button class="btn tiny" data-c="esci" title="esci dallo schermo intero (Esc)">✕</button>
+    </div>`;
+  const fai = { riprendi, passo: unPasso, ferma, salva: () => salvaNelDiario(p), esci: esciCinema };
+  barra.querySelectorAll("button[data-c]").forEach(b => b.addEventListener("click", e => {
+    e.stopPropagation(); fai[b.dataset.c](); svegliaCinema();
+  }));
+  const vel = barra.querySelector('select[data-c="velocita"]');
+  if (vel) vel.addEventListener("change", () => { scrivi(VELOCITA, vel.value === "1" ? "" : vel.value); svegliaCinema(); });
+  if (S.finita || p.fermo) document.body.classList.remove("sfc-quieta");
+}
+/* il pulsante per entrarci, piccolo, nell'angolo del tavolo: su un
+   telefono il pannello della sfida sta nel cassetto, e per guardare
+   non lo si deve aprire */
+function pulsanteCinema(){
+  const campo = document.querySelector(".board-scroll");
+  let b = document.getElementById("sf-cinema-entra");
+  const serve = !!partita && !partita.mia && !cinema;
+  if (!serve){ if (b) b.remove(); return; }
+  if (!campo || b) return;
+  b = document.createElement("button");
+  b.id = "sf-cinema-entra";
+  b.className = "btn tiny sf-cinema-entra";
+  b.title = "Guarda la partita a schermo intero";
+  b.textContent = "⛶ Schermo intero";
+  b.addEventListener("click", entraCinema);
+  campo.appendChild(b);
 }
 
 /* le righe nuove del registro, dall'ultima volta: torna quante schede */
@@ -392,6 +687,10 @@ function impostazioni(){
 }
 
 export function renderSfida(){
+  /* la barra dello schermo intero e il pulsante nell'angolo seguono il
+     pannello: si ridisegnano insieme */
+  if (cinema) disegnaCinema();
+  pulsanteCinema();
   const host = $("#sfida");
   if (!host) return;
   const p = partita;
@@ -420,22 +719,28 @@ export function renderSfida(){
   const testa = guarda
     ? `<div><b style="color:var(--armyA)">${esc(S.nomi.A)}</b>
          <span class="dim">contro</span> <b style="color:var(--armyB)">${esc(S.nomi.B)}</b>
-         <span class="dim">(tutti e due: ${esc(p.agente.nome)})</span></div>`
+         <span class="dim">(${agenteDi(p, "A").nome === agenteDi(p, "B").nome
+           ? `tutti e due: ${esc(agenteDi(p, "A").nome)}`
+           : `${esc(agenteDi(p, "A").nome)} contro ${esc(agenteDi(p, "B").nome)}`})</span></div>`
     : `<div><b style="color:var(--army${p.mia})">Tu: ${esc(S.nomi[p.mia])}</b>
         <span class="dim">contro</span> <b style="color:var(--army${lui})">${esc(S.nomi[lui])}</b>
         <span class="dim">(${esc(p.agente.nome)})</span></div>`;
   const vince = !S.finita || !S.esito.winner ? ""
     : guarda ? `Ha vinto ${S.nomi[S.esito.winner]}: ` : S.esito.winner === p.mia ? "Hai vinto: " : "Ha vinto l'AI: ";
-  /* chi guarda: fermarsi, ripartire, una mossa per volta */
+  /* chi guarda: fermarsi, ripartire, una mossa per volta, e quanto in fretta */
   const comandi = guarda && !S.finita ? `
     <div class="btn-row sf-guarda">
       ${p.fermo
         ? `<button class="btn tiny primary" id="sf-riprendi">▶ Riprendi</button>
            <button class="btn tiny" id="sf-passo" ${p.gira ? "disabled" : ""}>Una mossa</button>`
         : `<button class="btn tiny" id="sf-ferma">❚❚ Ferma</button>`}
+      <label class="sf-vel">velocità
+        <select id="sf-velocita">${VELOCITA_SCELTE.map(([v, t]) =>
+          `<option value="${v}" ${v === velocita() ? "selected" : ""}>${t}</option>`).join("")}</select></label>
       <span class="dim">${p.fermo ? (p.gira ? "sta giocando una mossa…" : "ferma: passa sopra le schede per leggerle")
                                   : "gioca da sola; ferma quando vuoi guardare meglio"}</span>
     </div>` : "";
+  const giocate = p.rec ? p.rec.frames.length : 0;
   const chiPensa = guarda && p.chiPensa ? S.nomi[p.chiPensa] : p.agente.nome;
   host.innerHTML = `
     <div class="sf-testa">
@@ -473,9 +778,16 @@ export function renderSfida(){
     <div class="panel-title">Registro</div>
     <ol class="sf-registro">${righeRegistro(S)}</ol>
     <div class="btn-row">
+      <button class="btn tiny ${S.finita && !p.salvata ? "primary" : ""}" id="sf-salva" ${giocate ? "" : "disabled"}
+        title="La partita finisce nella scheda Partite, e da lì si rivede con le animazioni">${
+        p.salvata ? (S.finita ? "Nel diario ✓" : "Aggiorna nel diario") : "Salva nel diario"}</button>
+      ${p.salvata && p.rec && p.rec.id ? `<button class="btn tiny" id="sf-rivedi">▶ Rivedi</button>` : ""}
+      ${guarda ? `<button class="btn tiny" id="sf-cinema" title="Solo il tavolo, a tutto schermo">⛶ Schermo intero</button>` : ""}
       <button class="btn tiny" id="sf-copia">Copia il registro</button>
       <button class="btn tiny ghost" id="sf-basta" style="color:var(--bad)">${S.finita ? "Chiudi la sfida" : "Abbandona"}</button>
     </div>
+    ${p.seme != null ? `<p class="note">Dadi dal seme ${p.seme}: la stessa partita si rigioca uguale, anche con
+      <span class="mono">tools/partita.mjs --seme ${p.seme}</span>.</p>` : ""}
     ${impostazioni()}`;
 
   host.querySelectorAll("[data-mossa]").forEach(b => {
@@ -493,7 +805,21 @@ export function renderSfida(){
     if (b) b.addEventListener("click", fai);
   }
   const basta = $("#sf-basta");
-  if (basta) basta.addEventListener("click", () => abbandona());
+  if (basta) basta.addEventListener("click", async () => {
+    /* chiudere una partita finita e non salvata la perde: si chiede */
+    if (p.rec && p.rec.frames.length && !p.salvata && S.finita &&
+        !await askConfirm("La partita non è nel diario: chiudendo la perdi. La chiudo lo stesso?",
+                          { title: "Chiudere senza salvare?" })) return;
+    abbandona();
+  });
+  const cin = $("#sf-cinema");
+  if (cin) cin.addEventListener("click", entraCinema);
+  const salva = $("#sf-salva");
+  if (salva) salva.addEventListener("click", () => salvaNelDiario(p));
+  const riv = $("#sf-rivedi");
+  if (riv) riv.addEventListener("click", () => rivedi(p.rec.id));
+  const vel = $("#sf-velocita");
+  if (vel) vel.addEventListener("change", () => scrivi(VELOCITA, vel.value === "1" ? "" : vel.value));
   agganciaImpostazioni(host);
 }
 
@@ -516,7 +842,7 @@ function agganciaImpostazioni(host){
   const spiega = host.querySelector("#sf-spiega");
   if (spiega) spiega.addEventListener("change", () => {
     scrivi(SPIEGA, spiega.checked ? "1" : "0");
-    if (!spiega.checked) svuotaPila();
+    if (!spiega.checked) togliPila(); else if (partita) contenitore();
   });
   const calma = host.querySelector("#sf-calma");
   if (calma) calma.addEventListener("change", () => scrivi(CALMA, calma.checked ? "1" : "0"));
