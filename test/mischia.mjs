@@ -367,9 +367,12 @@ console.log('\nil combattimento a piu di due (p. 153)');
   const tre1 = C.meleeFight([orchi, lupi], [saurus]);
   ok('in tre si mena in un ordine solo, dal piu svelto al piu lento',
      tre1.order.steps.map(s => s.at.join('')).join('|') === '1|0|2');
+  /* i Saurus menano per ultimi, e i colpi di chi e' caduto prima non
+     li tirano (p. 146): quelli persi stanno scritti sul primo colpo */
   ok('e chi e in mezzo a due nemici divide la sua fila',
      (() => { const suoi = tre1.steps.filter(s => s.side === 'B' && s.label === 'colpi');
-       return suoi.length === 2 && suoi.reduce((s, x) => s + x.attacks, 0) ===
+       const persi = suoi.reduce((s, x) => s + (x.caduti ? x.caduti.attacks : 0), 0);
+       return suoi.length === 2 && suoi.reduce((s, x) => s + x.attacks, 0) + persi ===
               C.contact(saurus, orchi).attacks; })());
   ok('le perdite si segnano unita per unita, e il totale le somma',
      tre1.kills.A.length === 2 && tre1.killsA === tre1.kills.A[0] + tre1.kills.A[1]);
@@ -944,6 +947,65 @@ console.log('\nle ferite multiple (Multiple Wounds, p. 175)');
   D.setSource(D.seeded(1));
 }
 function st1(){ return { M:'6',WS:'2',BS:'3',S:'3',T:'2',W:'1',I:'4',A:'1',Ld:'6' }; }
+
+/* ================================================================= */
+console.log('\nchi cade prima di menare non mena (pp. 146 e 150)');
+{
+  const D = await import('../src/dice.js');
+  D.setSource(() => 5);                                  // tutti sei: ogni colpo ferisce, niente armature
+  /* gli svelti: Iniziativa 5, un reggimento largo cinque */
+  const svelti = (n, fronte, a = 1) => C.combatant(unit('Svelti',
+    { M:'5',WS:'4',BS:'3',S:'4',T:'3',W:'1',I:'5',A:String(a),Ld:'8' }, n, fronte));
+  /* i lenti: Iniziativa 1, un attacco a testa, senza armatura */
+  const lenti = (n, fronte) => C.combatant(unit('Lenti',
+    { M:'4',WS:'3',BS:'3',S:'3',T:'3',W:'1',I:'1',A:'1',Ld:'7' }, n, fronte));
+  const menati = (r, side) => r.steps.filter(s => s.side === side && s.label === 'colpi')
+                                     .reduce((n, s) => n + s.attacks, 0);
+
+  /* 5 contro 20 in file da cinque: i lenti menano con la prima fila e
+     con l'appoggio della seconda, dieci colpi — finche' nessuno cade */
+  const pari = C.meleeFight(svelti(5, 5), C.combatant({ ...lenti(20, 5), i: 5 }));
+  ok('a Iniziativa pari menano tutti: dieci colpi, prima fila e appoggio', menati(pari, 'B') === 10);
+
+  /* gli svelti ne abbattono cinque: tutta la prima fila. Chi entra al
+     loro posto «non mena nella fase in cui si e' fatto avanti», e
+     l'appoggio resta, perche' le perdite non sono andate oltre la fila */
+  const fila = C.meleeFight(svelti(5, 5), lenti(20, 5));
+  ok('cinque caduti nella fila che combatte: menano solo i cinque dell appoggio',
+     fila.kills.B[0] === 5 && menati(fila, 'B') === 5);
+
+  /* sette caduti: la fila intera e due oltre, che tolgono due colpi
+     d'appoggio (Excess Casualties, p. 150). Sette svelti in file da
+     cinque menano con sette colpi: cinque e due d'appoggio. */
+  const sette = C.meleeFight(svelti(7, 5), lenti(20, 5));
+  ok('sette caduti su una fila da cinque: i due in piu tolgono due appoggi',
+     sette.kills.B[0] === 5 + 2 && menati(sette, 'B') === 3);
+  const dieci = C.meleeFight(svelti(5, 5, 2), lenti(20, 5));
+  ok('dieci caduti: non mena piu nessuno', dieci.kills.B[0] === 10 && menati(dieci, 'B') === 0);
+
+  /* la fila larga sette contro un nemico largo tre: menano i tre a
+     contatto, e chi cade si toglie dalle estremita' della fila
+     (p. 150) — gli altri si stringono sul nemico, e i colpi restano */
+  const larga = C.meleeFight(svelti(3, 3), lenti(21, 7));
+  ok('tre caduti dalle estremita di una fila da sette: i tre a contatto menano ancora',
+     larga.kills.B[0] === 3 && menati(larga, 'B') === 6);
+
+  /* l'urto della carica colpisce a Iniziativa 10 (p. 171): chi ne
+     cade non mena, anche se i carri menano insieme a lui. La carica
+     disordinata toglie il bonus d'Iniziativa (p. 146) e lascia l'urto,
+     che vuole solo i tre pollici: carri e lenti menano a Iniziativa 1. */
+  const carri = C.combatant(unit('Carri', { M:'8',WS:'3',BS:'0',S:'5',T:'5',W:'4',I:'1',A:'1',Ld:'7' }, 5, 5,
+                            { rules: ['Impact Hits (3)'] }), { charged: true, chargeInches: 6, disordered: true });
+  const urtati = C.meleeFight(carri, lenti(10, 5));
+  ok('tre caduti sotto l urto: dei cinque della fila ne menano due, piu i cinque d appoggio',
+     urtati.kills.B[0] === 3 + 5 && menati(urtati, 'B') === 2 + 5);
+  ok('e il registro dice perche',
+     urtati.steps.some(s => s.side === 'B' && s.notes.some(n => /3 caduti prima di menare: 3 colpi in meno/.test(n))));
+  /* chi mena a Iniziativa 10 mena insieme all'urto, e non perde niente */
+  const svelto10 = C.meleeFight(carri, C.combatant({ ...lenti(10, 5), i: 10 }));
+  ok('a Iniziativa 10 si mena insieme all urto: dieci colpi', menati(svelto10, 'B') === 10);
+  D.setSource(D.seeded(1));
+}
 
 /* ================================================================= */
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');

@@ -540,6 +540,82 @@ export function contact(att, def, { touching = null, frontage = null, withChars 
   };
 }
 
+/* ------------------------------------------------------------------
+   Chi cade prima di menare non mena (pp. 146 e 150).
+
+   Il conto di `contact` si fa una volta, all'inizio della fase, e
+   prima di questa riga l'assalto tirava quei dadi fino in fondo: un
+   reggimento di Iniziativa 1 che perdeva l'intera prima fila sotto i
+   colpi di un nemico piu' svelto menava lo stesso con tutti. Il libro
+   dice il contrario, in tre regole che vanno lette insieme:
+
+   - «Fallen Warriors» (p. 146): un modello della fila che combatte
+     ucciso da un nemico con Iniziativa piu' alta prima di aver menato
+     non mena, e i suoi attacchi sono persi;
+   - «Stepping Forward» (pp. 146 e 150): chi entra nella fila al posto
+     di un caduto non mena nella fase in cui ci e' entrato, qualunque
+     sia la sua Iniziativa. Per questo il conto parte dalla fila di
+     inizio fase e puo' solo scendere: i modelli tolti dal fondo
+     dell'unita' non tornano a menare davanti;
+   - «Excess Casualties» (p. 150): le perdite oltre i modelli della
+     fila che combatte sono cadute nella fila dietro, e tolgono gli
+     attacchi d'appoggio, uno per uno.
+
+   Da quale capo della fila si tolgono i caduti lo dice p. 150: «si
+   considerano tolti dalle estremita' della fila che combatte», e chi
+   resta «si stringe sul nemico» ed e' piu' facile che lo tocchi. Quindi
+   prima cadono i modelli della fila che non toccano nessuno — che qui
+   non menano, perche' `contact` conta solo chi tocca — e solo dopo
+   quelli a contatto. Un reggimento largo sette davanti a uno largo
+   tre perde quattro modelli prima di perdere un colpo.
+
+   L'appoggio e' contato allo stesso modo: il libro lo da' a tutta la
+   fila dietro (p. 145), `contact` solo a chi sta dietro i modelli a
+   contatto, e le perdite in eccesso tolgono prima i modelli della fila
+   dietro che qui non appoggiano. In tutte e due le file vale il piu'
+   piccolo fra il conto dell'app e quello del libro dopo le perdite.
+
+   `fallen` sono i soldati dell'unita' caduti in questa fase prima che
+   tocchi a lei: `att.models` e' gia' scesa, e la fila di partenza si
+   rifa' sommandoli. I personaggi uniti non sono qui: sono schiere loro
+   da un modello, e quando cadono smettono di menare da soli. Torna,
+   per ogni nemico di `cts`, quanti attacchi si sono persi.
+   ------------------------------------------------------------------ */
+function fightingRanks(att, models){
+  const fr = Math.max(1, att.frontage);
+  /* i capi uniti occupano un posto della prima fila (p. 207), come in
+     `contact` quando si stima */
+  const chars = (att.retinue || []).length;
+  const first = Math.max(0, Math.min(models, fr) - chars);
+  const behind = Math.max(0, models - fr);
+  /* con Press of Battle la fila che combatte e' profonda due ranghi */
+  const pressed = pressing(att) ? Math.min(fr, behind) : 0;
+  const ranks = att.flags && att.flags.extraRank ? 2 : 1;
+  return { rank: first + pressed, rear: Math.min(fr * ranks, behind - pressed) };
+}
+export function fallenCut(att, cts, fallen){
+  const out = cts.map(() => 0);
+  if (!(fallen > 0) || !cts.some(Boolean)) return out;
+  const full = cts.map(ct => (ct ? ct.front + ct.pressed : 0));
+  const sup = cts.map(ct => (ct ? ct.support : 0));
+  const tot = v => v.reduce((s, x) => s + x, 0);
+  const F = tot(full), S = tot(sup);
+  const { rank, rear } = fightingRanks(att, att.models + fallen);
+  const R = Math.max(rank, F), R2 = Math.max(rear, S);
+  /* p. 146: i caduti della fila che combatte, dalle estremita' (p. 150) */
+  const keepF = Math.min(F, Math.max(0, R - fallen));
+  /* p. 150: quelli oltre la fila vengono dalla fila dietro */
+  const keepS = Math.min(S, Math.max(0, R2 - Math.max(0, fallen - R)));
+  /* con piu' nemici davanti, la perdita si divide come la fila */
+  const lostF = spread(F - keepF, full), lostS = spread(S - keepS, sup);
+  cts.forEach((ct, k) => {
+    if (!ct) return;
+    const now = attacksFor(att, full[k] - lostF[k]) + sup[k] - lostS[k];
+    out[k] = Math.max(0, ct.troop - now);
+  });
+  return out;
+}
+
 /* La prima fila divisa fra i nemici che ha davanti. Il resto della
    divisione va ai primi dichiarati, che sono quelli piu' al centro; a
    chi resta senza un modello davanti non tocca niente, e allora non
@@ -845,16 +921,20 @@ function aimAt(c, foes, side){
   const veri = foes.map((j, k) => ({ j, k })).filter(x => !side[x.j].attached);
   const capi = foes.map((j, k) => ({ j, k })).filter(x =>  side[x.j].attached);
   const budget = foes.map(() => 0), fronts = foes.map(() => 0);
-  if (!foes.length) return { budget, fronts };
+  /* il conto di `contact` per ogni nemico, che serve dopo a togliere i
+     colpi di chi cade prima di menare (`fallenCut`); i colpi diretti
+     sul capo non ne hanno uno */
+  const cts = foes.map(() => null);
+  if (!foes.length) return { budget, fronts, cts };
 
   if (!veri.length){
     /* davanti c'e' rimasto solo il capo: allora tutta la fila e' sua */
     const q = frontShares(c.frontage, capi.length);
     capi.forEach((x, i) => {
       const ct = contact(c, side[x.j], { frontage: q[i], touching: seenAgainst(c, side[x.j], capi.length === 1) });
-      budget[x.k] = ct.troop; fronts[x.k] = ct.front;
+      budget[x.k] = ct.troop; fronts[x.k] = ct.front; cts[x.k] = ct;
     });
-    return { budget, fronts };
+    return { budget, fronts, cts };
   }
 
   const q = frontShares(c.frontage, veri.length);
@@ -863,7 +943,7 @@ function aimAt(c, foes, side){
        ogni altra fetta la fila e' tutta dei soldati */
     const ct = contact(c, side[x.j], { frontage: q[i], withChars: i === 0,
                                        touching: seenAgainst(c, side[x.j], veri.length === 1) });
-    budget[x.k] = ct.troop; fronts[x.k] = ct.front;
+    budget[x.k] = ct.troop; fronts[x.k] = ct.front; cts[x.k] = ct;
   });
   /* il numero corretto a mano nel pannello vince su tutto, quando il
      nemico vero e' uno: e' la stessa domanda, con una risposta migliore */
@@ -877,7 +957,7 @@ function aimAt(c, foes, side){
   /* i colpi diretti sul capo li perde il reggimento che lo ospita, che
      e' il primo dei nemici veri */
   if (tolti) budget[veri[0].k] = Math.max(0, budget[veri[0].k] - tolti);
-  return { budget, fronts };
+  return { budget, fronts, cts };
 }
 
 /* Dalle ferite di un colpo ai modelli a terra, per chi tiene lo stato
@@ -1053,6 +1133,11 @@ function duelLinks(link, duel){
   link.B.forEach((l, j) => { link.B[j] = j === duel.b ? [duel.a] : l.filter(i => i !== duel.a); });
 }
 
+/* la riga del registro per i colpi che non si tirano */
+const rigaCaduti = f => (f.models === 1 ? "1 caduto" : f.models + " caduti") +
+  " prima di menare: " + (f.attacks === 1 ? "1 colpo" : f.attacks + " colpi") +
+  " in meno (pp. 146 e 150)";
+
 export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
   const startA = asSide(SA), startB = asSide(SB);
   const A = withRetinue(startA.map(clone)), B = withRetinue(startB.map(clone));
@@ -1074,12 +1159,17 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
       e.duel = true;
       e.budget = foes.map(() => 0); e.fronts = foes.map(() => 0);
       if (foes.length){ e.budget[0] = attacksFor(c, 1); e.fronts[0] = 1; }
+      e.cts = null;
       return e;
     }
     if (outOfReach(c, mine, foes.map(j => side[j]))){
       e.budget = e.budget.map(() => 0); e.fronts = e.fronts.map(() => 0);
+      e.cts = null;
       c.outOfReach = true;
     }
+    /* i colpi di inizio fase: quelli che restano si contano sempre da
+       qui, perche' chi entra nella fila non li riporta su (p. 146) */
+    e.base = e.budget.slice();
     return e;
   };
   const all = [...A.map((c, i) => mk(c, i, "A", link.A[i], B, A)),
@@ -1148,7 +1238,10 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
     }
     steps.push({ side: x.e.tag, name: x.e.c.name, at: x.e.at, foe: x.def.name,
                  character: !!x.e.c.attached, mount: !!x.e.host,
-                 ...x.r, kills, together: !!x.together });
+                 ...x.r, kills, together: !!x.together,
+                 /* i caduti prima di menare e i colpi che si sono
+                    portati via, sul primo colpo della schiera */
+                 ...(x.caduti ? { caduti: x.caduti } : {}) });
   };
   const blow = (e, j, opts, facce = null) => land(shot(e, j, opts), facce);
 
@@ -1191,15 +1284,59 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
      tutte alla fine: e' la regola dei colpi simultanei, ed e' quello
      che impedisce a un capo di uccidere un modello che nello stesso
      istante lo stava colpendo. */
+  /* Chi cade prima di menare non mena (pp. 146 e 150, il conto sta in
+     `fallenCut`). Prima di ogni scaglione la schiera guarda quanti dei
+     suoi sono caduti da inizio fase: sono caduti per mano di qualcuno
+     piu' svelto, perche' le ferite dello scaglione in cui mena lei si
+     applicano dopo i suoi colpi (i colpi simultanei, p. 146). L'urto
+     della carica colpisce a Iniziativa 10 (p. 171): toglie i colpi a
+     tutti, salvo a chi mena anche lui a 10 — o con Strike First, che
+     porta l'Iniziativa a 10 (p. 177) — e quindi insieme all'urto.
+     Le righe della cavalcatura, i capi uniti e i duellanti sono un
+     modello solo: quando cadono smettono di menare da soli. */
+  const init = { A: initA, B: initB };
+  const cut = e => {
+    if (e.host || !e.cts || !e.base) return;
+    const sp = ML.speedOf(e.c);
+    if (sp.rank > 1 || sp.i >= 10) return;          // insieme all'urto
+    const fallen = init[e.tag][e.at].models - e.c.models;
+    const lost = fallenCut(e.c, e.cts, fallen);
+    const meno = lost.reduce((s, v) => s + v, 0);
+    if (!meno) return;
+    let over = 0;
+    e.budget = e.base.map((b, k) => {
+      if (!e.cts[k]) return b;
+      const v = b - lost[k];
+      if (v < 0){ over -= v; return 0; }
+      return v;
+    });
+    /* i colpi diretti sul capo escono dagli stessi modelli della fila:
+       quando la fila non ne ha piu' abbastanza, mancano anche a lui */
+    e.budget = e.budget.map((b, k) => {
+      if (e.cts[k] || over <= 0) return b;
+      const t = Math.min(b, over); over -= t;
+      return b - t;
+    });
+    e.caduti = { models: fallen, attacks: meno };
+  };
   const plan = ML.strikeSteps(all.map(e => e.c));
   for (const step of plan){
     const shots = [];
     for (const at of step.at){
       const e = all[at];
+      cut(e);
+      let detto = false;
       e.foes.forEach((j, k) => {
         if (e.budget[k] <= 0) return;       // ingaggiato, ma non arriva
         const x = shot(e, j, { label: "colpi", attacks: e.budget[k] });
-        if (x) shots.push(Object.assign(x, { together: step.together }));
+        if (!x) return;
+        /* il perche' dei colpi in meno, una volta sola per schiera */
+        if (e.caduti && !detto){
+          x.r.notes.unshift(rigaCaduti(e.caduti));
+          x.caduti = e.caduti;
+          detto = true;
+        }
+        shots.push(Object.assign(x, { together: step.together }));
       });
     }
     shots.forEach(x => land(x));

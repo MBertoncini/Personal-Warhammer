@@ -516,6 +516,23 @@ Per ogni fase: cosa l'app può fare da sola, e cosa resta ai giocatori.
 - Chi combatte: fila che combatte, contatto di basetta, attacchi di
   appoggio (pp. 145-146). L'app conosce già i contatti modello per
   modello: è il posto in cui è più avanti del manuale medio.
+  ~~Chi cade prima di menare non mena~~ (pp. 146 e 150). Fatto:
+  l'assalto contava i colpi una volta, a inizio fase, e un reggimento
+  che perdeva tutta la prima fila sotto un nemico più svelto menava lo
+  stesso con tutti. Adesso prima di ogni scaglione d'Iniziativa i colpi
+  scendono con i caduti — *Fallen Warriors*, e *Stepping Forward*: chi
+  entra nella fila al loro posto non mena in questa fase. I caduti si
+  tolgono dalle estremità della fila e chi resta si stringe sul nemico
+  (p. 150), quindi prima vanno quelli che non toccano; le perdite oltre
+  la fila tolgono l'appoggio (*Excess Casualties*, p. 150). Anche l'urto
+  della carica, che colpisce a Iniziativa 10 (p. 171), toglie i colpi
+  a chi mena dopo. Il registro lo scrive: «3 caduti prima di menare: 3
+  colpi in meno». Resta fuori la stessa fila vista dall'altra parte:
+  il libro fa menare tutta la fila che combatte, con un attacco solo
+  chi non tocca (pp. 145-146), e l'app fa menare solo chi tocca; la fila di
+  fianco, che è una colonna e non la prima riga (p. 147), non c'è.
+  E la previsione (`meleeForecast`), su cui l'arbitro sceglie le
+  cariche, conta ancora i due lati come se menassero tutti.
 - ~~Ordine di Iniziativa **con il bonus della carica** (+1 per pollice
   intero percorso, fino a +3 di fronte e +4 di fianco o di retro,
   p. 146).~~ Fatto nella Tappa 3, e con lui l'urto e la carica furiosa

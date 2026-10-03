@@ -648,7 +648,7 @@ test/
   regole.mjs          tipi di truppa, ritiri, archi, effetti, terreno, file d'esercito, nessuna regola ignota
   motore.mjs          le sedici caselle, le azioni, i dadi chiesti, il registro
   movimento.mjs       carica: arco, vista, distanza, reazioni, allineamento, fuga
-  mischia.mjs         bonus della carica, risultato, i tre esiti del test di rotta, la sfida e l'overkill, regole d'esercito
+  mischia.mjs         bonus della carica, chi cade prima di menare, risultato, i tre esiti del test di rotta, la sfida e l'overkill, regole d'esercito
   tiro.mjs            tiratori per modello, modificatori, sagome, deviazione, cannone, Panico
   psicologia.mjs      Paura, Terrore, Panico e le sue cause, Stupidità, Frenzy, Warband, il contatore
   cavalcature.mjs     personaggi montati: opzioni del libro, profilo sommato, file già montati, mischia, liste rinominate
