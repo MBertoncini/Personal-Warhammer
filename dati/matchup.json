@@ -1,16 +1,16 @@
 {
-  "listA": "lmufgrzknvou8",
-  "listB": "lmufgs2ffjhhe",
+  "listA": "lmus3ahrc91qo",
+  "listB": "lmus3azb4rw4n",
   "mine": "both",
   "note": "",
   "aiai": {
     "scenario": "sxprova-boschi",
     "chi": "euristica",
     "seme": 1,
-    "html": true,
-    "archivia": true,
+    "partite": 150,
     "estro": true,
     "mappa": true,
-    "partite": 150
+    "html": true,
+    "archivia": true
   }
 }

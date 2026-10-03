@@ -170,5 +170,90 @@
         "rot": 0
       }
     ]
+  },
+  {
+    "id": "sxmus3g2dbu3h",
+    "label": "Le Rovine di Xhotl (mio)",
+    "table": [
+      48,
+      36
+    ],
+    "gap": 8,
+    "deploy": "meeting engagement",
+    "desc": "Terreno salvato dal tavolo il 03/10/2026.",
+    "terrain": [
+      {
+        "kind": "marsh",
+        "x": 12,
+        "y": 10,
+        "w": 12,
+        "h": 5.75,
+        "rot": 0
+      },
+      {
+        "kind": "treasure",
+        "x": 24,
+        "y": 6,
+        "w": 1.575,
+        "h": 1.575,
+        "rot": 0
+      },
+      {
+        "kind": "wood",
+        "x": 37.75,
+        "y": 10,
+        "w": 8.5,
+        "h": 5.5,
+        "rot": 0
+      },
+      {
+        "kind": "hill",
+        "x": 5.5,
+        "y": 18,
+        "w": 8,
+        "h": 6,
+        "rot": 0
+      },
+      {
+        "kind": "pyramid",
+        "x": 24,
+        "y": 18,
+        "w": 8,
+        "h": 7,
+        "rot": 0
+      },
+      {
+        "kind": "hill",
+        "x": 42.5,
+        "y": 18,
+        "w": 8,
+        "h": 6,
+        "rot": 0
+      },
+      {
+        "kind": "marsh",
+        "x": 36,
+        "y": 26,
+        "w": 10.5,
+        "h": 5,
+        "rot": 0
+      },
+      {
+        "kind": "wood",
+        "x": 9,
+        "y": 26.25,
+        "w": 8.5,
+        "h": 6,
+        "rot": 0
+      },
+      {
+        "kind": "treasure",
+        "x": 24,
+        "y": 30,
+        "w": 1.575,
+        "h": 1.575,
+        "rot": 0
+      }
+    ]
   }
 ]
