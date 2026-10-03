@@ -217,6 +217,9 @@ export function armyFrom(lista, army, from = 0){
       placed: false, lost: 0, dead: false, fled: false, wounds: 0,
       fallen: [], effects: [], anchor: null,
       prepara: prep[i] || null,
+      /* il posto nella lista: la scheda di preparazione dice «questo capo
+         sta in quel reggimento» per posto, non per uid (`ospiteVoluto`) */
+      listaIdx: i,
     };
   });
 }
@@ -430,11 +433,27 @@ export const puoUnirsi = (S, c) => PREP.isCharacter(c) && !!genere(c) && (c.mode
    un'unita'), e con l'Unbreakable uguale (p. 179). */
 function puoOspitare(S, c, h){
   if (h === c || h.army !== c.army || h.dead || !onBoard(h) || isJoined(h)) return false;
+  return stannoInsieme(c, h);
+}
+/* La meta' della domanda che non guarda il tavolo: la si fa anche dalla
+   scheda delle liste, prima che ci sia una partita. */
+export function stannoInsieme(c, h){
+  if (!c || !h || c === h) return false;
+  if (!PREP.isCharacter(c) || !genere(c) || (c.models || 1) !== 1) return false;
   if (PREP.isCharacter(h) || genere(h) !== genere(c)) return false;
   /* Lumbering non ospita nessuno (p. 195), e a chi e' Clumsy si unisce
      solo chi e' Clumsy anche lui */
   if (FM.isLumbering(h) || !FM.clumsyOk(c, h)) return false;
   return indomito(h) === indomito(c);
+}
+/* Dove la lista vuole il capo (la scheda di preparazione, `con`): il
+   reggimento per posto nella lista, "solo" per stare da solo, null se
+   lo decide chi gioca. */
+function ospiteVoluto(S, c){
+  const con = c.prepara && c.prepara.con;
+  if (con === "solo") return "solo";
+  if (con == null || con === "") return null;
+  return S.units.find(h => h.army === c.army && h.listaIdx === +con) || null;
 }
 /* La Forza d'Unita' con i personaggi dentro (p. 207): e' quella che la
    Paura confronta. */
@@ -878,6 +897,12 @@ function entraSenzaUrtare(S, c, h){
 }
 export function opzioniUnione(S, c, { pollici = null } = {}){
   if (!puoUnirsi(S, c)) return [];
+  /* allo schieramento conta quello che la lista ha deciso: da solo non
+     si offre nessuna unione, e il reggimento voluto va in cima, marcato,
+     perche' chi sceglie le mosse — l'euristica come Gemini — lo prenda.
+     Gli altri restano: l'app propone, non impedisce. */
+  const voluto = pollici == null ? ospiteVoluto(S, c) : null;
+  if (voluto === "solo") return [];
   const out = [];
   for (const h of inCampo(S, c.army)){
     if (!puoOspitare(S, c, h)) continue;
@@ -888,13 +913,20 @@ export function opzioniUnione(S, c, { pollici = null } = {}){
     }
     if (!entraSenzaUrtare(S, c, h)) continue;
     const dentro = capiDi(S, h);
+    const lista = voluto && voluto.uid === h.uid;
     out.push({ id: pollici != null ? "unisciti" : "unisci", uid: c.uid, host: h.uid, nome: c.name, contro: h.name,
-               why: `entra in ${h.name} (${alive(h)} modelli${dentro.length ? ", con " + dentro.map(x => x.name).join(" e ") : ""}): ` +
+               ...(lista ? { lista: true } : {}),
+               why: (lista ? "come vuole la lista: " : "") + `entra in ${h.name} (${alive(h)} modelli${dentro.length ? ", con " + dentro.map(x => x.name).join(" e ") : ""}): ` +
                     `ne porta la Forza d'Unità a ${usConCapi(S, h) + usOf(c)}, e con lui il reggimento usa il Comando più alto (p. 97)` +
                     (pollici != null ? `; da lì il reggimento non si muove più in questo turno` : ""),
                page: 207 });
   }
-  return out.sort((a, b) => alive(byUid(S, b.host)) - alive(byUid(S, a.host)));
+  out.sort((a, b) => (b.lista ? 1 : 0) - (a.lista ? 1 : 0) || alive(byUid(S, b.host)) - alive(byUid(S, a.host)));
+  /* il reggimento voluto non c'e' (rimasto fuori, o senza posto per il
+     capo): lo si dice, e si sceglie fra gli altri */
+  if (voluto && !out.some(x => x.lista))
+    for (const x of out) x.why += `; la lista lo voleva in ${voluto.name}, che non lo può accogliere`;
+  return out;
 }
 
 /* ============================================================
@@ -2019,9 +2051,13 @@ function manovra(S, a){
   }
 
   if (a.id === "riforma"){
-    const t = byUid(S, a.verso);
-    if (!t) return no("verso chi?");
-    const rot = versoDi(t.x - u.x, t.y - u.y);
+    /* verso un nemico, o — dal pannello a mano — di quanti gradi si
+       vuole (`giro`, positivo a destra): la riforma gira fino a 180°
+       sul centro (p. 125), in qualunque direzione */
+    const t = a.giro != null ? null : byUid(S, a.verso);
+    if (a.giro == null && !t) return no("verso chi?");
+    if (a.giro != null && !(Math.abs(+a.giro) <= 180)) return no("la riforma gira al massimo di 180° (p. 125)");
+    const rot = t ? versoDi(t.x - u.x, t.y - u.y) : (((u.rot || 0) + +a.giro) % 360 + 360) % 360;
     if (ingombro(S, u, { ...boxOf(u, S.units), rot }, { unPollice: false }))
       return no("riformata non ci sta: toccherebbe un'altra unità o il bordo");
     const giro = Math.round(Math.abs(giroDi(u.rot, rot)));
@@ -2029,13 +2065,13 @@ function manovra(S, a){
     /* conta come mossa, anche per il tiro (p. 139: «including rallying and reforming») */
     u.moved = { kind: "reform", inches: 0 };
     limite(S, "manovre");
-    say(S, `${u.name} si riforma e si gira di ${giro}° verso ${t.name}, con il fronte di ${f0}: tutto il movimento.`,
-        { army: u.army, page: 125 });
+    say(S, `${u.name} si riforma e si gira di ${giro}°${t ? ` verso ${t.name}` : +a.giro > 0 ? " a destra" : " a sinistra"}, ` +
+           `con il fronte di ${f0}: tutto il movimento.`, { army: u.army, page: 125 });
     return si("riformata");
   }
 
   if (a.id === "indietro"){
-    const p = dritto([-avanti[0], -avanti[1]], m => m / 2);
+    const p = dritto([-avanti[0], -avanti[1]], m => Math.min(m / 2, +a.pollici > 0 ? +a.pollici : m / 2));
     u.moved = { kind: "back", inches: p.pollici };
     say(S, `${u.name} arretra di ${p.pollici}″, sempre girata verso il nemico (metà del Movimento)` +
            fermo(p, p.quanti) + ".", { army: u.army, page: 125 });
@@ -2618,6 +2654,9 @@ export function apply(S, a){
   /* con una domanda in sospeso si risponde a quella e basta */
   const attesi = S.pending ? SOSPESI[S.pending.kind] : null;
   if (attesi && !attesi.includes(a.id)) return no(`prima si risponde alla domanda in sospeso (${S.pending.kind})`);
+  /* una mossa a tappe lasciata aperta si chiude al primo gesto che non
+     la continua: e' li' che si tira il terreno pericoloso */
+  for (const u of S.units) if (u.passi && !(a.id === "passi" && a.uid === u.uid)) chiudiPassi(S, u);
   /* il gesto dice ai dadi chi li tira: con una sorgente per gesto
      (`D.seededPerGesto`, gli esperimenti) lo stesso gesto nella stessa
      casella tira gli stessi dadi in partite diverse; con le altre
@@ -2898,6 +2937,7 @@ const GESTI = {
      attaccato al muro per girarsi ci scivola accanto, ed e' il passo di
      lato di p. 125 — la stessa manovra, con il perche' scritto meglio. */
   aggira: (S, a) => a.lato ? manovra(S, { ...a, id:"lato" }) : mossa(S, a, !!a.marcia),
+  passi:    (S, a) => passi(S, a),
   gira:     (S, a) => manovra(S, a),
   riforma:  (S, a) => manovra(S, a),
   indietro: (S, a) => manovra(S, a),
@@ -3051,6 +3091,179 @@ const GESTI = {
    scavalca il monolite non ha un'unita' a cui mirare, ha un varco.
    Da qui in giu' la meta' e' una cosa sola con `x`, `y` e un nome, e
    tutto il resto della funzione non sa quale delle due sia. */
+/* ---- a tappe (p. 124) ----
+   «Unless it is charging, a unit can wheel more than once during its
+   move and can alternate between moving forward and wheeling.» Le
+   opzioni dell'elenco portano una ruota sola, verso il nemico o verso
+   un varco: per passare da una strettoia che non sta davanti — avanti,
+   ruota, avanti, ruota indietro, avanti — non c'era nessuna riga. Qui
+   la mossa si compone un pezzo alla volta: una ruota di quanti gradi
+   si vuole (si paga quanto cammina il modello esterno) o un tratto
+   dritto di quanti pollici si vuole, finche' il Movimento basta. La
+   marcia raddoppia e lascia solo ruote e tratti dritti, come dice il
+   libro (p. 123).
+
+   Non e' un'opzione dell'elenco: e' il pannello a mano di chi gioca
+   (`controai.js`). L'AI ha le sue righe, gia' fatte. Il terreno
+   pericoloso si tira alla fine (`chiudiPassi`), per tutto il percorso;
+   il pollice in meno del difficile si toglie appena ci si entra. Un
+   altro gesto qualunque chiude la mossa a tappe lasciata aperta. */
+export function passiPossibili(S){
+  const c = CASELLE[S.casella];
+  if (S.finita || S.schierando || S.preparando || S.pending || !c || c.id !== "mosse") return [];
+  return inCampo(S, S.army).filter(u => u.passi || (!u.moved && !u.fled && !u.charged && !ingaggiata(S, u) &&
+    u.unito !== chiave(S) && !stupida(S, u) && !vagante(u) && movimento(S, u).move > 0))
+    .map(u => ({ uid: u.uid, nome: u.name, ...(u.passi ? statoPassi(u) : {}),
+                 marcia: !bandiera(u, "noMarch") && !macchina(u) }));
+}
+const statoPassi = u => {
+  const st = u.passi;
+  return { inCorso: true, marciando: st.raddoppia, speso: r1(st.speso), budget: r1(st.budget),
+           resta: r1(Math.max(0, st.budget - st.speso)) };
+};
+function chiudiPassi(S, u){
+  const st = u.passi;
+  if (!st) return;
+  delete u.passi;
+  const mosso = st.speso > 0.01 || Math.hypot(u.x - st.x0, u.y - st.y0) > 0.5 || Math.abs(giroDi(st.rot0, u.rot)) > 0.5;
+  if (!mosso){
+    /* niente di fatto: se non c'e' stato il test di marcia l'unita' si
+       puo' ancora muovere in un altro modo; col test e' una marcia anche
+       stando fermi (p. 123) */
+    if (!st.testato) u.moved = null;
+    return;
+  }
+  u.moved = { kind: st.marcia ? "march" : "move", inches: r1(st.speso) };
+  say(S, `${u.name} finisce il movimento a tappe: ${r1(st.speso)}″ dei ${r1(st.budget)}″ che aveva` +
+         `${st.marcia ? (st.raddoppia ? ", marciando" : ", senza marcia") : ""} (p. 124).`,
+      { army: u.army, page: 124 });
+  if (!vola(u)) dopoIlMovimento(S, u, st.partenza);
+}
+function passi(S, a){
+  const u = byUid(S, a.uid);
+  if (!u) return no("unità sconosciuta");
+  if (a.tipo === "fine"){
+    if (!u.passi) return no("non sta muovendo a tappe");
+    chiudiPassi(S, u);
+    return si("mossa a tappe finita");
+  }
+  if (!u.passi){
+    if (!passiPossibili(S).some(x => x.uid === u.uid)) return no(`${u.name} adesso non si può muovere a tappe`);
+    const marcia = !!a.marcia;
+    if (marcia && (bandiera(u, "noMarch") || macchina(u))) return no("questa unità non può marciare");
+    const { move } = movimento(S, u);
+    const vicino = marcia && !vola(u) && nemiciDi(S, u).some(e => distanza(S, u, e) <= CH.MARCH_WATCH);
+    const raddoppia = marcia && provaMarcia(S, u);
+    u.passi = { x0: u.x, y0: u.y, rot0: u.rot || 0, partenza: postiDi(S, u), pieno: move,
+                budget: raddoppia ? move * 2 : move, speso: 0, marcia, raddoppia, testato: vicino,
+                lento: false, libero: !marcia && FM.isLumbering(u) ? 90 : 0 };
+    u.moved = { kind: marcia ? "march" : "move", inches: 0, passi: true };
+    say(S, `${u.name} comincia a muoversi a tappe: ${r1(u.passi.budget)}″` +
+           (marcia ? (raddoppia ? " di marcia" : ", senza marcia") : "") +
+           `, alternando ruote e tratti dritti (p. 124).`, { army: u.army, page: 124 });
+  }
+  const st = u.passi;
+  const resta = () => Math.max(0, st.budget - st.speso);
+  if (a.tipo === "annulla"){
+    posa(S, u, st.x0, st.y0, st.rot0);
+    if (st.lento){ st.budget += st.perdita || 0; st.lento = false; }
+    st.speso = 0; st.libero = !st.marcia && FM.isLumbering(u) ? 90 : 0;
+    u.moved.inches = 0;
+    say(S, `${u.name} torna dove ha cominciato il movimento a tappe.`, { army: u.army, page: 124 });
+    return si("rimessa al punto di partenza");
+  }
+  if (a.tipo === "ruota"){
+    const g = Math.round(+a.gradi || 0);
+    if (!g || Math.abs(g) > 180) return no("una ruota fra 1° e 180°, a destra o a sinistra");
+    const rot = (((u.rot || 0) + g) % 360 + 360) % 360;
+    const w = boxOf(u, S.units).w;
+    const libero = sciolta(u) ? Math.abs(g) : Math.min(st.libero, Math.abs(g));
+    const costo = MV.wheelCost(w, Math.abs(g) - libero);
+    if (costo > resta() + 1e-6)
+      return no(`ruotare di ${Math.abs(g)}° costa ${r1(costo)}″ (quanto cammina il modello esterno, p. 124), e ne restano ${r1(resta())}`);
+    const r = dopoLaRuota(S, u, rot, resta() - costo);
+    if (!r) return no("girandosi toccherebbe un'altra unità o un pezzo di terreno");
+    if (!dentroTavolo(S, boxCorners({ ...boxOf(u, S.units), x: r.x, y: r.y, rot })))
+      return no("girata così finirebbe fuori dal tavolo");
+    posa(S, u, r.x, r.y, rot);
+    st.speso += costo + r.extra;
+    if (!sciolta(u)) st.libero -= libero;
+    u.moved.inches = r1(st.speso);
+    say(S, `${u.name} ruota di ${Math.abs(g)}° a ${g > 0 ? "destra" : "sinistra"}` +
+           (costo + r.extra > 0.05 ? ` (${r1(costo + r.extra)}″` + (libero && !sciolta(u) ? `, ${libero}° liberi, Lumbering p. 195` : "") + ")"
+                                   : sciolta(u) ? " senza costo (formazione sciolta, p. 185)" : " senza costo (Lumbering, p. 195)") +
+           `: restano ${r1(resta())}″.`, { army: u.army, page: 124 });
+    return si("ruotata");
+  }
+  if (a.tipo === "avanti"){
+    const voluti = +a.pollici > 0 ? +a.pollici : resta();
+    const ra = (u.rot || 0) * Math.PI / 180;
+    const piano = q => percorso(S, u, [u.x + Math.sin(ra) * q * MM, u.y - Math.cos(ra) * q * MM], q,
+                                { rot: u.rot || 0, devia: false, sorvola: vola(u) });
+    let q = Math.min(voluti, resta());
+    if (q <= 0.01) return no("il Movimento è finito: chiudi la mossa");
+    let p = piano(q);
+    /* il terreno difficile: il pollice si perde la prima volta che ci
+       si entra, e con la marcia ne perde due (p. 269) */
+    if (!vola(u) && !st.lento){
+      const da = postiDi(S, u);
+      const pezzi = inPosa(u, p.x, p.y, u.rot, () => pezziFra(S, da, postiDi(S, u)));
+      const eff = TR.slowMove(st.pieno, lentiPer(u, pezzi));
+      if (eff.slowed){
+        st.lento = true;
+        st.perdita = (eff.base - eff.move) * (st.raddoppia ? 2 : 1);
+        st.budget -= st.perdita;
+        diciRallenta(S, u, eff);
+        q = Math.min(voluti, resta());
+        if (q <= 0.01){ u.moved.inches = r1(st.speso); return si("il terreno si è mangiato quel che restava"); }
+        p = piano(q);
+      }
+    }
+    if (p.pollici <= 0.01) return no(p.stop ? `non va avanti: c'è ${p.stop.perche}` : "non va avanti");
+    posa(S, u, p.x, p.y, u.rot);
+    st.speso += p.pollici;
+    u.moved.inches = r1(st.speso);
+    say(S, `${u.name} va dritta di ${p.pollici}″` +
+           (p.stop && p.pollici < q - 0.05 ? `, e si ferma: c'è ${p.stop.perche}` : "") +
+           `: restano ${r1(resta())}″.`, { army: u.army, page: 123 });
+    return si("avanti");
+  }
+  return no("a tappe si ruota, si va avanti, si annulla o si finisce");
+}
+
+/* La marcia (p. 123): passa da sola, o con il test di Comando se c'e'
+   un nemico entro 8″. Torna se il Movimento raddoppia. Anche col test
+   fallito e' una marcia: lo segna chi chiama. */
+function provaMarcia(S, u){
+  let raddoppia = true;
+  /* Marcia sotto gli occhi del nemico: test di Comando (p. 123).
+     Chi vola no: «they can march whilst within 8" of an enemy unit
+     without first having to make a Leadership test» (p. 170). */
+  const vicino = !vola(u) && nemiciDi(S, u).some(e => distanza(S, u, e) <= CH.MARCH_WATCH);
+  if (vicino){
+    const dadi = roll(2);
+    /* il musico non porta il Comando oltre 10, come la Warband e come
+       il raduno (p. 201): prima si sommava dopo il tetto, e gli Orc
+       Mobs della partita del seme 1 tiravano con Comando 11 */
+    const base = ldOf(S, u);
+    const musico = !!(u.command && u.command.musician) && base < PS.LD_CAP;
+    const ld = base + (musico ? 1 : 0);
+    const tot = dadi.reduce((s, v) => s + v, 0);
+    const passa = tot <= ld || (dadi[0] === 1 && dadi[1] === 1);
+    say(S, `${u.name} vuole marciare a ${CH.MARCH_WATCH}″ dal nemico: Comando ${ld}, ` +
+           `${dadi.join(" + ")} = ${tot} → ${passa ? "marcia" : "niente marcia"}.`,
+        { dice: dadi, army: u.army, page: 123,
+          x: { k: "marcia", u: u.name, uid: u.uid, tot, vs: { v: ld, op: "<=", t: "Comando" },
+               f: [{ t: `un nemico entro ${CH.MARCH_WATCH}″: per marciare serve un test di Comando (p. 123)`, f: "distanza" },
+                   ...fontiComando(S, u),
+                   ...(musico ? [{ t: "il musico: +1 al Comando", f: "regola" }]
+                      : u.command && u.command.musician ? [{ t: "il musico non aggiunge niente: il Comando è già 10", f: "regola" }] : [])],
+               e: passa ? "marcia: il doppio del Movimento" : "niente marcia: solo il Movimento", ok: passa } });
+    raddoppia = passa;
+  }
+  return raddoppia;
+}
+
 function mossa(S, a, marcia){
   const u = byUid(S, a.uid);
   const t = a.punto ? { x: a.punto[0], y: a.punto[1], name: a.dove || "di lato" }
@@ -3065,34 +3278,7 @@ function mossa(S, a, marcia){
   /* raddoppia: la marcia c'e' (senza nemici vicini, o con il test
      passato). Il pollice del terreno si toglie dopo, sul percorso vero
      (`pianoConTerreno`), e prima di raddoppiare. */
-  let raddoppia = marcia;
-  if (marcia){
-    /* Marcia sotto gli occhi del nemico: test di Comando (p. 123).
-       Chi vola no: «they can march whilst within 8" of an enemy unit
-       without first having to make a Leadership test» (p. 170). */
-    const vicino = !vola(u) && nemiciDi(S, u).some(e => distanza(S, u, e) <= CH.MARCH_WATCH);
-    if (vicino){
-      const dadi = roll(2);
-      /* il musico non porta il Comando oltre 10, come la Warband e come
-         il raduno (p. 201): prima si sommava dopo il tetto, e gli Orc
-         Mobs della partita del seme 1 tiravano con Comando 11 */
-      const base = ldOf(S, u);
-      const musico = !!(u.command && u.command.musician) && base < PS.LD_CAP;
-      const ld = base + (musico ? 1 : 0);
-      const tot = dadi.reduce((s, v) => s + v, 0);
-      const passa = tot <= ld || (dadi[0] === 1 && dadi[1] === 1);
-      say(S, `${u.name} vuole marciare a ${CH.MARCH_WATCH}″ dal nemico: Comando ${ld}, ` +
-             `${dadi.join(" + ")} = ${tot} → ${passa ? "marcia" : "niente marcia"}.`,
-          { dice: dadi, army: u.army, page: 123,
-            x: { k: "marcia", u: u.name, uid: u.uid, tot, vs: { v: ld, op: "<=", t: "Comando" },
-                 f: [{ t: `un nemico entro ${CH.MARCH_WATCH}″: per marciare serve un test di Comando (p. 123)`, f: "distanza" },
-                     ...fontiComando(S, u),
-                     ...(musico ? [{ t: "il musico: +1 al Comando", f: "regola" }]
-                        : u.command && u.command.musician ? [{ t: "il musico non aggiunge niente: il Comando è già 10", f: "regola" }] : [])],
-                 e: passa ? "marcia: il doppio del Movimento" : "niente marcia: solo il Movimento", ok: passa } });
-      raddoppia = passa;
-    }
-  }
+  const raddoppia = marcia && provaMarcia(S, u);
   /* Il pollice dal nemico (p. 118), le unita' in mezzo e il bordo li
      guarda il percorso: prima si fermava a «distanza meno uno» misurata
      da bordo a bordo, e intanto il centro andava dritto dentro chi

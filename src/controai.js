@@ -127,7 +127,8 @@ export function startSfida({ listA, listB, mia = "A", scenario = "", agenti = nu
   partita = { id: ++serie, S, mia: guarda ? null : mia, attesa: null, pensa: false,
               ultima: null, avvisi, errori: [], agente: null, agenti: null, visto: 0,
               fermo: false, unPasso: false, seme: conSeme, salva: !!salva, tipi: agenti || null,
-              liste: { A: listA, B: listB } };
+              liste: { A: listA, B: listB }, storia: [], guardo: null };
+  ricorda(partita);
   svuotaPila();
   const lui = mia === "A" ? "B" : "A";
   partita.agente = faiAgente(agenti && !guarda ? agenti[lui] : null, lui, conSeme);
@@ -153,10 +154,13 @@ export const TIPI_AGENTE = [
   ["estro", "l'euristica con estro"],
   ["gemini", "Gemini (con la chiave)"],
 ];
+export const haChiave = () => !!leggi(KEY);
 function faiAgente(tipo = null, tag = "B", seme = null){
   const chiave = leggi(KEY);
   const vuole = tipo || (chiave ? "gemini" : "ricerca");
-  const s = seme || 1;
+  /* senza seme — tu al tavolo, coi dadi veri — l'estro ne pesca uno:
+     con 1 fisso il piano dell'euristica sarebbe sempre lo stesso */
+  const s = seme || 1 + Math.floor(Math.random() * 1e6);
   if (vuole === "euristica") return AG.agenteEuristico({ nome: "l'euristica" });
   if (vuole === "estro")
     return AG.agenteEuristico({ nome: "l'euristica con estro", estro: D.seeded(semeEstro(s, tag)) });
@@ -189,9 +193,115 @@ export const statoSfida = () => partita ? partita.S : null;
    partita da guardare l'agente di quella parte */
 const agenteDi = (p, army) => (p.agenti && p.agenti[army]) || p.agente;
 
+/* ============================================================
+   2b · AVANTI E INDIETRO NEL TEMPO
+   Dopo ogni mossa che cambia il tavolo se ne tiene una fotografia (le
+   unita' e basta: e' quello che il tavolo disegna), e con ◀ e ▶ si
+   guarda com'era, fino alla prima e di nuovo fino all'ultima. Guardare
+   indietro non tocca la partita: l'arbitro resta dov'e', e chi guarda
+   l'AI la trova ferma. Da adesso, ▶ gioca la mossa dopo — cosi' si va
+   avanti uno stato alla volta fino alla fine della partita.
+   ============================================================ */
+const copiaUnita = u => {
+  const c = { ...u, effects: (u.effects || []).map(e => ({ ...e })), join: u.join ? { ...u.join } : null,
+              fallen: Array.isArray(u.fallen) ? u.fallen.slice() : u.fallen,
+              formation: u.formation && typeof u.formation === "object" ? structuredClone(u.formation) : u.formation };
+  delete c.mago; delete c.prepara;
+  return c;
+};
+const firmaTavolo = S => S.units.map(u => [u.uid, Math.round(u.x), Math.round(u.y), Math.round(u.rot || 0), u.lost || 0,
+  u.wounds || 0, u.dead ? 1 : 0, u.fled ? 1 : 0, u.placed ? 1 : 0, u.frontage || 0, u.join ? u.join.host : ""].join(",")).join(";");
+function faseDi(S){
+  return S.finita ? "fine della partita" : S.preparando ? "incantesimi" : S.schierando ? "schieramento"
+       : `turno ${S.turno} · ${S.nomi[S.army]} · ${(AR.CASELLE[S.casella] || {}).fase || ""}`;
+}
+function ricorda(p){
+  const S = p.S, f = firmaTavolo(S), ultima = p.storia[p.storia.length - 1];
+  if (ultima && ultima.firma === f){ ultima.fase = faseDi(S); return; }
+  p.storia.push({ firma: f, units: S.units.map(copiaUnita), fase: faseDi(S) });
+}
+/* il tavolo che si vede: quello di adesso, o lo stato che si sta guardando */
+function mostra(p){
+  if (p.guardo != null && p.storia[p.guardo]) mostraSfida({ units: p.storia[p.guardo].units });
+  else mostraSfida(p.S);
+}
+function vaiA(k){
+  const p = partita;
+  if (!p || !p.storia.length) return;
+  const ultimo = p.storia.length - 1;
+  k = Math.max(0, Math.min(ultimo, k));
+  p.guardo = k >= ultimo ? null : k;
+  mostra(p);
+  renderSfida();
+}
+function indietro(){
+  const p = partita;
+  if (!p) return;
+  if (!p.mia) p.fermo = true;
+  vaiA((p.guardo ?? p.storia.length - 1) - 1);
+}
+function avanti(){
+  const p = partita;
+  if (!p) return;
+  if (p.guardo != null) return vaiA(p.guardo + 1);
+  /* gia' al presente: chi guarda gioca la mossa dopo */
+  if (!p.mia && !p.S.finita) unPasso();
+}
+const alPrimo = () => { if (partita && !partita.mia) partita.fermo = true; vaiA(0); };
+const alPresente = () => vaiA(Infinity);
+function giraFermo(){
+  const p = partita;
+  if (!p || p.mia || p.S.finita) return;
+  if (p.fermo){ p.guardo = null; mostra(p); riprendi(); } else ferma();
+}
+/* i pulsanti, gli stessi nel pannello e a schermo intero */
+function tempoHTML(p, cls = "btn tiny"){
+  const n = p.storia.length, k = p.guardo ?? n - 1;
+  const fine = p.guardo == null && (p.mia || p.S.finita);
+  return `
+    <button class="${cls}" data-t="primo" ${k <= 0 ? "disabled" : ""} title="al primo stato (Home)">⏮</button>
+    <button class="${cls}" data-t="indietro" ${k <= 0 ? "disabled" : ""} title="uno stato indietro (←)">◀</button>
+    <button class="${cls}" data-t="avanti" ${fine || p.gira ? "disabled" : ""}
+      title="${p.guardo == null ? "gioca la mossa dopo (→)" : "uno stato avanti (→)"}">▶</button>
+    <button class="${cls}" data-t="presente" ${p.guardo == null ? "disabled" : ""} title="torna ad adesso (End)">⏭</button>`;
+}
+const TEMPO = { primo: alPrimo, indietro, avanti, presente: alPresente };
+function agganciaTempo(box){
+  box.querySelectorAll("button[data-t]").forEach(b => b.addEventListener("click", e => {
+    e.stopPropagation(); TEMPO[b.dataset.t](); svegliaCinema();
+  }));
+}
+
+/* La tastiera: spazio ferma e riparte (chi guarda), le frecce vanno
+   avanti e indietro di uno stato, Home ed End ai due capi. Si ascolta
+   prima del tavolo, che con le frecce sposterebbe il pezzo acceso —
+   una copia che l'arbitro non vede. */
+if (typeof document !== "undefined") document.addEventListener("keydown", e => {
+  const p = partita;
+  if (!p || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (/input|select|textarea/i.test(e.target.tagName || "") || e.target.isContentEditable) return;
+  const tavolo = document.querySelector('[data-panel="deploy"]');
+  if (tavolo && tavolo.hidden) return;
+  /* con una finestra aperta sopra (una domanda, l'editor della
+     formazione, la partita da rivedere) i tasti sono suoi */
+  if (document.querySelector(".dlg-back, .modal-back, .rivedi-velo")) return;
+  const fai = e.key === " " && !p.mia ? giraFermo
+            : e.key === "ArrowLeft" ? indietro : e.key === "ArrowRight" ? avanti
+            : e.key === "Home" ? alPrimo : e.key === "End" ? alPresente : null;
+  if (!fai) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  fai();
+  svegliaCinema();
+}, true);
+
 /* i comandi di chi guarda: fermarsi, ripartire, una mossa sola */
 function ferma(){ if (partita && !partita.mia){ partita.fermo = true; renderSfida(); } }
-function riprendi(){ if (partita && !partita.mia){ partita.fermo = false; renderSfida(); gira(); } }
+function riprendi(){
+  if (!partita || partita.mia) return;
+  partita.fermo = false;
+  if (partita.guardo != null){ partita.guardo = null; mostra(partita); }
+  renderSfida(); gira();
+}
 function unPasso(){
   if (!partita || partita.mia || partita.gira) return;
   partita.fermo = true; partita.unPasso = true;
@@ -225,7 +335,9 @@ async function gira(){
       }
       if (o.player === p.mia){
         const soloAvanti = o.list.length === 1 && o.list[0].id === "avanti";
-        if (soloAvanti && leggi(SALTA, "1") === "1"){
+        /* con una mossa a tappe aperta «avanti» la chiuderebbe: si aspetta */
+        const aMano = AR.passiPossibili(p.S).some(x => x.inCorso);
+        if (soloAvanti && !aMano && leggi(SALTA, "1") === "1"){
           applica(p, o, o.list[0], "passa da solo: non c'era niente da scegliere", "tu");
           continue;
         }
@@ -266,7 +378,7 @@ async function gira(){
     p.gira = false; p.pensa = false;
     if (partita === p){
       if (p.S.finita) await finita(p);
-      mostraSfida(p.S); renderSfida();
+      mostra(p); renderSfida();
     }
   }
 }
@@ -292,7 +404,8 @@ function applica(p, o, mossa, perche, chi){
   }
   AR.controllaFine(p.S);
   regista(p, o, mossa, chi === "ai" ? perche : "", prima, r);
-  mostraSfida(p.S);
+  ricorda(p);
+  mostra(p);
   /* le schede delle righe nuove, e davanti il perche' dell'AI */
   const scelta = chi === "ai" && mossa && mossa.id !== "avanti" && perche
     ? { x: { k: "scelta", t: "Perché questa mossa", testo: perche,
@@ -409,6 +522,118 @@ function scegli(i){
   applica(p, o, mossa, "", "tu");
   renderSfida();
   gira();
+}
+
+/* ============================================================
+   3c · MUOVERE A MANO
+   Le righe dell'elenco portano una ruota sola, verso il nemico o verso
+   un varco. Qui chi gioca compone la mossa come al tavolo: ruote di
+   quanti gradi vuole e tratti dritti di quanti pollici vuole, alternati
+   (p. 124: la Z per passare da una strettoia di lato), oppure una delle
+   manovre in qualunque direzione — girarsi, di lato, indietro,
+   riformarsi (pp. 124-125). L'arbitro le misura e le paga come le
+   altre: e' il gesto `passi` per le tappe, e quelli delle manovre.
+   ============================================================ */
+const mano = { uid: null, gradi: 15, pollici: "", lato: "", marcia: false };
+
+function manoHTML(p){
+  const S = p.S;
+  const chi = AR.passiPossibili(S);
+  if (!chi.length) return "";
+  const aperta = chi.find(x => x.inCorso);
+  if (aperta) mano.uid = aperta.uid;
+  if (!chi.some(x => x.uid === mano.uid)) mano.uid = chi[0].uid;
+  const u = chi.find(x => x.uid === mano.uid);
+  return `
+    <details class="sf-mano" ${aperta || mano.aperto ? "open" : ""}>
+      <summary class="panel-title">Muovi a mano: ruote, tratti dritti e manovre a scelta</summary>
+      <label class="field"><span>Unità</span>
+        <select id="sf-m-uid" ${aperta ? "disabled" : ""}>${chi.map(x =>
+          `<option value="${x.uid}" ${x.uid === mano.uid ? "selected" : ""}>${esc(x.nome)}</option>`).join("")}</select></label>
+      <div class="note"><b>A tappe</b> (p. 124): ruota e vai dritto quante volte vuoi, finché il Movimento basta.
+        La ruota costa quanto cammina il modello esterno; marciando si può solo ruotare e andare dritti.
+        ${aperta ? `<br><b>${esc(u.nome)}</b>: ${u.speso}″ fatti, <b>restano ${u.resta}″</b> di ${u.budget}″${u.marciando ? " (marcia)" : ""}.` : ""}</div>
+      <div class="btn-row sf-m-riga">
+        <input type="number" id="sf-m-gradi" min="1" max="180" step="1" value="${mano.gradi}" title="gradi" style="width:64px"><span class="dim">°</span>
+        <button class="btn tiny" data-m="ruota" data-s="-1" title="ruota a sinistra">↺ sinistra</button>
+        <button class="btn tiny" data-m="ruota" data-s="1" title="ruota a destra">↻ destra</button>
+      </div>
+      <div class="btn-row sf-m-riga">
+        <input type="number" id="sf-m-pollici" min="0.1" step="0.1" value="${esc(mano.pollici)}" placeholder="tutto" title="pollici (vuoto: tutto quello che resta)" style="width:64px"><span class="dim">″</span>
+        <button class="btn tiny" data-m="avanti">⬆ dritto</button>
+        ${!aperta && u.marcia ? `<label class="dim"><input type="checkbox" id="sf-m-marcia" ${mano.marcia ? "checked" : ""}> marciando</label>` : ""}
+      </div>
+      ${aperta ? `<div class="btn-row">
+        <button class="btn tiny primary" data-m="fine">Fine della mossa</button>
+        <button class="btn tiny ghost" data-m="annulla" title="torna al punto di partenza, con tutto il Movimento">Ricomincia</button>
+      </div>` : `
+      <div class="note"><b>Una manovra</b> (pp. 124-125), al posto della mossa:</div>
+      <div class="btn-row sf-m-riga">
+        <button class="btn tiny" data-g="gira" data-v="-90">gira 90° a sinistra</button>
+        <button class="btn tiny" data-g="gira" data-v="90">gira 90° a destra</button>
+        <button class="btn tiny" data-g="gira" data-v="180">gira 180°</button>
+      </div>
+      <div class="btn-row sf-m-riga">
+        <input type="number" id="sf-m-lato" min="0.1" step="0.1" value="${esc(mano.lato)}" placeholder="metà M" title="pollici (vuoto: metà del Movimento)" style="width:64px"><span class="dim">″</span>
+        <button class="btn tiny" data-g="lato" data-v="-1">← di lato</button>
+        <button class="btn tiny" data-g="lato" data-v="1">di lato →</button>
+        <button class="btn tiny" data-g="indietro">⬇ indietro</button>
+      </div>
+      <div class="btn-row sf-m-riga">
+        <button class="btn tiny" data-g="riforma" title="si gira sul centro dei gradi scritti sopra, a sinistra: costa tutto il Movimento" data-v="-1">riforma ↺</button>
+        <button class="btn tiny" data-g="riforma" data-v="1" title="si gira sul centro dei gradi scritti sopra, a destra: costa tutto il Movimento">riforma ↻</button>
+        <span class="dim">dei gradi scritti sopra, tutto il Movimento</span>
+      </div>`}
+      <p class="sf-m-esito note" id="sf-m-esito"></p>
+    </details>`;
+}
+
+function agganciaMano(host, p){
+  const box = host.querySelector(".sf-mano");
+  if (!box) return;
+  box.addEventListener("toggle", () => { mano.aperto = box.open; });
+  const sel = box.querySelector("#sf-m-uid");
+  if (sel) sel.addEventListener("change", () => { mano.uid = +sel.value; evidenzia(mano.uid); renderSfida(); });
+  const leggiCampi = () => {
+    mano.gradi = Math.max(1, Math.min(180, Math.round(+box.querySelector("#sf-m-gradi").value || 15)));
+    mano.pollici = box.querySelector("#sf-m-pollici").value;
+    const l = box.querySelector("#sf-m-lato"); if (l) mano.lato = l.value;
+    const m = box.querySelector("#sf-m-marcia"); if (m) mano.marcia = m.checked;
+  };
+  const fai = gesto => {
+    if (!p.attesa || p.gira) return;
+    /* non con `applica`: un gesto a mano rifiutato non deve passare la
+       casella, deve dire perche' e lasciar riprovare */
+    const prima = p.S.log.length;
+    const r = AR.apply(p.S, gesto);
+    if (!r.ok){
+      const e = box.querySelector("#sf-m-esito");
+      if (e){ e.textContent = r.text; e.style.color = "var(--bad)"; }
+      return;
+    }
+    AR.controllaFine(p.S);
+    regista(p, p.attesa, gesto, "", prima, r);
+    ricorda(p); mostra(p); raccogli(p);
+    evidenzia(gesto.uid);
+    p.attesa = null;
+    renderSfida(); gira();
+  };
+  box.querySelectorAll("[data-m]").forEach(b => b.addEventListener("click", () => {
+    leggiCampi();
+    const t = b.dataset.m;
+    fai({ id: "passi", uid: mano.uid, tipo: t,
+          ...(t === "ruota" ? { gradi: mano.gradi * +b.dataset.s } : {}),
+          ...(t === "avanti" && +mano.pollici > 0 ? { pollici: +mano.pollici } : {}),
+          ...(mano.marcia ? { marcia: true } : {}) });
+  }));
+  box.querySelectorAll("[data-g]").forEach(b => b.addEventListener("click", () => {
+    leggiCampi();
+    const t = b.dataset.g, v = +b.dataset.v;
+    fai(t === "gira" ? { id: "gira", uid: mano.uid, gradi: v }
+      : t === "lato" ? { id: "lato", uid: mano.uid, segno: v, ...(+mano.lato > 0 ? { pollici: +mano.lato } : {}) }
+      : t === "indietro" ? { id: "indietro", uid: mano.uid, ...(+mano.lato > 0 ? { pollici: +mano.lato } : {}) }
+      : { id: "riforma", uid: mano.uid, giro: mano.gradi * v });
+  }));
 }
 
 /* ============================================================
@@ -613,6 +838,7 @@ function disegnaCinema(){
       <span class="sfc-fase">${esc(fase)}${p.pensa && p.chiPensa ? ` · pensa ${esc(S.nomi[p.chiPensa])}` : ""}</span>
     </div>
     <div class="sfc-comandi">
+      ${p.storia.length > 1 ? tempoHTML(p) : ""}
       ${guarda && !S.finita ? (p.fermo
         ? `<button class="btn tiny primary" data-c="riprendi">▶</button>
            <button class="btn tiny" data-c="passo" ${p.gira ? "disabled" : ""} title="una mossa">⏭</button>`
@@ -626,6 +852,7 @@ function disegnaCinema(){
   barra.querySelectorAll("button[data-c]").forEach(b => b.addEventListener("click", e => {
     e.stopPropagation(); fai[b.dataset.c](); svegliaCinema();
   }));
+  agganciaTempo(barra);
   const vel = barra.querySelector('select[data-c="velocita"]');
   if (vel) vel.addEventListener("change", () => { scrivi(VELOCITA, vel.value === "1" ? "" : vel.value); svegliaCinema(); });
   if (S.finita || p.fermo) document.body.classList.remove("sfc-quieta");
@@ -731,14 +958,23 @@ export function renderSfida(){
   const comandi = guarda && !S.finita ? `
     <div class="btn-row sf-guarda">
       ${p.fermo
-        ? `<button class="btn tiny primary" id="sf-riprendi">▶ Riprendi</button>
+        ? `<button class="btn tiny primary" id="sf-riprendi" title="riprendi (spazio)">▶ Riprendi</button>
            <button class="btn tiny" id="sf-passo" ${p.gira ? "disabled" : ""}>Una mossa</button>`
-        : `<button class="btn tiny" id="sf-ferma">❚❚ Ferma</button>`}
+        : `<button class="btn tiny" id="sf-ferma" title="ferma (spazio)">❚❚ Ferma</button>`}
       <label class="sf-vel">velocità
         <select id="sf-velocita">${VELOCITA_SCELTE.map(([v, t]) =>
           `<option value="${v}" ${v === velocita() ? "selected" : ""}>${t}</option>`).join("")}</select></label>
       <span class="dim">${p.fermo ? (p.gira ? "sta giocando una mossa…" : "ferma: passa sopra le schede per leggerle")
-                                  : "gioca da sola; ferma quando vuoi guardare meglio"}</span>
+                                  : "gioca da sola; ferma quando vuoi guardare meglio (spazio)"}</span>
+    </div>` : "";
+  /* avanti e indietro di uno stato, per tutte e due le partite */
+  const k = p.guardo ?? p.storia.length - 1;
+  const tempo = p.storia.length > 1 || !guarda ? `
+    <div class="btn-row sf-tempo">
+      ${tempoHTML(p)}
+      <span class="dim">${p.guardo != null
+        ? `<b>stai guardando lo stato ${k + 1} di ${p.storia.length}</b> (${esc(p.storia[k].fase)}): il tavolo vero è più avanti`
+        : `stato ${k + 1} di ${p.storia.length} · ← → per tornare indietro e avanti${guarda ? ", spazio per fermare" : ""}`}</span>
     </div>` : "";
   const giocate = p.rec ? p.rec.frames.length : 0;
   const chiPensa = guarda && p.chiPensa ? S.nomi[p.chiPensa] : p.agente.nome;
@@ -749,7 +985,11 @@ export function renderSfida(){
     </div>
     ${p.avvisi.length ? `<p class="note warn">${p.avvisi.map(esc).join("<br>")}<br>La partita si gioca lo stesso, ma quei conti sono finti.</p>` : ""}
     ${comandi}
-    ${S.finita ? `
+    ${tempo}
+    ${p.guardo != null && !guarda && !S.finita ? `
+      <p class="note">Le mosse si scelgono dal tavolo di adesso:
+        <button class="btn tiny primary" data-t="presente">⏭ Torna ad adesso</button></p>`
+    : S.finita ? `
       <div class="readout"><span>${esc(S.esito.why)}</span>
         <b>${esc(vince)}${esc(S.esito.label)}</b></div>`
     : guarda ? (p.pensa ? `<p class="sf-pensa">${esc(chiPensa)} sta scegliendo…</p>` : "")
@@ -765,6 +1005,7 @@ export function renderSfida(){
               ${x.why ? `<small>${esc(x.why)}${x.page ? ` · p. ${x.page}` : ""}</small>` : ""}
             </button>`).join("")}
         </div>
+        ${manoHTML(p)}
       </div>`}
     ${p.ultima ? `
       <div class="sf-ai">
@@ -800,6 +1041,8 @@ export function renderSfida(){
     try { await navigator.clipboard.writeText(testo); copia.textContent = "Copiato ✓"; }
     catch { copia.textContent = "Non riesco a copiare"; }
   });
+  agganciaTempo(host);
+  agganciaMano(host, p);
   for (const [id, fai] of [["#sf-ferma", ferma], ["#sf-riprendi", riprendi], ["#sf-passo", unPasso]]){
     const b = host.querySelector(id);
     if (b) b.addEventListener("click", fai);
@@ -823,19 +1066,30 @@ export function renderSfida(){
   agganciaImpostazioni(host);
 }
 
+/* la chiave salvata o dimenticata cambia chi gioca, ma chi aveva scelto
+   l'euristica dal Matchup resta con l'euristica: prima ogni Salva
+   rimetteva l'avversario di sempre */
+function rifaiAgenti(){
+  const p = partita;
+  if (!p) return;
+  const tipo = t => (p.tipi && p.tipi[t]) || null;
+  if (p.agenti) p.agenti = { A: faiAgente(tipo("A"), "A", p.seme), B: faiAgente(tipo("B"), "B", p.seme) };
+  else { const lui = p.mia === "A" ? "B" : "A"; p.agente = faiAgente(tipo(lui), lui, p.seme); }
+}
+
 function agganciaImpostazioni(host){
   const salva = host.querySelector("#sf-save");
   if (salva) salva.addEventListener("click", () => {
     scrivi(KEY, host.querySelector("#sf-key").value.trim());
     scrivi(MODEL, host.querySelector("#sf-model").value.trim());
     /* l'avversario cambia subito, anche a partita in corso */
-    if (partita){ partita.agente = faiAgente(); if (partita.agenti) partita.agenti = { A: faiAgente(), B: faiAgente() }; }
+    rifaiAgenti();
     toast(leggi(KEY) ? "Chiave salvata: gioca Gemini." : "Nessuna chiave: gioca l'euristica che guarda avanti.");
     renderSfida();
   });
   const dimentica = host.querySelector("#sf-forget");
   if (dimentica) dimentica.addEventListener("click", () => {
-    scrivi(KEY, ""); if (partita){ partita.agente = faiAgente(); if (partita.agenti) partita.agenti = { A: faiAgente(), B: faiAgente() }; } renderSfida();
+    scrivi(KEY, ""); rifaiAgenti(); renderSfida();
   });
   const salta = host.querySelector("#sf-salta");
   if (salta) salta.addEventListener("change", () => { scrivi(SALTA, salta.checked ? "1" : "0"); gira(); });

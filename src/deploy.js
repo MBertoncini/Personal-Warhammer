@@ -18,6 +18,7 @@ import { initDuel, openDuel, renderDuel } from './duel.js';
 import { createHistory } from './history.js';
 import { createView, wireViewGestures } from './view.js';
 import * as FM from './formation.js';
+import { stannoInsieme } from './arbitro.js';
 import { initFormEditor, openEditor, refreshEditor } from './formeditor.js';
 import { exportPNG } from './imgexport.js';
 import { shareUrl, decodeBoard, readShareCode, copyText } from './share.js';
@@ -1627,10 +1628,15 @@ function drawBoard(){
         g(sg, "rect", { x:-s.w/2, y:-s.h/2, width:s.w, height:s.h, rx:1.5,
                         fill: s.kind === "char" ? "var(--accent)" : col, opacity: ph ? ".55" : ".85" });
       if (ph){
-        /* la foto resta dritta anche col reggimento girato: il fronte
-           lo dice gia' la riga bianca sul davanti */
-        const use = g(sg, "use", { x:-s.w/2, y:-s.h/2, width:s.w, height:s.h,
-                                   transform:`rotate(${-(u.rot + (s.rot || 0))})` });
+        /* la foto gira con la basetta: prima restava dritta sullo
+           schermo, e un reggimento ruotato di 45° aveva le facce che
+           guardavano da un'altra parte rispetto al fronte. Le basette
+           lunghe (cavalieri, carri, macchine) hanno la foto di fianco:
+           si distende per il lungo, come nella partita da rivedere */
+        const lunga = s.h > s.w * 1.3;
+        const iw = lunga ? s.h : s.w, ih = lunga ? s.w : s.h;
+        const use = g(sg, "use", { x:-iw/2, y:-ih/2, width:iw, height:ih,
+                                   ...(lunga ? { transform:"rotate(-90)" } : {}) });
         setHref(use, "#" + ph);
       }
       g(sg, "rect", { x:-s.w/2, y:-s.h/2, width:s.w, height:s.h, fill:"none",
@@ -5920,6 +5926,16 @@ function loadArmyFromList(list, armyId){
       x:0, y:0, rot: armyId === "A" ? 0 : 180, placed:false,
       lost:0, dead:false, fled:false,
     });
+  }
+  /* i capi che la lista mette dentro un reggimento (la scheda di
+     preparazione, «dove si schiera») ci entrano subito: si posa il
+     reggimento e arrivano con lui */
+  const mie = state.units.filter(u => u.army === armyId);
+  for (const [i, p] of Object.entries(prep)){
+    const con = p && p.con;
+    if (con == null || con === "" || con === "solo") continue;
+    const c = mie[+i], h = mie[+con];
+    if (c && h && c !== h && stannoInsieme(c, h)) FM.joinUnit(c, h);
   }
   state.armies[armyId].name = list.name;
   state.armies[armyId].info = list.info || null;

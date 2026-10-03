@@ -459,15 +459,20 @@ export function reportView(){
 export function advance(dir = 1){
   const g = game();
   const { index, wrapped } = PH.step(g.step || 0, dir);
+  /* Uscire dall'ultima casella e' chiudere il turno, ed e' lo stesso
+     gesto del pulsante grosso: prima la freccia passava la mano senza
+     fotografare il tavolo, e quel turno spariva dal report — con lui i
+     tesori tenuti a fine turno, che si contano proprio da li'. */
   if (wrapped > 0){
-    if (g.army === "A") g.army = "B";
-    else { g.army = "A"; g.turn++; }
-  } else if (wrapped < 0){
+    closeTurn();
+    logLine("Turno " + g.turn + " — tocca all'esercito " + g.army + ".", { army: g.army });
+    return;
+  }
+  if (wrapped < 0){
     if (g.army === "B") g.army = "A";
     else { g.army = "B"; g.turn = Math.max(1, g.turn - 1); }
   }
   goStep(index);
-  if (wrapped > 0) logLine("Turno " + g.turn + " — tocca all'esercito " + g.army + ".", { army: g.army });
 }
 
 /* ------------------------------------------------------------------
@@ -885,6 +890,30 @@ function wireDiceAndNote(host, where){
     if (t && t.trim()) ctx.act("annotazione", () => logLine(t.trim()));
   });
 }
+/* la durata casuale (p. 289): finito il round si tira dal vassoio, e
+   il registro scrive se si va avanti */
+async function askLength(){
+  const r = game().pendingLength;
+  if (!r) return;
+  const rolls = await askDice([{ id:"durata", kind:"d6", n:1, why:"durata della battaglia" }], `Fine del round ${r}`);
+  const got = rolls && rolls.durata;
+  const die = got ? ((got.dice || [])[0] || got.total || 0) : 0;
+  if (die) ctx.act("durata", () => rollLength(r, +die));
+}
+
+/* I tesori e il landmark tenuti a fine turno, sommati finora. Si
+   contavano gia' a ogni «Chiudi il turno» (la riga del registro) e nel
+   report, ma il pannello mostrava solo i punti in campo: durante la
+   partita il conto degli obiettivi non si vedeva da nessuna parte. */
+function objectivesReadout(esc, names){
+  const fmt = formatNow(), b = V.bonuses(fmt, chaosNow());
+  if (!b.treasure && !b.landmark) return "";
+  const ob = V.objectivePoints(game().turns, fmt, chaosNow());
+  return `<div class="readout" title="Battle March p. 27: ${b.treasure} a tesoro e ${b.landmark} il landmark, a ogni fine turno di giocatore">
+      <span>Obiettivi finora</span>
+      <b>${esc(names.A)} +${ob.A} · ${esc(names.B)} +${ob.B}</b></div>`;
+}
+
 export function renderGamePanel(host, { esc }){
   if (!host) return;
   hostEsc = esc;
@@ -982,6 +1011,7 @@ export function renderGamePanel(host, { esc }){
       <b>${sc.A.alivePts} pt in campo · −${sc.A.lostPts}</b></div>
     <div class="readout"><span><span class="swatch" style="background:var(--armyB)"></span>${esc(names.B)}</span>
       <b>${sc.B.alivePts} pt in campo · −${sc.B.lostPts}</b></div>
+    ${objectivesReadout(esc, names)}
     <button class="btn primary" id="g-close" style="width:100%;margin-top:8px"
       title="Fotografa il tavolo com'è adesso e passa la mano">Chiudi il turno di ${esc(names[g.army])}</button>
     <div class="readout"><span>Registrate</span><b>${played ? played + (played === 1 ? " fotografia" : " fotografie") : "solo lo schieramento"}</b></div>
@@ -1005,7 +1035,12 @@ export function renderGamePanel(host, { esc }){
   /* Le frecce camminano di casella in casella — sedici passi fanno un
      turno — mentre i quattro pulsanti delle fasi saltano all'inizio
      della fase, che e' il gesto di chi gioca in fretta. */
-  host.querySelector("#g-next").addEventListener("click", () => ctx.act("casella", () => advance(1)));
+  /* dall'ultima casella la freccia chiude il turno: se chiude anche il
+     round, la durata casuale si tira come col pulsante grosso */
+  host.querySelector("#g-next").addEventListener("click", () => {
+    ctx.act("casella", () => advance(1));
+    askLength();
+  });
   host.querySelector("#g-back").addEventListener("click", () => ctx.act("casella", () => advance(-1)));
   host.querySelectorAll("[data-phase]").forEach(b => b.addEventListener("click", () =>
     ctx.act("fase", () => goStep(+b.dataset.phase * 4))));
@@ -1033,16 +1068,9 @@ export function renderGamePanel(host, { esc }){
     ctx.act(label, () => dispatch(action, rolls));
   }));
   wireDiceAndNote(host, `turno ${g.turn} · ${here.full}`);
-  host.querySelector("#g-close").addEventListener("click", async () => {
+  host.querySelector("#g-close").addEventListener("click", () => {
     ctx.act("fine turno", closeTurn);
-    /* la durata casuale (p. 289): finito il round si tira dal vassoio,
-       e il registro scrive se si va avanti */
-    const r = game().pendingLength;
-    if (!r) return;
-    const rolls = await askDice([{ id:"durata", kind:"d6", n:1, why:"durata della battaglia" }], `Fine del round ${r}`);
-    const got = rolls && rolls.durata;
-    const die = got ? ((got.dice || [])[0] || got.total || 0) : 0;
-    if (die) ctx.act("durata", () => rollLength(r, +die));
+    askLength();
   });
   host.querySelector("#g-length").addEventListener("change", e =>
     ctx.act("durata", () => { game().meta.length = e.target.value; }));

@@ -33,6 +33,7 @@ import { loadArmies, armiesNow, coverage as armyCoverage } from './armies.js';
 import { loadProfiles, splitStat } from './profiles.js';
 import * as PAL from './palmares.js';
 import * as MT from './mounts.js';
+import { stannoInsieme } from './arbitro.js';
 
 const LIST_KEY = "lists:all";
 
@@ -223,6 +224,8 @@ export async function updateUnit(listId, i, patch){
     u.frontage = tuttiInFila ? defaultFrontage(u.troop, u.models, !!u.loose) : Math.min(u.frontage || 1, u.models);
   }
   delete u.__modelsPrima;
+  if (patch.frontage != null && patch.models == null)
+    u.frontage = Math.max(1, Math.min(u.models || 1, Math.round(+patch.frontage || 1)));
   if (patch.pts != null) u.pts = Math.max(0, Math.round(+patch.pts || 0));
   recount(l);
   await persist();
@@ -232,6 +235,7 @@ export async function removeUnit(listId, i){
   const l = getList(listId);
   if (!l || !l.units[i]) return;
   l.units.splice(i, 1);
+  PREP.dropUnit(l, i);
   recount(l);
   await persist();
 }
@@ -603,6 +607,7 @@ export function renderLists(){
     else {
       const kind = field[0], i = +field.slice(1);
       if (kind === "p") PREP.setUnitPrep(l, i, { shield: v === "" ? null : v === "1" });
+      else if (kind === "c") PREP.setUnitPrep(l, i, { con: v === "" ? null : v === "solo" ? "solo" : +v });
       else PREP.setUnitPrep(l, i, { w:"weapon", s:"spells", i:"items" }[kind]
         ? { [{ w:"weapon", s:"spells", i:"items" }[kind]]: v } : {});
     }
@@ -882,6 +887,24 @@ function armyHTML(l){
     </div>`;
 }
 
+/* Dove sta il capo quando si gioca: dentro un reggimento della lista,
+   da solo, o lo si decide al tavolo. Si sceglie una volta qui, e ogni
+   partita giocata con questa lista — la sfida, AI contro AI, il
+   simulatore, il tavolo — lo schiera cosi'. Si offrono solo i
+   reggimenti che lo possono accogliere (p. 207: stesso genere, niente
+   Lumbering, Clumsy con Clumsy, Unbreakable con Unbreakable). */
+function conHTML(l, u, i, mine){
+  if (!PREP.isCharacter(u) || (u.models || 1) !== 1) return "";
+  const ospiti = (l.units || []).map((h, j) => ({ h, j })).filter(x => x.j !== i && stannoInsieme(u, x.h));
+  const con = mine.con == null ? "" : String(mine.con);
+  if (!ospiti.length && !con) return "";
+  return `<select data-prep="${l.id}|c${i}" title="Dove si schiera quando si gioca questa lista (p. 207)">
+      <option value="" ${con === "" ? "selected" : ""}>— dove si schiera: lo decide chi gioca —</option>
+      <option value="solo" ${con === "solo" ? "selected" : ""}>da solo</option>
+      ${ospiti.map(({ h, j }) => `<option value="${j}" ${con === String(j) ? "selected" : ""}>dentro ${esc(h.name)} (${h.models})</option>`).join("")}
+    </select>`;
+}
+
 function prepHTML(l){
   const p = PREP.prepOf(l);
   const open = PREP.questions(l);
@@ -913,6 +936,7 @@ function prepHTML(l){
         </select>` : ""}
         ${wizard ? `<input type="text" data-prep="${l.id}|s${i}" placeholder="incantesimi generati (p. 106)" value="${esc(mine.spells || "")}">` : ""}
         ${PREP.isCharacter(u) ? `<input type="text" data-prep="${l.id}|i${i}" placeholder="oggetti magici" value="${esc(mine.items || "")}">` : ""}
+        ${conHTML(l, u, i, mine)}
       </div>`;
   }).join("");
 
@@ -1060,6 +1084,8 @@ function detailHTML(l){
             <input type="text" data-uf="${l.id}|${i}|name" value="${esc(u.name)}" title="Nome">
             <input type="number" min="1" max="200" data-uf="${l.id}|${i}|models" value="${u.models}" title="Modelli">
             <input type="number" min="0" data-uf="${l.id}|${i}|pts" value="${u.pts || 0}" title="Punti">
+            ${u.models > 1 ? `<input type="number" min="1" max="${u.models}" data-uf="${l.id}|${i}|frontage" value="${u.frontage || 1}"
+              title="Fronte: quanti modelli in prima fila. Ogni partita giocata con questa lista schiera l'unità così">` : ""}
             <select data-uf="${l.id}|${i}|baseId" title="Basetta">
               ${BASES.map(b => `<option value="${b.id}" ${b.id === u.baseId ? "selected" : ""}>${esc(b.label)}</option>`).join("")}
               ${u.baseId === "custom" ? `<option value="custom" selected>Personalizzata (${u.baseW}×${u.baseH})</option>` : ""}

@@ -10,6 +10,7 @@
  */
 import * as PAL from '../src/palmares.js';
 import { filterLists, factionsOf } from '../src/lists.js';
+import * as PREP from '../src/prep.js';
 
 let fails = 0;
 const ok = (label, cond) => {
@@ -101,5 +102,21 @@ ok('i filtri si sommano',
    f({ faction:'Skaven', mine:'mine' }).join() === 'Skaven da torneo');
 
 /* ================================================================= */
+console.log('\ntogliere un\'unità dalla lista');
+{
+  /* la scheda di preparazione sta per posto: togliendo la seconda unità
+     le risposte dopo scalano, e il capo resta nel reggimento giusto */
+  const l = { units: [{ name:'Warboss' }, { name:'Goblin' }, { name:'Black Orc' }, { name:'Bigboss' }],
+              prep: { general: 0, bsb: 3, note: '', units: { 0: { con: 2, items: 'ascia' }, 1: { weapon: 'lancia' }, 3: { con: 'solo' } } } };
+  l.units.splice(1, 1);
+  PREP.dropUnit(l, 1);
+  const p = l.prep;
+  ok('le risposte dell unità tolta se ne vanno', !Object.values(p.units).some(v => v.weapon === 'lancia'));
+  ok('quelle dopo scalano di uno, generale e stendardo compresi', p.general === 0 && p.bsb === 2 && p.units[2].con === 'solo');
+  ok('e il capo resta dentro i Black Orc, che adesso sono al posto 1', p.units[0].con === 1 && p.units[0].items === 'ascia');
+  PREP.dropUnit(l, 1);
+  ok('togliendo il reggimento, il capo torna «lo decide chi gioca»', l.prep.units[0].con == null);
+}
+
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

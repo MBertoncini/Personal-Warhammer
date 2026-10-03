@@ -41,6 +41,23 @@ export function setUnitPrep(l, i, patch){
   return l.prep;
 }
 
+/* Le risposte stanno per posto nella lista: togliendo l'unita' `i`
+   quelle dopo scalano di uno, e con loro il generale, lo stendardo e
+   il reggimento in cui un capo si schiera (`con`). Prima non scalava
+   niente, e togliere un'unita' in mezzo dava il generale al vicino. */
+export function dropUnit(l, i){
+  if (!l || !l.prep) return;
+  const p = prepOf(l);
+  const sposta = k => k == null || k === "" || k === "solo" ? k : +k === i ? null : +k > i ? +k - 1 : +k;
+  const units = {};
+  for (const [k, v] of Object.entries(p.units || {})){
+    const n = sposta(+k);
+    if (n == null) continue;
+    units[n] = v && v.con != null ? { ...v, con: sposta(v.con) } : v;
+  }
+  l.prep = { ...p, units, general: sposta(p.general), bsb: sposta(p.bsb) };
+}
+
 /* ============================================================
    2 · CHI PUO' ESSERE COSA
    ============================================================ */

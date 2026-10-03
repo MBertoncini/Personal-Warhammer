@@ -111,7 +111,10 @@ export function agenteEuristico({ nome = "euristica", estro = null, piano: sopra
       /* I CAPI stanno dentro un reggimento: da soli muoiono al primo
          turno, e dentro danno il loro Comando a tutti (p. 97). Il
          reggimento piu' grosso, che l'arbitro mette in cima. */
-      if (primo("unisci") && piano.unisci){
+      /* Quando e' la lista a dire dove sta il capo (la scheda di
+         preparazione), si fa come dice: e' una scelta di chi l'ha
+         scritta, non del piano. */
+      if (primo("unisci") && (piano.unisci || primo("unisci").lista)){
         const u = primo("unisci");
         return { scelta: u, perche: `${u.nome} si schiera dentro ${u.contro}: ${u.why}` };
       }

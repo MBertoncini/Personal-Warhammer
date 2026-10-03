@@ -2726,5 +2726,92 @@ console.log('\nil diario della partita, mentre si gioca e dal registro');
   seme(1);
 }
 
+console.log('\nil capo dove lo vuole la lista (p. 207)');
+{
+  /* Il Black Orc Warboss: l'euristica lo metteva nel reggimento piu'
+     grosso (gli Orc Mobs o i Night Goblin, venti modelli). La lista
+     puo' dire dove sta, e allora sta li'. */
+  const conPrep = (l, units) => ({ ...l, prep: { ...(l.prep || {}), units: { ...((l.prep || {}).units || {}), ...units } } });
+  const unisciAllaFine = BB => {
+    seme(3);
+    const G = AR.newBattle({ A, B: BB, scenario:'bm-strada', primo:'A' });
+    for (let i = 0; i < 80 && G.schierando; i++){
+      const o = AR.options(G);
+      const x = o.list.find(y => y.id === 'unisci' && y.lista) || o.list.find(y => y.id === 'schiera') || o.list[0];
+      AR.apply(G, x);
+    }
+    return G;
+  };
+  const G = unisciAllaFine(conPrep(B, { 0: { con: 2 } }));
+  const boss = G.units.find(u => u.baseName === 'Black Orc Warboss');
+  const neri = G.units.find(u => u.baseName === 'Black Orc Mobs');
+  ok('con «dentro Black Orc Mobs» il Warboss si schiera nei Black Orc', boss.join && boss.join.host === neri.uid);
+  ok('e la riga lo dice', G.log.some(r => /Black Orc Warboss si schiera dentro Black Orc Mobs/.test(r.text)));
+
+  seme(3);
+  const G2 = AR.newBattle({ A, B: conPrep(B, { 0: { con: 2 } }), scenario:'bm-strada', primo:'A' });
+  let offerte = null;
+  for (let i = 0; i < 80 && G2.schierando; i++){
+    const o = AR.options(G2);
+    if (o.list.some(y => y.id === 'unisci' && y.uid === boss.uid)){ offerte = o.list.filter(y => y.id === 'unisci'); break; }
+    AR.apply(G2, o.list.find(y => y.id === 'schiera') || o.list[0]);
+  }
+  ok('il reggimento voluto è il primo, marcato, e gli altri restano',
+     !!offerte && offerte[0].lista && offerte[0].host === neri.uid && offerte.length > 1 && /come vuole la lista/.test(offerte[0].why));
+  const eur = AG.agenteEuristico({ piano: { unisci: false } });
+  const r = await eur.scegli({ opzioni: AR.options(G2) });
+  ok('e l euristica lo prende anche quando il suo piano tiene i capi da soli', r.scelta.id === 'unisci' && r.scelta.lista);
+
+  seme(3);
+  const G3 = AR.newBattle({ A, B: conPrep(B, { 0: { con: 'solo' } }), scenario:'bm-strada', primo:'A' });
+  let mai = true;
+  for (let i = 0; i < 80 && G3.schierando; i++){
+    const o = AR.options(G3);
+    if (o.list.some(y => y.id === 'unisci' && y.uid === boss.uid)) mai = false;
+    AR.apply(G3, o.list.find(y => y.id === 'unisci' && y.uid !== boss.uid) || o.list.find(y => y.id === 'schiera') || o.list[0]);
+  }
+  ok('con «da solo» non gli si offre nessun reggimento', mai);
+  ok('stannoInsieme: il Warboss entra nei Black Orc, non con il Bigboss sul ragno (un altro personaggio, e cavalleria)',
+     AR.stannoInsieme(B.units[0], B.units[2]) && !AR.stannoInsieme(B.units[0], B.units[1]));
+}
+
+console.log('\na tappe: ruote e tratti dritti alternati (p. 124)');
+{
+  const G = nuova();
+  G.casella = casella('mosse'); G.army = 'A';
+  const tg = metti(G, uid(G, 6), 600, 600);
+  metti(G, uid(G, 503), 600, 120);
+  ok('chi non si è mosso si può muovere a tappe', AR.passiPossibili(G).some(x => x.uid === tg.uid));
+  /* marciando, lontano dal nemico: 8″ senza test (p. 123), e la marcia
+     lascia le ruote (una ruota di 30° di un fronte di 6″ costa 3,1″) */
+  const M = 8;
+  let r = AR.apply(G, { id:'passi', uid: tg.uid, tipo:'avanti', pollici: 1, marcia: true });
+  ok('un tratto dritto di 1″, marciando', r.ok && Math.abs((600 - tg.y) - 25.4) < 1 && tg.passi && tg.moved && tg.moved.passi);
+  r = AR.apply(G, { id:'passi', uid: tg.uid, tipo:'ruota', gradi: 30 });
+  ok('poi una ruota a destra di 30°, che si paga', r.ok && tg.rot === 30 && tg.passi.speso > 3.5);
+  const prima = tg.passi.speso;
+  r = AR.apply(G, { id:'passi', uid: tg.uid, tipo:'ruota', gradi: -30 });
+  ok('e una a sinistra: il pezzo torna dritto, spostato di lato', r.ok && tg.rot === 0 && tg.x > 600 + 5 && tg.passi.speso > prima);
+  r = AR.apply(G, { id:'passi', uid: tg.uid, tipo:'ruota', gradi: 90 });
+  ok('una ruota che costa più di quel che resta si rifiuta, e dice quanto', !r.ok && /costa/.test(r.text) && tg.rot === 0);
+  r = AR.apply(G, { id:'passi', uid: tg.uid, tipo:'avanti' });
+  ok('e il resto dritto, fino al Movimento', r.ok && Math.abs(tg.passi.speso - M) < 0.15);
+  r = AR.apply(G, { id:'passi', uid: tg.uid, tipo:'avanti', pollici: 1 });
+  ok('finito il Movimento non si va oltre', !r.ok);
+  AR.apply(G, { id:'passi', uid: tg.uid, tipo:'fine' });
+  ok('a fine mossa resta mossa, con i pollici fatti', !tg.passi && tg.moved && tg.moved.kind === 'march' && Math.abs(tg.moved.inches - M) < 0.15);
+  ok('e non si muove una seconda volta', !AR.passiPossibili(G).some(x => x.uid === tg.uid));
+
+  const G2 = nuova();
+  G2.casella = casella('mosse'); G2.army = 'A';
+  const t2 = metti(G2, uid(G2, 6), 600, 600);
+  metti(G2, uid(G2, 503), 600, 120);
+  AR.apply(G2, { id:'passi', uid: t2.uid, tipo:'avanti', pollici: 2 });
+  AR.apply(G2, { id:'passi', uid: t2.uid, tipo:'annulla' });
+  ok('annulla la rimette dov era, con tutto il Movimento', t2.y === 600 && t2.passi.speso === 0);
+  AR.apply(G2, { id:'avanti' });
+  ok('un altro gesto chiude la mossa lasciata aperta, e chi non ha fatto niente non ha mosso', !t2.passi && !t2.moved);
+}
+
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

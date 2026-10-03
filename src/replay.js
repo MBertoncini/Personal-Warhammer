@@ -587,10 +587,9 @@ function cliente(){
     const col = colA(u.a);
     const forma = u.fo != null ? FORME[u.fo] : null;
     const foto = mostraFoto.checked;
-    /* la foto resta in piedi: un reggimento che guarda in basso la
-       ruota di mezzo giro, cosi' le teste stanno sempre in alto */
-    const rot = ((u.r % 360) + 360) % 360;
-    const capovolta = rot > 90 && rot < 270;
+    /* la foto gira con la basetta, anche quando il reggimento guarda
+       in basso: prima a 90° faceva mezzo giro di colpo per tenere le
+       teste in alto, e le foto non seguivano piu' l'unita' */
     let s = '<rect class="acceso" x="' + (-u.w / 2 - 7) + '" y="' + (-u.h / 2 - 7) + '" width="' + (u.w + 14) +
             '" height="' + (u.h + 14) + '" rx="7"/>' +
             '<rect class="corpo" x="' + (-u.w / 2) + '" y="' + (-u.h / 2) + '" width="' + u.w + '" height="' + u.h +
@@ -606,9 +605,8 @@ function cliente(){
              il fronte */
           const lunga = h > w * 1.3;
           const iw = lunga ? h : w, ih = lunga ? w : h;
-          const g = lunga ? -90 : (capovolta ? 180 : 0);
           s += '<use href="#ph-' + cat + '" x="' + (-iw / 2) + '" y="' + (-ih / 2) + '" width="' + iw + '" height="' + ih +
-               '" transform="rotate(' + g + ')"/>' +
+               '"' + (lunga ? ' transform="rotate(-90)"' : '') + '/>' +
                '<rect x="' + (-w / 2) + '" y="' + (-h / 2) + '" width="' + w + '" height="' + h + '" fill="' + col + '" fill-opacity=".2"/>';
         }
         s += '<rect class="' + (capo ? 'capo' : 'base') + '" x="' + (-w / 2) + '" y="' + (-h / 2) + '" width="' + w +
@@ -619,7 +617,7 @@ function cliente(){
     s += '<rect class="fronte" x="' + (-u.w / 2) + '" y="' + (-u.h / 2 - 1.5) + '" width="' + u.w + '" height="4"/>' +
          '<rect class="bordo" x="' + (-u.w / 2) + '" y="' + (-u.h / 2) + '" width="' + u.w + '" height="' + u.h +
          '" rx="2" stroke="' + col + '"/>';
-    return { html: s, key: [u.fo, u.w, u.h, u.a, foto ? 1 : 0, capovolta ? 1 : 0].join('|') };
+    return { html: s, key: [u.fo, u.w, u.h, u.a, foto ? 1 : 0].join('|') };
   }
   function angolo(id, r){
     const prima = giro.get(id);

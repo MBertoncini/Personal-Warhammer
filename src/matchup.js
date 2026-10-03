@@ -20,7 +20,7 @@ import { loadDoc, saveDoc } from './store.js';
 import { emit } from './bus.js';
 import { askText, askConfirm } from './uikit.js';
 import { snapshot, applySnapshot, loadArmyFromList, renderAll, history, state as board } from './deploy.js';
-import { startSfida, scenariGiocabili, scenarioPer, inCorso } from './controai.js';
+import { startSfida, scenariGiocabili, scenarioPer, inCorso, TIPI_AGENTE, haChiave } from './controai.js';
 import { avviaSerie } from './simulatore.js';
 import { apriPagina } from './reports.js';
 import { customScenarioMap } from './scenariokit.js';
@@ -29,7 +29,7 @@ import { SCENARIOS } from './scenarios.js';
 const MU_KEY = "matchup:current";
 const DEP_KEY = "deployments:all";
 
-let mu = { listA: null, listB: null, mine: "A", note: "", sfidaMia: "A", sfidaScenario: "",
+let mu = { listA: null, listB: null, mine: "A", note: "", sfidaMia: "A", sfidaScenario: "", sfidaContro: "",
            aiai: { scenario: "", chi: "euristica", seme: 1, partite: 1, estro: true, mappa: true, html: true, archivia: false } };
 let deployments = [];
 
@@ -218,6 +218,12 @@ function sfidaHTML(){
           ${scenariGiocabili().map(s => `<option value="${s.id}" ${s.id === sc ? "selected" : ""}>${esc(s.label)}${s.pts ? ` · ${s.pts} pt` : ""}</option>`).join("")}
         </select></label>
     </div>
+    <label class="field" id="mu-sfida-contro-box" ${mu.sfidaMia === "guarda" ? "hidden" : ""}>Contro
+      <select id="mu-sfida-contro">
+        <option value="" ${!mu.sfidaContro ? "selected" : ""}>${haChiave() ? "di solito: Gemini (c'è la chiave)" : "di solito: l'euristica che guarda avanti (non c'è la chiave)"}</option>
+        ${TIPI_AGENTE.map(([v, t]) => `<option value="${v}" ${mu.sfidaContro === v ? "selected" : ""}>${esc(t)}${
+          v === "gemini" && !haChiave() ? " — senza chiave gioca l'euristica" : ""}</option>`).join("")}
+      </select></label>
     <button class="btn primary" id="mu-sfida" style="margin-top:6px;width:100%">${bottoneSfida(mu.sfidaMia)}</button>`;
 }
 /* chi non gioca non sfida nessuno: guarda */
@@ -492,14 +498,24 @@ export function renderMatchup(){
   });
   const sf = $("#mu-sfida");
   const mia = $("#mu-sfida-mia");
-  if (sf && mia) mia.addEventListener("change", () => { sf.textContent = bottoneSfida(mia.value); });
+  if (sf && mia) mia.addEventListener("change", () => {
+    sf.textContent = bottoneSfida(mia.value);
+    const box = $("#mu-sfida-contro-box");
+    if (box) box.hidden = mia.value === "guarda";
+  });
   if (sf) sf.addEventListener("click", async () => {
     if (inCorso() && !await askConfirm("C'è già una sfida in corso: la abbandono e ne comincio un'altra?",
                                       { title:"Nuova sfida?" })) return;
     mu.sfidaMia = $("#mu-sfida-mia").value;
     mu.sfidaScenario = $("#mu-sfida-sc").value;
+    mu.sfidaContro = $("#mu-sfida-contro").value;
     await persist();
-    startSfida({ listA: getList(mu.listA), listB: getList(mu.listB), mia: mu.sfidaMia, scenario: mu.sfidaScenario });
+    /* chi gioca l'altra parte: vuoto e' quello di sempre (Gemini con la
+       chiave, se no chi guarda avanti); se no quello scelto, anche
+       l'euristica sola contro chi ha la chiave */
+    const lui = mu.sfidaMia === "B" ? "A" : "B";
+    const agenti = mu.sfidaMia !== "guarda" && mu.sfidaContro ? { [lui]: mu.sfidaContro } : null;
+    startSfida({ listA: getList(mu.listA), listB: getList(mu.listB), mia: mu.sfidaMia, scenario: mu.sfidaScenario, agenti });
     emit("sfida:show");
   });
   const aiai = $("#mu-aiai");
