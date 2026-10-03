@@ -36,7 +36,7 @@ export const semeEstro = (s, lista) => ((s * 2654435761) ^ (lista === 'x' ? 0x51
    se c'e', vede ogni partita (e' la mappa). */
 export async function giocaSerie({ AR, AG, D, liste, nomi, scenario, def, magia, partite, seme = 1,
                                    specchio = false, agente, osservatore = null, primo = 'tira',
-                                   avanzamento = null }){
+                                   avanzamento = null, durata = null }){
   const tutte = [];
   const giri = specchio ? [0, 1] : [0];
   let fatte = 0;
@@ -48,7 +48,7 @@ export async function giocaSerie({ AR, AG, D, liste, nomi, scenario, def, magia,
       /* il seme prima della battaglia: anche lo schieramento e i tiri di
          chi comincia vengono dai dadi */
       D.setSource(D.seeded(s));
-      const S = AR.newBattle({ A: liste[zona.A], B: liste[zona.B], scenario, def, magia, primo,
+      const S = AR.newBattle({ A: liste[zona.A], B: liste[zona.B], scenario, def, magia, primo, durata,
                                nomi: { A: nomi[zona.A], B: nomi[zona.B] } });
       const ag = { A: agente(zona.A, nomi[zona.A], s), B: agente(zona.B, nomi[zona.B], s) };
       const ctx = { seme: s, giro, zona, lista };

@@ -34,36 +34,31 @@ export async function scenariTutti(){
   const { SCENARIOS } = await import('../../src/scenarios.js');
   let miei = [];
   try { miei = dati('scenari.json') || []; } catch (_){ /* nessuno scenario salvato */ }
-  return { ...SCENARIOS, ...Object.fromEntries(miei.filter(s => s && s.id && s.table && s.deploy).map(s => [s.id, s])) };
+  return { ...SCENARIOS, ...Object.fromEntries(miei.filter(s => s && s.id && s.table && s.deploy)
+    .map(s => [s.id, s.formato === 'bm' ? { ...s, group: 'Battle March' } : s])) };
 }
 
 /* ---------------- il lavoratore ---------------- */
 async function lavora(){
-  const AR = await import('../../src/arbitro.js');
-  const AG = await import('../../src/agente.js');
-  const D = await import('../../src/dice.js');
   const PR = await import('../../src/profiles.js');
   const ARM = await import('../../src/armies.js');
   const MG = await import('../../src/magic.js');
-  const SE = await import('../serie.mjs');
+  const MT = await import('../../src/mounts.js');
+  const { giocaCella } = await import('../../src/lab-partite.js');
   PR.useProfiles(dati('profili.json'));
   ARM.useArmies(ARM.makeArmies(dati(path.join('eserciti', 'indice.json')).file.map(f => dati(path.join('eserciti', f)))));
-  const magia = MG.useMagic(MG.makeMagic(dati(path.join('magia', 'domini.json'))));
+  MG.useMagic(MG.makeMagic(dati(path.join('magia', 'domini.json'))));
+  MT.useMounts(dati('cavalcature.json'));
   const TUTTI = await scenariTutti();
 
-  parentPort.on('message', async ({ id, x, y, scenario, partite, seme }) => {
+  /* la cella è quella della pagina (src/lab-partite.js): stessi semi,
+     stesso estro, stessi numeri. `def` può arrivare col messaggio — uno
+     scenario generato — altrimenti si cerca fra quelli noti. */
+  parentPort.on('message', async ({ id, x, y, scenario, def, partite, seme, formato, durata }) => {
     try {
-      if (!TUTTI[scenario]) throw new Error(`scenario «${scenario}» sconosciuto`);
-      const giocate = await SE.giocaSerie({ AR, AG, D, liste: { x, y }, nomi: { x: x.name, y: y.name }, scenario,
-        def: TUTTI[scenario], magia, partite, seme, specchio: true,
-        agente: (lista, nome, s) => AG.agenteEuristico({ nome, estro: D.seeded(SE.semeEstro(s, lista)) }) });
-      const r = { vince: { x: 0, y: 0 }, pari: 0, n: giocate.length, vp: { x: 0, y: 0 }, fuori: {} };
-      for (const g of giocate){
-        if (g.vincitore) r.vince[g.vincitore]++; else r.pari++;
-        r.vp.x += g.vp.x || 0; r.vp.y += g.vp.y || 0;
-        for (const f of g.fuori || []) r.fuori[`${f.lista}|${f.name}`] = (r.fuori[`${f.lista}|${f.name}`] || 0) + 1;
-      }
-      parentPort.postMessage({ id, r });
+      const d = def || TUTTI[scenario];
+      if (!d) throw new Error(`scenario «${scenario}» sconosciuto`);
+      parentPort.postMessage({ id, r: await giocaCella({ x, y, scenario, def: d, partite, seme, formato, durata }) });
     } catch (e){
       parentPort.postMessage({ id, errore: String(e && e.stack || e).slice(0, 800) });
     }

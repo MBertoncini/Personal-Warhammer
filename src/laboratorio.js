@@ -6,16 +6,19 @@
  * sceglie uno scenario: su questo tavolo, con quello che ho, quali
  * partite vengono equilibrate e quali a senso unico?
  *
- * Le ricerche non girano qui: una ricerca sono migliaia di partite, e il
- * browser si fermerebbe per un'ora. La scheda scrive il comando, come fa
- * già il Matchup per le partite fra due AI; si lancia nel terminale, e
- * quando ha finito i risultati compaiono qui con «Ricarica».
+ * Prima le ricerche giravano solo nel terminale, e questa scheda ne
+ * scriveva il comando. Adesso girano anche qui, nei Web Worker: la vista
+ * «Esperimenti» (lab-esperimento.js) le configura, le lancia e ne tiene i
+ * risultati nell'archivio del browser. Questa resta la vista dei file —
+ * le ricerche lunghe, fatte di notte nel terminale con tutti i
+ * processori — e i comandi per farne altre.
  */
 
 import { $, esc } from './util.js';
 import { copyText } from './share.js';
 import { adoptList } from './lists.js';
 import { scenariGiocabili } from './controai.js';
+import { renderEsperimento, usaFileRicerche, torneiLocali } from './lab-esperimento.js';
 
 const FAZIONI = { skaven: "Skaven", og: "Orchi & Goblin", liz: "Lucertole" };
 const POOL = { tutte: "con tutte le unità", collezione: "con la tua collezione", archivio: "dall'archivio" };
@@ -29,7 +32,7 @@ const SEI = ["sxmu9q80qdc65", "sxprova-profondo", "sxprova-boschi", "bm-strada",
 const TUTTI = "__tutti";
 const KEY = "tow-lab";
 
-let v = { punti: 800, scenario: TUTTI, filtro: "tutte", fazione: "tutte", pool: "entrambe", sforzo: "normale", dove: "sei", esempi: "si", capo: "no", sfida: "" };
+let v = { vista: "esperimenti", punti: 800, scenario: TUTTI, filtro: "tutte", fazione: "tutte", pool: "entrambe", sforzo: "normale", dove: "sei", esempi: "si", capo: "no", sfida: "" };
 try { v = { ...v, ...JSON.parse(localStorage.getItem(KEY) || "{}") }; } catch { /* la prima volta */ }
 const ricorda = () => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* niente */ } };
 
@@ -48,6 +51,7 @@ async function carica(){
     docs = (await Promise.all((idx.file || []).map(async f => ({ file: f.file, doc: await get(f.file).catch(() => null) }))))
       .filter(x => x.doc);
   } catch { docs = []; }
+  usaFileRicerche(docs);
 }
 
 /* ---------------- i conti ---------------- */
@@ -67,7 +71,11 @@ function cella(tor, a, b, sc){
 
 const ricercheA = p => (docs || []).filter(x => x.doc.formato === "tow-ricerca/1" && x.doc.punti === p)
   .sort((a, b) => Object.keys(FAZIONI).indexOf(a.doc.fazione) - Object.keys(FAZIONI).indexOf(b.doc.fazione) || a.doc.pool.localeCompare(b.doc.pool) || a.file.localeCompare(b.file));
-const torneoA = p => ((docs || []).find(x => x.doc.formato === "tow-torneo/1" && x.doc.punti === p) || {}).doc || null;
+/* il torneo a questi punti: il più recente fra quelli dei file e quelli
+   giocati dalla pagina */
+const torneoA = p => [...(docs || []).map(x => x.doc), ...torneiLocali()]
+  .filter(d => d.formato === "tow-torneo/1" && d.punti === p)
+  .sort((a, b) => String(b.quando).localeCompare(String(a.quando)))[0] || null;
 const giorno = iso => iso ? new Date(iso).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
 /* gli scenari: quelli che l'app conosce, e quelli dei file — i tuoi,
    salvati dal tavolo, su un altro browser non ci sono ma i file li
@@ -334,12 +342,27 @@ function comandiHTML(tor){
 
 /* ---------------- la scheda ---------------- */
 export async function renderLaboratorio(){
-  const host = $("#laboratorio");
-  if (!host) return;
+  const radice = $("#laboratorio");
+  if (!radice) return;
   if (!docs){
-    host.innerHTML = `<p class="empty">Leggo dati/ricerche…</p>`;
+    radice.innerHTML = `<p class="empty">Leggo dati/ricerche…</p>`;
     await (caricando ||= carica());
     caricando = null;
+  }
+  /* le due viste: gli esperimenti dalla pagina, e i file del progetto */
+  const scroll = window.scrollY;
+  radice.innerHTML = `
+    <div class="group lab-viste" role="tablist" aria-label="Viste del laboratorio">
+      <button class="btn${v.vista === "esperimenti" ? " on" : ""}" role="tab" aria-selected="${v.vista === "esperimenti"}" data-lab-vista="esperimenti">Esperimenti</button>
+      <button class="btn${v.vista === "progetto" ? " on" : ""}" role="tab" aria-selected="${v.vista === "progetto"}" data-lab-vista="progetto">Ricerche del progetto</button>
+    </div>
+    <div id="lab-vista"></div>`;
+  radice.querySelectorAll("[data-lab-vista]").forEach(b => b.addEventListener("click", () => { v.vista = b.dataset.labVista; ricorda(); renderLaboratorio(); }));
+  const host = $("#lab-vista");
+  if (v.vista === "esperimenti"){
+    await renderEsperimento(host, renderLaboratorio);
+    window.scrollTo(0, scroll);
+    return;
   }
   const puntiNoti = [...new Set([...(docs || []).map(x => x.doc.punti), v.punti])].sort((a, b) => a - b);
   const tor = torneoA(v.punti), ric = ricercheA(v.punti);
@@ -383,6 +406,7 @@ export async function renderLaboratorio(){
   const usa = $("#lab-usa-pt");
   if (usa) usa.addEventListener("click", () => { v.punti = sc.pts; ricorda(); renderLaboratorio(); });
   $("#lab-ricarica").addEventListener("click", async () => { docs = null; await renderLaboratorio(); });
+  window.scrollTo(0, scroll);
   $("#lab-copia").addEventListener("click", async e => {
     const ok = await copyText($("#lab-cmd").textContent);
     e.target.textContent = ok ? "Comandi copiati ✓" : "Non riesco a copiare";
@@ -392,6 +416,7 @@ export async function renderLaboratorio(){
   /* nelle mie liste: una finalista, o le due liste di una coppia */
   const listaDi = id => {
     for (const { doc } of docs) for (const m of doc.migliori || []) if (m.lista && m.lista.id === id) return m.lista;
+    for (const t of torneiLocali()) for (const l of t.liste || []) if (l.id === id && l.lista && l.fonte !== "archivio") return l.lista;
     return null;
   };
   const adotta = async (liste, btn) => {

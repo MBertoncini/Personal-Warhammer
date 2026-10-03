@@ -484,8 +484,24 @@ npm run torneo -- --punti 800                        # chi batte chi, su ogni sc
 - Ogni generazione **tutte le candidate giocano le stesse celle** — un avversario su uno scenario, un seme nuovo, a specchio — estratte fra tutte le coppie: giocarle tutte ogni volta costerebbe troppo (su un portatile le partite sono due o tre al secondo). Le migliori restano e rigiocano su celle nuove, e i conti si sommano; le altre si rimpiazzano con figlie e con una lista a caso. Alla fine le finaliste giocano **tutte** le celle su semi mai usati per scegliere, ed è con quei numeri che si ordinano.
 - Gli avversari sono le liste dell'archivio vicine ai punti e la migliore di ogni ricerca delle altre fazioni: rifare la ricerca riparte dalle liste migliori della volta prima e gioca contro quello che le altre hanno trovato nel frattempo. È il giro da ripetere: ricerca, torneo, ricerca.
 - I risultati vanno in `dati/ricerche/` (un file per ricerca, uno per torneo, e l'indice). La Nuvola non li tocca; su GitHub Pages arrivano con un commit. Dal Laboratorio una lista trovata entra nelle tue con **Aggiungi alle mie liste**.
-- Lo sforzo: `rapido` (qualche centinaio di partite a ricerca), `normale` (un paio di migliaia), `accurato`. Il Laboratorio scrive il comando e dice quante partite costa.
+- Lo sforzo: `lampo` (un paio di centinaia di partite), `rapido` (qualche centinaio a ricerca), `normale` (un paio di migliaia), `accurato`. La vista «Ricerche del progetto» del Laboratorio scrive il comando e dice quante partite costa.
+- `--obiettivo equilibrata` cerca la lista che contro **ogni** avversario sta vicina al 50%, invece di quella che vince di più; `--formato bm|core` e `--durata bm|fixed|breakpoint` giocano gli scenari con Battle March o con il Core Rulebook, anche contro quello che lo scenario direbbe.
 - **Perché non vince sempre la fanteria per costruzione.** Le prime ricerche davano solo blocchi di fanteria e un personaggio, e le cause erano due. La ricerca: metà delle unità si pescava fra le truppe base, i punti avanzati finivano tutti in modelli dei reggimenti, e la popolazione partiva dalle liste di `esempi.mjs`, tutte fanteria; con lo sforzo rapido non se ne allontanava. Adesso le unità si pescano alla pari, i punti avanzati comprano prima un'unità nuova, la prima generazione ha **una lista a tema per ogni unità** e `--senza-esempi` lascia fuori le liste note. Nel file e nel Laboratorio c'è **la tabella delle unità**: in quante liste è stata provata ognuna e come sono andate — si vede se un'unità manca perché va male o perché nessuno l'ha provata. L'altra causa è nel simulatore, ed è ancora lì: a parità di punti, 18 Saurus al posto di 5 Terradon vincono 47% contro 19% su 144 partite, perché un pezzo su basetta grande che girandosi sul posto toccherebbe qualcosa non si gira e va dritto (`pianoAvanzata` in `arbitro.js`), e i volanti restano spesso fermi.
+
+### Il Laboratorio dalla pagina
+
+Le stesse ricerche girano anche nel browser, senza terminale: la vista **Esperimenti** della scheda Laboratorio le configura e le lancia nei Web Worker, tanti quanti sono i processori meno uno, e con la stessa velocità del terminale — un paio di partite al secondo su un portatile. Il giro di generazioni è uno solo (`src/cerca.js`): `cerca.mjs` lo usa dal terminale, la pagina dai Worker. Quattro domande:
+
+- **Una lista** — la migliore di una fazione contro avversari scelti: quelli automatici del terminale, liste che spunti tu (dell'archivio, trovate dalle ricerche, trovate qui), o un **campionario a caso** di un'altra fazione, scritto con i suoi limiti. La più forte, o la più equilibrata.
+- **Una sfida alla pari** — due liste, una per parte, che si battono alla pari: si cercano coppie, e le figlie cambiano più spesso la lista che vince. Ogni coppia dice su quale scenario giocarla, e si guarda giocare sul tavolo vero.
+- **Un tavolo per una sfida** — due liste date, e il tavolo su cui vengono alla pari fra tanti tavoli generati, giocati tutti e i migliori rigiocati su semi nuovi; quello che piace si salva fra i tuoi scenari.
+- **Un torneo** — tutte contro tutte fra le liste spuntate, su ogni scenario: la tabella di «Ricerche del progetto» lo legge come quelli del terminale.
+
+Ogni parte ha le sue unità, una riga ciascuna, con quattro stati — **No** (mai), **Libera**, **Sì** (almeno una), **Tante** (almeno due, reggimenti grandi) — e accanto i numeri per chi li vuole precisi: quante unità, quanti modelli. Sono i `limiti` di `spazio.js`, il tema di `--con`/`--senza` scritto unità per unità. Prima di giocare la pagina controlla che i limiti si possano rispettare — nei punti, e con le miniature che hai — e dice perché no: una ricerca che prova a scrivere liste impossibili si ferma per minuti senza un motivo visibile.
+
+Il gioco si sceglie: punti, quanti se ne lasciano per strada, il **formato** (come dice lo scenario, Battle March, o il Core Rulebook — si cambia il gruppo della scheda, che è da dove `victory.js` lo legge), la durata, gli scenari, e i **tavoli generati** (`terreno-casuale.js`): misura, schieramento, tipo di terreno, quanto è pieno, cosa c'è al centro, quanti tesori, ognuna fissa o a caso. Lo stesso seme dà lo stesso tavolo. Un tavolo generato per Battle March, salvato fra i tuoi scenari, resta Battle March.
+
+«Ferma e tieni» finisce la generazione in corso, verifica quello che c'è e lo salva; «Annulla» butta via tutto. I risultati stanno nell'archivio del browser, uno per esperimento (`lab:esp:<id>`), e la Nuvola li porta con sé; «Rimetti questa configurazione» rifà la pagina com'era quando l'hai lanciato. Le ricerche lunghe — una notte con tutti i processori — restano da terminale: i loro file si leggono in «Ricerche del progetto».
 
 ## Installarla
 
@@ -657,6 +673,14 @@ src/
   spiega.js           il perché di un tiro: dalla riga del registro alla scheda, per la sfida e per la pagina da guardare
   matchup.js          disponibilità, confronto, schieramenti salvati
   laboratorio.js      le liste cercate a macchina e il torneo fra loro: chi batte chi, scenario per scenario
+  lab-esperimento.js  il Laboratorio dalla pagina: le parti unità per unità, il gioco, la corsa, i risultati
+  cerca.js            la ricerca a generazioni: una lista, una coppia alla pari, il tavolo di una sfida, il torneo
+  spazio.js           le liste che si possono scrivere: unità, opzioni, vincoli, collezione, limiti per unità
+  costruttori.js      le unità scritte a mano per provare liste, con i punti del libro (usaArchivio dà i modelli)
+  lab-partite.js      una cella: due liste, uno scenario, pochi semi a specchio; il formato e la durata scelti
+  lab-motore.js       i Web Worker del Laboratorio, con la forma di tools/liste/motore.mjs
+  lab-lavoro.js       il Web Worker: carica i dati una volta e gioca celle
+  terreno-casuale.js  il terreno generato col seme, e lo scenario generato con le sue manopole
   reports.js          archivio delle partite e scheda Partite
   deploy.js           stato del tavolo, pannelli, campo di battaglia
   main.js             avvio, schede, registrazione del service worker
@@ -679,6 +703,7 @@ test/
   serie.mjs           lo specchio, la stessa lista contro se stessa, i dadi per gesto, l'esperimento
   minacce.mjs         le minacce di carica, lo scontro atteso, il gioco delle distanze
   ricerca.mjs         la copia della partita, il valore di una posizione, chi guarda avanti
+  laboratorio.mjs     i limiti per unità, la ricerca con un gioco finto, la coppia, il tavolo, i tavoli generati, il formato
   sync.mjs            archivio su GitHub, contro un GitHub finto in memoria
   spiega.mjs          le schede del perché, e partite intere in cui ogni scheda deve tornare con i suoi conti
   boot.mjs            la pagina intera: schede, annulla, zoom, partita, report, link
@@ -690,13 +715,13 @@ tools/
   archivia.mjs        una partita di partita.mjs in dati/partite.json (il registro è src/archivio.js)
   archivia-registro.mjs  il testo di «Copia il registro» in dati/partite.json, come «Importa un registro» dell'app
   heatmap.mjs, serie.mjs, statistica.mjs   riesportano i moduli di src/, che usa anche il simulatore dell'app
-  liste/unita.mjs     le unità scritte a mano per provare liste: Skaven, Orchi & Goblin, Lucertole, con i punti del libro
+  liste/unita.mjs     legge liste e cavalcature e riesporta src/costruttori.js
   liste/gioca.mjs     una serie a specchio fra due liste, anche candidate, e che fine fa ogni unità
   liste/valuta.mjs    tante candidate contro tante liste su più scenari, in parallelo
   liste/salva.mjs     la candidata scelta, in dati/liste.json
   liste/esempi.mjs    le liste da 800 punti cercate così, e le alternative
-  liste/spazio.mjs    le liste che si possono scrivere: unità, opzioni, vincoli, collezione
-  liste/cerca.mjs     la ricerca a generazioni, per fazione, con tutte le unità o con la collezione
+  liste/spazio.mjs    legge la collezione e i maghi e riesporta src/spazio.js
+  liste/cerca.mjs     la ricerca a generazioni dal terminale (il giro è src/cerca.js), per fazione, con tutte le unità o con la collezione
   liste/torneo.mjs    le liste trovate tutte contro tutte, scenario per scenario
   liste/motore.mjs    i lavoratori che giocano le serie senza rilanciare un processo ogni volta
   liste/ricerche.mjs  i file di dati/ricerche/ e il loro indice
