@@ -527,7 +527,13 @@ function contactHTML(o){
       ${c.estimated
         ? `<b>${c.wide}</b> modelli a contatto <i>stimati</i> — la prima fila più stretta delle due`
         : `<b>${c.wide}</b> modelli a contatto, contati sulle basette`}${
-        c.support ? ` · ${c.support} d'appoggio dalle file dietro` : ""}${
+        /* la fila che combatte (p. 145): chi ci sta senza toccare mena
+           con un attacco, e di fianco o dietro la fila e' un'altra */
+        c.face === "fianco" ? " · presa di fianco: mena la colonna di quel lato"
+          : c.face === "retro" ? " · presa alle spalle: mena l'ultimo rango" : ""}${
+        c.rank > c.front ? ` · ${c.rank - c.front} nella fila che combatte senza toccare, un attacco a testa` : ""}${
+        c.pressed ? ` · ${c.pressed} dal rango dietro (Press of Battle), un attacco a testa` : ""}${
+        c.support ? ` · ${c.support} d'appoggio (Fight in Extra Rank)` : ""}${
         !c.inFront ? "" : c.estimated
           ? ` · ${c.inFront} ${c.inFront === 1 ? "posto preso da un personaggio" : "posti presi dai personaggi"}`
           : ` · e ${c.inFront} ${c.inFront === 1 ? "personaggio" : "personaggi"}, contati a parte`}.

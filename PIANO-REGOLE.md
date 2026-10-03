@@ -513,9 +513,29 @@ Per ogni fase: cosa l'app può fare da sola, e cosa resta ai giocatori.
   qualcuno non le trascrive da p. 347.
 
 ### Corpo a corpo
-- Chi combatte: fila che combatte, contatto di basetta, attacchi di
-  appoggio (pp. 145-146). L'app conosce già i contatti modello per
-  modello: è il posto in cui è più avanti del manuale medio.
+- ~~Chi combatte: fila che combatte, contatto di basetta, attacchi di
+  appoggio (pp. 145-146).~~ Fatto, ed era scritto come nel Warhammer di
+  prima: ogni reggimento aveva un rango d'appoggio a un colpo a testa,
+  Press of Battle faceva menare il secondo rango con tutti gli
+  attacchi, e l'arbitro non diceva a `contact()` da che faccia era
+  preso il difensore — i Saurus presi di fianco menavano con il fronte.
+  Adesso mena la **fila che combatte** (p. 145): il rango o la colonna
+  con almeno un modello a contatto — di fronte il primo rango, di
+  fianco la colonna di quel lato, dietro l'ultimo rango. Chi tocca mena
+  con tutti gli Attacchi, chi è nella fila senza toccare con uno solo,
+  personaggi compresi. L'**appoggio** c'è solo con Fight in Extra Rank
+  (p. 169), un attacco a testa da chi sta direttamente dietro la fila,
+  mai verso fianco o retro; le lance lo tolgono nel turno della carica
+  o fuori da quello (p. 215). **Press of Battle** fa entrare il rango
+  dietro nella fila, con un attacco a testa, e l'appoggio passa al
+  rango dopo. Le basette le conta `fightingRanks` (`formation.js`) per
+  l'arbitro e per il pannello: chi tocca, la fila, chi c'è dietro, e il
+  modello d'angolo preso fra fronte e fianco mena una volta sola.
+  Scelte dichiarate: Press of Battle vale solo di fronte (di fianco e
+  dietro il testo non dice dove sia «dietro»); il modello d'angolo va al
+  nemico più vicino. Resta fuori «Fallen Warriors» (p. 146): chi cade
+  prima di menare oggi mena lo stesso, perché i colpi di una schiera si
+  contano a inizio round.
 - ~~Ordine di Iniziativa **con il bonus della carica** (+1 per pollice
   intero percorso, fino a +3 di fronte e +4 di fianco o di retro,
   p. 146).~~ Fatto nella Tappa 3, e con lui l'urto e la carica furiosa

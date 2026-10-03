@@ -136,7 +136,32 @@ ok('una schiera ripassata resta se stessa', C.combatant(a).models === 12);
 
 const ct = C.contact(a, b);
 ok('a contatto va la fila piu stretta delle due', ct.front === 5);
-ok('una fila dietro appoggia con un colpo a testa', ct.attacks === 5 * 2 + 5);
+/* La fila che combatte (p. 145): tutto il primo rango mena, chi tocca
+   con tutti gli attacchi e chi non tocca con uno solo. Il sesto Saurus
+   non ha un Orco davanti, e mena con un attacco. */
+ok('chi e nella fila che combatte senza toccare mena con un attacco solo', ct.attacks === 5 * 2 + 1);
+ok('e la fila e il primo rango intero', ct.rank === 6 && ct.face === 'fronte');
+/* l'appoggio e' di chi ha Fight in Extra Rank, e basta (p. 145) */
+ok('senza lancia chi sta dietro non appoggia', ct.support === 0);
+{
+  const lance = C.combatant({ ...saurus, rules: ['Fight in Extra Rank'] });
+  const cl = C.contact(lance, b);
+  ok('con Fight in Extra Rank il secondo rango appoggia con un attacco a testa',
+     cl.support === 6 && cl.attacks === 5 * 2 + 1 + 6);
+  ok('ma non verso il fianco', C.contact(lance, b, { face: 'fianco' }).support === 0);
+  ok('ne verso il retro', C.contact(lance, b, { face: 'retro' }).support === 0);
+  /* la lancia da fanteria non appoggia nel turno in cui carica (p. 215) */
+  const spear = C.combatant({ ...saurus, weapons: [{ name: 'Thrusting spear', S: 'S', rules: 'Fight in Extra Rank' }] });
+  ok('la lancia da fanteria appoggia quando la caricano', C.contact(spear, b).support === 6);
+  ok('e non nel turno in cui ha caricato', C.contact({ ...spear, charged: true }, b).support === 0);
+}
+/* preso di fianco mena la colonna di quel lato: dodici Saurus su un
+   fronte di sei sono due ranghi, e la colonna e' di due */
+{
+  const fl = C.contact(a, b, { face: 'fianco' });
+  ok('preso di fianco mena la colonna, non il fronte', fl.rank === 2 && fl.attacks === 2 * 2);
+  ok('preso alle spalle mena l ultimo rango', C.contact(a, b, { face: 'retro' }).rank === 6);
+}
 
 /* ---------------------------------------------------------------
    I personaggi uniti: un profilo diverso nella stessa scatola
@@ -190,9 +215,19 @@ console.log('\ni modelli a contatto di basetta');
   const angolo = C.combatant(orcs, { touching: { models: 2, chars: [] } });
   ok('con il conto del tavolo la fila si stringe',
      C.contact(angolo, foe).wide === 2 && C.contact(angolo, foe).estimated === false);
-  ok('e gli attacchi calano di conseguenza',
-     C.contact(angolo, foe).attacks < C.contact(C.combatant(orcs), foe).attacks);
-  ok('ma le file dietro appoggiano lo stesso', C.contact(angolo, foe).support === 2);
+  /* chi ha due Attacchi ne perde uno per ogni modello che non tocca;
+     chi ne ha uno no, perche' nella fila mena lo stesso (p. 145) */
+  const sAngolo = C.combatant(saurus, { touching: { models: 2, chars: [] } });
+  ok('e gli attacchi calano per chi ne ha piu di uno',
+     C.contact(sAngolo, C.combatant(orcs)).attacks === 2 * 2 + 4 &&
+     C.contact(sAngolo, C.combatant(orcs)).attacks < C.contact(C.combatant(saurus), C.combatant(orcs)).attacks);
+  ok('ma il resto del primo rango mena con un attacco', C.contact(angolo, foe).attacks === 2 + 3);
+  ok('e le file dietro non appoggiano', C.contact(angolo, foe).support === 0);
+  /* il conto della fila, quando il tavolo lo porta, vince sulla stima */
+  const colonna = C.combatant(saurus, { touching: { models: 2, chars: [], face: 'fianco',
+                                                    rank: { models: 2, chars: [] }, behind: [0, 0] } });
+  ok('di fianco la fila e quella che il tavolo ha contato', C.contact(colonna, foe).attacks === 2 * 2 &&
+     C.contact(colonna, foe).rank === 2);
   ok('e non si tocca mai con piu modelli di quanti se ne hanno',
      C.contact(C.combatant({ ...orcs, models: 3, frontage: 3 },
                            { touching: { models: 9, chars: [] } }), foe).wide === 3);
@@ -206,10 +241,19 @@ console.log('\ni modelli a contatto di basetta');
     { joined: [capo], touching: { models: 3, chars: [] } });
   const dentro = C.combatant({ ...orcs, uid: 1 },
     { joined: [capo], touching: { models: 3, chars: [99] } });
-  ok('un personaggio che non tocca non mena',
-     C.contact(fuori, foe).groups.every(g => !g.character));
+  /* ma sta in prima fila, cioe' nella fila che combatte: mena con un
+     attacco, come i soldati accanto a lui (p. 145) */
+  ok('un personaggio in prima fila che non tocca mena con un attacco solo',
+     C.contact(fuori, foe).groups.some(g => g.character && g.attacks === 1 && g.touching === false));
+  /* preso di fianco, il capo al centro del primo rango non sta nella
+     colonna che combatte */
+  const lontano = C.combatant({ ...orcs, uid: 1 },
+    { joined: [capo], touching: { models: 3, chars: [], face: 'fianco',
+                                  rank: { models: 4, chars: [] }, behind: [0, 0] } });
+  ok('quello fuori dalla fila che combatte non mena',
+     C.contact(lontano, foe).groups.every(g => !g.character));
   ok('e lo dice invece di lasciarlo sparire',
-     C.contact(fuori, foe).outOfContact.join() === 'Big Boss');
+     C.contact(lontano, foe).outOfContact.join() === 'Big Boss');
   ok('quello che tocca mena con i suoi numeri',
      C.contact(dentro, foe).groups.some(g => g.character && g.attacks === 4));
   ok('e non toglie un posto ai soldati, perche il tavolo li ha contati a parte',
@@ -410,11 +454,11 @@ ok('le regole applicate finiscono in elenco', g.rulesRead.applied.length === 4);
 ok('e nessuna resta sconosciuta', g.rulesRead.unknown.length === 0);
 
 const plain = C.combatant(unit('Fanti', { M:'4',WS:'3',BS:'0',S:'3',T:'3',W:'1',I:'3',A:'1',Ld:'7' }, 10, 5));
-ok('senza carica gli attacchi sono quelli del profilo', C.contact(g, plain).attacks === 5 * 1 + 5);
+ok('senza carica gli attacchi sono quelli del profilo', C.contact(g, plain).attacks === 5 * 1);
 g.charged = true; g.chargeInches = 4;
-ok('in carica la carica furiosa ne aggiunge uno per modello', C.contact(g, plain).attacks === 5 * 2 + 5);
+ok('in carica la carica furiosa ne aggiunge uno per modello', C.contact(g, plain).attacks === 5 * 2);
 g.chargeInches = 1;
-ok('ma vuole i suoi tre pollici come l urto', C.contact(g, plain).attacks === 5 * 1 + 5);
+ok('ma vuole i suoi tre pollici come l urto', C.contact(g, plain).attacks === 5 * 1);
 g.charged = false; g.chargeInches = 0;
 
 /* l'arma che colpisce per ultima scavalca l'Iniziativa, che qui e' la piu alta */

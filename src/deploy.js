@@ -5993,10 +5993,14 @@ async function bootDeploy(){
        tre modelli mentre la stima ne dava cinque. Le basette lo sanno,
        e stanno tutte qui. Due unita' che non si toccano affatto non
        sono «zero modelli a contatto»: sono un combattimento che il
-       pannello guarda prima della carica, e li' vale la stima. */
+       pannello guarda prima della carica, e li' vale la stima. Con
+       chi tocca arrivano la faccia da cui si e' presi e la fila che
+       combatte: di fianco mena la colonna, non il fronte (p. 145). */
     touching: (u, foe) => {
-      const t = FM.touchingModels(FM.worldCells(u, layoutOf(u)), corners(foe));
-      return t.total > 0 ? t : null;
+      const poly = corners(foe);
+      const t = FM.fightingRanks(FM.worldCells(u, layoutOf(u)),
+        [{ key: "foe", poly, face: FM.faceTowards(boxOf(u), poly) }]);
+      return t.foe || null;
     },
     /* Fianco, retro e disordine guardando il tavolo, a ogni round (pp.
        101, 152-153). Il bonus e' della parte: conta chiunque del mio

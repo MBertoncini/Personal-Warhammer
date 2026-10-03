@@ -2452,6 +2452,81 @@ console.log('\nil Movimento che si tira (Random Movement, p. 176)');
 }
 
 /* ================================================================= */
+console.log('\nchi combatte: la fila che combatte, di fronte, di fianco e dietro (p. 145)');
+{
+  /* La partita del 3 ottobre: i Saurus, diciassette su un fronte di
+     sette, presi di fianco dagli Orc Mobs, hanno menato con ventiquattro
+     attacchi, come se fossero presi di fronte con un rango d'appoggio.
+     Sul libro mena la fila che tocca il nemico — di fianco la colonna di
+     quel lato —, chi tocca con tutti gli Attacchi, chi non tocca con uno,
+     e l'appoggio c'e' solo con Fight in Extra Rank e mai sul fianco. Qui
+     e' la Temple Guard (due Attacchi) portata a diciassette su sette: tre
+     ranghi da sette, sette e tre, il terzo allineato a sinistra. */
+  const prova = (lato, altri = []) => {
+    seme(1);
+    const G = nuova();
+    G.generale = { A: null, B: null };
+    const tg = uid(G, 6), orc = uid(G, 505);
+    Object.assign(tg, { models: 17, frontage: 7, us: 17 });
+    metti(G, tg, 600, 600, 0);
+    const dove = { fianco: [380, 600], fronte: [600, 380], retro: [600, 820] };
+    for (const [u, l] of [[orc, lato], ...altri.map(([n, l]) => [uid(G, n), l])]){
+      metti(G, u, dove[l][0], dove[l][1], 0);
+      aContattoDi(G, u, tg);
+    }
+    return { G, tg, orc };
+  };
+  const attacchi = G => {
+    const r = G.log.find(x => /^Temple Guard colpi su Orc Mobs/.test(x.text));
+    return r ? +/: (\d+) attacch/.exec(r.text)[1] : null;
+  };
+  const mena = G => {
+    G.casella = casella('mischia'); G.army = 'B';
+    AR.apply(G, AR.options(G).list.find(x => x.id === 'combatti'));
+  };
+
+  /* di fianco: la colonna sinistra, tre modelli che toccano tutti */
+  {
+    const { G, tg, orc } = prova('fianco');
+    const f = IN.filaCheCombatte(G, tg, [orc])[orc.uid];
+    ok('preso di fianco, la fila che combatte è la colonna di quel lato',
+       f.face === 'fianco' && f.rank.models === 3 && f.models === 3);
+    ok('e dietro la colonna nessuno appoggia', f.behind[0] === 0 && f.behind[1] === 0);
+    mena(G);
+    ok('i diciassette presi di fianco menano con tre modelli: sei attacchi, non venticinque', attacchi(G) === 3 * 2);
+  }
+  /* di fronte: il primo rango, e chi tocca d'angolo tocca (p. 145) */
+  {
+    const { G, tg, orc } = prova('fronte');
+    const f = IN.filaCheCombatte(G, tg, [orc])[orc.uid];
+    ok('preso di fronte, la fila che combatte è il primo rango',
+       f.face === 'fronte' && f.rank.models === 7);
+    ok('e il tavolo sa chi gli sta dietro', f.behind[0] === 7 && f.behind[1] === 3);
+    mena(G);
+    ok('e menano tutti i sette, con tutti gli Attacchi chi tocca', attacchi(G) === f.models * 2 + (7 - f.models));
+  }
+  /* dietro: l'ultimo rango, che qui e' di tre */
+  {
+    const { G, tg, orc } = prova('retro');
+    const f = IN.filaCheCombatte(G, tg, [orc])[orc.uid];
+    ok('preso alle spalle, la fila che combatte è l ultimo rango', f.face === 'retro' && f.rank.models === 3);
+    mena(G);
+    ok('e menano i tre del rango di fondo', attacchi(G) === f.models * 2 + (3 - f.models));
+  }
+  /* di fronte e di fianco insieme: il modello d'angolo mena una volta */
+  {
+    const { G, tg, orc } = prova('fronte', [[504, 'fianco']]);
+    const gob = uid(G, 504);
+    const v = IN.filaCheCombatte(G, tg, [orc, gob]);
+    ok('presi di fronte e di fianco, ognuno ha la sua fila',
+       v[orc.uid].face === 'fronte' && v[gob.uid].face === 'fianco');
+    ok('e il modello d angolo sta in una sola delle due',
+       v[orc.uid].rank.models + v[gob.uid].rank.models === 7 + 3 - 1);
+  }
+  D.setSource(D.seeded(1));
+}
+
+/* ================================================================= */
 console.log('\ni campi di ogni gesto (CAMPI)');
 {
   /* Su partite intere, fra le liste che l'archivio ha: ogni opzione che

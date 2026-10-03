@@ -1308,12 +1308,12 @@ export const PRESO_A_DADI_PARI = (1 + 146 / 1296) / 2;
 
 const scontri = new WeakMap();
 const firmaScontro = (S, u) => `${u.uid}:${alive(u)}:${u.wounds || 0}:${capiDi(S, u).map(c => c.uid + "/" + alive(c)).join(",")}`;
-export function scontroAtteso(S, att, def, lato = "fronte"){
+export function scontroAtteso(S, att, def, lato = "fronte", faccia = "fronte"){
   let cache = scontri.get(S);
   if (!cache){ cache = new Map(); scontri.set(S, cache); }
-  const k = `${firmaScontro(S, att)}|${firmaScontro(S, def)}|${lato}`;
+  const k = `${firmaScontro(S, att)}|${firmaScontro(S, def)}|${lato}|${faccia}`;
   if (cache.has(k)) return cache.get(k);
-  const r = scontroDiGruppo(S, [{ u: att, lato }], def);
+  const r = scontroDiGruppo(S, [{ u: att, lato, faccia }], def);
   cache.set(k, r);
   return r;
 }
@@ -1329,10 +1329,13 @@ export function scontroDiGruppo(S, attaccanti, def){
   const lista = attaccanti.filter(a => a && a.u)
     .sort((p, q) => (ML.arcToFlank(p.lato) ? 1 : 0) - (ML.arcToFlank(q.lato) ? 1 : 0));
   if (!lista.length) return { date: 0, prese: 0, diff: 0, rottaLui: 0, rottaMia: 0, valore: 0 };
-  const cd = schieraDi(S, def);
+  /* Il bersaglio mena con la fila della faccia da cui e' preso: di
+     fianco la colonna, dietro l'ultimo rango, e senza appoggio (p. 145).
+     Chi carica mena con il suo fronte, salvo dire altro (`faccia`). */
+  const cd = { ...schieraDi(S, def), face: lista[0].lato || "fronte" };
   const fer = (c, u) => Math.max(1, alive(u) * (c.w || 1) - (u.wounds || 0));
   const wd = fer(cd, def);
-  const schiere = lista.map(a => ({ ...a, c: schieraDi(S, a.u) }));
+  const schiere = lista.map(a => ({ ...a, c: { ...schieraDi(S, a.u), face: a.faccia || "fronte" } }));
   const lorde = schiere.map(a => CB.meleeForecast(a.c, cd).wounds);
   const somma = lorde.reduce((s, v) => s + v, 0);
   const date = Math.min(wd, somma), scala = somma > 0 ? date / somma : 0;
@@ -1396,7 +1399,11 @@ export function valuta(S, army, pesi = PESI){
     const miei = g[army], suoi = g[lui];
     for (const u of miei){
       const e = suoi.find(x => aContatto(S, u, [x]).length) || suoi[0];
-      if (e) v += pesi.mischia * scontroAtteso(S, u, e).valore / Math.max(1, miei.length);
+      /* le facce vere, che nella mischia gia' ingaggiata il tavolo sa:
+         un reggimento preso di fianco mena con la colonna (p. 145) */
+      if (e) v += pesi.mischia * scontroAtteso(S, u, e,
+        FM.faceTowards(boxOf(e, S.units), cornersOf(u, S.units)),
+        FM.faceTowards(boxOf(u, S.units), cornersOf(e, S.units))).valore / Math.max(1, miei.length);
     }
   }
   const prossimo = S.army === army ? lui : army;
@@ -5087,6 +5094,10 @@ function menaLaMischia(S, g){
   };
   const A = g.A.map(u => conAbominio(u, schieraDi(S, u, { feared: impauriti.has(u.uid) })));
   const B = g.B.map(u => conAbominio(u, schieraDi(S, u, { feared: impauriti.has(u.uid) })));
+  /* chi tocca chi, da che faccia e con quale fila, contato sulle basette:
+     senza, `contact()` stimava tutti presi di fronte (p. 145) */
+  A.forEach((c, i) => { const v = filaCheCombatte(S, g.A[i], g.B); if (v) c.touchingVs = v; });
+  B.forEach((c, i) => { const v = filaCheCombatte(S, g.B[i], g.A); if (v) c.touchingVs = v; });
   /* dove sta ogni modello nelle due parti: serve alla sfida, che e' fra
      due modelli e non fra due unita' */
   const posto = new Map();
@@ -5259,6 +5270,35 @@ function mucchi(s){
     groups.push({ what: p.need ? `${what} ${p.need}+` : what, dice: p.dice });
   }
   return { groups, flat: groups.flatMap(x => x.dice) };
+}
+
+/* La fila che combatte di `u` contro ognuno dei nemici del
+   combattimento, contata sulle basette (p. 145): chi tocca, chi sta
+   nella fila — il primo rango se il nemico e' davanti, la colonna se e'
+   di fianco, l'ultimo rango se e' dietro — e chi le sta dietro, per
+   Press of Battle e per l'appoggio. Prima l'arbitro a `contact()` non
+   diceva ne' chi toccava ne' da che faccia, e un reggimento preso di
+   fianco menava come se fosse preso di fronte: nella partita del 3
+   ottobre i Saurus presi di fianco dagli Orchi hanno menato con
+   ventiquattro attacchi, e la colonna che il libro fa combattere e' di
+   tre modelli.
+
+   Il nemico del gruppo che le basette non toccano ha un conto a zero —
+   e' nel combattimento ma non arriva —; se non se ne tocca nessuno
+   (le basette stanno appena oltre la tolleranza) si torna alla stima,
+   che e' meglio di un combattimento in cui nessuno mena. */
+const NESSUNO = { models: 0, chars: [], total: 0, rank: { models: 0, chars: [] }, behind: [0, 0] };
+function filaCheCombatte(S, u, loro){
+  if (!onBoard(u)) return null;
+  const box = boxOf(u, S.units);
+  const nemici = loro.filter(onBoard).map(e => {
+    const poly = cornersOf(e, S.units);
+    return { key: e.uid, poly, face: FM.faceTowards(box, poly) };
+  });
+  if (!nemici.length) return null;
+  const conti = FM.fightingRanks(FM.worldCells(u, layoutOf(u, S.units)), nemici, { gap: MM * 0.15 });
+  if (!nemici.some(n => conti[n.key])) return null;
+  return Object.fromEntries(nemici.map(n => [n.key, conti[n.key] || { ...NESSUNO, face: n.face }]));
 }
 
 /* chi, fra i nemici del gruppo, tocca ancora quest'unita' */
@@ -5989,4 +6029,6 @@ export const interni = { indietreggia, seguire, fuggi, postoAContatto, percorso,
                             guarda e che cosa sta sotto a chi sta fermo */
                          guarda, pezziSotto, pezziSulCammino, rallenta, terrenoInMischia,
                          sullaCollina, filaPiuAlta, quantiTirano, terrenoDiCarica,
-                         testPanico, ondaPanico, ripulisciSfide, sfidanti, puoRifiutare };
+                         testPanico, ondaPanico, ripulisciSfide, sfidanti, puoRifiutare,
+                         /* chi combatte, contato sulle basette (p. 145) */
+                         filaCheCombatte };

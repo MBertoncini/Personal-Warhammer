@@ -627,6 +627,121 @@ export function touchingModels(cells, foePoly, { gap = TOUCH } = {}){
   return out;
 }
 
+/* Da che faccia di `box` sta il nemico: fronte, fianco o retro. Il lato
+   lo dice dove sta il nemico INTERO, non il punto in cui le basette si
+   sfiorano: un reggimento largo appoggiato al fianco tocca anche lo
+   spigolo davanti, e il punto piu' vicino finirebbe li'. */
+export function faceTowards(box, foePoly){
+  return arcOfSide(sideOf(centroid(foePoly), box));
+}
+
+/* La fila che combatte, contata sulle basette (p. 145).
+ *
+ * Contare chi tocca non basta. Il libro chiama «fila che combatte»
+ * qualunque riga di modelli — rango o colonna — che abbia almeno un
+ * modello a contatto con il nemico, e ci fa menare TUTTI: chi tocca con
+ * tutti i suoi attacchi, chi non tocca con uno solo (p. 145, «How Many
+ * Attacks?»), perche' quelli in fondo alla fila si stringono attorno al
+ * nemico. Un reggimento preso di fronte combatte con il primo rango; preso
+ * di fianco con la colonna di quel lato, che in un blocco da sette per tre
+ * e' di tre modelli e non di sette.
+ *
+ * `foes` sono i nemici che l'unita' ha addosso, ognuno con il suo
+ * poligono e la faccia da cui la prende (`faceTowards`): di fronte e di
+ * retro la fila e' un rango, di fianco una colonna. Le righe si
+ * riconoscono dalle coordinate locali delle caselle (`x`, `y`, che
+ * `worldCells` lascia accanto a quelle del tavolo): stessa `y` stesso
+ * rango, stessa `x` stessa colonna.
+ *
+ * Ogni modello mena una volta sola. Due nemici sulla stessa faccia si
+ * spartiscono la fila — chi tocca va al nemico che tocca, chi non tocca
+ * al nemico piu' vicino —, e il modello d'angolo che sta sia nel primo
+ * rango sia nella colonna del fianco va a uno solo dei due. E' una scelta
+ * dell'app: il libro non dice a chi vada.
+ *
+ * `behind` sono i modelli di truppa direttamente dietro la fila che
+ * combatte, uno e due ranghi piu' in la', e servono solo di fronte:
+ * Press of Battle fa entrare il primo nella fila, e l'attacco d'appoggio
+ * lo fa chi sta dietro (p. 145), mai sul fianco o sul retro. Chi e' gia'
+ * in una fila che combatte non sta dietro a nessuno.
+ *
+ * Torna, per chiave di nemico, il conto che `combat.js` sa leggere —
+ * `{ models, chars, total, face, rank: { models, chars }, behind }` — o
+ * null quando non si tocca niente: allora vale la stima. */
+export function fightingRanks(cells, foes, { gap = TOUCH } = {}){
+  const out = {};
+  const list = cells || [];
+  const polys = list.map(c => boxCorners({ x:c.wx, y:c.wy, w:c.w, h:c.h, rot:c.wrot || 0 }));
+  const dist = (i, f) => polyDistance(polys[i], f.poly);
+  /* le righe: stessa y (un rango) o stessa x (una colonna), a meno di
+     mezza basetta */
+  const sameRow = (a, b, face) => face === "fianco"
+    ? Math.abs(list[a].x - list[b].x) < Math.min(list[a].w, list[b].w) / 2
+    : Math.abs(list[a].y - list[b].y) < Math.min(list[a].h, list[b].h) / 2;
+
+  const per = (foes || []).map(f => {
+    const touch = new Set();
+    if (f && f.poly && f.poly.length) list.forEach((c, i) => { if (dist(i, f) <= gap) touch.add(i); });
+    const rank = new Set();
+    if (touch.size) list.forEach((c, i) => { for (const t of touch) if (sameRow(i, t, f.face)){ rank.add(i); break; } });
+    return { f, touch, rank };
+  });
+
+  /* chi va a chi: un modello, un nemico */
+  const owner = new Map();
+  list.forEach((c, i) => {
+    const touched = per.filter(p => p.touch.has(i));
+    const pool = touched.length ? touched : per.filter(p => p.rank.has(i));
+    if (!pool.length) return;
+    const best = pool.reduce((a, b) => dist(i, b.f) < dist(i, a.f) ? b : a);
+    owner.set(i, { p: best, touching: best.touch.has(i) });
+  });
+  const inRank = new Set(owner.keys());
+
+  /* la riga dietro un insieme di caselle: per ognuna, la piu' vicina
+     nella stessa colonna e piu' in fondo, se le sta a contatto */
+  const taken = new Set(inRank);
+  const behindOf = from => {
+    const got = new Set();
+    for (const r of from){
+      const a = list[r];
+      let best = -1, dy = Infinity;
+      list.forEach((c, i) => {
+        if (taken.has(i) || got.has(i)) return;
+        const d = c.y - a.y;
+        if (d <= a.h / 4 || Math.abs(c.x - a.x) >= a.w / 2) return;
+        if (d > (a.h + c.h) / 2 + MM * 0.25) return;
+        if (d < dy){ dy = d; best = i; }
+      });
+      if (best >= 0) got.add(best);
+    }
+    for (const i of got) taken.add(i);
+    return got;
+  };
+  const troops = set => [...set].filter(i => list[i].kind !== "char").length;
+
+  for (const p of per){
+    const mine = [...owner].filter(([, o]) => o.p === p);
+    const key = p.f.key;
+    if (!mine.length){ out[key] = null; continue; }
+    const res = { models: 0, chars: [], total: 0, face: p.f.face || "fronte",
+                  rank: { models: 0, chars: [] }, behind: [0, 0] };
+    for (const [i, o] of mine){
+      const c = list[i];
+      if (c.kind === "char"){ res.rank.chars.push(c.uid); if (o.touching) res.chars.push(c.uid); }
+      else { res.rank.models++; if (o.touching) res.models++; }
+      if (o.touching) res.total++;
+    }
+    if (res.face === "fronte"){
+      const b1 = behindOf(mine.map(([i]) => i));
+      const b2 = behindOf(b1);
+      res.behind = [troops(b1), troops(b2)];
+    }
+    out[key] = res.total > 0 ? res : null;
+  }
+  return out;
+}
+
 /* units: quelle sul tavolo; boxOf: come si ricava il rettangolo di
    ognuna (lo sa deploy.js, che tiene le formazioni aggiornate) */
 export function contactList(units, boxOf){

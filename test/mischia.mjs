@@ -500,7 +500,9 @@ console.log('\nil capo che occupa un posto, nell assalto a gruppi (p. 207)');
   const r = C.meleeFight([mob], [nemico]);
   ok('il capo della lista diventa una schiera unita', r.sides.A.length === 2 && r.sides.A[1].attached === true);
   ok('in fondo alla parte, cosi le posizioni di chi chiama restano quelle', r.sides.A[0].name === 'Orc Mob');
-  ok('la truppa mena con un posto in meno', colpiDi(r, 'Orc Mob') === 4 * 1 + 5);
+  /* quattro Orchi a contatto e niente appoggio: senza Fight in Extra
+     Rank chi sta dietro non mena (p. 145) */
+  ok('la truppa mena con un posto in meno', colpiDi(r, 'Orc Mob') === 4 * 1);
   ok('e il capo con i suoi quattro attacchi', colpiDi(r, 'Orc Big Boss') === 4);
   ok('nessuno lo colpisce se non ci dirige i colpi', !r.steps.some(s => s.foe === 'Orc Big Boss'));
 
@@ -509,7 +511,7 @@ console.log('\nil capo che occupa un posto, nell assalto a gruppi (p. 207)');
   const eroe = C.combatant(capoU, { attached: true, shielded: true });
   const r2 = C.meleeFight([mob, eroe], [nemico]);
   ok('se il capo c e gia non si raddoppia', r2.sides.A.length === 2);
-  ok('ma il posto lo occupa lo stesso', colpiDi(r2, 'Orc Mob') === 9 && colpiDi(r2, 'Orc Big Boss') === 4);
+  ok('ma il posto lo occupa lo stesso', colpiDi(r2, 'Orc Mob') === 4 && colpiDi(r2, 'Orc Big Boss') === 4);
 
   /* il tavolo dice che il nemico tocca il reggimento: il capo ci sta
      dentro, e quindi tocca anche lui — prima il pannello lo lasciava
@@ -519,11 +521,19 @@ console.log('\nil capo che occupa un posto, nell assalto a gruppi (p. 207)');
   ok('chi tocca il reggimento tocca anche il capo che ci sta dentro', colpiDi(r2b, 'Orc Big Boss') === 4);
   ok('ma non lo colpisce per questo', !r2b.steps.some(s => s.foe === 'Orc Big Boss'));
 
-  /* il tavolo ha visto che il capo non tocca: e' nella mischia e non mena */
+  /* il tavolo ha visto che il capo non tocca: ma sta in prima fila,
+     cioe' nella fila che combatte, e mena con un attacco solo (p. 145) */
   const lontano = C.combatant(mobU, { joined: [capoU], touching: { models: 3, chars: [] } });
   const r3 = C.meleeFight([lontano], [nemico]);
-  ok('il capo che non tocca non mena', colpiDi(r3, 'Orc Big Boss') === 0);
-  ok('e i soldati menano con quelli che toccano davvero', colpiDi(r3, 'Orc Mob') === 3 + 3);
+  ok('il capo in prima fila che non tocca mena con un attacco solo', colpiDi(r3, 'Orc Big Boss') === 1);
+  ok('e i soldati menano con quelli che toccano, piu uno per chi non tocca', colpiDi(r3, 'Orc Mob') === 3 + 1);
+  /* preso di fianco, il capo in mezzo al primo rango non sta nella
+     colonna che combatte: e' nella mischia e non mena */
+  const fianco = C.combatant(mobU, { joined: [capoU], touching: { models: 3, chars: [], face: 'fianco',
+                                                                 rank: { models: 4, chars: [] }, behind: [0, 0] } });
+  const r3b = C.meleeFight([fianco], [nemico]);
+  ok('il capo fuori dalla fila che combatte non mena', colpiDi(r3b, 'Orc Big Boss') === 0);
+  ok('e la colonna mena con quelli che toccano, piu uno per chi non tocca', colpiDi(r3b, 'Orc Mob') === 3 + 1);
 
   /* Il capo unito sta dentro il reggimento (p. 207): se la parte
      perde, il test di rotta lo tira il reggimento, e lui va dove va il
@@ -559,11 +569,11 @@ console.log('\nil capo che occupa un posto, nell assalto a gruppi (p. 207)');
   const r4 = C.meleeFight([misurato], due);
   const su = nome => r4.steps.filter(s => s.name === 'Orc Mob' && s.foe === nome && s.label === 'colpi')
                              .reduce((n, s) => n + s.attacks, 0);
-  ok('con le basette contate la fila non si divide a meta', su('Fanti A') === 4 + 4 && su('Fanti B') === 1 + 1);
+  ok('con le basette contate la fila non si divide a meta', su('Fanti A') === 4 && su('Fanti B') === 1);
   const stimato = C.meleeFight([C.combatant(mobU)], due);
   const su2 = nome => stimato.steps.filter(s => s.name === 'Orc Mob' && s.foe === nome && s.label === 'colpi')
                                    .reduce((n, s) => n + s.attacks, 0);
-  ok('senza, resta la divisione in parti uguali', su2('Fanti A') === 3 + 3 && su2('Fanti B') === 2 + 2);
+  ok('senza, resta la divisione in parti uguali', su2('Fanti A') === 3 && su2('Fanti B') === 2);
 }
 
 /* ================================================================= */
@@ -777,13 +787,23 @@ console.log('\nle regole delle liste «fun» (Renegades)');
   ok('in mischia il 4 salva con la Parry', C.strike(foe, def, { attacks: 5, melee: true }).wounds === 0);
   ok('fuori dalla mischia no', C.strike(foe, def, { attacks: 5 }).wounds === 5);
 
-  /* Press of Battle: due ranghi pieni, tranne nel turno della carica */
-  const press = C.combatant(unit('Clanrats', st, 20, 5, { weapons: hw, rules: ['Press of Battle'] }));
+  /* Press of Battle: la fila che combatte e' profonda due ranghi, tranne
+     nel turno della carica. Chi sta nel secondo rango e' nella fila ma
+     non tocca il nemico, e mena con un attacco solo (p. 145) — anche
+     con due Attacchi sul profilo. E il terzo rango non appoggia, senza
+     Fight in Extra Rank. */
+  const press = C.combatant(unit('Clanrats', { ...st, A:'2' }, 20, 5, { weapons: hw, rules: ['Press of Battle'] }));
   const other = C.combatant(unit('Nemico', st, 20, 5, { weapons: hw }));
-  ok('Press of Battle: la seconda fila mena piena e la terza appoggia',
-     C.contact(press, other).troop === 15 && C.contact(press, other).pressed === 5);
+  ok('Press of Battle: il secondo rango mena con un attacco a testa',
+     C.contact(press, other).troop === 5 * 2 + 5 && C.contact(press, other).pressed === 5);
+  ok('e il terzo non appoggia', C.contact(press, other).support === 0);
   ok('nel turno in cui carica no', C.contact({ ...press, charged: true }, other).troop === 10);
   ok('e gli schermagliatori non stanno in file', C.contact({ ...press, loose: true }, other).troop === 10);
+  ok('e di fianco la fila resta la colonna', C.contact(press, other, { face: 'fianco' }).pressed === 0);
+  /* con la lancia, l'appoggio passa al rango dopo la fila che combatte */
+  const pressLance = C.combatant(unit('Clanrats', st, 20, 5, { weapons: hw, rules: ['Press of Battle', 'Fight in Extra Rank'] }));
+  ok('con Fight in Extra Rank appoggia il terzo rango',
+     C.contact(pressLance, other).support === 5 && C.contact(pressLance, other).troop === 5 + 5 + 5);
 
   /* Predatory Fighter: ogni 6 per colpire porta un attacco in piu', che non ne porta altri */
   D.setSource(() => 5);                                  // tutti sei
@@ -869,7 +889,7 @@ console.log('\nnel risultato contano le ferite perse (p. 152)');
      fila, e una grande che resta in piedi */
   const due = [C.combatant(unit('Pochi', prof, 2, 2, { uid: 61 })),
                C.combatant(unit('Tanti', prof, 20, 5, { uid: 62 }))];
-  const saurus = C.combatant(unit('Saurus', { ...prof, S:'5', T:'4' }, 20, 5),
+  const saurus = C.combatant(unit('Saurus', { ...prof, S:'5', T:'4', A:'2' }, 20, 5),
                              { touchingVs: { 61: { models: 4, chars: [] }, 62: { models: 1, chars: [] } } });
   D.setSource(() => 5);                                  // tutti sei
   const r = C.meleeFight([saurus], due);
