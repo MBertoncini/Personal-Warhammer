@@ -513,26 +513,42 @@ Per ogni fase: cosa l'app può fare da sola, e cosa resta ai giocatori.
   qualcuno non le trascrive da p. 347.
 
 ### Corpo a corpo
-- Chi combatte: fila che combatte, contatto di basetta, attacchi di
-  appoggio (pp. 145-146). L'app conosce già i contatti modello per
-  modello: è il posto in cui è più avanti del manuale medio.
-  ~~Chi cade prima di menare non mena~~ (pp. 146 e 150). Fatto:
-  l'assalto contava i colpi una volta, a inizio fase, e un reggimento
-  che perdeva tutta la prima fila sotto un nemico più svelto menava lo
-  stesso con tutti. Adesso prima di ogni scaglione d'Iniziativa i colpi
-  scendono con i caduti — *Fallen Warriors*, e *Stepping Forward*: chi
-  entra nella fila al loro posto non mena in questa fase. I caduti si
-  tolgono dalle estremità della fila e chi resta si stringe sul nemico
-  (p. 150), quindi prima vanno quelli che non toccano; le perdite oltre
-  la fila tolgono l'appoggio (*Excess Casualties*, p. 150). Anche l'urto
-  della carica, che colpisce a Iniziativa 10 (p. 171), toglie i colpi
-  a chi mena dopo. Il registro lo scrive: «3 caduti prima di menare: 3
-  colpi in meno». Resta fuori la stessa fila vista dall'altra parte:
-  il libro fa menare tutta la fila che combatte, con un attacco solo
-  chi non tocca (pp. 145-146), e l'app fa menare solo chi tocca; la fila di
-  fianco, che è una colonna e non la prima riga (p. 147), non c'è.
-  E la previsione (`meleeForecast`), su cui l'arbitro sceglie le
-  cariche, conta ancora i due lati come se menassero tutti.
+- ~~Chi combatte: fila che combatte, contatto di basetta, attacchi di
+  appoggio (pp. 145-146).~~ Fatto, ed era scritto come nel Warhammer di
+  prima: ogni reggimento aveva un rango d'appoggio a un colpo a testa,
+  Press of Battle faceva menare il secondo rango con tutti gli
+  attacchi, e l'arbitro non diceva a `contact()` da che faccia era
+  preso il difensore — i Saurus presi di fianco menavano con il fronte.
+  Adesso mena la **fila che combatte** (p. 145): il rango o la colonna
+  con almeno un modello a contatto — di fronte il primo rango, di
+  fianco la colonna di quel lato, dietro l'ultimo rango. Chi tocca mena
+  con tutti gli Attacchi, chi è nella fila senza toccare con uno solo,
+  personaggi compresi. L'**appoggio** c'è solo con Fight in Extra Rank
+  (p. 169), un attacco a testa da chi sta direttamente dietro la fila,
+  mai verso fianco o retro; le lance lo tolgono nel turno della carica
+  o fuori da quello (p. 215). **Press of Battle** fa entrare il rango
+  dietro nella fila, con un attacco a testa, e l'appoggio passa al
+  rango dopo. Le basette le conta `fightingRanks` (`formation.js`) per
+  l'arbitro e per il pannello: chi tocca, la fila, chi c'è dietro, e il
+  modello d'angolo preso fra fronte e fianco mena una volta sola.
+  Scelte dichiarate: Press of Battle vale solo di fronte (di fianco e
+  dietro il testo non dice dove sia «dietro»); il modello d'angolo va al
+  nemico più vicino.
+  ~~Chi cade prima di menare non mena~~ (pp. 146 e 150). Fatto anche
+  questo: l'assalto contava i colpi una volta, a inizio fase, e un
+  reggimento che perdeva tutta la prima fila sotto un nemico più svelto
+  menava lo stesso con tutti. Adesso prima di ogni scaglione
+  d'Iniziativa i colpi scendono con i caduti — *Fallen Warriors*, e
+  *Stepping Forward*: chi entra nella fila al loro posto non mena in
+  questa fase. I caduti si tolgono dalle estremità della fila e chi
+  resta si stringe sul nemico (p. 150), quindi prima vanno quelli della
+  fila che non toccano, a un colpo a testa, e poi chi tocca; le perdite
+  oltre la fila tolgono l'appoggio (*Excess Casualties*, p. 150). Anche
+  l'urto della carica, che colpisce a Iniziativa 10 (p. 171), toglie i
+  colpi a chi mena dopo. Il registro lo scrive: «3 caduti prima di
+  menare: 6 colpi in meno». Resta fuori la previsione
+  (`meleeForecast`), su cui l'arbitro sceglie le cariche: conta ancora i
+  due lati come se menassero tutti.
 - ~~Ordine di Iniziativa **con il bonus della carica** (+1 per pollice
   intero percorso, fino a +3 di fronte e +4 di fianco o di retro,
   p. 146).~~ Fatto nella Tappa 3, e con lui l'urto e la carica furiosa

@@ -452,17 +452,57 @@ function attacksFor(c, n){
 const pressing = c => !!(c.flags && c.flags.pressOfBattle) && !c.charged && !c.loose &&
                       ML.inCombatOrder(c);
 
+/* L'attacco d'appoggio lo fa solo chi ha Fight in Extra Rank (p. 169),
+   e le lance lo tolgono a seconda del turno (p. 215): quella da fanteria
+   e quella da cavalleria non appoggiano nel turno in cui hanno caricato,
+   quella da lancio si usa solo nel turno della carica — negli altri si
+   mena con l'arma a una mano, che non appoggia. */
+const supporting = c => {
+  if (!(c.flags && c.flags.extraRank)) return false;
+  const w = String(c.weapon || "");
+  if (c.charged && /thrusting spear|cavalry spear/i.test(w)) return false;
+  if (!c.charged && /throwing spear/i.test(w)) return false;
+  return true;
+};
+
+/* la faccia da cui l'unita' e' presa, nelle due lingue in cui arriva */
+const faceOf = f => /fianc|flank/i.test(f || "") ? "fianco" : /retro|rear/i.test(f || "") ? "retro" : "fronte";
+
 /* ------------------------------------------------------------------
-   Quanti menano, e con quanti dadi.
+   Quanti menano, e con quanti dadi (pp. 145-146).
 
-   La prima fila e' larga quanto la piu' stretta delle due, e una fila
-   dietro appoggia con un colpo a testa. Quello che mancava sono tre
-   cose che al tavolo si vedono e qui si tiravano a indovinare:
+   Il libro lo dice in tre righe, e fino a qui l'app ne faceva un'altra,
+   quella del Warhammer di prima — ogni reggimento con una fila
+   d'appoggio a un colpo a testa. Nel Old World:
 
-   - **quanti si toccano davvero**. Due reggimenti che si incontrano
-     d'angolo si toccano con tre modelli, non con la larghezza piena, e
-     `touching` e' il conto che il tavolo sa fare guardando le basette.
-     Senza, resta la stima di prima, che e' onesta e generosa.
+   - **la fila che combatte** e' la riga di modelli, rango o colonna,
+     che ha almeno un modello a contatto con il nemico (p. 145, «The
+     Fighting Rank»). Preso di fronte e' il primo rango, preso di fianco
+     la colonna di quel lato, preso alle spalle l'ultimo rango. Tutti i
+     suoi modelli menano: chi tocca il nemico con tutti i suoi Attacchi,
+     chi non lo tocca con UNO solo, qualunque sia il profilo (p. 145,
+     «How Many Attacks?») — sono quelli che si stringono attorno al
+     nemico. Diciassette Saurus su un fronte di sette, presi di fianco
+     da un blocco di Orchi, menano con la colonna di tre, non con il
+     fronte di sette.
+   - **l'appoggio** c'e' solo per chi ha un'arma che lo permette (Fight
+     in Extra Rank, p. 169): un attacco a testa, da chi sta direttamente
+     dietro un modello della fila che combatte, e mai verso il fianco o
+     il retro (p. 145, «Supporting Attacks»). Senza la regola, chi sta
+     dietro non mena.
+   - **Press of Battle** fa la fila profonda due ranghi (fuori dal turno
+     della carica): chi sta subito dietro e' nella fila che combatte, ma
+     non tocca il nemico, e quindi mena con un attacco solo. L'appoggio,
+     se c'e', passa al rango dopo. Di fianco e di retro «dietro» non ha
+     un verso che il testo dica, e l'app la tiene solo di fronte.
+
+   Chi tocca e chi sta nella fila lo sa il tavolo (`touching`, contato
+   sulle basette da `fightingRanks` in `formation.js`, con la faccia e
+   chi sta dietro). Senza, resta la stima: di fronte la fila e' il primo
+   rango e a contatto c'e' la piu' stretta delle due; di fianco la
+   colonna, profonda quanto i ranghi; dietro l'ultimo rango. Le altre
+   due cose che la stima sa:
+
    - **la fila divisa fra piu' nemici**. `frontage` e' la fetta di prima
      fila che tocca QUESTO nemico: chi ne ha due davanti non mena due
      volte con tutta la fila, la divide. Vale solo per la stima: quando
@@ -470,72 +510,106 @@ const pressing = c => !!(c.flags && c.flags.pressOfBattle) && !c.charged && !c.l
      gia' dentro il conto.
    - **i personaggi occupano un posto** (p. 207). Un capo in prima fila
      non e' un modello in piu': e' uno dei posti della fila, con un
-     profilo diverso. Contarlo in mezzo ai suoi voleva dire dargli un
-     attacco di Forza 3 invece di quattro di Forza 5, e insieme regalare
-     al reggimento un modello che non c'e'. `withChars: false` dice che
-     i personaggi stanno davanti a un altro nemico, e questa fetta di
-     fila e' tutta dei soldati.
+     profilo diverso. Nella fila che combatte mena come gli altri: con
+     tutti i suoi attacchi se tocca, con uno se non tocca, per niente se
+     sta altrove. `withChars: false` dice che i personaggi stanno davanti
+     a un altro nemico, e questa fetta di fila e' tutta dei soldati.
 
    Torna `attacks` — il totale di tutte le squadre —, `troop` — i dadi
    della sola truppa, che e' quello che il pannello corregge a mano e
    quello che l'assalto tira con il profilo del reggimento — e l'elenco
-   delle squadre che menano, una per profilo.
+   delle squadre che menano, una per profilo. `front` sono i soldati a
+   contatto, `rank` quelli nella fila che combatte, `pressed` quelli che
+   Press of Battle ci aggiunge, `support` gli attacchi d'appoggio.
    ------------------------------------------------------------------ */
-export function contact(att, def, { touching = null, frontage = null, withChars = true } = {}){
+export function contact(att, def, { touching = null, frontage = null, withChars = true, face = null } = {}){
   const retinue = att.retinue || [];
   /* Il conto del tavolo puo' arrivare come opzione o gia' scritto
-     sulla schiera. E' due numeri, non uno: i soldati che toccano e
-     **quali** personaggi toccano, perche' un capo in mezzo a una fila
-     che sfiora il nemico con lo spigolo puo' benissimo non toccare
-     niente, e i suoi quattro attacchi di Forza 5 non li tira. */
+     sulla schiera. Sono i soldati che toccano e **quali** personaggi
+     toccano — un capo in mezzo a una fila che sfiora il nemico con lo
+     spigolo puo' benissimo non toccare niente — e, quando il tavolo lo
+     sa dire, la faccia, la fila che combatte e chi le sta dietro. */
   const raw = touching != null ? touching : att.touching;
   const seen = raw && typeof raw === "object" ? raw
              : (+raw > 0 ? { models: +raw, chars: null } : null);
   const measured = !!seen;
+  const counted = seen && seen.rank ? seen.rank : null;
+  const lato = faceOf(face || (seen && seen.face) || att.face);
 
-  /* la larghezza a contatto: quella vera se il tavolo la sa dire,
-     altrimenti la piu' stretta delle due prime file — o della fetta
-     che tocca questo nemico, quando i nemici sono piu' d'uno */
-  const width = frontage == null ? Math.max(1, att.frontage) : Math.max(0, frontage);
+  /* La forma del blocco, per la stima: i personaggi stanno in prima
+     fila (p. 207), e il rango incompleto in fondo e' allineato a
+     sinistra, come lo disegna `formation.js`. */
+  const F = Math.max(1, att.frontage);
+  const slots = Math.max(1, att.models + retinue.length);
+  const rows = Math.ceil(slots / F);
+  const first = Math.min(F, slots);
+  const slice = frontage == null ? first : Math.max(0, Math.min(frontage, first));
+  const L = lato === "fianco" ? rows : lato === "retro" ? slots - F * (rows - 1) : slice;
+
+  /* i posti a contatto: quelli veri se il tavolo li sa dire, altrimenti
+     la fila contro la faccia del nemico, la piu' stretta delle due */
   const wide = measured
-    ? Math.max(0, Math.min(seen.models, att.frontage, att.models))
-    : width <= 0 ? 0 : Math.max(1, Math.min(width, def.frontage, att.models));
+    ? Math.max(0, Math.min(seen.models, att.models))
+    : L <= 0 ? 0 : Math.max(1, Math.min(L, def.frontage, slots));
 
-  /* Chi dei personaggi mena. Misurato, sono quelli che il tavolo ha
-     visto toccare; stimato, si suppone che stiano in prima fila —
-     e allora **occupano un posto** dei soldati invece di aggiungerne
-     uno, perche' un capo in una fila da cinque e' uno dei cinque. */
-  const fighting = !withChars ? []
-    : measured
-      ? (seen.chars ? retinue.filter(g => seen.chars.includes(g.ref && g.ref.uid)) : [])
-      : retinue.slice(0, wide);
-  const front = measured ? wide : Math.max(0, wide - fighting.length);
+  /* Chi dei personaggi mena, e come. Misurato, tocca chi il tavolo ha
+     visto toccare, e nella fila sta chi il tavolo ci ha contato — o,
+     senza il conto della fila, chi e' in prima fila quando si e' presi
+     di fronte. Stimato, si suppone che stiano dove si tocca. */
+  const ofRetinue = uids => retinue.filter(g => (uids || []).includes(g.ref && g.ref.uid));
+  let touchC = [], rankC = [];
+  if (withChars && measured){
+    touchC = seen.chars ? ofRetinue(seen.chars) : [];
+    rankC = counted ? ofRetinue(counted.chars).filter(g => !touchC.includes(g))
+          : lato === "fronte" ? retinue.filter(g => !touchC.includes(g)) : [];
+  } else if (withChars && lato === "fronte"){
+    touchC = retinue.slice(0, wide);
+    rankC = retinue.slice(wide, L);
+  }
+  const front = measured ? wide : Math.max(0, wide - touchC.length);
+  /* chi non tocca niente non ha una fila che combatte contro questo
+     nemico: e' ingaggiato, ma non arriva */
+  const engaged = front + touchC.length > 0;
+  if (!engaged){ touchC = []; rankC = []; }
+  const inRank = !engaged ? 0
+    : counted ? Math.max(front, Math.min(counted.models, att.models))
+    : Math.max(front, Math.min(att.models, L - touchC.length - rankC.length));
 
-  /* Le file d'appoggio: una, oppure due con la lancia che permette di
-     combattere in una fila in piu'. Ognuna appoggia con un colpo a
-     testa, non con tutti i suoi attacchi. */
-  const ranks = att.flags && att.flags.extraRank ? 2 : 1;
-  const behind = Math.max(0, att.models - att.frontage);
-  /* Press of Battle: fuori dal turno in cui ha caricato, la fila che
-     combatte e' profonda due ranghi. Chi sta dietro la prima fila mena
-     con tutti i suoi attacchi, e l'appoggio passa al rango dopo. */
-  const pressed = wide <= 0 || !pressing(att) ? 0 : Math.min(wide, behind);
-  const support = wide <= 0 ? 0 : Math.min(wide * ranks, behind - pressed);
+  /* Chi sta direttamente dietro la fila, uno e due ranghi piu' in la':
+     conta solo di fronte. Stimato, e' il secondo e il terzo rango del
+     blocco, nella stessa fetta della fila. */
+  const troopFirst = Math.max(0, first - Math.min(retinue.length, first));
+  const beyond = Math.max(0, att.models - troopFirst);
+  const share = n => first > 0 ? Math.min(L, Math.round(n * L / first)) : 0;
+  const behind = lato !== "fronte" || !engaged ? [0, 0]
+    : counted && seen.behind ? seen.behind
+    : [share(Math.min(F, beyond)), share(Math.min(F, Math.max(0, beyond - F)))];
+  const press = lato === "fronte" && pressing(att);
+  const pressed = press ? behind[0] : 0;
+  const support = lato === "fronte" && supporting(att) ? behind[press ? 1 : 0] : 0;
 
+  /* chi ha scelto di attaccare in un altro modo (gli Abominable Attacks)
+     non mena neanche con l'attacco solo */
+  const one = att.noAttacks ? 0 : 1;
   const groups = [];
-  const rankA = attacksFor(att, front + pressed) + support;
+  const rankA = attacksFor(att, front) + one * (inRank - front + pressed + support);
   if (rankA > 0) groups.push({
     id:"rank", name: att.name, character:false, models: front,
     ws: att.ws, i: att.i, s: att.s, baseS: att.baseS, ap: att.ap,
-    flags: att.flags, attacks: rankA, support, pressed,
+    flags: att.flags, attacks: rankA, support, pressed, extra: inRank - front,
   });
-  fighting.forEach((g, k) => groups.push({
-    ...g, id:"char" + k, support: 0,
+  const fighting = [...touchC, ...rankC];
+  touchC.forEach((g, k) => groups.push({
+    ...g, id:"char" + k, support: 0, touching: true,
     attacks: attacksFor(g, 1),
+  }));
+  rankC.forEach((g, k) => groups.push({
+    ...g, id:"char" + (touchC.length + k), support: 0, touching: false,
+    attacks: g.noAttacks ? 0 : 1,
   }));
 
   return {
-    front, wide, support, ranks, groups, pressed,
+    front, wide, support, groups, pressed, rank: inRank, face: lato,
     inFront: fighting.length,
     /* i personaggi uniti che NON menano: sta scritto, perche' «e il
        capo dov'e' finito?» e' la prima domanda che si fa guardando il
@@ -571,53 +645,42 @@ export function contact(att, def, { touching = null, frontage = null, withChars 
    Da quale capo della fila si tolgono i caduti lo dice p. 150: «si
    considerano tolti dalle estremita' della fila che combatte», e chi
    resta «si stringe sul nemico» ed e' piu' facile che lo tocchi. Quindi
-   prima cadono i modelli della fila che non toccano nessuno — che qui
-   non menano, perche' `contact` conta solo chi tocca — e solo dopo
-   quelli a contatto. Un reggimento largo sette davanti a uno largo
-   tre perde quattro modelli prima di perdere un colpo.
+   prima cadono i modelli della fila che non toccano nessuno, che menano
+   con un attacco solo (p. 146), e solo dopo quelli a contatto, che
+   menano con tutti i loro: finche' la fila ha gente da stringere, chi
+   tocca resta a toccare. Con Press of Battle il rango dietro e' nella
+   fila senza toccare, e cade insieme alle estremita'.
 
-   L'appoggio e' contato allo stesso modo: il libro lo da' a tutta la
-   fila dietro (p. 145), `contact` solo a chi sta dietro i modelli a
-   contatto, e le perdite in eccesso tolgono prima i modelli della fila
-   dietro che qui non appoggiano. In tutte e due le file vale il piu'
-   piccolo fra il conto dell'app e quello del libro dopo le perdite.
+   Le perdite oltre la fila tolgono l'appoggio uno per uno: `contact` lo
+   conta gia' come il libro, da chi sta direttamente dietro la fila e
+   solo con Fight in Extra Rank (pp. 145 e 169).
 
    `fallen` sono i soldati dell'unita' caduti in questa fase prima che
-   tocchi a lei: `att.models` e' gia' scesa, e la fila di partenza si
-   rifa' sommandoli. I personaggi uniti non sono qui: sono schiere loro
-   da un modello, e quando cadono smettono di menare da soli. Torna,
-   per ogni nemico di `cts`, quanti attacchi si sono persi.
+   tocchi a lei. La fila e' quella che `contact` ha contato a inizio
+   fase (`front`, `rank`, `pressed`, `support`), e i caduti la possono
+   solo assottigliare. I personaggi uniti non sono qui: sono schiere
+   loro da un modello, e quando cadono smettono di menare da soli.
+   Torna, per ogni nemico di `cts`, quanti attacchi si sono persi.
    ------------------------------------------------------------------ */
-function fightingRanks(att, models){
-  const fr = Math.max(1, att.frontage);
-  /* i capi uniti occupano un posto della prima fila (p. 207), come in
-     `contact` quando si stima */
-  const chars = (att.retinue || []).length;
-  const first = Math.max(0, Math.min(models, fr) - chars);
-  const behind = Math.max(0, models - fr);
-  /* con Press of Battle la fila che combatte e' profonda due ranghi */
-  const pressed = pressing(att) ? Math.min(fr, behind) : 0;
-  const ranks = att.flags && att.flags.extraRank ? 2 : 1;
-  return { rank: first + pressed, rear: Math.min(fr * ranks, behind - pressed) };
-}
 export function fallenCut(att, cts, fallen){
   const out = cts.map(() => 0);
   if (!(fallen > 0) || !cts.some(Boolean)) return out;
-  const full = cts.map(ct => (ct ? ct.front + ct.pressed : 0));
-  const sup = cts.map(ct => (ct ? ct.support : 0));
   const tot = v => v.reduce((s, x) => s + x, 0);
-  const F = tot(full), S = tot(sup);
-  const { rank, rear } = fightingRanks(att, att.models + fallen);
-  const R = Math.max(rank, F), R2 = Math.max(rear, S);
-  /* p. 146: i caduti della fila che combatte, dalle estremita' (p. 150) */
-  const keepF = Math.min(F, Math.max(0, R - fallen));
-  /* p. 150: quelli oltre la fila vengono dalla fila dietro */
-  const keepS = Math.min(S, Math.max(0, R2 - Math.max(0, fallen - R)));
+  /* chi tocca, chi e' nella fila senza toccare, chi appoggia */
+  const tocca = cts.map(ct => (ct ? ct.front : 0));
+  const fuori = cts.map(ct => (ct ? Math.max(0, ct.rank - ct.front) + ct.pressed : 0));
+  const dietro = cts.map(ct => (ct ? ct.support : 0));
+  /* p. 150: prima le estremita', poi chi tocca, e quello che avanza
+     oltre la fila toglie l'appoggio */
+  const persiFuori = Math.min(fallen, tot(fuori));
+  const persiTocca = Math.min(fallen - persiFuori, tot(tocca));
+  const persiDietro = Math.min(fallen - persiFuori - persiTocca, tot(dietro));
   /* con piu' nemici davanti, la perdita si divide come la fila */
-  const lostF = spread(F - keepF, full), lostS = spread(S - keepS, sup);
+  const lf = spread(persiFuori, fuori), lt = spread(persiTocca, tocca), ld = spread(persiDietro, dietro);
+  const one = att.noAttacks ? 0 : 1;
   cts.forEach((ct, k) => {
     if (!ct) return;
-    const now = attacksFor(att, full[k] - lostF[k]) + sup[k] - lostS[k];
+    const now = attacksFor(att, tocca[k] - lt[k]) + one * (fuori[k] - lf[k] + dietro[k] - ld[k]);
     out[k] = Math.max(0, ct.troop - now);
   });
   return out;
@@ -944,12 +1007,23 @@ function aimAt(c, foes, side){
     return { budget, fronts, cts };
   }
 
-  const q = frontShares(c.frontage, veri.length);
+  const seen = veri.map(x => seenAgainst(c, side[x.j], veri.length === 1));
+  let q = frontShares(c.frontage, veri.length);
+  /* Quando il tavolo ha contato chi tocca ma non la fila che combatte,
+     la fetta di ogni nemico e' quella che tocca piu' una parte di chi,
+     nel primo rango, non tocca nessuno: senza, ogni nemico si sarebbe
+     preso tutto il rango e chi non tocca avrebbe menato due volte. */
+  if (veri.length > 1 && seen.every(s => s && typeof s === "object" && !s.rank)){
+    const tocca = seen.map(s => (s.models || 0) + (s.chars ? s.chars.length : 0));
+    const primo = Math.min(Math.max(1, c.frontage), c.models + (c.retinue || []).length);
+    const chi = tocca.map((t, i) => i).filter(i => tocca[i] > 0);
+    const resto = frontShares(Math.max(0, primo - tocca.reduce((a, b) => a + b, 0)), chi.length || 1);
+    q = tocca.map((t, i) => t + (chi.includes(i) ? resto[chi.indexOf(i)] : 0));
+  }
   veri.forEach((x, i) => {
     /* i personaggi uniti stanno davanti a un nemico solo, il primo: in
        ogni altra fetta la fila e' tutta dei soldati */
-    const ct = contact(c, side[x.j], { frontage: q[i], withChars: i === 0,
-                                       touching: seenAgainst(c, side[x.j], veri.length === 1) });
+    const ct = contact(c, side[x.j], { frontage: q[i], withChars: i === 0, touching: seen[i] });
     budget[x.k] = ct.troop; fronts[x.k] = ct.front; cts[x.k] = ct;
   });
   /* il numero corretto a mano nel pannello vince su tutto, quando il
@@ -1089,16 +1163,55 @@ function withRetinue(list){
 
 /* Un personaggio che il tavolo ha visto NON toccare il nemico: il
    conto delle basette dell'ospite lo lascia fuori, e allora e' nella
-   mischia ma non arriva a menare. */
-function outOfReach(c, mine, foes){
-  if (!c.attached || c.hostAt == null) return false;
+   mischia ma non arriva a menare.
+
+   E non e' solo dentro o fuori: un personaggio che sta nella fila che
+   combatte senza toccare il nemico mena con un attacco solo, come i
+   soldati accanto a lui (p. 145). Torna, nemico per nemico, «pieno»,
+   «uno» o «fuori» — null per chi e' un personaggio nemico, o per tutti
+   quando il tavolo non ha contato niente e vale la stima. */
+function reachOf(c, mine, foes){
+  if (!c.attached || c.hostAt == null) return null;
   const h = mine[c.hostAt];
-  if (!h || !(h.retinue || []).length) return false;
-  const foe = foes.find(f => !f.attached) || foes[0];
-  if (!foe) return false;
-  const ct = contact(h, foe, { touching: seenAgainst(h, foe, true) });
-  if (ct.estimated) return false;
-  return !ct.groups.some(g => g.character && sameUnit(c, g));
+  if (!h || !(h.retinue || []).length) return null;
+  const veri = foes.filter(f => f && !f.attached);
+  const solo = veri.length === 1;
+  let known = false;
+  const out = foes.map(foe => {
+    if (!foe || foe.attached) return null;
+    const ct = contact(h, foe, { touching: seenAgainst(h, foe, solo) });
+    if (ct.estimated) return null;
+    known = true;
+    const g = ct.groups.find(x => x.character && sameUnit(c, x));
+    return !g ? "fuori" : g.touching === false ? "uno" : "pieno";
+  });
+  return known ? out : null;
+}
+/* il budget del personaggio rifatto su quello che arriva a toccare */
+function reach(e, c, mine, foes){
+  const r = reachOf(c, mine, foes);
+  if (!r) return;
+  const best = r.includes("pieno") ? "pieno" : r.includes("uno") ? "uno" : "fuori";
+  if (best === "fuori"){
+    e.budget = e.budget.map(() => 0); e.fronts = e.fronts.map(() => 0);
+    c.outOfReach = true;
+    return;
+  }
+  const k = r.indexOf(best);
+  if (best === "uno"){
+    const n = e.budget.some(v => v > 0) ? 1 : 0;
+    e.budget = e.budget.map((_, i) => i === k ? n : 0);
+    e.fronts = e.fronts.map(() => 0);
+    c.oneAttack = true;
+    return;
+  }
+  /* pieno: i colpi che la divisione aveva messo su un nemico vero che
+     non tocca vanno a quello che tocca */
+  r.forEach((s, i) => {
+    if (i === k || s == null || s === "pieno") return;
+    e.budget[k] += e.budget[i]; e.budget[i] = 0;
+    e.fronts[k] = Math.max(e.fronts[k], e.fronts[i]); e.fronts[i] = 0;
+  });
 }
 
 /* ------------------------------------------------------------------
@@ -1169,11 +1282,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
       e.cts = null;
       return e;
     }
-    if (outOfReach(c, mine, foes.map(j => side[j]))){
-      e.budget = e.budget.map(() => 0); e.fronts = e.fronts.map(() => 0);
-      e.cts = null;
-      c.outOfReach = true;
-    }
+    reach(e, c, mine, foes.map(j => side[j]));
     /* i colpi di inizio fase: quelli che restano si contano sempre da
        qui, perche' chi entra nella fila non li riporta su (p. 146) */
     e.base = e.budget.slice();
@@ -1303,7 +1412,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
      modello solo: quando cadono smettono di menare da soli. */
   const init = { A: initA, B: initB };
   const cut = e => {
-    if (e.host || !e.cts || !e.base) return;
+    if (e.host || e.c.attached || !e.cts || !e.base) return;
     const sp = ML.speedOf(e.c);
     if (sp.rank > 1 || sp.i >= 10) return;          // insieme all'urto
     const fallen = init[e.tag][e.at].models - e.c.models;
