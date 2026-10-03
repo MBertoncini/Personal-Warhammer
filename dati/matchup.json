@@ -1,6 +1,6 @@
 {
-  "listA": "lmus3ahrc91qo",
-  "listB": "lmus3azb4rw4n",
+  "listA": "lmus3azb4rw4n",
+  "listB": "lmus3ahrc91qo",
   "mine": "both",
   "note": "",
   "aiai": {
@@ -12,5 +12,7 @@
     "mappa": true,
     "html": true,
     "archivia": true
-  }
+  },
+  "sfidaMia": "A",
+  "sfidaScenario": "sxmus3g2dbu3h"
 }
