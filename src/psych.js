@@ -52,7 +52,7 @@ export const PSYCH_RULES = [
   { id:"terror", re:/^terror/i, melee:true,
     what:"fa Terrore: chi viene caricato tira o fugge, chi perde contro di lei ha −1 al test di rotta" },
   { id:"frenzy", re:/^frenzy/i, melee:true,
-    what:"+1 Attacchi quando carica, passa Paura, Panico e Terrore, deve caricare e non fugge" },
+    what:"+1 Attacchi quando carica o dopo aver seguito, passa Paura, Panico e Terrore, deve caricare e non fugge" },
   { id:"bloodFrenzy", re:/^blood frenzy/i,
     where:"diventa frenetica quando la cavalcatura ferisce: il conto dell'assalto non separa le ferite della bestia da quelle del cavaliere" },
   { id:"stupidity", re:/^stupidity/i,
@@ -72,7 +72,7 @@ export const PSYCH_RULES = [
   { id:"fearOfElves", re:/^fear of elves/i,
     where:"gli Elfi le fanno Paura" },
   { id:"quellImpetuosity", re:/^quell impetuosity/i,
-    where:"entro 6″ un'unità impetuosa amica ritira il test fallito: il pannello lo ricorda, il ritiro lo tirate voi" },
+    where:"entro 6″ un'unità impetuosa amica ritira il test fallito: l'arbitro lo ritira, al tavolo il pannello lo ricorda e il ritiro lo tirate voi" },
   { id:"firstCharge", re:/^first charge/i,
     where:"la prima carica riuscita della partita mette il bersaglio in disordine" },
 ];
@@ -467,19 +467,28 @@ export function stupidEffect(now = {}){
 
 /* ============================================================
    9 · FRENZY E IMPETUOSITA'
-   Frenzy: +1 Attacchi nel turno in cui carica e nel turno dopo un
-   inseguimento; se puo' dichiarare una carica deve farlo; chi perde un
-   round di combattimento la perde. Blood Frenzy la ridà.
+   Frenzy: +1 Attacchi nel turno in cui carica e nel turno dopo aver
+   seguito chi cede terreno (il «follow up» di p. 156, che non e'
+   l'inseguimento); se puo' dichiarare una carica deve farlo; chi perde
+   un round di combattimento la perde. Blood Frenzy la ridà.
 
    Impetuous: se puo' dichiarare una carica tira il Comando — senza il
    bonus della Warband — e se fallisce deve caricare. Chi e' gia'
-   frenetico non tira: deve caricare comunque.
+   frenetico non tira: deve caricare comunque. Entro 6″ da Quell
+   Impetuosity il test fallito si ritira.
+
+   E' il testo che le liste portano, ed e' quello che si gioca, come
+   per la Stupidita'. Il Core Rulebook stampato dice altro: a p. 170 il
+   +1 della Frenzy vale sempre, a p. 172 l'Impetuosita' e' un D6 (con
+   1-3 si deve caricare), e Quell Impetuosity (Ravening Hordes p. 46)
+   la fa ignorare invece di ritirare. Il testo delle liste e' il piu'
+   recente; l'arbitro lo dichiara (limite `frenesia`).
    ============================================================ */
 export function frenzyBonus({ p = {}, chargedThisTurn = false, followedUpLastTurn = false } = {}){
   if (!p.frenzy) return { a: 0, why: "" };
   if (chargedThisTurn) return { a: 1, why: "Frenzy: +1 Attacchi nel turno in cui carica" };
-  if (followedUpLastTurn) return { a: 1, why: "Frenzy: +1 Attacchi nel turno dopo l'inseguimento" };
-  return { a: 0, why: "Frenzy: il +1 vale solo caricando o dopo un inseguimento" };
+  if (followedUpLastTurn) return { a: 1, why: "Frenzy: +1 Attacchi nel turno dopo aver seguito" };
+  return { a: 0, why: "Frenzy: il +1 vale solo caricando o nel turno dopo aver seguito" };
 }
 
 export function mustCharge({ p = {}, canDeclare = true } = {}){

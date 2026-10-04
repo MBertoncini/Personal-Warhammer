@@ -2830,5 +2830,152 @@ console.log('\na tappe: ruote e tratti dritti alternati (p. 124)');
   ok('un altro gesto chiude la mossa lasciata aperta, e chi non ha fatto niente non ha mosso', !t2.passi && !t2.moved);
 }
 
+console.log('\nla Frenzy e l Impetuosità (testo della lista; Core pp. 170, 172)');
+{
+  /* gli Orc Mobs di «La Strada delle Pietre» non hanno regole d'esercito
+     nel file: gliele si mette a mano, e davanti gli Skink a tre pollici */
+  const prepara = (regole, { skink = true } = {}) => {
+    const G = nuova();
+    G.generale = { A: null, B: null };
+    const sk = skink ? metti(G, uid(G, 3), 600, 600 - 110 - 3 * MM, 180) : null;
+    const orchi = metti(G, uid(G, 505), 600, 600, 0);
+    orchi.rules = [...orchi.rules, ...regole];
+    G.army = 'B';
+    return { G, sk, orchi };
+  };
+  const dadi = facce => { const f = [...facce]; D.setSource(() => (f.length ? f.shift() : 3) - 1); };
+
+  /* la Frenzy: chi può dichiarare una carica deve farlo */
+  {
+    const { G, orchi } = prepara(['Frenzy']);
+    G.casella = casella('cariche');
+    const o = AR.options(G);
+    const sue = o.list.filter(x => x.id === 'carica' && x.uid === orchi.uid);
+    ok('le cariche di chi è frenetico sono segnate come dovute', sue.length > 0 && sue.every(x => x.deve && /deve caricare/.test(x.why)));
+    const basta = o.list.find(x => x.id === 'avanti');
+    ok('e «basta cariche» dice che passando la carica la dichiara l arbitro', !!basta && /deve caricare/.test(basta.why));
+    seme(3);
+    const r = AR.apply(G, { id: 'avanti' });
+    ok('passando, la carica si dichiara lo stesso, e la casella non va avanti',
+       r.ok && G.casella === casella('cariche') && G.pending && G.pending.kind === 'reazione' &&
+       G.pending.charger === orchi.uid &&
+       G.log.some(x => x.text.includes(`${orchi.name} deve caricare`) && x.page === 170));
+    seme(1);
+  }
+  {
+    const { G, orchi } = prepara([]);
+    G.casella = casella('cariche');
+    ok('senza Frenzy nessuna carica è dovuta', !AR.options(G).list.some(x => x.deve));
+    AR.apply(G, { id: 'avanti' });
+    ok('e «basta cariche» passa al movimento', G.casella === casella('mosse') && !orchi.charged);
+  }
+  {
+    /* chi non ha nessuno a portata non deve niente: la casella passa */
+    const { G, orchi } = prepara(['Frenzy'], { skink: false });
+    G.casella = casella('cariche');
+    AR.apply(G, { id: 'avanti' });
+    ok('frenetica ma senza nemici a portata: si passa', G.casella === casella('mosse') && !orchi.charged);
+  }
+
+  /* l'Impetuosità: un test di Comando, senza la Warband, all'apertura
+     della casella delle cariche */
+  {
+    const { G, orchi } = prepara(['Impetuous', 'Warband']);
+    G.casella = casella('raduno');
+    dadi([6, 6]);
+    AR.apply(G, { id: 'avanti' });
+    const riga = G.log.find(x => x.text.includes(`${orchi.name}, test di Impetuosità`));
+    ok('aprendo le cariche gli Orchi impetuosi tirano', !!riga && G.casella === casella('cariche'));
+    /* venti Orchi su quattro file: con la Warband sarebbe il Comando piu' i ranghi */
+    const suo = CB.combatant(orchi).ldBase;
+    ok('con il loro Comando, senza i ranghi della Warband',
+       !!riga && riga.text.includes(`Comando ${suo},`) && AR.interni.ldOf(G, orchi) > suo);
+    ok('falliscono, e le loro cariche diventano dovute',
+       AR.options(G).list.filter(x => x.uid === orchi.uid && x.id === 'carica').every(x => x.deve) &&
+       AR.options(G).list.some(x => x.uid === orchi.uid && x.deve));
+    seme(1);
+  }
+  {
+    const { G, orchi } = prepara(['Impetuous']);
+    G.casella = casella('raduno');
+    dadi([1, 2]);
+    AR.apply(G, { id: 'avanti' });
+    ok('passano: niente di dovuto', !AR.options(G).list.some(x => x.deve) &&
+       G.log.some(x => x.text.includes(`${orchi.name}, test di Impetuosità`)));
+    seme(1);
+  }
+  {
+    /* chi non può caricare non tira */
+    const { G, orchi } = prepara(['Impetuous'], { skink: false });
+    G.casella = casella('raduno');
+    AR.apply(G, { id: 'avanti' });
+    ok('senza nemici a portata l Impetuosità non si tira', !G.log.some(x => x.text.includes(`${orchi.name}, test di Impetuosità`)));
+  }
+  {
+    /* Quell Impetuosity: i Black Orc a tre pollici fanno ritirare il test fallito */
+    const { G, orchi } = prepara(['Impetuous']);
+    const neri = metti(G, uid(G, 503), 600 + 150, 600, 0);
+    neri.rules = [...neri.rules, 'Quell Impetuosity'];
+    G.casella = casella('raduno');
+    dadi([6, 6, 1, 1]);
+    AR.apply(G, { id: 'avanti' });
+    ok('un test fallito entro 6″ dai Black Orc si ritira, e il secondo passa',
+       G.log.filter(x => x.text.includes(`${orchi.name}, test di Impetuosità`)).length === 2 &&
+       G.log.some(x => /Quell Impetuosity/.test(x.text)) && !AR.options(G).list.some(x => x.deve));
+    seme(1);
+  }
+
+  /* la Frenzy si perde perdendo un round */
+  {
+    const G = nuova();
+    G.generale = { A: null, B: null };
+    const tg = metti(G, uid(G, 6), 600, 600);
+    const orchi = metti(G, uid(G, 505), 600, 400);
+    tg.rules = [...tg.rules, 'Frenzy']; orchi.rules = [...orchi.rules, 'Frenzy'];
+    aContattoDi(G, orchi, tg);
+    G.army = 'B'; G.casella = casella('mischia');
+    seme(4);
+    AR.apply(G, AR.options(G).list.find(x => x.id === 'combatti'));
+    const ris = G.log.find(x => /^Risultato:/.test(x.text));
+    const vinto = ris && /Vince/.test(ris.text) ? (ris.text.includes(`Vince ${tg.name}`) ? tg : orchi) : null;
+    const perso = vinto === tg ? orchi : vinto ? tg : null;
+    ok('chi perde il round perde la Frenzy, chi vince la tiene',
+       !!vinto && perso.frenzyLost && !vinto.frenzyLost &&
+       G.log.some(x => x.text.includes(`${perso.name} perde il round e con lui la Frenzy`)));
+    seme(1);
+  }
+
+  /* +1 Attacchi nel turno dopo aver seguito chi cede terreno (p. 156) */
+  {
+    const G = nuova();
+    G.generale = { A: null, B: null };
+    const tg = metti(G, uid(G, 6), 600, 600);
+    const orchi = metti(G, uid(G, 505), 600, 400);
+    tg.rules = [...tg.rules, 'Frenzy'];
+    aContattoDi(G, tg, orchi);
+    const da = AR.interni.schieraDi(G, tg).frenzyA;
+    G.army = 'A';
+    orchi.y -= 2 * MM;
+    AR.interni.seguire(G, [tg], orchi, { dx: 0, dy: -2 * MM });
+    const stesso = AR.interni.schieraDi(G, tg).frenzyA;
+    G.army = 'B';
+    const dopo = AR.interni.schieraDi(G, tg).frenzyA;
+    ok('la Frenzy: niente in più da ferma, niente nel turno in cui segue, +1 nel turno dopo',
+       da === 0 && stesso === 0 && dopo === 1);
+  }
+
+  /* il +1 non va alla bestia (p. 170): i cinghiali dei Boar Boyz frenetici */
+  {
+    const G = AR.newBattle({ A: lista('lmugl4zwpzy5r'), B, scenario: 'bm-strada', primo: 'A' });
+    const boyz = AR.unitsOf(G, 'A').find(u => u.baseName === 'Orc Boar Boy Mobs');
+    boyz.rules = [...boyz.rules, 'Frenzy'];
+    boyz.charged = { inches: 6 };
+    const c = CB.combatant(boyz, { charged: true, chargeInches: 6 });
+    const bestia = CB.mountStrikers(c).find(x => x.beastRow);
+    ok('i Boar Boyz frenetici in carica: +1 al cavaliere, niente al cinghiale',
+       c.frenzyA === 1 && !!bestia && bestia.a === 1);
+  }
+}
+
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

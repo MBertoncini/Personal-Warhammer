@@ -265,9 +265,10 @@ export function combatant(u, over = {}){
      fuggendo. E' il numero con cui si tira il test di rotta, e diciotto
      unita' delle liste salvate lo tiravano con due o tre punti di meno.
 
-     La Frenzy da' un attacco in piu' nel turno in cui carica: si
-     ricalcola dopo le correzioni del pannello, perche' «ha caricato» e'
-     una casella che si spunta. La Paura fallita toglie uno al tiro per
+     La Frenzy da' un attacco in piu' nel turno in cui carica e in
+     quello dopo aver seguito chi cede terreno (`followedUp`, lo segna
+     l'arbitro): si ricalcola dopo le correzioni del pannello, perche'
+     «ha caricato» e' una casella che si spunta. La Paura fallita toglie uno al tiro per
      colpire, e quella la dice il tavolo con `over.feared`. */
   /* Un'unita' usa il Comando piu' alto fra i suoi modelli (p. 97), e
      un capo unito e' uno dei suoi modelli. Serve da quando il capo non
@@ -294,7 +295,8 @@ export function combatant(u, over = {}){
 
   const out = Object.assign(c, over);
   if (over.frenzyA == null)
-    out.frenzyA = PS.frenzyBonus({ p: out.psych, chargedThisTurn: !!out.charged }).a;
+    out.frenzyA = PS.frenzyBonus({ p: out.psych, chargedThisTurn: !!out.charged,
+                                   followedUpLastTurn: !!out.followedUp }).a;
   /* I personaggi uniti, ognuno con il suo profilo (vedi sotto). Si
      calcolano dopo le correzioni del pannello perche' «ha caricato» e
      «e' disordinata» valgono anche per loro. */
@@ -352,8 +354,10 @@ export function retinueOf(joined = [], host = null){
       chargeArc: host ? host.chargeArc || "fronte" : "fronte",
       disordered: host ? !!host.disordered : false,
       feared: host ? !!host.feared : false,
+      followedUp: host ? !!host.followedUp : false,
     };
-    g.frenzyA = PS.frenzyBonus({ p: PS.psychOf(ch), chargedThisTurn: !!g.charged }).a;
+    g.frenzyA = PS.frenzyBonus({ p: PS.psychOf(ch), chargedThisTurn: !!g.charged,
+                                 followedUpLastTurn: g.followedUp }).a;
     out.push(g);
   }
   return out;
@@ -399,9 +403,13 @@ export function mountStrikers(c){
     const tutte = [...mine, ...(read.flags.army || []).filter(y => !mine.some(x => x.id === y.id))];
     const flags = { ...read.flags, army: tutte };
     /* la Frenzy del modello (quella della Plague Furnace) da' un
-       attacco in piu' a ciascuno dell'equipaggio; la carica furiosa
-       della bestia — «solo il Ripperdactyl» — vuole i suoi tre pollici */
-    const extra = (c.frenzyA || 0) + (ranIn(c) && flags.furiousCharge ? 1 : 0);
+       attacco in piu' a ciascuno dell'equipaggio, e niente alla bestia:
+       «does not apply to the model's mount (in the case of a cavalry
+       model), to the beasts that draw it (in the case of a chariot)»
+       (p. 170). Prima il cinghiale di un Boar Boy frenetico menava con
+       due. La carica furiosa della bestia — «solo il Ripperdactyl» —
+       vuole i suoi tre pollici */
+    const extra = (r.beast ? 0 : c.frenzyA || 0) + (ranIn(c) && flags.furiousCharge ? 1 : 0);
     /* la riga della bestia passa dagli effetti a tempo, come il
        cavaliere: la Carica delle Zanne e' un effetto «della
        cavalcatura», e senza questo lo si vedeva scritto e non pesava */
@@ -426,7 +434,7 @@ export function mountStrikers(c){
    furiosa vuole i suoi tre pollici di corsa, come l'urto. */
 const attacksOf = c => (c.a || 1) + (ranIn(c) && c.flags && c.flags.furiousCharge ? 1 : 0) +
                        /* la Frenzy non vuole i tre pollici: le basta aver
-                          caricato, o aver inseguito il turno prima */
+                          caricato, o aver seguito il turno prima */
                        (c.frenzyA || 0);
 
 /* Gli Attacchi che si tirano (Random Attacks, p. 176): «D6+1» non e' un

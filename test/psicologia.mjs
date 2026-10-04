@@ -229,7 +229,7 @@ console.log('\nFrenzy e Impetuous');
 
 const fr = prof(['Frenzy']);
 ok('+1 Attacchi nel turno in cui carica', PS.frenzyBonus({ p: fr, chargedThisTurn: true }).a === 1);
-ok('e nel turno dopo un inseguimento', PS.frenzyBonus({ p: fr, followedUpLastTurn: true }).a === 1);
+ok('e nel turno dopo aver seguito chi cede terreno', PS.frenzyBonus({ p: fr, followedUpLastTurn: true }).a === 1);
 ok('altrimenti niente', PS.frenzyBonus({ p: fr }).a === 0);
 ok('«se puo dichiarare una carica, deve»', PS.mustCharge({ p: fr }).must);
 ok('chi non puo dichiarare non deve niente', !PS.mustCharge({ p: fr, canDeclare: false }).must);

@@ -183,8 +183,13 @@ Quello che è stato deciso, perché non si rifaccia la stessa strada:
   (`psych.js`), che **non è quello di p. 178** del Core Rulebook — là si
   muove in avanti e non marcia né carica. Limite `stupidita`. Chi è
   stupido non muove, non carica, non tira, non lancia, non dissolve;
-- limiti ancora aperti: `frenesia` (l'obbligo di caricare non è
-  imposto), `solitari` (la protezione dei 3″ e la schivata, p. 206).
+- ~~`frenesia`~~ — fatto (2026-10-04): chi è frenetico o ha fallito
+  l'Impetuosità e può caricare deve farlo (campo `deve`; se passa,
+  l'arbitro dichiara la carica più probabile), la Frenzy si perde
+  perdendo un round e dà +1 anche dopo aver seguito, mai alla bestia.
+  Il limite resta, riscritto: si gioca il testo delle liste, non quello
+  stampato (pp. 170, 172). Aperto: `solitari` (la protezione dei 3″ e
+  la schivata, p. 206).
 
 ## Fatto: la sfida sul tavolo, tu contro l'AI
 

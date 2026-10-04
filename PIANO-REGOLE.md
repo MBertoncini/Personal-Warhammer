@@ -1266,10 +1266,12 @@ Quello che resta fuori, detto per non lasciarlo scoprire a una partita:
 - *Blood Frenzy* è letta e non applicata (il conto non separa le ferite
   della cavalcatura); *Quell Impetuosity* è ricordata e non ritira;
   l'obbligo di caricare di Frenzy e Impetuous è una riga arancione, non
-  una carica dichiarata da sola.
-- Il +1 Attacchi della Frenzy **dopo un inseguimento** ha la sua
-  funzione ma il tavolo non tiene ancora chi ha inseguito il turno
-  prima; e quello della carica vale finché la carica resta scritta
+  una carica dichiarata da sola. (Nel pannello del tavolo. L'arbitro
+  dal 2026-10-04 li gioca tutti e tre: vedi §13, «Chi deve caricare».)
+- Il +1 Attacchi della Frenzy **dopo aver seguito** (il «follow up» di
+  p. 156, non l'inseguimento) ha la sua funzione ma il tavolo non tiene
+  ancora chi ha seguito il turno prima — l'arbitro sì (`seguito`); e
+  quello della carica vale finché la carica resta scritta
   sull'unità, che a fine turno non viene tolta — nel pannello dello
   scontro si toglie la spunta.
 - Il disordine di *First Charge* non se ne va da solo a fine corpo a
@@ -1933,6 +1935,28 @@ solo se si trova di meglio:
   e una regola `who: "mount"` vale solo per la bestia (la Tusker
   Charge, p. 46, che da «a mano» diventa applicata), una `notMount` solo
   per chi la cavalca (le Choppas, p. 45).
+
+**Chi deve caricare** (pp. 170, 172, nel testo delle liste). Era un
+limite che l'arbitro dichiarava in più di metà delle partite (22 su 40
+fra le liste salvate): `psych.js` sapeva l'obbligo e nessuno lo
+imponeva. Adesso un'unità con un modello frenetico che può dichiarare
+una carica deve farlo, e un'unità impetuosa tira all'apertura della
+casella delle cariche — Comando senza la Warband, e il test fallito si
+ritira entro 6″ da Quell Impetuosity. «Può dichiarare» è quello che
+l'elenco offre; il bersaglio resta di chi gioca (campo `deve`), e chi
+passa con un obbligo aperto si vede dichiarare la carica più probabile,
+una alla volta, come chi si muove di quanto tira e non si è mosso.
+Con l'obbligo, le due metà della Frenzy che l'arbitro non faceva: la
+si **perde perdendo un round** (lo faceva solo il pannello), e il +1
+Attacchi vale anche nel turno **dopo aver seguito** chi cede terreno.
+E il +1 non va più alla bestia: il cinghiale di un Boar Boy frenetico
+menava con due (p. 170, «does not apply to the model's mount»).
+
+Il testo è quello delle liste, e non quello stampato: il Core Rulebook
+dà il +1 sempre e fa dell'Impetuosità un D6, Ravening Hordes fa
+ignorare l'Impetuosità invece di ritirare il test. Come per la
+Stupidità, l'arbitro gioca la versione più recente e lo dice (limite
+`frenesia`, riscritto).
 
 E un difetto trovato guardando la prima partita: **il capo unito non
 caricava con il suo reggimento.** La carica si scriveva sul reggimento,

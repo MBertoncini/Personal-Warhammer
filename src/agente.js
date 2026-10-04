@@ -196,6 +196,16 @@ export function agenteEuristico({ nome = "euristica", estro = null, piano: sopra
         if (best.chance >= piano.carica)
           return { scelta: best, perche: `carico ${best.contro} con ${best.nome}: ${best.why}` };
       }
+      /* Chi DEVE caricare (Frenzy, Impetuosita' fallita) non sceglie se,
+         solo su chi: la carica che rende di piu' fra quelle che arrivano
+         almeno una volta su due, se no la piu' probabile. Passando, la
+         sceglierebbe l'arbitro guardando solo la probabilita'. */
+      const dovute = l.filter(x => x.id === "carica" && x.deve);
+      if (dovute.length){
+        const arrivano = dovute.filter(x => x.chance >= 0.5).sort((a, b) => (b.esito || 0) - (a.esito || 0));
+        const s = arrivano[0] || dovute[0];
+        return { scelta: s, perche: `${s.nome} deve caricare: scelgo ${s.contro} — ${s.why}` };
+      }
 
       /* REAZIONE: si tiene, e si spara se si può. Fuggire davanti a una
          carica salva l'unità e regala il campo: lo si fa solo con chi

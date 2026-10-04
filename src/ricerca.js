@@ -119,6 +119,9 @@ export function agenteRicerca({ AR, base = null, nome = "ricerca", campioni = 3,
         const cariche = l.filter(x => x.id === "carica");
         if (!cariche.length) return euristica.scegli(ctx);
         const piano = assegna(S, cariche);
+        /* chi deve caricare e non sta nel piano: lo sceglie l'euristica,
+           che sa quale fra le sue rende di piu' */
+        if (!piano.length && cariche.some(x => x.deve)) return euristica.scegli(ctx);
         if (!piano.length){
           const basta = l.find(x => x.id === "avanti");
           return { scelta: basta, perche: "nessuna carica rende abbastanza: " +

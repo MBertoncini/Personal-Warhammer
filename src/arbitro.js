@@ -135,8 +135,8 @@ export const LIMITI = [
     why:"il percorso è una linea con qualche deviazione, non una ricerca di strada. Quando la chiude un pezzo impassabile l'arbitro offre i due varchi ai suoi fianchi (p. 270) e chi gioca sceglie — ma guarda un ostacolo solo, quello che ha davanti adesso: un secondo pezzo dietro al primo si scopre arrivandoci" },
   { id:"stupidita", what:"la Stupidità è quella del testo che la lista porta", page:178,
     why:"ferma, niente tiro né magia, e se caricata tiene la posizione; il Core Rulebook a p. 178 ne stampa un'altra versione — si muove in avanti nelle mosse obbligate, non marcia e non carica — e l'arbitro gioca quella della lista, che è la più recente" },
-  { id:"frenesia",  what:"chi è frenetico o impetuoso non è obbligato a caricare", page:170,
-    why:"`psych.js` sa l'obbligo (`mustCharge`), ma l'arbitro lascia la carica a chi gioca" },
+  { id:"frenesia",  what:"la Frenzy e l'Impetuosità sono quelle del testo che la lista porta", page:170,
+    why:"+1 Attacchi solo nel turno della carica o in quello dopo aver seguito, e l'Impetuosità è un test di Comando senza la Warband, che Quell Impetuosity fa ritirare; il Core Rulebook stampato dà il +1 sempre (p. 170), fa dell'Impetuosità un D6 che con 1-3 obbliga (p. 172) e lascia ignorarla vicino ai Black Orc (Ravening Hordes p. 46). L'arbitro gioca la lista, che è la più recente. Chi deve caricare e passa si vede dichiarare dall'arbitro la carica più probabile" },
   { id:"genere",    what:"un personaggio a piedi entra solo nella fanteria, uno a cavallo solo nella cavalleria", page:207,
     why:"il libro dice che ci si unisce «salvo che il tipo di truppa lo impedisca» senza fare l'elenco: questa è la lettura dell'app" },
   { id:"solitari",  what:"un personaggio da solo si bersaglia sempre, e non schiva l'inseguimento", page:206,
@@ -968,13 +968,16 @@ export function opzioniUnione(S, c, { pollici = null } = {}){
      esito     punti di lista che la carica, se arriva, guadagna al primo
                round (scontroAtteso); negativo se ci si perde
      rotta     probabilita' che il bersaglio scappi, se la carica arriva
+     deve      vero se l'unita' e' obbligata a caricare (Frenzy, o il test
+               d'Impetuosita' fallito): finche' ne ha una, «basta cariche»
+               dichiara per lei la piu' probabile
    ============================================================ */
 export const CAMPI = Object.freeze({
   primo:    ["cosa", "chi"],
   schiera:  ["uid", "x", "y", "dove", "murato"],
   dominio:  ["uid", "lore", "giocabili"],
   scambia:  ["uid", "out", "into", "lasciaMuto", "prendeMuto"],
-  carica:   ["uid", "target", "chance", "dist", "need", "lato", "esito", "rotta"],
+  carica:   ["uid", "target", "chance", "dist", "need", "lato", "esito", "rotta", "deve"],
   avanza:   ["uid", "verso", "dist", "pollici", "muro", "rischio", "danno", "portata"],
   accosta:  ["uid", "verso", "dist", "pollici", "fino", "rischio", "danno", "portata"],
   marcia:   ["uid", "verso", "dist", "pollici", "muro", "provaComando", "rischio", "danno", "portata"],
@@ -1214,6 +1217,7 @@ function opzioniCarica(S){
     if (!move) continue;
     const pu = PS.psychOf(u, { joined: capiInFila(S, u) });
     if (pu.anyFrenzy || pu.impetuous) limite(S, "frenesia");
+    const obbligo = deveCaricare(S, u, pu);
     for (const t of nemiciDi(S, u)){
       const paura = pauraDi(S, u, t, "charge");
       if (paura.already && !paura.passed) continue;
@@ -1250,7 +1254,9 @@ function opzioniCarica(S){
       const sc = scontroAtteso(S, u, t, d.side);
       out.push({ id:"carica", uid: u.uid, target: t.uid, nome: u.name, contro: t.name,
                  dist: +d.dist, need, lato: d.side, esito: sc.valore, rotta: Math.round(sc.rottaLui * 100) / 100,
-                 why: `${d.dist}″, ${need ? "serve " + need + "″ di tiro" : "ci arriva camminando"}` +
+                 deve: !!obbligo, ...(obbligo ? { obbligo } : {}),
+                 why: (obbligo ? `deve caricare (${obbligo.perche}, p. ${obbligo.page}): ` : "") +
+                      `${d.dist}″, ${need ? "serve " + need + "″ di tiro" : "ci arriva camminando"}` +
                       (extra ? ` (${extra}″ per trovare posto sulla faccia)` : "") +
                       `, riesce il ${Math.round(chance * 100)}%, la prende di ${d.side}` + nota +
                       `; se arriva, al primo round ${sc.valore >= 0 ? "guadagna" : "perde"} ≈ ${Math.abs(sc.valore)} punti` +
@@ -1259,7 +1265,80 @@ function opzioniCarica(S){
     }
   }
   out.sort((a, b) => b.chance - a.chance);
-  return [...out, avanti("basta cariche: si passa al movimento")];
+  const obbligati = [...new Set(out.filter(x => x.deve).map(x => x.nome))];
+  return [...out, avanti(obbligati.length
+    ? `basta cariche: ${obbligati.join(" e ")} ${obbligati.length > 1 ? "devono" : "deve"} caricare, ` +
+      `e passando l'arbitro dichiara per ${obbligati.length > 1 ? "loro" : "lei"} la carica più probabile`
+    : "basta cariche: si passa al movimento")];
+}
+
+/* ---- chi deve caricare (Frenzy, Impetuous) ----
+   «If a unit that includes one or more Frenzied models is able to
+   declare a charge … it must do so» (p. 170), e lo stesso chi ha
+   fallito il test d'Impetuosita' (p. 172). Prima l'arbitro lo sapeva
+   e lo diceva soltanto: un reggimento frenetico restava fermo dietro
+   una collina a guardare, se a chi giocava conveniva.
+
+   «Able to declare» e' quello che l'elenco offre: un bersaglio a
+   portata, visto, con il posto a contatto. Chi deve, e non ha nessuno
+   da caricare, non deve niente. Il bersaglio resta una scelta di chi
+   gioca; se passa, l'arbitro dichiara per lui la carica piu' probabile
+   — come fa con chi si muove di quanto tira e non si e' mosso. */
+function deveCaricare(S, u, pu = PS.psychOf(u, { joined: capiInFila(S, u) })){
+  if (pu.anyFrenzy) return { regola: "Frenzy", perche: "Frenzy", page: 170 };
+  if (u.impeto && u.impeto.key === chiave(S) && u.impeto.deve)
+    return { regola: "Impetuous", perche: "ha fallito il test d'Impetuosità", page: 172 };
+  return null;
+}
+
+/* Il test d'Impetuosita' si tira quando la casella delle cariche si
+   apre, una volta per turno e solo da chi puo' dichiarare una carica.
+   Il testo della lista: Comando senza la Warband («forImpetuous»), e
+   se fallisce deve caricare; entro 6″ da un'unita' con Quell
+   Impetuosity il test fallito si ritira. Chi e' frenetico non tira:
+   deve comunque. */
+const QUELL = 6;
+function impeti(S){
+  const possono = new Set(opzioniCarica(S).filter(x => x.id === "carica").map(x => x.uid));
+  for (const u of inCampo(S, S.army)){
+    if (!possono.has(u.uid) || (u.impeto && u.impeto.key === chiave(S))) continue;
+    const p = PS.psychOf(u, { joined: capiInFila(S, u) });
+    if (!p.impetuous || p.anyFrenzy) continue;
+    const ld = comandoConWarband(S, u, { impeto: true });
+    const tira = perche => {
+      const dadi = roll(2);
+      const res = PS.psychTest({ kind: "impetuous", ld: ld.ld, dice: dadi, p });
+      say(S, `${u.name}, test di Impetuosità (${perche}): ${res.text}.`, { dice: dadi, army: u.army, page: 172,
+          x: { k: "impeto", u: u.name, uid: u.uid, tot: res.total, vs: { v: res.target, op: "<=", t: "Comando" },
+               f: [{ t: perche, f: "stato" },
+                   ...(ld.why ? [{ t: ld.why, f: "regola" }] : []),
+                   ...(p.warband ? [{ t: "Warband: il bonus di ranghi qui non vale", f: "regola" }] : []),
+                   ...(res.insane ? [{ t: "doppio uno: passa sempre", f: "dadi" }] : [])],
+               e: res.passed ? "passato: fa come vuole" : "fallito: deve caricare", ok: res.passed } });
+      return res;
+    };
+    let res = tira("può dichiarare una carica");
+    if (!res.passed){
+      const q = quellVicino(S, u);
+      if (q) res = tira(`Quell Impetuosity di ${q.nome}, a ${q.d}″: si ritira`);
+    }
+    u.impeto = { key: chiave(S), deve: !res.passed };
+    if (!res.passed)
+      say(S, `${u.name} deve dichiarare una carica in questo turno.`, { army: u.army, page: 172 });
+  }
+}
+/* chi, fra gli amici, ha Quell Impetuosity entro 6″ — anche un capo
+   unito a un reggimento, che si misura dal reggimento */
+function quellVicino(S, u){
+  let best = null;
+  for (const x of inCampo(S, u.army)){
+    if (x.fled || !PS.psychOf(x).quell) continue;
+    const host = isJoined(x) ? byUid(S, FM.joinedHost(x)) : x;
+    if (!host || !onBoard(host)) continue;
+    const d = host === u ? 0 : distanza(S, u, host);
+    if (d <= QUELL && (!best || d < best.d)) best = { nome: x.name, d };
+  }
+  return best;
 }
 
 /* ============================================================
@@ -2209,6 +2288,8 @@ function opzioniMischia(S){
           avanti("rimanda i combattimenti")];
 }
 const chiave = S => `${S.turno}:${S.army}`;
+/* il turno di giocatore, contato da zero: chi comincia ha i pari */
+const mezzoTurno = S => (S.turno - 1) * 2 + (S.army === (S.primo || "A") ? 0 : 1);
 const fatto = (S, g) => [...g.A, ...g.B].some(u => u.fought === chiave(S));
 
 /* I combattimenti in corso: si parte da un contatto fra nemici e si
@@ -2253,9 +2334,10 @@ function ldOf(S, u){
    Black Orc Warboss (Comando 9, niente Warband) a nove pollici, hanno
    tirato la Paura con Comando 10. Torna il valore, da dove viene, e la
    frase della Warband se e' lei a deciderlo. */
-function comandoConWarband(S, u, { ranks = null } = {}){
+function comandoConWarband(S, u, { ranks = null, impeto = false } = {}){
   const p = PS.psychOf(u, { joined: capiInFila(S, u) });
-  const opts = { rankBonus: ranks != null ? ranks : ranghiAdesso(S, u), fleeing: !!u.fled };
+  /* `impeto`: il test d'Impetuosita' non somma i ranghi (`forImpetuous`) */
+  const opts = { rankBonus: ranks != null ? ranks : ranghiAdesso(S, u), fleeing: !!u.fled, forImpetuous: impeto };
   const crudo = x => { const c = CB.combatant(x); return +(c.ldBase != null ? c.ldBase : c.ld) || 0; };
   const conW = (ld, warband) => warband ? PS.leadershipOf(ld, p, opts) : { value: ld, why: "" };
   const suo = crudo(u);
@@ -2699,6 +2781,17 @@ const GESTI = {
     if (k === "raccogli"){
       const x = S.pending.list.find(y => y.id === "accetta");
       return x ? GESTI.accetta(S, x) : GESTI.rifiuta(S);
+    }
+    /* chi deve caricare e non l'ha fatto: l'arbitro dichiara per lui la
+       piu' probabile, una alla volta, e la casella resta aperta finche'
+       ce n'e' (pp. 170, 172) */
+    if (!k && !S.schierando && !S.preparando && CASELLE[S.casella] && CASELLE[S.casella].id === "cariche"){
+      const d = opzioniCarica(S).find(x => x.deve);
+      if (d){
+        say(S, `${d.nome} deve caricare (${d.obbligo.perche}): chi gioca passa, e l'arbitro dichiara la carica ` +
+               `più probabile, su ${d.contro}.`, { army: S.army, page: d.obbligo.page });
+        return GESTI.carica(S, d);
+      }
     }
     return si(passo(S));
   },
@@ -5525,6 +5618,18 @@ function menaLaMischia(S, g){
              e: r.cr.winner ? `vince ${r.cr.winner === "A" ? nomi(g.A) : nomi(g.B)} di ${r.cr.diff}` : "pareggio" } });
   for (const u of caduti) say(S, `${u.name}: non resta nessuno in piedi.`, { army: u.army });
 
+  /* «Any model that loses a round of combat will immediately lose this
+     special rule» (p. 170): tutti i modelli della parte che ha perso,
+     capi uniti compresi. Prima la perdeva solo il pannello del tavolo,
+     e nell'arbitro un reggimento frenetico restava frenetico per sempre. */
+  if (r.cr.winner)
+    for (const u of r.cr.winner === "A" ? g.B : g.A)
+      for (const x of [u, ...capiDi(S, u)]){
+        if (x.dead || !PS.losesFrenzy(PS.psychOf(x))) continue;
+        x.frenzyLost = true;
+        say(S, `${x.name} perde il round e con lui la Frenzy (p. 170).`, { army: x.army, page: 170 });
+      }
+
   /* i test di rotta, uno per unita' che ha perso (p. 154) */
   for (const t of r.tests || []){
     const c = r.sides[t.side][t.at || 0];
@@ -5672,7 +5777,12 @@ function schieraDi(S, u, { attached = false, host = null, feared = false } = {})
   const ch = attached && host && host.charged && typeof host.charged === "object" ? host.charged : null;
   const carica = ch ? { charged: true, chargeInches: ch.inches || 0, chargeArc: ch.arc || "fronte",
                         disordered: !!host.disordered } : {};
-  const c = CB.combatant(u, { joined: capiInFila(S, u), feared, ...carica });
+  /* chi ha seguito chi cedeva terreno nel turno di prima (p. 156): la
+     Frenzy lo fa menare con un attacco in piu', e il capo unito ha
+     seguito con il suo reggimento */
+  const chiSegue = attached && host ? host : u;
+  const followedUp = chiSegue.seguito != null && chiSegue.seguito === mezzoTurno(S) - 1;
+  const c = CB.combatant(u, { joined: capiInFila(S, u), feared, followedUp, ...carica });
   /* il test di rotta si tira con il Comando piu' alto fra i modelli
      (p. 97) o con quello del generale, se e' vicino: si rifa' il conto
      della Warband sopra il valore nuovo */
@@ -5782,6 +5892,8 @@ function seguire(S, vicini, perdente, { dx, dy }){
       continue;
     }
     posa(S, w, dove.x, dove.y, w.rot);
+    /* la Frenzy da' un attacco in piu' nel turno dopo (`schieraDi`) */
+    w.seguito = mezzoTurno(S);
     say(S, `${w.name} segue ${perdente.name} e resta a contatto.`, { army: w.army, page: 134 });
   }
 }
@@ -6125,6 +6237,7 @@ function passo(S){
   if (CASELLE[S.casella] && CASELLE[S.casella].id === "mosse") vaganoDaSoli(S);
   S.casella++;
   if (S.casella < CASELLE.length){
+    if (CASELLE[S.casella].id === "cariche") impeti(S);
     if (CASELLE[S.casella].id === "mosse") continuaAFuggire(S);
     if (CASELLE[S.casella].id === "tiro") serpenti(S);
     return `si passa a: ${CASELLE[S.casella].what}`;
@@ -6397,4 +6510,6 @@ export const interni = { indietreggia, seguire, fuggi, postoAContatto, percorso,
                          sullaCollina, filaPiuAlta, quantiTirano, terrenoDiCarica,
                          testPanico, ondaPanico, ripulisciSfide, sfidanti, puoRifiutare,
                          /* chi combatte, contato sulle basette (p. 145) */
-                         filaCheCombatte, schieraDi };
+                         filaCheCombatte, schieraDi,
+                         /* chi deve caricare (pp. 170, 172) */
+                         impeti, deveCaricare };
