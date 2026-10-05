@@ -2448,7 +2448,9 @@ console.log('\nil Movimento che si tira (Random Movement, p. 176)');
     ok('attaccare normalmente, nutrirsi o travolgere',
        scelte.includes('normali') && scelte.includes('nutriti') && scelte.includes('valanga'));
     ok('e ogni scelta dice quanto ci si aspetta', o.list.every(x => typeof x.attesa === 'number' && /≈|attacca normalmente/.test(x.why)));
-    ok('mentre si aspetta non si fa altro', AR.apply(G, { id:'avanti' }).ok && !G.pending);
+    /* risposto, la domanda si chiude e il combattimento si risolve: dopo
+       puo' venire quella di chi ha vinto (insegue?), non questa */
+    ok('mentre si aspetta non si fa altro', AR.apply(G, { id:'avanti' }).ok && (!G.pending || G.pending.kind === 'insegui'));
   }
   {
     const { G, hp, sk } = inMischia();
@@ -2974,6 +2976,157 @@ console.log('\nla Frenzy e l Impetuosità (testo della lista; Core pp. 170, 172)
     const bestia = CB.mountStrikers(c).find(x => x.beastRow);
     ok('i Boar Boyz frenetici in carica: +1 al cavaliere, niente al cinghiale',
        c.frenzyA === 1 && !!bestia && bestia.a === 1);
+  }
+}
+
+console.log('\ntrattenersi, seguire, inseguire (pp. 156-157)');
+{
+  const dadi = facce => { const f = [...facce]; D.setSource(() => (f.length ? f.shift() : 3) - 1); };
+  /* la Temple Guard ha vinto, gli Orchi le stanno davanti: che cosa
+     fanno gli Orchi lo dice `esito`, e la domanda la fa l'arbitro */
+  const vinta = (esito, { furia = false } = {}) => {
+    const G = nuova();
+    G.generale = { A: null, B: null };
+    const tg = metti(G, uid(G, 6), 600, 600);
+    const orchi = metti(G, uid(G, 505), 600, 400);
+    aContattoDi(G, orchi, tg);
+    if (furia) tg.rules = [...tg.rules, 'Frenzy'];
+    G.army = 'A'; G.casella = casella('mischia');
+    AR.interni.chiediInseguimento(G, { perdenti: [{ uid: orchi.uid, esito, vicini: [tg.uid] }], wiped: false,
+                                       coda: null, scelte: [], fallite: [], vincitori: [tg.uid] });
+    return { G, tg, orchi };
+  };
+  const tocca = (G, a, b) => AR.distanza(G, a, b) < 0.1;
+
+  {
+    const { G, tg, orchi } = vinta('give');
+    const o = AR.options(G);
+    ok('chi ha vinto sceglie, prima che il perdente si muova',
+       o.player === 'A' && G.pending.kind === 'insegui' && tocca(G, tg, orchi));
+    ok('seguire chi cede terreno è il primo consiglio, e trattenersi è una scelta con la sua probabilità',
+       o.list[0].scelta === 'segui' && o.list[0].target === orchi.uid &&
+       o.list.some(x => x.scelta === 'trattieni' && x.chance > 0 && /test di Comando/.test(x.why)));
+    seme(2);
+    AR.apply(G, o.list[0]);
+    ok('seguendo: gli Orchi cedono due pollici e la Temple Guard torna a contatto',
+       !G.pending && tocca(G, tg, orchi) && tg.seguito === AR.interni.mezzoTurno(G) && tg.y < 600);
+  }
+  {
+    const { G, tg, orchi } = vinta('give');
+    dadi([1, 2]);
+    AR.apply(G, AR.options(G).list.find(x => x.scelta === 'trattieni'));
+    ok('trattenersi con il test passato: resta dov è, e gli Orchi si staccano',
+       !G.pending && tg.y === 600 && !tocca(G, tg, orchi) &&
+       G.log.some(x => x.text.includes(`${tg.name} si trattiene`) && x.page === 156));
+    seme(1);
+  }
+  {
+    const { G, tg } = vinta('give');
+    dadi([6, 6]);
+    AR.apply(G, AR.options(G).list.find(x => x.scelta === 'trattieni'));
+    const o = AR.options(G);
+    ok('trattenersi con il test fallito: deve seguire, e trattenersi non si offre più',
+       G.pending && G.pending.kind === 'insegui' && o.list.length && !o.list.some(x => x.scelta === 'trattieni') &&
+       G.log.some(x => x.text.includes(`${tg.name} non si trattiene`)));
+    seme(1);
+  }
+  {
+    const { G } = vinta('give', { furia: true });
+    ok('chi è frenetico non può trattenersi (p. 170)', !AR.options(G).list.some(x => x.scelta === 'trattieni'));
+  }
+  {
+    const { G, tg, orchi } = vinta('fallBack');
+    const o = AR.options(G);
+    const ins = o.list.find(x => x.scelta === 'insegui' && x.target === orchi.uid);
+    ok('chi ripiega in ordine si può inseguire', !!ins && /ripiega in ordine/.test(ins.why));
+    dadi([2, 2, 6, 6]);
+    AR.apply(G, ins);
+    ok('ripiega di 2″ e la Temple Guard, con 12″, la raggiunge',
+       tocca(G, tg, orchi) && tg.inseguito && G.log.some(x => /conta come se avesse caricato/.test(x.text)));
+    G.army = 'B';
+    const c = AR.interni.schieraDi(G, tg);
+    ok('e al turno dopo conta come se avesse caricato (p. 157)', c.charged === true && c.chargeInches === 12);
+    seme(1);
+  }
+  {
+    const { G, tg, orchi } = vinta('fallBack');
+    dadi([6, 6, 1, 1]);
+    AR.apply(G, AR.options(G).list.find(x => x.scelta === 'insegui'));
+    ok('con 2″ di tiro contro 6″ di ripiego non la raggiunge, ma le va dietro',
+       !tocca(G, tg, orchi) && !tg.inseguito && tg.y < 600);
+    seme(1);
+  }
+  {
+    const { G, orchi } = vinta('rout');
+    dadi([1, 1, 6, 6]);
+    AR.apply(G, AR.options(G).list.find(x => x.scelta === 'insegui'));
+    ok('inseguire chi fugge: 2″ di fuga contro 12″, travolto', orchi.dead &&
+       G.log.some(x => x.text.includes(`${orchi.name} è travolta`)));
+    seme(1);
+  }
+  {
+    /* chi insegue lo prende se lo tocca, misurato dopo la fuga (p. 157):
+       qui gli Orchi fuggono di 8″ e il tiro di chi insegue e' 4″. Prima
+       chi inseguiva ignorava il fuggiasco nel percorso, e poteva finirgli
+       sopra; adesso gli si ferma davanti */
+    const { G, tg, orchi } = vinta('rout');
+    dadi([4, 4, 2, 2]);
+    AR.apply(G, AR.options(G).list.find(x => x.scelta === 'insegui'));
+    const riga = G.log.find(x => x.text.startsWith(`${tg.name} insegue di 4″`));
+    ok('chi non raggiunge il fuggiasco non lo travolge, e dice quanto era lontano',
+       !orchi.dead && !!riga && /è a [0-9.]+″: non la raggiunge/.test(riga.text));
+    ok('e non gli finisce sopra', !G.units.some(u => u === orchi) ||
+       !polysOverlap(AR.cornersOf(tg, G.units), AR.cornersOf(orchi, G.units)));
+    seme(1);
+  }
+  {
+    /* sfondare: il nemico distrutto prima dei test */
+    const G = nuova();
+    G.generale = { A: null, B: null };
+    const tg = metti(G, uid(G, 6), 600, 600);
+    G.army = 'A'; G.casella = casella('mischia');
+    AR.interni.chiediInseguimento(G, { perdenti: [], wiped: true, coda: null, scelte: [], fallite: [], vincitori: [tg.uid] });
+    const o = AR.options(G);
+    ok('chi ha distrutto il nemico sceglie fra trattenersi e sfondare, e il consiglio è restare',
+       o.list[0].scelta === 'trattieni' && o.list.some(x => x.scelta === 'travolgi'));
+    dadi([3, 4]);
+    AR.apply(G, o.list.find(x => x.scelta === 'travolgi'));
+    ok('sfonda di 2D6″ dritta in avanti, senza girarsi', tg.rot === 0 && Math.abs((600 - tg.y) - 7 * MM) < 1 && tg.x === 600);
+    seme(1);
+  }
+  {
+    /* chi ha ancora un altro nemico addosso non sceglie niente */
+    const G = nuova();
+    G.generale = { A: null, B: null };
+    const tg = metti(G, uid(G, 6), 600, 600);
+    const orchi = metti(G, uid(G, 505), 600, 400);
+    aContattoDi(G, orchi, tg);
+    const troll = metti(G, uid(G, 506), 900, 600, 270);
+    aContattoDi(G, troll, tg);
+    G.army = 'A'; G.casella = casella('mischia');
+    seme(2);
+    AR.interni.chiediInseguimento(G, { perdenti: [{ uid: orchi.uid, esito: 'give', vicini: [tg.uid] }], wiped: false,
+                                       coda: null, scelte: [], fallite: [], vincitori: [tg.uid] });
+    ok('combatte ancora con i Troll: nessuna domanda, e gli Orchi cedono terreno lo stesso',
+       !G.pending && !tocca(G, tg, orchi) && G.log.some(x => x.text.includes(`${tg.name} non segue e non insegue`)));
+    seme(1);
+  }
+  {
+    /* in una mischia vera: la domanda arriva a chi ha vinto, anche se
+       non è di turno */
+    const G = nuova();
+    G.generale = { A: null, B: null };
+    const sk = metti(G, uid(G, 3), 600, 600); sk.lost = 7;
+    const orchi = metti(G, uid(G, 505), 600, 400);
+    aContattoDi(G, orchi, sk);
+    G.army = 'A'; G.casella = casella('mischia');
+    seme(5);
+    AR.apply(G, AR.options(G).list.find(x => x.id === 'combatti'));
+    const ris = G.log.find(x => /^Risultato:/.test(x.text));
+    ok('gli Orchi battono gli Skink, e sono loro a scegliere se inseguire',
+       !!ris && ris.text.includes(`Vince ${orchi.name}`) && G.pending && G.pending.kind === 'insegui' &&
+       AR.options(G).player === 'B');
+    seme(1);
   }
 }
 

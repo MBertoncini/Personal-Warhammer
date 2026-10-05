@@ -108,8 +108,11 @@ c'era:
   `charge.js` lo diceva già, l'arbitro sommava);
 - gli schermagliatori senza bonus di ranghi: la pagina scritta accanto
   (p. 101) è quella che `inCombatOrder` citava già;
-- seguire chi cede terreno: l'arbitro lo fa sempre, e non segue mai chi
-  ripiega in ordine. Sul libro è una scelta: andrebbe offerta come mossa;
+- ~~seguire chi cede terreno~~ — fatto (2026-10-04): chi vince sceglie
+  se trattenersi (test di Comando), seguire, inseguire anche chi ripiega
+  in ordine, o sfondare (pp. 156-157), con la domanda `insegui`. Resta
+  nel limite `seguire`: la riforma di chi si trattiene, il giro prima di
+  seguire, e la carica di chi inseguendo tocca un'unità nuova;
 - i pestoni contro carri e cavalleria: l'arbitro li tira contro tutti.
 
 **Nei dati**: la lista *Skaven Battle March*, che non aveva né tipo di

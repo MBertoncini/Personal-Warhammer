@@ -1958,6 +1958,27 @@ ignorare l'Impetuosità invece di ritirare il test. Come per la
 Stupidità, l'arbitro gioca la versione più recente e lo dice (limite
 `frenesia`, riscritto).
 
+**Chi vince sceglie** (pp. 156-157). Anche questo l'arbitro lo decideva
+da solo, ed era il limite più frequente dopo quelli della geometria (26
+partite su 40): chi vinceva seguiva sempre chi cedeva terreno, inseguiva
+chi fuggiva solo se era il vincitore più vicino, non inseguiva mai chi
+ripiegava in ordine, e chi aveva distrutto il nemico «sfondava» senza
+muoversi. Sul libro è una scelta fatta prima che i perdenti si muovano.
+Adesso ogni vincitore libero è una domanda in sospeso (`insegui`): si
+trattiene (Comando senza la Warband; se fallisce deve seguire o
+inseguire, e chi è frenetico non può provarci, p. 170), segue, insegue
+un perdente che fugge o ripiega, o sfonda di 2D6″ in avanti. Chi
+raggiunge chi ripiegava torna in combattimento e al turno dopo conta
+come se avesse caricato (`inseguito`). Le opzioni sono in ordine di
+consiglio e l'euristica prende la prima.
+
+Strada facendo, l'inseguimento di chi fugge ha cambiato misura: prima
+confrontava il tiro con i pollici dichiarati della fuga e passava
+attraverso il fuggiasco. Con più vincitori che inseguono, i Saurus del
+seme 7 fuggivano attraverso gli Orchi di fianco (12,8″ invece degli 8
+del tiro, per non fermarsi addosso a loro) e gli Orchi gli finivano
+sopra. Adesso si prende chi si tocca, misurato sul tavolo (p. 157).
+
 E un difetto trovato guardando la prima partita: **il capo unito non
 caricava con il suo reggimento.** La carica si scriveva sul reggimento,
 e la schiera del capo (`schieraDi`) non la vedeva — niente bonus

@@ -60,6 +60,7 @@ export const TIPI = {
   mischia:      { i: "⚔", t: "Colpi in mischia" },
   risultato:    { i: "⚖", t: "Risultato del combattimento" },
   inseguimento: { i: "»", t: "Inseguimento" },
+  trattenuta:   { i: "‖", t: "Test per trattenersi" },
   lancio:       { i: "✦", t: "Lancio" },
   dissolvi:     { i: "✧", t: "Dissolvimento" },
   fiasco:       { i: "✹", t: "Fiasco" },

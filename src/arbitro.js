@@ -125,8 +125,8 @@ export const LIMITI = [
     why:"il libro lo fa tirare a ogni modello che ci comincia, ci passa o ci finisce dentro: l'arbitro misura il percorso con cinque linee — il centro e i quattro angoli — e non sa dire quali modelli ci siano passati davvero, quindi li conta tutti" },
   { id:"cammino",   what:"il terreno attraversato si misura su cinque linee, non sulla sagoma che scorre", page:269,
     why:"«una parte qualsiasi dell'unità» vorrebbe il rettangolo intero trascinato lungo il percorso: l'arbitro guarda il centro e i quattro angoli, che è molto meglio della linea sola di prima e non è ancora la regola" },
-  { id:"seguire",   what:"chi vince segue sempre chi cede terreno, e non segue mai chi ripiega in ordine", page:134,
-    why:"seguire o fermarsi è una scelta di chi gioca, e l'arbitro qui non la offre" },
+  { id:"seguire",   what:"chi si trattiene non si riforma, chi segue non si gira prima, e chi insegue e arriva addosso a un nemico nuovo si ferma lì", page:156,
+    why:"trattenersi, seguire o inseguire si sceglie, e l'arbitro lo chiede a chi ha vinto (p. 156); quello che non fa è la riforma gratuita di chi si trattiene, il giro di 90° o 180° prima di seguire, e la carica di chi inseguendo tocca un'unità nuova (p. 157): si ferma a contatto, e il combattimento comincia al turno dopo senza i bonus della carica" },
   { id:"ridirezione", what:"chi vede fuggire il bersaglio della carica non la ridirige su un altro", page:121,
     why:"tira comunque, e se non raggiunge chi fugge fa la carica fallita" },
   { id:"attraversare", what:"chi fugge passa attraverso le unità senza il test di Pericolo", page:133,
@@ -1069,6 +1069,15 @@ export function options(S){
     const sf = byUid(S, S.pending.sfidante);
     return { ...base, player: sf ? sf.army : S.army, fase: "Corpo a corpo", page: SFIDA,
              what: `la sfida di ${sf ? sf.name : "qualcuno"} è stata rifiutata: chi si ritira in fondo alle file?`,
+             list: S.pending.list };
+  }
+
+  /* chi ha vinto un combattimento decide prima che i perdenti si
+     muovano: si trattiene, segue o insegue (p. 156) */
+  if (S.pending && S.pending.kind === "insegui"){
+    const w = byUid(S, S.pending.uid);
+    return { ...base, player: S.pending.lato, fase: "Corpo a corpo", page: 156,
+             what: `${w ? w.name : "chi ha vinto"} ha vinto il combattimento: si trattiene, segue o insegue?`,
              list: S.pending.list };
   }
 
@@ -2334,10 +2343,12 @@ function ldOf(S, u){
    Black Orc Warboss (Comando 9, niente Warband) a nove pollici, hanno
    tirato la Paura con Comando 10. Torna il valore, da dove viene, e la
    frase della Warband se e' lei a deciderlo. */
-function comandoConWarband(S, u, { ranks = null, impeto = false } = {}){
+function comandoConWarband(S, u, { ranks = null, impeto = false, trattieni = false } = {}){
   const p = PS.psychOf(u, { joined: capiInFila(S, u) });
-  /* `impeto`: il test d'Impetuosita' non somma i ranghi (`forImpetuous`) */
-  const opts = { rankBonus: ranks != null ? ranks : ranghiAdesso(S, u), fleeing: !!u.fled, forImpetuous: impeto };
+  /* `impeto` e `trattieni`: il test d'Impetuosita' e quello per
+     trattenersi non sommano i ranghi (`forImpetuous`, `restraint`) */
+  const opts = { rankBonus: ranks != null ? ranks : ranghiAdesso(S, u), fleeing: !!u.fled, forImpetuous: impeto,
+                 restraint: trattieni };
   const crudo = x => { const c = CB.combatant(x); return +(c.ldBase != null ? c.ldBase : c.ld) || 0; };
   const conW = (ld, warband) => warband ? PS.leadershipOf(ld, p, opts) : { value: ld, why: "" };
   const suo = crudo(u);
@@ -2761,7 +2772,8 @@ const SOSPESI = { primo: ["primo", "avanti"], dissolvi: ["dissolvi", "lascia", "
                   sfida: ["sfida", "nessuna", "avanti"],
                   raccogli: ["accetta", "rifiuta", "avanti"],
                   ritira: ["ritira", "nessuna", "avanti"],
-                  abominio: ["abominio", "avanti"] };
+                  abominio: ["abominio", "avanti"],
+                  insegui: ["insegui", "avanti"] };
 const no = why => ({ ok: false, text: why });
 const si = text => ({ ok: true, text });
 
@@ -2774,6 +2786,11 @@ const GESTI = {
     if (k === "primo") return GESTI.primo(S, S.pending.list.find(x => x.chi === S.pending.lato));
     if (k === "dissolvi" || k === "assalto") return GESTI.lascia(S);
     if (k === "sfida" || k === "ritira") return GESTI.nessuna(S);
+    /* «passo» davanti a un inseguimento vuol dire non trattenersi: si
+       segue o si insegue il primo dell'elenco, che e' quello che
+       l'arbitro faceva sempre prima che fosse una scelta */
+    if (k === "insegui")
+      return GESTI.insegui(S, S.pending.list.find(x => x.scelta !== "trattieni") || S.pending.list[0]);
     /* «passo» davanti agli Abominable Attacks vuol dire attaccare come sempre */
     if (k === "abominio") return sceltaAbominio(S, S.pending.list.find(x => x.scelta === "normali"));
     /* «passo» davanti a una sfida vuol dire raccoglierla: rifiutarla e'
@@ -3171,6 +3188,8 @@ const GESTI = {
     }
     return no("qui non si risponde così");
   },
+
+  insegui: (S, a) => sceltaInseguimento(S, a),
 
   combatti: (S, a) => {
     const g = gruppiInMischia(S)[a.gruppo || 0];
@@ -5630,7 +5649,11 @@ function menaLaMischia(S, g){
         say(S, `${x.name} perde il round e con lui la Frenzy (p. 170).`, { army: x.army, page: 170 });
       }
 
-  /* i test di rotta, uno per unita' che ha perso (p. 154) */
+  /* i test di rotta, uno per unita' che ha perso (p. 154). Qui si
+     tirano e basta: chi perde si muove dopo che chi ha vinto ha deciso
+     se trattenersi, seguire o inseguire (p. 156, «before any units
+     belonging to the losing side Give Ground or make a Flee roll») */
+  const perdenti = [];
   for (const t of r.tests || []){
     const c = r.sides[t.side][t.at || 0];
     const u = c && c.ref;
@@ -5641,19 +5664,184 @@ function menaLaMischia(S, g){
     /* chi perde e rompe, o ripiega in ordine, manda al Panico gli
        amici entro 6″ (p. 161): si misura prima che si muova */
     if (t.outcome === "rout" || t.outcome === "fallBack") ondaPanico(S, u, "broke", usConCapi(S, u));
-    if (t.outcome === "rout"){
+    if (t.outcome === "rout" || t.outcome === "give" || t.outcome === "fallBack")
+      perdenti.push({ uid: u.uid, esito: t.outcome, vicini: aContatto(S, u, loro).map(x => x.uid) });
+  }
+  /* chi ha vinto e non ha piu' nessuno davanti sfonda */
+  const vince = r.wiped ? altro(r.wiped) : r.cr.winner || null;
+  if (r.wiped){
+    for (const w of r.wiped === "A" ? g.B : g.A)
+      if (onBoard(w)) say(S, `${w.name} sfonda: davanti non è rimasto nessuno (p. 156).`,
+                          { army: w.army, page: 156 });
+  }
+  if (!vince) return "combattimento risolto";
+  return chiediInseguimento(S, {
+    perdenti, wiped: !!r.wiped && !perdenti.length, coda: null, scelte: [], fallite: [],
+    vincitori: (vince === "A" ? g.A : g.B).map(u => u.uid),
+  });
+}
+
+/* ============================================================
+   TRATTENERSI, SEGUIRE, INSEGUIRE (pp. 156-157)
+   Prima l'arbitro decideva da solo: chi vinceva seguiva sempre chi
+   cedeva terreno, inseguiva chi fuggiva solo se era il piu' vicino, e
+   non inseguiva mai chi ripiegava in ordine. Sul libro e' una scelta di
+   chi ha vinto, fatta prima che i perdenti si muovano:
+
+     TRATTENERSI costa un test di Comando, senza la Warband: chi lo
+       passa resta dov'e', chi lo fallisce deve seguire o inseguire. Chi
+       e' frenetico non puo' nemmeno provarci (p. 170);
+     SEGUIRE chi cede terreno: si torna a contatto, e il combattimento
+       continua al turno dopo;
+     INSEGUIRE un solo perdente, che fugga o ripieghi in ordine: 2D6
+       verso di lui. Chi fugge, raggiunto, e' travolto; chi ripiegava
+       torna in combattimento, e il turno dopo chi lo ha preso conta come
+       se avesse caricato (p. 157);
+     SFONDARE, se il nemico e' stato distrutto prima dei test: 2D6
+       dritti in avanti, senza girarsi.
+
+   Ogni vincitore e' una domanda, a chi lo possiede, in fila. Le
+   opzioni sono in ordine: la prima e' quella che l'arbitro consiglia,
+   e l'euristica prende quella. Poi si muovono i perdenti, e dopo i
+   vincitori, uno alla volta (p. 156). Tutto quello che serve fra una
+   domanda e l'altra sta in `dopo`, che e' fatto di numeri: `clona` lo
+   copia con il resto dello stato.
+   ============================================================ */
+function chiediInseguimento(S, dopo){
+  const perduti = new Set(dopo.perdenti.map(p => p.uid));
+  if (!dopo.coda){
+    dopo.coda = [];
+    for (const uid of dopo.vincitori){
+      const w = byUid(S, uid);
+      if (!w || !onBoard(w) || w.fled) continue;
+      /* una macchina da guerra non segue e non insegue (p. 197) */
+      if (macchina(w)){
+        if (perduti.size) say(S, `${w.name} non segue e non insegue: è una macchina da guerra (p. 197).`,
+                              { army: w.army, page: 197 });
+        continue;
+      }
+      /* chi ha ancora addosso un nemico che non si muove resta dov'e':
+         «a unit that is still in base contact with an enemy unit cannot
+         follow up or pursue» (p. 156) */
+      const altri = aContatto(S, w, nemiciDi(S, w).filter(o => !perduti.has(o.uid)));
+      if (altri.length){
+        if (perduti.size) say(S, `${w.name} non segue e non insegue: combatte ancora con ${altri.map(o => o.name).join(" e ")} (p. 156).`,
+                              { army: w.army, page: 156 });
+        continue;
+      }
+      dopo.coda.push(uid);
+    }
+  }
+  while (dopo.coda.length){
+    const w = byUid(S, dopo.coda[0]);
+    const list = w && onBoard(w) ? opzioniInseguimento(S, w, dopo) : [];
+    if (!list.length){ dopo.coda.shift(); continue; }
+    S.pending = { kind: "insegui", uid: w.uid, lato: w.army, list, dopo };
+    return `${S.nomi[w.army]} sceglie che cosa fa ${w.name}: si trattiene, segue o insegue`;
+  }
+  return dopoInseguimento(S, dopo);
+}
+
+function opzioniInseguimento(S, w, dopo){
+  const perd = dopo.perdenti.map(p => ({ ...p, u: byUid(S, p.uid) })).filter(p => p.u && onBoard(p.u));
+  /* si segue chi si toccava; si insegue un perdente del combattimento,
+     e se questo vincitore non ne toccava nessuno, uno qualunque */
+  const tocca = perd.filter(p => p.vicini.includes(w.uid));
+  const bersagli = tocca.length ? tocca : perd;
+  const pw = PS.psychOf(w, { joined: capiInFila(S, w) });
+  const furia = pw.frenzy ? "; è frenetica, e non può trattenersi (p. 170)" : "";
+  const dadi = ML.pursuitDice(MV.swiftOf(w)).n === 3 ? "3D6" : "2D6";
+  const fuggono = [], seguono = [], ripiegano = [], peggio = [];
+  for (const p of bersagli){
+    const base = { id:"insegui", uid: w.uid, nome: w.name, target: p.uid, contro: p.u.name, page: 156 };
+    if (p.esito === "rout"){
+      fuggono.push({ ...base, scelta: "insegui",
+        why: `insegue ${p.u.name}, che fugge: ${dadi}″ verso di lei, e se la raggiunge la travolge (pp. 156-157)` + furia });
+      continue;
+    }
+    const sc = scontroAtteso(S, w, p.u);
+    if (p.esito === "give"){
+      seguono.push({ ...base, scelta: "segui", esito: sc.valore,
+        why: `segue ${p.u.name}, che cede terreno: torna a contatto, e il combattimento continua al turno dopo ` +
+             `(p. 156); al prossimo round ${sc.valore >= 0 ? "guadagna" : "perde"} ≈ ${Math.abs(sc.valore)} punti` + furia });
+      continue;
+    }
+    const x = { ...base, scelta: "insegui", esito: sc.valore,
+      why: `insegue ${p.u.name}, che ripiega in ordine: ${dadi}″, e se la raggiunge il combattimento continua e ` +
+           `conta come se avesse caricato (p. 157); al prossimo round ${sc.valore >= 0 ? "guadagna" : "perde"} ≈ ${Math.abs(sc.valore)} punti` + furia };
+    (sc.valore >= 0 ? ripiegano : peggio).push(x);
+  }
+  const sfonda = dopo.wiped
+    ? [{ id:"insegui", uid: w.uid, nome: w.name, scelta: "travolgi", target: null, page: 156,
+         why: `sfonda: ${dadi}″ dritta in avanti, senza girarsi (p. 156)` + furia }] : [];
+  const resta = [];
+  if (!pw.frenzy && !dopo.fallite.includes(w.uid)){
+    const ld = comandoConWarband(S, w, { trattieni: true }).ld;
+    const pr = passaIl(ld, false);
+    resta.push({ id:"insegui", uid: w.uid, nome: w.name, scelta: "trattieni", target: null, chance: Math.round(pr * 100) / 100,
+                 page: 156, why: `si trattiene e resta dov'è: test di Comando ${ld}, senza la Warband, che passa il ${Math.round(pr * 100)}%` +
+                                 ` — se fallisce deve seguire o inseguire (p. 156)` });
+  }
+  if (!fuggono.length && !seguono.length && !ripiegano.length && !peggio.length && !sfonda.length) return [];
+  /* in ordine di consiglio: travolgere chi fugge, restare addosso a chi
+     cede, riprendere chi ripiega se conviene; poi fermarsi, e in fondo
+     quello che non conviene. Sfondare alla cieca viene dopo il restare:
+     prima di questa scelta chi sfondava restava fermo */
+  return [...fuggono, ...seguono, ...ripiegano, ...resta, ...sfonda, ...peggio];
+}
+
+function sceltaInseguimento(S, a){
+  const p = S.pending;
+  if (!p || p.kind !== "insegui") return no("non c'è nessun inseguimento da decidere");
+  const x = a && p.list.find(y => y.scelta === a.scelta && (y.target ?? null) === (a.target ?? null));
+  if (!x) return no("questa scelta non c'è: " + p.list.map(y => y.scelta + (y.target != null ? " " + y.contro : "")).join(", "));
+  const w = byUid(S, p.uid), dopo = p.dopo;
+  S.pending = null;
+  if (x.scelta === "trattieni"){
+    const c = comandoConWarband(S, w, { trattieni: true });
+    const dadi = roll(2);
+    const res = PS.psychTest({ kind: "", ld: c.ld, dice: dadi, p: {} });
+    say(S, `${w.name}, test per trattenersi: ${res.text}.`, { dice: dadi, army: w.army, page: 156,
+        x: { k: "trattenuta", u: w.name, uid: w.uid, tot: res.total, vs: { v: res.target, op: "<=", t: "Comando" },
+             f: [{ t: "chi ha vinto e vuole restare fermo tira il Comando (p. 156)", f: "regola" },
+                 ...(c.why ? [{ t: c.why, f: "regola" }] : []),
+                 ...(PS.psychOf(w).warband ? [{ t: "Warband: il bonus di ranghi qui non vale", f: "regola" }] : []),
+                 ...(res.insane ? [{ t: "doppio uno: passa sempre", f: "dadi" }] : [])],
+             e: res.passed ? "si trattiene" : "non si trattiene: deve seguire o inseguire", ok: res.passed } });
+    if (res.passed){
+      say(S, `${w.name} si trattiene e resta dov'è (p. 156).`, { army: w.army, page: 156 });
+      dopo.coda.shift();
+    } else {
+      say(S, `${w.name} non si trattiene: deve seguire o inseguire (p. 156).`, { army: w.army, page: 156 });
+      dopo.fallite.push(w.uid);
+    }
+    limite(S, "seguire");
+    return si(chiediInseguimento(S, dopo));
+  }
+  dopo.scelte.push({ uid: w.uid, scelta: x.scelta, target: x.target ?? null });
+  dopo.coda.shift();
+  return si(chiediInseguimento(S, dopo));
+}
+
+/* Le mosse, nell'ordine del libro: prima i perdenti, poi chi ha
+   scelto di seguire o inseguire, uno alla volta (p. 156). */
+function dopoInseguimento(S, dopo){
+  const mosse = {};
+  const vincitori = dopo.vincitori.map(uid => byUid(S, uid)).filter(Boolean);
+  for (const p of dopo.perdenti){
+    const u = byUid(S, p.uid);
+    if (!u || !onBoard(u)) continue;
+    const loro = vincitori.filter(onBoard);
+    if (p.esito === "rout"){
       const vincitore = piuVicino(S, u, loro) || loro[0];
       const { dadi, via } = tiroDiFuga(u);
       say(S, `${u.name} rompe e fugge di ${via}″.`, { dice: dadi, army: u.army, page: 132,
           x: xFuga(u, dadi, via, { da: vincitore, perche: "ha perso il test di rotta" }) });
       if (vincitore) fuggi(S, u, vincitore, via); else u.fled = true;
-      /* e chi ha vinto insegue (p. 156) */
-      inseguimento(S, vincitore, u, via);
-    } else if (t.outcome === "give"){
-      const vicini = aContatto(S, u, loro);
-      const fatto = indietreggia(S, u, loro, CH.GIVE_GROUND, { kind: "give" });
-      if (fatto) seguire(S, vicini, u, fatto);
-    } else if (t.outcome === "fallBack"){
+      mosse[p.uid] = { via };
+    } else if (p.esito === "give"){
+      mosse[p.uid] = { fatto: indietreggia(S, u, loro, CH.GIVE_GROUND, { kind: "give" }) };
+    } else if (p.esito === "fallBack"){
       /* 2D6 e si tiene il maggiore (p. 134): prima si sommavano */
       const dadi = roll(2);
       const quanto = Math.max(...dadi);
@@ -5663,17 +5851,79 @@ function menaLaMischia(S, g){
                  f: [{ t: "2D6, si tiene il maggiore (p. 134)", f: "regola" }],
                  e: `ripiega di ${quanto}″, girata verso il nemico` } });
       indietreggia(S, u, loro, quanto, { kind: "fallBack" });
-      limite(S, "seguire");
+      mosse[p.uid] = { quanto };
     }
   }
-  /* chi ha vinto e non ha piu' nessuno davanti sfonda */
-  if (r.wiped){
-    const vincitori = r.wiped === "A" ? g.B : g.A;
-    for (const w of vincitori)
-      if (onBoard(w)) say(S, `${w.name} sfonda: davanti non è rimasto nessuno (p. 156).`,
-                          { army: w.army, page: 156 });
+  for (const sc of dopo.scelte){
+    const w = byUid(S, sc.uid);
+    if (!w || !onBoard(w) || w.fled) continue;
+    if (sc.scelta === "travolgi"){ sfondaAvanti(S, w); continue; }
+    const L = byUid(S, sc.target), p = dopo.perdenti.find(x => x.uid === sc.target), m = mosse[sc.target] || {};
+    if (!L || !p) continue;
+    if (sc.scelta === "segui"){
+      if (m.fatto) seguire(S, [w], L, m.fatto);
+    } else if (p.esito === "rout"){
+      inseguimento(S, w, L, m.via || 0);
+    } else if (p.esito === "fallBack"){
+      inseguiRipiego(S, w, L);
+    }
   }
   return "combattimento risolto";
+}
+
+/* Chi insegue chi ripiega in ordine (p. 157): si gira verso di lui, tira
+   2D6 e va. Se lo tocca il combattimento riprende al turno dopo, e lui
+   conta come se avesse caricato (`inseguito`, letto da `schieraDi`).
+   Toccarlo si misura sul tavolo: chi ripiega e' gia' arrivato dove i
+   suoi dadi lo hanno portato. */
+function inseguiRipiego(S, w, L){
+  if (!onBoard(L)) return;
+  const spec = ML.pursuitDice(MV.swiftOf(w));
+  const dadi = roll(spec.n);
+  const tot = dadi.reduce((s, v) => s + v, 0);
+  const d = distanza(S, w, L);
+  const posto = tot >= d ? postoAContatto(S, w, L) : null;
+  const preso = !!posto && !posto.pieno;
+  say(S, `${w.name} insegue ${L.name}, che ripiega in ordine: ${tot}″ contro ${d}″` +
+         (preso ? ": la raggiunge." : posto ? ", ma accanto a lei non c'è posto." : ": non la raggiunge."),
+      { dice: dadi, army: w.army, page: 157,
+        x: { k: "inseguimento", u: `${w.name} → ${L.name}`, uid: w.uid, su: L.uid, tot,
+             vs: { v: d, op: ">=", t: `quanto la separa da ${L.name}` },
+             f: [{ t: "chi insegue tira 2D6 e va verso chi ripiega; se lo tocca, il combattimento continua (p. 157)", f: "regola" },
+                 ...(dadi.length > 2 ? [{ t: "Swiftstride: un D6 in più (p. 178)", f: "regola" }] : [])],
+             e: preso ? `raggiunge ${L.name}` : "non la raggiunge", ok: preso } });
+  if (preso){
+    posa(S, w, posto.x, posto.y, posto.rot);
+    w.inseguito = { mezzo: mezzoTurno(S) + 1, inches: tot, arc: posto.arc || "fronte" };
+    say(S, `${w.name} e ${L.name} tornano in combattimento: al turno dopo ${w.name} conta come se avesse caricato (p. 157).`,
+        { army: w.army, page: 157 });
+    return;
+  }
+  const p = muoviVerso(S, w, L, tot, { unPollice: false });
+  if (p.pollici > 0)
+    say(S, `${w.name} avanza di ${p.pollici}″ inseguendo` +
+           (p.stop && p.stop.chi && p.stop.chi.army !== w.army ? ` e arriva addosso a ${p.stop.chi.name}` : "") + ".",
+        { army: w.army, page: 157 });
+}
+
+/* Chi ha distrutto il nemico prima dei test e non si trattiene sfonda:
+   «a normal pursuit move but must move directly forwards, without
+   pivoting» (p. 156). */
+function sfondaAvanti(S, w){
+  const spec = ML.pursuitDice(MV.swiftOf(w));
+  const dadi = roll(spec.n);
+  const tot = dadi.reduce((s, v) => s + v, 0);
+  const a = (w.rot || 0) * Math.PI / 180;
+  const lontano = { x: w.x + Math.sin(a) * 1e5, y: w.y - Math.cos(a) * 1e5 };
+  const p = muoviVerso(S, w, lontano, tot, { unPollice: false });
+  say(S, `${w.name} sfonda: ${dadi.join(" + ")} = ${tot}″ dritta in avanti` +
+         (p.pollici < tot - 0.05 ? `, e ne fa ${p.pollici}″` : "") +
+         (p.stop && p.stop.chi && p.stop.chi.army !== w.army ? `, fino addosso a ${p.stop.chi.name}` : "") + " (p. 156).",
+      { dice: dadi, army: w.army, page: 156,
+        x: { k: "inseguimento", u: w.name, uid: w.uid, tot,
+             f: [{ t: "chi ha distrutto il nemico prima dei test sfonda di 2D6″ in avanti, senza girarsi (p. 156)", f: "regola" },
+                 ...(dadi.length > 2 ? [{ t: "Swiftstride: un D6 in più (p. 178)", f: "regola" }] : [])],
+             e: `sfonda di ${p.pollici}″` } });
 }
 
 /* La scheda del test di rotta (p. 154). E' quella che risponde a
@@ -5782,7 +6032,11 @@ function schieraDi(S, u, { attached = false, host = null, feared = false } = {})
      seguito con il suo reggimento */
   const chiSegue = attached && host ? host : u;
   const followedUp = chiSegue.seguito != null && chiSegue.seguito === mezzoTurno(S) - 1;
-  const c = CB.combatant(u, { joined: capiInFila(S, u), feared, followedUp, ...carica });
+  /* chi ha raggiunto inseguendo un'unita' che ripiegava in ordine, al
+     turno dopo «counts as having charged» (p. 157) */
+  const ins = chiSegue.inseguito && chiSegue.inseguito.mezzo === mezzoTurno(S) ? chiSegue.inseguito : null;
+  const daInseguimento = ins ? { charged: true, chargeInches: ins.inches || 0, chargeArc: ins.arc || "fronte" } : {};
+  const c = CB.combatant(u, { joined: capiInFila(S, u), feared, followedUp, ...daInseguimento, ...carica });
   /* il test di rotta si tira con il Comando piu' alto fra i modelli
      (p. 97) o con quello del generale, se e' vicino: si rifa' il conto
      della Warband sopra il valore nuovo */
@@ -5900,7 +6154,16 @@ function seguire(S, vicini, perdente, { dx, dy }){
 
 /* L'inseguimento (p. 156): chi ha vinto tira, e si muove davvero —
    prima restava fermo anche quando travolgeva. Non insegue chi ha
-   ancora un altro nemico addosso. */
+   ancora un altro nemico addosso.
+
+   Lo prende se lo TOCCA (p. 157, «if the pursuing unit makes contact
+   with the pursued unit»), e si misura sul tavolo, dopo la fuga. Prima
+   si confrontava il tiro con i pollici dichiarati della fuga, e chi
+   inseguiva passava attraverso il fuggiasco: da quando inseguono tutti
+   i vincitori e non solo il piu' vicino, i Saurus del seme 7 fuggivano
+   via dai carri attraverso gli Orc Mobs che stavano di fianco — 12,8″
+   per non fermarsi addosso a loro, contro gli 8″ del tiro — e gli Orchi
+   «non li prendevano» e gli finivano sopra. */
 function inseguimento(S, vincitore, fuggito, quantoHaFuggito){
   if (!vincitore || !onBoard(vincitore) || vincitore.fled) return;
   /* una macchina da guerra non fa mosse d'inseguimento (p. 197) */
@@ -5918,14 +6181,19 @@ function inseguimento(S, vincitore, fuggito, quantoHaFuggito){
   const spec = ML.pursuitDice(MV.swiftOf(vincitore));
   const dadi = roll(spec.n);
   const tot = dadi.reduce((s, v) => s + v, 0);
-  const out = ML.pursuitOutcome({ roll: tot, flee: quantoHaFuggito, wiped: false });
-  const uscita = !!fuggito.fledOff;
-  say(S, uscita ? `${vincitore.name} insegue di ${tot}″: ${fuggito.name} è già fuori dal tavolo.`
-                : `${vincitore.name} ${out.text}.`,
+  /* due vincitori possono inseguire lo stesso fuggiasco: il secondo
+     arriva dove il primo l'ha gia' travolto, e lo conta come uscito */
+  const uscita = !!fuggito.fledOff || !!fuggito.dead;
+  const lontano = uscita ? 0 : distanza(S, vincitore, fuggito);
+  const out = { caught: !uscita && tot >= lontano };
+  say(S, uscita ? `${vincitore.name} insegue di ${tot}″: ${fuggito.name} è già ${fuggito.dead && !fuggito.fledOff ? "travolta" : "fuori dal tavolo"}.`
+                : `${vincitore.name} insegue di ${tot}″, e ${fuggito.name} ` +
+                  `${Math.abs(lontano - quantoHaFuggito) > 0.5 ? `ha fuggito ${quantoHaFuggito}″ ed ` : ""}è a ${lontano}″: ` +
+                  (out.caught ? "la raggiunge, unità travolta" : "non la raggiunge") + ".",
       { dice: dadi, army: vincitore.army, page: ML.PAGE.pursuit,
         x: { k: "inseguimento", u: `${vincitore.name} → ${fuggito.name}`, uid: vincitore.uid, su: fuggito.uid, tot,
-             vs: uscita ? null : { v: quantoHaFuggito, op: ">=", t: `quanto ha fuggito ${fuggito.name}` },
-             f: [{ t: "chi insegue tira come chi fugge, e se arriva almeno fin lì lo travolge", f: "regola" },
+             vs: uscita ? null : { v: lontano, op: ">=", t: `quanto è lontana ${fuggito.name} dopo la fuga` },
+             f: [{ t: "chi insegue tira 2D6 verso chi fugge, e se lo tocca lo travolge (pp. 156-157)", f: "regola" },
                  ...(dadi.length > 2 ? [{ t: "Swiftstride: un D6 in più (p. 178)", f: "regola" }] : [])],
              e: uscita ? `${fuggito.name} è già fuori dal tavolo` : out.caught ? `${fuggito.name} travolta e distrutta` : "non la prende",
              ok: uscita ? undefined : !!out.caught } });
@@ -5937,8 +6205,9 @@ function inseguimento(S, vincitore, fuggito, quantoHaFuggito){
     ondaPanico(S, fuggito, "destroyed", usF);
   }
   /* il passo di chi insegue: verso dove l'altro e' andato, fermandosi
-     a contatto con un nemico nuovo se lo incontra */
-  const p = muoviVerso(S, vincitore, fuggito, tot, { ignora: [fuggito.uid], unPollice: false });
+     a contatto con un nemico nuovo se lo incontra — e prima di toccare
+     il fuggiasco, se non lo ha preso */
+  const p = muoviVerso(S, vincitore, fuggito, tot, { ignora: out.caught || uscita ? [fuggito.uid] : [], unPollice: false });
   if (p.pollici > 0)
     say(S, `${vincitore.name} avanza di ${p.pollici}″ inseguendo` +
            (p.stop && p.stop.chi && p.stop.chi.army !== vincitore.army ? ` e arriva addosso a ${p.stop.chi.name}` : "") + ".",
@@ -6512,4 +6781,6 @@ export const interni = { indietreggia, seguire, fuggi, postoAContatto, percorso,
                          /* chi combatte, contato sulle basette (p. 145) */
                          filaCheCombatte, schieraDi,
                          /* chi deve caricare (pp. 170, 172) */
-                         impeti, deveCaricare };
+                         impeti, deveCaricare,
+                         /* trattenersi, seguire, inseguire (p. 156) */
+                         chiediInseguimento, inseguiRipiego, sfondaAvanti, mezzoTurno };

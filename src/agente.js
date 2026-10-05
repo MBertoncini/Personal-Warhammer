@@ -330,6 +330,14 @@ export function agenteEuristico({ nome = "euristica", estro = null, piano: sopra
         return { scelta: a, perche: `${a.nome}: ${a.why}` };
       }
 
+      /* TRATTENERSI, SEGUIRE, INSEGUIRE (p. 156): l'arbitro le mette in
+         ordine di consiglio — travolgere chi fugge, restare addosso a chi
+         cede, riprendere chi ripiega se conviene, poi fermarsi */
+      if (primo("insegui")){
+        const a = primo("insegui");
+        return { scelta: a, perche: `${a.nome}: ${a.why}` };
+      }
+
       /* MISCHIA: si risolve. Non c'è niente da decidere. */
       if (primo("combatti")){
         const c = primo("combatti");
