@@ -6,7 +6,7 @@ import { parseRoster, parseAny } from './parser.js';
 import { TERRAIN, TREASURE_CLEAR, BM_MAX_SIDE, catOf } from './terrain.js';
 import { R, T, SCENARIOS, geometry } from './scenarios.js';
 import { saveDoc, loadDoc } from './store.js';
-import { photoForUnit, photoFor, catEntry, matchUnitName } from './catalog.js';
+import { photoForUnit, photoFor, chiaveFoto, catEntry, matchUnitName } from './catalog.js';
 import { rectPoly, pointInRect, boxCorners, polysOverlap,
          distPointToBox, toWorld, toLocal, polyDistance, closestPoints } from './geom.js';
 import * as CB from './combat.js';
@@ -1363,12 +1363,15 @@ function photoDefsFor(svg){
     /* anche i personaggi uniti a un reggimento: sul tavolo non sono un
        pezzo a se', ma la loro base dentro il reggimento vuole la sua
        faccia come tutte le altre */
+    /* la chiave e' la voce di catalogo, o la foto di riferimento per
+       chi in collezione non c'e' (`chiaveFoto`, src/catalog.js) */
     const onBoard = u.placed || isJoined(u);
-    if (!onBoard || !u.catId || ids.has(u.catId)) continue;
-    const p = photoForUnit(u);
+    const fk = onBoard ? chiaveFoto(u) : null;
+    if (!fk || ids.has(fk)) continue;
+    const p = photoFor(fk);
     if (!p) continue;
-    ids.set(u.catId, "ph-" + u.catId);
-    key.push(u.catId + ":" + p.length);       // foto cambiata = chiave diversa
+    ids.set(fk, "ph-" + fk.replace(/[^\w-]/g, "_"));
+    key.push(fk + ":" + p.length);       // foto cambiata = chiave diversa
   }
   if (!ids.size) return ids;
 
@@ -1624,10 +1627,10 @@ function drawBoard(){
        chiuso e' la griglia di sempre; in formazione sciolta sono
        sparse, e allora il rettangolo dietro serve solo a dire quanto
        spazio occupa l'unita' — sono le basi il pezzo vero. */
-    const phId = photoIds.get(u.catId);
+    const phId = photoIds.get(chiaveFoto(u));
     const cells = g(gg, "g", { "pointer-events":"none" });
     for (const s of lay.slots){
-      const ph = s.kind === "char" ? photoIds.get(s.catId) : phId;
+      const ph = s.kind === "char" ? photoIds.get(chiaveFoto({ catId: s.catId, name: s.name })) : phId;
       const sg = g(cells, "g", { transform:`translate(${s.x} ${s.y}) rotate(${s.rot || 0})` });
       if (loose || s.kind === "char")
         g(sg, "rect", { x:-s.w/2, y:-s.h/2, width:s.w, height:s.h, rx:1.5,

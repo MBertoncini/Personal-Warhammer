@@ -8,3 +8,7 @@ package-lock.json
 # (quella che vuoi pubblicare mettila in partite/ e toglila da qui)
 partita*.html
 mappa*.html
+
+# le foto di riferimento delle unita che non sono in collezione:
+# immagini dei negozi, restano solo su questo computer
+foto-riferimento/

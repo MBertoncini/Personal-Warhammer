@@ -585,7 +585,10 @@ function cliente(){
             '" rx="2" fill="' + col + '" fill-opacity="' + (foto && forma ? '.4' : '.85') + '"/>';
     if (forma){
       for (const c of forma){
-        const [x, y, w, h, capo, cat, r] = c;
+        const [x, y, w, h, capo, catBase, r] = c;
+        /* una basetta senza voce di catalogo prende la foto del pezzo,
+           se ne ha una (le foto di riferimento, src/catalog.js) */
+        const cat = catBase || (!capo && (PZ[u.id] || {}).k) || '';
         const ph = foto && cat && FOTO[cat];
         s += '<g transform="translate(' + x + ',' + y + ') rotate(' + (r || 0) + ')">';
         if (ph){

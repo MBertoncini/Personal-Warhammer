@@ -43,7 +43,7 @@ import * as RP from './replay.js';
 import * as ARCH from './archivio.js';
 import * as AR from './arbitro.js';
 import * as MG from './magic.js';
-import { photoFor } from './catalog.js';
+import { photoFor, chiaveFoto } from './catalog.js';
 
 const REP_KEY = "reports:all";
 
@@ -210,7 +210,14 @@ export async function rivedi(idOrRep){
                "(la sfida sul tavolo, o AI contro AI) e salvata nel diario.", { title: "Niente da rivedere" });
   const meta = { ...rep.replay.meta };
   const foto = {};
-  for (const p of Object.values(meta.pezzi || {})){
+  /* i pezzi che in collezione non ci sono prendono la foto di
+     riferimento, se c'e': la chiave si scrive sul pezzo solo in questa
+     copia, la partita nel diario resta com'era */
+  meta.pezzi = Object.fromEntries(Object.entries(meta.pezzi || {}).map(([id, p]) => {
+    const k = p ? chiaveFoto({ catId: p.k, name: p.n }) : null;
+    return [id, k && k !== p.k ? { ...p, k } : p];
+  }));
+  for (const p of Object.values(meta.pezzi)){
     const src = p && p.k ? photoFor(p.k) : null;
     if (src) foto[p.k] = src;
   }

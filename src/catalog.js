@@ -63,8 +63,45 @@ export const catEntry = id => entries.find(e => e.id === id) || null;
 /* dipinte: mai piu' di quante ne possiedi, e le voci vecchie che non
    hanno il campo valgono zero senza rompere niente */
 export const paintedOf = e => Math.max(0, Math.min(+(e && e.owned) || 0, +(e && e.painted) || 0));
-export const photoForUnit = u => (u && u.catId ? photos.get(u.catId) || null : null);
-export const photoFor = id => photos.get(id) || null;
+/* Le foto di riferimento. Le liste dell'avversario — Nani, Uomini
+   Bestia, Elfi Silvani — hanno unita' che in collezione non ci sono, e
+   sul tavolo erano rettangoli colorati accanto alle foto delle tue.
+   Una voce di catalogo con zero modelli sporcherebbe la collezione e i
+   conti di quello che manca; qui invece c'e' una cartella
+   (`foto-riferimento/`, con il suo `indice.json`: nome dell'unita' ->
+   file) che vale solo per chi non ha una voce con la foto. La cartella
+   e' fuori da git, perche' le immagini sono quelle dei negozi: dove
+   non c'e', non succede niente. Le chiavi cominciano con «rif:», cosi'
+   non si confondono mai con un id del catalogo. */
+const riferimenti = new Map();   // "rif:<nome normalizzato>" -> dataURL
+const chiaveRif = nome => "rif:" + normalize(nome);
+const comeDataUrl = blob => new Promise((ok, no) => {
+  const fr = new FileReader();
+  fr.onload = () => ok(fr.result); fr.onerror = () => no(fr.error);
+  fr.readAsDataURL(blob);
+});
+export async function initRiferimenti(base = "./foto-riferimento/"){
+  try {
+    const r = await fetch(base + "indice.json", { cache: "no-cache" });
+    if (!r.ok) return 0;
+    const idx = await r.json();
+    await Promise.all(Object.entries(idx.foto || {}).map(async ([nome, file]) => {
+      const b = await fetch(base + file);
+      if (b.ok) riferimenti.set(chiaveRif(nome), await comeDataUrl(await b.blob()));
+    }));
+  } catch { /* niente cartella, niente foto: va bene cosi' */ }
+  return riferimenti.size;
+}
+/* La chiave della foto di un pezzo: la sua voce di catalogo, se ha la
+   foto; altrimenti quella di riferimento con il suo nome, se c'e'. */
+export function chiaveFoto(u){
+  if (!u) return null;
+  if (u.catId && photos.has(u.catId)) return u.catId;
+  const k = u.name ? chiaveRif(u.name) : null;
+  return k && riferimenti.has(k) ? k : null;
+}
+export const photoFor = id => photos.get(id) || riferimenti.get(id) || null;
+export const photoForUnit = u => { const k = chiaveFoto(u); return k ? photoFor(k) : null; };
 
 /* ============================================================
    2 · AGGANCIO NOME -> VOCE DI CATALOGO

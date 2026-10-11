@@ -6,7 +6,7 @@
  */
 
 import { $ } from './util.js';
-import { initCatalog, renderCatalog } from './catalog.js';
+import { initCatalog, initRiferimenti, renderCatalog } from './catalog.js';
 import { initLists, renderLists, healLinks as healListLinks } from './lists.js';
 import { initMatchup, renderMatchup } from './matchup.js';
 import { renderLaboratorio } from './laboratorio.js';
@@ -167,6 +167,7 @@ $("#file-backup").addEventListener("change", async e => {
      l'archivio nelle sue pulizie automatiche */
   await requestPersistence();
   await initCatalog();
+  await initRiferimenti();
   await initLists();
   await initMatchup();
   await initReports();
