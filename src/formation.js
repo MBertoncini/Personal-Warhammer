@@ -608,6 +608,26 @@ export function arcBetween(a, b, boxOf){
   };
 }
 
+/* IL MAGO CHE MENA (p. 108): «Assailment spells can be cast when a
+   Wizard fights during any Combat phase», e il bersaglio deve stare
+   nell'arco di vista del mago. Non basta che il reggimento che lo ospita
+   tocchi il nemico: nella partita dell'11 ottobre i Saurus hanno preso
+   gli Eternal Guard di fianco, lo Spellweaver stava in mezzo al primo
+   rango e ha lanciato Hammerhand due volte senza toccarli.
+
+   Si guarda la basetta del mago: la sua casella dentro il reggimento
+   (`cells`, da `worldCells`) se e' unito, l'unita' intera se e' da solo.
+   L'arco e' quello di `arcOfPoly`, letto come fa il tiro: basta che una
+   parte del bersaglio stia davanti. */
+export function wizardContact(cells, wizUid, hostBox, foePoly, { gap = TOUCH, allRound = false } = {}){
+  const cell = (cells || []).find(c => c.kind === "char" && c.uid === wizUid);
+  const box = cell ? { x: cell.wx, y: cell.wy, w: cell.w, h: cell.h, rot: cell.wrot || 0 } : hostBox;
+  return {
+    touching: polyDistance(boxCorners(box), foePoly) <= gap,
+    inArc: allRound || arcOfPoly(foePoly, box).has.includes("fronte"),
+  };
+}
+
 /* Gli spicchi da disegnare sul tavolo: quattro triangoli che partono
    dagli angoli della basetta e si allontanano di `len`. Servono al
    ventaglio dell'arco frontale nel pannello di movimento, che oggi

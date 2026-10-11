@@ -97,8 +97,15 @@ export async function initRiferimenti(base = "./foto-riferimento/"){
 export function chiaveFoto(u){
   if (!u) return null;
   if (u.catId && photos.has(u.catId)) return u.catId;
-  const k = u.name ? chiaveRif(u.name) : null;
-  return k && riferimenti.has(k) ? k : null;
+  if (!u.name) return null;
+  /* due unita' con lo stesso nome nella lista diventano «Glade Guard 1»
+     e «Glade Guard 2»: l'indice ha «Glade Guard», e senza il numero in
+     coda restavano rettangoli rossi accanto agli Eternal Guard in foto */
+  for (const nome of [u.name, String(u.name).replace(/\s+\d+$/, "")]){
+    const k = chiaveRif(nome);
+    if (riferimenti.has(k)) return k;
+  }
+  return null;
 }
 export const photoFor = id => photos.get(id) || riferimenti.get(id) || null;
 export const photoForUnit = u => { const k = chiaveFoto(u); return k ? photoFor(k) : null; };

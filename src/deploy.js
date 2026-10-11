@@ -3559,12 +3559,17 @@ async function runGenerate(x){
    La stessa misura del tiro: distanza da bordo a bordo, arco frontale,
    vista tagliata dagli elementi che la bloccano. Chi non va bene resta
    nell'elenco con il perche', e si puo' scegliere lo stesso. */
-function magicTargets(host, sp){
+function magicTargets(host, sp, caster = host){
   if (sp.type === "assailment"){
+    /* lancia un assalto solo il mago che mena: la sua basetta, non il
+       reggimento che lo ospita (p. 108, `FM.wizardContact`) */
     const ids = contactsNow().filter(c => c.enemy && (c.a === host.uid || c.b === host.uid))
                              .map(c => c.a === host.uid ? c.b : c.a);
+    const cells = caster === host ? [] : FM.worldCells(host, layoutOf(host));
+    const allRound = (host.rules || []).some(r => /^firing platform/i.test(String(r)));
     return [...new Set(ids)].map(unitByUid).filter(Boolean)
-      .map(unit => ({ unit, dist: 0, check: MG.targetCheck(sp, { touching: true }) }));
+      .map(unit => ({ unit, dist: 0, check: MG.targetCheck(sp,
+        FM.wizardContact(cells, caster.uid, boxOf(host), corners(unit), { gap: MM * 0.15, allRound })) }));
   }
   const friendly = sp.type === "enchantment" || sp.type === "conveyance";
   const pool = state.units.filter(o => o.placed && !o.dead && !isJoined(o) &&
@@ -3676,7 +3681,7 @@ async function runCast(caster, spellId, preUid = null){
   let target = null, targetWhy = [];
   if (sp.range === "self") target = host;
   else if (sp.type !== "vortex"){
-    const rows = magicTargets(host, sp);
+    const rows = magicTargets(host, sp, caster);
     if (!rows.length) return toast(sp.type === "assailment"
       ? `${sp.name}: nessun nemico in combattimento con ${caster.name}.` : `${sp.name}: nessun bersaglio sul tavolo.`);
     const pre = preUid != null ? rows.find(r => r.unit.uid === +preUid) : null;
@@ -4231,7 +4236,7 @@ function aimCast(a, host, target, dist, p, inArc){
   const range = typeof sp.range === "number" ? sp.range : 0;
   const head = `${sp.name} · ${fmtIn(r1(dist))}″${range ? " di " + fmtIn(range) + "″" : ""}`;
   if (target){
-    const row = magicTargets(host, sp).find(r => r.unit.uid === target.uid);
+    const row = magicTargets(host, sp, (a.casterUid != null && unitByUid(a.casterUid)) || host).find(r => r.unit.uid === target.uid);
     if (!row) return { tone: "blocked", lines: [head, "non è un bersaglio per questo incantesimo"] };
     return { tone: row.check.ok ? "ok" : range && row.dist > range ? "far" : "blocked",
              lines: [`${shortName(target.name)} · ${fmtIn(r1(row.dist))}″`,

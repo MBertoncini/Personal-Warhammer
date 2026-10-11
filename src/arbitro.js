@@ -5085,14 +5085,19 @@ function opzioniLancio(S, tipi, { army = S.army, gruppo = null } = {}){
 
 /* I bersagli legali (p. 108): nell'arco del mago, entro gittata, non in
    combattimento; i dardi vogliono la vista, gli assalti un nemico con
-   cui si combatte. Il mago unito misura dal reggimento che lo ospita. */
+   cui si combatte. Il mago unito misura dal reggimento che lo ospita —
+   tranne negli assalti, dove conta la sua basetta: lancia solo chi mena
+   (`FM.wizardContact`). */
 function bersagli(S, u, host, sp, gruppo){
   if (sp.range === "self") return [{ t: host, dist: 0 }];
   if (sp.type === "assailment"){
     const nemici = contatti(S).filter(c => (c.a === host.uid || c.b === host.uid) &&
                                            (c.a === host.uid ? c.bArmy : c.aArmy) !== host.army)
       .map(c => byUid(S, c.a === host.uid ? c.b : c.a)).filter(t => t && onBoard(t));
+    const celle = u === host ? [] : FM.worldCells(host, layoutOf(host, S.units));
     return [...new Set(nemici)].filter(t => !gruppo || [...gruppo.A, ...gruppo.B].includes(t))
+      .filter(t => MG.targetCheck(sp, FM.wizardContact(celle, u.uid, boxOf(host, S.units), cornersOf(t, S.units),
+                                                       { gap: MM * 0.15, allRound: haRegola(host, /^firing platform/i) })).ok)
       .map(t => ({ t, dist: 0 }));
   }
   const amici = sp.type === "enchantment" || sp.type === "conveyance";

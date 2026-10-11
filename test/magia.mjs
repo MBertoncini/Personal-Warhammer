@@ -11,6 +11,8 @@ import fs from 'node:fs';
 import * as MG from '../src/magic.js';
 import * as EF from '../src/effects.js';
 import * as C from '../src/combat.js';
+import * as FM from '../src/formation.js';
+import { boxCorners } from '../src/geom.js';
 
 let fails = 0;
 const ok = (label, cond) => {
@@ -271,6 +273,31 @@ console.log('\nMagic Resistance (p. 108)');
      MG.castResult({ dice:[4, 4], level:1, cv:8, mod:-3 }).total === 6 &&
      !MG.castResult({ dice:[4, 4], level:1, cv:8, mod:-3 }).cast);
   ok('e non ferma l invocazione perfetta', MG.castResult({ dice:[6, 6], level:1, cv:10, mod:-3 }).cast);
+}
+
+/* ================================================================= */
+console.log('\nl assalto lo lancia il mago che mena (p. 108)');
+{
+  /* la partita dell'11 ottobre: Eternal Guard 5×2 con lo Spellweaver in
+     mezzo al primo rango, e i Saurus che la prendono di fianco */
+  const hammer = M.spell('hammerhand');
+  const u = { uid: 1, name: 'Eternal Guard', models: 10, frontage: 5, baseW: 25, baseH: 25, x: 500, y: 500, rot: 0 };
+  const lay = FM.layout(u, { alive: 10, attached: [{ uid: 2, name: 'Spellweaver', baseW: 25, baseH: 25, join: { idx: 2 } }] });
+  const celle = FM.worldCells(u, lay);
+  const box = { x: u.x, y: u.y, w: lay.w, h: lay.h, rot: 0 };
+  const davanti = boxCorners({ x: 500, y: 500 - lay.h / 2 - 50, w: lay.w, h: 100, rot: 0 });
+  const fianco = boxCorners({ x: 500 + lay.w / 2 + 50, y: 500, w: 100, h: lay.h, rot: 0 });
+  const conto = poly => MG.targetCheck(hammer, FM.wizardContact(celle, 2, box, poly, { gap: 4 }));
+  ok('chi sta davanti al mago si può colpire', conto(davanti).ok);
+  ok('chi prende il reggimento di fianco no: il mago non lo tocca', !conto(fianco).ok &&
+     /non tocca/.test(conto(fianco).why.join(' ')));
+  /* un mago da solo preso alle spalle lo tocca, ma non lo vede */
+  const solo = { x: 0, y: 0, w: 25, h: 25, rot: 0 };
+  const dietro = boxCorners({ x: 0, y: 62.5, w: 100, h: 100, rot: 0 });
+  const r = MG.targetCheck(hammer, FM.wizardContact([], 9, solo, dietro, { gap: 4 }));
+  ok('un mago da solo non colpisce chi gli sta alle spalle', !r.ok && /arco/.test(r.why.join(' ')));
+  ok('se non sul carro, che guarda in tutte le direzioni',
+     MG.targetCheck(hammer, FM.wizardContact([], 9, solo, dietro, { gap: 4, allRound: true })).ok);
 }
 
 /* ================================================================= */

@@ -244,7 +244,8 @@ export function targetCheck(spell, { dist = 0, inArc = true, engaged = false, fr
   if (t === "vortex") return { ok: true, why: [] };
   if (t === "assailment"){
     if (friendly) why.push("un assalto colpisce solo un nemico");
-    if (!touching) why.push("un assalto colpisce solo chi combatte con il mago");
+    if (!touching) why.push("il mago non tocca questo nemico con la sua basetta: lancia un assalto solo chi mena (p. 108)");
+    else if (!inArc) why.push("fuori dall'arco di vista del mago (p. 108)");
     return { ok: why.length === 0, why };
   }
   const wantsFriend = t === "enchantment" || t === "conveyance";
