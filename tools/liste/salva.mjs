@@ -1,7 +1,7 @@
 /* Schieramento Old World — la candidata che resta, nell'archivio
  *
  *   node tools/liste/salva.mjs --file tools/liste/esempi.mjs --cand ogOrdaNera
- *   node tools/liste/salva.mjs --bilancia 1000 [--nomi "SKA abominio=La campana e l'Abominio;..."]
+ *   node tools/liste/salva.mjs --bilancia 1000 [--nomi "SKA abominio=La campana e l'Abominio;..."] [--solo "BST libera,WE libera"]
  *
  * Aggiunge le candidate scelte in fondo a dati/liste.json con un id nuovo,
  * lo stesso formato che l'app dà alle liste (`l` + tempo in base 36). La
@@ -12,7 +12,8 @@
  *
  * Con --bilancia le liste sono quelle di dati/ricerche/bilancia-<punti>.json
  * (tools/liste/bilancia.mjs), ricostruite dai loro geni con lo spazio del
- * loro tema; --nomi dà a ognuna il nome con cui compare nell'app.
+ * loro tema; --nomi dà a ognuna il nome con cui compare nell'app, e
+ * --solo salva solo quelle nominate (le altre sono già in archivio).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -37,9 +38,11 @@ if (arg('bilancia')){
   const nomi = Object.fromEntries(String(arg('nomi') || '').split(';').filter(Boolean).map(s => s.split('=').map(x => x.trim())));
   const temi = Object.fromEntries(Object.values(leggi('indice.json').file || []).map(f => leggi(f.file))
     .filter(d => d && d.formato === 'tow-ricerca/1' && d.punti === punti && d.tema).map(d => [`${d.fazione}|${d.tema.nome}`, d.tema]));
+  const solo = arg('solo') ? String(arg('solo')).split(',').map(s => s.trim()) : null;
   for (const b of doc.liste){
+    if (solo && !solo.includes(b.nome)) continue;
     const t = temi[`${b.fazione}|${b.tema}`] || {};
-    const S = spazio(b.fazione, { pool: 'collezione', punti, con: t.con || [], senza: t.senza || [] });
+    const S = spazio(b.fazione, { pool: b.pool || 'collezione', punti, con: t.con || [], senza: t.senza || [] });
     const err = S.valida(b.geni);
     if (err.length){ console.error(`${b.nome}: non vale più (${err.join('; ')}), la salto.`); continue; }
     const l = S.costruisci(b.geni, { id: nuovoId(), name: nomi[b.nome] || `${b.nome} ${punti}` });

@@ -25,7 +25,7 @@
  * gioca a mano (Fanatici, Gigante, Squig) non hanno una voce: sarebbero
  * punti che in una serie non fanno niente.
  */
-import { SK, OG, LZ, da, lista, avvisiComposizione } from './costruttori.js';
+import { SK, OG, LZ, BH, WE, DW, da, lista, avvisiComposizione } from './costruttori.js';
 import { armiKey, assegna, quanti } from './armi.js';
 
 /* La collezione (le voci di dati/catalogo.json, o quelle dell'app) e la
@@ -121,6 +121,88 @@ const LUCERTOLE = [
   { k: 'coldOnes', pezzo: 'Cold One Riders', n: [5, 10], opz: { c: COMANDO }, crea: LZ.coldOnes },
 ];
 
+/* I tre eserciti scritti dal libro (src/costruttori.js): niente
+   archivio da cui copiare, e niente miniature in vetrina — si cercano
+   con il serbatoio «tutte». Le unita' che l'arbitro non sa giocare non
+   hanno una voce: il cannone, l'organo e il lanciafiamme dei Nani, il
+   Bolt Thrower (la sua «Through & Through» non c'e'), i Gyrobomber, i
+   Wardancers e lo Shadowdancer (le danze sono una scelta a ogni
+   combattimento che l'arbitro non offre), la Cockatrice, il Cygor, il
+   Jabberslythe e il Gigante, che fanno quasi tutto con regole a mano. */
+const FRECCE = [null, 'hagbane', 'bodkins', 'trueflight', 'swiftshiver', 'moonfire'];
+/* l'arma grande e lo scudo sono una scelta sola: con le due mani lo
+   scudo in mischia non vale (Requires Two Hands, p. 176), e i costruttori
+   non lo fanno pagare */
+const MANI = ['great', 'shield', null];
+const mani = o => ({ ...o, great: o.weapon === 'great', shield: o.weapon === 'shield' });
+const ARMATURE = ['heavy', 'light', null];
+const BESTIE = [
+  { k: 'beastlord', pezzo: 'Beastlord', max: 1, opz: { weapon: MANI, armour: ARMATURE },
+    crea: o => BH.capo({ ...mani(o), beastlord: true }) },
+  { k: 'wargor', pezzo: 'Wargor', max: 2, opz: { weapon: MANI, armour: ARMATURE, bsb: SI_NO },
+    crea: o => BH.capo({ ...mani(o), beastlord: false }), bsb: o => o.bsb },
+  { k: 'greatShaman', pezzo: 'Great Bray-Shaman', max: 1, opz: { level: [4, 3] }, crea: o => BH.sciamano({ ...o, great: true }), mago: o => o.level },
+  { k: 'shaman', pezzo: 'Bray-Shaman', max: 2, opz: { level: [2, 1] }, crea: o => BH.sciamano({ ...o, great: false }), mago: o => o.level },
+  { k: 'doombull', pezzo: 'Doombull', max: 1, opz: { great: [true, false], armour: ARMATURE }, crea: o => BH.toro({ ...o, doombull: true }) },
+  { k: 'gorebull', pezzo: 'Gorebull', max: 1, opz: { great: [true, false], armour: ARMATURE }, crea: o => BH.toro({ ...o, doombull: false }) },
+  { k: 'gors', pezzo: 'Gor Herd', n: [10, 40], opz: { c: COMANDO, f: FRONTI }, crea: BH.gors },
+  { k: 'ungors', pezzo: 'Ungor Herd', n: [10, 40], opz: { c: COMANDO, spears: SI_NO, bows: SI_NO, f: FRONTI }, crea: BH.ungors },
+  { k: 'hounds', pezzo: 'Chaos Warhounds', n: [5, 10], crea: BH.hounds },
+  { k: 'razorgors', pezzo: 'Razorgor Herd', n: [1, 3], crea: BH.razorgors },
+  { k: 'tuskgorChariot', pezzo: 'Tuskgor Chariot', crea: () => BH.carro() },
+  { k: 'bestigors', pezzo: 'Bestigor Herd', n: [10, 30], opz: { c: COMANDO, f: FRONTI }, crea: BH.bestigors },
+  { k: 'minotaurs', pezzo: 'Minotaur Herd', n: [3, 6], opz: { c: ['', 'c', 'csm'], great: [true, false] }, crea: BH.minotaurs },
+  { k: 'harpies', pezzo: 'Harpies', n: [5, 10], crea: BH.harpies },
+  { k: 'centigors', pezzo: 'Centigor Herd', n: [5, 10], opz: { c: COMANDO, arma: ['spear', 'great', null], axes: SI_NO }, crea: BH.centigors },
+  { k: 'dragonOgres', pezzo: 'Dragon Ogres', n: [3, 6], opz: { arma: ['great', 'halberd', null], heavy: SI_NO, c: ['', 'c'] }, crea: BH.dragonOgres },
+  { k: 'razorgorChariot', pezzo: 'Razorgor Chariot', crea: () => BH.carro({ razorgor: true }) },
+  { k: 'ghorgon', pezzo: 'Ghorgon', max: 1, crea: BH.ghorgon },
+  { k: 'shaggoth', pezzo: 'Dragon Ogre Shaggoth', max: 1, opz: { great: [true, false], heavy: SI_NO }, crea: BH.shaggoth },
+];
+
+const ELFI = [
+  { k: 'gladeLord', pezzo: 'Glade Lord', max: 1, opz: { weapon: [null, 'great', 'shield'], frecce: FRECCE }, crea: o => WE.capo({ ...mani(o), lord: true }) },
+  { k: 'gladeCaptain', pezzo: 'Glade Captain', max: 2, opz: { weapon: [null, 'great', 'shield'], frecce: FRECCE, bsb: SI_NO },
+    crea: o => WE.capo({ ...mani(o), lord: false }), bsb: o => o.bsb },
+  { k: 'spellweaver', pezzo: 'Spellweaver', max: 1, opz: { level: [4, 3], tattoos: SI_NO }, crea: o => WE.mago({ ...o, weaver: true }), mago: o => o.level },
+  { k: 'spellsinger', pezzo: 'Spellsinger', max: 2, opz: { level: [2, 1], tattoos: SI_NO }, crea: o => WE.mago({ ...o, weaver: false }), mago: o => o.level },
+  { k: 'branchwraith', pezzo: 'Branchwraith', max: 1, opz: { level: [1, 2], great: SI_NO }, crea: WE.branchwraith, mago: o => o.level },
+  { k: 'ancient', pezzo: 'Treeman Ancient', max: 1, opz: { level: [2, 3, 4] }, crea: WE.ancient, mago: o => o.level },
+  { k: 'gladeGuard', pezzo: 'Glade Guard', n: [10, 30], opz: { c: COMANDO, frecce: FRECCE, f: FRONTI }, crea: WE.gladeGuard },
+  { k: 'eternalGuard', pezzo: 'Eternal Guard', n: [10, 30], opz: { c: COMANDO, shields: [true, false], f: FRONTI }, crea: WE.eternalGuard },
+  { k: 'dryads', pezzo: 'Dryads', n: [10, 20], opz: { c: ['', 'c'], f: FRONTI }, crea: WE.dryads },
+  { k: 'gladeRiders', pezzo: 'Glade Riders', n: [5, 10], opz: { c: COMANDO, frecce: FRECCE }, crea: WE.gladeRiders },
+  { k: 'scouts', pezzo: 'Deepwood Scouts', n: [5, 10], opz: { frecce: FRECCE }, crea: WE.scouts },
+  { k: 'rangers', pezzo: 'Wildwood Rangers', n: [10, 20], opz: { c: COMANDO, f: FRONTI }, crea: WE.rangers },
+  { k: 'sisters', pezzo: 'Sisters of the Thorn', n: [5, 10], opz: { c: COMANDO }, crea: WE.sisters },
+  { k: 'wildRiders', pezzo: 'Wild Riders', n: [5, 10], opz: { c: COMANDO, shields: SI_NO }, crea: WE.wildRiders },
+  { k: 'warhawks', pezzo: 'Warhawk Riders', n: [3, 6], opz: { frecce: FRECCE }, crea: WE.warhawks },
+  { k: 'treeKin', pezzo: 'Tree Kin', n: [3, 6], opz: { c: ['', 'c'] }, crea: WE.treeKin },
+  { k: 'treeman', pezzo: 'Treeman', max: 1, crea: WE.treeman },
+  { k: 'eagle', pezzo: 'Great Eagle', max: 3, crea: WE.eagle },
+];
+
+const NANI = [
+  { k: 'king', pezzo: 'King', max: 1, opz: { weapon: MANI }, crea: o => DW.capo({ ...mani(o), king: true }) },
+  { k: 'thane', pezzo: 'Thane', max: 2, opz: { weapon: MANI, bsb: SI_NO },
+    crea: o => DW.capo({ ...mani(o), king: false }), bsb: o => o.bsb },
+  { k: 'runelord', pezzo: 'Runelord', max: 1, opz: { weapon: ['shield', 'great', null], plate: SI_NO }, crea: o => DW.runico({ ...mani(o), lord: true }) },
+  { k: 'runesmith', pezzo: 'Runesmith', max: 2, opz: { weapon: ['shield', 'great', null], plate: SI_NO }, crea: o => DW.runico({ ...mani(o), lord: false }) },
+  { k: 'dragonSlayer', pezzo: 'Dragon Slayer', max: 1, opz: { great: [true, false] }, crea: o => DW.slayerEroe({ ...o, daemon: false }) },
+  { k: 'daemonSlayer', pezzo: 'Daemon Slayer', max: 1, opz: { great: [true, false] }, crea: o => DW.slayerEroe({ ...o, daemon: true }) },
+  { k: 'warriors', pezzo: 'Dwarf Warriors', n: [10, 30], opz: { c: COMANDO, arma: ['shields', 'great', null], f: FRONTI }, crea: DW.warriors },
+  { k: 'quarrellers', pezzo: 'Quarrellers', n: [10, 20], opz: { c: COMANDO, shields: SI_NO, f: FRONTI }, crea: o => DW.tiratori({ ...o, gun: false }) },
+  { k: 'thunderers', pezzo: 'Thunderers', n: [10, 20], opz: { c: COMANDO, shields: SI_NO, f: FRONTI }, crea: o => DW.tiratori({ ...o, gun: true }) },
+  { k: 'longbeards', pezzo: 'Longbeards', n: [10, 30], opz: { c: COMANDO, arma: ['shields', 'great', null], f: FRONTI }, crea: DW.longbeards },
+  { k: 'hammerers', pezzo: 'Hammerers', n: [10, 30], opz: { c: COMANDO, f: FRONTI }, crea: DW.hammerers },
+  { k: 'ironbreakers', pezzo: 'Ironbreakers', n: [10, 30], opz: { c: COMANDO, f: FRONTI }, crea: DW.ironbreakers },
+  { k: 'miners', pezzo: 'Miners', n: [10, 20], opz: { c: COMANDO, f: FRONTI }, crea: DW.miners },
+  { k: 'slayers', pezzo: 'Slayers', n: [10, 30], opz: { c: ['', 'sm'], great: [true, false], f: FRONTI }, crea: DW.slayers },
+  { k: 'gyro', pezzo: 'Gyrocopters', n: [1, 3], opz: { gun: ['brimstone', 'clattergun'] }, crea: DW.gyro },
+  { k: 'grudge', pezzo: 'Grudge Thrower', max: 3, crea: DW.grudge },
+  { k: 'irondrakes', pezzo: 'Irondrakes', n: [5, 20], opz: { c: COMANDO, f: FRONTI }, crea: DW.irondrakes },
+];
+
 /* Da Boyz (Ravening Hordes p. 46): un Boss di Orchi Neri per ogni
    reggimento di Orchi Neri, e viceversa */
 const daBoyz = (geni, voce) => {
@@ -170,6 +252,22 @@ const REGOLE_LUCERTOLE = [
   { k: ['bastiladon'], al: 2, per: true, t: 'Bastiladon, 0-2 ogni 1.000 punti (p. 2)' },
   { k: ['ancientSteg'], al: 1, per: true, t: 'Stegadon, 0-1 ogni 1.000 punti (p. 2)' },
 ];
+const REGOLE_BESTIE = [
+  { k: ['beastlord', 'greatShaman', 'doombull'], al: 1, per: true, t: 'Beastlord, Great Bray-Shaman o Doombull, 0-1 ogni 1.000 punti (Ravening Hordes p. 91)' },
+  { k: ['gors'], almeno: 1, t: 'almeno un Gor Herd (p. 91)' },
+];
+const REGOLE_ELFI = [
+  { k: ['gladeLord', 'spellweaver'], al: 1, per: true, t: 'Glade Lord o Spellweaver, 0-1 ogni 1.000 punti (Forces of Fantasy p. 119)' },
+  { k: ['ancient'], al: 1, per: true, t: 'Treeman Ancient, 0-1 ogni 1.000 punti (p. 119)' },
+  { k: ['gladeGuard'], almeno: 1, t: 'almeno un reggimento di Glade Guard (p. 119)' },
+  { k: ['treeKin'], al: 2, per: true, t: 'Tree Kin, 0-2 ogni 1.000 punti (p. 119)' },
+  { k: ['eagle'], al: 3, per: true, t: 'Great Eagles, 0-3 ogni 1.000 punti (p. 119)' },
+];
+const REGOLE_NANI = [
+  { k: ['king', 'runelord'], al: 1, per: true, t: 'King o Runelord, 0-1 ogni 1.000 punti (Forces of Fantasy p. 11)' },
+  { k: ['hammerers'], ogni: ['king', 'thane'], t: 'Hammerers, uno per King o Thane (p. 11)' },
+  { k: ['grudge'], al: 3, per: true, t: 'macchine da guerra delle Speciali, 0-3 ogni 1.000 punti (p. 11)' },
+];
 function composizione(geni, punti, regole){
   const quanti = ks => geni.filter(g => ks.includes(g.k)).length;
   const mille = Math.max(1, Math.floor(punti / 1000));
@@ -202,6 +300,24 @@ export const FAZIONI = {
   liz: { sigla: 'LIZ', nome: 'Lucertole', cat: 'Lizardmen', voci: LUCERTOLE, regole: REGOLE_LUCERTOLE, vincoli: (g, v, p) => composizione(g, p, REGOLE_LUCERTOLE),
     partenze: [[G('oldblood', 0, { weapon: 'great' }), G('scarVet', 0, { weapon: 'great', bsb: true }),
                 G('templeGuard', 16, { c: 'csm' }), G('saurus', 18, { c: 'cs' })]] },
+  /* i tre eserciti senza miniature in vetrina: la partenza e' una lista
+     scritta a mano, del tipo che si porta a una serata, e la ricerca
+     deve fare almeno altrettanto */
+  bst: { sigla: 'BST', nome: 'Uomini Bestia', cat: 'Beastmen Brayherds', voci: BESTIE, regole: REGOLE_BESTIE,
+    vincoli: (g, v, p) => composizione(g, p, REGOLE_BESTIE),
+    partenze: [[G('beastlord', 0, { weapon: 'great', armour: 'heavy' }), G('shaman', 0, { level: 2 }, 'dark'),
+                G('gors', 30, { c: 'csm', f: 6 }), G('gors', 20, { c: 'sm', f: 5 }), G('bestigors', 12, { c: 'csm', f: 6 }),
+                G('razorgorChariot', 0, {})]] },
+  we: { sigla: 'WE', nome: 'Elfi Silvani', cat: 'Wood Elf Realms', voci: ELFI, regole: REGOLE_ELFI,
+    vincoli: (g, v, p) => composizione(g, p, REGOLE_ELFI),
+    partenze: [[G('spellweaver', 0, { level: 4, tattoos: false }, 'battle'), G('gladeCaptain', 0, { weapon: null, frecce: null, bsb: true }),
+                G('gladeGuard', 15, { c: 'sm', frecce: 'hagbane', f: 5 }), G('gladeGuard', 10, { c: '', frecce: null, f: 5 }),
+                G('eternalGuard', 18, { c: 'csm', shields: true, f: 6 })]] },
+  dwf: { sigla: 'DWF', nome: 'Nani', cat: 'Dwarfen Mountain Holds', voci: NANI, regole: REGOLE_NANI,
+    vincoli: (g, v, p) => composizione(g, p, REGOLE_NANI),
+    partenze: [[G('thane', 0, { weapon: 'great', bsb: true }), G('runesmith', 0, { weapon: 'shield', plate: false }),
+                G('warriors', 25, { c: 'csm', arma: 'shields', f: 5 }), G('thunderers', 12, { c: '', shields: false, f: 6 }),
+                G('hammerers', 15, { c: 'csm', f: 5 }), G('grudge', 0, {})]] },
 };
 /* a quale fazione appartiene un catalogo: «Lizardmen - Renegades 2.0» è Lucertole */
 export const fazioneDi = catalogue => {
@@ -211,6 +327,7 @@ export const fazioneDi = catalogue => {
 
 /* ================= lo spazio di una ricerca ================= */
 const isChar = v => v.slot === 'Characters' || v.slot === 'Named Characters';
+const loner = u => ((u && u.rules) || []).some(r => /^loner/i.test(String(r)));
 const MAX = { Characters: 2, 'Named Characters': 1, Core: 4, Special: 2, Rare: 1 };
 const scegli = (a, rnd) => a[Math.floor(rnd() * a.length)];
 const intero = (a, b, rnd) => a + Math.floor(rnd() * (b - a + 1));
@@ -346,6 +463,8 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
     geni.forEach((g, i) => {
       if (!isChar(voce(g))) return;
       if (bsb(g)){ bsbI = i; return; }
+      /* Loner: «cannot be your General» (p. 172) — gli Slayer dei Nani */
+      if (loner(units[i])) return;
       const ld = +((units[i].stats || {}).Ld) || 0;
       if (ld > bestLd){ bestLd = ld; general = i; }
     });
@@ -395,7 +514,7 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
       err.push(`il tema vuole ${alt.map(k => perK[k] ? perK[k].nome : k).join(' o ')}`);
     for (const v of voci) if (v.min && (conta[v.k] || 0) < v.min) err.push(`il tema vuole ${v.min} ${v.nome}`);
     const chars = geni.filter(g => isChar(voce(g)));
-    if (!chars.some(g => !bsb(g))) err.push('nessun generale');
+    if (!chars.some(g => !bsb(g) && !loner(unita(g)))) err.push('nessun generale');
     if (geni.filter(bsb).length > 1) err.push('due stendardi da battaglia');
     if (geni.length - chars.length < 1) err.push('solo personaggi');
     const pts = totale(geni);
@@ -594,7 +713,13 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
 
   /* ---- a parole, per chi legge ---- */
   const PAROLE = { shields: 'scudi', spears: 'lance', bows: 'archi', great: 'arma grande', heavy: 'armatura pesante', shield: 'scudo',
-    bsb: 'stendardo da battaglia', censer: 'incensiere', catcher: 'Things-catcher', sling: 'fionde', big: "Big 'Uns" };
+    bsb: 'stendardo da battaglia', censer: 'incensiere', catcher: 'Things-catcher', sling: 'fionde', big: "Big 'Uns",
+    plate: 'armatura a piastre', tattoos: 'Talismanic Tattoos', axes: 'asce da lancio' };
+  const VALORI = { armour: { heavy: 'armatura pesante', light: 'armatura leggera' },
+    arma: { spear: 'lance', great: 'armi grandi', halberd: 'alabarde', shields: 'scudi' },
+    frecce: { hagbane: 'frecce Hagbane', bodkins: 'Arcane Bodkins', trueflight: 'frecce Trueflight',
+              swiftshiver: 'frecce Swiftshiver', moonfire: 'frecce Moonfire' },
+    gun: { pistol: 'pistola', musket: 'moschetto', brimstone: 'Brimstone gun', clattergun: 'Clattergun' } };
   function descrivi(geni){
     return ordina(geni).map(g => {
       const v = voce(g), o = g.o || {}, bit = [];
@@ -603,7 +728,7 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
         if (k === 'spears' && o.bows) continue;   // l'arco prende il posto delle lance
         if (k === 'c') bit.push([...x].map(c => ({ c: 'campione', s: 'stendardo', m: 'musico' })[c]).join(', '));
         else if (k === 'weapon') bit.push(PAROLE[x] || { halberd: 'alabarda' }[x] || x);
-        else if (k === 'gun') bit.push({ pistol: 'pistola', musket: 'moschetto' }[x] || x);
+        else if (VALORI[k]) bit.push(VALORI[k][x] || x);
         else if (k === 'pm') bit.push(`${x} Packmaster`);
         else if (x === true && PAROLE[k]) bit.push(PAROLE[k]);
       }

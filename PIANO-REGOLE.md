@@ -1984,8 +1984,61 @@ caricava con il suo reggimento.** La carica si scriveva sul reggimento,
 e la schiera del capo (`schieraDi`) non la vedeva — niente bonus
 d'Iniziativa, niente urto, niente regole di carica.
 
+**Tre eserciti dal libro** (2026-10-11). Uomini Bestia (Ravening Hordes
+pp. 91-117), Elfi Silvani (Forces of Fantasy pp. 119-147) e Nani
+(pp. 11-39), senza una lista salvata né una miniatura in vetrina: le
+unità le scrive `costruttori.js` profilo per profilo, le regole stanno
+in tre file nuovi di `dati/eserciti/`, e le cerca `spazio.js` dal
+serbatoio «tutte». Le decisioni, perché si rifacciano solo se si trova
+di meglio:
+
+- **quello che l'arbitro non sa giocare non ha una voce**: il cannone,
+  l'organo, il lanciafiamme, il Bolt Thrower, i Gyrobomber, i
+  Wardancers, la Cockatrice, il Cygor, il Jabberslythe, il Gigante. Una
+  ricerca che li compra misura punti buttati;
+- **chi può stare in ordine aperto si schiera in ranghi**, anche con
+  Skirmishers: è il contrario di quello che il parser fa con gli Open
+  Order importati (limite noto), e per le Glade Guard è la differenza
+  fra tirare con il Volley Fire e no;
+- **le regole d'esercito che vivono in un momento** le gioca l'arbitro:
+  la Primal Fury è un test quando il combattimento viene scelto
+  (`furiaPrimordiale`), la Blood Rage rende frenetici con un effetto che
+  la `frenzyLost` non spegne, il Mark of Chaos Undivided e il Veteran
+  ritirano il test fallito (`marchio`), la Rune Lore mette i Runesmith
+  fra chi dissolve (`dissolutori`), la Resolute toglie uno alla fuga e
+  all'inseguimento (`tiroDInseguimento`). Quelle che il vocabolario dei
+  file sa dire stanno nei file; le altre universali in `rulebook.js`;
+- **il primo round è dell'unità**, non della partita: l'arbitro passava
+  a `meleeFight` il numero del mezzo turno, l'Odio vuole «il primo round
+  del combattimento» e non scattava mai. Adesso conta chi non era in
+  combattimento all'inizio del mezzo turno (`giaInMischia`), e lo leggono
+  l'Odio e gli Elven Reflexes;
+- **l'Odio guarda la parentesi** (p. 171): «Hatred (Dwarfs)» odia i
+  Nani, non tutti. `odia` confronta la parentesi con il catalogo della
+  fazione per radice; una parentesi che non riconosce non odia nessuno.
+
+E tre cose del tiro che valevano per tutti: l'arbitro non tirava con il
+**Volley Fire** né con i **Multiple Shots** (`raffica`: le file dietro,
+e la scelta di tirare X volte con −1, presa sulla media e scritta), e
+l'**Armour Bane** a distanza si leggeva e si buttava. E una della
+mischia: la **lancia** vale solo nel turno della carica (p. 215), e
+`meleeWeapon` la teneva sempre perché perfora di più. E una
+dell'euristica: `restareFermo` marcava «resta ferma per tirare» solo le
+armi «o si muove o tira», e gli arcieri avanzavano verso il nemico che
+avevano già a tiro, perdendo il Volley Fire e prendendo il −1. Adesso
+la marca a ogni tiratore che muovendosi perderebbe qualcosa — non i
+Quick Shot, non mostri, carri e personaggi. Misurata con lo stesso seme
+su 252 partite contro le sette liste da 1000: la lista elfica di
+partenza da 30/56 a 44/45, i Nani da 46/45 a 50/40.
+
 ### Cosa resta
 
+- **Dei tre eserciti nuovi**: le unità senza voce (sopra), lo
+  schieramento fuori dal normale — Ambushers, Scouts, Vanguard, che
+  l'arbitro schiera tutti all'inizio —, le danze dei Wardancers, il Tree
+  Whack, il Deathblow degli Slayer, il Venerable, la Forgefire che il
+  Runesmith presta al reggimento, e gli oggetti runici e magici, che i
+  costruttori non comprano.
 - **La magia che resta testo.** Vortici, trasporti, sagome, linee: un
   trentatré dei cinquantasei incantesimi del manuale base: l'arbitro ne
   gioca ventitré. Vogliono la geometria delle sagome

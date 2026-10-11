@@ -20,7 +20,8 @@ import { adoptList } from './lists.js';
 import { scenariGiocabili } from './controai.js';
 import { renderEsperimento, usaFileRicerche, torneiLocali } from './lab-esperimento.js';
 
-const FAZIONI = { skaven: "Skaven", og: "Orchi & Goblin", liz: "Lucertole" };
+/* le stesse di src/spazio.js, nell'ordine delle ricerche */
+const FAZIONI = { skaven: "Skaven", og: "Orchi & Goblin", liz: "Lucertole", bst: "Uomini Bestia", we: "Elfi Silvani", dwf: "Nani" };
 const POOL = { tutte: "con tutte le unità", collezione: "con la tua collezione", archivio: "dall'archivio" };
 /* gli stessi di cerca.mjs: servono per dire quante partite costa */
 const SFORZI = {
@@ -308,7 +309,7 @@ function comandi(tor){
   const torneo = `node tools/liste/torneo.mjs --punti ${v.punti}`;
   /* la stima: gli avversari sono le liste d'archivio vicine ai punti e le
      migliori delle altre fazioni, fino a dieci */
-  const nf = v.fazione === "tutte" ? 3 : 1, np = v.pool === "entrambe" ? 2 : 1;
+  const nf = v.fazione === "tutte" ? Object.keys(FAZIONI).length : 1, np = v.pool === "entrambe" ? 2 : 1;
   const avv = Math.min(10, 6 + (ricercheA(v.punti).length ? 3 : 0));
   const p = SFORZI[v.sforzo], celle = avv * scen.length;
   const perRicerca = 2 * ((p.popolazione * p.generazioni + 12) * Math.min(p.celle, celle) + p.finaliste * celle * p.verifica);
@@ -325,7 +326,7 @@ function comandiHTML(tor){
     <div class="panel-title">Lancia una ricerca</div>
     <p class="note">Nel terminale, dalla cartella del progetto. La ricerca cerca le liste; il torneo le fa giocare tutte contro tutte su ogni scenario ed è la tabella qui sopra. Quando hanno finito, <b>Ricarica</b>.</p>
     <div class="grid2">
-      <label class="field">Fazione${sel("lab-fz", v.fazione, [["tutte", "Tutte e tre"], ...Object.entries(FAZIONI)])}</label>
+      <label class="field">Fazione${sel("lab-fz", v.fazione, [["tutte", "Tutte"], ...Object.entries(FAZIONI)])}</label>
       <label class="field">Unità${sel("lab-pool", v.pool, [["entrambe", "Tutte, e la mia collezione"], ["tutte", "Tutte quelle che si sanno costruire"], ["collezione", "Solo la mia collezione"]])}</label>
       <label class="field">Scenari su cui cercarla${sel("lab-dove", v.dove, [["sei", "I sei di prova (una lista buona ovunque)"], ["questo", "Solo lo scenario scelto"], ["tutti", "Tutti gli scenari"]])}</label>
       <label class="field">Sforzo${sel("lab-sforzo", v.sforzo, [["rapido", "Rapido"], ["normale", "Normale"], ["accurato", "Accurato"]])}</label>

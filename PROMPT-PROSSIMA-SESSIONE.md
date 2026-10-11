@@ -803,6 +803,52 @@ spazzata via tutta, l'altra vince comunque (stessa pagina). Restano
 testo i tre incantesimi con «Multiple Wounds» dei domini
 (`dati/magia/domini.json`, voci «a mano»).
 
+## Fatto: Uomini Bestia, Elfi Silvani e Nani, e le loro liste da 1000 (2026-10-11)
+
+Tre eserciti letti per intero sui libri — Ravening Hordes pp. 91-117,
+Forces of Fantasy pp. 11-39 e 119-147 — senza una lista salvata né una
+miniatura in vetrina. Il racconto sta nel README (*I tre eserciti
+scritti dal libro*) e nel piano (§13); qui quello che serve a chi
+riprende:
+
+- **dove stanno**: i costruttori `BH`, `WE`, `DW` in `src/costruttori.js`
+  (scritti per intero, come gli Skaven), le voci e i vincoli in
+  `src/spazio.js` (fazioni `bst`, `we`, `dwf`, serbatoio `tutte`), le
+  regole in `dati/eserciti/{uomini-bestia,elfi-silvani,nani}.json`, le
+  righe dei destrieri elfici, degli equipaggi dei carri dei Bestia e dei
+  serventi del Grudge Thrower in `dati/profili.json`, i maghi e la Lore
+  of Beasts / Lore of Athel Loren in `dati/magia/domini.json`. Prove in
+  `test/eserciti.mjs`;
+- **quello che non ha una voce** perché l'arbitro non lo sa giocare:
+  cannone, organo, lanciafiamme, Bolt Thrower, Gyrobomber, Wardancers e
+  Shadowdancer, Cockatrice, Cygor, Jabberslythe, Gigante. Il primo che si
+  implementa (la palla di cannone, le danze) si aggiunge a `spazio.js`;
+- **le letture**: in ordine aperto si schiera in ranghi; lo scudo con
+  l'arma a due mani non si compra; il Braystaff sempre in difesa;
+- **i buchi trovati strada facendo, che valevano per tutti**: l'Odio
+  (contro chiunque, e mai in partita), il Volley Fire e i Multiple Shots
+  (mai nell'arbitro), l'Armour Bane a distanza, la lancia fuori carica,
+  e gli arcieri che avanzavano invece di tirare (`restareFermo`). Hanno
+  spostato anche le sette liste vecchie: con il motore nuovo gli Orchi
+  salgono e gli Skaven scendono (sotto i numeri);
+- **le liste**: cercate con `cerca.mjs --obiettivo equilibrata` contro
+  le sette da 1000 (`dati/ricerche/{bst,we,dwf}-tutte-1000.json`), poi
+  `bilancia.mjs --solo bst:libera,we:libera,dwf:libera`, che adesso
+  accetta le ricerche senza collezione con il tema «libera», e salvate
+  con `salva.mjs --bilancia 1000 --solo …`. Nella verifica (8 semi a
+  specchio, 96 partite per coppia): «La Mandria e il Ghorgon BST» 48%,
+  «Archi e lance di Athel Loren WE» 47%, «Balestre, schioppi e Slayer
+  DWF» 56%; le sette vecchie fra 42% (Skryre) e 57% (Orchi Neri). Il
+  bilanciamento aveva cambiato i Nani con una variante al 53% su 24
+  partite per coppia, che sugli otto semi faceva 62%: rimessa la lista
+  della ricerca, provata contro le nove su 4 semi e rigiocata con i semi
+  della verifica (70001), così la tabella resta una sola;
+- **da fare, se servisse**: gli Elfi Silvani sono la fazione più corta
+  (le liste a caso al 33%): la cavalcatura dei capi (Great Stag, Elven
+  Steed) non c'è, la Lore of Athel Loren è quasi tutta testo, e le
+  danze dei Wardancers non si giocano. Gli Skaven di Skryre, con il
+  motore nuovo, sono scesi al 42%: forse vanno ribilanciati.
+
 ## Come si lavora qui
 
 - `npm test` prima di ogni commit, e le prove nuove **falliscono prima** di

@@ -267,6 +267,34 @@
           "effetto": { "a mano": "sagoma da 5 pollici entro 15 che blocca la vista e devia di D6 a ogni inizio turno; i nemici che tocca restano bagnati per la partita: −1 per colpire al tiro, e le macchine da guerra non tirano con un 1" },
           "testo": "tempesta che bagna i nemici: −1 al tiro per il resto della partita" }
       ]
+    },
+    {
+      "id": "beasts", "regola": "Lore of Beasts", "libro": "Ravening Hordes", "page": 117,
+      "spells": [
+        { "id": "viletide", "name": "Viletide", "type": "missile", "cv": 8, "range": 15, "page": 117,
+          "effetto": { "colpi": { "dadi": "5D6", "S": 1, "AP": 0, "noArmour": true } },
+          "testo": "5D6 colpi a Forza 1, senza armatura" },
+        { "id": "devolve", "name": "Devolve", "type": "missile", "cv": 8, "range": 15, "page": 117,
+          "effetto": { "a mano": "il bersaglio tira il Comando, e se fallisce perde tante Ferite quanto lo ha mancato" },
+          "testo": "test di Comando: perde le Ferite di quanto lo manca" },
+        { "id": "mantleOfGhorok", "name": "Mantle of Ghorok", "type": "enchantment", "cv": 8, "range": "self", "page": 117,
+          "effetto": { "a mano": "fino alla fine del turno il mago ha +D6 Forza e Attacchi (fino a 10); con un 6 il bonus si perde e il mago perde una Ferita" },
+          "testo": "+D6 Forza e Attacchi al mago, ma con un 6 si ferisce" }
+      ]
+    },
+    {
+      "id": "athelLoren", "regola": "Lore of Athel Loren", "libro": "Forces of Fantasy", "page": 146,
+      "spells": [
+        { "id": "treeSinging", "name": "Tree Singing", "type": "vortex", "cv": 7, "cv2": 9, "range": 15, "rip": true, "page": 146,
+          "effetto": { "a mano": "una sagoma da 3 pollici (da 5 con 9 o piu') entro 15 diventa un bosco, pericoloso per i nemici, finche' resta in gioco" },
+          "testo": "un bosco nuovo, pericoloso per i nemici" },
+        { "id": "forestWalker", "name": "Forest Walker", "type": "conveyance", "cv": 10, "range": 24, "page": 146,
+          "effetto": { "a mano": "un personaggio elfo amico tutto dentro un bosco passa in un altro bosco, non entro 6 pollici dai nemici" },
+          "testo": "un personaggio salta da un bosco all'altro" },
+        { "id": "flockOfDoom", "name": "Flock Of Doom", "type": "missile", "cv": 9, "range": 18, "page": 146,
+          "effetto": { "a mano": "sagoma da 3 pollici sul centro del bersaglio: chi ci sta sotto prende un colpo a Forza 3, perforazione 1" },
+          "testo": "sagoma piccola, colpi a Forza 3 perforazione 1" }
+      ]
     }
   ],
   "vincolati": [
@@ -303,6 +331,22 @@
       "opzione": "Livello 4, +30 punti" },
     { "nomi": ["Plague Priest"], "livello": 0, "domini": ["battle", "daemonology", "dark"],
       "regole": ["Lore of the Horned Rat"], "libro": "Legends: Skaven", "page": 6,
-      "opzione": "Livello 1 per 30 punti o Livello 2 per 60: senza, non e' un mago" }
+      "opzione": "Livello 1 per 30 punti o Livello 2 per 60: senza, non e' un mago" },
+    { "nomi": ["Great Bray-Shaman"], "livello": 3, "domini": ["daemonology", "dark", "elementalism"],
+      "regole": ["Lore of Beasts"], "libro": "Ravening Hordes", "page": 93, "opzione": "Livello 4, +30 punti" },
+    { "nomi": ["Bray-Shaman"], "livello": 1, "domini": ["daemonology", "dark", "elementalism"],
+      "regole": ["Lore of Beasts"], "libro": "Ravening Hordes", "page": 93, "opzione": "Livello 2, +30 punti" },
+    { "nomi": ["Spellweaver"], "livello": 3, "domini": ["battle", "elementalism", "high", "illusion"],
+      "regole": ["Lore of Athel Loren"], "libro": "Forces of Fantasy", "page": 121, "opzione": "Livello 4, +30 punti" },
+    { "nomi": ["Spellsinger"], "livello": 1, "domini": ["battle", "elementalism", "high", "illusion"],
+      "regole": ["Lore of Athel Loren"], "libro": "Forces of Fantasy", "page": 121, "opzione": "Livello 2, +30 punti" },
+    { "nomi": ["Treeman Ancient"], "livello": 2, "domini": ["battle", "elementalism"],
+      "regole": ["Lore of Athel Loren"], "libro": "Forces of Fantasy", "page": 124,
+      "opzione": "Livello 3 per 30 punti, Livello 4 per 60" },
+    { "nomi": ["Branchwraith"], "livello": 1, "domini": ["battle", "elementalism", "illusion"],
+      "regole": ["Lore of Athel Loren"], "libro": "Forces of Fantasy", "page": 125, "opzione": "Livello 2, +30 punti" },
+    { "nomi": ["Shadowdancer"], "livello": 0, "domini": ["battle", "illusion"],
+      "regole": [], "libro": "Forces of Fantasy", "page": 122,
+      "opzione": "Livello 1 per 35 punti: senza, non e' un mago" }
   ]
 }

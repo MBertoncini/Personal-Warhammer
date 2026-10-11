@@ -1,0 +1,4421 @@
+{
+ "formato": "tow-ricerca/1",
+ "quando": "2026-10-11T00:35:17.586Z",
+ "fazione": "dwf",
+ "nome": "Nani",
+ "catalogue": "Dwarfen Mountain Holds",
+ "pool": "tutte",
+ "punti": 1000,
+ "scenari": [
+  "sxmu9q80qdc65",
+  "sxprova-profondo",
+  "sxprova-boschi",
+  "bm-strada",
+  "bm-rovine",
+  "open"
+ ],
+ "seme": 1001,
+ "etichette": {
+  "sxmu9q80qdc65": "Poligono di tiro (mio)",
+  "sxprova-profondo": "Poligono profondo",
+  "sxprova-boschi": "Boschi e rovine",
+  "bm-strada": "La Strada delle Pietre",
+  "bm-rovine": "Le Rovine di Xhotl",
+  "open": "Battaglia Campale"
+ },
+ "sforzo": "normale",
+ "parametri": {
+  "popolazione": 10,
+  "generazioni": 8,
+  "celle": 12,
+  "verifica": 2,
+  "finaliste": 4
+ },
+ "obiettivo": "equilibrata",
+ "gioco": {
+  "formato": "scenario",
+  "durata": ""
+ },
+ "partite": 2592,
+ "secondi": 2141,
+ "unita": [
+  "King",
+  "Thane",
+  "Runelord",
+  "Runesmith",
+  "Dragon Slayer",
+  "Daemon Slayer",
+  "Dwarf Warriors",
+  "Quarrellers",
+  "Thunderers",
+  "Longbeards",
+  "Hammerers",
+  "Ironbreakers",
+  "Miners",
+  "Slayers",
+  "Gyrocopters",
+  "Grudge Thrower",
+  "Irondrakes"
+ ],
+ "escluse": [],
+ "esempi": true,
+ "provate": [
+  {
+   "k": "ironbreakers",
+   "nome": "Ironbreakers",
+   "liste": 1,
+   "partite": 24,
+   "media": 63,
+   "finaliste": 0
+  },
+  {
+   "k": "longbeards",
+   "nome": "Longbeards",
+   "liste": 9,
+   "partite": 384,
+   "media": 54,
+   "finaliste": 1
+  },
+  {
+   "k": "hammerers",
+   "nome": "Hammerers",
+   "liste": 3,
+   "partite": 72,
+   "media": 53,
+   "finaliste": 0
+  },
+  {
+   "k": "dragonSlayer",
+   "nome": "Dragon Slayer",
+   "liste": 10,
+   "partite": 432,
+   "media": 52,
+   "finaliste": 1
+  },
+  {
+   "k": "runesmith",
+   "nome": "Runesmith",
+   "liste": 21,
+   "partite": 768,
+   "media": 51,
+   "finaliste": 2
+  },
+  {
+   "k": "king",
+   "nome": "King",
+   "liste": 24,
+   "partite": 960,
+   "media": 49,
+   "finaliste": 2
+  },
+  {
+   "k": "thane",
+   "nome": "Thane",
+   "liste": 23,
+   "partite": 816,
+   "media": 49,
+   "finaliste": 2
+  },
+  {
+   "k": "warriors",
+   "nome": "Dwarf Warriors",
+   "liste": 29,
+   "partite": 1008,
+   "media": 49,
+   "finaliste": 3
+  },
+  {
+   "k": "quarrellers",
+   "nome": "Quarrellers",
+   "liste": 46,
+   "partite": 1776,
+   "media": 49,
+   "finaliste": 4
+  },
+  {
+   "k": "slayers",
+   "nome": "Slayers",
+   "liste": 28,
+   "partite": 1128,
+   "media": 49,
+   "finaliste": 3
+  },
+  {
+   "k": "grudge",
+   "nome": "Grudge Thrower",
+   "liste": 13,
+   "partite": 360,
+   "media": 49,
+   "finaliste": 1
+  },
+  {
+   "k": "thunderers",
+   "nome": "Thunderers",
+   "liste": 28,
+   "partite": 936,
+   "media": 48,
+   "finaliste": 2
+  },
+  {
+   "k": "irondrakes",
+   "nome": "Irondrakes",
+   "liste": 15,
+   "partite": 576,
+   "media": 48,
+   "finaliste": 1
+  },
+  {
+   "k": "daemonSlayer",
+   "nome": "Daemon Slayer",
+   "liste": 7,
+   "partite": 192,
+   "media": 47,
+   "finaliste": 0
+  },
+  {
+   "k": "gyro",
+   "nome": "Gyrocopters",
+   "liste": 16,
+   "partite": 624,
+   "media": 47,
+   "finaliste": 2
+  },
+  {
+   "k": "runelord",
+   "nome": "Runelord",
+   "liste": 8,
+   "partite": 216,
+   "media": 46,
+   "finaliste": 0
+  },
+  {
+   "k": "miners",
+   "nome": "Miners",
+   "liste": 14,
+   "partite": 504,
+   "media": 46,
+   "finaliste": 0
+  }
+ ],
+ "contro": [
+  {
+   "id": "lmugl4zv663f7",
+   "name": "La Campana e l'Abominio SKA",
+   "catalogue": "Skaven",
+   "points": 996,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmugl4zvob6pi",
+   "name": "Il Fulmine di Skryre SKA",
+   "catalogue": "Skaven",
+   "points": 996,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmugl4zw1fft7",
+   "name": "Squig e sciamani O&G",
+   "catalogue": "Orc and Goblin Tribes",
+   "points": 996,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmugl4zwpzy5r",
+   "name": "Orchi Neri e cinghiali O&G",
+   "catalogue": "Orc and Goblin Tribes",
+   "points": 984,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmugl4zwvt57k",
+   "name": "Il Carnosauro e i Terradon LIZ",
+   "catalogue": "Lizardmen",
+   "points": 979,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmugl4zwyicwd",
+   "name": "Lo Stegadonte e i Cold One LIZ",
+   "catalogue": "Lizardmen",
+   "points": 990,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmuh94k2z9p26",
+   "name": "Il Bastiladon e la Guardia del Tempio LIZ",
+   "catalogue": "Lizardmen",
+   "points": 964,
+   "fonte": "archivio"
+  }
+ ],
+ "storia": [
+  {
+   "gen": 1,
+   "partite": 240,
+   "migliore": 94,
+   "vince": 46,
+   "n": 24,
+   "lista": "King (scudo) — 127 pt; 14 Quarrellers (campione, stendardo, musico, fronte 10) — 141 pt; 16 Quarrellers (scudi, fronte 6) — 160 pt; 19 Longbeards — 228 pt; 17 Miners (campione, stendardo, musico, fronte 10) — 222 pt; 8 Irondrakes (fronte 8) — 120 pt"
+  },
+  {
+   "gen": 2,
+   "partite": 480,
+   "migliore": 85,
+   "vince": 48,
+   "n": 48,
+   "lista": "King (scudo) — 127 pt; 14 Quarrellers (campione, stendardo, musico, fronte 10) — 141 pt; 16 Quarrellers (scudi, fronte 6) — 160 pt; 19 Longbeards — 228 pt; 17 Miners (campione, stendardo, musico, fronte 10) — 222 pt; 8 Irondrakes (fronte 8) — 120 pt"
+  },
+  {
+   "gen": 3,
+   "partite": 720,
+   "migliore": 85,
+   "vince": 46,
+   "n": 72,
+   "lista": "Thane — 60 pt; Runesmith (arma grande, armatura a piastre) — 72 pt; 16 Dwarf Warriors (scudi, fronte 10) — 144 pt; 14 Quarrellers (fronte 7) — 126 pt; 18 Thunderers (campione, stendardo, musico, scudi, fronte 5) — 213 pt; 20 Thunderers (campione, stendardo, musico, scudi, fronte 10) — 235 pt; 11 Slayers (stendardo, musico, fronte 5) — 144 pt"
+  },
+  {
+   "gen": 4,
+   "partite": 960,
+   "migliore": 87,
+   "vince": 43,
+   "n": 96,
+   "lista": "Thane — 60 pt; Runesmith (arma grande, armatura a piastre) — 72 pt; 16 Dwarf Warriors (scudi, fronte 10) — 144 pt; 14 Quarrellers (fronte 7) — 126 pt; 18 Thunderers (campione, stendardo, musico, scudi, fronte 5) — 213 pt; 20 Thunderers (campione, stendardo, musico, scudi, fronte 10) — 235 pt; 11 Slayers (stendardo, musico, fronte 5) — 144 pt"
+  },
+  {
+   "gen": 5,
+   "partite": 1200,
+   "migliore": 86,
+   "vince": 38,
+   "n": 24,
+   "lista": "Thane — 60 pt; Runesmith (arma grande, armatura a piastre) — 72 pt; 21 Dwarf Warriors (scudi, fronte 10) — 189 pt; 20 Quarrellers (fronte 7) — 180 pt; 20 Thunderers (campione, stendardo, musico, scudi, fronte 10) — 235 pt; 13 Slayers (stendardo, musico, fronte 5) — 168 pt; Grudge Thrower — 95 pt"
+  },
+  {
+   "gen": 6,
+   "partite": 1440,
+   "migliore": 87,
+   "vince": 38,
+   "n": 144,
+   "lista": "Thane — 60 pt; Runesmith (arma grande, armatura a piastre) — 72 pt; 16 Dwarf Warriors (scudi, fronte 10) — 144 pt; 14 Quarrellers (fronte 7) — 126 pt; 18 Thunderers (campione, stendardo, musico, scudi, fronte 5) — 213 pt; 20 Thunderers (campione, stendardo, musico, scudi, fronte 10) — 235 pt; 11 Slayers (stendardo, musico, fronte 5) — 144 pt"
+  },
+  {
+   "gen": 7,
+   "partite": 1680,
+   "migliore": 87,
+   "vince": 38,
+   "n": 168,
+   "lista": "Thane — 60 pt; Runesmith (arma grande, armatura a piastre) — 72 pt; 16 Dwarf Warriors (scudi, fronte 10) — 144 pt; 14 Quarrellers (fronte 7) — 126 pt; 18 Thunderers (campione, stendardo, musico, scudi, fronte 5) — 213 pt; 20 Thunderers (campione, stendardo, musico, scudi, fronte 10) — 235 pt; 11 Slayers (stendardo, musico, fronte 5) — 144 pt"
+  },
+  {
+   "gen": 8,
+   "partite": 1920,
+   "migliore": 87,
+   "vince": 44,
+   "n": 192,
+   "lista": "King (arma grande) — 129 pt; Dragon Slayer — 70 pt; 19 Quarrellers (campione, stendardo, musico, fronte 6) — 186 pt; 11 Quarrellers (scudi, fronte 8) — 110 pt; 15 Quarrellers (campione, stendardo, musico, scudi, fronte 5) — 165 pt; 21 Slayers (stendardo, musico) — 264 pt; 1 Gyrocopters (Clattergun) — 70 pt"
+  }
+ ],
+ "migliori": [
+  {
+   "geni": [
+    {
+     "k": "thane",
+     "o": {
+      "weapon": null,
+      "bsb": false
+     }
+    },
+    {
+     "k": "runesmith",
+     "o": {
+      "weapon": "great",
+      "plate": true
+     }
+    },
+    {
+     "k": "warriors",
+     "o": {
+      "c": "",
+      "arma": "shields",
+      "f": 10
+     },
+     "n": 21
+    },
+    {
+     "k": "quarrellers",
+     "o": {
+      "c": "",
+      "shields": false,
+      "f": 6
+     },
+     "n": 20
+    },
+    {
+     "k": "thunderers",
+     "o": {
+      "c": "csm",
+      "shields": true,
+      "f": 10
+     },
+     "n": 20
+    },
+    {
+     "k": "slayers",
+     "o": {
+      "c": "sm",
+      "great": false,
+      "f": 5
+     },
+     "n": 13
+    },
+    {
+     "k": "grudge",
+     "o": {}
+    }
+   ],
+   "descrizione": "Thane — 60 pt; Runesmith (arma grande, armatura a piastre) — 72 pt; 21 Dwarf Warriors (scudi, fronte 10) — 189 pt; 20 Quarrellers (fronte 6) — 180 pt; 20 Thunderers (campione, stendardo, musico, scudi, fronte 10) — 235 pt; 13 Slayers (stendardo, musico, fronte 5) — 168 pt; Grudge Thrower — 95 pt",
+   "punti": 999,
+   "ricerca": {
+    "w": 13,
+    "l": 9,
+    "d": 2,
+    "n": 24
+   },
+   "verifica": {
+    "w": 67,
+    "l": 72,
+    "d": 29,
+    "n": 168,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 10,
+      "l": 10,
+      "d": 8,
+      "n": 28
+     },
+     "sxprova-profondo": {
+      "w": 13,
+      "l": 13,
+      "d": 2,
+      "n": 28
+     },
+     "sxprova-boschi": {
+      "w": 14,
+      "l": 7,
+      "d": 7,
+      "n": 28
+     },
+     "bm-strada": {
+      "w": 7,
+      "l": 21,
+      "d": 0,
+      "n": 28
+     },
+     "bm-rovine": {
+      "w": 15,
+      "l": 12,
+      "d": 1,
+      "n": 28
+     },
+     "open": {
+      "w": 8,
+      "l": 9,
+      "d": 11,
+      "n": 28
+     }
+    },
+    "perAvversario": {
+     "lmugl4zv663f7": {
+      "w": 5,
+      "l": 15,
+      "d": 4,
+      "n": 24
+     },
+     "lmugl4zvob6pi": {
+      "w": 10,
+      "l": 9,
+      "d": 5,
+      "n": 24
+     },
+     "lmugl4zw1fft7": {
+      "w": 11,
+      "l": 10,
+      "d": 3,
+      "n": 24
+     },
+     "lmugl4zwpzy5r": {
+      "w": 11,
+      "l": 11,
+      "d": 2,
+      "n": 24
+     },
+     "lmugl4zwvt57k": {
+      "w": 10,
+      "l": 9,
+      "d": 5,
+      "n": 24
+     },
+     "lmugl4zwyicwd": {
+      "w": 8,
+      "l": 9,
+      "d": 7,
+      "n": 24
+     },
+     "lmuh94k2z9p26": {
+      "w": 12,
+      "l": 9,
+      "d": 3,
+      "n": 24
+     }
+    },
+    "celle": {
+     "lmugl4zv663f7|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-profondo": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-strada": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|open": {
+      "w": 0,
+      "l": 2,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-strada": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|open": {
+      "w": 1,
+      "l": 0,
+      "d": 3,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|open": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|open": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 0,
+      "d": 3,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-profondo": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-boschi": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-rovine": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwvt57k|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-boschi": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|open": {
+      "w": 0,
+      "l": 1,
+      "d": 3,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-dwf-tutte-1000-1",
+    "name": "DWF libera 1000 · 1",
+    "info": {
+     "catalogue": "Dwarfen Mountain Holds",
+     "forceName": "Battle March",
+     "limit": 1000
+    },
+    "points": 999,
+    "external": false,
+    "imported": "2026-10-11T00:35:17.583Z",
+    "units": [
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Thane",
+        "stats": {
+         "M": "3",
+         "WS": "6",
+         "BS": "4",
+         "S": "4",
+         "T": "5",
+         "W": "2",
+         "I": "3",
+         "A": "3",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "Thane",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 60,
+      "troop": "Heavy infantry (character)",
+      "stats": {
+       "M": "3",
+       "WS": "6",
+       "BS": "4",
+       "S": "4",
+       "T": "5",
+       "W": "2",
+       "I": "3",
+       "A": "3",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "rules": [
+       "Ancestral Grudge",
+       "Dwarf Crafted",
+       "Gromril Armour",
+       "Gromril Weapons",
+       "Magic Resistance (-1)",
+       "Rallying Cry",
+       "Stubborn",
+       "Hatred (Orcs & Goblins)",
+       "Resolute"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "ruleText": {
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Runesmith",
+        "stats": {
+         "M": "3",
+         "WS": "5",
+         "BS": "4",
+         "S": "4",
+         "T": "4",
+         "W": "2",
+         "I": "2",
+         "A": "2",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "Runesmith",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 72,
+      "troop": "Heavy infantry (character)",
+      "stats": {
+       "M": "3",
+       "WS": "5",
+       "BS": "4",
+       "S": "4",
+       "T": "4",
+       "W": "2",
+       "I": "2",
+       "A": "2",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "rules": [
+       "Armour Bane (1)",
+       "Forgefire",
+       "Gromril Armour",
+       "Gromril Weapons",
+       "Magic Resistance (-2)",
+       "Rune Lore",
+       "Stubborn",
+       "Hatred (Orcs & Goblins)",
+       "Resolute"
+      ],
+      "weapons": [
+       {
+        "name": "Great Weapon",
+        "range": "Combat",
+        "S": "S+2",
+        "ap": "-2",
+        "rules": "Armour Bane (1), Requires Two Hands, Strike Last"
+       },
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "ruleText": {
+       "Armour Bane (1)": "If a model with this special rule rolls a natural 6 when making a roll To Wound, the Armour Piercing characteristic of its weapon is improved by the amount shown in brackets after the name of this special rule.\n\n For example, if a natural 6 is rolled when rolling To Wound with a weapon that has an AP of \"-\" and the Armour Bane (1) special rule its AP counts as being -1 when making an Armour Save roll against that wound.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Dwarf Warriors",
+        "stats": {
+         "M": "3",
+         "WS": "4",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Dwarf Warriors",
+      "models": 21,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 10,
+      "pts": 189,
+      "us": 21,
+      "troop": "Heavy infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "4",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "shield": true,
+      "rules": [
+       "Close Order",
+       "Magic Resistance (-1)",
+       "Shieldwall",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Shieldwall": "Once per game, during a turn in which it was charged, a unit with this special rule that is arrayed in a Close Order formation, and that is equipped with and chooses to use shields, may Give Ground rather than Fall Back in Good Order.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Quarrellers",
+        "stats": {
+         "M": "3",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Quarrellers",
+      "models": 20,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 6,
+      "pts": 180,
+      "us": 20,
+      "troop": "Heavy infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 5,
+      "shield": false,
+      "rules": [
+       "Close Order",
+       "Dwarf Crafted",
+       "Magic Resistance (-1)",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Crossbow",
+        "range": "30\"",
+        "S": "4",
+        "ap": "-",
+        "rules": "Armour Bane (2), Ponderous"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 30,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Thunderers",
+        "stats": {
+         "M": "3",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Thunderers",
+      "models": 20,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 10,
+      "pts": 235,
+      "us": 20,
+      "troop": "Heavy infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "shield": true,
+      "rules": [
+       "Close Order",
+       "Dwarf Crafted",
+       "Magic Resistance (-1)",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Handgun",
+        "range": "24\"",
+        "S": "4",
+        "ap": "-1",
+        "rules": "Armour Bane (1), Ponderous"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 24,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Slayers",
+        "stats": {
+         "M": "3",
+         "WS": "4",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "10"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Slayers",
+      "models": 13,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "pts": 168,
+      "us": 13,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "4",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "10"
+      },
+      "armour": 0,
+      "rules": [
+       "Deathblow",
+       "Immune to Psychology",
+       "Loner",
+       "Magic Resistance (-2)",
+       "Motley Crew",
+       "Open Order",
+       "Slayer",
+       "Unbreakable",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Special",
+      "maxRange": 0,
+      "ruleText": {
+       "Loner": "A character with this special rule cannot be your General and cannot join a unit without this special rule. A unit with this special rule cannot be joined by a character without this special rule.",
+       "Motley Crew": "Units with this special rule may include models of the same type that are equipped differently to one another, and/or models of different types that fight together in a single unit. If necessary, the army list entry for such units will be accompanied by a brief explanation of the unit’s composition.\n\n Different Weapons: The fighting rank of a Motley Crew may contain models that are armed with different weapons. In such cases, the controlling player must roll different batches of dice for the different models, making it clear to their opponent which model’s attacks they represent and where they are being directed. These attacks are made in the Initiative order of the individual models, as usual.\n\n Different Armour: Models within a Motley Crew may have different armour values. In combat, use the armour value of the majority of the models in the fighting rank. Against enemy shooting, use the armour value of the majority of the models in the unit.\n\n Casualty Removal: Against enemy shooting, casualty removal should be divided as equally as possible between the different models within the unit. In combat, casualties should be removed from among the majority of the models that make up the fighting rank. In either case, available models are brought forward from rear ranks to fill any gaps, as chosen by the controlling player.",
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Unbreakable": "If a unit with this special rule loses a round of combat, it is not required to make a Break test. Instead, it will automatically Give Ground as it is pushed back by the enemy. Characters that are not Unbreakable cannot join units that are, and vice versa.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 1,
+      "loose": true,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Grudge Thrower",
+        "stats": {
+         "M": "-",
+         "WS": "-",
+         "BS": "-",
+         "S": "-",
+         "T": "7",
+         "W": "3",
+         "I": "-",
+         "A": "-",
+         "Ld": "-"
+        }
+       },
+       {
+        "name": "Dwarf Crew",
+        "stats": {
+         "M": "3",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "3",
+         "I": "2",
+         "A": "3",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Grudge Thrower",
+      "models": 1,
+      "baseId": "50x75",
+      "baseW": 50,
+      "baseH": 75,
+      "frontage": 1,
+      "pts": 95,
+      "us": 0,
+      "troop": "War machine",
+      "unitSize": "1",
+      "stats": {
+       "M": "-",
+       "WS": "-",
+       "BS": "-",
+       "S": "-",
+       "T": "7",
+       "W": "3",
+       "I": "-",
+       "A": "-",
+       "Ld": "-"
+      },
+      "armour": 6,
+      "rules": [
+       "Hatred (Orcs & Goblins)",
+       "Magic Resistance (-1)",
+       "Skirmishers",
+       "Stubborn"
+      ],
+      "weapons": [
+       {
+        "name": "Stone thrower",
+        "range": "12-60\"",
+        "S": "4 (8)",
+        "ap": "-1 (-3)",
+        "rules": "Bombardment, Cumbersome, Move or Shoot, Multiple Wounds (D3+1)"
+       },
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Special",
+      "maxRange": 12,
+      "ruleText": {
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn."
+      }
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {},
+     "note": "Thane — 60 pt; Runesmith (arma grande, armatura a piastre) — 72 pt; 21 Dwarf Warriors (scudi, fronte 10) — 189 pt; 20 Quarrellers (fronte 6) — 180 pt; 20 Thunderers (campione, stendardo, musico, scudi, fronte 10) — 235 pt; 13 Slayers (stendardo, musico, fronte 5) — 168 pt; Grudge Thrower — 95 pt"
+    },
+    "formerNames": []
+   }
+  },
+  {
+   "geni": [
+    {
+     "k": "thane",
+     "o": {
+      "weapon": null,
+      "bsb": false
+     }
+    },
+    {
+     "k": "runesmith",
+     "o": {
+      "weapon": "great",
+      "plate": true
+     }
+    },
+    {
+     "k": "warriors",
+     "o": {
+      "c": "",
+      "arma": "shields",
+      "f": 10
+     },
+     "n": 16
+    },
+    {
+     "k": "quarrellers",
+     "o": {
+      "c": "",
+      "shields": false,
+      "f": 7
+     },
+     "n": 14
+    },
+    {
+     "k": "thunderers",
+     "o": {
+      "c": "csm",
+      "shields": true,
+      "f": 5
+     },
+     "n": 18
+    },
+    {
+     "k": "thunderers",
+     "o": {
+      "c": "csm",
+      "shields": true,
+      "f": 10
+     },
+     "n": 20
+    },
+    {
+     "k": "slayers",
+     "o": {
+      "c": "sm",
+      "great": false,
+      "f": 5
+     },
+     "n": 11
+    }
+   ],
+   "descrizione": "Thane — 60 pt; Runesmith (arma grande, armatura a piastre) — 72 pt; 16 Dwarf Warriors (scudi, fronte 10) — 144 pt; 14 Quarrellers (fronte 7) — 126 pt; 18 Thunderers (campione, stendardo, musico, scudi, fronte 5) — 213 pt; 20 Thunderers (campione, stendardo, musico, scudi, fronte 10) — 235 pt; 11 Slayers (stendardo, musico, fronte 5) — 144 pt",
+   "punti": 994,
+   "ricerca": {
+    "w": 68,
+    "l": 91,
+    "d": 33,
+    "n": 192
+   },
+   "verifica": {
+    "w": 76,
+    "l": 65,
+    "d": 27,
+    "n": 168,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 11,
+      "l": 11,
+      "d": 6,
+      "n": 28
+     },
+     "sxprova-profondo": {
+      "w": 16,
+      "l": 8,
+      "d": 4,
+      "n": 28
+     },
+     "sxprova-boschi": {
+      "w": 8,
+      "l": 13,
+      "d": 7,
+      "n": 28
+     },
+     "bm-strada": {
+      "w": 16,
+      "l": 12,
+      "d": 0,
+      "n": 28
+     },
+     "bm-rovine": {
+      "w": 16,
+      "l": 12,
+      "d": 0,
+      "n": 28
+     },
+     "open": {
+      "w": 9,
+      "l": 9,
+      "d": 10,
+      "n": 28
+     }
+    },
+    "perAvversario": {
+     "lmugl4zv663f7": {
+      "w": 12,
+      "l": 11,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zvob6pi": {
+      "w": 17,
+      "l": 5,
+      "d": 2,
+      "n": 24
+     },
+     "lmugl4zw1fft7": {
+      "w": 11,
+      "l": 8,
+      "d": 5,
+      "n": 24
+     },
+     "lmugl4zwpzy5r": {
+      "w": 8,
+      "l": 14,
+      "d": 2,
+      "n": 24
+     },
+     "lmugl4zwvt57k": {
+      "w": 12,
+      "l": 6,
+      "d": 6,
+      "n": 24
+     },
+     "lmugl4zwyicwd": {
+      "w": 8,
+      "l": 11,
+      "d": 5,
+      "n": 24
+     },
+     "lmuh94k2z9p26": {
+      "w": 8,
+      "l": 10,
+      "d": 6,
+      "n": 24
+     }
+    },
+    "celle": {
+     "lmugl4zv663f7|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-profondo": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-profondo": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxmu9q80qdc65": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|open": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-profondo": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-boschi": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|open": {
+      "w": 0,
+      "l": 2,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-profondo": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-boschi": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|open": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-profondo": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-boschi": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-rovine": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|open": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-profondo": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-boschi": {
+      "w": 0,
+      "l": 2,
+      "d": 2,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|open": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-dwf-tutte-1000-2",
+    "name": "DWF libera 1000 · 2",
+    "info": {
+     "catalogue": "Dwarfen Mountain Holds",
+     "forceName": "Battle March",
+     "limit": 1000
+    },
+    "points": 994,
+    "external": false,
+    "imported": "2026-10-11T00:35:17.583Z",
+    "units": [
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Thane",
+        "stats": {
+         "M": "3",
+         "WS": "6",
+         "BS": "4",
+         "S": "4",
+         "T": "5",
+         "W": "2",
+         "I": "3",
+         "A": "3",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "Thane",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 60,
+      "troop": "Heavy infantry (character)",
+      "stats": {
+       "M": "3",
+       "WS": "6",
+       "BS": "4",
+       "S": "4",
+       "T": "5",
+       "W": "2",
+       "I": "3",
+       "A": "3",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "rules": [
+       "Ancestral Grudge",
+       "Dwarf Crafted",
+       "Gromril Armour",
+       "Gromril Weapons",
+       "Magic Resistance (-1)",
+       "Rallying Cry",
+       "Stubborn",
+       "Hatred (Orcs & Goblins)",
+       "Resolute"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "ruleText": {
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Runesmith",
+        "stats": {
+         "M": "3",
+         "WS": "5",
+         "BS": "4",
+         "S": "4",
+         "T": "4",
+         "W": "2",
+         "I": "2",
+         "A": "2",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "Runesmith",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 72,
+      "troop": "Heavy infantry (character)",
+      "stats": {
+       "M": "3",
+       "WS": "5",
+       "BS": "4",
+       "S": "4",
+       "T": "4",
+       "W": "2",
+       "I": "2",
+       "A": "2",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "rules": [
+       "Armour Bane (1)",
+       "Forgefire",
+       "Gromril Armour",
+       "Gromril Weapons",
+       "Magic Resistance (-2)",
+       "Rune Lore",
+       "Stubborn",
+       "Hatred (Orcs & Goblins)",
+       "Resolute"
+      ],
+      "weapons": [
+       {
+        "name": "Great Weapon",
+        "range": "Combat",
+        "S": "S+2",
+        "ap": "-2",
+        "rules": "Armour Bane (1), Requires Two Hands, Strike Last"
+       },
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "ruleText": {
+       "Armour Bane (1)": "If a model with this special rule rolls a natural 6 when making a roll To Wound, the Armour Piercing characteristic of its weapon is improved by the amount shown in brackets after the name of this special rule.\n\n For example, if a natural 6 is rolled when rolling To Wound with a weapon that has an AP of \"-\" and the Armour Bane (1) special rule its AP counts as being -1 when making an Armour Save roll against that wound.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Dwarf Warriors",
+        "stats": {
+         "M": "3",
+         "WS": "4",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Dwarf Warriors",
+      "models": 16,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 10,
+      "pts": 144,
+      "us": 16,
+      "troop": "Heavy infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "4",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "shield": true,
+      "rules": [
+       "Close Order",
+       "Magic Resistance (-1)",
+       "Shieldwall",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Shieldwall": "Once per game, during a turn in which it was charged, a unit with this special rule that is arrayed in a Close Order formation, and that is equipped with and chooses to use shields, may Give Ground rather than Fall Back in Good Order.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Quarrellers",
+        "stats": {
+         "M": "3",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Quarrellers",
+      "models": 14,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 7,
+      "pts": 126,
+      "us": 14,
+      "troop": "Heavy infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 5,
+      "shield": false,
+      "rules": [
+       "Close Order",
+       "Dwarf Crafted",
+       "Magic Resistance (-1)",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Crossbow",
+        "range": "30\"",
+        "S": "4",
+        "ap": "-",
+        "rules": "Armour Bane (2), Ponderous"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 30,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Thunderers",
+        "stats": {
+         "M": "3",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Thunderers",
+      "models": 18,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "pts": 213,
+      "us": 18,
+      "troop": "Heavy infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "shield": true,
+      "rules": [
+       "Close Order",
+       "Dwarf Crafted",
+       "Magic Resistance (-1)",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Handgun",
+        "range": "24\"",
+        "S": "4",
+        "ap": "-1",
+        "rules": "Armour Bane (1), Ponderous"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 24,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Thunderers",
+        "stats": {
+         "M": "3",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Thunderers",
+      "models": 20,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 10,
+      "pts": 235,
+      "us": 20,
+      "troop": "Heavy infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "shield": true,
+      "rules": [
+       "Close Order",
+       "Dwarf Crafted",
+       "Magic Resistance (-1)",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Handgun",
+        "range": "24\"",
+        "S": "4",
+        "ap": "-1",
+        "rules": "Armour Bane (1), Ponderous"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 24,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Slayers",
+        "stats": {
+         "M": "3",
+         "WS": "4",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "10"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Slayers",
+      "models": 11,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "pts": 144,
+      "us": 11,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "4",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "10"
+      },
+      "armour": 0,
+      "rules": [
+       "Deathblow",
+       "Immune to Psychology",
+       "Loner",
+       "Magic Resistance (-2)",
+       "Motley Crew",
+       "Open Order",
+       "Slayer",
+       "Unbreakable",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Special",
+      "maxRange": 0,
+      "ruleText": {
+       "Loner": "A character with this special rule cannot be your General and cannot join a unit without this special rule. A unit with this special rule cannot be joined by a character without this special rule.",
+       "Motley Crew": "Units with this special rule may include models of the same type that are equipped differently to one another, and/or models of different types that fight together in a single unit. If necessary, the army list entry for such units will be accompanied by a brief explanation of the unit’s composition.\n\n Different Weapons: The fighting rank of a Motley Crew may contain models that are armed with different weapons. In such cases, the controlling player must roll different batches of dice for the different models, making it clear to their opponent which model’s attacks they represent and where they are being directed. These attacks are made in the Initiative order of the individual models, as usual.\n\n Different Armour: Models within a Motley Crew may have different armour values. In combat, use the armour value of the majority of the models in the fighting rank. Against enemy shooting, use the armour value of the majority of the models in the unit.\n\n Casualty Removal: Against enemy shooting, casualty removal should be divided as equally as possible between the different models within the unit. In combat, casualties should be removed from among the majority of the models that make up the fighting rank. In either case, available models are brought forward from rear ranks to fill any gaps, as chosen by the controlling player.",
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Unbreakable": "If a unit with this special rule loses a round of combat, it is not required to make a Break test. Instead, it will automatically Give Ground as it is pushed back by the enemy. Characters that are not Unbreakable cannot join units that are, and vice versa.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {},
+     "note": "Thane — 60 pt; Runesmith (arma grande, armatura a piastre) — 72 pt; 16 Dwarf Warriors (scudi, fronte 10) — 144 pt; 14 Quarrellers (fronte 7) — 126 pt; 18 Thunderers (campione, stendardo, musico, scudi, fronte 5) — 213 pt; 20 Thunderers (campione, stendardo, musico, scudi, fronte 10) — 235 pt; 11 Slayers (stendardo, musico, fronte 5) — 144 pt"
+    },
+    "formerNames": []
+   }
+  },
+  {
+   "geni": [
+    {
+     "k": "king",
+     "o": {
+      "weapon": "great"
+     }
+    },
+    {
+     "k": "dragonSlayer",
+     "o": {
+      "great": false
+     }
+    },
+    {
+     "k": "quarrellers",
+     "o": {
+      "c": "csm",
+      "shields": false,
+      "f": 6
+     },
+     "n": 19
+    },
+    {
+     "k": "quarrellers",
+     "o": {
+      "c": "",
+      "shields": true,
+      "f": 8
+     },
+     "n": 11
+    },
+    {
+     "k": "quarrellers",
+     "o": {
+      "c": "csm",
+      "shields": true,
+      "f": 5
+     },
+     "n": 15
+    },
+    {
+     "k": "slayers",
+     "o": {
+      "c": "sm",
+      "great": false,
+      "f": null
+     },
+     "n": 21
+    },
+    {
+     "k": "gyro",
+     "o": {
+      "gun": "clattergun"
+     },
+     "n": 1
+    }
+   ],
+   "descrizione": "King (arma grande) — 129 pt; Dragon Slayer — 70 pt; 19 Quarrellers (campione, stendardo, musico, fronte 6) — 186 pt; 11 Quarrellers (scudi, fronte 8) — 110 pt; 15 Quarrellers (campione, stendardo, musico, scudi, fronte 5) — 165 pt; 21 Slayers (stendardo, musico) — 264 pt; 1 Gyrocopters (Clattergun) — 70 pt",
+   "punti": 994,
+   "ricerca": {
+    "w": 84,
+    "l": 78,
+    "d": 30,
+    "n": 192
+   },
+   "verifica": {
+    "w": 77,
+    "l": 64,
+    "d": 27,
+    "n": 168,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 9,
+      "l": 10,
+      "d": 9,
+      "n": 28
+     },
+     "sxprova-profondo": {
+      "w": 15,
+      "l": 12,
+      "d": 1,
+      "n": 28
+     },
+     "sxprova-boschi": {
+      "w": 10,
+      "l": 8,
+      "d": 10,
+      "n": 28
+     },
+     "bm-strada": {
+      "w": 14,
+      "l": 14,
+      "d": 0,
+      "n": 28
+     },
+     "bm-rovine": {
+      "w": 16,
+      "l": 11,
+      "d": 1,
+      "n": 28
+     },
+     "open": {
+      "w": 13,
+      "l": 9,
+      "d": 6,
+      "n": 28
+     }
+    },
+    "perAvversario": {
+     "lmugl4zv663f7": {
+      "w": 10,
+      "l": 9,
+      "d": 5,
+      "n": 24
+     },
+     "lmugl4zvob6pi": {
+      "w": 16,
+      "l": 6,
+      "d": 2,
+      "n": 24
+     },
+     "lmugl4zw1fft7": {
+      "w": 6,
+      "l": 14,
+      "d": 4,
+      "n": 24
+     },
+     "lmugl4zwpzy5r": {
+      "w": 14,
+      "l": 9,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zwvt57k": {
+      "w": 14,
+      "l": 6,
+      "d": 4,
+      "n": 24
+     },
+     "lmugl4zwyicwd": {
+      "w": 8,
+      "l": 11,
+      "d": 5,
+      "n": 24
+     },
+     "lmuh94k2z9p26": {
+      "w": 9,
+      "l": 9,
+      "d": 6,
+      "n": 24
+     }
+    },
+    "celle": {
+     "lmugl4zv663f7|sxmu9q80qdc65": {
+      "w": 0,
+      "l": 1,
+      "d": 3,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-boschi": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxmu9q80qdc65": {
+      "w": 0,
+      "l": 1,
+      "d": 3,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-profondo": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-strada": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-rovine": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|open": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-boschi": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-rovine": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwvt57k|open": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxmu9q80qdc65": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-profondo": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-boschi": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|open": {
+      "w": 1,
+      "l": 0,
+      "d": 3,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-boschi": {
+      "w": 1,
+      "l": 0,
+      "d": 3,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|open": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-dwf-tutte-1000-3",
+    "name": "DWF libera 1000 · 3",
+    "info": {
+     "catalogue": "Dwarfen Mountain Holds",
+     "forceName": "Battle March",
+     "limit": 1000
+    },
+    "points": 994,
+    "external": false,
+    "imported": "2026-10-11T00:35:17.584Z",
+    "units": [
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "King",
+        "stats": {
+         "M": "3",
+         "WS": "7",
+         "BS": "4",
+         "S": "4",
+         "T": "5",
+         "W": "3",
+         "I": "4",
+         "A": "4",
+         "Ld": "10"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "King",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 129,
+      "troop": "Heavy infantry (character)",
+      "stats": {
+       "M": "3",
+       "WS": "7",
+       "BS": "4",
+       "S": "4",
+       "T": "5",
+       "W": "3",
+       "I": "4",
+       "A": "4",
+       "Ld": "10"
+      },
+      "armour": 4,
+      "rules": [
+       "Ancestral Grudge",
+       "Dwarf Crafted",
+       "Gromril Armour",
+       "Gromril Weapons",
+       "Magic Resistance (-1)",
+       "Rallying Cry",
+       "Stubborn",
+       "Hatred (Orcs & Goblins)",
+       "Resolute"
+      ],
+      "weapons": [
+       {
+        "name": "Great Weapon",
+        "range": "Combat",
+        "S": "S+2",
+        "ap": "-2",
+        "rules": "Armour Bane (1), Requires Two Hands, Strike Last"
+       },
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "ruleText": {
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Dragon Slayer",
+        "stats": {
+         "M": "3",
+         "WS": "6",
+         "BS": "3",
+         "S": "4",
+         "T": "5",
+         "W": "2",
+         "I": "4",
+         "A": "3",
+         "Ld": "10"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "Dragon Slayer",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 70,
+      "troop": "Heavy infantry (character)",
+      "stats": {
+       "M": "3",
+       "WS": "6",
+       "BS": "3",
+       "S": "4",
+       "T": "5",
+       "W": "2",
+       "I": "4",
+       "A": "3",
+       "Ld": "10"
+      },
+      "armour": 0,
+      "rules": [
+       "Deathblow",
+       "Gromril Weapons",
+       "Immune to Psychology",
+       "Killing Blow",
+       "Loner",
+       "Magic Resistance (-2)",
+       "Slayer of Dragons",
+       "Unbreakable",
+       "Vanguard",
+       "Hatred (Orcs & Goblins)",
+       "Resolute"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "ruleText": {
+       "Loner": "A character with this special rule cannot be your General and cannot join a unit without this special rule. A unit with this special rule cannot be joined by a character without this special rule.",
+       "Unbreakable": "If a unit with this special rule loses a round of combat, it is not required to make a Break test. Instead, it will automatically Give Ground as it is pushed back by the enemy. Characters that are not Unbreakable cannot join units that are, and vice versa."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Quarrellers",
+        "stats": {
+         "M": "3",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Quarrellers",
+      "models": 19,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 6,
+      "pts": 186,
+      "us": 19,
+      "troop": "Heavy infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 5,
+      "shield": false,
+      "rules": [
+       "Close Order",
+       "Dwarf Crafted",
+       "Magic Resistance (-1)",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Crossbow",
+        "range": "30\"",
+        "S": "4",
+        "ap": "-",
+        "rules": "Armour Bane (2), Ponderous"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 30,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Quarrellers",
+        "stats": {
+         "M": "3",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Quarrellers",
+      "models": 11,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 8,
+      "pts": 110,
+      "us": 11,
+      "troop": "Heavy infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "shield": true,
+      "rules": [
+       "Close Order",
+       "Dwarf Crafted",
+       "Magic Resistance (-1)",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Crossbow",
+        "range": "30\"",
+        "S": "4",
+        "ap": "-",
+        "rules": "Armour Bane (2), Ponderous"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 30,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Quarrellers",
+        "stats": {
+         "M": "3",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Quarrellers",
+      "models": 15,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "pts": 165,
+      "us": 15,
+      "troop": "Heavy infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "shield": true,
+      "rules": [
+       "Close Order",
+       "Dwarf Crafted",
+       "Magic Resistance (-1)",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Crossbow",
+        "range": "30\"",
+        "S": "4",
+        "ap": "-",
+        "rules": "Armour Bane (2), Ponderous"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 30,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Slayers",
+        "stats": {
+         "M": "3",
+         "WS": "4",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "10"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Slayers",
+      "models": 21,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 6,
+      "pts": 264,
+      "us": 21,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "4",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "10"
+      },
+      "armour": 0,
+      "rules": [
+       "Deathblow",
+       "Immune to Psychology",
+       "Loner",
+       "Magic Resistance (-2)",
+       "Motley Crew",
+       "Open Order",
+       "Slayer",
+       "Unbreakable",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Special",
+      "maxRange": 0,
+      "ruleText": {
+       "Loner": "A character with this special rule cannot be your General and cannot join a unit without this special rule. A unit with this special rule cannot be joined by a character without this special rule.",
+       "Motley Crew": "Units with this special rule may include models of the same type that are equipped differently to one another, and/or models of different types that fight together in a single unit. If necessary, the army list entry for such units will be accompanied by a brief explanation of the unit’s composition.\n\n Different Weapons: The fighting rank of a Motley Crew may contain models that are armed with different weapons. In such cases, the controlling player must roll different batches of dice for the different models, making it clear to their opponent which model’s attacks they represent and where they are being directed. These attacks are made in the Initiative order of the individual models, as usual.\n\n Different Armour: Models within a Motley Crew may have different armour values. In combat, use the armour value of the majority of the models in the fighting rank. Against enemy shooting, use the armour value of the majority of the models in the unit.\n\n Casualty Removal: Against enemy shooting, casualty removal should be divided as equally as possible between the different models within the unit. In combat, casualties should be removed from among the majority of the models that make up the fighting rank. In either case, available models are brought forward from rear ranks to fill any gaps, as chosen by the controlling player.",
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Unbreakable": "If a unit with this special rule loses a round of combat, it is not required to make a Break test. Instead, it will automatically Give Ground as it is pushed back by the enemy. Characters that are not Unbreakable cannot join units that are, and vice versa.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": true,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Gyrocopters",
+        "stats": {
+         "M": "1",
+         "WS": "4",
+         "BS": "3",
+         "S": "4",
+         "T": "5",
+         "W": "3",
+         "I": "2",
+         "A": "2",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Gyrocopters",
+      "models": 1,
+      "baseId": "50x50",
+      "baseW": 50,
+      "baseH": 50,
+      "frontage": 1,
+      "us": 3,
+      "pts": 70,
+      "troop": "Monstrous cavalry",
+      "unitSize": "1-6",
+      "stats": {
+       "M": "1",
+       "WS": "4",
+       "BS": "3",
+       "S": "4",
+       "T": "5",
+       "W": "3",
+       "I": "2",
+       "A": "2",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "rules": [
+       "Dive Bomb",
+       "Fire & Flee",
+       "Fly (9)",
+       "Impact Hits (D3)",
+       "Skirmishers",
+       "Swiftstride",
+       "Vanguard"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Clattergun",
+        "range": "24\"",
+        "S": "4",
+        "ap": "-1",
+        "rules": "Armour Bane (1), Dwarf Crafted, Move & Shoot, Multiple Shots (D6), Quick Shot"
+       }
+      ],
+      "slot": "Special",
+      "maxRange": 24,
+      "ruleText": {
+       "Impact Hits (D3)": "The number of Impact Hits caused varies from model to model, and will be shown in brackets after the name of this special rile. Often, this is determined by the roll of a dice.\n\n**Resolving Impact Hits:** Impact Hits can only be made by a charging model that moved 3\" or more and that is in base contact with the enemy. Impact Hits are resolved against the charged unit when the combat is chosen during Step 1.1 of the Choose Combat & Fight sub-phase, before issuing challenges. They hit automatically and use the unmodified Strength of the model making them.",
+       "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+      }
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {},
+     "note": "King (arma grande) — 129 pt; Dragon Slayer — 70 pt; 19 Quarrellers (campione, stendardo, musico, fronte 6) — 186 pt; 11 Quarrellers (scudi, fronte 8) — 110 pt; 15 Quarrellers (campione, stendardo, musico, scudi, fronte 5) — 165 pt; 21 Slayers (stendardo, musico) — 264 pt; 1 Gyrocopters (Clattergun) — 70 pt"
+    },
+    "formerNames": []
+   }
+  },
+  {
+   "geni": [
+    {
+     "k": "king",
+     "o": {
+      "weapon": "shield"
+     }
+    },
+    {
+     "k": "warriors",
+     "o": {
+      "c": "sm",
+      "arma": "shields",
+      "f": null
+     },
+     "n": 20
+    },
+    {
+     "k": "quarrellers",
+     "o": {
+      "c": "csm",
+      "shields": false,
+      "f": 10
+     },
+     "n": 11
+    },
+    {
+     "k": "quarrellers",
+     "o": {
+      "c": "",
+      "shields": true,
+      "f": 6
+     },
+     "n": 18
+    },
+    {
+     "k": "longbeards",
+     "o": {
+      "c": "",
+      "arma": null,
+      "f": null
+     },
+     "n": 20
+    },
+    {
+     "k": "gyro",
+     "o": {
+      "gun": "clattergun"
+     },
+     "n": 1
+    },
+    {
+     "k": "irondrakes",
+     "o": {
+      "c": "",
+      "f": null
+     },
+     "n": 5
+    }
+   ],
+   "descrizione": "King (scudo) — 127 pt; 20 Dwarf Warriors (stendardo, musico, scudi) — 190 pt; 11 Quarrellers (campione, stendardo, musico, fronte 10) — 114 pt; 18 Quarrellers (scudi, fronte 6) — 180 pt; 20 Longbeards — 240 pt; 1 Gyrocopters (Clattergun) — 70 pt; 5 Irondrakes — 75 pt",
+   "punti": 996,
+   "ricerca": {
+    "w": 33,
+    "l": 30,
+    "d": 9,
+    "n": 72
+   },
+   "verifica": {
+    "w": 95,
+    "l": 41,
+    "d": 32,
+    "n": 168,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 12,
+      "l": 9,
+      "d": 7,
+      "n": 28
+     },
+     "sxprova-profondo": {
+      "w": 18,
+      "l": 4,
+      "d": 6,
+      "n": 28
+     },
+     "sxprova-boschi": {
+      "w": 16,
+      "l": 4,
+      "d": 8,
+      "n": 28
+     },
+     "bm-strada": {
+      "w": 14,
+      "l": 14,
+      "d": 0,
+      "n": 28
+     },
+     "bm-rovine": {
+      "w": 22,
+      "l": 6,
+      "d": 0,
+      "n": 28
+     },
+     "open": {
+      "w": 13,
+      "l": 4,
+      "d": 11,
+      "n": 28
+     }
+    },
+    "perAvversario": {
+     "lmugl4zv663f7": {
+      "w": 9,
+      "l": 10,
+      "d": 5,
+      "n": 24
+     },
+     "lmugl4zvob6pi": {
+      "w": 17,
+      "l": 3,
+      "d": 4,
+      "n": 24
+     },
+     "lmugl4zw1fft7": {
+      "w": 15,
+      "l": 8,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zwpzy5r": {
+      "w": 12,
+      "l": 7,
+      "d": 5,
+      "n": 24
+     },
+     "lmugl4zwvt57k": {
+      "w": 14,
+      "l": 6,
+      "d": 4,
+      "n": 24
+     },
+     "lmugl4zwyicwd": {
+      "w": 15,
+      "l": 2,
+      "d": 7,
+      "n": 24
+     },
+     "lmuh94k2z9p26": {
+      "w": 13,
+      "l": 5,
+      "d": 6,
+      "n": 24
+     }
+    },
+    "celle": {
+     "lmugl4zv663f7|sxmu9q80qdc65": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-profondo": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-boschi": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-profondo": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-boschi": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|open": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-boschi": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|open": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-profondo": {
+      "w": 1,
+      "l": 0,
+      "d": 3,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-boschi": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|open": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-profondo": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|open": {
+      "w": 1,
+      "l": 0,
+      "d": 3,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-dwf-tutte-1000-4",
+    "name": "DWF libera 1000 · 4",
+    "info": {
+     "catalogue": "Dwarfen Mountain Holds",
+     "forceName": "Battle March",
+     "limit": 1000
+    },
+    "points": 996,
+    "external": false,
+    "imported": "2026-10-11T00:35:17.584Z",
+    "units": [
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "King",
+        "stats": {
+         "M": "3",
+         "WS": "7",
+         "BS": "4",
+         "S": "4",
+         "T": "5",
+         "W": "3",
+         "I": "4",
+         "A": "4",
+         "Ld": "10"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "King",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 127,
+      "troop": "Heavy infantry (character)",
+      "stats": {
+       "M": "3",
+       "WS": "7",
+       "BS": "4",
+       "S": "4",
+       "T": "5",
+       "W": "3",
+       "I": "4",
+       "A": "4",
+       "Ld": "10"
+      },
+      "armour": 3,
+      "shield": true,
+      "rules": [
+       "Ancestral Grudge",
+       "Dwarf Crafted",
+       "Gromril Armour",
+       "Gromril Weapons",
+       "Magic Resistance (-1)",
+       "Rallying Cry",
+       "Stubborn",
+       "Hatred (Orcs & Goblins)",
+       "Resolute"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "ruleText": {
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Dwarf Warriors",
+        "stats": {
+         "M": "3",
+         "WS": "4",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Dwarf Warriors",
+      "models": 20,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "pts": 190,
+      "us": 20,
+      "troop": "Heavy infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "4",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "shield": true,
+      "rules": [
+       "Close Order",
+       "Magic Resistance (-1)",
+       "Shieldwall",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Shieldwall": "Once per game, during a turn in which it was charged, a unit with this special rule that is arrayed in a Close Order formation, and that is equipped with and chooses to use shields, may Give Ground rather than Fall Back in Good Order.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Quarrellers",
+        "stats": {
+         "M": "3",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Quarrellers",
+      "models": 11,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 10,
+      "pts": 114,
+      "us": 11,
+      "troop": "Heavy infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 5,
+      "shield": false,
+      "rules": [
+       "Close Order",
+       "Dwarf Crafted",
+       "Magic Resistance (-1)",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Crossbow",
+        "range": "30\"",
+        "S": "4",
+        "ap": "-",
+        "rules": "Armour Bane (2), Ponderous"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 30,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Quarrellers",
+        "stats": {
+         "M": "3",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Quarrellers",
+      "models": 18,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 6,
+      "pts": 180,
+      "us": 18,
+      "troop": "Heavy infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "shield": true,
+      "rules": [
+       "Close Order",
+       "Dwarf Crafted",
+       "Magic Resistance (-1)",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Crossbow",
+        "range": "30\"",
+        "S": "4",
+        "ap": "-",
+        "rules": "Armour Bane (2), Ponderous"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 30,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Longbeards",
+        "stats": {
+         "M": "3",
+         "WS": "5",
+         "BS": "3",
+         "S": "4",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Longbeards",
+      "models": 20,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "pts": 240,
+      "us": 20,
+      "troop": "Heavy infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "5",
+       "BS": "3",
+       "S": "4",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 5,
+      "shield": false,
+      "rules": [
+       "Close Order",
+       "Gromril Weapons",
+       "Magic Resistance (-1)",
+       "Shieldwall",
+       "Venerable",
+       "Veteran",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Special",
+      "maxRange": 0,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Shieldwall": "Once per game, during a turn in which it was charged, a unit with this special rule that is arrayed in a Close Order formation, and that is equipped with and chooses to use shields, may Give Ground rather than Fall Back in Good Order.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": true,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Gyrocopters",
+        "stats": {
+         "M": "1",
+         "WS": "4",
+         "BS": "3",
+         "S": "4",
+         "T": "5",
+         "W": "3",
+         "I": "2",
+         "A": "2",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Gyrocopters",
+      "models": 1,
+      "baseId": "50x50",
+      "baseW": 50,
+      "baseH": 50,
+      "frontage": 1,
+      "us": 3,
+      "pts": 70,
+      "troop": "Monstrous cavalry",
+      "unitSize": "1-6",
+      "stats": {
+       "M": "1",
+       "WS": "4",
+       "BS": "3",
+       "S": "4",
+       "T": "5",
+       "W": "3",
+       "I": "2",
+       "A": "2",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "rules": [
+       "Dive Bomb",
+       "Fire & Flee",
+       "Fly (9)",
+       "Impact Hits (D3)",
+       "Skirmishers",
+       "Swiftstride",
+       "Vanguard"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Clattergun",
+        "range": "24\"",
+        "S": "4",
+        "ap": "-1",
+        "rules": "Armour Bane (1), Dwarf Crafted, Move & Shoot, Multiple Shots (D6), Quick Shot"
+       }
+      ],
+      "slot": "Special",
+      "maxRange": 24,
+      "ruleText": {
+       "Impact Hits (D3)": "The number of Impact Hits caused varies from model to model, and will be shown in brackets after the name of this special rile. Often, this is determined by the roll of a dice.\n\n**Resolving Impact Hits:** Impact Hits can only be made by a charging model that moved 3\" or more and that is in base contact with the enemy. Impact Hits are resolved against the charged unit when the combat is chosen during Step 1.1 of the Choose Combat & Fight sub-phase, before issuing challenges. They hit automatically and use the unmodified Strength of the model making them.",
+       "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Irondrakes",
+        "stats": {
+         "M": "3",
+         "WS": "4",
+         "BS": "4",
+         "S": "4",
+         "T": "4",
+         "W": "1",
+         "I": "2",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Dwarfen Mountain Holds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Irondrakes",
+      "models": 5,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "pts": 75,
+      "us": 5,
+      "troop": "Heavy infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "3",
+       "WS": "4",
+       "BS": "4",
+       "S": "4",
+       "T": "4",
+       "W": "1",
+       "I": "2",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 4,
+      "shield": false,
+      "rules": [
+       "Close Order",
+       "Detachment",
+       "Gromril Armour",
+       "Magic Resistance (-1)",
+       "Runes of Warding",
+       "Stubborn",
+       "Hatred (Orcs & Goblins)",
+       "Resolute",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Drakegun",
+        "range": "18\"",
+        "S": "5",
+        "ap": "-1",
+        "rules": "Armour Bane (2), Dwarf Crafted, Flaming Attacks, Quick Shot"
+       }
+      ],
+      "slot": "Rare",
+      "maxRange": 18,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {},
+     "note": "King (scudo) — 127 pt; 20 Dwarf Warriors (stendardo, musico, scudi) — 190 pt; 11 Quarrellers (campione, stendardo, musico, fronte 10) — 114 pt; 18 Quarrellers (scudi, fronte 6) — 180 pt; 20 Longbeards — 240 pt; 1 Gyrocopters (Clattergun) — 70 pt; 5 Irondrakes — 75 pt"
+    },
+    "formerNames": []
+   }
+  }
+ ]
+}

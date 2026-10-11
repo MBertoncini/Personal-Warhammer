@@ -12,6 +12,7 @@
  *   node tools/partita.mjs --scenario sxmttrgusdc7c   uno dei tuoi, da dati/scenari.json
  *   node tools/partita.mjs --liste 3,9          per numero (le elenca --liste ?)
  *   node tools/partita.mjs --liste lmtl5r4mb97yl,lmubp01267euf   o per id
+ *   node tools/partita.mjs --candidate prove.json --liste prova-we,lmugl4zwpzy5r   anche da un file
  *   node tools/partita.mjs --gemini             se GEMINI_API_KEY è nell'ambiente
  *   node tools/partita.mjs --gemini A           solo l'esercito A è il modello
  *   node tools/partita.mjs --gemini --pausa 8000  più lento, per le quote strette
@@ -73,7 +74,7 @@ const TUTTI = { ...SCENARIOS,
    Adesso le parole fino al prossimo «--» si rimettono insieme, e quelle
    che nessuno legge si dicono. */
 const argv = process.argv.slice(2);
-const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste', 'archivia', 'partite', 'estro', 'heatmap', 'specchio', 'esperimento', 'ricerca'];
+const NOTI = ['seme', 'scenario', 'breve', 'gemini', 'html', 'pausa', 'liste', 'candidate', 'archivia', 'partite', 'estro', 'heatmap', 'specchio', 'esperimento', 'ricerca'];
 const valori = {};
 const ignoti = [];
 for (let i = 0; i < argv.length; i++){
@@ -176,8 +177,12 @@ ARM.useArmies(ARM.makeArmies((idx.file || []).map(f => dati(path.join('eserciti'
 /* i domini e le schede dei maghi: senza, la magia non si gioca */
 const magia = MG.useMagic(MG.makeMagic(dati(path.join('magia', 'domini.json'))));
 
-/* ---- le due liste ---- */
-const liste = dati('liste.json');
+/* ---- le due liste ----
+   `--candidate file.json` mette davanti le liste di un file (quelle che
+   scrivono le ricerche, o una prova a mano): una lista cercata a
+   macchina si guarda giocare senza passare dall'archivio */
+const candidate = arg('candidate', null);
+const liste = [...(candidate ? JSON.parse(fs.readFileSync(candidate, 'utf8')) : []), ...dati('liste.json')];
 const scelte = String(arg('liste', '') || '');
 if (scelte === '?' || scelte === 'true'){
   liste.forEach((l, i) => {

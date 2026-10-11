@@ -1,12 +1,44 @@
 {
  "formato": "tow-ricerche/1",
- "aggiornato": "2026-09-25T18:26:14.364Z",
+ "aggiornato": "2026-10-11T03:45:27.942Z",
  "file": [
   {
    "file": "bilancia-1000.json",
    "formato": "tow-bilancia/1",
-   "quando": "2026-09-25T18:25:53.772Z",
+   "quando": "2026-10-11T02:27:36.592Z",
    "punti": 1000
+  },
+  {
+   "file": "bst-tutte-1000.json",
+   "formato": "tow-ricerca/1",
+   "quando": "2026-10-10T23:01:22.740Z",
+   "punti": 1000,
+   "fazione": "bst",
+   "pool": "tutte",
+   "scenari": [
+    "sxmu9q80qdc65",
+    "sxprova-profondo",
+    "sxprova-boschi",
+    "bm-strada",
+    "bm-rovine",
+    "open"
+   ]
+  },
+  {
+   "file": "dwf-tutte-1000.json",
+   "formato": "tow-ricerca/1",
+   "quando": "2026-10-11T00:35:17.586Z",
+   "punti": 1000,
+   "fazione": "dwf",
+   "pool": "tutte",
+   "scenari": [
+    "sxmu9q80qdc65",
+    "sxprova-profondo",
+    "sxprova-boschi",
+    "bm-strada",
+    "bm-rovine",
+    "open"
+   ]
   },
   {
    "file": "liz-collezione-1000-bastiladon.json",
@@ -219,7 +251,7 @@
   {
    "file": "torneo-1000.json",
    "formato": "tow-torneo/1",
-   "quando": "2026-09-25T18:25:53.824Z",
+   "quando": "2026-10-11T03:44:44.108Z",
    "punti": 1000,
    "scenari": [
     "sxmu9q80qdc65",
@@ -229,7 +261,7 @@
     "bm-rovine",
     "open"
    ],
-   "liste": 7
+   "liste": 10
   },
   {
    "file": "torneo-800.json",
@@ -252,6 +284,22 @@
     "sxprova-boschi"
    ],
    "liste": 6
+  },
+  {
+   "file": "we-tutte-1000.json",
+   "formato": "tow-ricerca/1",
+   "quando": "2026-10-10T23:59:35.959Z",
+   "punti": 1000,
+   "fazione": "we",
+   "pool": "tutte",
+   "scenari": [
+    "sxmu9q80qdc65",
+    "sxprova-profondo",
+    "sxprova-boschi",
+    "bm-strada",
+    "bm-rovine",
+    "open"
+   ]
   }
  ]
 }

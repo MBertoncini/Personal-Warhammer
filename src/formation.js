@@ -314,8 +314,16 @@ const LUMBER_WHY = "è un carro pesante o un mostro: non si unisce e non ospita 
    a piedi. Il vincolo e' fra due pezzi, e allora sta qui accanto ai
    candidati invece che in `canJoin`. */
 export const isClumsy = u => hasRule(u, /^clumsy/i);
-export const clumsyOk = (ch, host) => !isClumsy(host) || isClumsy(ch);
+/* Tree Spirit (Forces of Fantasy p. 145) e' lo stesso vincolo, nei due
+   versi: uno spirito dell'albero si unisce solo a chi lo e', e a chi lo
+   e' si unisce solo uno spirito. Un Glade Captain non entra fra le
+   Dryads, una Branchwraith non entra fra le Glade Guard. */
+export const isTreeSpirit = u => hasRule(u, /^tree spirit/i);
+export const clumsyOk = (ch, host) => (!isClumsy(host) || isClumsy(ch)) && isTreeSpirit(ch) === isTreeSpirit(host);
 const CLUMSY_WHY = "è Clumsy: le si unisce solo un personaggio che ha anche lui Clumsy";
+const TREE_WHY = "Tree Spirit: uno spirito dell'albero sta solo con gli spiriti dell'albero";
+const legameWhy = (ch, host, chi) => isTreeSpirit(ch) !== isTreeSpirit(host) ? TREE_WHY
+  : chi ? CLUMSY_WHY.replace("è Clumsy", chi + " è Clumsy") : CLUMSY_WHY;
 
 export const canJoin = u => !u.dead && !isLumbering(u) && (isCharacter(u) || (u.models || 1) === 1);
 
@@ -347,7 +355,7 @@ export function joinRefusals(units, host){
     if (!(isCharacter(c) || (c.models || 1) === 1)) continue;   // un reggimento non ci sta, e si sa
     if (c.dead){ out.push({ uid:c.uid, name:c.name, why:"è eliminata" }); continue; }
     if (isLumbering(c)){ out.push({ uid:c.uid, name:c.name, why:LUMBER_WHY }); continue; }
-    if (!clumsyOk(c, host)){ out.push({ uid:c.uid, name:c.name, why:CLUMSY_WHY.replace("è Clumsy", host.name + " è Clumsy") }); continue; }
+    if (!clumsyOk(c, host)){ out.push({ uid:c.uid, name:c.name, why:legameWhy(c, host, host.name) }); continue; }
     const h = hostUnit(units, c);
     if (h){
       if (h.uid !== host.uid)                                   // chi e' gia' dentro QUESTO non manca
@@ -367,7 +375,7 @@ export function hostRefusals(units, ch){
     if (c.uid === ch.uid || c.army !== ch.army) continue;
     if (c.dead){ out.push({ uid:c.uid, name:c.name, why:"è eliminata" }); continue; }
     if (isLumbering(c)){ out.push({ uid:c.uid, name:c.name, why:LUMBER_WHY }); continue; }
-    if (!clumsyOk(ch, c)){ out.push({ uid:c.uid, name:c.name, why:CLUMSY_WHY }); continue; }
+    if (!clumsyOk(ch, c)){ out.push({ uid:c.uid, name:c.name, why:legameWhy(ch, c) }); continue; }
     const h = hostUnit(units, c);
     if (h) out.push({ uid:c.uid, name:c.name, why:`è già dentro ${h.name}` });
   }

@@ -1,6 +1,6 @@
 {
  "formato": "tow-bilancia/1",
- "quando": "2026-09-25T18:25:53.772Z",
+ "quando": "2026-10-11T02:27:36.592Z",
  "punti": 1000,
  "scenari": [
   "sxmu9q80qdc65",
@@ -14,6 +14,7 @@
  "liste": [
   {
    "fazione": "skaven",
+   "pool": "collezione",
    "tema": "abominio",
    "nome": "SKA abominio",
    "geni": [
@@ -59,10 +60,11 @@
    ],
    "descrizione": "Grey Seer sulla Screaming Bell (Livello 3, dark) — 370 pt; 30 Clanrats (scudi, campione, stendardo, musico, fronte 5) — 167 pt; 20 Clanrats (scudi, fronte 5) — 100 pt; 3 Rat Ogres (1 Packmaster) — 149 pt; Hell Pit Abomination — 210 pt",
    "punti": 996,
-   "media": 0.4875
+   "media": 0.47265625
   },
   {
    "fazione": "skaven",
+   "pool": "collezione",
    "tema": "skryre",
    "nome": "SKA skryre",
    "geni": [
@@ -113,10 +115,11 @@
    ],
    "descrizione": "Grey Seer sulla Screaming Bell (Livello 4, daemonology) — 400 pt; Warlock Engineer (Livello 1, battle) — 75 pt; 35 Clanrats (scudi, lance, campione, stendardo, musico, fronte 6) — 227 pt; 22 Clanrats (scudi, campione, stendardo, musico, fronte 5) — 127 pt; 3 Warplock Jezzails — 57 pt; Warp Lightning Cannon — 110 pt",
    "punti": 996,
-   "media": 0.425
+   "media": 0.4186197916666667
   },
   {
    "fazione": "og",
+   "pool": "collezione",
    "tema": "notte",
    "nome": "O&G notte",
    "geni": [
@@ -200,10 +203,11 @@
    ],
    "descrizione": "Orc Weirdnob (Livello 4, battle) — 170 pt; Goblin Oddnob (Livello 4, elementalism) — 165 pt; Night Goblin Bigboss (arma grande, scudo) — 39 pt; 23 Orc Mobs (stendardo, musico, fronte 7) — 125 pt; 14 Orc Mobs (stendardo, musico, archi, fronte 7) — 80 pt; 10 Goblin Mobs (campione, stendardo, musico, fronte 8) — 47 pt; 1 Stone Troll Mobs — 45 pt; 1 Stone Troll Mobs — 45 pt; 16 Cave Squig nella Squig Herd — 172 pt; 6 Orc Boar Boy Mobs (stendardo, musico, lance) — 108 pt",
    "punti": 996,
-   "media": 0.38333333333333336
+   "media": 0.4661458333333333
   },
   {
    "fazione": "og",
+   "pool": "collezione",
    "tema": "orchineri",
    "nome": "O&G orchineri",
    "geni": [
@@ -277,10 +281,11 @@
    ],
    "descrizione": "Orc Bigboss sul cinghiale (arma grande) — 75 pt; Black Orc Warboss (arma grande) — 139 pt; 15 Orc Mobs (campione, stendardo, musico, archi, fronte 5) — 92 pt; 25 Orc Mobs (stendardo, musico, Big 'Uns, fronte 6) — 185 pt; 11 Black Orc Mobs (stendardo, musico, arma grande, fronte 6) — 166 pt; 10 Goblin Mobs (campione, stendardo, musico, fronte 6) — 47 pt; 10 Orc Boar Boy Mobs (campione, stendardo, musico, lance, scudi) — 190 pt; Orc Boar Chariots — 90 pt",
    "punti": 984,
-   "media": 0.5354166666666667
+   "media": 0.57421875
   },
   {
    "fazione": "liz",
+   "pool": "collezione",
    "tema": "bastiladon",
    "nome": "LIZ bastiladon",
    "geni": [
@@ -324,10 +329,11 @@
    ],
    "descrizione": "Skink Priest (Livello 1, battle) — 60 pt; 20 Saurus Warriors (fronte 7) — 280 pt; 19 Temple Guard (fronte 6) — 304 pt; 18 Skink Skirmishers — 90 pt; 14 Skink Skirmishers — 70 pt; Bastiladon — 160 pt",
    "punti": 964,
-   "media": 0.5924479166666666
+   "media": 0.48735119047619047
   },
   {
    "fazione": "liz",
+   "pool": "collezione",
    "tema": "carnosauro",
    "nome": "LIZ carnosauro",
    "geni": [
@@ -368,10 +374,11 @@
    ],
    "descrizione": "Saurus Oldblood sul Carnosauro — 310 pt; Skink Chief — 45 pt; 16 Saurus Warriors (fronte 10) — 224 pt; 10 Saurus Warriors (fronte 8) — 140 pt; 20 Skink Skirmishers — 100 pt; 5 Terradon Riders — 160 pt",
    "punti": 979,
-   "media": 0.5559895833333334
+   "media": 0.5625
   },
   {
    "fazione": "liz",
+   "pool": "collezione",
    "tema": "stegadonte",
    "nome": "LIZ stegadonte",
    "geni": [
@@ -410,7 +417,171 @@
    ],
    "descrizione": "Skink Priest sull'Ancient Stegadon (Livello 2, illusion) — 320 pt; 17 Saurus Warriors (fronte 7) — 238 pt; 18 Skink Skirmishers — 90 pt; 14 Skink Skirmishers — 70 pt; 8 Cold One Riders — 272 pt",
    "punti": 990,
-   "media": 0.5625
+   "media": 0.5290178571428571
+  },
+  {
+   "fazione": "bst",
+   "pool": "tutte",
+   "tema": "libera",
+   "nome": "BST libera",
+   "geni": [
+    {
+     "k": "greatShaman",
+     "o": {
+      "level": 3
+     },
+     "lore": "dark"
+    },
+    {
+     "k": "gors",
+     "o": {
+      "c": "csm",
+      "f": 7
+     },
+     "n": 40
+    },
+    {
+     "k": "ungors",
+     "o": {
+      "c": "",
+      "spears": false,
+      "bows": false,
+      "f": 10
+     },
+     "n": 40
+    },
+    {
+     "k": "razorgors",
+     "o": {},
+     "n": 2
+    },
+    {
+     "k": "ghorgon",
+     "o": {}
+    }
+   ],
+   "descrizione": "Great Bray-Shaman (Livello 3, dark) — 150 pt; 40 Gor Herd (campione, stendardo, musico, fronte 7) — 297 pt; 40 Ungor Herd (fronte 10) — 200 pt; 2 Razorgor Herd — 104 pt; Ghorgon — 245 pt",
+   "punti": 996,
+   "media": 0.47685185185185186
+  },
+  {
+   "fazione": "we",
+   "pool": "tutte",
+   "tema": "libera",
+   "nome": "WE libera",
+   "geni": [
+    {
+     "k": "gladeCaptain",
+     "o": {
+      "weapon": null,
+      "frecce": null,
+      "bsb": true
+     }
+    },
+    {
+     "k": "spellweaver",
+     "o": {
+      "level": 4,
+      "tattoos": false
+     },
+     "lore": "battle"
+    },
+    {
+     "k": "gladeGuard",
+     "n": 16,
+     "o": {
+      "c": "sm",
+      "frecce": "hagbane",
+      "f": 5
+     }
+    },
+    {
+     "k": "gladeGuard",
+     "n": 12,
+     "o": {
+      "c": "",
+      "frecce": null,
+      "f": 5
+     }
+    },
+    {
+     "k": "eternalGuard",
+     "n": 25,
+     "o": {
+      "c": "csm",
+      "shields": true,
+      "f": 6
+     }
+    }
+   ],
+   "descrizione": "Glade Captain (stendardo da battaglia) — 95 pt; Spellweaver (Livello 4, battle) — 185 pt; 16 Glade Guard (stendardo, musico, frecce Hagbane, fronte 5) — 220 pt; 12 Glade Guard (fronte 5) — 132 pt; 25 Eternal Guard (campione, stendardo, musico, scudi, fronte 6) — 365 pt",
+   "punti": 997,
+   "media": 0.4664351851851852
+  },
+  {
+   "fazione": "dwf",
+   "pool": "tutte",
+   "tema": "libera",
+   "nome": "DWF libera",
+   "geni": [
+    {
+     "k": "thane",
+     "o": {
+      "weapon": null,
+      "bsb": false
+     }
+    },
+    {
+     "k": "runesmith",
+     "o": {
+      "weapon": "great",
+      "plate": true
+     }
+    },
+    {
+     "k": "warriors",
+     "o": {
+      "c": "",
+      "arma": "shields",
+      "f": 10
+     },
+     "n": 21
+    },
+    {
+     "k": "quarrellers",
+     "o": {
+      "c": "",
+      "shields": false,
+      "f": 6
+     },
+     "n": 20
+    },
+    {
+     "k": "thunderers",
+     "o": {
+      "c": "csm",
+      "shields": true,
+      "f": 10
+     },
+     "n": 20
+    },
+    {
+     "k": "slayers",
+     "o": {
+      "c": "sm",
+      "great": false,
+      "f": 5
+     },
+     "n": 13
+    },
+    {
+     "k": "grudge",
+     "o": {}
+    }
+   ],
+   "descrizione": "Thane — 60 pt; Runesmith (arma grande, armatura a piastre) — 72 pt; 21 Dwarf Warriors (scudi, fronte 10) — 189 pt; 20 Quarrellers (fronte 6) — 180 pt; 20 Thunderers (campione, stendardo, musico, scudi, fronte 10) — 235 pt; 13 Slayers (stendardo, musico, fronte 5) — 168 pt; Grudge Thrower — 95 pt",
+   "punti": 999,
+   "media": 0.5561342592592593
   }
  ],
  "matrice": [
@@ -428,21 +599,355 @@
     "n": 0
    },
    {
+    "w": 38,
+    "l": 46,
+    "d": 12,
+    "n": 96
+   },
+   {
+    "w": 34,
+    "l": 58,
+    "d": 4,
+    "n": 96
+   },
+   {
+    "w": 35,
+    "l": 53,
+    "d": 8,
+    "n": 96
+   },
+   {
+    "w": 37,
+    "l": 54,
+    "d": 5,
+    "n": 96
+   },
+   {
+    "w": 38,
+    "l": 47,
+    "d": 11,
+    "n": 96
+   },
+   {
+    "w": 40,
+    "l": 46,
+    "d": 10,
+    "n": 96
+   },
+   {
+    "w": 57,
+    "l": 31,
+    "d": 8,
+    "n": 96
+   },
+   {
+    "w": 50,
+    "l": 36,
+    "d": 10,
+    "n": 96
+   }
+  ],
+  [
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 31,
+    "l": 60,
+    "d": 5,
+    "n": 96
+   },
+   {
+    "w": 23,
+    "l": 63,
+    "d": 10,
+    "n": 96
+   },
+   {
     "w": 48,
-    "l": 34,
-    "d": 14,
+    "l": 36,
+    "d": 12,
+    "n": 96
+   },
+   {
+    "w": 48,
+    "l": 41,
+    "d": 7,
+    "n": 96
+   },
+   {
+    "w": 40,
+    "l": 47,
+    "d": 9,
+    "n": 96
+   },
+   {
+    "w": 37,
+    "l": 48,
+    "d": 11,
+    "n": 96
+   },
+   {
+    "w": 28,
+    "l": 52,
+    "d": 16,
+    "n": 96
+   },
+   {
+    "w": 27,
+    "l": 60,
+    "d": 9,
+    "n": 96
+   }
+  ],
+  [
+   {
+    "w": 46,
+    "l": 38,
+    "d": 12,
+    "n": 96
+   },
+   {
+    "w": 60,
+    "l": 31,
+    "d": 5,
+    "n": 96
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 36,
+    "l": 45,
+    "d": 15,
     "n": 96
    },
    {
     "w": 31,
-    "l": 56,
+    "l": 55,
+    "d": 10,
+    "n": 96
+   },
+   {
+    "w": 39,
+    "l": 49,
+    "d": 8,
+    "n": 96
+   },
+   {
+    "w": 41,
+    "l": 49,
+    "d": 6,
+    "n": 96
+   },
+   {
+    "w": 38,
+    "l": 49,
     "d": 9,
     "n": 96
+   },
+   {
+    "w": 28,
+    "l": 55,
+    "d": 13,
+    "n": 96
+   }
+  ],
+  [
+   {
+    "w": 58,
+    "l": 34,
+    "d": 4,
+    "n": 96
+   },
+   {
+    "w": 63,
+    "l": 23,
+    "d": 10,
+    "n": 96
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
    },
    {
     "w": 45,
     "l": 41,
     "d": 10,
+    "n": 96
+   },
+   {
+    "w": 46,
+    "l": 44,
+    "d": 6,
+    "n": 96
+   },
+   {
+    "w": 49,
+    "l": 35,
+    "d": 12,
+    "n": 96
+   },
+   {
+    "w": 54,
+    "l": 34,
+    "d": 8,
+    "n": 96
+   },
+   {
+    "w": 49,
+    "l": 34,
+    "d": 13,
+    "n": 96
+   },
+   {
+    "w": 38,
+    "l": 43,
+    "d": 15,
+    "n": 96
+   }
+  ],
+  [
+   {
+    "w": 53,
+    "l": 35,
+    "d": 8,
+    "n": 96
+   },
+   {
+    "w": 36,
+    "l": 48,
+    "d": 12,
+    "n": 96
+   },
+   {
+    "w": 45,
+    "l": 36,
+    "d": 15,
+    "n": 96
+   },
+   {
+    "w": 41,
+    "l": 45,
+    "d": 10,
+    "n": 96
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 49,
+    "l": 37,
+    "d": 10,
+    "n": 96
+   },
+   {
+    "w": 31,
+    "l": 59,
+    "d": 6,
+    "n": 96
+   },
+   {
+    "w": 36,
+    "l": 48,
+    "d": 12,
+    "n": 96
+   }
+  ],
+  [
+   {
+    "w": 54,
+    "l": 37,
+    "d": 5,
+    "n": 96
+   },
+   {
+    "w": 41,
+    "l": 48,
+    "d": 7,
+    "n": 96
+   },
+   {
+    "w": 55,
+    "l": 31,
+    "d": 10,
+    "n": 96
+   },
+   {
+    "w": 44,
+    "l": 46,
+    "d": 6,
+    "n": 96
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 63,
+    "l": 31,
+    "d": 2,
+    "n": 96
+   },
+   {
+    "w": 55,
+    "l": 29,
+    "d": 12,
     "n": 96
    },
    {
@@ -450,176 +955,112 @@
     "l": 44,
     "d": 14,
     "n": 96
+   }
+  ],
+  [
+   {
+    "w": 47,
+    "l": 38,
+    "d": 11,
+    "n": 96
    },
    {
-    "w": 41,
+    "w": 47,
     "l": 40,
-    "d": 15,
-    "n": 96
-   }
-  ],
-  [
-   {
-    "w": 0,
-    "l": 0,
-    "d": 0,
-    "n": 0
-   },
-   {
-    "w": 0,
-    "l": 0,
-    "d": 0,
-    "n": 0
-   },
-   {
-    "w": 31,
-    "l": 53,
-    "d": 12,
-    "n": 96
-   },
-   {
-    "w": 26,
-    "l": 66,
-    "d": 4,
-    "n": 96
-   },
-   {
-    "w": 39,
-    "l": 43,
-    "d": 14,
-    "n": 96
-   },
-   {
-    "w": 44,
-    "l": 42,
-    "d": 10,
-    "n": 96
-   },
-   {
-    "w": 37,
-    "l": 45,
-    "d": 14,
-    "n": 96
-   }
-  ],
-  [
-   {
-    "w": 34,
-    "l": 48,
-    "d": 14,
-    "n": 96
-   },
-   {
-    "w": 53,
-    "l": 31,
-    "d": 12,
-    "n": 96
-   },
-   {
-    "w": 0,
-    "l": 0,
-    "d": 0,
-    "n": 0
-   },
-   {
-    "w": 0,
-    "l": 0,
-    "d": 0,
-    "n": 0
-   },
-   {
-    "w": 20,
-    "l": 69,
-    "d": 7,
-    "n": 96
-   },
-   {
-    "w": 22,
-    "l": 64,
-    "d": 10,
-    "n": 96
-   },
-   {
-    "w": 27,
-    "l": 56,
-    "d": 13,
-    "n": 96
-   }
-  ],
-  [
-   {
-    "w": 56,
-    "l": 31,
     "d": 9,
     "n": 96
    },
    {
-    "w": 66,
-    "l": 26,
-    "d": 4,
-    "n": 96
-   },
-   {
-    "w": 0,
-    "l": 0,
-    "d": 0,
-    "n": 0
-   },
-   {
-    "w": 0,
-    "l": 0,
-    "d": 0,
-    "n": 0
-   },
-   {
-    "w": 33,
-    "l": 55,
+    "w": 49,
+    "l": 39,
     "d": 8,
     "n": 96
    },
    {
-    "w": 46,
-    "l": 43,
-    "d": 7,
+    "w": 35,
+    "l": 49,
+    "d": 12,
     "n": 96
    },
    {
-    "w": 34,
-    "l": 46,
-    "d": 16,
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 42,
+    "l": 39,
+    "d": 15,
+    "n": 96
+   },
+   {
+    "w": 44,
+    "l": 35,
+    "d": 17,
+    "n": 96
+   },
+   {
+    "w": 47,
+    "l": 32,
+    "d": 17,
     "n": 96
    }
   ],
   [
    {
-    "w": 41,
-    "l": 45,
+    "w": 46,
+    "l": 40,
     "d": 10,
     "n": 96
    },
    {
-    "w": 43,
-    "l": 39,
-    "d": 14,
+    "w": 48,
+    "l": 37,
+    "d": 11,
     "n": 96
    },
    {
-    "w": 69,
-    "l": 20,
-    "d": 7,
+    "w": 49,
+    "l": 41,
+    "d": 6,
     "n": 96
    },
    {
-    "w": 55,
-    "l": 33,
+    "w": 34,
+    "l": 54,
     "d": 8,
     "n": 96
    },
    {
-    "w": 0,
-    "l": 0,
-    "d": 0,
-    "n": 0
+    "w": 37,
+    "l": 49,
+    "d": 10,
+    "n": 96
+   },
+   {
+    "w": 31,
+    "l": 63,
+    "d": 2,
+    "n": 96
+   },
+   {
+    "w": 39,
+    "l": 42,
+    "d": 15,
+    "n": 96
    },
    {
     "w": 0,
@@ -628,13 +1069,111 @@
     "n": 0
    },
    {
-    "w": 0,
-    "l": 0,
-    "d": 0,
-    "n": 0
+    "w": 47,
+    "l": 37,
+    "d": 12,
+    "n": 96
+   },
+   {
+    "w": 40,
+    "l": 48,
+    "d": 8,
+    "n": 96
    }
   ],
   [
+   {
+    "w": 31,
+    "l": 57,
+    "d": 8,
+    "n": 96
+   },
+   {
+    "w": 52,
+    "l": 28,
+    "d": 16,
+    "n": 96
+   },
+   {
+    "w": 49,
+    "l": 38,
+    "d": 9,
+    "n": 96
+   },
+   {
+    "w": 34,
+    "l": 49,
+    "d": 13,
+    "n": 96
+   },
+   {
+    "w": 59,
+    "l": 31,
+    "d": 6,
+    "n": 96
+   },
+   {
+    "w": 29,
+    "l": 55,
+    "d": 12,
+    "n": 96
+   },
+   {
+    "w": 35,
+    "l": 44,
+    "d": 17,
+    "n": 96
+   },
+   {
+    "w": 37,
+    "l": 47,
+    "d": 12,
+    "n": 96
+   },
+   {
+    "w": 0,
+    "l": 0,
+    "d": 0,
+    "n": 0
+   },
+   {
+    "w": 26,
+    "l": 61,
+    "d": 9,
+    "n": 96
+   }
+  ],
+  [
+   {
+    "w": 36,
+    "l": 50,
+    "d": 10,
+    "n": 96
+   },
+   {
+    "w": 60,
+    "l": 27,
+    "d": 9,
+    "n": 96
+   },
+   {
+    "w": 55,
+    "l": 28,
+    "d": 13,
+    "n": 96
+   },
+   {
+    "w": 43,
+    "l": 38,
+    "d": 15,
+    "n": 96
+   },
+   {
+    "w": 48,
+    "l": 36,
+    "d": 12,
+    "n": 96
+   },
    {
     "w": 44,
     "l": 38,
@@ -642,78 +1181,22 @@
     "n": 96
    },
    {
-    "w": 42,
-    "l": 44,
-    "d": 10,
+    "w": 32,
+    "l": 47,
+    "d": 17,
     "n": 96
    },
    {
-    "w": 64,
-    "l": 22,
-    "d": 10,
+    "w": 48,
+    "l": 40,
+    "d": 8,
     "n": 96
    },
    {
-    "w": 43,
-    "l": 46,
-    "d": 7,
+    "w": 61,
+    "l": 26,
+    "d": 9,
     "n": 96
-   },
-   {
-    "w": 0,
-    "l": 0,
-    "d": 0,
-    "n": 0
-   },
-   {
-    "w": 0,
-    "l": 0,
-    "d": 0,
-    "n": 0
-   },
-   {
-    "w": 0,
-    "l": 0,
-    "d": 0,
-    "n": 0
-   }
-  ],
-  [
-   {
-    "w": 40,
-    "l": 41,
-    "d": 15,
-    "n": 96
-   },
-   {
-    "w": 45,
-    "l": 37,
-    "d": 14,
-    "n": 96
-   },
-   {
-    "w": 56,
-    "l": 27,
-    "d": 13,
-    "n": 96
-   },
-   {
-    "w": 46,
-    "l": 34,
-    "d": 16,
-    "n": 96
-   },
-   {
-    "w": 0,
-    "l": 0,
-    "d": 0,
-    "n": 0
-   },
-   {
-    "w": 0,
-    "l": 0,
-    "d": 0,
-    "n": 0
    },
    {
     "w": 0,
@@ -868,6 +1351,39 @@
    "lista": "LIZ bastiladon",
    "cambiata": false,
    "provata": "Skink Priest (Livello 2, battle) — 90 pt; 21 Saurus Warriors (fronte 7) — 294 pt; 18 Temple Guard (fronte 6) — 288 pt; 18 Skink Skirmishers — 90 pt; 14 Skink Skirmishers — 70 pt; Bastiladon — 160 pt"
+  },
+  {
+   "passo": 1,
+   "lista": "BST libera",
+   "cambiata": false,
+   "provata": "Great Bray-Shaman (Livello 4, dark) — 180 pt; 33 Gor Herd (stendardo, musico, fronte 7) — 241 pt; 40 Ungor Herd (stendardo, musico, lance, fronte 7) — 250 pt; 12 Ungor Herd (stendardo, musico, lance, fronte 5) — 82 pt; Ghorgon — 245 pt"
+  },
+  {
+   "passo": 2,
+   "lista": "BST libera",
+   "cambiata": true,
+   "descrizione": "Great Bray-Shaman (Livello 3, dark) — 150 pt; 40 Gor Herd (campione, stendardo, musico, fronte 7) — 297 pt; 40 Ungor Herd (fronte 10) — 200 pt; 2 Razorgor Herd — 104 pt; Ghorgon — 245 pt",
+   "media": 0.44675925925925924
+  },
+  {
+   "passo": 3,
+   "lista": "DWF libera",
+   "cambiata": true,
+   "descrizione": "Thane — 60 pt; Runesmith (arma grande, armatura a piastre) — 72 pt; 24 Dwarf Warriors (scudi, fronte 10) — 216 pt; 20 Quarrellers (fronte 6) — 180 pt; 11 Thunderers (stendardo, musico, scudi, fronte 10) — 131 pt; 18 Longbeards (stendardo, musico, armi grandi, fronte 5) — 246 pt; Grudge Thrower — 95 pt",
+   "media": 0.5254629629629629
+  },
+  {
+   "passo": 4,
+   "lista": "BST libera",
+   "cambiata": false
+  },
+  {
+   "passo": "nani",
+   "lista": "DWF libera",
+   "cambiata": true,
+   "descrizione": "Thane — 60 pt; Runesmith (arma grande, armatura a piastre) — 72 pt; 21 Dwarf Warriors (scudi, fronte 10) — 189 pt; 20 Quarrellers (fronte 6) — 180 pt; 20 Thunderers (campione, stendardo, musico, scudi, fronte 10) — 235 pt; 13 Slayers (stendardo, musico, fronte 5) — 168 pt; Grudge Thrower — 95 pt",
+   "media": 0.5561342592592593,
+   "nota": "riportati verso il 50% fuori da bilancia.mjs: varianti a 4 semi, la scelta rigiocata con i semi della verifica"
   }
  ]
 }

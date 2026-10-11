@@ -1,0 +1,3486 @@
+{
+ "formato": "tow-ricerca/1",
+ "quando": "2026-10-10T23:59:35.959Z",
+ "fazione": "we",
+ "nome": "Elfi Silvani",
+ "catalogue": "Wood Elf Realms",
+ "pool": "tutte",
+ "punti": 1000,
+ "scenari": [
+  "sxmu9q80qdc65",
+  "sxprova-profondo",
+  "sxprova-boschi",
+  "bm-strada",
+  "bm-rovine",
+  "open"
+ ],
+ "seme": 1001,
+ "etichette": {
+  "sxmu9q80qdc65": "Poligono di tiro (mio)",
+  "sxprova-profondo": "Poligono profondo",
+  "sxprova-boschi": "Boschi e rovine",
+  "bm-strada": "La Strada delle Pietre",
+  "bm-rovine": "Le Rovine di Xhotl",
+  "open": "Battaglia Campale"
+ },
+ "sforzo": "normale",
+ "parametri": {
+  "popolazione": 10,
+  "generazioni": 8,
+  "celle": 12,
+  "verifica": 2,
+  "finaliste": 4
+ },
+ "obiettivo": "equilibrata",
+ "gioco": {
+  "formato": "scenario",
+  "durata": ""
+ },
+ "partite": 2592,
+ "secondi": 1445,
+ "unita": [
+  "Glade Lord",
+  "Glade Captain",
+  "Spellweaver",
+  "Spellsinger",
+  "Branchwraith",
+  "Treeman Ancient",
+  "Glade Guard",
+  "Eternal Guard",
+  "Dryads",
+  "Glade Riders",
+  "Deepwood Scouts",
+  "Wildwood Rangers",
+  "Sisters of the Thorn",
+  "Wild Riders",
+  "Warhawk Riders",
+  "Tree Kin",
+  "Treeman",
+  "Great Eagle"
+ ],
+ "escluse": [],
+ "esempi": true,
+ "provate": [
+  {
+   "k": "ancient",
+   "nome": "Treeman Ancient",
+   "liste": 2,
+   "partite": 48,
+   "media": 57,
+   "finaliste": 0
+  },
+  {
+   "k": "gladeCaptain",
+   "nome": "Glade Captain",
+   "liste": 14,
+   "partite": 528,
+   "media": 42,
+   "finaliste": 2
+  },
+  {
+   "k": "sisters",
+   "nome": "Sisters of the Thorn",
+   "liste": 14,
+   "partite": 504,
+   "media": 42,
+   "finaliste": 2
+  },
+  {
+   "k": "eternalGuard",
+   "nome": "Eternal Guard",
+   "liste": 19,
+   "partite": 816,
+   "media": 41,
+   "finaliste": 4
+  },
+  {
+   "k": "treeman",
+   "nome": "Treeman",
+   "liste": 12,
+   "partite": 504,
+   "media": 39,
+   "finaliste": 0
+  },
+  {
+   "k": "gladeLord",
+   "nome": "Glade Lord",
+   "liste": 9,
+   "partite": 384,
+   "media": 36,
+   "finaliste": 2
+  },
+  {
+   "k": "treeKin",
+   "nome": "Tree Kin",
+   "liste": 3,
+   "partite": 72,
+   "media": 36,
+   "finaliste": 0
+  },
+  {
+   "k": "spellweaver",
+   "nome": "Spellweaver",
+   "liste": 19,
+   "partite": 720,
+   "media": 34,
+   "finaliste": 2
+  },
+  {
+   "k": "scouts",
+   "nome": "Deepwood Scouts",
+   "liste": 5,
+   "partite": 120,
+   "media": 34,
+   "finaliste": 0
+  },
+  {
+   "k": "gladeGuard",
+   "nome": "Glade Guard",
+   "liste": 52,
+   "partite": 1920,
+   "media": 33,
+   "finaliste": 4
+  },
+  {
+   "k": "wildRiders",
+   "nome": "Wild Riders",
+   "liste": 3,
+   "partite": 72,
+   "media": 31,
+   "finaliste": 0
+  },
+  {
+   "k": "spellsinger",
+   "nome": "Spellsinger",
+   "liste": 16,
+   "partite": 600,
+   "media": 30,
+   "finaliste": 0
+  },
+  {
+   "k": "dryads",
+   "nome": "Dryads",
+   "liste": 16,
+   "partite": 480,
+   "media": 28,
+   "finaliste": 0
+  },
+  {
+   "k": "rangers",
+   "nome": "Wildwood Rangers",
+   "liste": 8,
+   "partite": 192,
+   "media": 27,
+   "finaliste": 0
+  },
+  {
+   "k": "branchwraith",
+   "nome": "Branchwraith",
+   "liste": 17,
+   "partite": 648,
+   "media": 25,
+   "finaliste": 0
+  },
+  {
+   "k": "gladeRiders",
+   "nome": "Glade Riders",
+   "liste": 11,
+   "partite": 432,
+   "media": 24,
+   "finaliste": 0
+  },
+  {
+   "k": "eagle",
+   "nome": "Great Eagle",
+   "liste": 12,
+   "partite": 384,
+   "media": 22,
+   "finaliste": 0
+  },
+  {
+   "k": "warhawks",
+   "nome": "Warhawk Riders",
+   "liste": 2,
+   "partite": 48,
+   "media": 17,
+   "finaliste": 0
+  }
+ ],
+ "contro": [
+  {
+   "id": "lmugl4zv663f7",
+   "name": "La Campana e l'Abominio SKA",
+   "catalogue": "Skaven",
+   "points": 996,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmugl4zvob6pi",
+   "name": "Il Fulmine di Skryre SKA",
+   "catalogue": "Skaven",
+   "points": 996,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmugl4zw1fft7",
+   "name": "Squig e sciamani O&G",
+   "catalogue": "Orc and Goblin Tribes",
+   "points": 996,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmugl4zwpzy5r",
+   "name": "Orchi Neri e cinghiali O&G",
+   "catalogue": "Orc and Goblin Tribes",
+   "points": 984,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmugl4zwvt57k",
+   "name": "Il Carnosauro e i Terradon LIZ",
+   "catalogue": "Lizardmen",
+   "points": 979,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmugl4zwyicwd",
+   "name": "Lo Stegadonte e i Cold One LIZ",
+   "catalogue": "Lizardmen",
+   "points": 990,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmuh94k2z9p26",
+   "name": "Il Bastiladon e la Guardia del Tempio LIZ",
+   "catalogue": "Lizardmen",
+   "points": 964,
+   "fonte": "archivio"
+  }
+ ],
+ "storia": [
+  {
+   "gen": 1,
+   "partite": 240,
+   "migliore": 73,
+   "vince": 38,
+   "n": 24,
+   "lista": "Glade Lord (frecce Moonfire) — 138 pt; 25 Glade Guard (campione, stendardo, musico, frecce Trueflight, fronte 5) — 318 pt; 29 Eternal Guard (fronte 8) — 377 pt; 6 Sisters of the Thorn (campione, stendardo, musico) — 164 pt"
+  },
+  {
+   "gen": 2,
+   "partite": 480,
+   "migliore": 77,
+   "vince": 31,
+   "n": 48,
+   "lista": "Spellweaver (Livello 4, high, Talismanic Tattoos) — 200 pt; 29 Glade Guard (campione, stendardo, musico, Arcane Bodkins, fronte 5) — 395 pt; 15 Glade Guard (campione, stendardo, musico, frecce Hagbane, fronte 8) — 213 pt; Great Eagle — 60 pt; Great Eagle — 60 pt; Great Eagle — 60 pt"
+  },
+  {
+   "gen": 3,
+   "partite": 720,
+   "migliore": 77,
+   "vince": 33,
+   "n": 48,
+   "lista": "Glade Lord (arma grande, frecce Moonfire) — 142 pt; 27 Glade Guard (campione, stendardo, musico, frecce Trueflight, fronte 5) — 342 pt; 27 Eternal Guard (fronte 8) — 351 pt; 6 Sisters of the Thorn (campione, stendardo, musico) — 164 pt"
+  },
+  {
+   "gen": 4,
+   "partite": 960,
+   "migliore": 86,
+   "vince": 42,
+   "n": 24,
+   "lista": "Spellsinger (Livello 1, high) — 80 pt; Branchwraith (Livello 1, illusion) — 80 pt; 30 Glade Guard (campione, stendardo, musico, frecce Hagbane, fronte 7) — 408 pt; 16 Dryads (campione, fronte 10) — 213 pt; Treeman — 215 pt"
+  },
+  {
+   "gen": 5,
+   "partite": 1200,
+   "migliore": 78,
+   "vince": 40,
+   "n": 120,
+   "lista": "Glade Captain (stendardo da battaglia) — 95 pt; Spellweaver (Livello 4, battle) — 185 pt; 16 Glade Guard (stendardo, musico, frecce Hagbane, fronte 5) — 220 pt; 12 Glade Guard (fronte 5) — 132 pt; 25 Eternal Guard (campione, stendardo, musico, scudi, fronte 6) — 365 pt"
+  },
+  {
+   "gen": 6,
+   "partite": 1440,
+   "migliore": 79,
+   "vince": 38,
+   "n": 144,
+   "lista": "Glade Captain (stendardo da battaglia) — 95 pt; Spellweaver (Livello 4, battle) — 185 pt; 16 Glade Guard (stendardo, musico, frecce Hagbane, fronte 5) — 220 pt; 12 Glade Guard (fronte 5) — 132 pt; 25 Eternal Guard (campione, stendardo, musico, scudi, fronte 6) — 365 pt"
+  },
+  {
+   "gen": 7,
+   "partite": 1680,
+   "migliore": 81,
+   "vince": 38,
+   "n": 144,
+   "lista": "Spellsinger (Livello 1, high) — 80 pt; Branchwraith (Livello 1, illusion) — 80 pt; 30 Glade Guard (campione, stendardo, musico, frecce Hagbane, fronte 7) — 408 pt; 10 Glade Riders (frecce Hagbane) — 200 pt; Treeman — 215 pt"
+  },
+  {
+   "gen": 8,
+   "partite": 1920,
+   "migliore": 86,
+   "vince": 46,
+   "n": 24,
+   "lista": "Glade Lord (arma grande, frecce Moonfire) — 142 pt; 27 Glade Guard (campione, stendardo, musico, frecce Trueflight, fronte 5) — 342 pt; 25 Eternal Guard (fronte 8) — 325 pt; 7 Sisters of the Thorn (campione, stendardo, musico) — 188 pt"
+  }
+ ],
+ "migliori": [
+  {
+   "geni": [
+    {
+     "k": "gladeCaptain",
+     "o": {
+      "weapon": null,
+      "frecce": null,
+      "bsb": true
+     }
+    },
+    {
+     "k": "spellweaver",
+     "o": {
+      "level": 4,
+      "tattoos": false
+     },
+     "lore": "battle"
+    },
+    {
+     "k": "gladeGuard",
+     "n": 16,
+     "o": {
+      "c": "sm",
+      "frecce": "hagbane",
+      "f": 5
+     }
+    },
+    {
+     "k": "gladeGuard",
+     "n": 12,
+     "o": {
+      "c": "",
+      "frecce": null,
+      "f": 5
+     }
+    },
+    {
+     "k": "eternalGuard",
+     "n": 25,
+     "o": {
+      "c": "csm",
+      "shields": true,
+      "f": 6
+     }
+    }
+   ],
+   "descrizione": "Glade Captain (stendardo da battaglia) — 95 pt; Spellweaver (Livello 4, battle) — 185 pt; 16 Glade Guard (stendardo, musico, frecce Hagbane, fronte 5) — 220 pt; 12 Glade Guard (fronte 5) — 132 pt; 25 Eternal Guard (campione, stendardo, musico, scudi, fronte 6) — 365 pt",
+   "punti": 997,
+   "ricerca": {
+    "w": 74,
+    "l": 99,
+    "d": 19,
+    "n": 192
+   },
+   "verifica": {
+    "w": 69,
+    "l": 84,
+    "d": 15,
+    "n": 168,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 10,
+      "l": 16,
+      "d": 2,
+      "n": 28
+     },
+     "sxprova-profondo": {
+      "w": 10,
+      "l": 15,
+      "d": 3,
+      "n": 28
+     },
+     "sxprova-boschi": {
+      "w": 11,
+      "l": 10,
+      "d": 7,
+      "n": 28
+     },
+     "bm-strada": {
+      "w": 11,
+      "l": 17,
+      "d": 0,
+      "n": 28
+     },
+     "bm-rovine": {
+      "w": 15,
+      "l": 13,
+      "d": 0,
+      "n": 28
+     },
+     "open": {
+      "w": 12,
+      "l": 13,
+      "d": 3,
+      "n": 28
+     }
+    },
+    "perAvversario": {
+     "lmugl4zv663f7": {
+      "w": 5,
+      "l": 16,
+      "d": 3,
+      "n": 24
+     },
+     "lmugl4zvob6pi": {
+      "w": 13,
+      "l": 9,
+      "d": 2,
+      "n": 24
+     },
+     "lmugl4zw1fft7": {
+      "w": 9,
+      "l": 11,
+      "d": 4,
+      "n": 24
+     },
+     "lmugl4zwpzy5r": {
+      "w": 11,
+      "l": 12,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zwvt57k": {
+      "w": 10,
+      "l": 12,
+      "d": 2,
+      "n": 24
+     },
+     "lmugl4zwyicwd": {
+      "w": 9,
+      "l": 13,
+      "d": 2,
+      "n": 24
+     },
+     "lmuh94k2z9p26": {
+      "w": 12,
+      "l": 11,
+      "d": 1,
+      "n": 24
+     }
+    },
+    "celle": {
+     "lmugl4zv663f7|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-profondo": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-boschi": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-strada": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|open": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-profondo": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-boschi": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-profondo": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-boschi": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|open": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-boschi": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|open": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-profondo": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|open": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-we-tutte-1000-1",
+    "name": "WE libera 1000 · 1",
+    "info": {
+     "catalogue": "Wood Elf Realms",
+     "forceName": "Battle March",
+     "limit": 1000
+    },
+    "points": 997,
+    "external": false,
+    "imported": "2026-10-10T23:59:35.957Z",
+    "units": [
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Glade Captain",
+        "stats": {
+         "M": "5",
+         "WS": "6",
+         "BS": "6",
+         "S": "4",
+         "T": "3",
+         "W": "2",
+         "I": "5",
+         "A": "3",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "Glade Captain",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 95,
+      "troop": "Regular infantry (character)",
+      "stats": {
+       "M": "5",
+       "WS": "6",
+       "BS": "6",
+       "S": "4",
+       "T": "3",
+       "W": "2",
+       "I": "5",
+       "A": "3",
+       "Ld": "9"
+      },
+      "armour": 6,
+      "rules": [
+       "The Arrow of Kurnous",
+       "Evasive",
+       "Fire & Flee",
+       "Ignores Cover",
+       "Move through Cover",
+       "Rallying Cry",
+       "Strike First",
+       "Battle Standard Bearer"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Asrai longbow",
+        "range": "32\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Armour Bane (1), Volley Fire"
+       }
+      ],
+      "maxRange": 32,
+      "ruleText": {
+       "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+       "Battle Standard Bearer": "Armies often include a Battle Standard Bearer – a trusted warrior who holds aloft the General’s personal heraldry. A Battle Standard Bearer is a rallying point for the army, from The Battlecan Standard which friendly soldiers take heart and draw strength.\n\nThe Battle Standard Bearer Model\nA Battle Standard Bearer is a heroic model carrying a particularly impressive banner, and it will be presented as an option in your chosen army list. The Battle Standard is carried by a character model and, unless specified otherwise, the model that carries the Battle Standard cannot be the General.\n\nUnlike normal standards, the Battle Standard is lost if the bearer is slain – other models cannot pick it up, even if they are in the same unit.\n\nCombat Result Bonus: A Battle Standard grants a bonus of +1 combat result point. Unlike other standards, a Battle Standard grants this bonus even if another standard is present.\nIf, by some unusual circumstance, there are two Battle Standards on the same side in the combat, you can only count the bonus for one.\n\n“Hold Your Ground”: To represent the Battle Standard’s steadying presence, unless your Battle Standard Bearer is fleeing, friendly units within the Battle Standard Bearer’s Command range may re-roll any failed Panic or Rally test. In addition, friendly units within the Battle Standard Bearer’s Command range may re-roll the 2D6 when making a Break test. However, you must accept the result of the second roll, even if it is worse than the first."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Spellweaver",
+        "stats": {
+         "M": "5",
+         "WS": "4",
+         "BS": "4",
+         "S": "3",
+         "T": "3",
+         "W": "3",
+         "I": "4",
+         "A": "2",
+         "Ld": "8"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "Spellweaver",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 185,
+      "troop": "Regular infantry (character)",
+      "stats": {
+       "M": "5",
+       "WS": "4",
+       "BS": "4",
+       "S": "3",
+       "T": "3",
+       "W": "3",
+       "I": "4",
+       "A": "2",
+       "Ld": "8"
+      },
+      "armour": 0,
+      "rules": [
+       "Elven Reflexes",
+       "Lore of Athel Loren",
+       "Magical Attacks",
+       "Move through Cover"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "ruleText": {
+       "Magical Attacks": "Any attack made or hit caused by a model with this special rule, or made using a weapon with this special rule, is a ‘Magical’ attack.\n\n Note that all spells are considered to have this special rule, as are any hits caused by magic items."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Glade Guard",
+        "stats": {
+         "M": "5",
+         "WS": "4",
+         "BS": "4",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "4",
+         "A": "1",
+         "Ld": "8"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": false
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "name": "Glade Guard",
+      "models": 16,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "pts": 220,
+      "us": 16,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "4",
+       "BS": "4",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "4",
+       "A": "1",
+       "Ld": "8"
+      },
+      "armour": 0,
+      "rules": [
+       "Elven Reflexes",
+       "Move through Cover",
+       "Open Order",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Asrai longbow",
+        "range": "32\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Armour Bane (1), Volley Fire, Poisoned Attacks"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 32,
+      "ruleText": {
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Glade Guard",
+        "stats": {
+         "M": "5",
+         "WS": "4",
+         "BS": "4",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "4",
+         "A": "1",
+         "Ld": "8"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "name": "Glade Guard",
+      "models": 12,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "pts": 132,
+      "us": 12,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "4",
+       "BS": "4",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "4",
+       "A": "1",
+       "Ld": "8"
+      },
+      "armour": 0,
+      "rules": [
+       "Elven Reflexes",
+       "Move through Cover",
+       "Open Order",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Asrai longbow",
+        "range": "32\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Armour Bane (1), Volley Fire"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 32,
+      "ruleText": {
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Eternal Guard",
+        "stats": {
+         "M": "5",
+         "WS": "5",
+         "BS": "4",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "4",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "name": "Eternal Guard",
+      "models": 25,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 6,
+      "pts": 365,
+      "us": 25,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "5",
+       "BS": "4",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "4",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 5,
+      "shield": true,
+      "rules": [
+       "Close Order",
+       "Elven Reflexes",
+       "Martial Prowess",
+       "Move through Cover",
+       "Stubborn",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Asrai spear",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-1",
+        "rules": "Fight in Extra Rank"
+       },
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     }
+    ],
+    "prep": {
+     "general": 1,
+     "bsb": 0,
+     "units": {
+      "1": {
+       "level": 4,
+       "lore": "battle"
+      }
+     },
+     "note": "Glade Captain (stendardo da battaglia) — 95 pt; Spellweaver (Livello 4, battle) — 185 pt; 16 Glade Guard (stendardo, musico, frecce Hagbane, fronte 5) — 220 pt; 12 Glade Guard (fronte 5) — 132 pt; 25 Eternal Guard (campione, stendardo, musico, scudi, fronte 6) — 365 pt"
+    },
+    "formerNames": []
+   }
+  },
+  {
+   "geni": [
+    {
+     "k": "gladeCaptain",
+     "o": {
+      "weapon": "shield",
+      "frecce": null,
+      "bsb": true
+     }
+    },
+    {
+     "k": "spellweaver",
+     "o": {
+      "level": 4,
+      "tattoos": false
+     },
+     "lore": "battle"
+    },
+    {
+     "k": "gladeGuard",
+     "n": 16,
+     "o": {
+      "c": "sm",
+      "frecce": "hagbane",
+      "f": 5
+     }
+    },
+    {
+     "k": "gladeGuard",
+     "n": 12,
+     "o": {
+      "c": "",
+      "frecce": null,
+      "f": 5
+     }
+    },
+    {
+     "k": "eternalGuard",
+     "n": 25,
+     "o": {
+      "c": "csm",
+      "shields": true,
+      "f": 6
+     }
+    }
+   ],
+   "descrizione": "Glade Captain (scudo, stendardo da battaglia) — 97 pt; Spellweaver (Livello 4, battle) — 185 pt; 16 Glade Guard (stendardo, musico, frecce Hagbane, fronte 5) — 220 pt; 12 Glade Guard (fronte 5) — 132 pt; 25 Eternal Guard (campione, stendardo, musico, scudi, fronte 6) — 365 pt",
+   "punti": 999,
+   "ricerca": {
+    "w": 19,
+    "l": 25,
+    "d": 4,
+    "n": 48
+   },
+   "verifica": {
+    "w": 70,
+    "l": 85,
+    "d": 13,
+    "n": 168,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 10,
+      "l": 16,
+      "d": 2,
+      "n": 28
+     },
+     "sxprova-profondo": {
+      "w": 10,
+      "l": 16,
+      "d": 2,
+      "n": 28
+     },
+     "sxprova-boschi": {
+      "w": 11,
+      "l": 10,
+      "d": 7,
+      "n": 28
+     },
+     "bm-strada": {
+      "w": 11,
+      "l": 17,
+      "d": 0,
+      "n": 28
+     },
+     "bm-rovine": {
+      "w": 15,
+      "l": 13,
+      "d": 0,
+      "n": 28
+     },
+     "open": {
+      "w": 13,
+      "l": 13,
+      "d": 2,
+      "n": 28
+     }
+    },
+    "perAvversario": {
+     "lmugl4zv663f7": {
+      "w": 5,
+      "l": 16,
+      "d": 3,
+      "n": 24
+     },
+     "lmugl4zvob6pi": {
+      "w": 13,
+      "l": 9,
+      "d": 2,
+      "n": 24
+     },
+     "lmugl4zw1fft7": {
+      "w": 9,
+      "l": 13,
+      "d": 2,
+      "n": 24
+     },
+     "lmugl4zwpzy5r": {
+      "w": 12,
+      "l": 11,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zwvt57k": {
+      "w": 10,
+      "l": 12,
+      "d": 2,
+      "n": 24
+     },
+     "lmugl4zwyicwd": {
+      "w": 9,
+      "l": 13,
+      "d": 2,
+      "n": 24
+     },
+     "lmuh94k2z9p26": {
+      "w": 12,
+      "l": 11,
+      "d": 1,
+      "n": 24
+     }
+    },
+    "celle": {
+     "lmugl4zv663f7|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-profondo": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-boschi": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-strada": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|open": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-profondo": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-boschi": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-profondo": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-boschi": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-boschi": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|open": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-profondo": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|open": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-we-tutte-1000-2",
+    "name": "WE libera 1000 · 2",
+    "info": {
+     "catalogue": "Wood Elf Realms",
+     "forceName": "Battle March",
+     "limit": 1000
+    },
+    "points": 999,
+    "external": false,
+    "imported": "2026-10-10T23:59:35.957Z",
+    "units": [
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Glade Captain",
+        "stats": {
+         "M": "5",
+         "WS": "6",
+         "BS": "6",
+         "S": "4",
+         "T": "3",
+         "W": "2",
+         "I": "5",
+         "A": "3",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "Glade Captain",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 97,
+      "troop": "Regular infantry (character)",
+      "stats": {
+       "M": "5",
+       "WS": "6",
+       "BS": "6",
+       "S": "4",
+       "T": "3",
+       "W": "2",
+       "I": "5",
+       "A": "3",
+       "Ld": "9"
+      },
+      "armour": 5,
+      "shield": true,
+      "rules": [
+       "The Arrow of Kurnous",
+       "Evasive",
+       "Fire & Flee",
+       "Ignores Cover",
+       "Move through Cover",
+       "Rallying Cry",
+       "Strike First",
+       "Battle Standard Bearer"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Asrai longbow",
+        "range": "32\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Armour Bane (1), Volley Fire"
+       }
+      ],
+      "maxRange": 32,
+      "ruleText": {
+       "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+       "Battle Standard Bearer": "Armies often include a Battle Standard Bearer – a trusted warrior who holds aloft the General’s personal heraldry. A Battle Standard Bearer is a rallying point for the army, from The Battlecan Standard which friendly soldiers take heart and draw strength.\n\nThe Battle Standard Bearer Model\nA Battle Standard Bearer is a heroic model carrying a particularly impressive banner, and it will be presented as an option in your chosen army list. The Battle Standard is carried by a character model and, unless specified otherwise, the model that carries the Battle Standard cannot be the General.\n\nUnlike normal standards, the Battle Standard is lost if the bearer is slain – other models cannot pick it up, even if they are in the same unit.\n\nCombat Result Bonus: A Battle Standard grants a bonus of +1 combat result point. Unlike other standards, a Battle Standard grants this bonus even if another standard is present.\nIf, by some unusual circumstance, there are two Battle Standards on the same side in the combat, you can only count the bonus for one.\n\n“Hold Your Ground”: To represent the Battle Standard’s steadying presence, unless your Battle Standard Bearer is fleeing, friendly units within the Battle Standard Bearer’s Command range may re-roll any failed Panic or Rally test. In addition, friendly units within the Battle Standard Bearer’s Command range may re-roll the 2D6 when making a Break test. However, you must accept the result of the second roll, even if it is worse than the first."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Spellweaver",
+        "stats": {
+         "M": "5",
+         "WS": "4",
+         "BS": "4",
+         "S": "3",
+         "T": "3",
+         "W": "3",
+         "I": "4",
+         "A": "2",
+         "Ld": "8"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "Spellweaver",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 185,
+      "troop": "Regular infantry (character)",
+      "stats": {
+       "M": "5",
+       "WS": "4",
+       "BS": "4",
+       "S": "3",
+       "T": "3",
+       "W": "3",
+       "I": "4",
+       "A": "2",
+       "Ld": "8"
+      },
+      "armour": 0,
+      "rules": [
+       "Elven Reflexes",
+       "Lore of Athel Loren",
+       "Magical Attacks",
+       "Move through Cover"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "ruleText": {
+       "Magical Attacks": "Any attack made or hit caused by a model with this special rule, or made using a weapon with this special rule, is a ‘Magical’ attack.\n\n Note that all spells are considered to have this special rule, as are any hits caused by magic items."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Glade Guard",
+        "stats": {
+         "M": "5",
+         "WS": "4",
+         "BS": "4",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "4",
+         "A": "1",
+         "Ld": "8"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": false
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "name": "Glade Guard",
+      "models": 16,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "pts": 220,
+      "us": 16,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "4",
+       "BS": "4",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "4",
+       "A": "1",
+       "Ld": "8"
+      },
+      "armour": 0,
+      "rules": [
+       "Elven Reflexes",
+       "Move through Cover",
+       "Open Order",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Asrai longbow",
+        "range": "32\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Armour Bane (1), Volley Fire, Poisoned Attacks"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 32,
+      "ruleText": {
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Glade Guard",
+        "stats": {
+         "M": "5",
+         "WS": "4",
+         "BS": "4",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "4",
+         "A": "1",
+         "Ld": "8"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "name": "Glade Guard",
+      "models": 12,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "pts": 132,
+      "us": 12,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "4",
+       "BS": "4",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "4",
+       "A": "1",
+       "Ld": "8"
+      },
+      "armour": 0,
+      "rules": [
+       "Elven Reflexes",
+       "Move through Cover",
+       "Open Order",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Asrai longbow",
+        "range": "32\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Armour Bane (1), Volley Fire"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 32,
+      "ruleText": {
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Eternal Guard",
+        "stats": {
+         "M": "5",
+         "WS": "5",
+         "BS": "4",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "4",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "name": "Eternal Guard",
+      "models": 25,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 6,
+      "pts": 365,
+      "us": 25,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "5",
+       "BS": "4",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "4",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 5,
+      "shield": true,
+      "rules": [
+       "Close Order",
+       "Elven Reflexes",
+       "Martial Prowess",
+       "Move through Cover",
+       "Stubborn",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Asrai spear",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-1",
+        "rules": "Fight in Extra Rank"
+       },
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     }
+    ],
+    "prep": {
+     "general": 1,
+     "bsb": 0,
+     "units": {
+      "1": {
+       "level": 4,
+       "lore": "battle"
+      }
+     },
+     "note": "Glade Captain (scudo, stendardo da battaglia) — 97 pt; Spellweaver (Livello 4, battle) — 185 pt; 16 Glade Guard (stendardo, musico, frecce Hagbane, fronte 5) — 220 pt; 12 Glade Guard (fronte 5) — 132 pt; 25 Eternal Guard (campione, stendardo, musico, scudi, fronte 6) — 365 pt"
+    },
+    "formerNames": []
+   }
+  },
+  {
+   "geni": [
+    {
+     "k": "gladeLord",
+     "o": {
+      "weapon": null,
+      "frecce": "moonfire"
+     }
+    },
+    {
+     "k": "gladeGuard",
+     "o": {
+      "c": "csm",
+      "frecce": "trueflight",
+      "f": 5
+     },
+     "n": 27
+    },
+    {
+     "k": "eternalGuard",
+     "o": {
+      "c": "",
+      "shields": false,
+      "f": 8
+     },
+     "n": 27
+    },
+    {
+     "k": "sisters",
+     "o": {
+      "c": "csm"
+     },
+     "n": 6
+    }
+   ],
+   "descrizione": "Glade Lord (frecce Moonfire) — 138 pt; 27 Glade Guard (campione, stendardo, musico, frecce Trueflight, fronte 5) — 342 pt; 27 Eternal Guard (fronte 8) — 351 pt; 6 Sisters of the Thorn (campione, stendardo, musico) — 164 pt",
+   "punti": 995,
+   "ricerca": {
+    "w": 9,
+    "l": 11,
+    "d": 4,
+    "n": 24
+   },
+   "verifica": {
+    "w": 59,
+    "l": 105,
+    "d": 4,
+    "n": 168,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 6,
+      "l": 21,
+      "d": 1,
+      "n": 28
+     },
+     "sxprova-profondo": {
+      "w": 10,
+      "l": 18,
+      "d": 0,
+      "n": 28
+     },
+     "sxprova-boschi": {
+      "w": 10,
+      "l": 18,
+      "d": 0,
+      "n": 28
+     },
+     "bm-strada": {
+      "w": 9,
+      "l": 19,
+      "d": 0,
+      "n": 28
+     },
+     "bm-rovine": {
+      "w": 15,
+      "l": 13,
+      "d": 0,
+      "n": 28
+     },
+     "open": {
+      "w": 9,
+      "l": 16,
+      "d": 3,
+      "n": 28
+     }
+    },
+    "perAvversario": {
+     "lmugl4zv663f7": {
+      "w": 9,
+      "l": 14,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zvob6pi": {
+      "w": 13,
+      "l": 11,
+      "d": 0,
+      "n": 24
+     },
+     "lmugl4zw1fft7": {
+      "w": 7,
+      "l": 16,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zwpzy5r": {
+      "w": 10,
+      "l": 13,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zwvt57k": {
+      "w": 5,
+      "l": 19,
+      "d": 0,
+      "n": 24
+     },
+     "lmugl4zwyicwd": {
+      "w": 8,
+      "l": 16,
+      "d": 0,
+      "n": 24
+     },
+     "lmuh94k2z9p26": {
+      "w": 7,
+      "l": 16,
+      "d": 1,
+      "n": 24
+     }
+    },
+    "celle": {
+     "lmugl4zv663f7|sxmu9q80qdc65": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|open": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-strada": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|open": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-profondo": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-boschi": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|open": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxmu9q80qdc65": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-profondo": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxmu9q80qdc65": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-profondo": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-boschi": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|open": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxmu9q80qdc65": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-boschi": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-profondo": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-boschi": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|open": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-we-tutte-1000-3",
+    "name": "WE libera 1000 · 3",
+    "info": {
+     "catalogue": "Wood Elf Realms",
+     "forceName": "Battle March",
+     "limit": 1000
+    },
+    "points": 995,
+    "external": false,
+    "imported": "2026-10-10T23:59:35.958Z",
+    "units": [
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Glade Lord",
+        "stats": {
+         "M": "5",
+         "WS": "7",
+         "BS": "7",
+         "S": "4",
+         "T": "3",
+         "W": "3",
+         "I": "6",
+         "A": "4",
+         "Ld": "10"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "Glade Lord",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 138,
+      "troop": "Regular infantry (character)",
+      "stats": {
+       "M": "5",
+       "WS": "7",
+       "BS": "7",
+       "S": "4",
+       "T": "3",
+       "W": "3",
+       "I": "6",
+       "A": "4",
+       "Ld": "10"
+      },
+      "armour": 6,
+      "rules": [
+       "The Arrow of Kurnous",
+       "Evasive",
+       "Fire & Flee",
+       "Ignores Cover",
+       "Move through Cover",
+       "Rallying Cry",
+       "Strike First"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Asrai longbow",
+        "range": "32\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Armour Bane (1), Volley Fire, Flaming Attacks, Magical Attacks"
+       }
+      ],
+      "maxRange": 32,
+      "ruleText": {
+       "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Glade Guard",
+        "stats": {
+         "M": "5",
+         "WS": "4",
+         "BS": "4",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "4",
+         "A": "1",
+         "Ld": "8"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "name": "Glade Guard",
+      "models": 27,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "pts": 342,
+      "us": 27,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "4",
+       "BS": "4",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "4",
+       "A": "1",
+       "Ld": "8"
+      },
+      "armour": 0,
+      "rules": [
+       "Elven Reflexes",
+       "Move through Cover",
+       "Open Order",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Asrai longbow",
+        "range": "32\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Armour Bane (1), Volley Fire, Ignores Cover, Quick Shot"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 32,
+      "ruleText": {
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Eternal Guard",
+        "stats": {
+         "M": "5",
+         "WS": "5",
+         "BS": "4",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "4",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "name": "Eternal Guard",
+      "models": 27,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 8,
+      "pts": 351,
+      "us": 27,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "5",
+       "BS": "4",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "4",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 6,
+      "shield": false,
+      "rules": [
+       "Close Order",
+       "Elven Reflexes",
+       "Martial Prowess",
+       "Move through Cover",
+       "Stubborn",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Asrai spear",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-1",
+        "rules": "Fight in Extra Rank"
+       },
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Sisters of the Thorn",
+        "stats": {
+         "M": "8",
+         "WS": "4",
+         "BS": "5",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "4",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "name": "Sisters of the Thorn",
+      "models": 6,
+      "baseId": "30x60",
+      "baseW": 30,
+      "baseH": 60,
+      "frontage": 5,
+      "us": 12,
+      "pts": 164,
+      "troop": "Light cavalry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "8",
+       "WS": "4",
+       "BS": "5",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "4",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 0,
+      "rules": [
+       "Daughters of Eternity",
+       "Deepwood Coven",
+       "Elven Reflexes",
+       "Fast Cavalry",
+       "Fire & Flee",
+       "Move through Cover",
+       "Open Order",
+       "Poisoned Attacks",
+       "Swiftstride"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Blackbriar javelin",
+        "range": "12\"",
+        "S": "S",
+        "ap": "-1",
+        "rules": "Move & Shoot, Quick Shot"
+       }
+      ],
+      "slot": "Special",
+      "maxRange": 12,
+      "ruleText": {
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Poisoned Attacks": "If a model with Poisoned Attacks rolls a natural 6 when making a roll To Hit, it may apply a +2 modifier to that hit’s roll To Wound. Unless otherwise stated, a model with this special rule may use it when making both shooting and combat attacks. Any spells cast by the model are unaffected, as are any attacks made with magic weapons. Note that if an attack needs a To Hit roll of 7+, or hits automatically, this special rule cannot be used.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+      }
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {},
+     "note": "Glade Lord (frecce Moonfire) — 138 pt; 27 Glade Guard (campione, stendardo, musico, frecce Trueflight, fronte 5) — 342 pt; 27 Eternal Guard (fronte 8) — 351 pt; 6 Sisters of the Thorn (campione, stendardo, musico) — 164 pt"
+    },
+    "formerNames": []
+   }
+  },
+  {
+   "geni": [
+    {
+     "k": "gladeLord",
+     "o": {
+      "weapon": "great",
+      "frecce": "moonfire"
+     }
+    },
+    {
+     "k": "gladeGuard",
+     "o": {
+      "c": "csm",
+      "frecce": "trueflight",
+      "f": 5
+     },
+     "n": 27
+    },
+    {
+     "k": "eternalGuard",
+     "o": {
+      "c": "",
+      "shields": false,
+      "f": 8
+     },
+     "n": 25
+    },
+    {
+     "k": "sisters",
+     "o": {
+      "c": "csm"
+     },
+     "n": 7
+    }
+   ],
+   "descrizione": "Glade Lord (arma grande, frecce Moonfire) — 142 pt; 27 Glade Guard (campione, stendardo, musico, frecce Trueflight, fronte 5) — 342 pt; 25 Eternal Guard (fronte 8) — 325 pt; 7 Sisters of the Thorn (campione, stendardo, musico) — 188 pt",
+   "punti": 997,
+   "ricerca": {
+    "w": 11,
+    "l": 10,
+    "d": 3,
+    "n": 24
+   },
+   "verifica": {
+    "w": 56,
+    "l": 103,
+    "d": 9,
+    "n": 168,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 7,
+      "l": 20,
+      "d": 1,
+      "n": 28
+     },
+     "sxprova-profondo": {
+      "w": 5,
+      "l": 19,
+      "d": 4,
+      "n": 28
+     },
+     "sxprova-boschi": {
+      "w": 6,
+      "l": 20,
+      "d": 2,
+      "n": 28
+     },
+     "bm-strada": {
+      "w": 11,
+      "l": 17,
+      "d": 0,
+      "n": 28
+     },
+     "bm-rovine": {
+      "w": 16,
+      "l": 12,
+      "d": 0,
+      "n": 28
+     },
+     "open": {
+      "w": 11,
+      "l": 15,
+      "d": 2,
+      "n": 28
+     }
+    },
+    "perAvversario": {
+     "lmugl4zv663f7": {
+      "w": 14,
+      "l": 10,
+      "d": 0,
+      "n": 24
+     },
+     "lmugl4zvob6pi": {
+      "w": 9,
+      "l": 13,
+      "d": 2,
+      "n": 24
+     },
+     "lmugl4zw1fft7": {
+      "w": 6,
+      "l": 16,
+      "d": 2,
+      "n": 24
+     },
+     "lmugl4zwpzy5r": {
+      "w": 11,
+      "l": 12,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zwvt57k": {
+      "w": 3,
+      "l": 20,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zwyicwd": {
+      "w": 9,
+      "l": 13,
+      "d": 2,
+      "n": 24
+     },
+     "lmuh94k2z9p26": {
+      "w": 4,
+      "l": 19,
+      "d": 1,
+      "n": 24
+     }
+    },
+    "celle": {
+     "lmugl4zv663f7|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-profondo": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|open": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-profondo": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-boschi": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-profondo": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-boschi": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|open": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-profondo": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-boschi": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxmu9q80qdc65": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-profondo": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-boschi": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|open": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-profondo": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-boschi": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|open": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxmu9q80qdc65": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-profondo": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-boschi": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-strada": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-we-tutte-1000-4",
+    "name": "WE libera 1000 · 4",
+    "info": {
+     "catalogue": "Wood Elf Realms",
+     "forceName": "Battle March",
+     "limit": 1000
+    },
+    "points": 997,
+    "external": false,
+    "imported": "2026-10-10T23:59:35.958Z",
+    "units": [
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Glade Lord",
+        "stats": {
+         "M": "5",
+         "WS": "7",
+         "BS": "7",
+         "S": "4",
+         "T": "3",
+         "W": "3",
+         "I": "6",
+         "A": "4",
+         "Ld": "10"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "Glade Lord",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 142,
+      "troop": "Regular infantry (character)",
+      "stats": {
+       "M": "5",
+       "WS": "7",
+       "BS": "7",
+       "S": "4",
+       "T": "3",
+       "W": "3",
+       "I": "6",
+       "A": "4",
+       "Ld": "10"
+      },
+      "armour": 6,
+      "rules": [
+       "The Arrow of Kurnous",
+       "Evasive",
+       "Fire & Flee",
+       "Ignores Cover",
+       "Move through Cover",
+       "Rallying Cry",
+       "Strike First"
+      ],
+      "weapons": [
+       {
+        "name": "Great Weapon",
+        "range": "Combat",
+        "S": "S+2",
+        "ap": "-2",
+        "rules": "Armour Bane (1), Requires Two Hands, Strike Last"
+       },
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Asrai longbow",
+        "range": "32\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Armour Bane (1), Volley Fire, Flaming Attacks, Magical Attacks"
+       }
+      ],
+      "maxRange": 32,
+      "ruleText": {
+       "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Glade Guard",
+        "stats": {
+         "M": "5",
+         "WS": "4",
+         "BS": "4",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "4",
+         "A": "1",
+         "Ld": "8"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "name": "Glade Guard",
+      "models": 27,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "pts": 342,
+      "us": 27,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "4",
+       "BS": "4",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "4",
+       "A": "1",
+       "Ld": "8"
+      },
+      "armour": 0,
+      "rules": [
+       "Elven Reflexes",
+       "Move through Cover",
+       "Open Order",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Asrai longbow",
+        "range": "32\"",
+        "S": "S",
+        "ap": "-",
+        "rules": "Armour Bane (1), Volley Fire, Ignores Cover, Quick Shot"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 32,
+      "ruleText": {
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Eternal Guard",
+        "stats": {
+         "M": "5",
+         "WS": "5",
+         "BS": "4",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "4",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "name": "Eternal Guard",
+      "models": 25,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 8,
+      "pts": 325,
+      "us": 25,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "5",
+       "BS": "4",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "4",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 6,
+      "shield": false,
+      "rules": [
+       "Close Order",
+       "Elven Reflexes",
+       "Martial Prowess",
+       "Move through Cover",
+       "Stubborn",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Asrai spear",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-1",
+        "rules": "Fight in Extra Rank"
+       },
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Sisters of the Thorn",
+        "stats": {
+         "M": "8",
+         "WS": "4",
+         "BS": "5",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "4",
+         "A": "1",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Wood Elf Realms",
+      "ward": 0,
+      "regen": 0,
+      "name": "Sisters of the Thorn",
+      "models": 7,
+      "baseId": "30x60",
+      "baseW": 30,
+      "baseH": 60,
+      "frontage": 5,
+      "us": 14,
+      "pts": 188,
+      "troop": "Light cavalry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "8",
+       "WS": "4",
+       "BS": "5",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "4",
+       "A": "1",
+       "Ld": "9"
+      },
+      "armour": 0,
+      "rules": [
+       "Daughters of Eternity",
+       "Deepwood Coven",
+       "Elven Reflexes",
+       "Fast Cavalry",
+       "Fire & Flee",
+       "Move through Cover",
+       "Open Order",
+       "Poisoned Attacks",
+       "Swiftstride"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       },
+       {
+        "name": "Blackbriar javelin",
+        "range": "12\"",
+        "S": "S",
+        "ap": "-1",
+        "rules": "Move & Shoot, Quick Shot"
+       }
+      ],
+      "slot": "Special",
+      "maxRange": 12,
+      "ruleText": {
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Poisoned Attacks": "If a model with Poisoned Attacks rolls a natural 6 when making a roll To Hit, it may apply a +2 modifier to that hit’s roll To Wound. Unless otherwise stated, a model with this special rule may use it when making both shooting and combat attacks. Any spells cast by the model are unaffected, as are any attacks made with magic weapons. Note that if an attack needs a To Hit roll of 7+, or hits automatically, this special rule cannot be used.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+      }
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {},
+     "note": "Glade Lord (arma grande, frecce Moonfire) — 142 pt; 27 Glade Guard (campione, stendardo, musico, frecce Trueflight, fronte 5) — 342 pt; 25 Eternal Guard (fronte 8) — 325 pt; 7 Sisters of the Thorn (campione, stendardo, musico) — 188 pt"
+    },
+    "formerNames": []
+   }
+  }
+ ]
+}

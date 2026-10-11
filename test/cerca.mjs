@@ -24,7 +24,9 @@ const rnd = () => ((s = (s * 1103515245 + 12345) >>> 0) / 2 ** 32);
 /* --- le fazioni dei cataloghi --- */
 ok('«Lizardmen - Renegades 2.0» è Lucertole', fazioneDi('Lizardmen - Renegades 2.0') === 'liz');
 ok('«Orc & Goblin Tribes» e «Orc and Goblin Tribes» sono la stessa', fazioneDi('Orc & Goblin Tribes') === 'og' && fazioneDi('Orc and Goblin Tribes') === 'og');
-ok('un catalogo che non conosciamo non è di nessuno', fazioneDi('Dwarfen Mountain Holds') === null);
+ok('un catalogo che non conosciamo non è di nessuno', fazioneDi('Kingdom of Bretonnia') === null);
+ok('e i tre letti sui libri hanno la loro fazione',
+   fazioneDi('Beastmen Brayherds') === 'bst' && fazioneDi('Wood Elf Realms') === 'we' && fazioneDi('Dwarfen Mountain Holds') === 'dwf');
 
 /* --- tutte le unità --- */
 for (const f of Object.keys(FAZIONI)){
@@ -51,13 +53,14 @@ for (const f of Object.keys(FAZIONI)){
 }
 
 /* --- le liste a tema: ogni unità ne ha una, tranne chi non entra per
-   regola (la Hell Pit Abomination costa 210, l'Ancient Stegadon 230, e
-   le Rare a 800 punti si fermano a 200) --- */
+   regola (la Hell Pit Abomination costa 210, l'Ancient Stegadon 230, il
+   Ghorgon 245, e le Rare a 800 punti si fermano a 200) --- */
 for (const f of Object.keys(FAZIONI)){
   const S = spazio(f, { pool: 'tutte', punti: 800 });
   const senza = S.voci.filter(v => { const g = S.casuale(rnd, { con: v.k }); return !g || !g.some(x => x.k === v.k); }).map(v => v.k);
-  ok(`${f}: una lista a tema per ogni unità${senza.length ? ' (tranne ' + senza.join(', ') + ')' : ''}`,
-     senza.every(k => k === 'hpa' || k === 'ancientSteg'));
+  const troppoCara = k => { const v = S.voci.find(x => x.k === k); return v.slot === 'Rare' && v.crea({}).pts > 800 * 0.25; };
+  ok(`${f}: una lista a tema per ogni unità${senza.length ? ' (tranne ' + senza.join(', ') + ', Rare oltre i 200 punti)' : ''}`,
+     senza.every(troppoCara));
 }
 
 /* --- i maghi portano Livello e dominio nella scheda di preparazione --- */

@@ -18,11 +18,11 @@
 
 import { hitMelee, woundOn, saveOn, pool, roll, chance, expected, rankBonus,
          stat, weaponStrength, weaponAP, IMPOSSIBLE } from './rules.js';
-import { readRules, splitWeaponRules, emptyFlags } from './rulebook.js';
+import { readRules, splitWeaponRules, emptyFlags, odia } from './rulebook.js';
 import { troopType, usPerModel } from './troops.js';
 import { flagsOf, spent, val, statOf, baseOf } from './effects.js';
 import { woundsOf } from './extras.js';
-import { armyFor, meleeBoosts, fleeBonus } from './armies.js';
+import { armyFor, meleeBoosts, fleeBonus, pursuitBonus } from './armies.js';
 import * as ML from './melee.js';
 import * as SH from './shoot.js';
 import * as PS from './psych.js';
@@ -37,8 +37,18 @@ import { beastStat } from './profiles.js';
    quella che perfora di piu', che e' quella che si userebbe */
 /* le armi marcate `di` sono della cavalcatura (le corna dello Stegadon,
    gli artigli del Carnosauro): le tira la sua riga, non il cavaliere */
-export function meleeWeapon(u){
-  const list = (u.weapons || []).filter(w => !(stat(w.range) > 0) && !w.di);
+/* Le armi che valgono solo nel turno della carica (p. 215): la lancia,
+   la lancia da lancio, e per la Forza e la perforazione la lancia da
+   cavalleria; la lancia da caccia dei Wild Riders (Forces of Fantasy
+   p. 136) dice lo stesso. Negli altri turni si mena con l'arma a una
+   mano. Prima l'assalto teneva sempre quella che perfora di piu', e i
+   Boar Boyz menavano con la lancia anche al terzo round. `charged`
+   null vuol dire «non si sa» (una stima senza tavolo): si tiene tutto. */
+const SOLO_IN_CARICA = /^(lance|cavalry spear|throwing spear|hunting spear)/i;
+export function meleeWeapon(u, { charged = null } = {}){
+  const tutte = (u.weapons || []).filter(w => !(stat(w.range) > 0) && !w.di);
+  const ora = charged === false ? tutte.filter(w => !SOLO_IN_CARICA.test(String(w.name || ""))) : tutte;
+  const list = ora.length ? ora : tutte;
   if (!list.length) return null;
   return list.reduce((best, w) => weaponAP(w) > weaponAP(best) ? w : best, list[0]);
 }
@@ -99,6 +109,18 @@ function mergePools(a, b){
            hits: a.hits + b.hits, need: a.need, of: a.of + b.of };
 }
 
+/* Blood Greed (Ravening Hordes p. 115): «whilst Frenzied, this model
+   has a +2 modifier to its Attacks characteristic (rather than the
+   usual +1)». Vale quando la Frenzy da' il suo +1, e lo raddoppia. */
+const bloodGreed = (u, a) => a > 0 && ((u && u.rules) || []).some(r => /^blood greed/i.test(String(r))) ? 2 : a;
+
+/* Il primo round di un combattimento. L'arbitro lo sa unita' per unita'
+   (`primoRound`: non era in combattimento all'inizio di questo turno);
+   il pannello delle due schiere conta i round, e il primo e' l'1. Prima
+   l'arbitro passava il numero del mezzo turno della partita, che non
+   vale mai 1, e l'Odio in partita non scattava mai. */
+export const primoDi = (c, round = 1) => c && c.primoRound != null ? !!c.primoRound : round === 1;
+
 /* La schiera: quello che serve a tirare, e niente altro. `over` sono le
    correzioni fatte a mano nel pannello, che vincono sempre sul profilo
    perche' chi guarda il tavolo ne sa piu' del file. */
@@ -111,7 +133,7 @@ export function combatant(u, over = {}){
     return back;
   }
   const st = u.stats || {};
-  const melee = meleeWeapon(u);
+  const melee = meleeWeapon(u, { charged: !!(u.charged && typeof u.charged === "object") || !!over.charged });
   const alive = Math.max(0, (u.models || 1) - (u.lost || 0));
   /* Quanti pollici ha percorso caricando e da che faccia e' arrivato:
      la Tappa 2 lo scrive qui quando la carica va a segno, e fino alla
@@ -295,8 +317,14 @@ export function combatant(u, over = {}){
 
   const out = Object.assign(c, over);
   if (over.frenzyA == null)
-    out.frenzyA = PS.frenzyBonus({ p: out.psych, chargedThisTurn: !!out.charged,
-                                   followedUpLastTurn: !!out.followedUp }).a;
+    out.frenzyA = bloodGreed(u, PS.frenzyBonus({ p: out.psych, chargedThisTurn: !!out.charged,
+                                                 followedUpLastTurn: !!out.followedUp }).a);
+  /* Stoic Defenders: chi e' stato caricato in questo turno lo dice chi
+     chiama (`caricata`); il pannello non lo sa, e lì non vale */
+  if (out.flags.stoicDefenders && out.caricata){
+    out.i = (+out.i || 0) + 1;
+    out.a = (+out.a || 0) + 1;
+  }
   /* I personaggi uniti, ognuno con il suo profilo (vedi sotto). Si
      calcolano dopo le correzioni del pannello perche' «ha caricato» e
      «e' disordinata» valgono anche per loro. */
@@ -331,7 +359,7 @@ export function retinueOf(joined = [], host = null){
   const out = [];
   for (const ch of joined || []){
     if (!ch || ch.dead) continue;
-    const melee = meleeWeapon(ch);
+    const melee = meleeWeapon(ch, { charged: host ? !!host.charged : null });
     const army = armyFor(ch);
     const read = readRules(ch.rules || [], splitWeaponRules(melee && melee.rules),
                            melee ? melee.name : "", ch.ruleText || null, army);
@@ -356,8 +384,8 @@ export function retinueOf(joined = [], host = null){
       feared: host ? !!host.feared : false,
       followedUp: host ? !!host.followedUp : false,
     };
-    g.frenzyA = PS.frenzyBonus({ p: PS.psychOf(ch), chargedThisTurn: !!g.charged,
-                                 followedUpLastTurn: g.followedUp }).a;
+    g.frenzyA = bloodGreed(ch, PS.frenzyBonus({ p: PS.psychOf(ch), chargedThisTurn: !!g.charged,
+                                               followedUpLastTurn: g.followedUp }).a);
     out.push(g);
   }
   return out;
@@ -394,7 +422,7 @@ export function mountStrikers(c){
   return rows.map(r => {
     /* l'equipaggio senza un'arma sua impugna quella dell'unita': le armi
        del file di un carro sono dei servitori */
-    const w = r.arma || (r.crew ? meleeWeapon(u) : null);
+    const w = r.arma || (r.crew ? meleeWeapon(u, { charged: !!c.charged }) : null);
     const read = readRules(r.regole || [], splitWeaponRules(w && w.rules), w ? w.name : "", null, army);
     /* le regole d'esercito sono quelle del modello, piu' quelle che la
        riga della bestia porta lei: la Tusker Charge dei Boar Boyz sta
@@ -423,7 +451,12 @@ export function mountStrikers(c){
       ws: mv("WS", r.ws), i: mv("I", r.i),
       a: r.a * r.n + extra * r.n,
       baseS: S, s: w ? weaponStrength(w, S) : S,
-      ap: w ? weaponAP(w) : 0, weapon: w ? w.name : "",
+      /* la Foe Render che il libro scrive «Razorgor only» (Ravening
+         Hordes p. 103) sta sulla riga della bestia: con la Primal Fury
+         che l'arbitro ha scritto sul modello, le zanne perforano di 2 */
+      ap: Math.max(w ? weaponAP(w) : 0,
+                   c.primalFury && w && /hand weapon/i.test(w.name) && (r.regole || []).some(x => /^foe render/i.test(x)) ? 2 : 0),
+      weapon: w ? w.name : "",
       flags, retinue: [], frenzyA: 0, forcedAttacks: null, attached: false,
     };
   });
@@ -836,6 +869,11 @@ function boostsOf(att){
    `armies.js`: viene dal tipo di truppa, e per questo si somma qui. */
 export const WAR_MACHINE_FLEE = -1;
 
+export function pursuitBonusOf(u){
+  const army = armyFor(u);
+  return army ? pursuitBonus(readRules((u && u.rules) || [], [], "", null, army).flags.army) : { mod: 0, why: "" };
+}
+
 export function fleeBonusOf(u){
   const army = armyFor(u);
   const base = army ? fleeBonus(readRules((u && u.rules) || [], [], "", null, army).flags.army)
@@ -871,12 +909,15 @@ export function strike(att, def, { attacks, auto = false, strength, ap, label = 
      ritiro, e il testo che le liste salvate portano con se' lo dice in
      tre righe. Il ritiro vero lo fa `pool`, che sa gia' che un dado
      non si ritira due volte (p. 93). */
-  /* l'Odio puo' venire anche da un incantesimo (Battle Lust) */
-  const hateful = !auto && (f.hatred || !!(att.eff && att.eff.hatred)) && round === 1;
+  /* l'Odio puo' venire anche da un incantesimo (Battle Lust), e quello
+     di una regola vale solo contro chi la parentesi nomina (p. 171) */
+  const hateful = !auto && (odia(f, def) || !!(att.eff && att.eff.hatred)) && primoDi(att, round);
   /* L'Odio ritira tutti i mancati, e quindi anche gli 1: con lui il
      ritiro degli 1 del Waaagh! non aggiunge niente, perche' un dado non
-     si ritira due volte (p. 93). */
-  const hitAgain = hateful ? "misses" : (boost && boost.rerollHit) || null;
+     si ritira due volte (p. 93). La Furia Primordiale degli Uomini
+     Bestia ritira gli 1 anche lei (Ravening Hordes p. 116), e la scrive
+     sulla schiera l'arbitro quando il test di Comando passa. */
+  const hitAgain = hateful ? "misses" : (boost && boost.rerollHit) || (att.primalFury && !auto ? "ones" : null);
   const hit = auto ? { dice: [], hits: n, need: 0, of: n } : pool(n, hitNeed, hitAgain);
   /* Predatory Fighter: ogni 6 naturale per colpire in mischia porta un
      attacco in piu', che si tira come gli altri — e i sei che escono da
@@ -890,12 +931,14 @@ export function strike(att, def, { attacks, auto = false, strength, ap, label = 
   }
   if (hit.rerolled) notes.push(hateful
     ? "Odio: " + hit.rerolled + (hit.rerolled === 1 ? " colpo mancato ritirato" : " colpi mancati ritirati")
-    : boost.from.hit + ": " + hit.rerolled + (hit.rerolled === 1 ? " 1 per colpire ritirato" : " 1 per colpire ritirati"));
+    : (boost.from.hit || "Primal Fury") + ": " + hit.rerolled + (hit.rerolled === 1 ? " 1 per colpire ritirato" : " 1 per colpire ritirati"));
 
   /* Veleno: il 6 naturale per colpire non ferisce da solo, da' due punti
      al tiro per ferire. Quei colpi si tirano a parte, con il loro
      punteggio, e poi i due tiri si raccontano come uno. */
-  const woundNeed = woundOn(S, def.t);
+  /* Slayer: il 4+ basta sempre, anche contro una Resistenza alta */
+  const woundNeed = f.slayer && !auto ? Math.min(woundOn(S, def.t), f.slayer) : woundOn(S, def.t);
+  if (f.slayer && !auto && woundNeed < woundOn(S, def.t)) notes.push(`Slayer: per ferire basta il ${f.slayer}+`);
   const venom = f.poisoned ? Math.min(sixes(hit), hit.hits) : 0;
   const venomNeed = Math.max(2, woundNeed - 2);
   const woundAgain = (boost && boost.rerollWound) || null;
@@ -918,9 +961,13 @@ export function strike(att, def, { attacks, auto = false, strength, ap, label = 
   if (melee && def.parryArmour) notes.push(def.parryFrom);
   const saveNeed = saveOn(armour, AP);
   const critNeed = f.killingBlow ? IMPOSSIBLE : saveOn(armour, AP + f.armourBane);
-  const savePlain = pool(wound.hits - critHits, saveNeed);
-  const saveCrit = critHits ? pool(critHits, critNeed) : null;
+  /* l'armatura di gromril ritira gli 1 naturali (Forces of Fantasy p. 39) */
+  const saveAgain = def.flags && def.flags.gromrilArmour ? "ones" : null;
+  const savePlain = pool(wound.hits - critHits, saveNeed, saveAgain);
+  const saveCrit = critHits ? pool(critHits, critNeed, saveAgain) : null;
   const save = mergePools(savePlain, saveCrit);
+  if (saveAgain && (savePlain.rerolled || (saveCrit && saveCrit.rerolled)))
+    notes.push(`Gromril Armour: ${(savePlain.rerolled || 0) + ((saveCrit && saveCrit.rerolled) || 0)} 1 d'armatura ritirati`);
   if (critHits) notes.push(critHits + (critHits === 1 ? " sei naturale" : " sei naturali")
     + (f.killingBlow ? ": nessuna armatura" : ": armatura a " + (critNeed >= IMPOSSIBLE ? "niente" : critNeed + "+")));
   const through = wound.hits - save.hits;
@@ -1313,6 +1360,11 @@ const rigaCaduti = f => (f.models === 1 ? "1 caduto" : f.models + " caduti") +
 export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
   const startA = asSide(SA), startB = asSide(SB);
   const A = withRetinue(startA.map(clone)), B = withRetinue(startB.map(clone));
+  /* Elven Reflexes (Forces of Fantasy p. 145): +1 all'Iniziativa nel
+     primo round, al modello e non alla cavalcatura — le righe della
+     bestia prendono l'Iniziativa dalla loro riga, piu' sotto */
+  for (const c of [...A, ...B])
+    if (c.flags && c.flags.elvenReflexes && primoDi(c, round)) c.i = (+c.i || 0) + 1;
   /* i modelli e le ferite di partenza, per chi c'era e per i capi
      aggiunti qui: servono alle perdite e all'overkill */
   const initA = A.map(c => ({ models: c.models, w: c.w, spill: c.spill || 0 }));
@@ -1783,11 +1835,12 @@ function oneForecast(att, def, n0){
   /* le regole d'esercito entrano nella media come nei dadi veri: gli 1
      ritirati li conta `expected`, la perforazione e la Forza si sommano */
   const boost = boostsOf(att);
-  const hOne = f.hatred ? expected(1, h, "misses")
-    : boost.rerollHit ? expected(1, h, boost.rerollHit) : chance(h);
+  const again = boost.rerollHit || (att.primalFury ? "ones" : null);
+  const hOne = odia(f, def) && att.primoRound !== false ? expected(1, h, "misses")
+    : again ? expected(1, h, again) : chance(h);
   /* Predatory Fighter: un sesto degli attacchi porta un attacco in piu' */
   const hChance = f.predatory && h < IMPOSSIBLE ? hOne * (1 + 1 / 6) : hOne;
-  const w = woundOn(att.s + boost.s, def.t);
+  const w = f.slayer ? Math.min(woundOn(att.s + boost.s, def.t), f.slayer) : woundOn(att.s + boost.s, def.t);
   const wOne = need => boost.rerollWound ? expected(1, need, boost.rerollWound) : chance(need);
   /* col veleno un colpo su sei ferisce con due punti di sconto: la
      media si fa sui due casi, non su uno */
@@ -1797,16 +1850,18 @@ function oneForecast(att, def, n0){
   const ap = att.ap + boost.ap;
   const armour = def.parryArmour || def.armour;
   const sv = saveOn(armour, ap);
-  const svChance = f.killingBlow ? (5 / 6) * chance(sv)
-    : f.armourBane ? (5 / 6) * chance(sv) + (1 / 6) * chance(saveOn(armour, ap + f.armourBane))
-    : chance(sv);
+  const sAgain = def.flags && def.flags.gromrilArmour ? "ones" : null;
+  const sOne = need => sAgain ? expected(1, need, sAgain) : chance(need);
+  const svChance = f.killingBlow ? (5 / 6) * sOne(sv)
+    : f.armourBane ? (5 / 6) * sOne(sv) + (1 / 6) * sOne(saveOn(armour, ap + f.armourBane))
+    : sOne(sv);
   const wd = saveOn(def.ward, 0), rg = saveOn(def.regen, 0);
   /* le «Multiple Wounds» contano per quello che il modello ha da
      perdere: la media del dado, tagliata alle sue ferite */
   const wounds = n * hChance * wChance * (1 - svChance) * (1 - chance(wd)) * (1 - chance(rg)) *
                  multiMean(f.multipleWounds, def.w);
   return { attacks: n, hitNeed: h, woundNeed: w, saveNeed: sv, wardNeed: wd, regenNeed: rg,
-           hatred: !!f.hatred, boost, wounds, kills: wounds / def.w };
+           hatred: odia(f, def), boost, wounds, kills: wounds / def.w };
 }
 
 /* ============================================================
@@ -1847,10 +1902,19 @@ export function shootForecast(shooter, target, { weapon, mods = 0, shots } = {})
     ? (5 / 6) * chance(wNeed) + (1 / 6) * chance(Math.max(2, wNeed - 2))
     : chance(wNeed);
   const hChance = SH.hitChance(need, aim.again, aim.then);
-  const wounds = n * hChance * wChance * (1 - chance(sNeed)) * (1 - chance(kNeed)) * (1 - chance(rNeed)) *
+  /* Armour Bane vale anche a distanza (p. 166): il 6 naturale per
+     ferire perfora di X in piu'. L'arco degli Elfi Silvani e lo schioppo
+     ce l'hanno nel profilo, e il tiro lo leggeva e lo buttava. E
+     l'armatura di gromril ritira gli 1 anche sotto le frecce. */
+  const cNeed = f.armourBane ? saveOn(t.armour, AP + f.armourBane) : sNeed;
+  const saveAgain = t.flags && t.flags.gromrilArmour ? "ones" : null;
+  const sOne = x => saveAgain ? expected(1, x, saveAgain) : chance(x);
+  const svChance = f.armourBane ? (5 / 6) * sOne(sNeed) + (1 / 6) * sOne(cNeed) : sOne(sNeed);
+  const wounds = n * hChance * wChance * (1 - svChance) * (1 - chance(kNeed)) * (1 - chance(rNeed)) *
                  multiMean(f.multipleWounds, t.w);
   return { shots: n, hitNeed: need, hitAgain: aim.again, hitThen: aim.then || 0, hitRaw: aim.raw || need,
            bs, strength: S, ap: AP, poisoned: f.poisoned, multi: f.multipleWounds,
+           armourBane: f.armourBane || 0, critNeed: cNeed, saveAgain,
            woundNeed: wNeed, saveNeed: sNeed, wardNeed: kNeed, regenNeed: rNeed,
            wounds, kills: wounds / t.w, targetW: t.w,
            /* le ferite che il bersaglio si porta gia' addosso: tre
@@ -1886,11 +1950,18 @@ export function shootRoll(shooter, target, opts){
   const venom = f.poisoned ? Math.min(sixes(hit), hit.hits) : 0;
   const venomNeed = Math.max(2, f.woundNeed - 2);
   const plain = pool(hit.hits - venom, f.woundNeed);
-  const wound = mergePools(plain, venom ? pool(venom, venomNeed) : null);
+  const spiked = venom ? pool(venom, venomNeed) : null;
+  const wound = mergePools(plain, spiked);
   if (venom) notes.push(venom + (venom === 1 ? " colpo avvelenato feriva" : " colpi avvelenati ferivano")
                         + " a " + venomNeed + "+ invece che a " + f.woundNeed + "+");
 
-  const save = pool(wound.hits, f.saveNeed);
+  /* Armour Bane: i 6 naturali per ferire si salvano con la perforazione
+     piu' alta, come in mischia */
+  const crit = f.armourBane ? Math.min(sixes(plain) + (spiked ? sixes(spiked) : 0), wound.hits) : 0;
+  const save = mergePools(pool(wound.hits - crit, f.saveNeed, f.saveAgain),
+                          crit ? pool(crit, f.critNeed, f.saveAgain) : null);
+  if (crit) notes.push(crit + (crit === 1 ? " sei naturale" : " sei naturali") + " per ferire: armatura a " +
+                       (f.critNeed >= IMPOSSIBLE ? "niente" : f.critNeed + "+") + " (Armour Bane)");
   const through = wound.hits - save.hits;
   const ward = pool(through, f.wardNeed);
   const left = through - ward.hits;

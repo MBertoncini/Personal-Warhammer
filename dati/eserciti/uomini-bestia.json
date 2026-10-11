@@ -1,0 +1,174 @@
+{
+  "id": "uomini-bestia",
+  "name": "Uomini Bestia",
+  "matches": ["Beastmen Brayherds", "Beastmen"],
+  "book": { "title": "Ravening Hordes", "list": 91, "rules": 115 },
+  "nota": "Le regole d'esercito stanno alle pp. 115-116 di Ravening Hordes, quelle delle unita' nelle loro schede (pp. 92-110). Lette tutte sul libro: nessuna lista salvata schiera ancora gli Uomini Bestia, e le unita' le costruisce src/costruttori.js. Le pagine sono quelle stampate. `gioca` dice quale modulo la applica quando il vocabolario di questo file non basta: la Primal Fury e' un test di Comando al momento in cui il combattimento viene scelto, e la tira l'arbitro.",
+  "rules": [
+    {
+      "id": "primalFury",
+      "name": "Primal Fury",
+      "nomi": ["Primal Fury"],
+      "page": 116,
+      "when": "melee",
+      "gioca": "arbitro.js",
+      "what": "quando il suo combattimento viene scelto l'unita' tira il Comando; se passa, fino alla fine della fase ritira gli 1 naturali per colpire"
+    },
+    {
+      "id": "foeRender",
+      "name": "Foe Render",
+      "nomi": ["Foe Render", "Foe Render (Razorgor only)"],
+      "page": 115,
+      "when": "melee",
+      "gioca": "arbitro.js",
+      "what": "con la Primal Fury addosso l'arma a una mano sola e ordinaria perfora di 2; non vale per la cavalcatura"
+    },
+    {
+      "id": "bloodRage",
+      "name": "Blood Rage",
+      "nomi": ["Blood Rage"],
+      "page": 115,
+      "when": "melee",
+      "gioca": "arbitro.js",
+      "what": "se il test della Primal Fury passa con un doppio, l'unita' diventa frenetica, anche se la Frenzy l'aveva persa"
+    },
+    {
+      "id": "bloodGreed",
+      "name": "Blood Greed",
+      "nomi": ["Blood Greed"],
+      "page": 115,
+      "when": "melee",
+      "gioca": "combat.js",
+      "what": "frenetico, +2 Attacchi invece di +1; e insegue con un D6 solo invece di 2D6"
+    },
+    {
+      "id": "bullGors",
+      "name": "Bull-gors",
+      "nomi": ["Bull-gors"],
+      "page": 115,
+      "when": "charge",
+      "gioca": "rulebook.js",
+      "what": "le ferite d'urto perforano di 1"
+    },
+    {
+      "id": "ensorcelledWeapons",
+      "name": "Ensorcelled Weapons",
+      "nomi": ["Ensorcelled Weapons"],
+      "page": 115,
+      "when": "melee",
+      "gioca": "rulebook.js",
+      "what": "l'arma a una mano sola e ordinaria perfora di 1 ed e' magica; non vale per la cavalcatura"
+    },
+    {
+      "id": "bestialCharge",
+      "name": "Bestial Charge",
+      "nomi": ["Bestial Charge"],
+      "page": 97,
+      "when": "charge",
+      "what": "+1 Forza nel turno in cui carica (il libro vuole una carica di 3 pollici o piu': l'app la da' a ogni carica)",
+      "mods": { "S": 1 }
+    },
+    {
+      "id": "razorTusks",
+      "name": "Razor Tusks",
+      "nomi": ["Razor Tusks"],
+      "page": 116,
+      "when": "charge",
+      "what": "nel turno in cui carica le zanne del Tuskgor e del Razorgor perforano di 1 in piu'; non il carro ne' il suo equipaggio",
+      "ap": 1,
+      "flags": { "weapon": "tusk" }
+    },
+    {
+      "id": "markOfChaosUndivided",
+      "name": "Mark of Chaos Undivided",
+      "nomi": ["Mark of Chaos Undivided"],
+      "page": 116,
+      "when": "psych",
+      "gioca": "arbitro.js",
+      "what": "ritira i test di Paura, Panico e Terrore falliti"
+    },
+    {
+      "id": "gazeOfTheGods",
+      "name": "Gaze of the Gods",
+      "nomi": ["Gaze of the Gods"],
+      "page": 116,
+      "when": "command",
+      "what": "nella sotto-fase di comando il personaggio puo' tirare sulla tabella dello Sguardo degli Dei: con 1 diventa stupido, con 2-6 guadagna una caratteristica",
+      "perche": "e' facoltativa («may choose to roll»): l'arbitro non la offre, e chi non tira gioca il personaggio com'e'"
+    },
+    {
+      "id": "brayhorn",
+      "name": "Brayhorn",
+      "nomi": ["Brayhorn", "Brayhorn (General only)"],
+      "page": 92,
+      "when": "command",
+      "what": "dal secondo round il generale tira il Comando e, se passa, si ritira l'arrivo delle unita' in agguato",
+      "perche": "vale solo per le unita' di Ambushers, e l'arbitro non le tiene in riserva: si schierano tutte"
+    },
+    {
+      "id": "braystaff",
+      "name": "Braystaff",
+      "nomi": ["Braystaff"],
+      "page": 93,
+      "when": "melee",
+      "what": "quando il combattimento viene scelto lo sciamano usa il bastone in attacco (arma grande) o in difesa (arma a una mano e armatura 5+)",
+      "perche": "e' una scelta a ogni combattimento: i costruttori lo danno sempre in difesa, arma a una mano e armatura 5+, che e' una delle due scelte del libro"
+    },
+    {
+      "id": "slaughterersCall",
+      "name": "Slaughterer's Call",
+      "nomi": ["Slaughterer's Call", "Slaughterer’s Call"],
+      "page": 94,
+      "when": "psych",
+      "what": "finche' il Minotauro e' frenetico, l'unita' a cui e' unito lo e' anche lei",
+      "perche": "e' la Frenzy prestata a un'unita' da un capo unito: la psicologia la guarda unita' per unita'"
+    },
+    {
+      "id": "drunken",
+      "name": "Drunken",
+      "nomi": ["Drunken"],
+      "page": 115,
+      "when": "turnStart",
+      "what": "all'inizio di ogni turno un D6: con 1 l'unita' si muove a caso di D6+2, con 6 diventa frenetica",
+      "perche": "l'arbitro non tira la tabella: i Centigor giocano sobri, e il registro lo dice"
+    },
+    {
+      "id": "quickeningStorm",
+      "name": "The Quickening Storm",
+      "nomi": ["The Quickening Storm"],
+      "page": 116,
+      "when": "magic",
+      "what": "salvezza speciale 5+ contro i dardi e i vortici magici, e chi e' colpito dallo Storm Call ha +1 Iniziativa e +1 Attacchi",
+      "perche": "vale solo contro gli incantesimi, e le salvezze dei colpi magici l'arbitro non le distingue"
+    },
+    {
+      "id": "stormCall",
+      "name": "Storm Call",
+      "nomi": ["Storm Call"],
+      "page": 104,
+      "when": "magic",
+      "what": "incantesimo vincolato di Livello 1: D3 colpi a Forza 4 perforazione 1 a tutte le unita' entro 6 pollici, amiche e nemiche",
+      "perche": "e' un incantesimo vincolato che non sta in dati/magia/domini.json: l'arbitro non lo offre"
+    },
+    {
+      "id": "swallowWhole",
+      "name": "Swallow Whole",
+      "nomi": ["Swallow Whole"],
+      "page": 110,
+      "when": "command",
+      "what": "nella sotto-fase di comando, contro fanteria, un test d'Iniziativa: se fallisce un modello e' tolto e il Ghorgon recupera una Ferita",
+      "perche": "e' un attacco nella sotto-fase di comando: l'arbitro non lo offre"
+    },
+    {
+      "id": "lore",
+      "name": "Lore of Beasts",
+      "nomi": ["Lore of Beasts"],
+      "page": 117,
+      "when": "magic",
+      "gioca": "magic.js",
+      "what": "scartando un incantesimo tirato si puo' prendere la firma del dominio o uno dei tre della Lore of Beasts (dati/magia/domini.json)"
+    }
+  ],
+  "items": [],
+  "lores": []
+}

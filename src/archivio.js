@@ -133,6 +133,12 @@ const PERSE = [
   { re: /^(.*?) tira su (.+?) con .+? da [\d.]+″: .*?(\d+) a terra(?: \[.*?\])?$/, chi: 2, quanti: 3 },
   { re: /^(.*?) colpi su (.+?): .*?(\d+) a terra$/,                                   chi: 2, quanti: 3 },
   { re: /^(.*?) pestoni su (.+?): .*?(\d+) a terra$/,                                 chi: 2, quanti: 3 },
+  /* l'urto della carica (p. 171) e i colpi senza tiro per colpire delle
+     macchine — «X su Y: 7 colpi di sagoma, … 5 a terra», il fulmine, la
+     valanga di carne: il diario rifatto non li leggeva, e i modelli che
+     toglievano restavano in piedi */
+  { re: /^(.*?) urto della carica su (.+?): .*?(\d+) a terra$/,                       chi: 2, quanti: 3 },
+  { re: /^(.*?) su (.+?): \d+ colp\S+ (?:di sagoma|di Forza|a Forza).*?(\d+) a terra$/, chi: 2, quanti: 3 },
   { re: /^(.*?): \d+ colp\S+ a Forza .*?(\d+) a terra$/,                             chi: 1, quanti: 2 },
   /* il terreno pericoloso: «X attraversa Palude: 16 dadi a 2+, 2 ferite, 2 a terra» */
   { re: /^(.+?) attraversa .+?: .*?(\d+) a terra(?:,.*)?$/,                          chi: 1, quanti: 2 },

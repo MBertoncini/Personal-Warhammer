@@ -1,0 +1,128 @@
+{
+  "id": "elfi-silvani",
+  "name": "Elfi Silvani",
+  "matches": ["Wood Elf Realms", "Wood Elves"],
+  "book": { "title": "Forces of Fantasy", "list": 119, "rules": 145 },
+  "nota": "Le regole d'esercito stanno a p. 145 di Forces of Fantasy, la Lore of Athel Loren a p. 146 e le armi a p. 147; quelle delle unita' nelle loro schede (pp. 120-140). Lette tutte sul libro: nessuna lista salvata schiera ancora gli Elfi Silvani, e le unita' le costruisce src/costruttori.js. Le pagine sono quelle stampate.",
+  "rules": [
+    {
+      "id": "elvenReflexes",
+      "name": "Elven Reflexes",
+      "nomi": ["Elven Reflexes"],
+      "page": 145,
+      "when": "melee",
+      "gioca": "rulebook.js",
+      "what": "+1 Iniziativa nel primo round di ogni combattimento, al modello e non alla cavalcatura"
+    },
+    {
+      "id": "talismanicTattoos",
+      "name": "Talismanic Tattoos",
+      "nomi": ["Talismanic Tattoos"],
+      "page": 145,
+      "when": "always",
+      "what": "salvezza speciale 6+ contro qualunque ferita",
+      "set": { "ward": 6 }
+    },
+    {
+      "id": "daughtersOfEternity",
+      "name": "Daughters of Eternity",
+      "nomi": ["Daughters of Eternity"],
+      "page": 135,
+      "when": "always",
+      "what": "salvezza speciale 4+ contro qualunque ferita",
+      "set": { "ward": 4 }
+    },
+    {
+      "id": "treeSpirit",
+      "name": "Tree Spirit",
+      "nomi": ["Tree Spirit"],
+      "page": 145,
+      "when": "list",
+      "gioca": "formation.js",
+      "what": "uno spirito dell'albero si unisce solo agli spiriti, e agli spiriti si unisce solo uno spirito; il Comando di un personaggio che non lo e' non lo possono usare (questa seconda meta' l'arbitro non la guarda: il generale elfo vicino presta il suo Comando anche alle Dryads)"
+    },
+    {
+      "id": "treeWhack",
+      "name": "Tree Whack",
+      "nomi": ["Tree Whack"],
+      "page": 145,
+      "when": "melee",
+      "what": "una volta per turno uno degli attacchi diventa un colpo su un modello: se fallisce un test d'Iniziativa prende D3 colpi a Forza piena senza armatura",
+      "perche": "e' un attacco a un modello scelto, al posto di uno dei normali: l'assalto non lo offre, e il modello mena con tutti i suoi attacchi normali"
+    },
+    {
+      "id": "woodlandAmbush",
+      "name": "Woodland Ambush",
+      "nomi": ["Woodland Ambush"],
+      "page": 145,
+      "when": "list",
+      "what": "dopo il terreno si puo' mettere un bosco in piu', fuori dalla zona nemica e lontano dal centro",
+      "perche": "e' facoltativa («may place»): il tavolo dello scenario resta com'e'"
+    },
+    {
+      "id": "arrowOfKurnous",
+      "name": "The Arrow of Kurnous",
+      "nomi": ["The Arrow of Kurnous", "The Arrow Of Kurnous", "Arrow of Kurnous"],
+      "page": 120,
+      "when": "list",
+      "what": "dopo lo schieramento un colpo a Forza 3 senza armatura sul generale nemico entro 36 pollici, e l'avversario ha +1 al tiro per il primo turno",
+      "perche": "e' facoltativa («may fire»): l'arbitro non la tira"
+    },
+    {
+      "id": "martialProwess",
+      "name": "Martial Prowess",
+      "nomi": ["Martial Prowess"],
+      "page": 129,
+      "when": "melee",
+      "what": "gli attacchi d'appoggio valgono anche presi di fianco o alle spalle",
+      "perche": "l'appoggio di fianco e alle spalle l'assalto non lo conta per nessuno"
+    },
+    {
+      "id": "guardiansOfTheWildwood",
+      "name": "Guardians of the Wildwood",
+      "nomi": ["Guardians of the Wildwood", "Guardians Of The Wildwood"],
+      "page": 130,
+      "when": "melee",
+      "what": "a contatto con un nemico che fa Paura o Terrore, +1 Attacchi e Multiple Wounds (2)",
+      "perche": "dipende da chi tocca, modello per modello: l'assalto non lo guarda"
+    },
+    {
+      "id": "dancesOfLoec",
+      "name": "Dances of Loec",
+      "nomi": ["Dances of Loec", "Dances Of Loec"],
+      "page": 131,
+      "when": "melee",
+      "what": "quando il combattimento viene scelto si sceglie una danza: perforazione +2, un attacco in piu', salvezza 4+, o −1 per colpire a chi la mena",
+      "perche": "e' una scelta a ogni combattimento: l'arbitro non la offre"
+    },
+    {
+      "id": "deepwoodCoven",
+      "name": "Deepwood Coven",
+      "nomi": ["Deepwood Coven"],
+      "page": 135,
+      "when": "magic",
+      "what": "le Sisters of the Thorn conoscono un incantesimo di Battle Magic o Elementalism e lo lanciano vincolato",
+      "perche": "l'incantesimo vincolato di un'unita' che non e' un mago l'arbitro non lo prepara"
+    },
+    {
+      "id": "hawkEyedArcher",
+      "name": "Hawk-eyed Archer",
+      "nomi": ["Hawk-eyed Archer"],
+      "page": 123,
+      "when": "shoot",
+      "what": "puo' bersagliare un personaggio solo e un modello scelto dentro un'unita'",
+      "perche": "l'arbitro tira sulle unita', non sui modelli"
+    },
+    {
+      "id": "lore",
+      "name": "Lore of Athel Loren",
+      "nomi": ["Lore of Athel Loren"],
+      "page": 146,
+      "when": "magic",
+      "gioca": "magic.js",
+      "what": "scartando un incantesimo tirato si puo' prendere la firma del dominio o uno dei tre della Lore of Athel Loren (dati/magia/domini.json)"
+    }
+  ],
+  "items": [],
+  "lores": []
+}

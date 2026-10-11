@@ -19689,5 +19689,1489 @@
       "note": ""
     },
     "formerNames": []
+  },
+  {
+    "id": "lmv3a5cmqm740",
+    "name": "La Mandria e il Ghorgon BST",
+    "info": {
+      "catalogue": "Beastmen Brayherds",
+      "forceName": "Battle March",
+      "limit": 1000
+    },
+    "points": 996,
+    "external": false,
+    "imported": "2026-10-11T03:45:06.867Z",
+    "units": [
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Great Bray-Shaman",
+            "stats": {
+              "M": "5",
+              "WS": "5",
+              "BS": "3",
+              "S": "4",
+              "T": "5",
+              "W": "3",
+              "I": "4",
+              "A": "2",
+              "Ld": "8"
+            }
+          }
+        ],
+        "command": {
+          "standard": false,
+          "musician": false,
+          "champion": false
+        },
+        "faction": "Beastmen Brayherds",
+        "ward": 0,
+        "regen": 0,
+        "models": 1,
+        "frontage": 1,
+        "us": 1,
+        "unitSize": "1",
+        "slot": "Characters",
+        "name": "Great Bray-Shaman",
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "pts": 150,
+        "troop": "Regular infantry (character)",
+        "stats": {
+          "M": "5",
+          "WS": "5",
+          "BS": "3",
+          "S": "4",
+          "T": "5",
+          "W": "3",
+          "I": "4",
+          "A": "2",
+          "Ld": "8"
+        },
+        "armour": 5,
+        "rules": [
+          "Braystaff",
+          "Gaze of the Gods",
+          "Lore of Beasts",
+          "Mark of Chaos Undivided",
+          "Primal Fury",
+          "Warband"
+        ],
+        "weapons": [
+          {
+            "name": "Braystaff (hand weapon)",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "maxRange": 0,
+        "ruleText": {
+          "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher."
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Gor Herd",
+            "stats": {
+              "M": "5",
+              "WS": "4",
+              "BS": "2",
+              "S": "3",
+              "T": "4",
+              "W": "1",
+              "I": "3",
+              "A": "1",
+              "Ld": "6"
+            }
+          }
+        ],
+        "command": {
+          "standard": true,
+          "musician": true,
+          "champion": true
+        },
+        "faction": "Beastmen Brayherds",
+        "ward": 0,
+        "regen": 0,
+        "name": "Gor Herd",
+        "models": 40,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 7,
+        "pts": 297,
+        "us": 40,
+        "troop": "Regular infantry",
+        "unitSize": "5+",
+        "stats": {
+          "M": "5",
+          "WS": "4",
+          "BS": "2",
+          "S": "3",
+          "T": "4",
+          "W": "1",
+          "I": "3",
+          "A": "1",
+          "Ld": "6"
+        },
+        "armour": 6,
+        "shield": true,
+        "rules": [
+          "Bestial Charge",
+          "Blood Rage",
+          "Horde",
+          "Move through Cover",
+          "Open Order",
+          "Skirmishers",
+          "Mark of Chaos Undivided",
+          "Primal Fury",
+          "Warband",
+          "Press of Battle",
+          "Massed Infantry",
+          "Parry"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "slot": "Core",
+        "maxRange": 0,
+        "ruleText": {
+          "Horde": "A unit with this special rule may increase the maximum Rank Bonus it can claim (as determined by its troop type) by one.",
+          "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+          "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+          "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+          "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+          "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+          "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Ungor Herd",
+            "stats": {
+              "M": "5",
+              "WS": "3",
+              "BS": "3",
+              "S": "3",
+              "T": "3",
+              "W": "1",
+              "I": "3",
+              "A": "1",
+              "Ld": "5"
+            }
+          }
+        ],
+        "command": {
+          "standard": false,
+          "musician": false,
+          "champion": false
+        },
+        "faction": "Beastmen Brayherds",
+        "ward": 0,
+        "regen": 0,
+        "name": "Ungor Herd",
+        "models": 40,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 10,
+        "pts": 200,
+        "us": 40,
+        "troop": "Regular infantry",
+        "unitSize": "10+",
+        "stats": {
+          "M": "5",
+          "WS": "3",
+          "BS": "3",
+          "S": "3",
+          "T": "3",
+          "W": "1",
+          "I": "3",
+          "A": "1",
+          "Ld": "5"
+        },
+        "armour": 6,
+        "shield": true,
+        "rules": [
+          "Chariot Runners",
+          "Horde",
+          "Move through Cover",
+          "Open Order",
+          "Skirmishers",
+          "Mark of Chaos Undivided",
+          "Primal Fury",
+          "Warband",
+          "Press of Battle",
+          "Massed Infantry",
+          "Parry"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "slot": "Core",
+        "maxRange": 0,
+        "ruleText": {
+          "Horde": "A unit with this special rule may increase the maximum Rank Bonus it can claim (as determined by its troop type) by one.",
+          "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+          "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+          "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+          "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+          "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+          "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Razorgor Herd",
+            "stats": {
+              "M": "7",
+              "WS": "3",
+              "BS": "0",
+              "S": "5",
+              "T": "5",
+              "W": "3",
+              "I": "2",
+              "A": "4",
+              "Ld": "6"
+            }
+          }
+        ],
+        "command": {
+          "standard": false,
+          "musician": false,
+          "champion": false
+        },
+        "faction": "Beastmen Brayherds",
+        "ward": 0,
+        "regen": 0,
+        "name": "Razorgor Herd",
+        "models": 2,
+        "baseId": "50x75",
+        "baseW": 50,
+        "baseH": 75,
+        "frontage": 2,
+        "us": 2,
+        "pts": 104,
+        "troop": "War beasts",
+        "unitSize": "1+",
+        "stats": {
+          "M": "7",
+          "WS": "3",
+          "BS": "0",
+          "S": "5",
+          "T": "5",
+          "W": "3",
+          "I": "2",
+          "A": "4",
+          "Ld": "6"
+        },
+        "armour": 6,
+        "rules": [
+          "Armour Bane (1)",
+          "Fear",
+          "Foe Render",
+          "Impact Hits (D3)",
+          "Loner",
+          "Open Order",
+          "Primal Fury",
+          "Razor Tusks",
+          "Swiftstride"
+        ],
+        "weapons": [
+          {
+            "name": "Tusks (counts as a hand weapon)",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "slot": "Core",
+        "maxRange": 0,
+        "ruleText": {
+          "Armour Bane (1)": "If a model with this special rule rolls a natural 6 when making a roll To Wound, the Armour Piercing characteristic of its weapon is improved by the amount shown in brackets after the name of this special rule.\n\n For example, if a natural 6 is rolled when rolling To Wound with a weapon that has an AP of \"-\" and the Armour Bane (1) special rule its AP counts as being -1 when making an Armour Save roll against that wound.",
+          "Fear": "Models with this special rule cause Fear:\n\n \n• \tIf a unit wishes to declare a charge against an enemy unit that both causes Fear and has a higher Unit Strength, it must first make a Leadership test. If this test is failed, the unit cannot charge. It does not move and is considered to have made a failed charge. If this test is passed, the unit can charge as normal.\n\n \n• \tIf a unit is engaged with an enemy unit that both causes Fear and has a higher Unit Strength when its combat is chosen during any Choose & Fight Combat sub-phase, it must make a Leadership test. If this test is failed, any models in the unit that direct their attacks against the Fear-causing enemy suffer a -1 modifier to their rolls To Hit.\n\n A unit only needs to make one Fear test per turn. Models that cause Fear are immune to Fear. A unit that does not cause Fear does not become immune to Fear when joined by a character that does.",
+          "Impact Hits (D3)": "The number of Impact Hits caused varies from model to model, and will be shown in brackets after the name of this special rile. Often, this is determined by the roll of a dice.\n\n**Resolving Impact Hits:** Impact Hits can only be made by a charging model that moved 3\" or more and that is in base contact with the enemy. Impact Hits are resolved against the charged unit when the combat is chosen during Step 1.1 of the Choose Combat & Fight sub-phase, before issuing challenges. They hit automatically and use the unmodified Strength of the model making them.",
+          "Loner": "A character with this special rule cannot be your General and cannot join a unit without this special rule. A unit with this special rule cannot be joined by a character without this special rule.",
+          "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+          "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Ghorgon",
+            "stats": {
+              "M": "7",
+              "WS": "4",
+              "BS": "0",
+              "S": "6",
+              "T": "6",
+              "W": "6",
+              "I": "4",
+              "A": "5",
+              "Ld": "9"
+            }
+          }
+        ],
+        "command": {
+          "standard": false,
+          "musician": false,
+          "champion": false
+        },
+        "faction": "Beastmen Brayherds",
+        "ward": 0,
+        "regen": 6,
+        "name": "Ghorgon",
+        "models": 1,
+        "baseId": "60x100",
+        "baseW": 60,
+        "baseH": 100,
+        "frontage": 1,
+        "us": 0,
+        "pts": 245,
+        "troop": "Behemoth",
+        "unitSize": "1",
+        "stats": {
+          "M": "7",
+          "WS": "4",
+          "BS": "0",
+          "S": "6",
+          "T": "6",
+          "W": "6",
+          "I": "4",
+          "A": "5",
+          "Ld": "9"
+        },
+        "armour": 6,
+        "rules": [
+          "Blood Greed",
+          "Close Order",
+          "Frenzy",
+          "Large Target",
+          "Primal Fury",
+          "Regeneration (6+)",
+          "Stomp Attacks (D3)",
+          "Stubborn",
+          "Swallow Whole",
+          "Terror",
+          "Timmm-berrr!"
+        ],
+        "weapons": [
+          {
+            "name": "Cleaver-limbs",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-2",
+            "rules": "Killing Blow, Monster Slayer"
+          }
+        ],
+        "slot": "Rare",
+        "maxRange": 0,
+        "ruleText": {
+          "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+          "Frenzy": "During a turn in which it made a charge move, or during the turn after it made a follow up move, a Frenzied model has a +1 modifier to its Attacks characteristic. This modifier does not apply to the model’s mount (in the case of a cavalry model), to the beasts that draw it (in the case of a chariot), or to its rider (in the case of a monster).\n\nIn addition:\n- If the majority of the models in a unit are Frenzied, the unit automatically passes any Fear, Panic or Terror tests it is required to make.\n- If a unit that includes one or more Frenzied models is able to declare a charge during the Declare Charges & Charge Reactions sub-phase of its turn, it must do so.\n- If the majority of the models in a unit are Frenzied, it cannot choose to Flee as a charge reaction, nor can it ever choose to make a Restraint test.\n\n**Losing Frenzy:** Unlike other special rules, Frenzy can be lost during a game. Any model that loses a round of combat will immediately lose this special rule.",
+          "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
+          "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
+          "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does."
+        }
+      }
+    ],
+    "prep": {
+      "general": 0,
+      "bsb": null,
+      "units": {
+        "0": {
+          "level": 3,
+          "lore": "dark"
+        }
+      },
+      "note": "Great Bray-Shaman (Livello 3, dark) — 150 pt; 40 Gor Herd (campione, stendardo, musico, fronte 7) — 297 pt; 40 Ungor Herd (fronte 10) — 200 pt; 2 Razorgor Herd — 104 pt; Ghorgon — 245 pt"
+    },
+    "formerNames": []
+  },
+  {
+    "id": "lmv3a5cn1indz",
+    "name": "Archi e lance di Athel Loren WE",
+    "info": {
+      "catalogue": "Wood Elf Realms",
+      "forceName": "Battle March",
+      "limit": 1000
+    },
+    "points": 997,
+    "external": false,
+    "imported": "2026-10-11T03:45:06.877Z",
+    "units": [
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Glade Captain",
+            "stats": {
+              "M": "5",
+              "WS": "6",
+              "BS": "6",
+              "S": "4",
+              "T": "3",
+              "W": "2",
+              "I": "5",
+              "A": "3",
+              "Ld": "9"
+            }
+          }
+        ],
+        "command": {
+          "standard": false,
+          "musician": false,
+          "champion": false
+        },
+        "faction": "Wood Elf Realms",
+        "ward": 0,
+        "regen": 0,
+        "models": 1,
+        "frontage": 1,
+        "us": 1,
+        "unitSize": "1",
+        "slot": "Characters",
+        "name": "Glade Captain",
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "pts": 95,
+        "troop": "Regular infantry (character)",
+        "stats": {
+          "M": "5",
+          "WS": "6",
+          "BS": "6",
+          "S": "4",
+          "T": "3",
+          "W": "2",
+          "I": "5",
+          "A": "3",
+          "Ld": "9"
+        },
+        "armour": 6,
+        "rules": [
+          "The Arrow of Kurnous",
+          "Evasive",
+          "Fire & Flee",
+          "Ignores Cover",
+          "Move through Cover",
+          "Rallying Cry",
+          "Strike First",
+          "Battle Standard Bearer"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          },
+          {
+            "name": "Asrai longbow",
+            "range": "32\"",
+            "S": "S",
+            "ap": "-",
+            "rules": "Armour Bane (1), Volley Fire"
+          }
+        ],
+        "maxRange": 32,
+        "ruleText": {
+          "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+          "Battle Standard Bearer": "Armies often include a Battle Standard Bearer – a trusted warrior who holds aloft the General’s personal heraldry. A Battle Standard Bearer is a rallying point for the army, from The Battlecan Standard which friendly soldiers take heart and draw strength.\n\nThe Battle Standard Bearer Model\nA Battle Standard Bearer is a heroic model carrying a particularly impressive banner, and it will be presented as an option in your chosen army list. The Battle Standard is carried by a character model and, unless specified otherwise, the model that carries the Battle Standard cannot be the General.\n\nUnlike normal standards, the Battle Standard is lost if the bearer is slain – other models cannot pick it up, even if they are in the same unit.\n\nCombat Result Bonus: A Battle Standard grants a bonus of +1 combat result point. Unlike other standards, a Battle Standard grants this bonus even if another standard is present.\nIf, by some unusual circumstance, there are two Battle Standards on the same side in the combat, you can only count the bonus for one.\n\n“Hold Your Ground”: To represent the Battle Standard’s steadying presence, unless your Battle Standard Bearer is fleeing, friendly units within the Battle Standard Bearer’s Command range may re-roll any failed Panic or Rally test. In addition, friendly units within the Battle Standard Bearer’s Command range may re-roll the 2D6 when making a Break test. However, you must accept the result of the second roll, even if it is worse than the first."
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Spellweaver",
+            "stats": {
+              "M": "5",
+              "WS": "4",
+              "BS": "4",
+              "S": "3",
+              "T": "3",
+              "W": "3",
+              "I": "4",
+              "A": "2",
+              "Ld": "8"
+            }
+          }
+        ],
+        "command": {
+          "standard": false,
+          "musician": false,
+          "champion": false
+        },
+        "faction": "Wood Elf Realms",
+        "ward": 0,
+        "regen": 0,
+        "models": 1,
+        "frontage": 1,
+        "us": 1,
+        "unitSize": "1",
+        "slot": "Characters",
+        "name": "Spellweaver",
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "pts": 185,
+        "troop": "Regular infantry (character)",
+        "stats": {
+          "M": "5",
+          "WS": "4",
+          "BS": "4",
+          "S": "3",
+          "T": "3",
+          "W": "3",
+          "I": "4",
+          "A": "2",
+          "Ld": "8"
+        },
+        "armour": 0,
+        "rules": [
+          "Elven Reflexes",
+          "Lore of Athel Loren",
+          "Magical Attacks",
+          "Move through Cover"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "maxRange": 0,
+        "ruleText": {
+          "Magical Attacks": "Any attack made or hit caused by a model with this special rule, or made using a weapon with this special rule, is a ‘Magical’ attack.\n\n Note that all spells are considered to have this special rule, as are any hits caused by magic items."
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Glade Guard",
+            "stats": {
+              "M": "5",
+              "WS": "4",
+              "BS": "4",
+              "S": "3",
+              "T": "3",
+              "W": "1",
+              "I": "4",
+              "A": "1",
+              "Ld": "8"
+            }
+          }
+        ],
+        "command": {
+          "standard": true,
+          "musician": true,
+          "champion": false
+        },
+        "faction": "Wood Elf Realms",
+        "ward": 0,
+        "regen": 0,
+        "name": "Glade Guard",
+        "models": 16,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 5,
+        "pts": 220,
+        "us": 16,
+        "troop": "Regular infantry",
+        "unitSize": "5+",
+        "stats": {
+          "M": "5",
+          "WS": "4",
+          "BS": "4",
+          "S": "3",
+          "T": "3",
+          "W": "1",
+          "I": "4",
+          "A": "1",
+          "Ld": "8"
+        },
+        "armour": 0,
+        "rules": [
+          "Elven Reflexes",
+          "Move through Cover",
+          "Open Order",
+          "Press of Battle",
+          "Massed Infantry",
+          "Parry"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          },
+          {
+            "name": "Asrai longbow",
+            "range": "32\"",
+            "S": "S",
+            "ap": "-",
+            "rules": "Armour Bane (1), Volley Fire, Poisoned Attacks"
+          }
+        ],
+        "slot": "Core",
+        "maxRange": 32,
+        "ruleText": {
+          "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+          "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+          "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+          "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Glade Guard",
+            "stats": {
+              "M": "5",
+              "WS": "4",
+              "BS": "4",
+              "S": "3",
+              "T": "3",
+              "W": "1",
+              "I": "4",
+              "A": "1",
+              "Ld": "8"
+            }
+          }
+        ],
+        "command": {
+          "standard": false,
+          "musician": false,
+          "champion": false
+        },
+        "faction": "Wood Elf Realms",
+        "ward": 0,
+        "regen": 0,
+        "name": "Glade Guard",
+        "models": 12,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 5,
+        "pts": 132,
+        "us": 12,
+        "troop": "Regular infantry",
+        "unitSize": "5+",
+        "stats": {
+          "M": "5",
+          "WS": "4",
+          "BS": "4",
+          "S": "3",
+          "T": "3",
+          "W": "1",
+          "I": "4",
+          "A": "1",
+          "Ld": "8"
+        },
+        "armour": 0,
+        "rules": [
+          "Elven Reflexes",
+          "Move through Cover",
+          "Open Order",
+          "Press of Battle",
+          "Massed Infantry",
+          "Parry"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          },
+          {
+            "name": "Asrai longbow",
+            "range": "32\"",
+            "S": "S",
+            "ap": "-",
+            "rules": "Armour Bane (1), Volley Fire"
+          }
+        ],
+        "slot": "Core",
+        "maxRange": 32,
+        "ruleText": {
+          "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+          "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+          "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+          "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Eternal Guard",
+            "stats": {
+              "M": "5",
+              "WS": "5",
+              "BS": "4",
+              "S": "3",
+              "T": "3",
+              "W": "1",
+              "I": "4",
+              "A": "1",
+              "Ld": "9"
+            }
+          }
+        ],
+        "command": {
+          "standard": true,
+          "musician": true,
+          "champion": true
+        },
+        "faction": "Wood Elf Realms",
+        "ward": 0,
+        "regen": 0,
+        "name": "Eternal Guard",
+        "models": 25,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 6,
+        "pts": 365,
+        "us": 25,
+        "troop": "Regular infantry",
+        "unitSize": "5+",
+        "stats": {
+          "M": "5",
+          "WS": "5",
+          "BS": "4",
+          "S": "3",
+          "T": "3",
+          "W": "1",
+          "I": "4",
+          "A": "1",
+          "Ld": "9"
+        },
+        "armour": 5,
+        "shield": true,
+        "rules": [
+          "Close Order",
+          "Elven Reflexes",
+          "Martial Prowess",
+          "Move through Cover",
+          "Stubborn",
+          "Press of Battle",
+          "Massed Infantry",
+          "Parry"
+        ],
+        "weapons": [
+          {
+            "name": "Asrai spear",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-1",
+            "rules": "Fight in Extra Rank"
+          },
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "slot": "Core",
+        "maxRange": 0,
+        "ruleText": {
+          "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+          "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
+          "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+          "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+          "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+        }
+      }
+    ],
+    "prep": {
+      "general": 1,
+      "bsb": 0,
+      "units": {
+        "1": {
+          "level": 4,
+          "lore": "battle"
+        }
+      },
+      "note": "Glade Captain (stendardo da battaglia) — 95 pt; Spellweaver (Livello 4, battle) — 185 pt; 16 Glade Guard (stendardo, musico, frecce Hagbane, fronte 5) — 220 pt; 12 Glade Guard (fronte 5) — 132 pt; 25 Eternal Guard (campione, stendardo, musico, scudi, fronte 6) — 365 pt"
+    },
+    "formerNames": []
+  },
+  {
+    "id": "lmv3a5cn5yf0u",
+    "name": "Balestre, schioppi e Slayer DWF",
+    "info": {
+      "catalogue": "Dwarfen Mountain Holds",
+      "forceName": "Battle March",
+      "limit": 1000
+    },
+    "points": 999,
+    "external": false,
+    "imported": "2026-10-11T03:45:06.881Z",
+    "units": [
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Thane",
+            "stats": {
+              "M": "3",
+              "WS": "6",
+              "BS": "4",
+              "S": "4",
+              "T": "5",
+              "W": "2",
+              "I": "3",
+              "A": "3",
+              "Ld": "9"
+            }
+          }
+        ],
+        "command": {
+          "standard": false,
+          "musician": false,
+          "champion": false
+        },
+        "faction": "Dwarfen Mountain Holds",
+        "ward": 0,
+        "regen": 0,
+        "models": 1,
+        "frontage": 1,
+        "us": 1,
+        "unitSize": "1",
+        "slot": "Characters",
+        "name": "Thane",
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "pts": 60,
+        "troop": "Heavy infantry (character)",
+        "stats": {
+          "M": "3",
+          "WS": "6",
+          "BS": "4",
+          "S": "4",
+          "T": "5",
+          "W": "2",
+          "I": "3",
+          "A": "3",
+          "Ld": "9"
+        },
+        "armour": 4,
+        "rules": [
+          "Ancestral Grudge",
+          "Dwarf Crafted",
+          "Gromril Armour",
+          "Gromril Weapons",
+          "Magic Resistance (-1)",
+          "Rallying Cry",
+          "Stubborn",
+          "Hatred (Orcs & Goblins)",
+          "Resolute"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "maxRange": 0,
+        "ruleText": {
+          "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+          "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
+          "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn."
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Runesmith",
+            "stats": {
+              "M": "3",
+              "WS": "5",
+              "BS": "4",
+              "S": "4",
+              "T": "4",
+              "W": "2",
+              "I": "2",
+              "A": "2",
+              "Ld": "9"
+            }
+          }
+        ],
+        "command": {
+          "standard": false,
+          "musician": false,
+          "champion": false
+        },
+        "faction": "Dwarfen Mountain Holds",
+        "ward": 0,
+        "regen": 0,
+        "models": 1,
+        "frontage": 1,
+        "us": 1,
+        "unitSize": "1",
+        "slot": "Characters",
+        "name": "Runesmith",
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "pts": 72,
+        "troop": "Heavy infantry (character)",
+        "stats": {
+          "M": "3",
+          "WS": "5",
+          "BS": "4",
+          "S": "4",
+          "T": "4",
+          "W": "2",
+          "I": "2",
+          "A": "2",
+          "Ld": "9"
+        },
+        "armour": 4,
+        "rules": [
+          "Armour Bane (1)",
+          "Forgefire",
+          "Gromril Armour",
+          "Gromril Weapons",
+          "Magic Resistance (-2)",
+          "Rune Lore",
+          "Stubborn",
+          "Hatred (Orcs & Goblins)",
+          "Resolute"
+        ],
+        "weapons": [
+          {
+            "name": "Great Weapon",
+            "range": "Combat",
+            "S": "S+2",
+            "ap": "-2",
+            "rules": "Armour Bane (1), Requires Two Hands, Strike Last"
+          },
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "maxRange": 0,
+        "ruleText": {
+          "Armour Bane (1)": "If a model with this special rule rolls a natural 6 when making a roll To Wound, the Armour Piercing characteristic of its weapon is improved by the amount shown in brackets after the name of this special rule.\n\n For example, if a natural 6 is rolled when rolling To Wound with a weapon that has an AP of \"-\" and the Armour Bane (1) special rule its AP counts as being -1 when making an Armour Save roll against that wound.",
+          "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn."
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Dwarf Warriors",
+            "stats": {
+              "M": "3",
+              "WS": "4",
+              "BS": "3",
+              "S": "3",
+              "T": "4",
+              "W": "1",
+              "I": "2",
+              "A": "1",
+              "Ld": "9"
+            }
+          }
+        ],
+        "command": {
+          "standard": false,
+          "musician": false,
+          "champion": false
+        },
+        "faction": "Dwarfen Mountain Holds",
+        "ward": 0,
+        "regen": 0,
+        "name": "Dwarf Warriors",
+        "models": 21,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 10,
+        "pts": 189,
+        "us": 21,
+        "troop": "Heavy infantry",
+        "unitSize": "5+",
+        "stats": {
+          "M": "3",
+          "WS": "4",
+          "BS": "3",
+          "S": "3",
+          "T": "4",
+          "W": "1",
+          "I": "2",
+          "A": "1",
+          "Ld": "9"
+        },
+        "armour": 4,
+        "shield": true,
+        "rules": [
+          "Close Order",
+          "Magic Resistance (-1)",
+          "Shieldwall",
+          "Hatred (Orcs & Goblins)",
+          "Resolute",
+          "Press of Battle",
+          "Massed Infantry",
+          "Parry"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "slot": "Core",
+        "maxRange": 0,
+        "ruleText": {
+          "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+          "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+          "Shieldwall": "Once per game, during a turn in which it was charged, a unit with this special rule that is arrayed in a Close Order formation, and that is equipped with and chooses to use shields, may Give Ground rather than Fall Back in Good Order.",
+          "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+          "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+          "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Quarrellers",
+            "stats": {
+              "M": "3",
+              "WS": "3",
+              "BS": "3",
+              "S": "3",
+              "T": "4",
+              "W": "1",
+              "I": "2",
+              "A": "1",
+              "Ld": "9"
+            }
+          }
+        ],
+        "command": {
+          "standard": false,
+          "musician": false,
+          "champion": false
+        },
+        "faction": "Dwarfen Mountain Holds",
+        "ward": 0,
+        "regen": 0,
+        "name": "Quarrellers",
+        "models": 20,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 6,
+        "pts": 180,
+        "us": 20,
+        "troop": "Heavy infantry",
+        "unitSize": "5+",
+        "stats": {
+          "M": "3",
+          "WS": "3",
+          "BS": "3",
+          "S": "3",
+          "T": "4",
+          "W": "1",
+          "I": "2",
+          "A": "1",
+          "Ld": "9"
+        },
+        "armour": 5,
+        "shield": false,
+        "rules": [
+          "Close Order",
+          "Dwarf Crafted",
+          "Magic Resistance (-1)",
+          "Hatred (Orcs & Goblins)",
+          "Resolute",
+          "Press of Battle",
+          "Massed Infantry",
+          "Parry"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          },
+          {
+            "name": "Crossbow",
+            "range": "30\"",
+            "S": "4",
+            "ap": "-",
+            "rules": "Armour Bane (2), Ponderous"
+          }
+        ],
+        "slot": "Core",
+        "maxRange": 30,
+        "ruleText": {
+          "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+          "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+          "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+          "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+          "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Thunderers",
+            "stats": {
+              "M": "3",
+              "WS": "3",
+              "BS": "3",
+              "S": "3",
+              "T": "4",
+              "W": "1",
+              "I": "2",
+              "A": "1",
+              "Ld": "9"
+            }
+          }
+        ],
+        "command": {
+          "standard": true,
+          "musician": true,
+          "champion": true
+        },
+        "faction": "Dwarfen Mountain Holds",
+        "ward": 0,
+        "regen": 0,
+        "name": "Thunderers",
+        "models": 20,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 10,
+        "pts": 235,
+        "us": 20,
+        "troop": "Heavy infantry",
+        "unitSize": "5+",
+        "stats": {
+          "M": "3",
+          "WS": "3",
+          "BS": "3",
+          "S": "3",
+          "T": "4",
+          "W": "1",
+          "I": "2",
+          "A": "1",
+          "Ld": "9"
+        },
+        "armour": 4,
+        "shield": true,
+        "rules": [
+          "Close Order",
+          "Dwarf Crafted",
+          "Magic Resistance (-1)",
+          "Hatred (Orcs & Goblins)",
+          "Resolute",
+          "Press of Battle",
+          "Massed Infantry",
+          "Parry"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          },
+          {
+            "name": "Handgun",
+            "range": "24\"",
+            "S": "4",
+            "ap": "-1",
+            "rules": "Armour Bane (1), Ponderous"
+          }
+        ],
+        "slot": "Core",
+        "maxRange": 24,
+        "ruleText": {
+          "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+          "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+          "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+          "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+          "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+        }
+      },
+      {
+        "crew": 0,
+        "loose": false,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Slayers",
+            "stats": {
+              "M": "3",
+              "WS": "4",
+              "BS": "3",
+              "S": "3",
+              "T": "4",
+              "W": "1",
+              "I": "2",
+              "A": "1",
+              "Ld": "10"
+            }
+          }
+        ],
+        "command": {
+          "standard": true,
+          "musician": true,
+          "champion": false
+        },
+        "faction": "Dwarfen Mountain Holds",
+        "ward": 0,
+        "regen": 0,
+        "name": "Slayers",
+        "models": 13,
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "frontage": 5,
+        "pts": 168,
+        "us": 13,
+        "troop": "Regular infantry",
+        "unitSize": "5+",
+        "stats": {
+          "M": "3",
+          "WS": "4",
+          "BS": "3",
+          "S": "3",
+          "T": "4",
+          "W": "1",
+          "I": "2",
+          "A": "1",
+          "Ld": "10"
+        },
+        "armour": 0,
+        "rules": [
+          "Deathblow",
+          "Immune to Psychology",
+          "Loner",
+          "Magic Resistance (-2)",
+          "Motley Crew",
+          "Open Order",
+          "Slayer",
+          "Unbreakable",
+          "Hatred (Orcs & Goblins)",
+          "Resolute",
+          "Press of Battle",
+          "Massed Infantry",
+          "Parry"
+        ],
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "slot": "Special",
+        "maxRange": 0,
+        "ruleText": {
+          "Loner": "A character with this special rule cannot be your General and cannot join a unit without this special rule. A unit with this special rule cannot be joined by a character without this special rule.",
+          "Motley Crew": "Units with this special rule may include models of the same type that are equipped differently to one another, and/or models of different types that fight together in a single unit. If necessary, the army list entry for such units will be accompanied by a brief explanation of the unit’s composition.\n\n Different Weapons: The fighting rank of a Motley Crew may contain models that are armed with different weapons. In such cases, the controlling player must roll different batches of dice for the different models, making it clear to their opponent which model’s attacks they represent and where they are being directed. These attacks are made in the Initiative order of the individual models, as usual.\n\n Different Armour: Models within a Motley Crew may have different armour values. In combat, use the armour value of the majority of the models in the fighting rank. Against enemy shooting, use the armour value of the majority of the models in the unit.\n\n Casualty Removal: Against enemy shooting, casualty removal should be divided as equally as possible between the different models within the unit. In combat, casualties should be removed from among the majority of the models that make up the fighting rank. In either case, available models are brought forward from rear ranks to fill any gaps, as chosen by the controlling player.",
+          "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+          "Unbreakable": "If a unit with this special rule loses a round of combat, it is not required to make a Break test. Instead, it will automatically Give Ground as it is pushed back by the enemy. Characters that are not Unbreakable cannot join units that are, and vice versa.",
+          "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+          "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+          "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+        }
+      },
+      {
+        "crew": 1,
+        "loose": true,
+        "mount": null,
+        "profiles": [
+          {
+            "name": "Grudge Thrower",
+            "stats": {
+              "M": "-",
+              "WS": "-",
+              "BS": "-",
+              "S": "-",
+              "T": "7",
+              "W": "3",
+              "I": "-",
+              "A": "-",
+              "Ld": "-"
+            }
+          },
+          {
+            "name": "Dwarf Crew",
+            "stats": {
+              "M": "3",
+              "WS": "3",
+              "BS": "3",
+              "S": "3",
+              "T": "4",
+              "W": "3",
+              "I": "2",
+              "A": "3",
+              "Ld": "9"
+            }
+          }
+        ],
+        "command": {
+          "standard": false,
+          "musician": false,
+          "champion": false
+        },
+        "faction": "Dwarfen Mountain Holds",
+        "ward": 0,
+        "regen": 0,
+        "name": "Grudge Thrower",
+        "models": 1,
+        "baseId": "50x75",
+        "baseW": 50,
+        "baseH": 75,
+        "frontage": 1,
+        "pts": 95,
+        "us": 0,
+        "troop": "War machine",
+        "unitSize": "1",
+        "stats": {
+          "M": "-",
+          "WS": "-",
+          "BS": "-",
+          "S": "-",
+          "T": "7",
+          "W": "3",
+          "I": "-",
+          "A": "-",
+          "Ld": "-"
+        },
+        "armour": 6,
+        "rules": [
+          "Hatred (Orcs & Goblins)",
+          "Magic Resistance (-1)",
+          "Skirmishers",
+          "Stubborn"
+        ],
+        "weapons": [
+          {
+            "name": "Stone thrower",
+            "range": "12-60\"",
+            "S": "4 (8)",
+            "ap": "-1 (-3)",
+            "rules": "Bombardment, Cumbersome, Move or Shoot, Multiple Wounds (D3+1)"
+          },
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          }
+        ],
+        "slot": "Special",
+        "maxRange": 12,
+        "ruleText": {
+          "Magic Resistance (-1)": "The Casting roll of any enemy spell (including Bound Spells) that targets a unit that includes one or more models with this special rule suffers a modifier, as shown in brackets after the name of this special rule (-X).\n\nNote that this special rule is not cumulative. If two or more models in a unit have this special rule, use the highest modifier.",
+          "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+          "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn."
+        }
+      }
+    ],
+    "prep": {
+      "general": 0,
+      "bsb": null,
+      "units": {},
+      "note": "Thane — 60 pt; Runesmith (arma grande, armatura a piastre) — 72 pt; 21 Dwarf Warriors (scudi, fronte 10) — 189 pt; 20 Quarrellers (fronte 6) — 180 pt; 20 Thunderers (campione, stendardo, musico, scudi, fronte 10) — 235 pt; 13 Slayers (stendardo, musico, fronte 5) — 168 pt; Grudge Thrower — 95 pt"
+    },
+    "formerNames": []
   }
 ]

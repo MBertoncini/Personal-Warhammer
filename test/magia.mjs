@@ -38,7 +38,12 @@ ok('la firma della Magia da Battaglia e Hammerhand, 7+, in combattimento',
    (s => s.n === 0 && s.cv === 7 && s.range === 'combat' && s.type === 'assailment')(M.spell('hammerhand')));
 ok('Fireball: dardo magico 8+ a 24 pollici, 2D6 colpi a Forza 4',
    (s => s.type === 'missile' && s.cv === 8 && s.range === 24 && MG.hitsOf(s).dadi === '2D6' && MG.hitsOf(s).S === 4)(M.spell('Fireball')));
-ok('quattro innesti d esercito e un incantesimo vincolato', M.grafts.length === 4 && M.bound.length === 1);
+ok('sei innesti d esercito e un incantesimo vincolato', M.grafts.length === 6 && M.bound.length === 1);
+ok('la Lore of Beasts e la Lore of Athel Loren le concede la regola dei loro maghi',
+   M.graftsFor(['Lore of Beasts'])[0].spells.some(s => s.id === 'viletide') &&
+   M.graftsFor(['Lore of Athel Loren'])[0].spells.some(s => s.id === 'flockOfDoom'));
+ok('Viletide: 5D6 colpi a Forza 1 senza armatura, e l arbitro lo sa lanciare',
+   (s => MG.hitsOf(s).dadi === '5D6' && MG.hitsOf(s).S === 1 && MG.hitsOf(s).noArmour === true)(M.spell('viletide')));
 ok('gli innesti li concede la regola del mago',
    M.graftsFor(['Lore of the Horned Rat']).map(g => g.id).join() === 'hornedRat' &&
    M.graftsFor(['Lore Of Lustria'])[0].spells.some(s => s.id === 'apotheosis'));

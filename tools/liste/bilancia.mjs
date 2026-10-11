@@ -37,7 +37,8 @@
  * butta via).
  *
  * I temi di default sono tutte le ricerche a tema a questi punti con la
- * collezione, due per fazione.
+ * collezione, due per fazione, e per le fazioni senza collezione la
+ * ricerca con tutte le unità (il tema «libera»).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -55,22 +56,29 @@ const sc = String(arg('scenari', 'sei'));
 const scenari = sc === 'sei' ? SEI : sc === 'tutti' ? Object.keys(TUTTI) : sc.split(',');
 const FILE = `bilancia-${punti}.json`;
 
-/* ---------------- le liste di partenza ---------------- */
-const ricerche = tutte().filter(({ doc }) => doc.formato === 'tow-ricerca/1' && doc.punti === punti && doc.pool === 'collezione' && doc.tema && (doc.migliori || []).length);
+/* ---------------- le liste di partenza ----------------
+   Le ricerche a tema con la collezione; e per le fazioni che in vetrina
+   non hanno niente (Uomini Bestia, Elfi Silvani, Nani: dati/catalogo.json
+   non ne conta una miniatura) la ricerca con tutte le unità, che senza
+   tema si chiama «libera». */
+const tutteLeRicerche = tutte().filter(({ doc }) => doc.formato === 'tow-ricerca/1' && doc.punti === punti && (doc.migliori || []).length);
+const conCollezione = new Set(tutteLeRicerche.filter(({ doc }) => doc.pool === 'collezione').map(({ doc }) => doc.fazione));
+const ricerche = tutteLeRicerche.filter(({ doc }) => doc.pool === 'collezione' ? !!doc.tema : !conCollezione.has(doc.fazione));
+const nomeTema = doc => doc.tema ? doc.tema : { nome: 'libera', con: [], senza: [] };
 const scelti = arg('temi', null) ? String(arg('temi')).split(',').map(s => s.split(':')) : null;
-const temi = ricerche.filter(({ doc }) => !scelti || scelti.some(([f, t]) => f === doc.fazione && t === doc.tema.nome))
-  .map(({ file, doc }) => ({ file, fazione: doc.fazione, tema: doc.tema, geni: doc.migliori[0].geni }))
+const temi = ricerche.filter(({ doc }) => !scelti || scelti.some(([f, t]) => f === doc.fazione && t === nomeTema(doc).nome))
+  .map(({ file, doc }) => ({ file, fazione: doc.fazione, pool: doc.pool, tema: nomeTema(doc), geni: doc.migliori[0].geni }))
   .sort((a, b) => Object.keys(FAZIONI).indexOf(a.fazione) - Object.keys(FAZIONI).indexOf(b.fazione) || a.tema.nome.localeCompare(b.tema.nome));
-if (temi.length < 2){ console.error(`A ${punti} punti ci sono ${temi.length} ricerche a tema con la collezione: ne servono almeno due di fazioni diverse.`); process.exit(1); }
+if (temi.length < 2){ console.error(`A ${punti} punti ci sono ${temi.length} ricerche da bilanciare: ne servono almeno due di fazioni diverse.`); process.exit(1); }
 
 const prima = arg('da-capo', false) === true ? null : leggi(FILE);
 const L = temi.map((t, i) => {
-  const S = spazio(t.fazione, { pool: 'collezione', punti, con: t.tema.con || [], senza: t.tema.senza || [] });
+  const S = spazio(t.fazione, { pool: t.pool, punti, con: t.tema.con || [], senza: t.tema.senza || [] });
   const ripresa = prima && (prima.liste || []).find(x => x.fazione === t.fazione && x.tema === t.tema.nome);
   const geni = ripresa && !S.valida(ripresa.geni).length ? ripresa.geni : t.geni;
   const err = S.valida(geni);
   if (err.length){ console.error(`${t.fazione} «${t.tema.nome}»: la lista di partenza non vale più (${err.join('; ')})`); process.exit(1); }
-  return { i, fazione: t.fazione, tema: t.tema.nome, S, geni, nome: `${FAZIONI[t.fazione].sigla} ${t.tema.nome}` };
+  return { i, fazione: t.fazione, pool: t.pool, tema: t.tema.nome, S, geni, nome: `${FAZIONI[t.fazione].sigla} ${t.tema.nome}` };
 });
 const incrocio = (a, b) => L[a].fazione !== L[b].fazione;
 /* --solo: le sole liste che si possono ritoccare; le altre giocano e basta.
@@ -147,7 +155,7 @@ function stampa(titolo){
 function salva(storia){
   scrivi(FILE, {
     formato: 'tow-bilancia/1', quando: new Date().toISOString(), punti, scenari, semi,
-    liste: L.map(l => ({ fazione: l.fazione, tema: l.tema, nome: l.nome, geni: l.geni, descrizione: l.S.descrivi(l.geni), punti: l.S.totale(l.geni),
+    liste: L.map(l => ({ fazione: l.fazione, pool: l.pool, tema: l.tema, nome: l.nome, geni: l.geni, descrizione: l.S.descrivi(l.geni), punti: l.S.totale(l.geni),
       media: media(l.i) })),
     matrice: M, storia,
   });
@@ -247,7 +255,7 @@ scrivi(`torneo-${punti}.json`, {
   formato: 'tow-torneo/1', quando: new Date().toISOString(), punti, semi: semiVerifica, seme: 70001, partite: giocate,
   secondi: Math.round((Date.now() - t0) / 1000), bilanciato: true,
   scenari: scenari.map(id => ({ id, label: TUTTI[id].label || id, group: TUTTI[id].group || 'Miei', pts: TUTTI[id].pts || null })),
-  liste: L.map(l => ({ id: `b-${l.i}`, name: nomeVero(l), fazione: l.fazione, pool: 'collezione', fonte: 'ricerca', file: FILE,
+  liste: L.map(l => ({ id: `b-${l.i}`, name: nomeVero(l), fazione: l.fazione, pool: l.pool, fonte: 'ricerca', file: FILE,
     points: l.S.totale(l.geni), descrizione: l.S.descrivi(l.geni), units: l.geni.length })),
   celle: perScenario,
 });

@@ -57,7 +57,7 @@ import { scatter as deviazione, rollDice, contesto as contestoDadi } from './dic
 import { SCENARIOS, geometry } from './scenarios.js';
 import { troopType, unitStrength } from './troops.js';
 import { troopOf, herdRows } from './mounts.js';
-import { readRules, splitWeaponRules } from './rulebook.js';
+import { readRules, splitWeaponRules, amount as amountOf } from './rulebook.js';
 import { TERRAIN } from './terrain.js';
 import * as TR from './terrain.js';
 import * as SG from './sight.js';
@@ -443,8 +443,9 @@ export function stannoInsieme(c, h){
   if (!c || !h || c === h) return false;
   if (!PREP.isCharacter(c) || !genere(c) || (c.models || 1) !== 1) return false;
   if (PREP.isCharacter(h) || genere(h) !== genere(c)) return false;
-  /* Lumbering non ospita nessuno (p. 195), e a chi e' Clumsy si unisce
-     solo chi e' Clumsy anche lui */
+  /* Lumbering non ospita nessuno (p. 195), a chi e' Clumsy si unisce
+     solo chi e' Clumsy anche lui, e gli spiriti dell'albero stanno fra
+     loro (Tree Spirit, Forces of Fantasy p. 145) */
   if (FM.isLumbering(h) || !FM.clumsyOk(c, h)) return false;
   return indomito(h) === indomito(c);
 }
@@ -1206,7 +1207,26 @@ function testPsico(S, u, kind, p, perche, page){
   const res = PS.psychTest({ kind, ld: ldOf(S, u), dice: dadi, p });
   say(S, `${u.name}, ${PS.KINDS[kind].label} (${perche}): ${res.text}.`, { dice: dadi, army: u.army, page,
       x: xPsico(S, u, kind, dadi, res, perche) });
-  return res;
+  return marchio(S, u, kind, p, res, perche) || res;
+}
+
+/* Due regole che ritirano un test fallito. Mark of Chaos Undivided
+   (Ravening Hordes p. 116): «can re-roll any failed Fear, Panic or
+   Terror test». Veteran (p. 180): se ce l'ha la maggioranza dei modelli,
+   «the unit may re-roll any failed Leadership test» — e il test di rotta
+   non e' un test di Comando. I Longbeards dei Nani la portano di serie.
+   Un dado non si ritira due volte (p. 93): le due insieme fanno un
+   ritiro solo. Torna il secondo tiro, o niente. */
+function marchio(S, u, kind, p, res, perche){
+  if (res.passed) return null;
+  const marchiata = ["fear", "terror", "panic"].includes(kind) && haRegola(u, /^mark of chaos undivided/i);
+  const veterana = haRegola(u, /^veteran\b/i);
+  if (!marchiata && !veterana) return null;
+  const dadi = roll(PS.coldDice(kind, p) ? 3 : 2);
+  const di = PS.psychTest({ kind, ld: ldOf(S, u), dice: dadi, p });
+  say(S, `${u.name} ritira il ${PS.KINDS[kind].label} (${marchiata ? "Mark of Chaos Undivided" : "Veteran"}): ${di.text}.`,
+      { dice: dadi, army: u.army, page: marchiata ? 116 : 180, x: xPsico(S, u, kind, dadi, di, perche) });
+  return di;
 }
 
 function opzioniCarica(S){
@@ -1905,6 +1925,23 @@ function restareFermo(S, u, d){
   if (f.moveOrShoot && d <= gittata && d >= minima)
     return { tieniIlTiro: true,
              why: `resta dov'è: ha ${arma.name} a tiro (${d}″ su ${gittata}″) e l'arma o si muove o tira (p. 175)` };
+  /* E chi tira con un'arma che muovendosi perde qualcosa: il −1 (p. 138),
+     −2 con Ponderous (p. 175), e le file dietro del Volley Fire, che
+     tirano solo se l'unita' non si e' mossa (p. 180). Il commento
+     dell'euristica lo prometteva a tutti i tiratori e il codice lo
+     faceva solo alle armi «o si muove o tira»: le Glade Guard e i
+     Thunderers avanzavano verso il nemico che avevano gia' a tiro, per
+     poi tirare con la sola prima fila e con −1. Chi tira senza perdere
+     niente (Quick Shot, Move & Shoot) non c'entra, e nemmeno chi tira
+     per accompagnare la mischia: mostri, carri e personaggi. */
+  const perde = !f.quickShot && !f.moveAndShoot;
+  const accompagna = PREP.isCharacter(u) ||
+    ["monstrousCreature", "behemoth", "heavyChariot", "lightChariot"].includes(troopType(u.troop).id);
+  if (perde && !accompagna && d <= gittata && d >= minima)
+    return { tieniIlTiro: true,
+             why: `resta dov'è: ha ${arma.name} a tiro (${d}″ su ${gittata}″), e muovendosi tirerebbe con ` +
+                  `${f.ponderous ? "−2 (Ponderous, p. 175)" : "−1 (p. 138)"}` +
+                  (f.volleyFire && !u.loose ? " e senza le file dietro (Volley Fire, p. 180)" : "") };
   return { why: "resta dov'è: chi non muove spara meglio (p. 138)" };
 }
 
@@ -2263,8 +2300,9 @@ function opzioniTiro(S){
       const d = distanza(S, u, t);
       if (d > gittata) continue;
       if (vistaTagliata(S, u, t)) continue;
-      const mods = modificatori(S, u, t, d, gittata);
-      const f = CB.shootForecast(u, t, { weapon: arma, mods: mods.total });
+      const mods = modificatori(S, u, t, d, gittata, { arma });
+      const rf = raffica(S, u, arma, mods.total);
+      const f = CB.shootForecast(u, t, { weapon: arma, mods: mods.total + rf.mod, shots: rf.shots });
       /* la probabilita' scritta in chiaro: un modello che legge «6+» e
          basta continua a tirare a vuoto per quattro turni */
       const pc = Math.round(SH.hitChance(f.hitNeed, f.hitAgain, f.hitThen) * 100);
@@ -2691,6 +2729,51 @@ const quantiTirano = (S, u) => SH.shooterCap({
   frontage: u.frontage || 1, loose: !!u.loose,
   hill: sullaCollina(S, u) === "all",
 });
+
+/* Quanti tiri, con quest'arma. Due regole che il pannello del tavolo
+   sapeva e l'arbitro no, e che in partita non scattavano mai:
+
+   - Volley Fire (p. 180): dietro la prima fila tira la meta' di ogni
+     fila, arrotondando per eccesso, se l'unita' non si e' mossa per
+     nessun motivo in questo turno e non sta facendo «tira e tieni».
+     Gli archi degli Orchi, dei Night Goblin e degli Elfi Silvani
+     tiravano con la sola prima fila;
+   - Multiple Shots (X) (p. 174): ogni modello tira una volta, o X
+     volte con −1 per colpire, e tutta l'unita' fa la stessa scelta.
+     L'arbitro la fa da solo, prendendo la piu' redditizia in media:
+     e' una scelta del giocatore, e la scrive. Se X e' un dado, si tira
+     un dado per modello. Prima ogni fionda tirava una volta sola.
+
+   `tira` falso: la media dei dadi, per le previsioni delle opzioni. */
+function raffica(S, u, arma, mods, { standAndShoot = false, tira = false } = {}){
+  const wf = SH.weaponFlagsOf(arma);
+  const prima = quantiTirano(S, u);
+  const volley = !!wf.volleyFire && !u.loose && !haMosso(u) && !standAndShoot;
+  const n = volley ? SH.shooterCap({ models: u.models || 1, lost: u.lost || 0, frontage: u.frontage || 1,
+                                     loose: false, hill: sullaCollina(S, u) === "all", volley: true }) : prima;
+  const righe = [];
+  if (n > prima) righe.push(`Volley Fire: ${n - prima} in più dalle file dietro (p. 180)`);
+  const regole = Array.isArray(arma.rules) ? arma.rules.join(", ") : String(arma.rules || "");
+  const m = /multiple shots\s*(\([^)]*\))/i.exec(regole);
+  const x = m ? amountOf(m[1]) : null;
+  if (!x || !n) return { shots: n, mod: 0, righe, volley };
+  const media = x.flat ? x.flat : (x.times || 1) * (x.die + 1) / 2 + (x.plus || 0);
+  const bs = stat((u.stats || {}).BS);
+  const uno = SH.hitNeed(bs, mods), tanti = SH.hitNeed(bs, mods - 1);
+  const pUno = SH.hitChance(uno.need, uno.again, uno.then), pTanti = SH.hitChance(tanti.need, tanti.again, tanti.then);
+  if (!(media * pTanti > pUno)) return { shots: n, mod: 0, righe, volley };
+  let shots = Math.round(n * media), dadi = [];
+  if (tira && !x.flat){
+    dadi = Array.from({ length: n }, () => {
+      const d = x.die === 3 ? Array.from({ length: x.times || 1 }, () => d3()) : roll(x.times || 1);
+      return d.reduce((s, v) => s + v, 0) + (x.plus || 0);
+    });
+    shots = dadi.reduce((s, v) => s + v, 0);
+  } else if (x.flat) shots = n * x.flat;
+  righe.push(`Multiple Shots ${m[1]}: ${shots} tiri invece di ${n}` + (dadi.length ? ` (${dadi.join(", ")})` : "") +
+             `, −1 per colpire (p. 174)`);
+  return { shots, mod: -1, righe, volley, dadi };
+}
 
 /* Le unita' in mezzo, nella forma che `sight.js` vuole: bloccano la
    vista (p. 103), e chi sta tutto su una collina le scavalca con lo
@@ -3870,9 +3953,25 @@ function vaganoDaSoli(S){
 function tiroDiFuga(u){
   const swift = MV.swiftOf(u);
   const dadi = roll(swift ? 3 : 2);
-  const via = dadi.reduce((s, v) => s + v, 0) + CB.fleeBonusOf(u).mod;
+  /* «to a minimum of 1»: la Resolute dei Nani e la macchina da guerra */
+  const via = Math.max(1, dadi.reduce((s, v) => s + v, 0) + CB.fleeBonusOf(u).mod);
   const testo = dadi.slice(0, 2).join(" + ") + (swift ? ` + ${dadi[2]} (Swiftstride, p. 178)` : "");
   return { dadi, via, testo };
+}
+
+/* Il tiro d'inseguimento: 2D6 (3D6 con lo Swiftstride), e la Resolute
+   dei Nani che toglie uno, al minimo 1 (Forces of Fantasy p. 39). La
+   riga del perche' la porta chi scrive il registro. */
+function tiroDInseguimento(w){
+  /* Blood Greed (Ravening Hordes p. 115): chi e' frenetico e ha fame
+     «rolls only a single D6 when making a Pursuit roll» */
+  const ingordo = haRegola(w, /^blood greed/i) && PS.psychOf(w).frenzy;
+  const dadi = roll(ingordo ? 1 : ML.pursuitDice(MV.swiftOf(w)).n);
+  const b = CB.pursuitBonusOf(w);
+  const somma = dadi.reduce((s, v) => s + v, 0);
+  return { dadi, tot: b.mod ? Math.max(1, somma + b.mod) : somma,
+           righe: [...(ingordo ? [{ t: "Blood Greed: frenetico, insegue con un D6 solo", f: "regola" }] : []),
+                   ...(b.mod ? [{ t: b.why + " al tiro d'inseguimento, al minimo 1", f: "regola" }] : [])] };
 }
 
 /* Quanti pollici di fuga bastano a uscire dal tavolo, e con che
@@ -3951,9 +4050,13 @@ const haMosso = u => !!u.moved && u.moved.kind !== "still";
    parziale, oltre la meta' e' pieno e vale −2. Prima l'arbitro non
    sapeva nemmeno dire −2, e un reggimento dietro un monolite si
    prendeva lo stesso sconto di uno in mezzo all'erba alta. */
-function modificatori(S, u, t, d, gittata, { standAndShoot = false } = {}){
+/* «Ignores Cover» (p. 171), del tiratore o dell'arma (le frecce
+   Trueflight degli Elfi Silvani): niente −1 o −2 per il riparo */
+const ignoraRiparo = (u, arma) => haRegola(u, /^ignores cover/i) ||
+  /ignores cover/i.test(Array.isArray(arma && arma.rules) ? arma.rules.join(", ") : String((arma && arma.rules) || ""));
+function modificatori(S, u, t, d, gittata, { standAndShoot = false, arma = null } = {}){
   return SH.shootMods({ long: d > gittata / 2, moved: haMosso(u) && !standAndShoot,
-                        cover: coperturaDi(S, t, u),
+                        cover: ignoraRiparo(u, arma) ? "" : coperturaDi(S, t, u),
                         looseTarget: !!t.loose, standAndShoot });
 }
 
@@ -3984,8 +4087,10 @@ function tiro(S, u, t, arma, { standAndShoot = false } = {}){
     return;
   }
   if (sagomaOMacchina(u, arma)) limite(S, "sagome");
-  const mods = modificatori(S, u, t, d, gittata, { standAndShoot });
-  const r = CB.shootRoll(u, t, { weapon: arma, mods: mods.total, shots: quantiTirano(S, u) });
+  const mods = modificatori(S, u, t, d, gittata, { standAndShoot, arma });
+  const rf = raffica(S, u, arma, mods.total, { standAndShoot, tira: true });
+  for (const riga of rf.righe) say(S, `${u.name}: ${riga}.`, { army: u.army, page: /Volley/.test(riga) ? 180 : 174 });
+  const r = CB.shootRoll(u, t, { weapon: arma, mods: mods.total + rf.mod, shots: rf.shots });
   /* la Forza d'Unita' com'era all'inizio di questa fase: il quarto del
      Panico si conta su quella, sommando tutti i tiri della fase */
   const fase = faseDi(S);
@@ -4401,9 +4506,10 @@ function testPanico(S, u, causa, { perche = "", da = null, fonte = null, dist = 
       x: { k: "panico", u: u.name, uid: u.uid, f: [{ t: c.why || "", f: "stato" }, { t: c.autoWhy, f: "regola" }],
            e: "non tira", ok: true } }); return; }
   const dadi = roll(PS.coldDice("panic", p) ? 3 : 2);
-  const res = PS.psychTest({ kind:"panic", ld: ldOf(S, u), dice: dadi, p });
-  say(S, `${u.name}, test di Panico (${c.why}): ${res.text}.`, { dice: dadi, army: u.army, page: c.page,
-      x: xPsico(S, u, "panic", dadi, res, c.why) });
+  const prima = PS.psychTest({ kind:"panic", ld: ldOf(S, u), dice: dadi, p });
+  say(S, `${u.name}, test di Panico (${c.why}): ${prima.text}.`, { dice: dadi, army: u.army, page: c.page,
+      x: xPsico(S, u, "panic", dadi, prima, c.why) });
+  const res = marchio(S, u, "panic", p, prima, c.why) || prima;
   if (res.passed) return;
   const nemico = (da && !da.dead && da.army !== u.army ? da : null) ||
                  piuVicino(S, u, nemiciDi(S, u).filter(e => !e.fled)) || piuVicino(S, u);
@@ -4650,6 +4756,18 @@ function scambiaIncantesimo(S, a){
 const maghiDi = (S, army) => S.units.filter(u => u.army === army && u.mago && !u.dead &&
                                                    onBoard(ospite(S, u)) &&
                                                    (u.mago.level > 0 || u.mago.vincolati.length));
+/* Rune Lore (Forces of Fantasy p. 39): l'Anvil of Doom, il Runelord e il
+   Runesmith tentano un dissolvimento «as if it were a Wizard», di Livello
+   3, 2 e 1. Non lanciano niente: per tutto il resto non sono maghi. */
+const RUNE_LORE = [[/anvil of doom/i, 3], [/runelord/i, 2], [/runesmith/i, 1]];
+const livelloRunico = u => {
+  if (!u || u.mago || !haRegola(u, /^rune lore/i)) return 0;
+  const r = RUNE_LORE.find(([re]) => re.test(String(u.name || "")));
+  return r ? r[1] : 0;
+};
+const livelloDissolvi = d => d && d.mago && d.mago.level > 0 ? d.mago.level : livelloRunico(d);
+const dissolutori = (S, army) => [...maghiDi(S, army),
+  ...S.units.filter(u => u.army === army && !u.dead && livelloRunico(u) > 0 && onBoard(ospite(S, u)))];
 const castKey = S => chiave(S);
 const giaLanciati = (S, u) => (u.mago.cast && u.mago.cast.key === castKey(S)) ? u.mago.cast.ids : [];
 const fermo = (S, army, cosa) => S.magia.stop[cosa + ":" + army] === castKey(S);
@@ -4837,15 +4955,16 @@ function opzioniDissolvi(S, l){
   const lui = altro(l.army), da = ospite(S, w);
   const out = [];
   if (!fermo(S, lui, "dissolvi")){
-    for (const d of maghiDi(S, lui)){
-      if (!(d.mago.level > 0)) continue;
+    for (const d of dissolutori(S, lui)){
+      const liv = livelloDissolvi(d);
+      if (!(liv > 0)) continue;
       const h = ospite(S, d);
       if (h.fled || ingaggiata(S, h) || stupida(S, d)) continue;
       const dist = distanza(S, h, da);
-      if (dist > MG.dispelRange(d.mago.level) + 1e-6) continue;
-      const odds = MG.dispelOdds({ level: d.mago.level, against: l.total, bound: !!sp.bound });
+      if (dist > MG.dispelRange(liv) + 1e-6) continue;
+      const odds = MG.dispelOdds({ level: liv, against: l.total, bound: !!sp.bound });
       out.push({ id:"dissolvi", uid: d.uid, nome: d.name, contro: sp.name,
-                 why: `Livello ${d.mago.level} a ${dist}″ (portata ${MG.dispelRange(d.mago.level)}″): ` +
+                 why: `${d.mago ? "" : "Rune Lore, come un mago di "}Livello ${liv} a ${dist}″ (portata ${MG.dispelRange(liv)}″): ` +
                       `supera ${l.total} il ${pct(odds.dispel)}` +
                       (odds.outclassed ? `, surclassato il ${pct(odds.outclassed)}` : ""),
                  chance: odds.dispel, page: MG.PAGE.dispel });
@@ -4872,13 +4991,13 @@ function dissolvi(S, a){
   const d = a.fato ? null : byUid(S, a.uid);
   if (a.fato) S.magia.fato[lui] = castKey(S);
   const dadi = roll(2);
-  let res = MG.dispelResult({ dice: dadi, level: d ? d.mago.level : 0, fated: !!a.fato, castTotal: l.total });
+  let res = MG.dispelResult({ dice: dadi, level: d ? livelloDissolvi(d) : 0, fated: !!a.fato, castTotal: l.total });
   /* un incantesimo vincolato non surclassa nessuno (p. 109) */
   if (sp.bound && res.outclassed) res = { ...res, outclassed: false, dispelled: res.total > res.against };
   say(S, `${d ? d.name : "La sorte"} contro ${sp.name}: ${res.text}.`,
       { dice: dadi, army: lui, page: MG.PAGE.dispel,
         x: { k: "dissolvi", t: `Dissolvimento · ${sp.name}`, u: d ? d.name : "la sorte", uid: d ? d.uid : null,
-             tot: res.natural, piu: d ? [{ t: `Livello ${d.mago.level}`, v: d.mago.level }] : [],
+             tot: res.natural, piu: d ? [{ t: `Livello ${livelloDissolvi(d)}`, v: livelloDissolvi(d) }] : [],
              vs: { v: res.against, op: MG.DISPEL_TIES ? ">=" : ">", t: "il lancio" },
              f: [...(a.fato ? [{ t: "affidato alla sorte: niente Livello, una volta per turno", f: "magia" }] : []),
                  ...(sp.bound ? [{ t: "vincolato: non surclassa nessuno (p. 109)", f: "magia" }] : []),
@@ -5499,6 +5618,44 @@ function terrenoInMischia(S, g){
         { page: 153 });
 }
 
+/* La Primal Fury degli Uomini Bestia (Ravening Hordes p. 116): «when
+   this unit's combat is chosen … it must make a Leadership test». Chi
+   lo passa ritira gli 1 per colpire fino alla fine della fase, e con la
+   Foe Render l'arma a una mano perfora di 2 (p. 115): le legge
+   `schieraDi` da `u.furia`. Blood Rage (p. 115): se il test passa con
+   un doppio, l'unita' diventa frenetica, anche se la Frenzy l'aveva
+   persa. Si tira una volta per fase, anche se il combattimento si
+   ripete (un assalto che si apre dopo un incantesimo). */
+function furiaPrimordiale(S, g){
+  for (const u of [...g.A, ...g.B]){
+    if (!onBoard(u) || u.dead || u.fled || !haRegola(u, /^primal fury/i)) continue;
+    if (u.furiaTirata === chiave(S)) continue;
+    u.furiaTirata = chiave(S);
+    const c = comandoConWarband(S, u);
+    const dadi = roll(2);
+    const res = PS.psychTest({ kind: "", ld: c.ld, dice: dadi, p: {} });
+    const doppio = dadi.length === 2 && dadi[0] === dadi[1];
+    const rabbia = res.passed && doppio && haRegola(u, /^blood rage/i);
+    say(S, `${u.name}, test di Primal Fury: ${res.text}` +
+           (res.passed ? ": fino alla fine della fase ritira gli 1 per colpire" +
+                         (haRegola(u, /^foe render/i) ? ", e l'arma a una mano perfora di 2 (Foe Render)" : "") : "") + ".",
+        { dice: dadi, army: u.army, page: 116,
+          x: { k: "furia", u: u.name, uid: u.uid, tot: res.total, vs: { v: res.target, op: "<=", t: "Comando" },
+               f: [{ t: "quando il suo combattimento viene scelto, l'unità tira il Comando (Ravening Hordes p. 116)", f: "regola" },
+                   ...(c.why ? [{ t: c.why, f: "regola" }] : []),
+                   ...(res.insane ? [{ t: "doppio uno: passa sempre", f: "dadi" }] : [])],
+               e: res.passed ? "furia primordiale" : "niente furia", ok: res.passed } });
+    if (!res.passed) continue;
+    u.furia = chiave(S);
+    if (rabbia){
+      u.frenzyLost = false;
+      EF.addEffect(u, { id: "bloodRage", from: "Blood Rage", page: 115, flags: { frenzy: true } });
+      say(S, `${u.name} ha passato il test con un doppio: Blood Rage, adesso è frenetica (Ravening Hordes p. 115).`,
+          { army: u.army, page: 115 });
+    }
+  }
+}
+
 /* il combattimento, e sul tavolo il segno che si mena: chi contro chi */
 function mischia(S, g){
   const prima = S.log.length;
@@ -5541,6 +5698,7 @@ function menaLaMischia(S, g){
       }
     }
   }
+  furiaPrimordiale(S, g);
   /* gli Abominable Attacks scelti prima: le ferite che fanno entrano
      nel risultato, e chi le ha fatte non attacca normalmente */
   const abomini = new Map();
@@ -5878,9 +6036,7 @@ function dopoInseguimento(S, dopo){
    suoi dadi lo hanno portato. */
 function inseguiRipiego(S, w, L){
   if (!onBoard(L)) return;
-  const spec = ML.pursuitDice(MV.swiftOf(w));
-  const dadi = roll(spec.n);
-  const tot = dadi.reduce((s, v) => s + v, 0);
+  const { dadi, tot, righe } = tiroDInseguimento(w);
   const d = distanza(S, w, L);
   const posto = tot >= d ? postoAContatto(S, w, L) : null;
   const preso = !!posto && !posto.pieno;
@@ -5890,7 +6046,7 @@ function inseguiRipiego(S, w, L){
         x: { k: "inseguimento", u: `${w.name} → ${L.name}`, uid: w.uid, su: L.uid, tot,
              vs: { v: d, op: ">=", t: `quanto la separa da ${L.name}` },
              f: [{ t: "chi insegue tira 2D6 e va verso chi ripiega; se lo tocca, il combattimento continua (p. 157)", f: "regola" },
-                 ...(dadi.length > 2 ? [{ t: "Swiftstride: un D6 in più (p. 178)", f: "regola" }] : [])],
+                 ...(dadi.length > 2 ? [{ t: "Swiftstride: un D6 in più (p. 178)", f: "regola" }] : []), ...righe],
              e: preso ? `raggiunge ${L.name}` : "non la raggiunge", ok: preso } });
   if (preso){
     posa(S, w, posto.x, posto.y, posto.rot);
@@ -5910,9 +6066,7 @@ function inseguiRipiego(S, w, L){
    «a normal pursuit move but must move directly forwards, without
    pivoting» (p. 156). */
 function sfondaAvanti(S, w){
-  const spec = ML.pursuitDice(MV.swiftOf(w));
-  const dadi = roll(spec.n);
-  const tot = dadi.reduce((s, v) => s + v, 0);
+  const { dadi, tot, righe } = tiroDInseguimento(w);
   const a = (w.rot || 0) * Math.PI / 180;
   const lontano = { x: w.x + Math.sin(a) * 1e5, y: w.y - Math.cos(a) * 1e5 };
   const p = muoviVerso(S, w, lontano, tot, { unPollice: false });
@@ -5922,7 +6076,7 @@ function sfondaAvanti(S, w){
       { dice: dadi, army: w.army, page: 156,
         x: { k: "inseguimento", u: w.name, uid: w.uid, tot,
              f: [{ t: "chi ha distrutto il nemico prima dei test sfonda di 2D6″ in avanti, senza girarsi (p. 156)", f: "regola" },
-                 ...(dadi.length > 2 ? [{ t: "Swiftstride: un D6 in più (p. 178)", f: "regola" }] : [])],
+                 ...(dadi.length > 2 ? [{ t: "Swiftstride: un D6 in più (p. 178)", f: "regola" }] : []), ...righe],
              e: `sfonda di ${p.pollici}″` } });
 }
 
@@ -6036,7 +6190,21 @@ function schieraDi(S, u, { attached = false, host = null, feared = false } = {})
      turno dopo «counts as having charged» (p. 157) */
   const ins = chiSegue.inseguito && chiSegue.inseguito.mezzo === mezzoTurno(S) ? chiSegue.inseguito : null;
   const daInseguimento = ins ? { charged: true, chargeInches: ins.inches || 0, chargeArc: ins.arc || "fronte" } : {};
-  const c = CB.combatant(u, { joined: capiInFila(S, u), feared, followedUp, ...daInseguimento, ...carica });
+  /* il primo round e chi e' stato caricato: del reggimento, per il capo
+     che ci sta dentro (l'Odio, gli Elven Reflexes, gli Stoic Defenders) */
+  const caricata = S.units.some(e => e.army !== chiSegue.army && e.charged && e.charged.uid === chiSegue.uid);
+  const c = CB.combatant(u, { joined: capiInFila(S, u), feared, followedUp, ...daInseguimento, ...carica,
+                              primoRound: !chiSegue.giaInMischia, caricata });
+  /* La Primal Fury (Ravening Hordes p. 116), passata quando il
+     combattimento e' stato scelto (`furiaPrimordiale`): ritira gli 1 per
+     colpire, e con la Foe Render l'arma a una mano perfora di 2 (p. 115) */
+  if (chiSegue.furia === chiave(S)){
+    c.primalFury = true;
+    if (haRegola(u, /^foe render/i) && /hand weapon|arma a una mano/i.test(c.weapon || "Hand weapon")){
+      if ((+c.ap || 0) < 2) c.foeRender = true;
+      c.ap = Math.max(+c.ap || 0, 2);
+    }
+  }
   /* il test di rotta si tira con il Comando piu' alto fra i modelli
      (p. 97) o con quello del generale, se e' vicino: si rifa' il conto
      della Warband sopra il valore nuovo */
@@ -6178,9 +6346,7 @@ function inseguimento(S, vincitore, fuggito, quantoHaFuggito){
         { army: vincitore.army, page: ML.PAGE.pursuit });
     return;
   }
-  const spec = ML.pursuitDice(MV.swiftOf(vincitore));
-  const dadi = roll(spec.n);
-  const tot = dadi.reduce((s, v) => s + v, 0);
+  const { dadi, tot, righe } = tiroDInseguimento(vincitore);
   /* due vincitori possono inseguire lo stesso fuggiasco: il secondo
      arriva dove il primo l'ha gia' travolto, e lo conta come uscito */
   const uscita = !!fuggito.fledOff || !!fuggito.dead;
@@ -6194,7 +6360,7 @@ function inseguimento(S, vincitore, fuggito, quantoHaFuggito){
         x: { k: "inseguimento", u: `${vincitore.name} → ${fuggito.name}`, uid: vincitore.uid, su: fuggito.uid, tot,
              vs: uscita ? null : { v: lontano, op: ">=", t: `quanto è lontana ${fuggito.name} dopo la fuga` },
              f: [{ t: "chi insegue tira 2D6 verso chi fugge, e se lo tocca lo travolge (pp. 156-157)", f: "regola" },
-                 ...(dadi.length > 2 ? [{ t: "Swiftstride: un D6 in più (p. 178)", f: "regola" }] : [])],
+                 ...(dadi.length > 2 ? [{ t: "Swiftstride: un D6 in più (p. 178)", f: "regola" }] : []), ...righe],
              e: uscita ? `${fuggito.name} è già fuori dal tavolo` : out.caught ? `${fuggito.name} travolta e distrutta` : "non la prende",
              ok: uscita ? undefined : !!out.caught } });
   if (out.caught && !uscita){
@@ -6517,6 +6683,10 @@ function passo(S){
   segnaObiettivi(S);
   S.casella = 0;
   for (const u of S.units){ u.moved = null; u.shot = false; u.charged = null; u.unito = null; }
+  /* chi e' in combattimento adesso, alla fine di questo mezzo turno, nel
+     prossimo non combatte il suo primo round: e' quello che leggono
+     l'Odio e gli Elven Reflexes (`primoRound`, in `schieraDi`) */
+  for (const u of S.units) u.giaInMischia = !u.dead && onBoard(u) && ingaggiata(S, u);
   if (S.army !== S.primo){
     S.turno++;
     S.army = S.primo;

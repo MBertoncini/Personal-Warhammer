@@ -1,0 +1,3847 @@
+{
+ "formato": "tow-ricerca/1",
+ "quando": "2026-10-10T23:01:22.740Z",
+ "fazione": "bst",
+ "nome": "Uomini Bestia",
+ "catalogue": "Beastmen Brayherds",
+ "pool": "tutte",
+ "punti": 1000,
+ "scenari": [
+  "sxmu9q80qdc65",
+  "sxprova-profondo",
+  "sxprova-boschi",
+  "bm-strada",
+  "bm-rovine",
+  "open"
+ ],
+ "seme": 1001,
+ "etichette": {
+  "sxmu9q80qdc65": "Poligono di tiro (mio)",
+  "sxprova-profondo": "Poligono profondo",
+  "sxprova-boschi": "Boschi e rovine",
+  "bm-strada": "La Strada delle Pietre",
+  "bm-rovine": "Le Rovine di Xhotl",
+  "open": "Battaglia Campale"
+ },
+ "sforzo": "normale",
+ "parametri": {
+  "popolazione": 10,
+  "generazioni": 8,
+  "celle": 12,
+  "verifica": 2,
+  "finaliste": 4
+ },
+ "obiettivo": "equilibrata",
+ "gioco": {
+  "formato": "scenario",
+  "durata": ""
+ },
+ "partite": 2592,
+ "secondi": 2168,
+ "unita": [
+  "Beastlord",
+  "Wargor",
+  "Great Bray-Shaman",
+  "Bray-Shaman",
+  "Doombull",
+  "Gorebull",
+  "Gor Herd",
+  "Ungor Herd",
+  "Chaos Warhounds",
+  "Razorgor Herd",
+  "Tuskgor Chariot",
+  "Bestigor Herd",
+  "Minotaur Herd",
+  "Harpies",
+  "Centigor Herd",
+  "Dragon Ogres",
+  "Razorgor Chariot",
+  "Ghorgon",
+  "Dragon Ogre Shaggoth"
+ ],
+ "escluse": [],
+ "esempi": true,
+ "provate": [
+  {
+   "k": "shaggoth",
+   "nome": "Dragon Ogre Shaggoth",
+   "liste": 8,
+   "partite": 384,
+   "media": 58,
+   "finaliste": 0
+  },
+  {
+   "k": "dragonOgres",
+   "nome": "Dragon Ogres",
+   "liste": 2,
+   "partite": 72,
+   "media": 53,
+   "finaliste": 0
+  },
+  {
+   "k": "gorebull",
+   "nome": "Gorebull",
+   "liste": 5,
+   "partite": 192,
+   "media": 52,
+   "finaliste": 0
+  },
+  {
+   "k": "doombull",
+   "nome": "Doombull",
+   "liste": 8,
+   "partite": 360,
+   "media": 50,
+   "finaliste": 0
+  },
+  {
+   "k": "ghorgon",
+   "nome": "Ghorgon",
+   "liste": 24,
+   "partite": 984,
+   "media": 50,
+   "finaliste": 4
+  },
+  {
+   "k": "hounds",
+   "nome": "Chaos Warhounds",
+   "liste": 24,
+   "partite": 888,
+   "media": 48,
+   "finaliste": 1
+  },
+  {
+   "k": "beastlord",
+   "nome": "Beastlord",
+   "liste": 4,
+   "partite": 96,
+   "media": 47,
+   "finaliste": 0
+  },
+  {
+   "k": "razorgors",
+   "nome": "Razorgor Herd",
+   "liste": 33,
+   "partite": 1248,
+   "media": 46,
+   "finaliste": 4
+  },
+  {
+   "k": "tuskgorChariot",
+   "nome": "Tuskgor Chariot",
+   "liste": 25,
+   "partite": 912,
+   "media": 46,
+   "finaliste": 1
+  },
+  {
+   "k": "gors",
+   "nome": "Gor Herd",
+   "liste": 52,
+   "partite": 1920,
+   "media": 44,
+   "finaliste": 4
+  },
+  {
+   "k": "greatShaman",
+   "nome": "Great Bray-Shaman",
+   "liste": 33,
+   "partite": 1224,
+   "media": 43,
+   "finaliste": 4
+  },
+  {
+   "k": "ungors",
+   "nome": "Ungor Herd",
+   "liste": 39,
+   "partite": 1440,
+   "media": 42,
+   "finaliste": 3
+  },
+  {
+   "k": "bestigors",
+   "nome": "Bestigor Herd",
+   "liste": 6,
+   "partite": 168,
+   "media": 42,
+   "finaliste": 0
+  },
+  {
+   "k": "harpies",
+   "nome": "Harpies",
+   "liste": 34,
+   "partite": 1248,
+   "media": 41,
+   "finaliste": 2
+  },
+  {
+   "k": "razorgorChariot",
+   "nome": "Razorgor Chariot",
+   "liste": 11,
+   "partite": 288,
+   "media": 39,
+   "finaliste": 0
+  },
+  {
+   "k": "shaman",
+   "nome": "Bray-Shaman",
+   "liste": 4,
+   "partite": 120,
+   "media": 38,
+   "finaliste": 0
+  },
+  {
+   "k": "centigors",
+   "nome": "Centigor Herd",
+   "liste": 8,
+   "partite": 240,
+   "media": 36,
+   "finaliste": 0
+  },
+  {
+   "k": "minotaurs",
+   "nome": "Minotaur Herd",
+   "liste": 3,
+   "partite": 72,
+   "media": 33,
+   "finaliste": 0
+  },
+  {
+   "k": "wargor",
+   "nome": "Wargor",
+   "liste": 5,
+   "partite": 144,
+   "media": 31,
+   "finaliste": 0
+  }
+ ],
+ "contro": [
+  {
+   "id": "lmugl4zv663f7",
+   "name": "La Campana e l'Abominio SKA",
+   "catalogue": "Skaven",
+   "points": 996,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmugl4zvob6pi",
+   "name": "Il Fulmine di Skryre SKA",
+   "catalogue": "Skaven",
+   "points": 996,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmugl4zw1fft7",
+   "name": "Squig e sciamani O&G",
+   "catalogue": "Orc and Goblin Tribes",
+   "points": 996,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmugl4zwpzy5r",
+   "name": "Orchi Neri e cinghiali O&G",
+   "catalogue": "Orc and Goblin Tribes",
+   "points": 984,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmugl4zwvt57k",
+   "name": "Il Carnosauro e i Terradon LIZ",
+   "catalogue": "Lizardmen",
+   "points": 979,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmugl4zwyicwd",
+   "name": "Lo Stegadonte e i Cold One LIZ",
+   "catalogue": "Lizardmen",
+   "points": 990,
+   "fonte": "archivio"
+  },
+  {
+   "id": "lmuh94k2z9p26",
+   "name": "Il Bastiladon e la Guardia del Tempio LIZ",
+   "catalogue": "Lizardmen",
+   "points": 964,
+   "fonte": "archivio"
+  }
+ ],
+ "storia": [
+  {
+   "gen": 1,
+   "partite": 240,
+   "migliore": 81,
+   "vince": 50,
+   "n": 24,
+   "lista": "Doombull — 210 pt; 39 Gor Herd (campione, stendardo, musico) — 290 pt; 22 Ungor Herd (campione, stendardo, musico, fronte 10) — 127 pt; 9 Chaos Warhounds — 54 pt; Tuskgor Chariot — 85 pt; Dragon Ogre Shaggoth (armatura pesante) — 231 pt"
+  },
+  {
+   "gen": 2,
+   "partite": 480,
+   "migliore": 86,
+   "vince": 54,
+   "n": 24,
+   "lista": "Great Bray-Shaman (Livello 4, elementalism) — 180 pt; 32 Gor Herd (campione, stendardo, musico, fronte 7) — 241 pt; 25 Ungor Herd (campione, stendardo, musico, archi, fronte 6) — 142 pt; 2 Razorgor Herd — 104 pt; 8 Harpies — 88 pt; Ghorgon — 245 pt"
+  },
+  {
+   "gen": 3,
+   "partite": 720,
+   "migliore": 87,
+   "vince": 56,
+   "n": 72,
+   "lista": "Great Bray-Shaman (Livello 4, elementalism) — 180 pt; 32 Gor Herd (campione, stendardo, musico, fronte 7) — 241 pt; 26 Ungor Herd (fronte 7) — 130 pt; 2 Razorgor Herd — 104 pt; 9 Harpies — 99 pt; Ghorgon — 245 pt"
+  },
+  {
+   "gen": 4,
+   "partite": 960,
+   "migliore": 87,
+   "vince": 55,
+   "n": 96,
+   "lista": "Great Bray-Shaman (Livello 4, elementalism) — 180 pt; 32 Gor Herd (campione, stendardo, musico, fronte 7) — 241 pt; 26 Ungor Herd (fronte 7) — 130 pt; 2 Razorgor Herd — 104 pt; 9 Harpies — 99 pt; Ghorgon — 245 pt"
+  },
+  {
+   "gen": 5,
+   "partite": 1200,
+   "migliore": 82,
+   "vince": 55,
+   "n": 120,
+   "lista": "Great Bray-Shaman (Livello 4, elementalism) — 180 pt; 32 Gor Herd (campione, stendardo, musico, fronte 7) — 241 pt; 26 Ungor Herd (fronte 7) — 130 pt; 2 Razorgor Herd — 104 pt; 9 Harpies — 99 pt; Ghorgon — 245 pt"
+  },
+  {
+   "gen": 6,
+   "partite": 1440,
+   "migliore": 77,
+   "vince": 56,
+   "n": 144,
+   "lista": "Great Bray-Shaman (Livello 4, elementalism) — 180 pt; 32 Gor Herd (campione, stendardo, musico, fronte 7) — 241 pt; 26 Ungor Herd (fronte 7) — 130 pt; 2 Razorgor Herd — 104 pt; 9 Harpies — 99 pt; Ghorgon — 245 pt"
+  },
+  {
+   "gen": 7,
+   "partite": 1680,
+   "migliore": 79,
+   "vince": 38,
+   "n": 72,
+   "lista": "Great Bray-Shaman (Livello 4, elementalism) — 180 pt; 32 Gor Herd (campione, stendardo, musico, fronte 7) — 241 pt; 5 Chaos Warhounds — 30 pt; 2 Razorgor Herd — 104 pt; Tuskgor Chariot — 85 pt; 10 Harpies — 110 pt; Ghorgon — 245 pt"
+  },
+  {
+   "gen": 8,
+   "partite": 1920,
+   "migliore": 79,
+   "vince": 35,
+   "n": 96,
+   "lista": "Great Bray-Shaman (Livello 4, elementalism) — 180 pt; 32 Gor Herd (campione, stendardo, musico, fronte 7) — 241 pt; 5 Chaos Warhounds — 30 pt; 2 Razorgor Herd — 104 pt; Tuskgor Chariot — 85 pt; 10 Harpies — 110 pt; Ghorgon — 245 pt"
+  }
+ ],
+ "migliori": [
+  {
+   "geni": [
+    {
+     "k": "greatShaman",
+     "o": {
+      "level": 4
+     },
+     "lore": "dark"
+    },
+    {
+     "k": "gors",
+     "o": {
+      "c": "csm",
+      "f": 7
+     },
+     "n": 39
+    },
+    {
+     "k": "ungors",
+     "o": {
+      "c": "",
+      "spears": false,
+      "bows": false,
+      "f": 7
+     },
+     "n": 36
+    },
+    {
+     "k": "razorgors",
+     "o": {},
+     "n": 2
+    },
+    {
+     "k": "ghorgon",
+     "o": {}
+    }
+   ],
+   "descrizione": "Great Bray-Shaman (Livello 4, dark) — 180 pt; 39 Gor Herd (campione, stendardo, musico, fronte 7) — 290 pt; 36 Ungor Herd (fronte 7) — 180 pt; 2 Razorgor Herd — 104 pt; Ghorgon — 245 pt",
+   "punti": 999,
+   "ricerca": {
+    "w": 14,
+    "l": 9,
+    "d": 1,
+    "n": 24
+   },
+   "verifica": {
+    "w": 72,
+    "l": 80,
+    "d": 16,
+    "n": 168,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 8,
+      "l": 15,
+      "d": 5,
+      "n": 28
+     },
+     "sxprova-profondo": {
+      "w": 8,
+      "l": 18,
+      "d": 2,
+      "n": 28
+     },
+     "sxprova-boschi": {
+      "w": 11,
+      "l": 13,
+      "d": 4,
+      "n": 28
+     },
+     "bm-strada": {
+      "w": 14,
+      "l": 14,
+      "d": 0,
+      "n": 28
+     },
+     "bm-rovine": {
+      "w": 21,
+      "l": 7,
+      "d": 0,
+      "n": 28
+     },
+     "open": {
+      "w": 10,
+      "l": 13,
+      "d": 5,
+      "n": 28
+     }
+    },
+    "perAvversario": {
+     "lmugl4zv663f7": {
+      "w": 10,
+      "l": 11,
+      "d": 3,
+      "n": 24
+     },
+     "lmugl4zvob6pi": {
+      "w": 11,
+      "l": 11,
+      "d": 2,
+      "n": 24
+     },
+     "lmugl4zw1fft7": {
+      "w": 10,
+      "l": 11,
+      "d": 3,
+      "n": 24
+     },
+     "lmugl4zwpzy5r": {
+      "w": 7,
+      "l": 16,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zwvt57k": {
+      "w": 10,
+      "l": 11,
+      "d": 3,
+      "n": 24
+     },
+     "lmugl4zwyicwd": {
+      "w": 11,
+      "l": 11,
+      "d": 2,
+      "n": 24
+     },
+     "lmuh94k2z9p26": {
+      "w": 13,
+      "l": 9,
+      "d": 2,
+      "n": 24
+     }
+    },
+    "celle": {
+     "lmugl4zv663f7|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-profondo": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-boschi": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|open": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-profondo": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxmu9q80qdc65": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-profondo": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-boschi": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-profondo": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|open": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-boschi": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-strada": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|open": {
+      "w": 0,
+      "l": 2,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-profondo": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-profondo": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-boschi": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-bst-tutte-1000-1",
+    "name": "BST libera 1000 · 1",
+    "info": {
+     "catalogue": "Beastmen Brayherds",
+     "forceName": "Battle March",
+     "limit": 1000
+    },
+    "points": 999,
+    "external": false,
+    "imported": "2026-10-10T23:01:22.736Z",
+    "units": [
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Great Bray-Shaman",
+        "stats": {
+         "M": "5",
+         "WS": "5",
+         "BS": "3",
+         "S": "4",
+         "T": "5",
+         "W": "3",
+         "I": "4",
+         "A": "2",
+         "Ld": "8"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "Great Bray-Shaman",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 180,
+      "troop": "Regular infantry (character)",
+      "stats": {
+       "M": "5",
+       "WS": "5",
+       "BS": "3",
+       "S": "4",
+       "T": "5",
+       "W": "3",
+       "I": "4",
+       "A": "2",
+       "Ld": "8"
+      },
+      "armour": 5,
+      "rules": [
+       "Braystaff",
+       "Gaze of the Gods",
+       "Lore of Beasts",
+       "Mark of Chaos Undivided",
+       "Primal Fury",
+       "Warband"
+      ],
+      "weapons": [
+       {
+        "name": "Braystaff (hand weapon)",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "ruleText": {
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Gor Herd",
+        "stats": {
+         "M": "5",
+         "WS": "4",
+         "BS": "2",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "3",
+         "A": "1",
+         "Ld": "6"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Gor Herd",
+      "models": 39,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 7,
+      "pts": 290,
+      "us": 39,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "4",
+       "BS": "2",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "6"
+      },
+      "armour": 6,
+      "shield": true,
+      "rules": [
+       "Bestial Charge",
+       "Blood Rage",
+       "Horde",
+       "Move through Cover",
+       "Open Order",
+       "Skirmishers",
+       "Mark of Chaos Undivided",
+       "Primal Fury",
+       "Warband",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Horde": "A unit with this special rule may increase the maximum Rank Bonus it can claim (as determined by its troop type) by one.",
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Ungor Herd",
+        "stats": {
+         "M": "5",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "3",
+         "A": "1",
+         "Ld": "5"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Ungor Herd",
+      "models": 36,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 7,
+      "pts": 180,
+      "us": 36,
+      "troop": "Regular infantry",
+      "unitSize": "10+",
+      "stats": {
+       "M": "5",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "5"
+      },
+      "armour": 6,
+      "shield": true,
+      "rules": [
+       "Chariot Runners",
+       "Horde",
+       "Move through Cover",
+       "Open Order",
+       "Skirmishers",
+       "Mark of Chaos Undivided",
+       "Primal Fury",
+       "Warband",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Horde": "A unit with this special rule may increase the maximum Rank Bonus it can claim (as determined by its troop type) by one.",
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Razorgor Herd",
+        "stats": {
+         "M": "7",
+         "WS": "3",
+         "BS": "0",
+         "S": "5",
+         "T": "5",
+         "W": "3",
+         "I": "2",
+         "A": "4",
+         "Ld": "6"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Razorgor Herd",
+      "models": 2,
+      "baseId": "50x75",
+      "baseW": 50,
+      "baseH": 75,
+      "frontage": 2,
+      "us": 2,
+      "pts": 104,
+      "troop": "War beasts",
+      "unitSize": "1+",
+      "stats": {
+       "M": "7",
+       "WS": "3",
+       "BS": "0",
+       "S": "5",
+       "T": "5",
+       "W": "3",
+       "I": "2",
+       "A": "4",
+       "Ld": "6"
+      },
+      "armour": 6,
+      "rules": [
+       "Armour Bane (1)",
+       "Fear",
+       "Foe Render",
+       "Impact Hits (D3)",
+       "Loner",
+       "Open Order",
+       "Primal Fury",
+       "Razor Tusks",
+       "Swiftstride"
+      ],
+      "weapons": [
+       {
+        "name": "Tusks (counts as a hand weapon)",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Armour Bane (1)": "If a model with this special rule rolls a natural 6 when making a roll To Wound, the Armour Piercing characteristic of its weapon is improved by the amount shown in brackets after the name of this special rule.\n\n For example, if a natural 6 is rolled when rolling To Wound with a weapon that has an AP of \"-\" and the Armour Bane (1) special rule its AP counts as being -1 when making an Armour Save roll against that wound.",
+       "Fear": "Models with this special rule cause Fear:\n\n \n• \tIf a unit wishes to declare a charge against an enemy unit that both causes Fear and has a higher Unit Strength, it must first make a Leadership test. If this test is failed, the unit cannot charge. It does not move and is considered to have made a failed charge. If this test is passed, the unit can charge as normal.\n\n \n• \tIf a unit is engaged with an enemy unit that both causes Fear and has a higher Unit Strength when its combat is chosen during any Choose & Fight Combat sub-phase, it must make a Leadership test. If this test is failed, any models in the unit that direct their attacks against the Fear-causing enemy suffer a -1 modifier to their rolls To Hit.\n\n A unit only needs to make one Fear test per turn. Models that cause Fear are immune to Fear. A unit that does not cause Fear does not become immune to Fear when joined by a character that does.",
+       "Impact Hits (D3)": "The number of Impact Hits caused varies from model to model, and will be shown in brackets after the name of this special rile. Often, this is determined by the roll of a dice.\n\n**Resolving Impact Hits:** Impact Hits can only be made by a charging model that moved 3\" or more and that is in base contact with the enemy. Impact Hits are resolved against the charged unit when the combat is chosen during Step 1.1 of the Choose Combat & Fight sub-phase, before issuing challenges. They hit automatically and use the unmodified Strength of the model making them.",
+       "Loner": "A character with this special rule cannot be your General and cannot join a unit without this special rule. A unit with this special rule cannot be joined by a character without this special rule.",
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Ghorgon",
+        "stats": {
+         "M": "7",
+         "WS": "4",
+         "BS": "0",
+         "S": "6",
+         "T": "6",
+         "W": "6",
+         "I": "4",
+         "A": "5",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 6,
+      "name": "Ghorgon",
+      "models": 1,
+      "baseId": "60x100",
+      "baseW": 60,
+      "baseH": 100,
+      "frontage": 1,
+      "us": 0,
+      "pts": 245,
+      "troop": "Behemoth",
+      "unitSize": "1",
+      "stats": {
+       "M": "7",
+       "WS": "4",
+       "BS": "0",
+       "S": "6",
+       "T": "6",
+       "W": "6",
+       "I": "4",
+       "A": "5",
+       "Ld": "9"
+      },
+      "armour": 6,
+      "rules": [
+       "Blood Greed",
+       "Close Order",
+       "Frenzy",
+       "Large Target",
+       "Primal Fury",
+       "Regeneration (6+)",
+       "Stomp Attacks (D3)",
+       "Stubborn",
+       "Swallow Whole",
+       "Terror",
+       "Timmm-berrr!"
+      ],
+      "weapons": [
+       {
+        "name": "Cleaver-limbs",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-2",
+        "rules": "Killing Blow, Monster Slayer"
+       }
+      ],
+      "slot": "Rare",
+      "maxRange": 0,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Frenzy": "During a turn in which it made a charge move, or during the turn after it made a follow up move, a Frenzied model has a +1 modifier to its Attacks characteristic. This modifier does not apply to the model’s mount (in the case of a cavalry model), to the beasts that draw it (in the case of a chariot), or to its rider (in the case of a monster).\n\nIn addition:\n- If the majority of the models in a unit are Frenzied, the unit automatically passes any Fear, Panic or Terror tests it is required to make.\n- If a unit that includes one or more Frenzied models is able to declare a charge during the Declare Charges & Charge Reactions sub-phase of its turn, it must do so.\n- If the majority of the models in a unit are Frenzied, it cannot choose to Flee as a charge reaction, nor can it ever choose to make a Restraint test.\n\n**Losing Frenzy:** Unlike other special rules, Frenzy can be lost during a game. Any model that loses a round of combat will immediately lose this special rule.",
+       "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
+       "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does."
+      }
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {
+      "0": {
+       "level": 4,
+       "lore": "dark"
+      }
+     },
+     "note": "Great Bray-Shaman (Livello 4, dark) — 180 pt; 39 Gor Herd (campione, stendardo, musico, fronte 7) — 290 pt; 36 Ungor Herd (fronte 7) — 180 pt; 2 Razorgor Herd — 104 pt; Ghorgon — 245 pt"
+    },
+    "formerNames": []
+   }
+  },
+  {
+   "geni": [
+    {
+     "k": "greatShaman",
+     "o": {
+      "level": 4
+     },
+     "lore": "elementalism"
+    },
+    {
+     "k": "gors",
+     "o": {
+      "c": "csm",
+      "f": 7
+     },
+     "n": 32
+    },
+    {
+     "k": "ungors",
+     "o": {
+      "c": "",
+      "spears": false,
+      "bows": false,
+      "f": 7
+     },
+     "n": 26
+    },
+    {
+     "k": "razorgors",
+     "o": {},
+     "n": 2
+    },
+    {
+     "k": "harpies",
+     "o": {},
+     "n": 9
+    },
+    {
+     "k": "ghorgon",
+     "o": {}
+    }
+   ],
+   "descrizione": "Great Bray-Shaman (Livello 4, elementalism) — 180 pt; 32 Gor Herd (campione, stendardo, musico, fronte 7) — 241 pt; 26 Ungor Herd (fronte 7) — 130 pt; 2 Razorgor Herd — 104 pt; 9 Harpies — 99 pt; Ghorgon — 245 pt",
+   "punti": 999,
+   "ricerca": {
+    "w": 96,
+    "l": 79,
+    "d": 17,
+    "n": 192
+   },
+   "verifica": {
+    "w": 70,
+    "l": 84,
+    "d": 14,
+    "n": 168,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 16,
+      "l": 11,
+      "d": 1,
+      "n": 28
+     },
+     "sxprova-profondo": {
+      "w": 10,
+      "l": 14,
+      "d": 4,
+      "n": 28
+     },
+     "sxprova-boschi": {
+      "w": 8,
+      "l": 14,
+      "d": 6,
+      "n": 28
+     },
+     "bm-strada": {
+      "w": 14,
+      "l": 14,
+      "d": 0,
+      "n": 28
+     },
+     "bm-rovine": {
+      "w": 12,
+      "l": 16,
+      "d": 0,
+      "n": 28
+     },
+     "open": {
+      "w": 10,
+      "l": 15,
+      "d": 3,
+      "n": 28
+     }
+    },
+    "perAvversario": {
+     "lmugl4zv663f7": {
+      "w": 9,
+      "l": 12,
+      "d": 3,
+      "n": 24
+     },
+     "lmugl4zvob6pi": {
+      "w": 9,
+      "l": 14,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zw1fft7": {
+      "w": 10,
+      "l": 12,
+      "d": 2,
+      "n": 24
+     },
+     "lmugl4zwpzy5r": {
+      "w": 7,
+      "l": 14,
+      "d": 3,
+      "n": 24
+     },
+     "lmugl4zwvt57k": {
+      "w": 10,
+      "l": 13,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zwyicwd": {
+      "w": 9,
+      "l": 12,
+      "d": 3,
+      "n": 24
+     },
+     "lmuh94k2z9p26": {
+      "w": 16,
+      "l": 7,
+      "d": 1,
+      "n": 24
+     }
+    },
+    "celle": {
+     "lmugl4zv663f7|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-profondo": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|open": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-profondo": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-boschi": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-profondo": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|open": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-profondo": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-boschi": {
+      "w": 0,
+      "l": 2,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-boschi": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-profondo": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-boschi": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxmu9q80qdc65": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-bst-tutte-1000-2",
+    "name": "BST libera 1000 · 2",
+    "info": {
+     "catalogue": "Beastmen Brayherds",
+     "forceName": "Battle March",
+     "limit": 1000
+    },
+    "points": 999,
+    "external": false,
+    "imported": "2026-10-10T23:01:22.737Z",
+    "units": [
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Great Bray-Shaman",
+        "stats": {
+         "M": "5",
+         "WS": "5",
+         "BS": "3",
+         "S": "4",
+         "T": "5",
+         "W": "3",
+         "I": "4",
+         "A": "2",
+         "Ld": "8"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "Great Bray-Shaman",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 180,
+      "troop": "Regular infantry (character)",
+      "stats": {
+       "M": "5",
+       "WS": "5",
+       "BS": "3",
+       "S": "4",
+       "T": "5",
+       "W": "3",
+       "I": "4",
+       "A": "2",
+       "Ld": "8"
+      },
+      "armour": 5,
+      "rules": [
+       "Braystaff",
+       "Gaze of the Gods",
+       "Lore of Beasts",
+       "Mark of Chaos Undivided",
+       "Primal Fury",
+       "Warband"
+      ],
+      "weapons": [
+       {
+        "name": "Braystaff (hand weapon)",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "ruleText": {
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Gor Herd",
+        "stats": {
+         "M": "5",
+         "WS": "4",
+         "BS": "2",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "3",
+         "A": "1",
+         "Ld": "6"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Gor Herd",
+      "models": 32,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 7,
+      "pts": 241,
+      "us": 32,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "4",
+       "BS": "2",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "6"
+      },
+      "armour": 6,
+      "shield": true,
+      "rules": [
+       "Bestial Charge",
+       "Blood Rage",
+       "Horde",
+       "Move through Cover",
+       "Open Order",
+       "Skirmishers",
+       "Mark of Chaos Undivided",
+       "Primal Fury",
+       "Warband",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Horde": "A unit with this special rule may increase the maximum Rank Bonus it can claim (as determined by its troop type) by one.",
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Ungor Herd",
+        "stats": {
+         "M": "5",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "3",
+         "A": "1",
+         "Ld": "5"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Ungor Herd",
+      "models": 26,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 7,
+      "pts": 130,
+      "us": 26,
+      "troop": "Regular infantry",
+      "unitSize": "10+",
+      "stats": {
+       "M": "5",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "5"
+      },
+      "armour": 6,
+      "shield": true,
+      "rules": [
+       "Chariot Runners",
+       "Horde",
+       "Move through Cover",
+       "Open Order",
+       "Skirmishers",
+       "Mark of Chaos Undivided",
+       "Primal Fury",
+       "Warband",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Horde": "A unit with this special rule may increase the maximum Rank Bonus it can claim (as determined by its troop type) by one.",
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Razorgor Herd",
+        "stats": {
+         "M": "7",
+         "WS": "3",
+         "BS": "0",
+         "S": "5",
+         "T": "5",
+         "W": "3",
+         "I": "2",
+         "A": "4",
+         "Ld": "6"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Razorgor Herd",
+      "models": 2,
+      "baseId": "50x75",
+      "baseW": 50,
+      "baseH": 75,
+      "frontage": 2,
+      "us": 2,
+      "pts": 104,
+      "troop": "War beasts",
+      "unitSize": "1+",
+      "stats": {
+       "M": "7",
+       "WS": "3",
+       "BS": "0",
+       "S": "5",
+       "T": "5",
+       "W": "3",
+       "I": "2",
+       "A": "4",
+       "Ld": "6"
+      },
+      "armour": 6,
+      "rules": [
+       "Armour Bane (1)",
+       "Fear",
+       "Foe Render",
+       "Impact Hits (D3)",
+       "Loner",
+       "Open Order",
+       "Primal Fury",
+       "Razor Tusks",
+       "Swiftstride"
+      ],
+      "weapons": [
+       {
+        "name": "Tusks (counts as a hand weapon)",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Armour Bane (1)": "If a model with this special rule rolls a natural 6 when making a roll To Wound, the Armour Piercing characteristic of its weapon is improved by the amount shown in brackets after the name of this special rule.\n\n For example, if a natural 6 is rolled when rolling To Wound with a weapon that has an AP of \"-\" and the Armour Bane (1) special rule its AP counts as being -1 when making an Armour Save roll against that wound.",
+       "Fear": "Models with this special rule cause Fear:\n\n \n• \tIf a unit wishes to declare a charge against an enemy unit that both causes Fear and has a higher Unit Strength, it must first make a Leadership test. If this test is failed, the unit cannot charge. It does not move and is considered to have made a failed charge. If this test is passed, the unit can charge as normal.\n\n \n• \tIf a unit is engaged with an enemy unit that both causes Fear and has a higher Unit Strength when its combat is chosen during any Choose & Fight Combat sub-phase, it must make a Leadership test. If this test is failed, any models in the unit that direct their attacks against the Fear-causing enemy suffer a -1 modifier to their rolls To Hit.\n\n A unit only needs to make one Fear test per turn. Models that cause Fear are immune to Fear. A unit that does not cause Fear does not become immune to Fear when joined by a character that does.",
+       "Impact Hits (D3)": "The number of Impact Hits caused varies from model to model, and will be shown in brackets after the name of this special rile. Often, this is determined by the roll of a dice.\n\n**Resolving Impact Hits:** Impact Hits can only be made by a charging model that moved 3\" or more and that is in base contact with the enemy. Impact Hits are resolved against the charged unit when the combat is chosen during Step 1.1 of the Choose Combat & Fight sub-phase, before issuing challenges. They hit automatically and use the unmodified Strength of the model making them.",
+       "Loner": "A character with this special rule cannot be your General and cannot join a unit without this special rule. A unit with this special rule cannot be joined by a character without this special rule.",
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": true,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Harpies",
+        "stats": {
+         "M": "5",
+         "WS": "3",
+         "BS": "0",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "5",
+         "A": "2",
+         "Ld": "6"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Harpies",
+      "models": 9,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 9,
+      "us": 9,
+      "pts": 99,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "3",
+       "BS": "0",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "5",
+       "A": "2",
+       "Ld": "6"
+      },
+      "armour": 0,
+      "rules": [
+       "Fly (10)",
+       "Move through Cover",
+       "Scouts",
+       "Skirmishers",
+       "Swiftstride"
+      ],
+      "weapons": [
+       {
+        "name": "Claws (counts as hand weapons)",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Special",
+      "maxRange": 0,
+      "ruleText": {
+       "Fly (10)": "Except when following up or pursuing, a model with this special rule can choose to move by flying through the air, rather than moving across the ground as normal. When a model flies it uses a special ‘Fly Movement’ characteristic, shown in brackets after the name of this special rule (shown here as ‘X’). Models that choose to move by flying:\n\n- May move as normal (i.e. they may charge, march and manoeuvre as if moving on the ground), except that they are able to pass freely above other models, units and terrain features without any penalty, and they can march whilst within 8\" of an enemy unit without first having to make a Leadership test.\n\n- May end their movement in terrain, but will suffer its effects if they do. They cannot end their movement 'on top' of impassable terrain or another unit, or within 1\" of an enemy unit.\n\nModels that can Fly must begin and end all their movement on the ground. A character with this special rule cannot join a unit without this special rule, and vice versa.",
+       "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Ghorgon",
+        "stats": {
+         "M": "7",
+         "WS": "4",
+         "BS": "0",
+         "S": "6",
+         "T": "6",
+         "W": "6",
+         "I": "4",
+         "A": "5",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 6,
+      "name": "Ghorgon",
+      "models": 1,
+      "baseId": "60x100",
+      "baseW": 60,
+      "baseH": 100,
+      "frontage": 1,
+      "us": 0,
+      "pts": 245,
+      "troop": "Behemoth",
+      "unitSize": "1",
+      "stats": {
+       "M": "7",
+       "WS": "4",
+       "BS": "0",
+       "S": "6",
+       "T": "6",
+       "W": "6",
+       "I": "4",
+       "A": "5",
+       "Ld": "9"
+      },
+      "armour": 6,
+      "rules": [
+       "Blood Greed",
+       "Close Order",
+       "Frenzy",
+       "Large Target",
+       "Primal Fury",
+       "Regeneration (6+)",
+       "Stomp Attacks (D3)",
+       "Stubborn",
+       "Swallow Whole",
+       "Terror",
+       "Timmm-berrr!"
+      ],
+      "weapons": [
+       {
+        "name": "Cleaver-limbs",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-2",
+        "rules": "Killing Blow, Monster Slayer"
+       }
+      ],
+      "slot": "Rare",
+      "maxRange": 0,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Frenzy": "During a turn in which it made a charge move, or during the turn after it made a follow up move, a Frenzied model has a +1 modifier to its Attacks characteristic. This modifier does not apply to the model’s mount (in the case of a cavalry model), to the beasts that draw it (in the case of a chariot), or to its rider (in the case of a monster).\n\nIn addition:\n- If the majority of the models in a unit are Frenzied, the unit automatically passes any Fear, Panic or Terror tests it is required to make.\n- If a unit that includes one or more Frenzied models is able to declare a charge during the Declare Charges & Charge Reactions sub-phase of its turn, it must do so.\n- If the majority of the models in a unit are Frenzied, it cannot choose to Flee as a charge reaction, nor can it ever choose to make a Restraint test.\n\n**Losing Frenzy:** Unlike other special rules, Frenzy can be lost during a game. Any model that loses a round of combat will immediately lose this special rule.",
+       "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
+       "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does."
+      }
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {
+      "0": {
+       "level": 4,
+       "lore": "elementalism"
+      }
+     },
+     "note": "Great Bray-Shaman (Livello 4, elementalism) — 180 pt; 32 Gor Herd (campione, stendardo, musico, fronte 7) — 241 pt; 26 Ungor Herd (fronte 7) — 130 pt; 2 Razorgor Herd — 104 pt; 9 Harpies — 99 pt; Ghorgon — 245 pt"
+    },
+    "formerNames": []
+   }
+  },
+  {
+   "geni": [
+    {
+     "k": "greatShaman",
+     "o": {
+      "level": 4
+     },
+     "lore": "elementalism"
+    },
+    {
+     "k": "gors",
+     "o": {
+      "c": "csm",
+      "f": 7
+     },
+     "n": 39
+    },
+    {
+     "k": "ungors",
+     "o": {
+      "c": "",
+      "spears": false,
+      "bows": false,
+      "f": 7
+     },
+     "n": 36
+    },
+    {
+     "k": "razorgors",
+     "o": {},
+     "n": 2
+    },
+    {
+     "k": "ghorgon",
+     "o": {}
+    }
+   ],
+   "descrizione": "Great Bray-Shaman (Livello 4, elementalism) — 180 pt; 39 Gor Herd (campione, stendardo, musico, fronte 7) — 290 pt; 36 Ungor Herd (fronte 7) — 180 pt; 2 Razorgor Herd — 104 pt; Ghorgon — 245 pt",
+   "punti": 999,
+   "ricerca": {
+    "w": 18,
+    "l": 27,
+    "d": 3,
+    "n": 48
+   },
+   "verifica": {
+    "w": 71,
+    "l": 74,
+    "d": 23,
+    "n": 168,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 15,
+      "l": 8,
+      "d": 5,
+      "n": 28
+     },
+     "sxprova-profondo": {
+      "w": 9,
+      "l": 15,
+      "d": 4,
+      "n": 28
+     },
+     "sxprova-boschi": {
+      "w": 8,
+      "l": 11,
+      "d": 9,
+      "n": 28
+     },
+     "bm-strada": {
+      "w": 15,
+      "l": 13,
+      "d": 0,
+      "n": 28
+     },
+     "bm-rovine": {
+      "w": 12,
+      "l": 16,
+      "d": 0,
+      "n": 28
+     },
+     "open": {
+      "w": 12,
+      "l": 11,
+      "d": 5,
+      "n": 28
+     }
+    },
+    "perAvversario": {
+     "lmugl4zv663f7": {
+      "w": 13,
+      "l": 7,
+      "d": 4,
+      "n": 24
+     },
+     "lmugl4zvob6pi": {
+      "w": 13,
+      "l": 10,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zw1fft7": {
+      "w": 9,
+      "l": 10,
+      "d": 5,
+      "n": 24
+     },
+     "lmugl4zwpzy5r": {
+      "w": 5,
+      "l": 14,
+      "d": 5,
+      "n": 24
+     },
+     "lmugl4zwvt57k": {
+      "w": 11,
+      "l": 10,
+      "d": 3,
+      "n": 24
+     },
+     "lmugl4zwyicwd": {
+      "w": 8,
+      "l": 15,
+      "d": 1,
+      "n": 24
+     },
+     "lmuh94k2z9p26": {
+      "w": 12,
+      "l": 8,
+      "d": 4,
+      "n": 24
+     }
+    },
+    "celle": {
+     "lmugl4zv663f7|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 0,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-boschi": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-strada": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxmu9q80qdc65": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-profondo": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-boschi": {
+      "w": 1,
+      "l": 0,
+      "d": 3,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-strada": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-rovine": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-profondo": {
+      "w": 0,
+      "l": 2,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-boschi": {
+      "w": 0,
+      "l": 3,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|open": {
+      "w": 1,
+      "l": 1,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-profondo": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-boschi": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-boschi": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-strada": {
+      "w": 0,
+      "l": 4,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|open": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-profondo": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-boschi": {
+      "w": 2,
+      "l": 0,
+      "d": 2,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-bst-tutte-1000-3",
+    "name": "BST libera 1000 · 3",
+    "info": {
+     "catalogue": "Beastmen Brayherds",
+     "forceName": "Battle March",
+     "limit": 1000
+    },
+    "points": 999,
+    "external": false,
+    "imported": "2026-10-10T23:01:22.737Z",
+    "units": [
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Great Bray-Shaman",
+        "stats": {
+         "M": "5",
+         "WS": "5",
+         "BS": "3",
+         "S": "4",
+         "T": "5",
+         "W": "3",
+         "I": "4",
+         "A": "2",
+         "Ld": "8"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "Great Bray-Shaman",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 180,
+      "troop": "Regular infantry (character)",
+      "stats": {
+       "M": "5",
+       "WS": "5",
+       "BS": "3",
+       "S": "4",
+       "T": "5",
+       "W": "3",
+       "I": "4",
+       "A": "2",
+       "Ld": "8"
+      },
+      "armour": 5,
+      "rules": [
+       "Braystaff",
+       "Gaze of the Gods",
+       "Lore of Beasts",
+       "Mark of Chaos Undivided",
+       "Primal Fury",
+       "Warband"
+      ],
+      "weapons": [
+       {
+        "name": "Braystaff (hand weapon)",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "ruleText": {
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Gor Herd",
+        "stats": {
+         "M": "5",
+         "WS": "4",
+         "BS": "2",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "3",
+         "A": "1",
+         "Ld": "6"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Gor Herd",
+      "models": 39,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 7,
+      "pts": 290,
+      "us": 39,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "4",
+       "BS": "2",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "6"
+      },
+      "armour": 6,
+      "shield": true,
+      "rules": [
+       "Bestial Charge",
+       "Blood Rage",
+       "Horde",
+       "Move through Cover",
+       "Open Order",
+       "Skirmishers",
+       "Mark of Chaos Undivided",
+       "Primal Fury",
+       "Warband",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Horde": "A unit with this special rule may increase the maximum Rank Bonus it can claim (as determined by its troop type) by one.",
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Ungor Herd",
+        "stats": {
+         "M": "5",
+         "WS": "3",
+         "BS": "3",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "3",
+         "A": "1",
+         "Ld": "5"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Ungor Herd",
+      "models": 36,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 7,
+      "pts": 180,
+      "us": 36,
+      "troop": "Regular infantry",
+      "unitSize": "10+",
+      "stats": {
+       "M": "5",
+       "WS": "3",
+       "BS": "3",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "5"
+      },
+      "armour": 6,
+      "shield": true,
+      "rules": [
+       "Chariot Runners",
+       "Horde",
+       "Move through Cover",
+       "Open Order",
+       "Skirmishers",
+       "Mark of Chaos Undivided",
+       "Primal Fury",
+       "Warband",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Horde": "A unit with this special rule may increase the maximum Rank Bonus it can claim (as determined by its troop type) by one.",
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Razorgor Herd",
+        "stats": {
+         "M": "7",
+         "WS": "3",
+         "BS": "0",
+         "S": "5",
+         "T": "5",
+         "W": "3",
+         "I": "2",
+         "A": "4",
+         "Ld": "6"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Razorgor Herd",
+      "models": 2,
+      "baseId": "50x75",
+      "baseW": 50,
+      "baseH": 75,
+      "frontage": 2,
+      "us": 2,
+      "pts": 104,
+      "troop": "War beasts",
+      "unitSize": "1+",
+      "stats": {
+       "M": "7",
+       "WS": "3",
+       "BS": "0",
+       "S": "5",
+       "T": "5",
+       "W": "3",
+       "I": "2",
+       "A": "4",
+       "Ld": "6"
+      },
+      "armour": 6,
+      "rules": [
+       "Armour Bane (1)",
+       "Fear",
+       "Foe Render",
+       "Impact Hits (D3)",
+       "Loner",
+       "Open Order",
+       "Primal Fury",
+       "Razor Tusks",
+       "Swiftstride"
+      ],
+      "weapons": [
+       {
+        "name": "Tusks (counts as a hand weapon)",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Armour Bane (1)": "If a model with this special rule rolls a natural 6 when making a roll To Wound, the Armour Piercing characteristic of its weapon is improved by the amount shown in brackets after the name of this special rule.\n\n For example, if a natural 6 is rolled when rolling To Wound with a weapon that has an AP of \"-\" and the Armour Bane (1) special rule its AP counts as being -1 when making an Armour Save roll against that wound.",
+       "Fear": "Models with this special rule cause Fear:\n\n \n• \tIf a unit wishes to declare a charge against an enemy unit that both causes Fear and has a higher Unit Strength, it must first make a Leadership test. If this test is failed, the unit cannot charge. It does not move and is considered to have made a failed charge. If this test is passed, the unit can charge as normal.\n\n \n• \tIf a unit is engaged with an enemy unit that both causes Fear and has a higher Unit Strength when its combat is chosen during any Choose & Fight Combat sub-phase, it must make a Leadership test. If this test is failed, any models in the unit that direct their attacks against the Fear-causing enemy suffer a -1 modifier to their rolls To Hit.\n\n A unit only needs to make one Fear test per turn. Models that cause Fear are immune to Fear. A unit that does not cause Fear does not become immune to Fear when joined by a character that does.",
+       "Impact Hits (D3)": "The number of Impact Hits caused varies from model to model, and will be shown in brackets after the name of this special rile. Often, this is determined by the roll of a dice.\n\n**Resolving Impact Hits:** Impact Hits can only be made by a charging model that moved 3\" or more and that is in base contact with the enemy. Impact Hits are resolved against the charged unit when the combat is chosen during Step 1.1 of the Choose Combat & Fight sub-phase, before issuing challenges. They hit automatically and use the unmodified Strength of the model making them.",
+       "Loner": "A character with this special rule cannot be your General and cannot join a unit without this special rule. A unit with this special rule cannot be joined by a character without this special rule.",
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Ghorgon",
+        "stats": {
+         "M": "7",
+         "WS": "4",
+         "BS": "0",
+         "S": "6",
+         "T": "6",
+         "W": "6",
+         "I": "4",
+         "A": "5",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 6,
+      "name": "Ghorgon",
+      "models": 1,
+      "baseId": "60x100",
+      "baseW": 60,
+      "baseH": 100,
+      "frontage": 1,
+      "us": 0,
+      "pts": 245,
+      "troop": "Behemoth",
+      "unitSize": "1",
+      "stats": {
+       "M": "7",
+       "WS": "4",
+       "BS": "0",
+       "S": "6",
+       "T": "6",
+       "W": "6",
+       "I": "4",
+       "A": "5",
+       "Ld": "9"
+      },
+      "armour": 6,
+      "rules": [
+       "Blood Greed",
+       "Close Order",
+       "Frenzy",
+       "Large Target",
+       "Primal Fury",
+       "Regeneration (6+)",
+       "Stomp Attacks (D3)",
+       "Stubborn",
+       "Swallow Whole",
+       "Terror",
+       "Timmm-berrr!"
+      ],
+      "weapons": [
+       {
+        "name": "Cleaver-limbs",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-2",
+        "rules": "Killing Blow, Monster Slayer"
+       }
+      ],
+      "slot": "Rare",
+      "maxRange": 0,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Frenzy": "During a turn in which it made a charge move, or during the turn after it made a follow up move, a Frenzied model has a +1 modifier to its Attacks characteristic. This modifier does not apply to the model’s mount (in the case of a cavalry model), to the beasts that draw it (in the case of a chariot), or to its rider (in the case of a monster).\n\nIn addition:\n- If the majority of the models in a unit are Frenzied, the unit automatically passes any Fear, Panic or Terror tests it is required to make.\n- If a unit that includes one or more Frenzied models is able to declare a charge during the Declare Charges & Charge Reactions sub-phase of its turn, it must do so.\n- If the majority of the models in a unit are Frenzied, it cannot choose to Flee as a charge reaction, nor can it ever choose to make a Restraint test.\n\n**Losing Frenzy:** Unlike other special rules, Frenzy can be lost during a game. Any model that loses a round of combat will immediately lose this special rule.",
+       "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
+       "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does."
+      }
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {
+      "0": {
+       "level": 4,
+       "lore": "elementalism"
+      }
+     },
+     "note": "Great Bray-Shaman (Livello 4, elementalism) — 180 pt; 39 Gor Herd (campione, stendardo, musico, fronte 7) — 290 pt; 36 Ungor Herd (fronte 7) — 180 pt; 2 Razorgor Herd — 104 pt; Ghorgon — 245 pt"
+    },
+    "formerNames": []
+   }
+  },
+  {
+   "geni": [
+    {
+     "k": "greatShaman",
+     "o": {
+      "level": 4
+     },
+     "lore": "elementalism"
+    },
+    {
+     "k": "gors",
+     "o": {
+      "c": "csm",
+      "f": 7
+     },
+     "n": 32
+    },
+    {
+     "k": "hounds",
+     "o": {},
+     "n": 5
+    },
+    {
+     "k": "razorgors",
+     "o": {},
+     "n": 2
+    },
+    {
+     "k": "tuskgorChariot",
+     "o": {}
+    },
+    {
+     "k": "harpies",
+     "o": {},
+     "n": 10
+    },
+    {
+     "k": "ghorgon",
+     "o": {}
+    }
+   ],
+   "descrizione": "Great Bray-Shaman (Livello 4, elementalism) — 180 pt; 32 Gor Herd (campione, stendardo, musico, fronte 7) — 241 pt; 5 Chaos Warhounds — 30 pt; 2 Razorgor Herd — 104 pt; Tuskgor Chariot — 85 pt; 10 Harpies — 110 pt; Ghorgon — 245 pt",
+   "punti": 995,
+   "ricerca": {
+    "w": 34,
+    "l": 50,
+    "d": 12,
+    "n": 96
+   },
+   "verifica": {
+    "w": 105,
+    "l": 56,
+    "d": 7,
+    "n": 168,
+    "perScenario": {
+     "sxmu9q80qdc65": {
+      "w": 13,
+      "l": 12,
+      "d": 3,
+      "n": 28
+     },
+     "sxprova-profondo": {
+      "w": 18,
+      "l": 8,
+      "d": 2,
+      "n": 28
+     },
+     "sxprova-boschi": {
+      "w": 20,
+      "l": 7,
+      "d": 1,
+      "n": 28
+     },
+     "bm-strada": {
+      "w": 17,
+      "l": 11,
+      "d": 0,
+      "n": 28
+     },
+     "bm-rovine": {
+      "w": 17,
+      "l": 11,
+      "d": 0,
+      "n": 28
+     },
+     "open": {
+      "w": 20,
+      "l": 7,
+      "d": 1,
+      "n": 28
+     }
+    },
+    "perAvversario": {
+     "lmugl4zv663f7": {
+      "w": 14,
+      "l": 9,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zvob6pi": {
+      "w": 19,
+      "l": 5,
+      "d": 0,
+      "n": 24
+     },
+     "lmugl4zw1fft7": {
+      "w": 17,
+      "l": 6,
+      "d": 1,
+      "n": 24
+     },
+     "lmugl4zwpzy5r": {
+      "w": 14,
+      "l": 8,
+      "d": 2,
+      "n": 24
+     },
+     "lmugl4zwvt57k": {
+      "w": 11,
+      "l": 11,
+      "d": 2,
+      "n": 24
+     },
+     "lmugl4zwyicwd": {
+      "w": 12,
+      "l": 12,
+      "d": 0,
+      "n": 24
+     },
+     "lmuh94k2z9p26": {
+      "w": 18,
+      "l": 5,
+      "d": 1,
+      "n": 24
+     }
+    },
+    "celle": {
+     "lmugl4zv663f7|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-profondo": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zv663f7|sxprova-boschi": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|bm-rovine": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zv663f7|open": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|sxprova-boschi": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|bm-rovine": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zvob6pi|open": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxmu9q80qdc65": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|sxprova-boschi": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-strada": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zw1fft7|open": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|sxprova-boschi": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwpzy5r|open": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 2,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-profondo": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|sxprova-boschi": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-strada": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwvt57k|open": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxmu9q80qdc65": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-profondo": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|sxprova-boschi": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-strada": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|bm-rovine": {
+      "w": 1,
+      "l": 3,
+      "d": 0,
+      "n": 4
+     },
+     "lmugl4zwyicwd|open": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxmu9q80qdc65": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-profondo": {
+      "w": 2,
+      "l": 1,
+      "d": 1,
+      "n": 4
+     },
+     "lmuh94k2z9p26|sxprova-boschi": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-strada": {
+      "w": 4,
+      "l": 0,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|bm-rovine": {
+      "w": 3,
+      "l": 1,
+      "d": 0,
+      "n": 4
+     },
+     "lmuh94k2z9p26|open": {
+      "w": 2,
+      "l": 2,
+      "d": 0,
+      "n": 4
+     }
+    },
+    "fuori": {}
+   },
+   "lista": {
+    "id": "r-bst-tutte-1000-4",
+    "name": "BST libera 1000 · 4",
+    "info": {
+     "catalogue": "Beastmen Brayherds",
+     "forceName": "Battle March",
+     "limit": 1000
+    },
+    "points": 995,
+    "external": false,
+    "imported": "2026-10-10T23:01:22.737Z",
+    "units": [
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Great Bray-Shaman",
+        "stats": {
+         "M": "5",
+         "WS": "5",
+         "BS": "3",
+         "S": "4",
+         "T": "5",
+         "W": "3",
+         "I": "4",
+         "A": "2",
+         "Ld": "8"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "models": 1,
+      "frontage": 1,
+      "us": 1,
+      "unitSize": "1",
+      "slot": "Characters",
+      "name": "Great Bray-Shaman",
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "pts": 180,
+      "troop": "Regular infantry (character)",
+      "stats": {
+       "M": "5",
+       "WS": "5",
+       "BS": "3",
+       "S": "4",
+       "T": "5",
+       "W": "3",
+       "I": "4",
+       "A": "2",
+       "Ld": "8"
+      },
+      "armour": 5,
+      "rules": [
+       "Braystaff",
+       "Gaze of the Gods",
+       "Lore of Beasts",
+       "Mark of Chaos Undivided",
+       "Primal Fury",
+       "Warband"
+      ],
+      "weapons": [
+       {
+        "name": "Braystaff (hand weapon)",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "maxRange": 0,
+      "ruleText": {
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Gor Herd",
+        "stats": {
+         "M": "5",
+         "WS": "4",
+         "BS": "2",
+         "S": "3",
+         "T": "4",
+         "W": "1",
+         "I": "3",
+         "A": "1",
+         "Ld": "6"
+        }
+       }
+      ],
+      "command": {
+       "standard": true,
+       "musician": true,
+       "champion": true
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Gor Herd",
+      "models": 32,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 7,
+      "pts": 241,
+      "us": 32,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "4",
+       "BS": "2",
+       "S": "3",
+       "T": "4",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "6"
+      },
+      "armour": 6,
+      "shield": true,
+      "rules": [
+       "Bestial Charge",
+       "Blood Rage",
+       "Horde",
+       "Move through Cover",
+       "Open Order",
+       "Skirmishers",
+       "Mark of Chaos Undivided",
+       "Primal Fury",
+       "Warband",
+       "Press of Battle",
+       "Massed Infantry",
+       "Parry"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Horde": "A unit with this special rule may increase the maximum Rank Bonus it can claim (as determined by its troop type) by one.",
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
+       "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
+       "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
+       "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Chaos Warhounds",
+        "stats": {
+         "M": "7",
+         "WS": "4",
+         "BS": "0",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "3",
+         "A": "1",
+         "Ld": "6"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Chaos Warhounds",
+      "models": 5,
+      "baseId": "25x50",
+      "baseW": 25,
+      "baseH": 50,
+      "frontage": 5,
+      "us": 5,
+      "pts": 30,
+      "troop": "War beasts",
+      "unitSize": "5+",
+      "stats": {
+       "M": "7",
+       "WS": "4",
+       "BS": "0",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "3",
+       "A": "1",
+       "Ld": "6"
+      },
+      "armour": 0,
+      "rules": [
+       "Loner",
+       "Move through Cover",
+       "Open Order",
+       "Swiftstride"
+      ],
+      "weapons": [
+       {
+        "name": "Claws and fangs (counts as a hand weapon)",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Loner": "A character with this special rule cannot be your General and cannot join a unit without this special rule. A unit with this special rule cannot be joined by a character without this special rule.",
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Razorgor Herd",
+        "stats": {
+         "M": "7",
+         "WS": "3",
+         "BS": "0",
+         "S": "5",
+         "T": "5",
+         "W": "3",
+         "I": "2",
+         "A": "4",
+         "Ld": "6"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Razorgor Herd",
+      "models": 2,
+      "baseId": "50x75",
+      "baseW": 50,
+      "baseH": 75,
+      "frontage": 2,
+      "us": 2,
+      "pts": 104,
+      "troop": "War beasts",
+      "unitSize": "1+",
+      "stats": {
+       "M": "7",
+       "WS": "3",
+       "BS": "0",
+       "S": "5",
+       "T": "5",
+       "W": "3",
+       "I": "2",
+       "A": "4",
+       "Ld": "6"
+      },
+      "armour": 6,
+      "rules": [
+       "Armour Bane (1)",
+       "Fear",
+       "Foe Render",
+       "Impact Hits (D3)",
+       "Loner",
+       "Open Order",
+       "Primal Fury",
+       "Razor Tusks",
+       "Swiftstride"
+      ],
+      "weapons": [
+       {
+        "name": "Tusks (counts as a hand weapon)",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Armour Bane (1)": "If a model with this special rule rolls a natural 6 when making a roll To Wound, the Armour Piercing characteristic of its weapon is improved by the amount shown in brackets after the name of this special rule.\n\n For example, if a natural 6 is rolled when rolling To Wound with a weapon that has an AP of \"-\" and the Armour Bane (1) special rule its AP counts as being -1 when making an Armour Save roll against that wound.",
+       "Fear": "Models with this special rule cause Fear:\n\n \n• \tIf a unit wishes to declare a charge against an enemy unit that both causes Fear and has a higher Unit Strength, it must first make a Leadership test. If this test is failed, the unit cannot charge. It does not move and is considered to have made a failed charge. If this test is passed, the unit can charge as normal.\n\n \n• \tIf a unit is engaged with an enemy unit that both causes Fear and has a higher Unit Strength when its combat is chosen during any Choose & Fight Combat sub-phase, it must make a Leadership test. If this test is failed, any models in the unit that direct their attacks against the Fear-causing enemy suffer a -1 modifier to their rolls To Hit.\n\n A unit only needs to make one Fear test per turn. Models that cause Fear are immune to Fear. A unit that does not cause Fear does not become immune to Fear when joined by a character that does.",
+       "Impact Hits (D3)": "The number of Impact Hits caused varies from model to model, and will be shown in brackets after the name of this special rile. Often, this is determined by the roll of a dice.\n\n**Resolving Impact Hits:** Impact Hits can only be made by a charging model that moved 3\" or more and that is in base contact with the enemy. Impact Hits are resolved against the charged unit when the combat is chosen during Step 1.1 of the Choose Combat & Fight sub-phase, before issuing challenges. They hit automatically and use the unmodified Strength of the model making them.",
+       "Loner": "A character with this special rule cannot be your General and cannot join a unit without this special rule. A unit with this special rule cannot be joined by a character without this special rule.",
+       "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Tuskgor Chariot",
+        "stats": {
+         "M": "-",
+         "WS": "-",
+         "BS": "-",
+         "S": "5",
+         "T": "4",
+         "W": "4",
+         "I": "-",
+         "A": "-",
+         "Ld": "-"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Tuskgor Chariot",
+      "models": 1,
+      "baseId": "50x100",
+      "baseW": 50,
+      "baseH": 100,
+      "frontage": 1,
+      "us": 5,
+      "pts": 85,
+      "troop": "Heavy chariot",
+      "unitSize": "1",
+      "stats": {
+       "M": "-",
+       "WS": "-",
+       "BS": "-",
+       "S": "5",
+       "T": "4",
+       "W": "4",
+       "I": "-",
+       "A": "-",
+       "Ld": "-"
+      },
+      "armour": 4,
+      "rules": [
+       "Close Order",
+       "First Charge",
+       "Impact Hits (D6+1)",
+       "Mark of Chaos Undivided",
+       "Primal Fury",
+       "Razor Tusks",
+       "Warband"
+      ],
+      "weapons": [
+       {
+        "name": "Hand Weapon",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Core",
+      "maxRange": 0,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "First Charge": "If this unit’s first charge of the game is successful (i.e., if the unit makes contact with the charge target), the charge target becomes Disrupted until the end of the Combat phase of that turn.",
+       "Impact Hits (D6+1)": "The number of Impact Hits caused varies from model to model, and will be shown in brackets after the name of this special rile. Often, this is determined by the roll of a dice.\n\n**Resolving Impact Hits:** Impact Hits can only be made by a charging model that moved 3\" or more and that is in base contact with the enemy. Impact Hits are resolved against the charged unit when the combat is chosen during Step 1.1 of the Choose Combat & Fight sub-phase, before issuing challenges. They hit automatically and use the unmodified Strength of the model making them.",
+       "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": true,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Harpies",
+        "stats": {
+         "M": "5",
+         "WS": "3",
+         "BS": "0",
+         "S": "3",
+         "T": "3",
+         "W": "1",
+         "I": "5",
+         "A": "2",
+         "Ld": "6"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 0,
+      "name": "Harpies",
+      "models": 10,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 10,
+      "us": 10,
+      "pts": 110,
+      "troop": "Regular infantry",
+      "unitSize": "5+",
+      "stats": {
+       "M": "5",
+       "WS": "3",
+       "BS": "0",
+       "S": "3",
+       "T": "3",
+       "W": "1",
+       "I": "5",
+       "A": "2",
+       "Ld": "6"
+      },
+      "armour": 0,
+      "rules": [
+       "Fly (10)",
+       "Move through Cover",
+       "Scouts",
+       "Skirmishers",
+       "Swiftstride"
+      ],
+      "weapons": [
+       {
+        "name": "Claws (counts as hand weapons)",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-",
+        "rules": "-"
+       }
+      ],
+      "slot": "Special",
+      "maxRange": 0,
+      "ruleText": {
+       "Fly (10)": "Except when following up or pursuing, a model with this special rule can choose to move by flying through the air, rather than moving across the ground as normal. When a model flies it uses a special ‘Fly Movement’ characteristic, shown in brackets after the name of this special rule (shown here as ‘X’). Models that choose to move by flying:\n\n- May move as normal (i.e. they may charge, march and manoeuvre as if moving on the ground), except that they are able to pass freely above other models, units and terrain features without any penalty, and they can march whilst within 8\" of an enemy unit without first having to make a Leadership test.\n\n- May end their movement in terrain, but will suffer its effects if they do. They cannot end their movement 'on top' of impassable terrain or another unit, or within 1\" of an enemy unit.\n\nModels that can Fly must begin and end all their movement on the ground. A character with this special rule cannot join a unit without this special rule, and vice versa.",
+       "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
+       "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result."
+      }
+     },
+     {
+      "crew": 0,
+      "loose": false,
+      "mount": null,
+      "profiles": [
+       {
+        "name": "Ghorgon",
+        "stats": {
+         "M": "7",
+         "WS": "4",
+         "BS": "0",
+         "S": "6",
+         "T": "6",
+         "W": "6",
+         "I": "4",
+         "A": "5",
+         "Ld": "9"
+        }
+       }
+      ],
+      "command": {
+       "standard": false,
+       "musician": false,
+       "champion": false
+      },
+      "faction": "Beastmen Brayherds",
+      "ward": 0,
+      "regen": 6,
+      "name": "Ghorgon",
+      "models": 1,
+      "baseId": "60x100",
+      "baseW": 60,
+      "baseH": 100,
+      "frontage": 1,
+      "us": 0,
+      "pts": 245,
+      "troop": "Behemoth",
+      "unitSize": "1",
+      "stats": {
+       "M": "7",
+       "WS": "4",
+       "BS": "0",
+       "S": "6",
+       "T": "6",
+       "W": "6",
+       "I": "4",
+       "A": "5",
+       "Ld": "9"
+      },
+      "armour": 6,
+      "rules": [
+       "Blood Greed",
+       "Close Order",
+       "Frenzy",
+       "Large Target",
+       "Primal Fury",
+       "Regeneration (6+)",
+       "Stomp Attacks (D3)",
+       "Stubborn",
+       "Swallow Whole",
+       "Terror",
+       "Timmm-berrr!"
+      ],
+      "weapons": [
+       {
+        "name": "Cleaver-limbs",
+        "range": "Combat",
+        "S": "S",
+        "ap": "-2",
+        "rules": "Killing Blow, Monster Slayer"
+       }
+      ],
+      "slot": "Rare",
+      "maxRange": 0,
+      "ruleText": {
+       "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
+       "Frenzy": "During a turn in which it made a charge move, or during the turn after it made a follow up move, a Frenzied model has a +1 modifier to its Attacks characteristic. This modifier does not apply to the model’s mount (in the case of a cavalry model), to the beasts that draw it (in the case of a chariot), or to its rider (in the case of a monster).\n\nIn addition:\n- If the majority of the models in a unit are Frenzied, the unit automatically passes any Fear, Panic or Terror tests it is required to make.\n- If a unit that includes one or more Frenzied models is able to declare a charge during the Declare Charges & Charge Reactions sub-phase of its turn, it must do so.\n- If the majority of the models in a unit are Frenzied, it cannot choose to Flee as a charge reaction, nor can it ever choose to make a Restraint test.\n\n**Losing Frenzy:** Unlike other special rules, Frenzy can be lost during a game. Any model that loses a round of combat will immediately lose this special rule.",
+       "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
+       "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
+       "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does."
+      }
+     }
+    ],
+    "prep": {
+     "general": 0,
+     "bsb": null,
+     "units": {
+      "0": {
+       "level": 4,
+       "lore": "elementalism"
+      }
+     },
+     "note": "Great Bray-Shaman (Livello 4, elementalism) — 180 pt; 32 Gor Herd (campione, stendardo, musico, fronte 7) — 241 pt; 5 Chaos Warhounds — 30 pt; 2 Razorgor Herd — 104 pt; Tuskgor Chariot — 85 pt; 10 Harpies — 110 pt; Ghorgon — 245 pt"
+    },
+    "formerNames": []
+   }
+  }
+ ]
+}

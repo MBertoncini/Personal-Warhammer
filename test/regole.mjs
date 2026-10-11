@@ -338,11 +338,14 @@ const dir = new URL('../dati/eserciti/', import.meta.url);
 const index = JSON.parse(fs.readFileSync(new URL('indice.json', dir), 'utf8'));
 const files = index.file.map(f => JSON.parse(fs.readFileSync(new URL(f, dir), 'utf8')));
 const A = makeArmies(files);
-ok('ci sono tre eserciti, come i tre libri sullo scaffale', A.list.length === 3);
-ok('e l indice li elenca tutti', index.file.length === 3);
+ok('ci sono sei eserciti: i tre delle liste di casa, e Uomini Bestia, Elfi Silvani e Nani letti sui libri', A.list.length === 6);
+ok('e l indice li elenca tutti', index.file.length === 6);
 ok('gli Orchi si trovano dal nome del catalogo', A.find('Orc and Goblin Tribes').id === 'orchi-goblin');
 ok('gli Skaven pure', A.find('Skaven').id === 'skaven');
 ok('e gli Uomini Lucertola pure', A.find('Lizardmen').id === 'uomini-lucertola');
+ok('e i tre nuovi, con il nome del catalogo di New Recruit',
+   A.find('Beastmen Brayherds').id === 'uomini-bestia' && A.find('Wood Elf Realms').id === 'elfi-silvani' &&
+   A.find('Dwarfen Mountain Holds').id === 'nani');
 ok('un esercito che non c e non si inventa', A.find('Bretonnia') === null);
 
 const named = lists.filter(l => l.info && l.info.catalogue);

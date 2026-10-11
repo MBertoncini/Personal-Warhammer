@@ -215,13 +215,19 @@ const odio = C.combatant(unit('Nani',
 ok('l Odio viene letto e applicato', odio.flags.hatred === true);
 ok('e non e piu elencato come psicologia',
    odio.rulesRead.applied.some(x => /Hatred/.test(x.name)));
-const colpi = C.strike(odio, C.combatant(guardia), { attacks: 200, round: 1 });
+/* l'odiato e' quello della parentesi (p. 171): la fazione la dice il
+   catalogo da cui viene l'unita'. Prima la parentesi si buttava, e
+   questi Nani odiavano anche una guardia senza fazione */
+const orchi = { ...guardia, faction: 'Orc and Goblin Tribes' };
+const colpi = C.strike(odio, C.combatant(orchi), { attacks: 200, round: 1 });
 ok('nel primo assalto i mancati si ritirano', colpi.hit.rerolled > 0);
 ok('e nel secondo no',
-   C.strike(odio, C.combatant(guardia), { attacks: 200, round: 2 }).hit.rerolled === 0);
+   C.strike(odio, C.combatant(orchi), { attacks: 200, round: 2 }).hit.rerolled === 0);
 ok('il ritiro alza la media, e la previsione lo sa',
-   C.meleeForecast(odio, C.combatant(guardia)).wounds >
-   C.meleeForecast(C.combatant({ ...odio.ref, rules: [] }), C.combatant(guardia)).wounds);
+   C.meleeForecast(odio, C.combatant(orchi)).wounds >
+   C.meleeForecast(C.combatant({ ...odio.ref, rules: [] }), C.combatant(orchi)).wounds);
+ok('ma contro chi la parentesi non nomina non si ritira niente',
+   C.strike(odio, C.combatant({ ...guardia, faction: 'Skaven' }), { attacks: 200, round: 1 }).hit.rerolled === 0);
 
 /* la sfida: le ferite in piu' entrano nel risultato */
 const eroe = C.combatant(unit('Eroe',

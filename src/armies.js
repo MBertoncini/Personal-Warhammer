@@ -219,6 +219,10 @@ export function meleeBoosts(rules = [], { charged = false, weapon = "", mount = 
       out.off.push(r.name + ": vale solo con l'arma a una mano");
       continue;
     }
+    /* una regola che vale su un'arma sola, per nome: le zanne della
+       Razor Tusks (Ravening Hordes p. 116) sono del Tuskgor e del
+       Razorgor, non dell'equipaggio del carro che le bestie tirano */
+    if (f.weapon && !new RegExp(f.weapon, "i").test(String(weapon || ""))) continue;
     if (r.reroll && r.reroll.toHit){ out.rerollHit = r.reroll.toHit; out.from.hit = r.name; }
     if (r.reroll && r.reroll.toWound){ out.rerollWound = r.reroll.toWound; out.from.wound = r.name; }
     if (r.ap){ out.ap += r.ap; out.notes.push(r.name + ": perforazione +" + r.ap); }
@@ -238,6 +242,20 @@ export function fleeBonus(rules = []){
     if (!applies(r) || !(r.flags && r.flags.fleeBonus)) continue;
     mod += +r.flags.fleeBonus || 0;
     why.push(r.name + " " + (r.flags.fleeBonus > 0 ? "+" : "") + r.flags.fleeBonus);
+  }
+  return { mod, why: why.join(", ") };
+}
+
+/* E quanto in piu' (o in meno) si insegue: la Resolute dei Nani toglie
+   uno alla fuga e all'inseguimento, «to a minimum of 1» (Forces of
+   Fantasy p. 39). Il minimo lo mette chi tira. */
+export function pursuitBonus(rules = []){
+  let mod = 0;
+  const why = [];
+  for (const r of rules || []){
+    if (!applies(r) || !(r.flags && r.flags.pursuitBonus)) continue;
+    mod += +r.flags.pursuitBonus || 0;
+    why.push(r.name + " " + (r.flags.pursuitBonus > 0 ? "+" : "") + r.flags.pursuitBonus);
   }
   return { mod, why: why.join(", ") };
 }

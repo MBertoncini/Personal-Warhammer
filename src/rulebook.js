@@ -45,6 +45,39 @@ export function amount(s){
   return n ? { flat: +n[1] } : null;
 }
 
+/* Chi odia: quello che sta nella parentesi di «Hatred (X)». Senza
+   parentesi si odia tutti, e il Rancore Ancestrale dei Nani odia i
+   personaggi. */
+export const odiati = name => {
+  if (/^ancestral grudge/i.test(String(name))) return "enemy characters";
+  const m = /\(([^)]*)\)/.exec(String(name));
+  return m ? m[1].trim() : "all enemies";
+};
+
+/* E se `def` e' fra gli odiati. La fazione di un'unita' e' il catalogo
+   da cui viene («Orc and Goblin Tribes», «Dwarfen Mountain Holds»), e
+   la parentesi la nomina come la nomina il libro («Orcs & Goblins»,
+   «Dwarfs»): le si confronta per radice. Una parentesi che nessuna
+   radice riconosce non odia nessuno — prima odiava tutti. */
+const RADICI = [
+  [/orc|goblin/i, /orc|goblin/i], [/dwarf/i, /dwarf/i], [/\bel(f|ves)/i, /\bel(f|ves|ven)\b|elf/i],
+  [/empire/i, /empire/i], [/skaven/i, /skaven/i], [/lizard/i, /lizard/i], [/beast/i, /beast/i],
+  [/chaos/i, /chaos/i], [/bretonn/i, /bretonn/i], [/tomb|khemri/i, /tomb|khemri/i],
+];
+export function odia(f = {}, def = null){
+  if (!f || !f.hatred) return false;
+  const chi = f.hatredOf || [];
+  if (!chi.length) return true;
+  const ref = (def && def.ref) || def || {};
+  const fz = `${ref.faction || ""} ${def && def.armyName || ""}`;
+  return chi.some(x => {
+    if (/all|tutt/i.test(x)) return true;
+    if (/character|personagg/i.test(x))
+      return !!(def && (def.attached || /character/i.test(String(ref.troop || ""))));
+    return RADICI.some(([q, v]) => q.test(x) && v.test(fz));
+  });
+}
+
 /* ============================================================
    1 · QUELLO CHE IL CALCOLO SA FARE
    ============================================================ */
@@ -74,9 +107,44 @@ export const RULEBOOK = [
     what:"ogni ferita non salvata ne vale X su un modello solo, e l'eccesso non passa al vicino",
     on: (f, name) => { f.multipleWounds = amount(name); } },
 
-  { id:"obsidian", re:/^obsidian blades/i,
+  /* Tre regole di tre libri che dicono la stessa cosa con parole sue:
+     le lame di ossidiana delle Lucertole, le armi di gromril dei Nani
+     (Forces of Fantasy p. 39) e le armi stregate dei Dragon Ogre
+     (Ravening Hordes p. 115). Valgono sull'arma a una mano sola e
+     ordinaria: con due armi, o con l'arma grande, no. Le stregate sono
+     anche magiche, e quello resta fra le cose che un assalto non sente. */
+  { id:"obsidian", re:/^(obsidian blades|gromril weapons|ensorcelled weapons)/i,
     what:"l'arma a una mano perfora di 1",
     on: f => { f.handWeaponAP = Math.max(f.handWeaponAP, 1); } },
+
+  /* Gromril Armour (Forces of Fantasy p. 39): «may re-roll any roll of
+     a natural 1 made when making an Armour Save roll». La legge chi si
+     difende, in mischia e sotto il tiro. */
+  { id:"gromrilArmour", re:/^gromril armou?r/i,
+    what:"ritira gli 1 naturali dei tiri d'armatura",
+    on: f => { f.gromrilArmour = true; } },
+
+  /* Slayer, Slayer of Daemons e Slayer of Dragons (Forces of Fantasy
+     pp. 17 e 27): «a roll of 4+ is always a success, regardless of the
+     target's Toughness». Le ferite multiple contro i behemoth e i
+     demoni le due dei personaggi le hanno in piu', e restano testo. */
+  { id:"slayer", re:/^slayer\b/i,
+    what:"per ferire basta sempre il 4+, qualunque sia la Resistenza",
+    on: f => { f.slayer = 4; } },
+
+  /* Elven Reflexes (Forces of Fantasy p. 145): +1 all'Iniziativa nel
+     primo round di ogni combattimento, al modello e non alla sua
+     cavalcatura. Il primo round lo sa chi chiama (`primoRound`). */
+  { id:"elvenReflexes", re:/^elven reflexes/i,
+    what:"+1 Iniziativa nel primo round di ogni combattimento",
+    on: f => { f.elvenReflexes = true; } },
+
+  /* Stoic Defenders, sugli Hammerers (Forces of Fantasy p. 23): nel turno
+     in cui il nemico l'ha caricata, +1 Iniziativa e +1 Attacchi. Chi
+     sia stato caricato lo dice chi chiama (`caricata`). */
+  { id:"stoicDefenders", re:/^stoic defenders/i,
+    what:"+1 Iniziativa e +1 Attacchi nel turno in cui è stata caricata",
+    on: f => { f.stoicDefenders = true; } },
 
   /* Ferite d'urto e pestoni erano la stessa riga, e sono due regole
      diverse che si risolvono in due momenti opposti dell'assalto. Il
@@ -98,9 +166,22 @@ export const RULEBOOK = [
     what:"pestoni alla fine di tutto, senza tirare per colpire",
     on: (f, name) => { f.stomp = amount(name) || { flat: 1 }; } },
 
-  { id:"hatred", re:/^hatred/i,
-    what:"ritira i colpi mancati nel primo assalto",
-    on: f => { f.hatred = true; } },
+  /* «Hatred (X)» (p. 171): si ritirano i colpi mancati «against a hated
+     enemy during the first round of combat», e chi sia odiato lo dice
+     la parentesi. Prima la parentesi si buttava, e i Night Goblin con
+     «Hatred (Dwarfs)» odiavano Skaven e Lucertole; con i Nani, che
+     odiano «Orcs & Goblins», l'errore sarebbe stato in ogni partita.
+     Ancestral Grudge (Forces of Fantasy p. 12) e' un Odio anche lei:
+     «Hatred (enemy characters)». Il bersaglio lo giudica `odia`. */
+  { id:"hatred", re:/^(hatred|ancestral grudge)/i,
+    what:"ritira i colpi mancati nel primo round, contro chi odia",
+    on: (f, name) => { f.hatred = true; f.hatredOf = [...(f.hatredOf || []), odiati(name)]; } },
+
+  /* Bull-gors, sui Minotauri (Ravening Hordes p. 115): le ferite d'urto
+     perforano di 1, come le Scythed Wheels di sotto ma di un punto. */
+  { id:"bullGors", re:/^bull-?gors/i,
+    what:"le ferite d'urto perforano di 1",
+    on: f => { f.impactAP = Math.max(f.impactAP || 0, 1); } },
 
   { id:"battleStandard", re:/^battle standard/i,
     what:"+1 al risultato del combattimento, e si somma allo stendardo",
@@ -268,6 +349,26 @@ export const ELSEWHERE = [
     why:"modelli armati e corazzati in modo diverso nella stessa unità: si tirano a mucchi separati, e il conto usa l'arma e l'armatura della maggioranza" },
   { re:/^loner/i,
     why:"vincolo sui personaggi che si uniscono e sul Generale: si rispetta schierando" },
+  /* Le universali che hanno portato i tre eserciti scritti dal libro
+     (2026-10): l'arbitro gioca la reazione alla carica con tieni, tira e
+     tieni, fuggi, e schiera ogni unita' per conto suo */
+  { re:/^evasive/i,
+    why:"una volta per turno, bersagliata dal tiro, può ripiegare in ordine lontano da chi tira (p. 168): l'arbitro non lo offre" },
+  { re:/^fire (and|&) flee/i,
+    why:"reazione alla carica: tira come «tira e tieni» e poi fugge (p. 169): l'arbitro offre tenere, tirare e fuggire, non le due insieme" },
+  { re:/^feigned flight/i,
+    why:"chi fugge come reazione alla carica si raduna da solo a fine movimento (p. 168): l'arbitro lo fa fuggire e radunare con i test di sempre" },
+  { re:/^ignores cover/i,
+    why:"niente −1 o −2 per il riparo quando tira (p. 171): lo toglie l'arbitro, il pannello del tiro no" },
+  { re:/^veteran\b/i,
+    why:"se ce l'ha la maggioranza dei modelli, ritira i test di Comando falliti, non quello di rotta (p. 180): l'arbitro lo fa sulla psicologia e sul Panico" },
+  { re:/^(regimental unit|detachment)/i,
+    why:"un reggimento e i suoi distaccamenti (pp. 167, 176): l'arbitro schiera ogni unità per conto suo" },
+  { re:/^timmm-?berrr/i,
+    why:"quando il colosso cade, chi gli sta a contatto nell'arco dove cade prende D6 colpi con la sua Forza (p. 179): l'arbitro lo toglie e basta" },
+  /* Chariot Runners (p. 167): sugli Ungor e sui lupi dei Goblin */
+  { re:/^chariot runners/i,
+    why:"i carri amici guardano e passano attraverso questi schermagliatori (p. 167): l'arbitro non fa passare nessun carro attraverso le unità amiche, e la vista la blocca a tutti" },
   { re:/^counter charge/i,
     why:"è una reazione alla carica di cavalleria, carri e mostri: il pannello offre tenere, tirare e fuggire, e questa la muovete voi" },
   /* Le tre che ha portato l'Hell Pit Abomination. La terza era la piu'
@@ -307,7 +408,8 @@ export const ELSEWHERE = [
    ============================================================ */
 export const emptyFlags = () => ({
   furiousCharge:false, poisoned:false, armourBane:0, killingBlow:false, multipleWounds:null,
-  handWeaponAP:0, impact:null, impactAP:0, stomp:null, extraRank:false, hatred:false,
+  handWeaponAP:0, impact:null, impactAP:0, stomp:null, extraRank:false, hatred:false, hatredOf:[],
+  gromrilArmour:false, slayer:0, elvenReflexes:false, stoicDefenders:false,
   strikeFirst:false, strikeLast:false, stubborn:false, unbreakable:false,
   battleStandard:false, horde:false, shieldwall:false, impervious:false,
   massedInfantry:false, parry:false, pressOfBattle:false, predatory:false, skinkRiders:false,

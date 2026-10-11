@@ -1,0 +1,182 @@
+{
+  "id": "nani",
+  "name": "Nani",
+  "matches": ["Dwarfen Mountain Holds", "Dwarfs", "Dwarf"],
+  "book": { "title": "Forces of Fantasy", "list": 11, "rules": 39 },
+  "nota": "Le regole d'esercito stanno a p. 39 di Forces of Fantasy, quelle delle unita' nelle loro schede (pp. 12-31). Lette tutte sul libro: nessuna lista salvata schiera ancora i Nani, e le unita' le costruisce src/costruttori.js. I Nani non hanno maghi: le rune dei Runesmith dissolvono come un mago (Rune Lore), e gli oggetti runici non si comprano nei costruttori. Le pagine sono quelle stampate.",
+  "rules": [
+    {
+      "id": "resolute",
+      "name": "Resolute",
+      "nomi": ["Resolute"],
+      "page": 39,
+      "when": "flee",
+      "what": "−1 al tiro di fuga e a quello d'inseguimento, al minimo 1",
+      "flags": { "fleeBonus": -1, "pursuitBonus": -1 }
+    },
+    {
+      "id": "gromrilArmour",
+      "name": "Gromril Armour",
+      "nomi": ["Gromril Armour"],
+      "page": 39,
+      "when": "always",
+      "gioca": "rulebook.js",
+      "what": "ritira gli 1 naturali dei tiri d'armatura"
+    },
+    {
+      "id": "gromrilWeapons",
+      "name": "Gromril Weapons",
+      "nomi": ["Gromril Weapons"],
+      "page": 39,
+      "when": "melee",
+      "gioca": "rulebook.js",
+      "what": "l'arma a una mano sola e ordinaria perfora di 1"
+    },
+    {
+      "id": "dwarfCrafted",
+      "name": "Dwarf Crafted",
+      "nomi": ["Dwarf Crafted"],
+      "page": 39,
+      "when": "shoot",
+      "what": "niente −1 per colpire nella reazione «tira e tieni»",
+      "perche": "il −1 del «tira e tieni» il tiro lo mette a tutti, e questa eccezione non la guarda"
+    },
+    {
+      "id": "ancestralGrudge",
+      "name": "Ancestral Grudge",
+      "nomi": ["Ancestral Grudge"],
+      "page": 12,
+      "when": "melee",
+      "gioca": "rulebook.js",
+      "what": "odia i personaggi nemici (Hatred, p. 171); la meta' che passa ai Longbeards e agli Hammerers a cui si unisce l'app non la presta"
+    },
+    {
+      "id": "runeLore",
+      "name": "Rune Lore",
+      "nomi": ["Rune Lore"],
+      "page": 39,
+      "when": "magic",
+      "gioca": "arbitro.js",
+      "what": "dissolve come un mago: l'Anvil of Doom di Livello 3, il Runelord di Livello 2, il Runesmith di Livello 1"
+    },
+    {
+      "id": "slayer",
+      "name": "Slayer",
+      "nomi": ["Slayer", "Slayer of Daemons", "Slayer of Dragons", "Slayer Of Daemons", "Slayer Of Dragons"],
+      "page": 27,
+      "when": "melee",
+      "gioca": "rulebook.js",
+      "what": "per ferire basta sempre il 4+; le ferite multiple dei due personaggi contro i behemoth e i demoni restano testo"
+    },
+    {
+      "id": "deathblow",
+      "name": "Deathblow",
+      "nomi": ["Deathblow"],
+      "page": 39,
+      "when": "melee",
+      "what": "quando un nemico lo porta a zero Ferite in combattimento, l'unita' che l'ha colpito prende un colpo a Forza 3 perforazione 1",
+      "perche": "e' un colpo che parte da un modello appena caduto: l'assalto non lo tira"
+    },
+    {
+      "id": "fightMe",
+      "name": "\"Fight Me!\"",
+      "nomi": ["\"Fight Me!\"", "“Fight Me!”", "Fight Me!"],
+      "page": 27,
+      "when": "melee",
+      "what": "il Giant Slayer lancia e raccoglie sfide come un personaggio",
+      "perche": "le sfide dei campioni l'arbitro non le gioca (limite campioni)"
+    },
+    {
+      "id": "stoicDefenders",
+      "name": "Stoic Defenders",
+      "nomi": ["Stoic Defenders"],
+      "page": 23,
+      "when": "melee",
+      "gioca": "rulebook.js",
+      "what": "+1 Iniziativa e +1 Attacchi nel turno in cui e' stata caricata"
+    },
+    {
+      "id": "royalGuard",
+      "name": "Royal Guard",
+      "nomi": ["Royal Guard"],
+      "page": 23,
+      "when": "list",
+      "what": "un'unita' di Hammerers per ogni King o Thane; con uno di loro dentro, i modelli lanciano e raccolgono sfide come personaggi",
+      "perche": "il vincolo di lista lo controlla la ricerca; le sfide dei campioni l'arbitro non le gioca"
+    },
+    {
+      "id": "venerable",
+      "name": "Venerable",
+      "nomi": ["Venerable"],
+      "page": 20,
+      "when": "psych",
+      "what": "le unita' amiche entro 6 pollici ritirano i test di Panico falliti",
+      "perche": "e' una misura di distanza fra due unita' amiche al momento del Panico: l'arbitro non la guarda"
+    },
+    {
+      "id": "runesOfProtection",
+      "name": "Runes of Protection",
+      "nomi": ["Runes of Protection", "Runes Of Protection"],
+      "page": 24,
+      "when": "always",
+      "what": "salvezza speciale 6+ contro le ferite degli attacchi non magici (l'app la conta anche contro quelli magici, che le liste di casa portano solo con qualche incantesimo e con le armi di warpstone)",
+      "set": { "ward": 6 }
+    },
+    {
+      "id": "runesOfWarding",
+      "name": "Runes of Warding",
+      "nomi": ["Runes of Warding", "Runes Of Warding"],
+      "page": 25,
+      "when": "always",
+      "what": "salvezza speciale 5+ contro le ferite degli attacchi infuocati",
+      "perche": "vale solo contro gli attacchi infuocati, e la salvezza dell'assalto non distingue da dove viene il colpo"
+    },
+    {
+      "id": "forgefire",
+      "name": "Forgefire",
+      "nomi": ["Forgefire"],
+      "page": 16,
+      "when": "melee",
+      "what": "l'unita' a cui il Runesmith si unisce prende Armour Bane (2) e gli attacchi infuocati",
+      "perche": "e' una regola che il capo presta al reggimento: l'assalto la guarda solo sul capo"
+    },
+    {
+      "id": "artilleryMaster",
+      "name": "Artillery Master",
+      "nomi": ["Artillery Master"],
+      "page": 18,
+      "when": "shoot",
+      "what": "una volta per turno una macchina o un'unita' di Quarrellers o Thunderers nel suo raggio ritira gli 1 per colpire o un dado d'artiglieria",
+      "perche": "l'arbitro non la offre"
+    },
+    {
+      "id": "entrenchment",
+      "name": "Entrenchment",
+      "nomi": ["Entrenchment"],
+      "page": 18,
+      "when": "list",
+      "what": "una macchina da guerra trincerata allo schieramento conta in riparo parziale e dietro un ostacolo basso",
+      "perche": "l'arbitro non la trincera"
+    },
+    {
+      "id": "diveBomb",
+      "name": "Dive Bomb",
+      "nomi": ["Dive Bomb"],
+      "page": 28,
+      "when": "compulsory",
+      "what": "una volta per partita i Gyrocopter che volano sopra un'unita' nemica non in combattimento le fanno D6 colpi a Forza 3 perforazione 1 ciascuno, e ogni 1 e' una bomba che gli scoppia addosso",
+      "perche": "l'arbitro non fa volare sopra le unita' (limite volo)"
+    },
+    {
+      "id": "standBackChief",
+      "name": "\"Stand Back Chief\"",
+      "nomi": ["\"Stand Back Chief\"", "“Stand Back Chief”", "Stand Back Chief"],
+      "page": 18,
+      "when": "shoot",
+      "what": "entro 3 pollici da una macchina da guerra amica non si puo' bersagliare",
+      "perche": "l'arbitro non la guarda"
+    }
+  ],
+  "items": [],
+  "lores": []
+}
