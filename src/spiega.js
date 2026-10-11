@@ -56,6 +56,7 @@ export const TIPI = {
   movimento:    { i: "⤳", t: "Movimento a caso" },
   terreno:      { i: "▲", t: "Terreno" },
   pericoloso:   { i: "▲", t: "Terreno pericoloso" },
+  scompiglio:   { i: "⇄", t: "Scompaginata" },
   tiro:         { i: "➶", t: "Tiro" },
   mischia:      { i: "⚔", t: "Colpi in mischia" },
   risultato:    { i: "⚖", t: "Risultato del combattimento" },

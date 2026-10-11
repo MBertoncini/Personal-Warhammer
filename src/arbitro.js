@@ -35,7 +35,7 @@
  */
 
 import { MM, inch } from './util.js';
-import { boxCorners, polyDistance, polysOverlap, pointInRect, distPointToBox, boxRadius, toWorld } from './geom.js';
+import { boxCorners, polyDistance, polysOverlap, pointInRect, distPointToBox, boxRadius, toWorld, toLocal } from './geom.js';
 import * as FM from './formation.js';
 import * as MV from './movement.js';
 import * as CH from './charge.js';
@@ -92,7 +92,7 @@ export const LIMITI = [
   { id:"bombardata", what:"un'arma a Bombardata di cui i libri in casa non dicono la sagoma non spara", page:224,
     why:"quale sagoma usa sta nelle Note del profilo, e l'export di New Recruit le butta via: fra la sagoma da tre pollici e quella da cinque ce ne sono due di diametro, e sceglierne una a caso vuol dire sbagliare in silenzio" },
   { id:"macchina", what:"una macchina da guerra non marcia, non carica e non insegue, e si gira gratis", page:197,
-    why:"«Weapon of War» (p. 197) le toglie la marcia, la dichiarazione di carica e l'inseguimento, e le lascia il giro libero in qualunque momento del suo turno; quello che l'arbitro non le dà è il giro che NON conta come essersi mossa, e il profilo diviso macchina/equipaggio (p. 97), che l'app tiene in una riga sola" },
+    why:"«Weapon of War» (p. 197) le toglie la marcia, la dichiarazione di carica e l'inseguimento, e le lascia il giro libero in qualunque momento del suo turno, che non conta come essersi mossa: l'arbitro la gira gratis verso il bersaglio quando spara, ma nelle mosse il giro va con l'avanzata, e il profilo diviso macchina/equipaggio (p. 97) l'app lo tiene in una riga sola — in mischia la macchina si difende con la Resistenza della macchina e non con quella dell'equipaggio" },
   { id:"fulmine",   what:"la linea del Warp Lightning Cannon si punta su un nemico che si vede, e l'Energy Overload la rigira senza ritirarne la lunghezza", page:19,
     why:"il libro dice «draw a straight line, 8D6\" in length, from the model's base edge» e non dice né che serva la linea di vista né che il guasto ritiri la lunghezza (Legends: Skaven, p. 19): l'arbitro mira a un nemico che vede, e sul guasto tiene la linea già tirata e le cambia direzione" },
   { id:"indiretto", what:"la Bombardata si spara sempre a vista", page:225,
@@ -764,7 +764,7 @@ function terrenoDelPosto(S, box, u = null){
    scrive (`passo`, e il limite `fuori`). */
 const COLONNE_ZONA = ["sinistra", "centro-sinistra", "centro", "centro-destra", "destra"];
 
-function postiNellaZona(S, u, { varchi = false } = {}){
+function postiNellaZona(S, u, { varchi = false, largo = false } = {}){
   const z = zonaDi(S, u.army);
   const lay = layoutOf(u, S.units);
   const mie = inCampo(S, u.army);
@@ -785,7 +785,10 @@ function postiNellaZona(S, u, { varchi = false } = {}){
       : z.y + z.h - lay.h / 2 - MM - f * passo;
     const box = { x, y, w: lay.w, h: lay.h, rot: u.rot || 0 };
     const poly = boxCorners(box);
-    const libero = !mie.some(o => polyDistance(poly, cornersOf(o, S.units)) < MM / 2) &&
+    /* `largo`: i varchi offerti a chi un posto ce l'avrebbe gia', ma
+       dietro un amico, lasciano un pollice e mezzo ai vicini — quanto
+       basta perche' un capo entri nel reggimento accanto (`postiConVarchi`) */
+    const libero = !mie.some(o => polyDistance(poly, cornersOf(o, S.units)) < (largo ? 1.5 * MM : MM / 2)) &&
                    x - lay.w / 2 >= z.x - 0.01 && x + lay.w / 2 <= z.x + z.w + 0.01 &&
                    y - lay.h / 2 >= z.y - 0.01 && y + lay.h / 2 <= z.y + z.h + 0.01;
     if (!libero) return null;
@@ -794,12 +797,38 @@ function postiNellaZona(S, u, { varchi = false } = {}){
     if (ter.sotto.some(t => chiusoPer(u, t))) return null;
     return { y, ter };
   };
-  const offerta = (x, f, p, nome, perche) => ({
-    id:"schiera", uid: u.uid, x, y: p.y, rot: u.rot || 0,
-    dove: nome + (f ? `, ${f + 1}ª fila` : ""),
-    murato: !!p.ter.muro,
-    why: `${perche}${f ? ", dietro" : ", in prima fila"}` + (p.ter.testo ? ` — ${p.ter.testo}` : ""),
-  });
+  /* Quello che serve a scegliere un posto guardandolo accanto agli altri,
+     in campi e non nella frase: la fila, se ci si posa dentro un terreno
+     che rallenta o scompiglia, se si sta su una collina, e chi degli amici
+     sta davanti nella stessa corsia — chi ci si mette dietro, al primo
+     passo gli finisce addosso, e se tira non vede oltre. Prima l'euristica
+     guardava solo `murato`, e nella partita del 10 ottobre il carro dei
+     cinghiali e' partito in seconda fila dietro i goblin, e Boar Boyz e
+     troll dentro le rovine. */
+  const tiro = CB.rangedWeapons(u).length > 0 && !PREP.isCharacter(u);
+  const davanti = (x, y) => {
+    const box = { x, y, w: lay.w, h: lay.h, rot: u.rot || 0 };
+    const chi = mie.filter(o => !isJoined(o)).map(o => {
+      const [lx, ly] = toLocal([o.x, o.y], box);
+      const bo = boxOf(o, S.units);
+      const corsia = Math.abs(lx) < (lay.w + bo.w) / 2 * 0.8;
+      return { o, corsia, ly, d: polyDistance(boxCorners(box), cornersOf(o, S.units)) };
+    }).filter(z => z.corsia && z.ly < 0 && z.d <= ORIZZONTE * MM).sort((a, b) => a.d - b.d)[0];
+    return chi ? chi.o.name : "";
+  };
+  const offerta = (x, f, p, nome, perche) => {
+    const dietro = davanti(x, p.y);
+    return {
+      id:"schiera", uid: u.uid, x, y: p.y, rot: u.rot || 0,
+      dove: nome + (f ? `, ${f + 1}ª fila` : ""),
+      murato: !!p.ter.muro, fila: f,
+      lento: lentiPer(u, p.ter.sotto).some(t => t.cat && (t.cat.slow || t.cat.danger || t.cat.disorder)),
+      collina: p.ter.sotto.some(t => t.kind === "hill"),
+      dietro, tiro, macchina: macchina(u), sciolto: sciolta(u),
+      why: `${perche}${f ? ", dietro" : ", in prima fila"}` + (dietro ? ` a ${dietro}` : "") +
+           (p.ter.testo ? ` — ${p.ter.testo}` : ""),
+    };
+  };
   for (let f = 0; f < (varchi ? file : Math.min(file, 3)); f++){
     if (!varchi){
       /* Le cinque colonne stanno fra i due posti estremi che l'unita'
@@ -877,8 +906,47 @@ function perchéFuori(S, u){
   return `è larga ${r1(inch(lay.w))}″, e fra le unità già schierate, i bordi e il terreno impassabile non resta un varco così`;
 }
 
+/* Le colonne piene in prima fila lasciano solo posti dietro qualcuno: si
+   offrono anche i varchi, che spesso in prima fila ci sono — un carro
+   largo due pollici sta fra due reggimenti. Prima il carro dei cinghiali,
+   sesto della lista, finiva sempre in seconda fila. */
+function postiConVarchi(S, u){
+  const out = postiNellaZona(S, u);
+  if (!out.length || !out.every(x => x.dietro || x.murato || x.lento)) return out;
+  const vicino = (a, b) => Math.abs(a.x - b.x) < 1 && Math.abs(a.y - b.y) < 1;
+  return [...out, ...postiNellaZona(S, u, { varchi: true, largo: true }).filter(v => !out.some(o => vicino(o, v)))];
+}
+
+/* La colonna di marcia allo schieramento (p. 101): tre troll che la lista
+   scrive larghi uno stanno in colonna, e in colonna non si carica. Si
+   offre prima il fronte piu' stretto in ordine di combattimento, e la
+   colonna resta in fondo, marcata: e' una scelta, ma deve dire che cosa
+   costa. */
+function postiFuoriColonna(S, u){
+  if (!cambiaFronte(u) || !inColonna(S, u)) return [];
+  const lay0 = layoutOf(u, S.units), n = lay0.slots.length, f0 = lay0.front;
+  let f = f0 + 1;
+  while (f < n && colonna(n, f)) f++;
+  const prima = u.frontage;
+  try {
+    u.frontage = f;
+    let posti = postiConVarchi(S, u);
+    if (!posti.length) posti = postiNellaZona(S, u, { varchi: true });
+    return posti.map(p => ({ ...p, fronte: f, dove: `${p.dove}, ${f} di fronte`,
+      why: `con ${f} di fronte invece di ${f0}: come la scrive la lista sarebbe in colonna di marcia, che non carica (p. 101); ${p.why}` }));
+  } finally {
+    u.frontage = prima;
+  }
+}
+
 export function postiPer(S, u){
-  let out = postiNellaZona(S, u);
+  const fuori = postiFuoriColonna(S, u);
+  if (fuori.length){
+    const tali = postiNellaZona(S, u).map(p => ({ ...p, colonna: true,
+      why: `${p.why} — in colonna di marcia, come la scrive la lista: non carica e non conta i ranghi (p. 101)` }));
+    return [...fuori, ...tali].sort((a, b) => (a.murato ? 1 : 0) - (b.murato ? 1 : 0));
+  }
+  let out = postiConVarchi(S, u);
   if (!out.length) out = postiNellaZona(S, u, { varchi: true });
   if (!out.length) out = postiAltroFronte(S, u);
   /* i posti murati in fondo all'elenco, senza toglierli: al tavolo un
@@ -898,6 +966,32 @@ function entraSenzaUrtare(S, c, h){
   c.join = prima;
   return !ingombro(S, h, box, { unPollice: false, ignora: [c.uid] });
 }
+/* Allo schieramento il reggimento si sposta di lato per fare posto al
+   capo che ci entra, finche' resta nella zona: il posto lo si sceglie, e
+   il capo ci sta dentro. Da quando i posti si cercano anche nei varchi
+   della prima fila, il vicino stava a mezzo pollice, il reggimento col
+   capo si allargava e lo toccava, e il Bigboss restava fuori dai Boar
+   Boyz. */
+function spostaPerIlCapo(S, c, h){
+  const prima = c.join;
+  c.join = { host: h.uid };
+  try {
+    const box = boxOf(h, S.units), z = zonaDi(S, h.army);
+    const a = (h.rot || 0) * Math.PI / 180, rx = Math.cos(a), ry = Math.sin(a);
+    for (let k = 1; k <= 16; k++)
+      for (const segno of [1, -1]){
+        const off = segno * k * MM / 4;
+        const b = { ...box, x: box.x + rx * off, y: box.y + ry * off };
+        if (!boxCorners(b).every(p => pointInRect(p, z, 0.01))) continue;
+        if (ingombro(S, h, b, { unPollice: false, ignora: [c.uid] })) continue;
+        return [b.x, b.y];
+      }
+    return null;
+  } finally {
+    c.join = prima;
+  }
+}
+
 export function opzioniUnione(S, c, { pollici = null } = {}){
   if (!puoUnirsi(S, c)) return [];
   /* allo schieramento conta quello che la lista ha deciso: da solo non
@@ -914,13 +1008,15 @@ export function opzioniUnione(S, c, { pollici = null } = {}){
       const d = distanza(S, c, h);
       if (d > pollici + 1e-6) continue;
     }
-    if (!entraSenzaUrtare(S, c, h)) continue;
+    let sposta = null;
+    if (!entraSenzaUrtare(S, c, h) && (pollici != null || !(sposta = spostaPerIlCapo(S, c, h)))) continue;
     const dentro = capiDi(S, h);
     const lista = voluto && voluto.uid === h.uid;
     out.push({ id: pollici != null ? "unisciti" : "unisci", uid: c.uid, host: h.uid, nome: c.name, contro: h.name,
-               ...(lista ? { lista: true } : {}),
+               ...(lista ? { lista: true } : {}), ...(sposta ? { sposta } : {}),
                why: (lista ? "come vuole la lista: " : "") + `entra in ${h.name} (${alive(h)} modelli${dentro.length ? ", con " + dentro.map(x => x.name).join(" e ") : ""}): ` +
                     `ne porta la Forza d'Unità a ${usConCapi(S, h) + usOf(c)}, e con lui il reggimento usa il Comando più alto (p. 97)` +
+                    (sposta ? `; ${h.name} si sposta di lato di ${r1(inch(Math.hypot(sposta[0] - h.x, sposta[1] - h.y)))}″ per fargli posto` : "") +
                     (pollici != null ? `; da lì il reggimento non si muove più in questo turno` : ""),
                page: 207 });
   }
@@ -1235,6 +1331,9 @@ function opzioniCarica(S){
     /* chi ha gia' fatto qualcosa in questo turno non dichiara cariche:
        ci e' andata male una volta e basta */
     if (u.fled || u.charged || u.moved || ingaggiata(S, u)) continue;
+    /* chi si e' radunato in questo turno non carica (p. 117), e la colonna
+       di marcia nemmeno (p. 101) */
+    if (u.radunata || inColonna(S, u)) continue;
     /* una macchina da guerra non dichiara cariche (p. 197) */
     if (macchina(u)){ limite(S, "macchina"); continue; }
     /* e chi si muove di quanto tira non dichiara: carica solo se il suo
@@ -1280,7 +1379,7 @@ function opzioniCarica(S){
       }
       const pt = PS.psychOf(t, { joined: capiDi(S, t) });
       if (pu.causesTerror && !pt.immuneTerror) nota += `; fa Terrore: ${t.name} tira, e se fallisce deve fuggire (p. 179)`;
-      const sc = scontroAtteso(S, u, t, d.side);
+      const sc = scontroAtteso(S, u, t, d.side, "fronte", { inches: +d.dist || 0 });
       out.push({ id:"carica", uid: u.uid, target: t.uid, nome: u.name, contro: t.name,
                  dist: +d.dist, need, lato: d.side, esito: sc.valore, rotta: Math.round(sc.rottaLui * 100) / 100,
                  deve: !!obbligo, ...(obbligo ? { obbligo } : {}),
@@ -1456,12 +1555,19 @@ export const PRESO_A_DADI_PARI = (1 + 146 / 1296) / 2;
 
 const scontri = new WeakMap();
 const firmaScontro = (S, u) => `${u.uid}:${alive(u)}:${u.wounds || 0}:${capiDi(S, u).map(c => c.uid + "/" + alive(c)).join(",")}`;
-export function scontroAtteso(S, att, def, lato = "fronte", faccia = "fronte"){
+/* `carica`: lo scontro di una carica che arriva — { inches }, i pollici
+   che chi carica corre. Senza, e' il round di una mischia gia' in corso.
+   Prima la carica si prevedeva come una mischia in corso: niente urto,
+   niente Furious Charge, niente Choppas, e con dentro la Press of Battle
+   che nel turno della carica non vale (lo dice il testo della regola). Gli
+   Slayers sui goblin valevano il doppio di quello che fanno davvero
+   caricando, e il carro dei cinghiali non valeva niente. */
+export function scontroAtteso(S, att, def, lato = "fronte", faccia = "fronte", carica = null){
   let cache = scontri.get(S);
   if (!cache){ cache = new Map(); scontri.set(S, cache); }
-  const k = `${firmaScontro(S, att)}|${firmaScontro(S, def)}|${lato}|${faccia}`;
+  const k = `${firmaScontro(S, att)}|${firmaScontro(S, def)}|${lato}|${faccia}|${carica ? r1(carica.inches || 0) : "-"}`;
   if (cache.has(k)) return cache.get(k);
-  const r = scontroDiGruppo(S, [{ u: att, lato, faccia }], def);
+  const r = scontroDiGruppo(S, [{ u: att, lato, faccia, carica }], def);
   cache.set(k, r);
   return r;
 }
@@ -1480,10 +1586,17 @@ export function scontroDiGruppo(S, attaccanti, def){
   /* Il bersaglio mena con la fila della faccia da cui e' preso: di
      fianco la colonna, dietro l'ultimo rango, e senza appoggio (p. 145).
      Chi carica mena con il suo fronte, salvo dire altro (`faccia`). */
-  const cd = { ...schieraDi(S, def), face: lista[0].lato || "fronte" };
+  const caricata = lista.some(a => a.carica);
+  const cd = { ...schieraDi(S, def, caricata ? { subisce: true } : {}), face: lista[0].lato || "fronte" };
+  /* chi la prende di fianco o alle spalle con Forza d'Unita' cinque o piu'
+     la scompagina, e i ranghi non li conta (p. 101) */
+  const diLato = l => l === "flank" || l === "rear" || !!ML.arcToFlank(l);
+  if (lista.some(a => diLato(a.lato) && !a.u.loose && usConCapi(S, a.u) >= 5)) cd.disrupted = true;
   const fer = (c, u) => Math.max(1, alive(u) * (c.w || 1) - (u.wounds || 0));
   const wd = fer(cd, def);
-  const schiere = lista.map(a => ({ ...a, c: { ...schieraDi(S, a.u), face: a.faccia || "fronte" } }));
+  const schiere = lista.map(a => ({ ...a, c: { ...schieraDi(S, a.u, a.carica
+    ? { ipotesi: { inches: +a.carica.inches || 0, arc: (a.lato === "flank" ? "fianco" : a.lato === "rear" ? "retro" : a.lato) || "fronte" } }
+    : {}), face: a.faccia || "fronte" } }));
   const lorde = schiere.map(a => CB.meleeForecast(a.c, cd).wounds);
   const somma = lorde.reduce((s, v) => s + v, 0);
   const date = Math.min(wd, somma), scala = somma > 0 ? date / somma : 0;
@@ -1550,8 +1663,8 @@ export function valuta(S, army, pesi = PESI){
       /* le facce vere, che nella mischia gia' ingaggiata il tavolo sa:
          un reggimento preso di fianco mena con la colonna (p. 145) */
       if (e) v += pesi.mischia * scontroAtteso(S, u, e,
-        FM.faceTowards(boxOf(e, S.units), cornersOf(u, S.units)),
-        FM.faceTowards(boxOf(u, S.units), cornersOf(e, S.units))).valore / Math.max(1, miei.length);
+        facciaToccata(S, e, u) || FM.faceTowards(boxOf(e, S.units), cornersOf(u, S.units)),
+        facciaToccata(S, u, e) || FM.faceTowards(boxOf(u, S.units), cornersOf(e, S.units))).valore / Math.max(1, miei.length);
     }
   }
   const prossimo = S.army === army ? lui : army;
@@ -1564,7 +1677,7 @@ export function valuta(S, army, pesi = PESI){
       let peggio = 0;
       for (const c of m.cariche.slice(0, 3)){
         const e = byUid(S, c.uid);
-        if (e) peggio = Math.max(peggio, c.chance * Math.max(0, scontroAtteso(S, e, t, c.lato).valore));
+        if (e) peggio = Math.max(peggio, c.chance * Math.max(0, scontroAtteso(S, e, t, c.lato, "fronte", { inches: +c.dist || 0 }).valore));
       }
       tot += peggio;
     }
@@ -1631,10 +1744,14 @@ function guardia(S, u, box, nemici, t, tb, move){
   for (const c of m.cariche.slice(0, 3)){
     const e = byUid(S, c.uid);
     if (!e) continue;
-    const v = c.chance * Math.max(0, scontroAtteso(S, e, u, c.lato).valore);
+    const v = c.chance * Math.max(0, scontroAtteso(S, e, u, c.lato, "fronte", { inches: +c.dist || 0 }).valore);
     if (v > danno){ danno = v; peggio = { ...c, e }; }
   }
-  const portata = MN.portataDa(box, move, tb, { swift: MV.swiftOf(u), fly: vola(u), pieces: S.terrain });
+  /* la mia carica del turno dopo, per chi la puo' dichiarare: la Grudge
+     Thrower si sentiva dire «lei carica Orc Boar Boy Mobs il 75%», e una
+     macchina da guerra non carica (p. 197) */
+  const carica = !macchina(u) && !vagante(u) && !bandiera(u, "noCharge") && !inColonna(S, u);
+  const portata = carica ? MN.portataDa(box, move, tb, { swift: MV.swiftOf(u), fly: vola(u), pieces: S.terrain }) : 0;
   const rischio = Math.round(m.p * 100) / 100;
   const testo = !m.cariche.length ? (portata > 0 ? `; da lì nessuno la carica, e lei carica ${t.name} il ${pc(portata)}` : "")
     : `; da lì ${m.cariche.length === 1 ? m.cariche[0].name + " la carica" : "la caricano"} il ${pc(m.p)}` +
@@ -1650,7 +1767,8 @@ function guardia(S, u, box, nemici, t, tb, move){
 function stradaVera(S, u, meta, { marcia = false, fino = null } = {}){
   const { move: pieno } = movimento(S, u);
   if (!pieno) return null;
-  const quantiDi = m => fino != null ? Math.min(fino, marcia ? m * 2 : m) : marcia ? m * 2 : m;
+  const volte = marcia ? perMarcia(S, u) : 1;
+  const quantiDi = m => fino != null ? Math.min(fino, m * volte) : m * volte;
   const { pr, p, quanti, move } = pianoConTerreno(S, u, meta, pieno, { marcia, quanti: quantiDi });
   return { pr, quanti, move, pollici: p.pollici, bloccata: p.bloccata, giro: p.giro,
            stop: p.stop, muro: p.stop && p.stop.terreno ? p.stop.terreno : null,
@@ -1751,6 +1869,32 @@ function opzioniAggiramento(S, u, t, muro, drittoP){
   return out;
 }
 
+/* VERSO CHI SI MUOVE (p. 122). Prima sempre verso il nemico piu' vicino,
+   anche quando era gia' in mischia con i miei e la strada la chiudevano
+   gli amici: i goblin della partita del 10 ottobre sono rimasti tre
+   turni dietro gli Orc Mobs «verso gli Slayers», facendo 0,3″ a turno e
+   impedendo agli orchi di seguire. E la Grudge Thrower andava addosso a
+   chi le stava gia' dentro la gittata minima, e non sparava piu'.
+   Adesso le mosse vanno verso due bersagli: quello che conviene — il piu'
+   vicino che non fugge e non e' gia' in mischia con i miei; per chi tira
+   a bombardata, il piu' vicino oltre la gittata minima — e il piu' vicino,
+   se e' un altro. Chi sceglie li ha davanti tutti e due, e l'euristica
+   prende il primo. Una macchina che non ha nessuno oltre la gittata
+   minima non avanza: le resta girarsi e stare ferma. */
+function gittataMinima(u){
+  const arma = CB.rangedWeapons(u)[0];
+  return arma && SH.bombardOf(arma) ? (SH.rangeBand(arma).min || 0) : 0;
+}
+function bersagliDellaMossa(S, u, t0){
+  const miei = inCampo(S, u.army);
+  const conIMiei = e => ingaggiata(S, e) && aContatto(S, e, miei).length > 0;
+  const minima = gittataMinima(u);
+  const liberi = nemiciDi(S, u).filter(e => !e.fled && !conIMiei(e) && (!minima || distanza(S, u, e) > minima));
+  const primo = piuVicino(S, u, liberi);
+  if (minima) return primo ? [primo] : [];
+  return !primo || primo === t0 ? [t0] : [primo, t0];
+}
+
 /* ---- mosse (p. 122) ---- */
 function opzioniMossa(S){
   const out = [];
@@ -1762,81 +1906,91 @@ function opzioniMossa(S){
     if (vagante(u)){ out.push(...opzioniVaga(S, u, move)); continue; }
     /* un personaggio da solo puo' invece unirsi a chi raggiunge */
     if (puoUnirsi(S, u)) out.push(...opzioniUnione(S, u, { pollici: move }));
-    const t = piuVicino(S, u);
-    if (!t) continue;
-    const d = distanza(S, u, t);
+    const t0 = piuVicino(S, u);
+    if (!t0) continue;
+    const d0 = distanza(S, u, t0);
     /* a un pollice dal nemico piu' vicino non si avanza verso di lui:
        il pollice (p. 118) ferma il pezzo prima di partire */
-    if (d <= 1.05){
+    if (d0 <= 1.05){
       /* girarsi o riordinarsi sul posto invece si puo' */
-      out.push(...opzioniManovra(S, u, t, move).filter(x => x.id !== "lato"));
-      out.push({ id:"ferma", uid: u.uid, nome: u.name, dist: d, why: `resta dov'è: ${t.name} è a ${d}″`, page: 122 });
+      out.push(...opzioniManovra(S, u, t0, move).filter(x => x.id !== "lato"));
+      out.push({ id:"ferma", uid: u.uid, nome: u.name, dist: d0, why: `resta dov'è: ${t0.name} è a ${d0}″`, page: 122 });
       continue;
     }
-    /* la ruota si paga (p. 124), e la dice l'opzione: un reggimento
-       che deve girarsi di 45° per guardare il nemico non avanza affatto */
-    const rotT = versoDi(t.x - u.x, t.y - u.y);
-    const pa = pianoRuota(S, u, rotT, move), pm = pianoRuota(S, u, rotT, move * 2, { marcia: true });
-    /* la strada dritta, provata: quando un pezzo di terreno la chiude,
-       il numero promesso e quello vero sono due numeri diversi, ed e'
-       quello vero che va scritto (vedi il blocco sull'aggiramento) */
-    const va = stradaVera(S, u, [t.x, t.y], { marcia: false });
-    const vm = stradaVera(S, u, [t.x, t.y], { marcia: true });
-    /* chi mi puo' caricare dove arrivo, e quanto mi costerebbe; e se da
-       li' il turno dopo carico io (vedi LE MINACCE) */
-    const nemici = caricatori(S, altro(u.army));
-    const tb = boxOf(t, S.units), qui = boxOf(u, S.units);
-    const g = v => v ? guardia(S, u, { ...qui, x: v.x, y: v.y, rot: v.rot }, nemici, t, tb, move) : guardia(S, u, qui, nemici, t, tb, move);
-    const ga = g(va), gm = g(vm), gf = g(null);
-    /* con un trattino e non con un «ma»: la marcia porta gia' il suo
-       «ma» per il test di Comando, e due «ma» di fila non si leggono */
-    const muroTesto = v => v && v.muro && v.pollici < v.pr.resta - 0.05
-      ? ` — però ${v.muro.label} chiude la strada: di pollici ne fa ${r1(v.pollici)} e si ferma lì (p. 270)` : "";
-    /* Un'avanzata che non sposta il pezzo di un pollice e non lo gira
-       di un grado non e' una mossa: contava come movimento (niente
-       tiro, e da marcia niente tiro per tutto il turno) e nella palude
-       costava il test di terreno pericoloso. I Boar Boyz dell'ultima
-       partita l'hanno «fatta» tre turni di fila, perdendo un modello a
-       turno per stare fermi. */
-    const fermoDavvero = v => !!v && v.pollici < 0.05 && Math.abs(v.giro || 0) < 0.5;
-    if (!fermoDavvero(va)) out.push({ id:"avanza", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
-               dist: d, pollici: r1(va ? va.pollici : pa.resta), muro: !!(va && va.muro), ...ga.campi,
-               why: `${t.name} è a ${d}″: ${testoRuota(pa, move)}` + (mv.why ? ` (${mv.why})` : "") +
-                    muroTesto(va) + ga.testo,
-               page: va && va.muro ? 270 : pa.costo ? 124 : 122 });
-    /* ACCOSTARSI: il gioco delle distanze. Se dove l'avanzata intera
-       arriva il nemico carica facile, si offre il punto piu' avanti sul
-       percorso — a un quarto, a meta', a tre quarti — dove il rischio
-       scende davvero (almeno 15 punti). E' un gesto che il tavolo ha e
-       l'elenco non aveva: fermarsi prima. */
-    if (va && ga.campi.rischio >= 0.2 && va.pollici > 1){
-      let meglio = null;
-      for (const f of [0.75, 0.5, 0.25]){
-        const fino = r1(va.pollici * f);
-        const v = stradaVera(S, u, [t.x, t.y], { marcia: false, fino });
-        if (!v) continue;
-        const gv = g(v);
-        if (gv.campi.rischio <= ga.campi.rischio - 0.15){ meglio = { fino: r1(v.pollici), gv }; break; }
+    const bloccate = new Set();
+    for (const [k, t] of bersagliDellaMossa(S, u, t0).entries()){
+      const d = distanza(S, u, t);
+      /* la ruota si paga (p. 124), e la dice l'opzione: un reggimento
+         che deve girarsi di 45° per guardare il nemico non avanza affatto */
+      const rotT = versoDi(t.x - u.x, t.y - u.y);
+      const volte = perMarcia(S, u);
+      const pa = pianoRuota(S, u, rotT, move), pm = pianoRuota(S, u, rotT, move * volte, { marcia: true });
+      /* la strada dritta, provata: quando un pezzo di terreno la chiude,
+         il numero promesso e quello vero sono due numeri diversi, ed e'
+         quello vero che va scritto (vedi il blocco sull'aggiramento) */
+      const va = stradaVera(S, u, [t.x, t.y], { marcia: false });
+      const vm = stradaVera(S, u, [t.x, t.y], { marcia: true });
+      if (va && va.bloccata) bloccate.add(t.uid);
+      /* chi mi puo' caricare dove arrivo, e quanto mi costerebbe; e se da
+         li' il turno dopo carico io (vedi LE MINACCE) */
+      const nemici = caricatori(S, altro(u.army));
+      const tb = boxOf(t, S.units), qui = boxOf(u, S.units);
+      const g = v => v ? guardia(S, u, { ...qui, x: v.x, y: v.y, rot: v.rot }, nemici, t, tb, move) : guardia(S, u, qui, nemici, t, tb, move);
+      const ga = g(va), gm = g(vm);
+      /* con un trattino e non con un «ma»: la marcia porta gia' il suo
+         «ma» per il test di Comando, e due «ma» di fila non si leggono */
+      const muroTesto = v => v && v.muro && v.pollici < v.pr.resta - 0.05
+        ? ` — però ${v.muro.label} chiude la strada: di pollici ne fa ${r1(v.pollici)} e si ferma lì (p. 270)` : "";
+      /* Un'avanzata che non sposta il pezzo di un pollice e non lo gira
+         di un grado non e' una mossa: contava come movimento (niente
+         tiro, e da marcia niente tiro per tutto il turno) e nella palude
+         costava il test di terreno pericoloso. I Boar Boyz dell'ultima
+         partita l'hanno «fatta» tre turni di fila, perdendo un modello a
+         turno per stare fermi. */
+      const fermoDavvero = v => !!v && v.pollici < 0.05 && Math.abs(v.giro || 0) < 0.5;
+      if (!fermoDavvero(va)) out.push({ id:"avanza", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
+                 dist: d, pollici: r1(va ? va.pollici : pa.resta), muro: !!(va && va.muro), ...ga.campi,
+                 why: `${t.name} è a ${d}″: ${testoRuota(pa, move)}` + (mv.why ? ` (${mv.why})` : "") +
+                      muroTesto(va) + ga.testo,
+                 page: va && va.muro ? 270 : pa.costo ? 124 : 122 });
+      /* ACCOSTARSI: il gioco delle distanze. Se dove l'avanzata intera
+         arriva il nemico carica facile, si offre il punto piu' avanti sul
+         percorso — a un quarto, a meta', a tre quarti — dove il rischio
+         scende davvero (almeno 15 punti). E' un gesto che il tavolo ha e
+         l'elenco non aveva: fermarsi prima. */
+      if (va && ga.campi.rischio >= 0.2 && va.pollici > 1){
+        let meglio = null;
+        for (const f of [0.75, 0.5, 0.25]){
+          const fino = r1(va.pollici * f);
+          const v = stradaVera(S, u, [t.x, t.y], { marcia: false, fino });
+          if (!v) continue;
+          const gv = g(v);
+          if (gv.campi.rischio <= ga.campi.rischio - 0.15){ meglio = { fino: r1(v.pollici), gv }; break; }
+        }
+        if (meglio) out.push({ id:"accosta", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
+          dist: d, pollici: meglio.fino, fino: meglio.fino, muro: false, ...meglio.gv.campi,
+          why: `${t.name} è a ${d}″: avanza di ${meglio.fino}″ e si ferma` + meglio.gv.testo +
+               ` — con tutti i ${r1(va.pollici)}″ il rischio sarebbe ${pc(ga.campi.rischio)}`,
+          page: 122 });
       }
-      if (meglio) out.push({ id:"accosta", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
-        dist: d, pollici: meglio.fino, fino: meglio.fino, muro: false, ...meglio.gv.campi,
-        why: `${t.name} è a ${d}″: avanza di ${meglio.fino}″ e si ferma` + meglio.gv.testo +
-             ` — con tutti i ${r1(va.pollici)}″ il rischio sarebbe ${pc(ga.campi.rischio)}`,
-        page: 122 });
+      if (!bandiera(u, "noMarch") && !macchina(u) && !fermoDavvero(vm)) out.push({ id:"marcia", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
+                 dist: d, pollici: r1(vm ? vm.pollici : pm.resta), muro: !!(vm && vm.muro), provaComando: d <= CH.MARCH_WATCH && !vola(u),
+                 ...gm.campi,
+                 why: `${t.name} è a ${d}″: ${testoRuota(pm, move * volte, "marcia")}` +
+                      (volte === 3 ? " (in colonna di marcia: il triplo, p. 101)" : "") +
+                      (d <= CH.MARCH_WATCH && !vola(u) ? `, ma a ${CH.MARCH_WATCH}″ da un nemico serve un test di Comando (p. 123)` : "") +
+                      muroTesto(vm) + gm.testo,
+                 page: vm && vm.muro ? 270 : 123 });
+      /* e se la strada e' chiusa, si offre di girarci attorno: verso il
+         bersaglio che si preferisce, che l'euristica l'aggiramento lo prende
+         prima di ogni avanzata */
+      const muro = (va && va.muro) || (vm && vm.muro);
+      if (muro && !k) out.push(...opzioniAggiramento(S, u, t, muro, Math.max(va ? va.pollici : 0, vm ? vm.pollici : 0)));
     }
-    if (!bandiera(u, "noMarch") && !macchina(u) && !fermoDavvero(vm)) out.push({ id:"marcia", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
-               dist: d, pollici: r1(vm ? vm.pollici : pm.resta), muro: !!(vm && vm.muro), provaComando: d <= CH.MARCH_WATCH && !vola(u),
-               ...gm.campi,
-               why: `${t.name} è a ${d}″: ${testoRuota(pm, move * 2, "marcia")}` +
-                    (d <= CH.MARCH_WATCH && !vola(u) ? `, ma a ${CH.MARCH_WATCH}″ da un nemico serve un test di Comando (p. 123)` : "") +
-                    muroTesto(vm) + gm.testo,
-               page: vm && vm.muro ? 270 : 123 });
-    /* e se la strada e' chiusa, si offre di girarci attorno */
-    const muro = (va && va.muro) || (vm && vm.muro);
-    if (muro) out.push(...opzioniAggiramento(S, u, t, muro, Math.max(va ? va.pollici : 0, vm ? vm.pollici : 0)));
-    out.push(...opzioniManovra(S, u, t, move));
-    const rf = restareFermo(S, u, d);
-    out.push({ id:"ferma", uid: u.uid, nome: u.name, dist: d, ...gf.campi, ...rf, why: rf.why + gf.testo, page: 138 });
+    out.push(...opzioniManovra(S, u, t0, move, { bloccata: bloccate.has(t0.uid) }));
+    const gf = guardia(S, u, boxOf(u, S.units), caricatori(S, altro(u.army)), t0, boxOf(t0, S.units), move);
+    const rf = restareFermo(S, u, d0);
+    out.push({ id:"ferma", uid: u.uid, nome: u.name, dist: d0, ...gf.campi, ...rf, why: rf.why + gf.testo, page: 138 });
   }
   /* i capi escono prima che il reggimento si muova (p. 207): in fondo
      all'elenco, perche' e' la mossa che si fa di rado */
@@ -1902,6 +2056,19 @@ export const FUGA_MACCHINA = -1;        // p. 197, al minimo 1
    segno (positivo in senso orario, cioe' verso destra), fra -180 e 180 */
 const giroDi = (da, a) => ((((a || 0) - (da || 0)) % 360) + 540) % 360 - 180;
 const colonna = (n, f) => Math.ceil(n / Math.max(1, f)) > f;
+/* LA COLONNA DI MARCIA (p. 101): «A Marching Column cannot claim a Rank
+   Bonus and cannot make a charge move, but may triple its Movement
+   characteristic when Marching». I ranghi li toglieva gia' `rankBonus`;
+   la carica e la marcia tripla no, e tre Stone Troll schierati uno
+   dietro l'altro caricavano come una linea e marciavano del doppio. Chi
+   e' sciolto e chi e' Lumbering non e' mai in colonna. */
+function inColonna(S, u){
+  if (sciolta(u) || FM.isLumbering(u)) return false;
+  const lay = layoutOf(u, S.units);
+  const n = lay.slots ? lay.slots.length : alive(u);
+  return n >= 2 && colonna(n, lay.front || u.frontage || 1);
+}
+const perMarcia = (S, u) => inColonna(S, u) ? 3 : 2;
 
 /* La ruota verso `rot` pagata con `budget` pollici. Costa quanto
    cammina il modello esterno (p. 124), cioe' il fronte per l'angolo in
@@ -1914,6 +2081,13 @@ const colonna = (n, f) => Math.ceil(n / Math.max(1, f)) > f;
    -1 ma un turno intero. La marca con un campo suo, perche' l'elenco
    delle mosse non porta le armi: senza, la macchina da guerra avanzava
    di cinque pollici a ogni turno per poi non sparare mai. */
+/* Il bersaglio si cerca fra TUTTI i nemici che adesso si possono tirare
+   — gittata, gittata minima, vista e arco — e non solo sul piu' vicino:
+   la Grudge Thrower della partita del 10 ottobre aveva i Boar Boyz a
+   undici pollici, dentro i dodici della gittata minima, e con quelli
+   soli il conto diceva «niente a tiro»: avanzava verso di loro, perdeva
+   il tiro e si faceva caricare. `obbligato` dice che muoversi costa il
+   turno intero, e chi sceglie a macchina non lo baratta con la posizione. */
 function restareFermo(S, u, d){
   const arma = CB.rangedWeapons(u)[0];
   if (!arma) return { why: "resta dov'è: chi non muove spara meglio (p. 138)" };
@@ -1922,9 +2096,14 @@ function restareFermo(S, u, d){
   const banda = SH.rangeBand(arma);
   const gittata = linea ? (banda.n || 1) * (banda.die || 6) : bomba ? banda.max : stat(arma.range);
   const minima = bomba ? banda.min : 0;
-  if (f.moveOrShoot && d <= gittata && d >= minima)
-    return { tieniIlTiro: true,
-             why: `resta dov'è: ha ${arma.name} a tiro (${d}″ su ${gittata}″) e l'arma o si muove o tira (p. 175)` };
+  const bersaglio = nemiciDi(S, u).filter(t => onBoard(t) && !ingaggiata(S, t))
+    .map(t => ({ t, d: distanza(S, u, t) }))
+    .filter(x => x.d <= gittata && x.d >= minima)
+    .sort((a, b) => a.d - b.d)
+    .find(x => !vistaTagliata(S, u, x.t, { arco: true }));
+  if (f.moveOrShoot && bersaglio)
+    return { tieniIlTiro: true, obbligato: true,
+             why: `resta dov'è: ha ${arma.name} a tiro su ${bersaglio.t.name} (${bersaglio.d}″ su ${gittata}″) e l'arma o si muove o tira (p. 175)` };
   /* E chi tira con un'arma che muovendosi perde qualcosa: il −1 (p. 138),
      −2 con Ponderous (p. 175), e le file dietro del Volley Fire, che
      tirano solo se l'unita' non si e' mossa (p. 180). Il commento
@@ -1937,9 +2116,9 @@ function restareFermo(S, u, d){
   const perde = !f.quickShot && !f.moveAndShoot;
   const accompagna = PREP.isCharacter(u) ||
     ["monstrousCreature", "behemoth", "heavyChariot", "lightChariot"].includes(troopType(u.troop).id);
-  if (perde && !accompagna && d <= gittata && d >= minima)
+  if (perde && !accompagna && bersaglio)
     return { tieniIlTiro: true,
-             why: `resta dov'è: ha ${arma.name} a tiro (${d}″ su ${gittata}″), e muovendosi tirerebbe con ` +
+             why: `resta dov'è: ha ${arma.name} a tiro su ${bersaglio.t.name} (${bersaglio.d}″ su ${gittata}″), e muovendosi tirerebbe con ` +
                   `${f.ponderous ? "−2 (Ponderous, p. 175)" : "−1 (p. 138)"}` +
                   (f.volleyFire && !u.loose ? " e senza le file dietro (Volley Fire, p. 180)" : "") };
   return { why: "resta dov'è: chi non muove spara meglio (p. 138)" };
@@ -2015,7 +2194,7 @@ function portataCarica(S, e){
   return passi.length ? CH.chargeBands(Math.min(...passi), MV.swiftOf(e)).max : 0;
 }
 
-function opzioniManovra(S, u, t, move){
+function opzioniManovra(S, u, t, move, { bloccata = false } = {}){
   if (sciolta(u) || !move) return [];
   const out = [];
   const bu = boxOf(u, S.units), lay = layoutOf(u, S.units);
@@ -2051,9 +2230,13 @@ function opzioniManovra(S, u, t, move){
      chi non ci riesce ruotando — e costa tutto il movimento. A chi la
      ruota se la puo' permettere non si offre: un Troll che si gira di
      70° con due pollici e poi cammina non ha motivo di stare fermo */
+  /* E a chi la ruota non riesce affatto — un vicino, il bordo del tavolo
+     a cui e' rimasto voltato dopo una mischia o una fuga —: prima non le si
+     offriva, e l'unita' andava «dritta» contro il bordo per due decimi di
+     pollice a turno (i Boar Boyz della partita del 10 ottobre). */
   const rotT = versoDi(t.x - u.x, t.y - u.y);
   const giro = Math.round(Math.abs(giroDi(u.rot, rotT)));
-  if (giro >= 1 && pianoRuota(S, u, rotT, move).parziale &&
+  if (giro >= 1 && (pianoRuota(S, u, rotT, move).parziale || (bloccata && giro >= 15)) &&
       !ingombro(S, u, { ...bu, rot: rotT }, { unPollice: false })){
     out.push({ id:"riforma", ...base,
       why: `si gira sul centro verso ${t.name} (${giro}°) tenendo il fronte di ${f0}` +
@@ -2261,7 +2444,7 @@ function opzioniTiro(S){
         if (ingaggiata(S, t)) continue;
         const d = distanza(S, u, t);
         if (d > massimo) continue;
-        if (vistaTagliata(S, u, t)) continue;
+        if (vistaTagliata(S, u, t, { arco: true })) continue;
         const f = previsioneFulmine(S, u, t, arma);
         out.push({ id:"fulmina", uid: u.uid, target: t.uid, nome: u.name, contro: t.name, dist: d,
                    why: `${fulmine.why}, da ${d}″: in media ci finiscono sotto ${f.sotto} ` +
@@ -2281,7 +2464,7 @@ function opzioniTiro(S){
         if (ingaggiata(S, t)) continue;
         const d = distanza(S, u, t);
         if (d > bomba.banda.max || d < bomba.banda.min) continue;
-        if (vistaTagliata(S, u, t)) continue;
+        if (vistaTagliata(S, u, t, { arco: true })) continue;
         const f = previsioneBombarda(S, u, t, arma, bomba);
         out.push({ id:"bombarda", uid: u.uid, target: t.uid, nome: u.name, contro: t.name, dist: d,
                    why: `${bomba.why}, da ${d}″: se non devia ci finiscono sotto ${f.sotto} ` +
@@ -2299,7 +2482,7 @@ function opzioniTiro(S){
       if (ingaggiata(S, t)) continue;
       const d = distanza(S, u, t);
       if (d > gittata) continue;
-      if (vistaTagliata(S, u, t)) continue;
+      if (vistaTagliata(S, u, t, { arco: true })) continue;
       const mods = modificatori(S, u, t, d, gittata, { arma });
       const rf = raffica(S, u, arma, mods.total);
       const f = CB.shootForecast(u, t, { weapon: arma, mods: mods.total + rf.mod, shots: rf.shots });
@@ -2788,17 +2971,40 @@ function altreDi(S, a, b){
 /* La vista del libro, quella intera: i modelli e le unita' in mezzo, la
    penombra del bosco, la cresta della collina, e il riparo contato sui
    modelli coperti invece che sul centro (pp. 103, 139, 270, 272). */
-function guarda(S, a, b){
+/* `arco`: per il tiro la vista e' quella del libro, con l'arco di 90°
+   davanti a ogni modello (pp. 103 e 137). Prima l'arbitro guardava tutto
+   intorno, e nella partita del 10 ottobre i Thunderers si giravano di
+   150° verso i troll e poi sparavano ai Boar Boyz che avevano alle
+   spalle; nelle partite col seme i Quarrellers tiravano a 165° dal loro
+   fronte. Tutto intorno guardano gli schermagliatori (p. 184), il
+   personaggio da solo, che e' sciolto (p. 205), il carro con la Firing
+   Platform (p. 194) e la macchina da guerra, che si gira gratis quando
+   vuole (p. 197). La magia ha il suo arco (`nelArco`) e qui non passa. */
+const vedeIntorno = u => sciolta(u) || haRegola(u, /^firing platform/i);
+function guarda(S, a, b, { arco = false } = {}){
   return SG.unitSight({
     eyes: primaFila(S, a),
     targets: FM.worldCells(b, layoutOf(b, S.units)),
     terrain: S.terrain, others: altreDi(S, a, b),
     fromHill: sullaCollina(S, a), toHill: sullaCollina(S, b),
+    facing: arco && !vedeIntorno(a) ? (a.rot || 0) : null,
   });
 }
-function vistaTagliata(S, a, b){ return !guarda(S, a, b).sees; }
+function vistaTagliata(S, a, b, { arco = false } = {}){ return !guarda(S, a, b, { arco }).sees; }
+/* chi non vede solo perche' il bersaglio gli sta fuori dall'arco */
+const fuoriArco = (S, a, b) => vistaTagliata(S, a, b, { arco: true }) && !vistaTagliata(S, a, b);
 function coperturaDi(S, u, da = null){
-  return da ? guarda(S, da, u).cover : "";
+  return da ? guarda(S, da, u, { arco: true }).cover : "";
+}
+/* La macchina da guerra «can pivot freely at any time during its turn
+   (the better to face the enemy)», e girarsi non e' muoversi (p. 197):
+   prima di sparare si gira verso il bersaglio, se girata ci sta. */
+function giraLaMacchina(S, u, t){
+  if (!macchina(u) || !t) return;
+  const rot = versoDi(t.x - u.x, t.y - u.y);
+  if (Math.abs(giroDi(u.rot || 0, rot)) < 1) return;
+  if (ingombro(S, u, { ...boxOf(u, S.units), rot }, { unPollice: false, bordo: false })) return;
+  posa(S, u, u.x, u.y, rot);
 }
 function segmentoTocca(a, b, t){
   const poly = boxCorners({ x: t.x, y: t.y, w: t.w, h: t.h, rot: t.rot || 0 });
@@ -2933,7 +3139,9 @@ const GESTI = {
   unisci: (S, a) => {
     const c = byUid(S, a.uid), h = byUid(S, a.host);
     if (!S.schierando || !c || c.placed) return no("si unisce allo schieramento solo chi è ancora da schierare");
-    if (!opzioniUnione(S, c).some(x => x.host === a.host)) return no(`${c ? c.name : "?"} non può unirsi a quell'unità`);
+    const op = opzioniUnione(S, c).find(x => x.host === a.host);
+    if (!op) return no(`${c ? c.name : "?"} non può unirsi a quell'unità`);
+    if (op.sposta) posa(S, h, op.sposta[0], op.sposta[1], h.rot);
     c.join = { host: h.uid };
     c.placed = true;
     posa(S, h, h.x, h.y, h.rot);
@@ -2984,7 +3192,16 @@ const GESTI = {
     const dadi = roll(2);
     const res = PS.rallyTest({ ld: ldOf(S, u), dice: dadi, models: alive(u), start: u.models || 0,
                                musician: !!(u.command && u.command.musician) });
-    if (res.passed){ u.fled = false; u.moved = { kind:"rally", inches: 0 }; }
+    /* «Upon rallying, a unit may immediately perform a free reform … The
+       unit cannot charge during this turn and counts as having moved for
+       the purposes of shooting, but can otherwise act as normal» (p. 117).
+       Prima l'arbitro non la girava e le segnava il movimento gia' fatto:
+       restava voltata verso il bordo da cui scappava, ferma per tutto il
+       turno, e il turno dopo spendeva il movimento intero a riformarsi —
+       i Boar Boyz della partita del 10 ottobre camminavano contro il bordo
+       del tavolo. Adesso si gira verso il nemico e si muove come gli altri;
+       la carica no (`opzioniCarica`), e per il tiro ha mosso (`haMosso`). */
+    if (res.passed){ u.fled = false; u.radunata = true; }
     say(S, `${u.name}, raduno: ${res.text}. ${res.then}`, { dice: dadi, army: u.army, page: res.page,
         /* sotto un quarto dei modelli il Comando non conta: «serve ≤ 5»
            accanto a un 5 uscito direbbe che doveva radunarsi */
@@ -2993,6 +3210,7 @@ const GESTI = {
              f: [...fontiComando(S, u), ...(res.why || []).map(t => ({ t, f: "stato" })),
                  ...(res.insane ? [{ t: "doppio uno: si raduna sempre", f: "dadi" }] : [])],
              e: res.passed ? "si raduna" : "continua a fuggire", ok: res.passed } });
+    if (res.passed) riformaDelRaduno(S, u);
     return si(res.text);
   },
 
@@ -3006,6 +3224,8 @@ const GESTI = {
     if (bandiera(u, "noCharge")) return no("un incantesimo le impedisce di caricare");
     if (stupida(S, u)) return no("è in preda alla Stupidità: non carica");
     if (u.moved || u.charged) return no("si è già mossa in questo turno");
+    if (u.radunata) return no("si è radunata in questo turno: non carica (p. 117)");
+    if (inColonna(S, u)) return no("è in colonna di marcia: non carica (p. 101); prima va riordinata");
     const { move } = movimento(S, u);
     const tc = terrenoDiCarica(S, u, t);
     const d = CH.declareCharge({
@@ -3045,7 +3265,11 @@ const GESTI = {
                              noFlee: puo.can ? "" : puo.why, mustHold: puo.hold ? puo.why : "",
                              fleeing: !!t.fled, engaged: ingaggiata(S, t),
                              noShoot: ft.cumbersome && !ft.quickShot
-                               ? "l'arma è ingombrante: non si alza in faccia a chi carica (p. 167)" : "",
+                               ? "l'arma è ingombrante: non si alza in faccia a chi carica (p. 167)"
+                               /* «can draw a line of sight to the charging
+                                  unit» (p. 120): chi carica di fianco o alle
+                                  spalle non si vede, e non gli si spara */
+                               : armaT && fuoriArco(S, t, u) ? `${u.name} arriva da fuori dall'arco di vista: non gli si spara (p. 120)` : "",
                              anyRange: !!ft.quickShot });
     const scelte = (Array.isArray(r) ? r : (r.list || [])).filter(x => x && x.can !== false);
     S.pending = {
@@ -3159,6 +3383,8 @@ const GESTI = {
     if (!armi.length) return no("non ha armi da tiro");
     if (SH.bombardOf(armi[0])) return no("spara a bombardata: il gesto è «bombarda», non «tira» (p. 224)");
     if (SH.lineShotOf(armi[0])) return no("spara una linea: il gesto è «fulmina», non «tira» (Legends: Skaven, p. 19)");
+    giraLaMacchina(S, u, t);
+    if (fuoriArco(S, u, t)) return no(`${t.name} le sta fuori dall'arco di vista: si tira solo davanti (pp. 103 e 137)`);
     tiro(S, u, t, armi[0], {});
     u.shot = true;
     return si("tiro risolto");
@@ -3174,6 +3400,7 @@ const GESTI = {
     const arma = CB.rangedWeapons(u)[0];
     const row = arma && SH.lineShotOf(arma);
     if (!row) return no("non spara una linea");
+    giraLaMacchina(S, u, t);
     fulmina(S, u, t, arma, row);
     u.shot = true;
     return si("fulmine risolto");
@@ -3190,6 +3417,7 @@ const GESTI = {
     const row = arma && bombardaDi(u, arma);
     if (!row) return no("non spara a bombardata");
     if (!row.known) return no(row.why);
+    giraLaMacchina(S, u, t);
     bombarda(S, u, t, arma, row);
     u.shot = true;
     return si("bombardata risolta");
@@ -3352,7 +3580,7 @@ function passi(S, a){
     const vicino = marcia && !vola(u) && nemiciDi(S, u).some(e => distanza(S, u, e) <= CH.MARCH_WATCH);
     const raddoppia = marcia && provaMarcia(S, u);
     u.passi = { x0: u.x, y0: u.y, rot0: u.rot || 0, partenza: postiDi(S, u), pieno: move,
-                budget: raddoppia ? move * 2 : move, speso: 0, marcia, raddoppia, testato: vicino,
+                budget: raddoppia ? move * perMarcia(S, u) : move, speso: 0, marcia, raddoppia, testato: vicino,
                 lento: false, libero: !marcia && FM.isLumbering(u) ? 90 : 0 };
     u.moved = { kind: marcia ? "march" : "move", inches: 0, passi: true };
     say(S, `${u.name} comincia a muoversi a tappe: ${r1(u.passi.budget)}″` +
@@ -3487,7 +3715,7 @@ function mossa(S, a, marcia){
   /* «accosta»: ci si ferma prima, dove si e' deciso (p. 122: il
      Movimento e' un massimo, non un obbligo) */
   const quantiDi = m => {
-    const q = raddoppia ? m * 2 : m;
+    const q = raddoppia ? m * perMarcia(S, u) : m;
     return a.fino != null && a.fino >= 0 ? Math.min(q, a.fino) : q;
   };
   const partenza = postiDi(S, u);
@@ -4039,7 +4267,25 @@ function fuggi(S, u, da, pollici){
 
 /* ---- il tiro ---- */
 /* Ha mosso, per il tiro (p. 138): stare fermi no, radunarsi si' (p. 117). */
-const haMosso = u => !!u.moved && u.moved.kind !== "still";
+const haMosso = u => (!!u.moved && u.moved.kind !== "still") || !!u.radunata;
+
+/* La riforma gratis di chi si raduna (p. 117): sul centro, verso il nemico
+   piu' vicino che non fugge, con il fronte che ha. Se girata non ci sta —
+   un amico accanto, il bordo — resta com'e', e lo si dice. */
+function riformaDelRaduno(S, u){
+  const t = piuVicino(S, u, nemiciDi(S, u).filter(e => !e.fled)) || piuVicino(S, u);
+  if (!t) return;
+  const rot = versoDi(t.x - u.x, t.y - u.y);
+  const giro = Math.round(Math.abs(giroDi(u.rot || 0, rot)));
+  if (giro < 1) return;
+  if (ingombro(S, u, { ...boxOf(u, S.units), rot }, { unPollice: false })){
+    say(S, `${u.name} non si riforma: girata verso ${t.name} non ci sta.`, { army: u.army, page: 117 });
+    return;
+  }
+  posa(S, u, u.x, u.y, rot);
+  say(S, `${u.name} si riforma gratis e si gira di ${giro}° verso ${t.name}: non carica in questo turno, ` +
+         `ma si muove come gli altri (p. 117).`, { army: u.army, page: 117 });
+}
 /* I modificatori del tiro, gli stessi del pannello (`SH.modsFor`): il
    bersaglio sciolto e il «tira e tiene» l'arbitro non li passava, e la
    reazione alla carica sparava senza il suo −1.
@@ -4054,10 +4300,17 @@ const haMosso = u => !!u.moved && u.moved.kind !== "still";
    Trueflight degli Elfi Silvani): niente −1 o −2 per il riparo */
 const ignoraRiparo = (u, arma) => haRegola(u, /^ignores cover/i) ||
   /ignores cover/i.test(Array.isArray(arma && arma.rules) ? arma.rules.join(", ") : String((arma && arma.rules) || ""));
+/* Le regole dell'arma che cambiano il «ha mosso» (p. 175): Ponderous lo
+   raddoppia, Quick Shot e Move & Shoot lo tolgono. `shootMods` le sapeva
+   da sempre, ma da qui non gli arrivavano: i Quarrellers che si erano
+   mossi tiravano con −1 invece di −2, e gli archi corti dei goblin
+   pagavano il −1 che Quick Shot toglie — mentre l'opzione «resta fermo»
+   prometteva il −2 all'euristica. */
 function modificatori(S, u, t, d, gittata, { standAndShoot = false, arma = null } = {}){
   return SH.shootMods({ long: d > gittata / 2, moved: haMosso(u) && !standAndShoot,
                         cover: ignoraRiparo(u, arma) ? "" : coperturaDi(S, t, u),
-                        looseTarget: !!t.loose, standAndShoot });
+                        looseTarget: !!t.loose, standAndShoot,
+                        weaponFlags: arma ? SH.weaponFlagsOf(arma) : null });
 }
 
 /* Il limite delle sagome si dice solo quando conta: una macchina da
@@ -5595,12 +5848,32 @@ function terrenoInMischia(S, g){
   const difficile = S.terrain.filter(t => !t.decor && TR.combatCat(t).disorder);
   for (const u of [...g.A, ...g.B]){
     if (!onBoard(u)) continue;
-    const d = CH.disruptedInTerrain(celleDi(S, u), difficile);
-    if (d.disrupted && !u.disrupted)
+    /* l'ordine aperto non si scompiglia nel terreno (Dispersed Ranks, p. 183) */
+    const aperto = FM.formationOf(u, alive(u)) === "aperto";
+    const d = aperto ? { disrupted: false } : CH.disruptedInTerrain(celleDi(S, u), difficile);
+    if (d.disrupted && !u.disruptedTerreno)
       say(S, `${u.name}: ${d.why}`, { army: u.army, page: 159,
           x: { k: "terreno", t: "Scompigliata dal terreno", u: u.name, uid: u.uid,
                f: [{ t: d.why, f: "terreno" }], e: "niente bonus di ranghi in questo combattimento", ok: false } });
-    u.disrupted = d.disrupted;
+    u.disruptedTerreno = d.disrupted;
+    /* E presa di fianco o alle spalle (p. 101): «It is engaged in the
+       flank or rear by an enemy unit with a Unit Strength of five or
+       more», e gli schermagliatori non scompigliano. Prima non lo faceva
+       niente, e gli Slayers presi di fianco da venticinque orchi
+       contavano ancora il loro rango. */
+    const loro = g.A.includes(u) ? g.B : g.A;
+    const chi = aContatto(S, u, loro).find(e => !e.loose && usConCapi(S, e) >= 5 &&
+                                               ["fianco", "retro"].includes(facciaToccata(S, u, e)));
+    if (chi && !u.disruptedFianco){
+      const dove = facciaToccata(S, u, chi) === "retro" ? "alle spalle" : "di fianco";
+      say(S, `${u.name} è presa ${dove} da ${chi.name}: scompaginata, niente bonus di ranghi (p. 101).`,
+          { army: u.army, page: 101,
+            x: { k: "scompiglio", t: "Presa " + dove, u: u.name, uid: u.uid,
+                 f: [{ t: `${chi.name}, Forza d'Unità ${usConCapi(S, chi)}, le sta ${dove} (p. 101)`, f: "mischia" }],
+                 e: "niente bonus di ranghi in questo combattimento", ok: false } });
+    }
+    u.disruptedFianco = !!chi;
+    u.disrupted = d.disrupted || !!chi;
 
     const alto = filaPiuAlta(S, u);
     if (alto && !u.highGround)
@@ -5721,6 +5994,26 @@ function menaLaMischia(S, g){
      senza, `contact()` stimava tutti presi di fronte (p. 145) */
   A.forEach((c, i) => { const v = filaCheCombatte(S, g.A[i], g.B); if (v) c.touchingVs = v; });
   B.forEach((c, i) => { const v = filaCheCombatte(S, g.B[i], g.A); if (v) c.touchingVs = v; });
+  /* IL FIANCO E IL RETRO (p. 152): «if your unit is engaged with the
+     enemy's flank arc» — finche' ci si sta, non solo nel turno della
+     carica. Prima il punto veniva dalla dichiarazione di carica, che si
+     cancella a fine turno: nella partita del 10 ottobre gli Orc Mobs presi
+     gli Slayers di fianco avevano il +1 al primo round e non al secondo,
+     con le due unita' ferme dov'erano. Nel turno della carica decide la
+     dichiarazione (p. 127); negli altri il tavolo. */
+  const fianchi = (cs, miei, loro) => cs.forEach((c, i) => {
+    if (c.charged) return;
+    let meglio = null;
+    for (const e of aContatto(S, miei[i], loro)){
+      const f = facciaToccata(S, e, miei[i]);
+      if (f === "retro" || (f === "fianco" && (!meglio || meglio.f !== "retro"))) meglio = { f, e };
+    }
+    if (!meglio) return;
+    c.flank = meglio.f === "retro" ? "rear" : "flank";
+    c.flankUid = meglio.e.uid;
+  });
+  fianchi(A, g.A, g.B);
+  fianchi(B, g.B, g.A);
   /* dove sta ogni modello nelle due parti: serve alla sfida, che e' fra
      due modelli e non fra due unita' */
   const posto = new Map();
@@ -5872,12 +6165,10 @@ function chiediInseguimento(S, dopo){
     for (const uid of dopo.vincitori){
       const w = byUid(S, uid);
       if (!w || !onBoard(w) || w.fled) continue;
-      /* una macchina da guerra non segue e non insegue (p. 197) */
-      if (macchina(w)){
-        if (perduti.size) say(S, `${w.name} non segue e non insegue: è una macchina da guerra (p. 197).`,
-                              { army: w.army, page: 197 });
-        continue;
-      }
+      /* una macchina da guerra non insegue, ma «may make a follow up move
+         as normal» (p. 197): prima non seguiva nemmeno, e il registro lo
+         diceva citando la pagina che lo permette. Le sue opzioni le
+         toglie `opzioniInseguimento`. */
       /* chi ha ancora addosso un nemico che non si muove resta dov'e':
          «a unit that is still in base contact with an enemy unit cannot
          follow up or pursue» (p. 156) */
@@ -5939,6 +6230,12 @@ function opzioniInseguimento(S, w, dopo){
     resta.push({ id:"insegui", uid: w.uid, nome: w.name, scelta: "trattieni", target: null, chance: Math.round(pr * 100) / 100,
                  page: 156, why: `si trattiene e resta dov'è: test di Comando ${ld}, senza la Warband, che passa il ${Math.round(pr * 100)}%` +
                                  ` — se fallisce deve seguire o inseguire (p. 156)` });
+  }
+  if (macchina(w)){
+    /* niente inseguimento, niente sfondamento (p. 197): resta il seguire */
+    if ((fuggono.length || ripiegano.length || peggio.length || sfonda.length) && !seguono.length)
+      say(S, `${w.name} non insegue: è una macchina da guerra (p. 197).`, { army: w.army, page: 197 });
+    fuggono.length = 0; ripiegano.length = 0; peggio.length = 0; sfonda.length = 0;
   }
   if (!fuggono.length && !seguono.length && !ripiegano.length && !peggio.length && !sfonda.length) return [];
   /* in ordine di consiglio: travolgere chi fugge, restare addosso a chi
@@ -6163,6 +6460,30 @@ function filaCheCombatte(S, u, loro){
   return Object.fromEntries(nemici.map(n => [n.key, conti[n.key] || { ...NESSUNO, face: n.face }]));
 }
 
+/* QUALE FACCIA DI `chi` TOCCA `da`: «fronte», «fianco», «retro», o null
+   se non la tocca affatto. Si guarda il contatto vero — nove punti per
+   lato, e vince il lato con piu' punti addosso all'altro — e non il
+   centro: un reggimento largo dieci basette sul fianco corto di una
+   cavalleria ha il centro spostato, e `faceTowards` lo vedeva davanti.
+   Serve al fianco del risultato (p. 152) e allo scompiglio (p. 101), che
+   valgono per tutto il tempo in cui si e' ingaggiati da quella parte, non
+   solo nel turno della carica. */
+function facciaToccata(S, chi, da){
+  const b = boxOf(chi, S.units), bd = boxOf(da, S.units);
+  const toll = MM * 0.3;
+  const conta = { fronte: 0, retro: 0, fianco: 0 };
+  const lati = [["fronte", [-1, -1], [1, -1]], ["retro", [-1, 1], [1, 1]],
+                ["fianco", [-1, -1], [-1, 1]], ["fianco", [1, -1], [1, 1]]];
+  for (const [nome, p, q] of lati)
+    for (let k = 1; k < 10; k++){
+      const t = k / 10;
+      const w = toWorld([(p[0] + (q[0] - p[0]) * t) * b.w / 2, (p[1] + (q[1] - p[1]) * t) * b.h / 2], b);
+      if (distPointToBox(w, bd) <= toll) conta[nome]++;
+    }
+  const lato = Object.keys(conta).reduce((a, k) => conta[k] > conta[a] ? k : a, "fronte");
+  return conta[lato] > 0 ? lato : null;
+}
+
 /* chi, fra i nemici del gruppo, tocca ancora quest'unita' */
 function aContatto(S, u, loro){
   const mio = cornersOf(u, S.units);
@@ -6171,7 +6492,7 @@ function aContatto(S, u, loro){
 
 /* La schiera che combatte, con addosso quello che il tavolo sa: chi ha
    caricato e da che faccia, il terreno, i personaggi uniti. */
-function schieraDi(S, u, { attached = false, host = null, feared = false } = {}){
+function schieraDi(S, u, { attached = false, host = null, feared = false, ipotesi = null, subisce = false } = {}){
   /* Il capo unito carica con il reggimento in cui sta: la carica la
      scrive `muoviCarica` sul reggimento, e il capo non si muove da
      solo. Prima la sua schiera non lo sapeva, e un Bigboss dentro i
@@ -6192,9 +6513,12 @@ function schieraDi(S, u, { attached = false, host = null, feared = false } = {})
   const daInseguimento = ins ? { charged: true, chargeInches: ins.inches || 0, chargeArc: ins.arc || "fronte" } : {};
   /* il primo round e chi e' stato caricato: del reggimento, per il capo
      che ci sta dentro (l'Odio, gli Elven Reflexes, gli Stoic Defenders) */
-  const caricata = S.units.some(e => e.army !== chiSegue.army && e.charged && e.charged.uid === chiSegue.uid);
-  const c = CB.combatant(u, { joined: capiInFila(S, u), feared, followedUp, ...daInseguimento, ...carica,
-                              primoRound: !chiSegue.giaInMischia, caricata });
+  const caricata = subisce || S.units.some(e => e.army !== chiSegue.army && e.charged && e.charged.uid === chiSegue.uid);
+  /* la carica che si sta pesando, per chi deve decidere se farla
+     (`scontroAtteso` con `carica`): come se fosse arrivata */
+  const supposta = ipotesi ? { charged: true, chargeInches: ipotesi.inches, chargeArc: ipotesi.arc || "fronte" } : {};
+  const c = CB.combatant(u, { joined: capiInFila(S, u), feared, followedUp, ...daInseguimento, ...carica, ...supposta,
+                              primoRound: ipotesi || subisce ? true : !chiSegue.giaInMischia, caricata });
   /* La Primal Fury (Ravening Hordes p. 116), passata quando il
      combattimento e' stato scelto (`furiaPrimordiale`): ritira gli 1 per
      colpire, e con la Foe Render l'arma a una mano perfora di 2 (p. 115) */
@@ -6682,7 +7006,7 @@ function passo(S){
      obiettivi (Battle March p. 27, «at the end of each player's turn») */
   segnaObiettivi(S);
   S.casella = 0;
-  for (const u of S.units){ u.moved = null; u.shot = false; u.charged = null; u.unito = null; }
+  for (const u of S.units){ u.moved = null; u.shot = false; u.charged = null; u.unito = null; u.radunata = false; }
   /* chi e' in combattimento adesso, alla fine di questo mezzo turno, nel
      prossimo non combatte il suo primo round: e' quello che leggono
      l'Odio e gli Elven Reflexes (`primoRound`, in `schieraDi`) */
@@ -6949,7 +7273,9 @@ export const interni = { indietreggia, seguire, fuggi, postoAContatto, percorso,
                          sullaCollina, filaPiuAlta, quantiTirano, terrenoDiCarica,
                          testPanico, ondaPanico, ripulisciSfide, sfidanti, puoRifiutare,
                          /* chi combatte, contato sulle basette (p. 145) */
-                         filaCheCombatte, schieraDi,
+                         filaCheCombatte, schieraDi, facciaToccata,
+                         /* le manovre offerte, e verso chi si muove (p. 122) */
+                         opzioniManovra, bersagliDellaMossa,
                          /* chi deve caricare (pp. 170, 172) */
                          impeti, deveCaricare,
                          /* trattenersi, seguire, inseguire (p. 156) */

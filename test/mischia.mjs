@@ -65,6 +65,34 @@ ok('un reggimento largo e in ordine di combattimento',
 ok('una colonna no', ML.inCombatOrder({ models: 20, frontage: 2, rules: [] }) === false);
 ok('gli schermagliatori no', ML.inCombatOrder({ models: 10, frontage: 5, rules: ['Skirmishers'] }) === false);
 ok('un mostro solo si', ML.inCombatOrder({ models: 1, frontage: 1, rules: [] }) === true);
+/* L'arma aggiuntiva: «Extra Attacks (+1)» (p. 214). Gli Orc Mobs della
+   partita del 10 ottobre la avevano, e menavano con un attacco solo:
+   l'arbitro impugnava la prima arma dell'elenco e non leggeva la regola. */
+{
+  const orchi = o => C.combatant({ name: 'Orc Mobs', models: 25, frontage: 5, rules: ['Close Order'],
+    stats: { M: '4', WS: '3', S: '3', T: '4', W: '1', I: '3', A: '1', Ld: '6' },
+    weapons: [{ name: 'Hand Weapon', range: 'Combat', S: 'S', ap: '-', rules: '-' },
+              { name: 'Additional Hand Weapon', range: 'Combat', S: 'S', ap: '-', rules: 'Extra Attacks (+1), Requires Two Hands' }], ...o });
+  ok('con l arma aggiuntiva si impugna quella, e gli Attacchi sono due', orchi().weapon === 'Additional Hand Weapon' && orchi().a === 2);
+  ok('ma non se costa lo scudo: allora arma a una mano e scudo', orchi({ shield: true }).a === 1);
+  ok('e la fila mena con due attacchi a testa', C.contact(orchi(), { frontage: 5 }).attacks === 10);
+}
+/* ...ma il punto e' dell'ordine CHIUSO (pp. 101 e 152): gli Slayers, che
+   hanno Open Order e non Close Order, lo prendevano come un reggimento
+   di Warriors. Il carro pesante e il mostro da soli si' (Lumbering,
+   p. 195), il personaggio solo no: e' sciolto (p. 205). */
+{
+  const schiera = o => C.combatant({ name: 'x', models: 12, frontage: 6, stats: { WS: '4', S: '3', T: '3', W: '1', A: '1', Ld: '8' }, ...o });
+  const punto = o => ML.scoreCardOf(schiera(o), 0).combatOrder;
+  ok('l ordine chiuso in ordine di combattimento prende il punto', punto({ rules: ['Close Order'] }) === true);
+  ok('l ordine aperto no (p. 183)', punto({ rules: ['Open Order'] }) === false);
+  ok('chi ha tutte e due le regole sta chiuso', punto({ rules: ['Close Order', 'Open Order'] }) === true);
+  ok('chi non dice la formazione resta chiuso, come prima', punto({ rules: [] }) === true);
+  ok('il carro pesante da solo sì (Lumbering, p. 195)',
+     punto({ models: 1, frontage: 1, troop: 'Heavy chariot', rules: ['Close Order'] }) === true);
+  ok('il personaggio da solo no: è sciolto (p. 205)',
+     punto({ models: 1, frontage: 1, troop: 'Heavy infantry (character)', rules: [] }) === false);
+}
 /* il disordine da terreno della Tappa 2 arriva qui, ed e' la prima
    volta che costa qualcosa a qualcuno */
 ok('un quarto dei modelli nel bosco toglie i ranghi',

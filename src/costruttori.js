@@ -25,11 +25,12 @@
  * Legends (Lizardmen, Skaven) per gli altri, con la pagina accanto. Dove
  * New Recruit oggi scrive un numero diverso lo si dice (lo Stone Troll).
  *
- * Due cose che il simulatore NON gioca, e che quindi qui non si comprano:
- * l'arma aggiuntiva (il suo «Extra Attacks» non è letto: fra armi che
- * perforano uguale `meleeWeapon` tiene la prima dell'elenco), e per lo
- * stesso motivo l'arma che si vuole impugnare va messa per prima — le
- * lance stanno davanti all'arma a una mano. I Fanatici dei Night Goblin e
+ * L'arma aggiuntiva qui non si compra. Fino al 2026-10-11 il simulatore
+ * non ne leggeva l'«Extra Attacks»; adesso lo legge (`extraAttacksOf` in
+ * combat.js, e a parità di perforazione si impugna l'arma con più
+ * attacchi), ma offrirla ai costruttori vuol dire rifare le ricerche e
+ * non è ancora stato fatto. L'arma che si vuole impugnare va comunque
+ * messa per prima — le lance stanno davanti all'arma a una mano. I Fanatici dei Night Goblin e
  * gli attacchi del Gigante sono regole «a mano» (dati/eserciti): un
  * costruttore per loro misurerebbe punti buttati.
  */
@@ -411,7 +412,7 @@ export const LZ = {
    Fantasy): nessuna lista salvata li schiera, e le unità si scrivono per
    intero come quelle Skaven, profilo per profilo, con la pagina
    stampata accanto. Quello che il simulatore non gioca non si compra:
-   l'arma aggiuntiva (il suo attacco in più non è letto), gli oggetti
+   l'arma aggiuntiva (vedi in cima al file), gli oggetti
    magici e runici, le mutazioni, gli Spiriti della Foresta, le regole
    d'agguato (Ambushers, Vanguard: l'arbitro schiera tutto all'inizio).
 

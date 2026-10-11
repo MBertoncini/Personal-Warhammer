@@ -144,43 +144,73 @@ const centreOf = c => Array.isArray(c) ? c : [c.wx, c.wy];
    quelli che guardano: libero, coperto, invisibile. Il bersaglio si vede
    se almeno un modello non e' invisibile (p. 103); il riparo e' la quota
    di modelli non liberi (p. 139).
+
+   `facing` (in gradi, come `rot`) accende l'ARCO DI VISTA: «Models can
+   only draw a line of sight to things that lie within their 'vision
+   arc'. Unless stated otherwise, models have a 90° vision arc,
+   corresponding to their front arc» (p. 103). Ogni modello che guarda
+   vede solo quello che gli sta entro 45° dal fronte, e del bersaglio
+   basta un pezzo: un modello col centro fuori dall'arco e un angolo
+   dentro si vede, e non per questo e' coperto. Senza `facing` si guarda
+   tutto intorno, che e' quello che fanno gli schermagliatori (p. 184).
    ============================================================ */
+const FUORI_ARCO = { label: "fuori dall'arco di vista", arco: true };
+export const VISION_HALF_ARC = 45;
 export function unitSight({ eyes = [], targets = [], poly = null, terrain = [], others = [],
-                            fromHill = "", toHill = "" } = {}){
+                            fromHill = "", toHill = "", facing = null, halfArc = VISION_HALF_ARC } = {}){
   const models = targets.length ? targets
     : poly ? [{ poly, centre: centroid(poly) }] : [];
   const opts = { terrain, others, fromHill, toHill };
   const perEye = eyes.map(() => ({ sees: false, blockedBy: null }));
-  let obscured = 0, visible = 0, firstBlock = null;
+  let obscured = 0, visible = 0, firstBlock = null, fuori = 0;
+  const fx = facing == null ? 0 : Math.sin(facing * Math.PI / 180);
+  const fy = facing == null ? 0 : -Math.cos(facing * Math.PI / 180);
+  const soglia = Math.cos((halfArc + 0.5) * Math.PI / 180);
+  const inArco = (p, q) => {
+    if (facing == null) return true;
+    const dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy);
+    return l < 1e-6 || (dx * fx + dy * fy) / l >= soglia;
+  };
 
   for (const m of models){
     const centre = m.centre || centreOf(m);
     const edges = m.poly || cellPoly(m);
     let best = 2;                              // 0 libero, 1 coperto, 2 invisibile
+    let veroBlocco = false;                    // qualcosa sulla linea, non solo l'arco
     eyes.forEach((e, k) => {
       const p = centreOf(e);
-      let look = lookLine(p, centre, opts);
+      const centroDentro = inArco(p, centre);
+      let look = centroDentro ? lookLine(p, centre, opts) : { blocked: FUORI_ARCO, obscured: null };
       let state = look.blocked ? 2 : look.obscured ? 1 : 0;
       if (state === 2){
         for (const q of edges){
+          if (!inArco(p, q)) continue;
           const l = lookLine(p, q, opts);
-          if (!l.blocked){ state = 1; look = l; break; }
+          if (l.blocked) veroBlocco = true;
+          /* il centro coperto da qualcosa e un angolo libero e' riparo;
+             il centro solo fuori dall'arco no */
+          if (!l.blocked){ state = !centroDentro && !l.obscured ? 0 : 1; look = l; break; }
         }
       }
       if (state < 2) perEye[k].sees = true;
       else if (!perEye[k].blockedBy) perEye[k].blockedBy = look.blocked;
       if (state === 2 && !firstBlock) firstBlock = look.blocked;
+      if (state === 2 && look.blocked !== FUORI_ARCO) veroBlocco = true;
       if (state < best) best = state;
     });
+    /* un modello che nessuno vede solo perche' sta fuori dall'arco non e'
+       coperto: non si puo' bersagliare da li', e il riparo si conta sugli
+       altri (p. 139) */
+    if (best === 2 && !veroBlocco && facing != null){ fuori++; continue; }
     if (best < 2) visible++;
     if (best > 0) obscured++;
   }
-  const n = models.length;
+  const n = models.length - fuori;
   const cover = !n || !obscured ? "" : obscured * 2 <= n ? "soft" : "hard";
   return {
     sees: visible > 0,
     blockedBy: visible ? null : firstBlock,
-    perEye, models: n, visible, obscured,
+    perEye, models: n, visible, obscured, outOfArc: fuori,
     cover, coverWhy: cover ? `${obscured} modell${obscured === 1 ? "o" : "i"} su ${n} coperti` : "",
     page: PAGE.cover,
   };

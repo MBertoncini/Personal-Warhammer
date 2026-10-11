@@ -637,6 +637,29 @@ console.log('\nstare fermi non è muoversi (p. 138)');
      AR.options(G).list.filter(x => x.id === 'tira' && x.uid === sk.uid).every(x => /ha mosso/.test(x.why)));
 }
 
+console.log('\nPonderous e Quick Shot quando si tira davvero (p. 175)');
+{
+  /* l'opzione «resta fermo» prometteva il −2 di Ponderous, e il tiro vero
+     tirava con −1: nella partita del 10 ottobre i Quarrellers mossi
+     colpivano a 8+ invece che a 9+, e gli archi corti dei goblin pagavano
+     il −1 che Quick Shot toglie */
+  const G = nuova();
+  const sk = metti(G, uid(G, 3), 600, 600);
+  const e = metti(G, uid(G, 505), 600, 380);
+  G.casella = casella('tiro'); G.army = 'A';
+  sk.moved = { kind:'move', inches: 3 };
+  const suLui = () => AR.options(G).list.find(x => x.id === 'tira' && x.uid === sk.uid && x.target === e.uid);
+  sk.weapons = [{ name:'Handgun', range:'24"', S:'4', ap:'-1', rules:'Armour Bane (1), Ponderous' }];
+  ok('chi ha mosso con un arma Ponderous paga −2, non −1', /ingombrante/.test((suLui() || {}).why || ''));
+  seme(3);
+  AR.apply(G, { id:'tira', uid: sk.uid, target: e.uid });
+  ok('e il tiro vero lo paga anche lui', G.log.some(x => /tira su Orc Mobs/.test(x.text) && /ingombrante/.test(x.text)));
+  sk.shot = false;
+  sk.weapons = [{ name:'Shortbow', range:'18"', S:'3', ap:'-', rules:'Quick Shot, Volley Fire' }];
+  ok('con Quick Shot il −1 del movimento non c è', !!suLui() && !/ha mosso/.test(suLui().why));
+  D.setSource(D.seeded(1));
+}
+
 console.log('\nnon si tira dentro una mischia (p. 143)');
 {
   const G = nuova();
@@ -1239,6 +1262,28 @@ console.log('\nuna lista scritta a mano, sul tavolo');
   ok('il lato del tavolo non fa da fazione', !!PR.profileFor({ ...clan, army:'B' }));
 }
 
+console.log('\nchi si raduna si riforma gratis e si muove, ma non carica (p. 117)');
+{
+  /* i Boar Boyz della partita del 10 ottobre si radunavano voltati verso il
+     bordo da cui scappavano, restavano fermi tutto il turno e il turno dopo
+     camminavano contro il bordo */
+  const G = nuova();
+  const tg = metti(G, uid(G, 6), 600, 600, 180);
+  metti(G, uid(G, 505), 600, 250);
+  tg.fled = true;
+  G.casella = casella('raduno'); G.army = 'A';
+  D.setSource(() => 0);                                  // doppio uno: si raduna
+  AR.apply(G, { id:'raduna', uid: tg.uid });
+  ok('si raduna', !tg.fled);
+  ok('e si gira verso il nemico con la riforma gratis', Math.min(tg.rot % 360, 360 - tg.rot % 360) < 2 &&
+     G.log.some(r => /si riforma gratis e si gira di 180° verso Orc Mobs/.test(r.text)));
+  G.casella = casella('cariche');
+  ok('non carica in questo turno', !AR.options(G).list.some(x => x.id === 'carica' && x.uid === tg.uid));
+  G.casella = casella('mosse');
+  ok('ma si muove come gli altri', AR.options(G).list.some(x => (x.id === 'avanza' || x.id === 'marcia') && x.uid === tg.uid));
+  D.setSource(D.seeded(1));
+}
+
 console.log('\nil raduno, una volta per turno (p. 117)');
 {
   const G = nuova();
@@ -1336,6 +1381,154 @@ console.log('\ntira e tiene (p. 120)');
   ok('chi ha un arco può scegliere di tirare e tenere', !!spara);
   AR.apply(G, spara);
   ok('e lo fa davvero (prima teneva e basta)', G.log.some(r => /tiene e spara/.test(r.text)));
+}
+
+console.log('\nsi tira solo davanti: l arco di vista (pp. 103, 120 e 137)');
+{
+  /* nella partita del 10 ottobre i Thunderers si giravano di 150° verso i
+     troll e poi sparavano ai Boar Boyz che avevano alle spalle: l'arbitro
+     guardava tutto intorno */
+  const G = nuova();
+  const tg = metti(G, uid(G, 6), 600, 600, 0);
+  tg.weapons = [{ name:'Handgun', range:'24"', S:'4', ap:'-1', rules:'Armour Bane (1)' }];
+  const e = metti(G, uid(G, 505), 600, 380);
+  G.casella = casella('tiro'); G.army = 'A';
+  const suLui = (u = tg) => AR.options(G).list.some(x => x.id === 'tira' && x.uid === u.uid && x.target === e.uid);
+  ok('un reggimento chiuso tira su chi ha davanti', suLui());
+  metti(G, e, 600, 860);
+  ok('non su chi gli sta alle spalle', !suLui());
+  metti(G, e, 280, 600, 90);
+  ok('né su chi gli sta di fianco', !suLui());
+  ok('e il gesto, chiesto lo stesso, dice perché no',
+     /arco di vista/.test(AR.apply(G, { id:'tira', uid: tg.uid, target: e.uid }).text || ''));
+  const sk = metti(G, uid(G, 3), 280, 380, 0);
+  ok('gli schermagliatori guardano tutto intorno (p. 184)', suLui(sk));
+}
+{
+  const G = nuova();
+  const sv = metti(G, uid(G, 1), 600, 600);
+  const ng = metti(G, uid(G, 504), 600, 380, 0);   // girati: i Saurus arrivano da dietro
+  G.casella = casella('cariche'); G.army = 'A';
+  AR.apply(G, { id:'carica', uid: sv.uid, target: ng.uid });
+  ok('chi è caricato alle spalle non tiene e spara: non vede chi arriva (p. 120)',
+     G.pending && !AR.options(G).list.some(x => x.kind === 'stand'));
+  D.setSource(D.seeded(1));
+}
+
+console.log('\nla colonna di marcia non carica e marcia del triplo (p. 101)');
+{
+  const G = nuova();
+  const tr = metti(G, uid(G, 506), 600, 300, 180);
+  const tg = metti(G, uid(G, 6), 600, 520, 0);
+  G.casella = casella('cariche'); G.army = 'B';
+  ok('quattro troll uno dietro l altro non caricano', !AR.options(G).list.some(x => x.id === 'carica' && x.uid === tr.uid));
+  ok('e il gesto, chiesto lo stesso, lo dice', /colonna di marcia/.test(AR.apply(G, { id:'carica', uid: tr.uid, target: tg.uid }).text));
+  tr.frontage = 4;
+  ok('in linea sì', AR.options(G).list.some(x => x.id === 'carica' && x.uid === tr.uid));
+}
+{
+  const G = nuova();
+  const tr = metti(G, uid(G, 506), 200, 150, 180);
+  metti(G, uid(G, 6), 200, 880, 0);
+  G.casella = casella('mosse'); G.army = 'B';
+  const m = AR.options(G).list.find(x => x.id === 'marcia' && x.uid === tr.uid);
+  ok('in colonna la marcia è il triplo del Movimento', !!m && /il triplo/.test(m.why) && m.pollici > 12.5);
+}
+
+console.log('\nla carica si prevede come una carica (pp. 171 e 146)');
+{
+  /* lo scontro atteso di una carica era quello di una mischia in corso:
+     niente urto, niente Furious Charge, e la Press of Battle che nel turno
+     della carica non vale. Il carro dei cinghiali sugli Slayers valeva
+     meno di una ferita, e l'euristica non lo faceva caricare mai */
+  const G = AR.newBattle({ A: lista('lmv3a5cn5yf0u'), B: lista('lmus3azb4rw4n'), scenario:'open', primo:'A' });
+  G.schierando = false;
+  const carro = G.units.find(u => u.name === 'Orc Boar Chariots');
+  const sl = G.units.find(u => u.name === 'Slayers');
+  metti(G, sl, 600, 600, 0);
+  metti(G, carro, 600, 330, 180);
+  const ferma = AR.scontroAtteso(G, carro, sl, 'fronte');
+  const arriva = AR.scontroAtteso(G, carro, sl, 'fronte', 'fronte', { inches: 6 });
+  ok('con la carica il carro porta l urto: più di due ferite in più', arriva.date - ferma.date > 2);
+  G.casella = casella('cariche'); G.army = 'B';
+  const op = AR.options(G).list.find(x => x.id === 'carica' && x.uid === carro.uid && x.target === sl.uid);
+  ok('e l opzione di carica scrive quel conto', !!op && op.esito === AR.scontroAtteso(G, carro, sl, op.lato, 'fronte', { inches: op.dist }).valore);
+}
+
+console.log('\nla macchina da guerra resta a tirare (pp. 175 e 197)');
+{
+  /* la Grudge Thrower della partita del 10 ottobre aveva i Boar Boyz a
+     undici pollici, dentro la gittata minima, e altri bersagli piu' in la':
+     l'arbitro guardava solo il piu' vicino, le diceva «niente a tiro», e lei
+     avanzava verso i cinghiali — senza piu' sparare, e con «lei carica il
+     75%», che una macchina non fa */
+  const G = nuova();
+  const lp = metti(G, uid(G, 3), 600, 880);
+  lp.troop = 'War machine';
+  lp.weapons = [{ name: 'Stone thrower', range: '12-60"', S: '4 (8)', ap: '-1 (-3)', rules: 'Bombardment, Cumbersome, Move or Shoot' }];
+  const vicino = metti(G, uid(G, 505), 600, 640);
+  metti(G, uid(G, 504), 400, 200);
+  G.casella = casella('mosse'); G.army = 'A';
+  const mie = AR.options(G).list.filter(x => x.uid === lp.uid);
+  const ferma = mie.find(x => x.id === 'ferma');
+  ok('con un bersaglio oltre la gittata minima resta ferma a tirarlo', !!ferma && ferma.tieniIlTiro && ferma.obbligato);
+  ok('e non le si offre di andare addosso a chi le sta dentro i dodici pollici',
+     !mie.some(x => (x.id === 'avanza' || x.id === 'marcia') && x.verso === vicino.uid));
+  ok('nessuna mossa le promette una carica', !mie.some(x => /lei carica/.test(x.why || '')));
+  const ag = AG.agenteEuristico({ nome: 'prova', piano: { tieniTiro: false } });
+  const sc = await ag.scegli({ opzioni: { ...AR.options(G), list: mie.concat(AR.options(G).list.filter(x => x.id === 'avanti')) }, stato: G });
+  ok('e l euristica resta ferma anche col piano che direbbe di muoversi', sc.scelta && sc.scelta.id === 'ferma');
+  D.setSource(D.seeded(1));
+}
+
+console.log('\nverso chi ci si muove, e la riforma di chi non riesce a ruotare (pp. 122 e 125)');
+{
+  /* i goblin della partita del 10 ottobre andavano «verso gli Slayers»,
+     gia' in mischia con gli Orc Mobs, e facevano 0,3″ a turno */
+  const G = nuova();
+  const tg = metti(G, uid(G, 6), 600, 560, 0);
+  const orchi = metti(G, uid(G, 505), 600, 380);
+  aContattoDi(G, orchi, tg);
+  const sv = metti(G, uid(G, 1), 300, 760, 0);
+  const goblin = metti(G, uid(G, 504), 300, 150);
+  const b = IN.bersagliDellaMossa(G, sv, orchi);
+  ok('chi ha il più vicino già in mischia con i suoi va prima verso un nemico libero', b[0] === goblin && b.includes(orchi));
+  /* chi non riesce a ruotare (un vicino, il bordo) si vede offrire la riforma */
+  const G2 = nuova();
+  const t2 = metti(G2, uid(G2, 6), 600, 600, 0);
+  const e2 = metti(G2, uid(G2, 505), 750, 300);
+  const rif = blocco => IN.opzioniManovra(G2, t2, e2, 4, { bloccata: blocco }).some(x => x.id === 'riforma');
+  ok('con la ruota che costa poco e passa, la riforma non si offre', !rif(false));
+  ok('se la ruota non ci sta, sì', rif(true));
+}
+
+console.log('\nlo schieramento guarda chi ha davanti, il terreno sotto e la colonna (pp. 101 e 115)');
+{
+  /* la partita del 10 ottobre: il carro dei cinghiali, sesto della lista,
+     in seconda fila dietro i goblin; Boar Boyz e troll dentro le rovine; i
+     troll larghi uno, in colonna. L'euristica sceglieva il posto per indice */
+  seme(1);
+  const G = AR.newBattle({ A: lista('lmv3a5cn5yf0u'), B: lista('lmus3azb4rw4n'), scenario:'open', primo:'A' });
+  const ag = { A: AG.agenteEuristico({ nome: 'a' }), B: AG.agenteEuristico({ nome: 'b' }) };
+  const scelte = {};
+  for (let i = 0; i < 200 && G.schierando; i++){
+    const o = AR.options(G);
+    const s = await ag[o.player].scegli({ opzioni: o, stato: G });
+    const u = G.units.find(x => x.uid === s.scelta.uid);
+    if (s.scelta.id === 'schiera' && u) scelte[u.name] = { scelta: s.scelta, offerte: o.list };
+    AR.apply(G, s.scelta);
+  }
+  const carro = scelte['Orc Boar Chariots'];
+  ok('ogni posto dice la fila, chi ha davanti e se il terreno rallenta',
+     carro.offerte.every(x => typeof x.fila === 'number' && typeof x.dietro === 'string' && typeof x.lento === 'boolean'));
+  ok('il carro non parte dietro un amico', !carro.scelta.dietro);
+  const troll = G.units.find(u => u.name === 'Stone Troll Mobs');
+  ok('i troll non si schierano in colonna', troll.frontage > 1 && !scelte['Stone Troll Mobs'].scelta.colonna);
+  ok('e la colonna resta fra le offerte, in fondo e marcata', scelte['Stone Troll Mobs'].offerte.some(x => x.colonna));
+  ok('e il Bigboss entra lo stesso nei Boar Boyz',
+     G.units.find(u => u.name === 'Orc Bigboss').join && G.units.find(u => u.name === 'Orc Bigboss').join.host ===
+     G.units.find(u => u.name === 'Orc Boar Boy Mobs').uid);
+  seme(1);
 }
 
 console.log('\nil Panico, un quarto in una fase (p. 141)');
@@ -2557,6 +2750,32 @@ console.log('\nchi combatte: la fila che combatte, di fronte, di fianco e dietro
     ok('e il modello d angolo sta in una sola delle due',
        v[orc.uid].rank.models + v[gob.uid].rank.models === 7 + 3 - 1);
   }
+
+  /* Il fianco vale finche' ci si sta, non solo nel turno della carica
+     (p. 152), e chi e' preso di fianco da un'unita' con Forza d'Unita'
+     cinque o piu' e' scompaginata e non conta i ranghi (p. 101). Nella
+     partita del 10 ottobre gli Orc Mobs sul fianco degli Slayers avevano
+     il +1 al primo round e non al secondo, e gli Slayers contavano il
+     rango. Qui gli Orc Mobs stanno sul fianco senza aver caricato. */
+  {
+    const { G, tg, orc } = prova('fianco');
+    ok('chi sta sul fianco senza aver caricato non ha il segno della carica', !orc.charged);
+    mena(G);
+    const ris = G.log.find(x => /^Risultato:/.test(x.text));
+    const [, mio, suo] = /Temple Guard \d+ \(([^)]*)\) contro Orc Mobs \d+ \(([^)]*)\)/.exec(ris.text) || [];
+    ok('gli Orc Mobs sul fianco prendono il punto anche senza la carica (p. 152)', /fianco/.test(suo || ''));
+    ok('la Temple Guard presa di fianco è scompaginata, e lo dice (p. 101)',
+       G.log.some(x => /Temple Guard è presa di fianco da Orc Mobs: scompaginata/.test(x.text)));
+    ok('e il suo bonus di ranghi non c è più', !/rang/.test(mio || 'rang'));
+  }
+  /* chi sta di fronte non scompagina e non prende il fianco */
+  {
+    const { G } = prova('fronte');
+    mena(G);
+    const ris = G.log.find(x => /^Risultato:/.test(x.text));
+    ok('di fronte niente fianco e niente scompiglio',
+       !/fianco/.test(ris.text) && !G.log.some(x => /scompaginata/.test(x.text)));
+  }
   D.setSource(D.seeded(1));
 }
 
@@ -3092,6 +3311,28 @@ console.log('\ntrattenersi, seguire, inseguire (pp. 156-157)');
     dadi([3, 4]);
     AR.apply(G, o.list.find(x => x.scelta === 'travolgi'));
     ok('sfonda di 2D6″ dritta in avanti, senza girarsi', tg.rot === 0 && Math.abs((600 - tg.y) - 7 * MM) < 1 && tg.x === 600);
+    seme(1);
+  }
+  {
+    /* la macchina da guerra non insegue, ma segue «as normal» (p. 197):
+       prima il registro diceva che non seguiva citando proprio quella pagina */
+    const macchinaContro = esito => {
+      const G = nuova();
+      G.generale = { A: null, B: null };
+      const lp = metti(G, uid(G, 3), 600, 600); lp.troop = 'War machine';
+      const orchi = metti(G, uid(G, 505), 600, 400);
+      aContattoDi(G, orchi, lp);
+      G.army = 'A'; G.casella = casella('mischia');
+      AR.interni.chiediInseguimento(G, { perdenti: [{ uid: orchi.uid, esito, vicini: [lp.uid] }], wiped: false,
+                                         coda: null, scelte: [], fallite: [], vincitori: [lp.uid] });
+      return G;
+    };
+    const G1 = macchinaContro('give');
+    ok('una macchina da guerra può seguire chi cede terreno (p. 197)',
+       G1.pending && G1.pending.kind === 'insegui' && AR.options(G1).list.some(x => x.scelta === 'segui'));
+    const G2 = macchinaContro('rout');
+    ok('ma chi fugge non lo insegue, e lo dice',
+       !(G2.pending && G2.pending.kind === 'insegui') && G2.log.some(x => /non insegue: è una macchina da guerra/.test(x.text)));
     seme(1);
   }
   {

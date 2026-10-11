@@ -307,6 +307,33 @@ export const hostsAnyone = (units, u) =>
 const LUMBERING = ["heavyChariot", "monstrousCreature", "behemoth"];
 const hasRule = (u, re) => ((u && u.rules) || []).some(r => re.test(String(r)));
 export const isLumbering = u => LUMBERING.includes(troopType(troopOf(u)).id) || hasRule(u, /^lumbering/i);
+
+/* LA FORMAZIONE (pp. 100, 182-185, 195, 205): «chiuso», «aperto» o
+   «sciolto». Serve alle regole che il libro lega alla formazione e non
+   alla forma: il +1 dell'ordine di combattimento e' dell'ordine CHIUSO
+   (pp. 101 e 152), e l'ordine aperto non si scompiglia nel terreno
+   difficile (p. 183). Prima bastava essere piu' larghi che profondi, e
+   gli Slayers — che hanno Open Order e non Close Order — prendevano il
+   punto come un reggimento di Warriors.
+
+   - Il carro pesante e i mostri sono Lumbering, e «considered to be …
+     a Close Order formation, even when … a single model» (p. 195).
+   - Un modello solo non e' un ordine chiuso, che vuole «two or more
+     models» (p. 100); il personaggio solo e' sempre sciolto (p. 205).
+   - Gli altri adottano la formazione che le loro regole dicono: chi sta
+     sul tavolo sciolto e' sciolto; chi ha Close Order sta chiuso; chi ha
+     solo Open Order sta aperto (l'app lo schiera in ranghi, vedi
+     `costruttori.js`). Chi non ha nessuna di queste regole — le liste
+     scritte a mano — resta chiuso, come prima. */
+export function formationOf(u, n = (u && u.models) || 1){
+  if (!u) return "chiuso";
+  if (isLumbering(u)) return "chiuso";
+  if (n < 2 || u.loose) return "sciolto";
+  if (hasRule(u, /^close order/i)) return "chiuso";
+  if (hasRule(u, /^open order/i)) return "aperto";
+  if (hasRule(u, /^skirmish/i)) return "sciolto";
+  return "chiuso";
+}
 const LUMBER_WHY = "è un carro pesante o un mostro: non si unisce e non ospita (Lumbering, p. 195)";
 
 /* Clumsy: «a quest'unita' si unisce solo un personaggio che ha anche lui

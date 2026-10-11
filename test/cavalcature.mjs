@@ -192,7 +192,11 @@ ok('l urto a Forza 5', impact && impact.strength === 5);
 ok('il Rat Ogre non tira il test di rotta e non e un bersaglio', fight.sides.A.length === 1);
 const fc = C.meleeForecast(a, b);
 ok('la previsione somma il Grey Seer e il Rat Ogre',
-   (fc.groups || []).some(g => g.mount) && fc.attacks === 2 + 3);
+   (fc.groups || []).some(g => g.mount) && fc.groups.filter(g => !g.auto).reduce((t, g) => t + g.attacks, 0) === 2 + 3);
+/* e, siccome ha caricato di sei pollici, l'urto della campana: prima la
+   previsione non contava i colpi automatici, e le cariche dei carri
+   sembravano non rendere niente */
+ok('e ci mette sopra l urto della carica', fc.groups.some(g => g.auto && /urto/.test(g.name)) && fc.attacks > 2 + 3);
 const onFoot = C.meleeFight([C.combatant(seer())], [C.combatant(clanrats())]);
 ok('a piedi nessuno mena per lui', !onFoot.steps.some(s => s.mount));
 

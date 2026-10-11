@@ -128,11 +128,26 @@ export function agenteEuristico({ nome = "euristica", estro = null, piano: sopra
            qui si preferisce qualunque altra colonna — se sono murate
            tutte si schiera lo stesso, che restare fuori dal tavolo e'
            peggio. */
-        const buoni = posti.filter(x => !x.murato);
-        const usa = buoni.length ? buoni : posti;
+        /* E un posto si guarda anche per quello che c'e' sotto e davanti:
+           niente terreno che rallenta sotto i piedi, niente amici davanti
+           nella stessa corsia (al primo passo ci si finisce addosso, e chi
+           tira non vede oltre), niente colonna di marcia; chi tira sta
+           volentieri sulla collina, e chi va a menare in prima fila. Fra i
+           posti migliori si sparpaglia come prima. Prima si sceglieva per
+           indice fra tutti, e il carro dei cinghiali della partita del 10
+           ottobre e' partito in seconda fila dietro i goblin. */
+        const costo = x => (x.murato ? 100 : 0) + (x.colonna ? 50 : 0) + (x.dietro ? 30 : 0) +
+          (x.lento && !x.sciolto ? 20 : 0) + (x.fila || 0) * (x.tiro || x.macchina ? 1 : 3) -
+          (x.collina && (x.tiro || x.macchina) ? 8 : 0);
+        const minimo = Math.min(...posti.map(costo));
+        const usa = posti.filter(x => costo(x) <= minimo + 0.5);
         const scelto = piano.colonne ? perColonna(usa, piano.colonne, colonna++) : usa[colonna++ % usa.length];
+        const scartati = [posti.some(x => x.murato) && !scelto.murato ? "i posti col terreno impassabile davanti" : "",
+                          posti.some(x => x.dietro) && !scelto.dietro ? "quelli dietro un amico" : "",
+                          posti.some(x => x.lento) && !scelto.lento ? "quelli dentro un terreno che rallenta" : "",
+                          posti.some(x => x.colonna) && !scelto.colonna ? "la colonna di marcia" : ""].filter(Boolean);
         return { scelta: scelto, perche: `la metto ${scelto.dove}: uno schieramento largo non si fa prendere di fianco` +
-          (buoni.length < posti.length ? `, e i posti col terreno impassabile davanti li lascio stare` : "") };
+          (scartati.length ? `, e lascio stare ${scartati.join(", ")}` : "") };
       }
 
       /* INCANTESIMI, PRIMA DI SCHIERARE: il dominio con piu'
@@ -239,8 +254,12 @@ export function agenteEuristico({ nome = "euristica", estro = null, piano: sopra
          codice non lo faceva — il Warp Lightning Cannon avanzava di
          cinque pollici a ogni turno e non ha mai sparato in nessuna
          partita. Il conto lo fa l'arbitro, che le armi le ha in mano. */
+      /* il piano puo' dire di muoversi lo stesso, ma non quando muoversi
+         vuol dire non tirare affatto (`obbligato`, l'arma «o si muove o
+         tira»): li' non c'e' niente da barattare */
       const tieniIlTiro = l.find(x => x.id === "ferma" && x.tieniIlTiro);
-      if (tieniIlTiro && piano.tieniTiro) return { scelta: tieniIlTiro, perche: `${tieniIlTiro.nome} ${tieniIlTiro.why}` };
+      if (tieniIlTiro && (piano.tieniTiro || tieniIlTiro.obbligato))
+        return { scelta: tieniIlTiro, perche: `${tieniIlTiro.nome} ${tieniIlTiro.why}` };
 
       /* CHI HA UN MURO DAVANTI LO AGGIRA, prima di qualunque avanzata.
          L'arbitro offre «aggira» solo a chi ha la strada chiusa da un

@@ -610,7 +610,12 @@ export function scoreCardOf(c = {}, wounds = 0, { foe = "" } = {}){
      una seconda volta vorrebbe dire due volte lo stesso punto. */
   const dentro = !!c.attached;
   return {
-    combatOrder: !dentro && inCombatOrder(c),
+    /* il punto e' dell'ordine CHIUSO in ordine di combattimento (pp. 101
+       e 152): non dell'ordine aperto (p. 183), non del modello solo che
+       non e' un carro pesante o un mostro (pp. 100, 195, 205). La
+       formazione la scrive `combat.js`; una scheda fatta a mano che non
+       la dice resta come prima. */
+    combatOrder: !dentro && (c.formazione == null || c.formazione === "chiuso") && inCombatOrder(c),
     foe, name: c.name || "", attached: dentro,
     wounds,
     models: c.models || 0, frontage: c.frontage || 1,

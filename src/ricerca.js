@@ -93,13 +93,15 @@ export function agenteRicerca({ AR, base = null, nome = "ricerca", campioni = 3,
         if (!u || !t) continue;
         const G = gruppi.get(c.target) || [];
         const prima = G.length ? AR.scontroDiGruppo(S, G, t).valore : 0;
-        const dopo = AR.scontroDiGruppo(S, [...G, { u, lato: c.lato }], t).valore;
+        /* come una carica che arriva: urto, Furious Charge, Choppas, e
+           niente Press of Battle (`scontroAtteso`, «carica») */
+        const dopo = AR.scontroDiGruppo(S, [...G, { u, lato: c.lato, carica: { inches: c.dist } }], t).valore;
         const guadagno = c.chance * (dopo - prima);
         if (!meglio || guadagno > meglio.guadagno) meglio = { c, u, guadagno, prima, dopo };
       }
       if (!meglio || meglio.guadagno < soglia) break;
       prese.add(meglio.c.uid);
-      gruppi.set(meglio.c.target, [...(gruppi.get(meglio.c.target) || []), { u: meglio.u, lato: meglio.c.lato }]);
+      gruppi.set(meglio.c.target, [...(gruppi.get(meglio.c.target) || []), { u: meglio.u, lato: meglio.c.lato, carica: { inches: meglio.c.dist } }]);
       piano.push(meglio);
     }
     return piano;
@@ -146,6 +148,11 @@ export function agenteRicerca({ AR, base = null, nome = "ricerca", campioni = 3,
         const r = await euristica.scegli(ctx);
         const x = r && r.scelta;
         if (!x || x.id === "avanti" || x.uid == null) return r;
+        /* chi resta fermo per non perdere il tiro di un'arma «o si muove o
+           tira» non si rimette in discussione: `valuta` non sa del tiro
+           che verra', e una posizione un poco migliore gli costerebbe il
+           turno intero (la Grudge Thrower che avanzava e non sparava) */
+        if (x.id === "ferma" && x.obbligato) return r;
         const tipo = o.casella === "mosse" ? MOSSE : TIRI;
         if (!tipo.has(x.id)) return r;
         const sue = l.filter(y => y.uid === x.uid && tipo.has(y.id));

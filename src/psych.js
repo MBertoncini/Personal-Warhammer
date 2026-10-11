@@ -621,7 +621,7 @@ export function rallyTest({ ld = 0, dice = [], models = 0, start = 0, musician =
           " → " + (passed ? "si raduna" : "continua a fuggire"),
     /* quello che il raduno concede e toglie, e che non e' un tiro */
     then: passed
-      ? "riforma gratis (p. 125); non può caricare in questo turno e conta come mossa per il tiro"
+      ? "riforma gratis (p. 125); non può caricare in questo turno e conta come mossa per il tiro, ma si muove (p. 117)"
       : "continua a fuggire nella fase di movimento (p. 132)",
   };
 }

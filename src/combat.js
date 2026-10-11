@@ -28,6 +28,7 @@ import * as SH from './shoot.js';
 import * as PS from './psych.js';
 import { attackRows, herdRows } from './mounts.js';
 import { beastStat } from './profiles.js';
+import { formationOf } from './formation.js';
 
 /* ============================================================
    1 · DALL'UNITA' DEL TAVOLO ALLA SCHIERA CHE COMBATTE
@@ -45,12 +46,27 @@ import { beastStat } from './profiles.js';
    Boar Boyz menavano con la lancia anche al terzo round. `charged`
    null vuol dire «non si sa» (una stima senza tavolo): si tiene tutto. */
 const SOLO_IN_CARICA = /^(lance|cavalry spear|throwing spear|hunting spear)/i;
+/* L'arma aggiuntiva: «Extra Attacks (+1), Requires Two Hands» (p. 214).
+   Prima l'attacco in piu' non lo leggeva nessuno, e fra due armi che
+   perforano uguale si teneva la prima dell'elenco — l'arma a una mano:
+   gli Orc Mobs della partita del 10 ottobre menavano con un attacco
+   invece di due, e nessuna riga lo diceva. Adesso, a parita' di
+   perforazione, si impugna quella con piu' attacchi; ma non se costa lo
+   scudo (le due mani), che la Parry e l'armatura gli darebbero e che il
+   file sa (`u.shield`): li' la scelta resta l'arma a una mano. */
+export const extraAttacksOf = w => {
+  const m = /extra attacks\s*\(\s*\+?\s*(\d+)\s*\)/i.exec(Array.isArray(w && w.rules) ? w.rules.join(", ") : String((w && w.rules) || ""));
+  return m ? +m[1] : 0;
+};
+const dueMani = w => /requires two hands/i.test(Array.isArray(w && w.rules) ? w.rules.join(", ") : String((w && w.rules) || ""));
 export function meleeWeapon(u, { charged = null } = {}){
   const tutte = (u.weapons || []).filter(w => !(stat(w.range) > 0) && !w.di);
   const ora = charged === false ? tutte.filter(w => !SOLO_IN_CARICA.test(String(w.name || ""))) : tutte;
   const list = ora.length ? ora : tutte;
   if (!list.length) return null;
-  return list.reduce((best, w) => weaponAP(w) > weaponAP(best) ? w : best, list[0]);
+  const extra = w => u.shield === true && dueMani(w) ? 0 : extraAttacksOf(w);
+  return list.reduce((best, w) => weaponAP(w) > weaponAP(best) ||
+                                  (weaponAP(w) === weaponAP(best) && extra(w) > extra(best)) ? w : best, list[0]);
 }
 /* fra le armi da tiro la piu' lunga per prima: e' quella che decide da
    dove si comincia a sparare */
@@ -168,6 +184,9 @@ export function combatant(u, over = {}){
     ap: melee ? weaponAP(melee) : 0,
     weapon: melee ? melee.name : "",
     loose: !!u.loose, rules: u.rules || [],
+    /* chiuso, aperto o sciolto: il +1 dell'ordine di combattimento e'
+       solo dell'ordine chiuso (pp. 101 e 152, `formationOf`) */
+    formazione: formationOf(u, alive),
     standard: !!(u.command && u.command.standard),
     musician: !!(u.command && u.command.musician),
     /* Quello che la carica si e' lasciata dietro, e che adesso pesa in
@@ -189,6 +208,18 @@ export function combatant(u, over = {}){
      e i pestoni usano la Forza NON modificata del modello — lo dice il
      testo delle due regole — e per averla bisogna tenersela da parte
      prima che la lancia la alzi di due punti. */
+  /* l'attacco in piu' dell'arma impugnata (l'arma aggiuntiva) e quello
+     di «Extra Attacks (+X)» fra le regole del modello (p. 165) */
+  const extraRegola = (u.rules || []).reduce((t, r) => {
+    const m = /^extra attacks\s*\(\s*\+?\s*(\d+)\s*\)/i.exec(String(r));
+    return t + (m ? +m[1] : 0);
+  }, 0);
+  const extraA = (melee ? extraAttacksOf(melee) : 0) + extraRegola;
+  if (extraA){
+    c.extraA = extraA;
+    if (c.randomA) c.randomA = { ...c.randomA, plus: c.randomA.plus + extraA };
+    c.a = (c.a || 0) + extraA;
+  }
   c.baseS = c.s;
   if (melee) c.s = weaponStrength(melee, c.s);
   /* Sul mostro e sul carro l'urto e i pestoni usano la Forza della
@@ -1749,7 +1780,10 @@ export function resolution(a, b, done){
        nemico e non una per attaccante (p. 153). Senza contatti
        dichiarati e' il primo dell'altra parte, che in un assalto a due
        e' l'unico. */
-    const at = c.foes && c.foes.length ? c.foes[0] : 0;
+    /* chi prende un nemico di fianco o alle spalle (il tavolo lo scrive in
+       `flankUid`) conta il punto contro quello, non contro il primo */
+    const sulFianco = c.flankUid != null ? other.findIndex(o => o && o.ref && o.ref.uid === c.flankUid) : -1;
+    const at = sulFianco >= 0 ? sulFianco : c.foes && c.foes.length ? c.foes[0] : 0;
     const foe = other[at];
     const card = ML.scoreCardOf(c, hurt, { foe: "#" + at });
     /* Impervious Defence e' una regola di chi viene preso di fianco, ma
@@ -1791,12 +1825,47 @@ export function odds(A, B, n = 500, opts = {}){
   return out;
 }
 
+/* I COLPI AUTOMATICI NELLA PREVISIONE: l'urto della carica (p. 171), solo
+   per chi ha corso tre pollici o piu', e i pestoni (p. 178), sempre.
+   Si contano come li conta l'assalto (`autoHits`): la media del dado, la
+   Forza non modificata — o della bestia —, nessun tiro per colpire, e la
+   perforazione delle Scythed Wheels. Prima la previsione non li sapeva, e
+   il carro dei cinghiali che carica gli Slayers valeva meno di una ferita:
+   l'arbitro scriveva «renderebbe −41» e il carro non caricava mai. */
+const mediaAuto = (a, front) => !a ? 0 : a.flat ? a.flat
+  : a.die ? (a.times || 1) * (a.die + 1) / 2 + (a.plus || 0) : front;
+function autoForecast(att, def, a, ap, label){
+  const n = mediaAuto(a, contact(att, def).front);
+  if (!(n > 0)) return null;
+  const s = att.autoS || att.baseS || att.s;
+  const w = woundOn(s, def.t);
+  const sv = saveOn(def.parryArmour || def.armour, ap || 0);
+  const wd = saveOn(def.ward, 0), rg = saveOn(def.regen, 0);
+  const wounds = n * chance(w) * (1 - chance(sv)) * (1 - chance(wd)) * (1 - chance(rg));
+  return { name: label, attacks: n, hitNeed: 0, woundNeed: w, saveNeed: sv, wardNeed: wd, regenNeed: rg,
+           hatred: false, wounds, kills: wounds / Math.max(1, def.w || 1) };
+}
+
+export function meleeForecast(att, def, attacks){
+  const f = meleeForecastBase(att, def, attacks);
+  if (attacks != null) return f;
+  const fl = att.flags || {};
+  const auto = [ranIn(att) && fl.impact ? autoForecast(att, def, fl.impact, fl.impactAP, "urto della carica") : null,
+                fl.stomp ? autoForecast(att, def, fl.stomp, 0, "pestoni") : null].filter(Boolean);
+  if (!auto.length) return f;
+  const somma = k => auto.reduce((t, x) => t + x[k], 0);
+  return { ...f, attacks: f.attacks + somma("attacks"), wounds: f.wounds + somma("wounds"), kills: f.kills + somma("kills"),
+           groups: [...(f.groups || [{ name: att.name, character: false, mount: false, ...f }]),
+                    ...auto.map(x => ({ ...x, character: false, mount: false, auto: true }))] };
+}
+
 /* La stessa cosa senza tirare: quante ferite ci si aspetta in media.
    Con un numero di attacchi dichiarato e' un profilo solo; senza, sono
    tutte le squadre che menano — la truppa e ogni personaggio unito —
    e le medie si sommano. La riga in cima resta quella della truppa,
-   perche' e' quella che risponde a «con che punteggio colpisco». */
-export function meleeForecast(att, def, attacks){
+   perche' e' quella che risponde a «con che punteggio colpisco».
+   Sopra ci mette i colpi automatici `meleeForecast`. */
+function meleeForecastBase(att, def, attacks){
   const parts = attacks == null && (att.retinue || []).length
     ? strikersOf(att, def, "A").map(x => ({ x, f: oneForecast(x.who, def, x.g.attacks) }))
     : [];
