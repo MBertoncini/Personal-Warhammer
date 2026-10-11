@@ -1543,3 +1543,61 @@ body.sf-cinema.sfc-quieta .board-wrap{cursor:none;}
 }
 .sf-cinema-barra .btn, .sf-cinema-barra select{background:#2a261f;color:#ece8de;border-color:#423c31;}
 .sf-cinema-barra .btn.primary{background:#d8b24a;color:#1c160b;border-color:#d8b24a;}
+
+/* ============================================================
+   LA SCENA (`src/scena.js`): il tavolo dal vivo che si muove
+   Il cartellino del turno in alto, il cartello grande quando cambia
+   turno, la fine con i coriandoli, e il bordo del tavolo nel colore di
+   chi sta giocando. Chi chiede meno movimento li vede fermi.
+   ============================================================ */
+.board-scroll.sc-di-turno{box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--sc-turno) 55%, transparent),
+  inset 0 0 38px -12px var(--sc-turno);transition:box-shadow .5s ease;}
+svg#board .sc-fx text{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;}
+svg#board .fxt{font-weight:800;paint-order:stroke;stroke:rgba(0,0,0,.55);stroke-linejoin:round;}
+.sc-hud{position:absolute;top:8px;left:8px;z-index:4;display:flex;flex-wrap:wrap;gap:5px;align-items:center;
+  max-width:calc(100% - 150px);pointer-events:none;font:600 12.5px/1 "Archivo",system-ui,sans-serif;}
+.sc-hud:empty{display:none;}
+.sc-hud > span{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;white-space:nowrap;
+  background:color-mix(in srgb, var(--panel) 88%, transparent);color:var(--ink);border:1px solid var(--line);
+  box-shadow:0 2px 8px rgba(0,0,0,.12);backdrop-filter:blur(3px);}
+.sc-hud .sc-chi{color:#fff;border-color:transparent;}
+.sc-hud .sc-turno{font-family:"Fraunces",serif;font-weight:700;letter-spacing:.2px;}
+.sc-hud .sc-pensa{color:var(--muted);font-weight:500;}
+.sc-hud .sc-pensa i{width:4px;height:4px;border-radius:50%;background:currentColor;animation:sc-punti 1s infinite ease-in-out;}
+.sc-hud .sc-pensa i:nth-child(2){animation-delay:.15s;} .sc-hud .sc-pensa i:nth-child(3){animation-delay:.3s;}
+@keyframes sc-punti{0%,80%,100%{opacity:.25;transform:translateY(0);}40%{opacity:1;transform:translateY(-3px);}}
+.sc-hud.sc-pop .sc-fase{animation:sc-pop .45s cubic-bezier(.3,1.6,.5,1);}
+@keyframes sc-pop{from{transform:scale(.7);opacity:.2;}to{transform:none;opacity:1;}}
+
+.sc-cartello{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;pointer-events:none;
+  animation:sc-cartello var(--sc-durata,1500ms) ease both;}
+.sc-c-in{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:min(420px,80%);
+  padding:16px 34px 14px;color:#fff;text-align:center;
+  background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--sc-col) 88%, #000) 18%,
+             color-mix(in srgb, var(--sc-col) 88%, #000) 82%, transparent);
+  box-shadow:0 10px 40px rgba(0,0,0,.25);}
+.sc-c-in::before, .sc-c-in::after{content:"";position:absolute;left:12%;right:12%;height:2px;
+  background:linear-gradient(90deg, transparent, #f5c542, transparent);}
+.sc-c-in::before{top:5px;} .sc-c-in::after{bottom:5px;}
+.sc-c-in b{font:700 clamp(22px,4.2vw,40px)/1.05 "Fraunces",serif;letter-spacing:.5px;text-shadow:0 2px 10px rgba(0,0,0,.35);}
+.sc-c-in span{font:600 clamp(12px,1.6vw,15px)/1.2 "Archivo",system-ui,sans-serif;letter-spacing:2px;text-transform:uppercase;opacity:.92;}
+@keyframes sc-cartello{
+  0%{opacity:0;transform:scaleX(.6);} 14%{opacity:1;transform:scaleX(1.03);} 22%{transform:none;}
+  78%{opacity:1;transform:none;} 100%{opacity:0;transform:translateY(-14px);}
+}
+.sc-cartello.sc-resta{animation:sc-entra .7s cubic-bezier(.2,1.4,.4,1) both;pointer-events:none;}
+.sc-cartello.sc-resta .sc-c-in{pointer-events:auto;}
+@keyframes sc-entra{from{opacity:0;transform:scale(.6);}to{opacity:1;transform:none;}}
+.sc-finale .sc-c-in{padding:22px 48px 18px;}
+.sc-finale .sc-c-in b{font-size:clamp(28px,5.6vw,54px);}
+.sc-chiudi{position:absolute;top:8px;right:10px;background:rgba(0,0,0,.25);color:#fff;border-color:transparent;padding:2px 8px;}
+.sc-coriandoli{position:absolute;inset:0;z-index:6;overflow:hidden;pointer-events:none;}
+.sc-coriandoli i{position:absolute;top:-16px;border-radius:2px;animation:sc-cade linear both;}
+@keyframes sc-cade{
+  from{transform:translate(0,0) rotate(0);opacity:1;}
+  to{transform:translate(var(--deriva,0px), 110vh) rotate(var(--giro,360deg));opacity:.8;}
+}
+@media (prefers-reduced-motion:reduce){
+  .sc-cartello, .sc-cartello.sc-resta, .sc-hud.sc-pop .sc-fase, .sc-hud .sc-pensa i{animation:none;}
+  .sc-coriandoli{display:none;}
+}

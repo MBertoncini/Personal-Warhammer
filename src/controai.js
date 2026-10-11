@@ -48,6 +48,7 @@ import { customScenarioMap } from './scenariokit.js';
 import { mostraSfida, chiudiSfida, evidenzia, toast } from './deploy.js';
 import { askConfirm } from './uikit.js';
 import { rigaHTML, SPIEGA_CSS } from './spiega.js';
+import * as SC from './scena.js';
 
 const KEY = "tow-gemini-key";
 const MODEL = "tow-gemini-model";
@@ -138,6 +139,8 @@ export function startSfida({ listA, listB, mia = "A", scenario = "", agenti = nu
   if (guarda) partita.agenti = { A: faiAgente(agenti && agenti.A, "A", conSeme),
                                  B: faiAgente(agenti && agenti.B, "B", conSeme) };
   registra(partita);
+  /* il tavolo di partenza, per sapere poi chi si e' mosso e chi e' caduto */
+  try { partita.fotoPrima = RP.fotogramma(S, { AR }); } catch { partita.fotoPrima = null; }
   mostraSfida(S, { nuova: true });
   if (leggi(SPIEGA, "1") === "1") contenitore();
   renderSfida();
@@ -222,8 +225,8 @@ function ricorda(p){
 }
 /* il tavolo che si vede: quello di adesso, o lo stato che si sta guardando */
 function mostra(p){
-  if (p.guardo != null && p.storia[p.guardo]) mostraSfida({ units: p.storia[p.guardo].units });
-  else mostraSfida(p.S);
+  if (p.guardo != null && p.storia[p.guardo]) return mostraSfida({ units: p.storia[p.guardo].units });
+  return mostraSfida(p.S);
 }
 function vaiA(k){
   const p = partita;
@@ -363,8 +366,14 @@ async function gira(){
       const v = velocita();
       /* la velocita' scala le pause di chi guarda; «di corsa» non ne fa,
          ma un giro del browser lo lascia lo stesso, se no il tavolo non
-         si disegna finche' la partita non e' finita */
-      const ms = v === 0 ? 0 : Math.max(leggere, p.mia ? 0 : calma ? 450 : 120) / (p.mia ? 1 : v);
+         si disegna finche' la partita non e' finita. E si aspetta anche
+         la scena: i pezzi che scivolano e le frecce che volano
+         (`scena.js`) — piu' in fretta va la partita, meno se ne aspetta.
+         Contro di te la scena si aspetta solo con calma: chi l'ha spenta
+         vuole la mossa dell'AI subito, e le animazioni gli corrono dietro */
+      const scena = (p.durataScena || 0) * (p.mia ? (calma ? .85 : 0) : .85 / Math.max(1, v / 1.5));
+      const ms = v === 0 && !p.mia ? 0
+        : Math.max(Math.max(leggere, p.mia ? 0 : calma ? 450 : 120) / (p.mia ? 1 : v || 1), scena);
       if (!p.S.finita){
         if (ms || !p.mia) renderSfida();
         if (ms) await pausa(ms);
@@ -392,6 +401,7 @@ async function finita(p){
 }
 
 function applica(p, o, mossa, perche, chi){
+  SC.impostaRitmo(p.mia ? 1 : velocita());
   const prima = p.S.log.length;
   const r = AR.apply(p.S, mossa);
   if (chi === "ai" && mossa && mossa.id !== "avanti")
@@ -403,9 +413,10 @@ function applica(p, o, mossa, perche, chi){
     AR.apply(p.S, { id: "avanti" });
   }
   AR.controllaFine(p.S);
-  regista(p, o, mossa, chi === "ai" ? perche : "", prima, r);
+  const f = regista(p, o, mossa, chi === "ai" ? perche : "", prima, r);
   ricorda(p);
-  mostra(p);
+  const scivola = mostra(p) || 0;
+  p.durataScena = Math.max(scivola, inScena(p, f));
   /* le schede delle righe nuove, e davanti il perche' dell'AI */
   const scelta = chi === "ai" && mossa && mossa.id !== "avanti" && perche
     ? { x: { k: "scelta", t: "Perché questa mossa", testo: perche,
@@ -413,6 +424,44 @@ function applica(p, o, mossa, perche, chi){
   return raccogli(p, scelta);
 }
 const pausa = ms => new Promise(r => setTimeout(r, ms));
+
+/* La mossa sul tavolo: i pezzi scivolano gia' (`mostraSfida`), qui
+   partono gli effetti del fotogramma — i colpi, le magie, chi cade.
+   Guardando il passato non parte niente: e' una fotografia. */
+function inScena(p, f){
+  if (!f) return 0;
+  const prima = p.fotoPrima;
+  p.fotoPrima = f;
+  return p.guardo == null ? SC.recita(f, prima) : 0;
+}
+
+/* Il cartellino del turno sul tavolo, il cartello quando cambia, e alla
+   fine chi ha vinto. */
+function cornice(p){
+  const S = p.S;
+  if (S.finita){
+    if (p.finale) return;
+    p.finale = true;
+    const e = S.esito || {}, w = e.winner, pt = AR.punteggio(S);
+    SC.cornice({ turno: "Fine", fase: "", army: w || "", chi: "", annuncio: false });
+    SC.finale({
+      titolo: !w ? (e.label || "Partita finita") : p.mia ? (w === p.mia ? "Vittoria!" : "Sconfitta") : `Vince ${S.nomi[w]}`,
+      sotto: [w ? e.label : "", `punti vittoria ${pt.A} a ${pt.B}`].filter(Boolean).join(" · "),
+      army: w || "", festa: !!w && (!p.mia || w === p.mia),
+    });
+    return;
+  }
+  const prepara = S.preparando || S.schierando;
+  const tocca = S.army;
+  SC.cornice({
+    turno: S.preparando ? "Incantesimi" : S.schierando ? "Schieramento" : `Turno ${S.turno}${S.rounds ? "/" + S.rounds : ""}`,
+    fase: prepara ? "" : (AR.CASELLE[S.casella] || {}).fase || "",
+    army: tocca || "",
+    chi: !tocca ? "" : p.mia && tocca === p.mia ? "Tocca a te" : S.nomi[tocca],
+    pensa: p.pensa ? "sceglie" : "",
+    annuncio: !prepara,
+  });
+}
 
 /* ============================================================
    3b · LA REGISTRAZIONE
@@ -438,7 +487,7 @@ function registra(p){
 }
 function regista(p, o, mossa, perche, prima, esito){
   const rec = p.rec;
-  if (!rec) return;
+  if (!rec) return null;
   const S = p.S;
   const righe = S.log.slice(prima);
   const c = o.fase === "Incantesimi" ? "incantesimi" : o.fase === "Schieramento" ? "schieramento" : (o.casella || "");
@@ -456,9 +505,11 @@ function regista(p, o, mossa, perche, prima, esito){
     const f = RP.fotogramma(S, { AR, testo, chi: S.nomi[o.player], perche: detto, army: o.player, casella: c,
                                  turno: righe.length ? righe[0].turno : S.turno });
     if (testo.length || detto || !RP.stessoTavolo(rec.frames[rec.frames.length - 1], f)) rec.frames.push(f);
+    return f;
   } catch (e){
     /* la registrazione non deve mai fermare la partita */
     p.errori.push(`registrazione: ${e.message}`);
+    return null;
   }
 }
 
@@ -612,8 +663,9 @@ function agganciaMano(host, p){
       return;
     }
     AR.controllaFine(p.S);
-    regista(p, p.attesa, gesto, "", prima, r);
-    ricorda(p); mostra(p); raccogli(p);
+    SC.impostaRitmo(1);
+    const f = regista(p, p.attesa, gesto, "", prima, r);
+    ricorda(p); mostra(p); inScena(p, f); raccogli(p);
     evidenzia(gesto.uid);
     p.attesa = null;
     renderSfida(); gira();
@@ -921,6 +973,7 @@ export function renderSfida(){
      pannello: si ridisegnano insieme */
   if (cinema) disegnaCinema();
   pulsanteCinema();
+  if (partita) cornice(partita);
   const host = $("#sfida");
   if (!host) return;
   const p = partita;

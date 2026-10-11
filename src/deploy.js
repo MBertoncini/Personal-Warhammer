@@ -39,6 +39,7 @@ import { chartLink } from './charts.js';
 import { askText, askConfirm, askPick, showMenu, closeMenu,
          countersHTML, wireCounters, tagsHTML, wireTags } from './uikit.js';
 import * as EX from './extras.js';
+import * as SC from './scena.js';
 import * as MV from './movement.js';
 import * as MN from './minacce.js';
 import { ZONE_KINDS, zoneKind, makeZone, ensureZone, zoneRect, zoneBox,
@@ -85,6 +86,9 @@ const state = {
   moveAid:true,
   /* il fantasma dell'ultima fotografia, sotto le unita' di adesso */
   ghost:false,
+  /* i pezzi che scivolano, i colpi che volano, chi cade che lampeggia:
+     `scena.js`. Si spegne dal menu Vista */
+  fx:true,
   /* modalita' «disegna una zona»: il prossimo trascinamento sul vuoto
      diventa un rettangolo invece che uno scorrimento */
   zoning:false, zonePts:null,
@@ -160,6 +164,7 @@ const zoneById   = id => state.zones.find(z => z.zid === +id) || null;
    di sicurezza va ricordata, quindi e' difficile dimenticarsela.
    ============================================================ */
 const svgEl = $("#board");
+SC.scenaSu(svgEl, { attivo: () => state.fx !== false });
 const BOARD_PAD = 46;
 
 const baseBox = () => ({
@@ -1595,7 +1600,7 @@ function drawBoard(){
 
   // unità
   const photoIds = photoDefsFor(svg);
-  const layer = g(svg, "g", {});
+  const layer = g(svg, "g", { class:"l-units" });
   for (const u of state.units){
     if (!u.placed || isJoined(u)) continue;
     const st = unitStatus(u, sc), col = state.armies[u.army].color;
@@ -1675,13 +1680,17 @@ function drawBoard(){
   if (state.moveAid) drawMoveAid(svg, g, selUnit);
 
   // numeri e cartellino
-  const lab = g(svg, "g", { "pointer-events":"none" });
+  /* le etichette sanno di chi sono: quando il pezzo scivola, scivolano
+     con lui (`scena.js`) */
+  const lab = g(svg, "g", { "pointer-events":"none", class:"l-lab" });
+  const labOf = (u, e) => { e.dataset.of = u.uid; return e; };
   for (const u of state.units){
     if (!u.placed || isJoined(u)) continue;
     if (state.labels){
       const t = g(lab, "text", { x:u.x, y:u.y + 12, "text-anchor":"middle", "font-size":34, "font-weight":"500",
                                  fill:"var(--paper)", stroke:"rgba(0,0,0,.3)", "stroke-width":"1", "paint-order":"stroke" });
       t.textContent = String(u.idx);
+      labOf(u, t);
     }
     /* le etichette libere sotto l'unità: due parole, non un pannello.
        Servono a vedere a colpo d'occhio chi è disordinato o chi ha già
@@ -1693,6 +1702,7 @@ function drawBoard(){
                                  fill:"var(--accent)", stroke:"var(--paper)", "stroke-width":"2.4",
                                  "paint-order":"stroke", opacity:".95" });
       t.textContent = s2 + (u.tags.length > 3 ? " +" + (u.tags.length - 3) : "");
+      labOf(u, t);
     }
     /* Lo stato dell'unità, in due parole sopra la testa.
        È il marcatore che al tavolo si appoggia accanto al reggimento:
@@ -1710,6 +1720,7 @@ function drawBoard(){
                                    fill:"var(--warn)", stroke:"var(--paper)", "stroke-width":"2.6",
                                    "paint-order":"stroke" });
         t.textContent = marks.map(m => m.text).join(" · ");
+        labOf(u, t);
       }
     }
     if (state.game.on && EX.woundsOf(u)){
@@ -1718,15 +1729,17 @@ function drawBoard(){
                                  fill:"var(--bad)", stroke:"var(--paper)", "stroke-width":"2.6",
                                  "paint-order":"stroke" });
       t.textContent = "♥ " + EX.woundsOf(u);
+      labOf(u, t);
     }
     if (selIs("unit", u.uid)){
       const txt = `${u.idx}. ${shortName(u.name)} — ${effModels(u)} mod.` +
                   (state.game.on && u.lost ? ` (−${u.lost})` : "");
       const wBox = txt.length * 12 + 20;
       const yTop = Math.max(-40, Math.min(...corners(u).map(p => p[1])) - 44);
-      g(lab, "rect", { x:u.x - wBox/2, y:yTop, width:wBox, height:30, rx:5, fill:"var(--panel)", stroke:"var(--accent)", "stroke-width":1.4 });
+      labOf(u, g(lab, "rect", { x:u.x - wBox/2, y:yTop, width:wBox, height:30, rx:5, fill:"var(--panel)", stroke:"var(--accent)", "stroke-width":1.4 }));
       const t2 = g(lab, "text", { x:u.x, y:yTop + 21, "text-anchor":"middle", "font-size":19, fill:"var(--ink)" });
       t2.textContent = txt;
+      labOf(u, t2);
     }
   }
 
@@ -1844,6 +1857,28 @@ function drawBoard(){
   $("#sc-name").textContent = sc.label + (sc.pts ? ` · ${sc.pts} pt` : "");
   $("#sc-desc").textContent = sc.desc || "";
   updateStat(sc);
+
+  /* gli effetti stanno sopra a tutto, e sopravvivono al ridisegno; nella
+     partita a mano chi ha appena perso modelli lampeggia */
+  SC.riattacca();
+  if (state.game.on && !state.sfida && !drag) SC.osserva(fotoTavolo());
+}
+
+/* Il tavolo come lo vede `fxmotore.js`: la stessa forma dei fotogrammi
+   della partita da rivedere (`RP.fotogramma`), fatta con i pezzi del
+   tavolo invece che con quelli dell'arbitro. */
+function fotoTavolo(){
+  const unita = [], ospiti = {};
+  for (const u of state.units){
+    if (!u.placed || u.dead) continue;
+    const h = hostOf(u);
+    if (h){ ospiti[u.uid] = h.uid; continue; }
+    const b = boxOf(u), fp = EX.woundsOf(u), per = EX.woundsPerModel(u);
+    unita.push({ id:u.uid, a:u.army, x:b.x, y:b.y, w:b.w, h:b.h, r:b.rot || 0,
+                 v:Math.max(0, (u.models || 1) - (u.lost || 0)), m:u.models || 1, f:u.fled ? 1 : 0,
+                 ...(per > 1 || fp ? { fp, fw:per || fp + 1 } : {}) });
+  }
+  return { unita, ospiti, testo:[] };
 }
 
 function shortName(n){
@@ -2640,6 +2675,13 @@ async function runCharge(u, uid){
    perche' il risultato del combattimento torni. */
 function landCharge(u, t, row, out){
   const al = row.align || CH.alignTo(boxOf(u), boxOf(t));
+  /* la carica si vede: il reggimento corre fino al nemico, con la sua
+     polvere, invece di comparirgli addosso */
+  const fotoPrima = fotoTavolo(), da = new Map([[u.uid, { x:u.x, y:u.y, rot:u.rot || 0 }]]);
+  setTimeout(() => {
+    SC.scivola(da, [u]);
+    SC.colpo({ k:"carica", da:u.uid, su:t.uid, ok:true }, fotoTavolo(), fotoPrima);
+  }, 0);
   if (al){ u.x = al.x; u.y = al.y; u.rot = al.rot; }
   u.charged = { target: t.name, uid: t.uid, inches: out.reach, arc: al ? al.arc : "fronte",
                 turn: state.game.turn, side: state.game.army };
@@ -2722,6 +2764,7 @@ async function runFlee(t, from){
   const fb = CB.fleeBonusOf(t);
   const mv = CH.backwardMove("flee", boxOf(t), [asPiece(from)], { roll: rolls.fuga.total, mod: fb.mod });
   const start = [t.x, t.y];
+  const fotoPrima = fotoTavolo(), da = new Map([[t.uid, { x:t.x, y:t.y, rot:t.rot || 0 }]]);
   act("fuga", () => {
     G.dispatch({ type:"flee", unit:t, army:t.army,
                  text: `${t.name} ${mv.text}${fb.why ? " (" + fb.why + ")" : ""}` }, rolls);
@@ -2730,6 +2773,8 @@ async function runFlee(t, from){
     t.fled = true;
     t.moved = { kind:"flee", inches: mv.inches };
   });
+  SC.scivola(da, [t]);
+  SC.colpo({ k:"fuga", da:t.uid }, fotoTavolo(), fotoPrima);
   await panicFledThrough(t, start);
 }
 
@@ -2797,6 +2842,7 @@ async function runShot(u, uid){
   if (!f.shots) return toast("Nessun modello vede il bersaglio a gittata.");
 
   /* 2 · la raffica, vista cadere */
+  let fotoColpo = null;
   const weapon = plan.weapon || { range: String(plan.range), S: "", ap: "" };
   const r = CB.shootRoll(u, t, { weapon, mods: f.mods.total, shots: f.shots });
   await showDiceGroups(shotGroups(r, u.name, t.name), {
@@ -2821,6 +2867,7 @@ async function runShot(u, uid){
                    { salvezza: { dice: r.save.dice, hits: r.save.hits } });
     }
     if (state.game.on) G.goStep(11);
+    fotoColpo = fotoTavolo();
     if (r.kills > 0) G.setLost(t, (t.lost || 0) + r.kills);
     else G.dispatch({ type:"note", army:u.army,
                       text: `${t.name}: nessuna perdita — ${r.wounds} ferit${r.wounds === 1 ? "a" : "e"} passate` });
@@ -2829,6 +2876,9 @@ async function runShot(u, uid){
        raffica, e sparivano nel nulla a ogni tiro. */
     if (r.left != null) G.setWounds(t, r.left);
   });
+  /* la raffica sul tavolo: le frecce partono, e chi cade cade quando
+     arrivano (`scena.js`) */
+  SC.colpo({ k:"tiro", da:u.uid, su:t.uid, arma:weapon.name || "", tiri:f.shots }, fotoTavolo(), fotoColpo);
 
   /* 4 · il Panico. Il conto si fa sulla Forza d'Unita' quando c'e', e
      l'app sa quanti ne sono partiti meglio di chiunque al tavolo. */
@@ -3696,6 +3746,7 @@ async function runCast(caster, spellId, preUid = null){
     kills = toll.kills;
   }
 
+  const fotoMagia = fotoTavolo();
   act(sp.name, () => {
     if (forward) G.goStep(idx);
     caster.magic = { ...(caster.magic || {}), cast: {
@@ -3743,6 +3794,13 @@ async function runCast(caster, spellId, preUid = null){
     const manual = MG.manualOf(sp);
     if (manual) G.logLine(`${sp.name}, a mano: ${manual}.`, { army: caster.army });
   });
+  /* e sul tavolo si vede: la runa sotto il mago, il dardo che parte, o
+     l'incantesimo che si rompe a meta' strada */
+  const su = target ? target.uid : host.uid;
+  SC.colpo(mis ? { k:"fiasco", da:host.uid }
+         : disp && disp.res.dispelled ? { k:"dissolto", da:host.uid, su, nome:sp.name, tipo:sp.type || "" }
+         : final ? { k:"magia", da:host.uid, su, nome:sp.name, tipo:sp.type || "" } : null,
+           fotoTavolo(), fotoMagia);
 }
 
 /* Un incantesimo che resta in gioco finisce quando il mago lo decide,
@@ -3869,6 +3927,7 @@ async function runBombard(u){
       text: `${out.text} Sotto: ${hits.full} del tutto, ${hits.partial} in parte` +
             (detta ? ` — ${detta}` : " — nessuno") }, rolls);
   });
+  SC.colpo({ k:"sagoma", da:u.uid, p:[out.to], r:(out.shape && out.shape.r) || 40 }, fotoTavolo());
   if (!perUnit.size) return toast("La sagoma è caduta sul vuoto.");
   act("perdite dalla sagoma", () => {
     if (state.game.on) G.goStep(11);
@@ -5519,6 +5578,7 @@ const TOGGLES = [
   ["#btn-dist", "distances"], ["#btn-arcs", "arcs"], ["#btn-threats", "threats"],
   ["#btn-move", "move"], ["#btn-shoot", "shoot"],
   ["#btn-moveaid", "moveAid"], ["#btn-ghost", "ghost"], ["#btn-zone-draw", "zoning"],
+  ["#btn-fx", "fx"],
 ];
 for (const [sel, key] of TOGGLES){
   const b = $(sel);
@@ -5527,6 +5587,7 @@ for (const [sel, key] of TOGGLES){
     state[key] = !state[key];
     if (key === "measure" && !state.measure) state.measurePts = [];
     if (key === "zoning" && !state.zoning) state.zonePts = null;
+    if (key === "fx" && !state.fx) SC.fermaTutto();
     /* misurare e disegnare una zona sono due modalita' e si escludono:
        tenerle accese insieme vuol dire un clic che non si sa cosa fa */
     if (key === "measure" && state.measure) setToggle("zoning", false);
@@ -5817,7 +5878,7 @@ function snapshot(){
     tableW:state.tableW, tableH:state.tableH, gap:state.gap,
     snap:state.snap, labels:state.labels, ranges:state.ranges, photos:state.photos,
     distances:state.distances, arcs:state.arcs, move:state.move, shoot:state.shoot, threats:state.threats,
-    moveAid:state.moveAid, ghost:state.ghost,
+    moveAid:state.moveAid, ghost:state.ghost, fx:state.fx,
     rulers:state.rulers, game:state.game, sel:state.sel,
     extras:state.extras || null,
   };
@@ -5856,6 +5917,7 @@ function applySnapshot(s){
   state.labels = s.labels !== false;
   state.ranges = !!s.ranges;
   state.photos = s.photos !== false;
+  state.fx = s.fx !== false;
   state.distances = !!s.distances;
   state.arcs = !!s.arcs;
   state.move = !!s.move;
@@ -5886,7 +5948,14 @@ function applySnapshot(s){
    pagina ricaricata non ha piu' l'arbitro, e il tavolo torna libero.
    ============================================================ */
 function mostraSfida(S, { nuova = false } = {}){
+  /* dove stavano i pezzi disegnati: da li' scivolano dove li ha messi
+     l'arbitro, invece di saltarci (`scena.js`) */
+  const prima = new Map();
+  if (!nuova && state.sfida)
+    for (const u of state.units) if (u.placed && !isJoined(u)) prima.set(u.uid, { x:u.x, y:u.y, rot:u.rot || 0 });
+  SC.osserva(null);
   if (nuova){
+    SC.fermaTutto(); SC.togliCornice();
     state.units = [];
     state.markers = []; state.rulers = []; state.sel = null;
     setScenario(S.scenario, false, { render:false });
@@ -5901,11 +5970,13 @@ function mostraSfida(S, { nuova = false } = {}){
     return c;
   });
   uidSeq = Math.max(uidSeq, ...state.units.map(u => u.uid + 1));
+  SC.tipiDiTruppa(state.units.map(u => [u.uid, troopType(u.troop).id]));
   layCache.clear();
   if (nuova) view.fit();
   renderAll();
+  return nuova ? 0 : SC.scivola(prima, state.units.filter(u => u.placed && !isJoined(u)));
 }
-function chiudiSfida(){ state.sfida = false; renderAll(); }
+function chiudiSfida(){ state.sfida = false; SC.fermaTutto(); SC.togliCornice(); SC.osserva(null); renderAll(); }
 /* il pezzo di cui si parla, acceso sul tavolo */
 function evidenzia(uid){
   const u = state.units.find(x => x.uid === uid);
@@ -6070,6 +6141,7 @@ async function bootDeploy(){
     fearFor: (u, foe) => PS.fearCheck({ me: psychFor(u), foe: psychFor(foe), meUS: usOf(u), foeUS: usOf(foe),
                                         when:"combat", tested: fearTested(u), foeName: foe.name }),
     applyLosses: pairs => {
+      const fotoPrima = fotoTavolo();
       act("perdite dallo scontro", () => {
         for (const [u, n, spill] of pairs){
           if (n > 0) G.setLost(u, (u.lost || 0) + n);
@@ -6078,6 +6150,9 @@ async function bootDeploy(){
           if (spill != null) G.setWounds(u, spill);
         }
       });
+      /* le scintille dove le due linee si toccano, e poi chi cade */
+      const di = tag => pairs.map(([u]) => u).filter(u => u.army === tag).map(u => (hostOf(u) || u).uid);
+      SC.colpo({ k:"mischia", a:di("A"), b:di("B") }, fotoTavolo(), fotoPrima);
       toast(state.game.on
         ? "Perdite segnate: i reggimenti sul tavolo si sono accorciati."
         : "Perdite segnate. Si vedono sul tavolo dopo «Comincia la partita».");
