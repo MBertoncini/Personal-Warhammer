@@ -599,7 +599,7 @@ function cliente(){
           const iw = lunga ? h : w, ih = lunga ? w : h;
           s += '<use href="#ph-' + cat + '" x="' + (-iw / 2) + '" y="' + (-ih / 2) + '" width="' + iw + '" height="' + ih +
                '"' + (lunga ? ' transform="rotate(-90)"' : '') + '/>' +
-               '<rect x="' + (-w / 2) + '" y="' + (-h / 2) + '" width="' + w + '" height="' + h + '" fill="' + col + '" fill-opacity=".2"/>';
+               '<rect x="' + (-w / 2) + '" y="' + (-h / 2) + '" width="' + w + '" height="' + h + '" fill="' + col + '" fill-opacity=".6" style="mix-blend-mode:multiply"/>';
         }
         s += '<rect class="' + (capo ? 'capo' : 'base') + '" x="' + (-w / 2) + '" y="' + (-h / 2) + '" width="' + w +
              '" height="' + h + '" rx="' + (capo ? 3 : 1) + '"/></g>';

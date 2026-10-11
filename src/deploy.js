@@ -1646,6 +1646,13 @@ function drawBoard(){
         const use = g(sg, "use", { x:-iw/2, y:-ih/2, width:iw, height:ih,
                                    ...(lunga ? { transform:"rotate(-90)" } : {}) });
         setHref(use, "#" + ph);
+        /* il velo dell'esercito: le foto con lo sfondo bianco (quelle dei
+           negozi, e molte della collezione) coprivano la basetta, e il
+           reggimento diventava una macchia chiara sul tavolo chiaro.
+           In moltiplica il bianco prende il colore e le miniature, che
+           sono scure, restano leggibili */
+        g(sg, "rect", { x:-s.w/2, y:-s.h/2, width:s.w, height:s.h, fill:col,
+                        opacity:".6", style:"mix-blend-mode:multiply" });
       }
       g(sg, "rect", { x:-s.w/2, y:-s.h/2, width:s.w, height:s.h, fill:"none",
                       stroke:"var(--paper)", "stroke-width":.8, opacity:".5" });
