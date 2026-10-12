@@ -11,7 +11,7 @@
  * di rete. Qui dentro c'e' solo il guscio dell'app.
  */
 
-const VERSION = "v57";
+const VERSION = "v58";
 const SHELL = "shell-" + VERSION;
 const RUNTIME = "runtime-" + VERSION;
 

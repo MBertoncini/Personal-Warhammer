@@ -21,6 +21,7 @@ import { polysOverlap, boxCorners } from '../src/geom.js';
 import { spawnSync } from 'node:child_process';
 import * as MG from '../src/magic.js';
 import * as EF from '../src/effects.js';
+import * as ARM from '../src/armies.js';
 import { MM } from '../src/util.js';
 
 let fails = 0;
@@ -1669,6 +1670,25 @@ console.log('\nla carica su chi fugge come reazione (pp. 120-121)');
      G1.log.some(r => /reagisce fuggendo: 1 \+ 1 \+ 1 \(Swiftstride, p\. 178\) = 3″/.test(r.text)));
   D.setSource(D.seeded(1));
 
+  /* il bonus dell'esercito si scrive nella somma: i Jezzail della
+     partita contro la Mandria «fuggivano di 1 + 6 = 8″», e l'uno in più
+     dello Scurry Away stava solo nella scheda */
+  /* le regole d'esercito si caricano solo qui, e si tolgono dopo: il
+     resto del file gioca senza */
+  ARM.useArmies(ARM.makeArmies(dati('eserciti/indice.json').file.map(f => dati('eserciti/' + f))));
+  const Gs = AR.newBattle({ A, B: lista('lmugl4zvob6pi'), scenario:'bm-strada', primo:'A' });
+  Gs.schierando = false;
+  const ss = metti(Gs, uid(Gs, 1), 600, 600);
+  const jz = metti(Gs, Gs.units.find(u => u.army === 'B' && /Jezzail/.test(u.name)), 600, 430);
+  Gs.casella = casella('cariche'); Gs.army = 'A';
+  AR.apply(Gs, { id:'carica', uid: ss.uid, target: jz.uid });
+  D.setSource(() => 0);
+  AR.apply(Gs, AR.options(Gs).list.find(x => x.kind === 'flee'));
+  ok('lo Scurry Away si legge nella somma della fuga: 1 + 1 + 1 = 3″',
+     Gs.log.some(r => /reagisce fuggendo: 1 \+ 1 \+ 1 \(Scurry Away\) = 3″/.test(r.text)));
+  D.setSource(D.seeded(1));
+  ARM.useArmies(null);
+
   const G2 = nuova();
   const s2 = metti(G2, uid(G2, 1), 600, 600);
   const w2 = metti(G2, uid(G2, 501), 600, 430);
@@ -2051,6 +2071,52 @@ console.log('\nle manovre (pp. 124-125)');
     orc = verso(G2, b2, 120, 400);
     AR.apply(G2, { id:'avanza', uid: b2.uid, verso: orc.uid });
     ok('e di 120° paga solo i 30 oltre i novanta', quasi(spostato(b2, 600, 600), 2.76));
+    /* e anche nel giro sul posto: il Ghorgon della partita contro la
+       Skryre si girava di 90° pagando 1,8″ dei suoi 7 */
+    const G3 = inMosse(nuova());
+    G3.terrain = [];
+    const b3 = metti(G3, uid(G3, 7), 600, 600);
+    metti(G3, uid(G3, 505), 900, 600);
+    const gi = AR.options(G3).list.find(x => x.id === 'gira' && x.uid === b3.uid);
+    ok('il giro di 90° si offre senza costo (Lumbering, p. 195)', !!gi && /senza costo: Lumbering, p\. 195/.test(gi.why));
+    AR.apply(G3, gi);
+    ok('e girato va dritto con tutto il Movimento',
+       b3.rot === 90 && quasi(spostato(b3, 600, 600), 4) &&
+       G3.log.some(r => /gira di 90° a destra senza costo \(Lumbering, p\. 195\)/.test(r.text)));
+    const G4 = inMosse(nuova());
+    G4.terrain = [];
+    const b4 = metti(G4, uid(G4, 7), 600, 600);
+    metti(G4, uid(G4, 505), 600, 900);
+    AR.apply(G4, AR.options(G4).list.find(x => x.id === 'gira' && x.uid === b4.uid));
+    ok('di 180° paga solo i 90 oltre i liberi: un quarto del Movimento', quasi(spostato(b4, 600, 600), 3));
+  }
+  /* La ruota a filo del bordo (p. 125): la Gor Herd della partita
+     contro la Skryre, schierata contro il bordo sinistro, «ruotava di 7°
+     e avanzava di 0″» verso un bersaglio che stava più in là del bordo:
+     la ruota ci stava, ogni passo dopo usciva dal tavolo, e il registro
+     non diceva perché. Adesso va dritta, e quando il bordo la ferma a
+     metà lo dice. */
+  {
+    const aFilo = mm => {
+      const G = inMosse(nuova());
+      G.terrain = [];
+      const tg = metti(G, uid(G, 6), 300, 600);
+      tg.x = AR.boxOf(tg, G.units).w / 2 + mm;
+      const a = -10 * Math.PI / 180;
+      metti(G, uid(G, 506), tg.x + Math.sin(a) * 400, tg.y - Math.cos(a) * 400);
+      return { G, tg, x0: tg.x, op: AR.options(G).list.find(x => x.id === 'avanza' && x.uid === tg.uid) };
+    };
+    const { G, tg, x0, op } = aFilo(0.3);
+    ok('a filo del bordo l opzione dice che va dritta, e quanto', !!op && /non ha posto per girarsi: avanza dritta di 4″/.test(op.why));
+    AR.apply(G, op);
+    ok('e la Temple Guard fa i suoi 4″ dritta invece di 0″',
+       tg.rot === 0 && quasi(spostato(tg, x0, 600), 4) && !G.log.some(r => /avanza di 0″/.test(r.text)));
+    const b = aFilo(6);
+    ok('a pochi millimetri l opzione dice dove il bordo la ferma',
+       !!b.op && /il bordo del tavolo la ferma a [\d.]+″/.test(b.op.why));
+    AR.apply(b.G, b.op);
+    ok('e il registro dice che c è il bordo',
+       b.G.log.some(r => /e si ferma: c'è il bordo del tavolo/.test(r.text)) && spostato(b.tg, b.x0, 600) > 0.5);
   }
   /* il giro (p. 124): un quarto del Movimento ogni 90°, e i modelli
      girano sul posto — i ranghi diventano file */
@@ -3481,6 +3547,26 @@ console.log('\nla Frenzy e l Impetuosità (testo della lista; Core pp. 170, 172)
        G.log.filter(x => x.text.includes(`${orchi.name}, test di Impetuosità`)).length === 2 &&
        G.log.some(x => /Quell Impetuosity/.test(x.text)) && !AR.options(G).list.some(x => x.deve));
     seme(1);
+  }
+
+  /* il pareggio rotto dal musico (p. 201): il registro scriveva «Vince
+     Gor Herd di 0», che sembrava un conto sbagliato */
+  {
+    const G = nuova();
+    const tg = metti(G, uid(G, 6), 600, 600);
+    const orchi = metti(G, uid(G, 505), 600, 400);
+    orchi.models = 15;
+    tg.command = { standard: false, musician: true, champion: false };
+    orchi.command = { standard: false, musician: false, champion: false };
+    aContattoDi(G, orchi, tg);
+    G.army = 'B'; G.casella = casella('mischia');
+    D.setSource(() => 0);                                  // tutti uno: nessuno ferisce
+    AR.apply(G, AR.options(G).list.find(x => x.id === 'combatti'));
+    D.setSource(D.seeded(1));
+    const ris = G.log.find(x => /^Risultato:/.test(x.text));
+    ok('a punti pari il registro dice pareggio, rotto dal musico, e chi vince',
+       !!ris && /Pareggio, rotto dal musico: vince Temple Guard/.test(ris.text) && !/di 0/.test(ris.text));
+    ok('e chi perde tira lo stesso il test di rotta', G.log.some(x => /^Orc Mobs: /.test(x.text) && /cede terreno|ripiega|rotta/.test(x.text)));
   }
 
   /* la Frenzy si perde perdendo un round */

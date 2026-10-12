@@ -528,7 +528,7 @@ export const sulTavolo = (S, u) => dentroTavolo(S, cornersOf(u, S.units));
 export function ingombro(S, u, box, { ignora = [], unPollice = true, bordo = true, gia = null,
                                       terreno = true } = {}){
   const poly = boxCorners(box);
-  if (bordo && !dentroTavolo(S, poly)) return { chi: null, perche: "il bordo del tavolo" };
+  if (bordo && !dentroTavolo(S, poly)) return { chi: null, perche: "il bordo del tavolo", bordo: true };
   /* Il terreno impassabile (p. 270): «non si attraversa durante la
      battaglia — le unita' devono girarci attorno». Questo controllo non
      c'era affatto: `ingombro` guardava le unita' e il bordo, e nelle
@@ -649,9 +649,11 @@ function percorso(S, u, verso, pollici, { rot = u.rot || 0, ignora = [], unPolli
       }
       fatto = lo;
     }
+    const prima = fatto;
     fatto = rientra(at, fatto);
     const p = at(fatto);
-    return { x: p.x, y: p.y, mm: fatto, stop, resta: Math.hypot(verso[0] - p.x, verso[1] - p.y), ang };
+    return { x: p.x, y: p.y, mm: fatto, stop, resta: Math.hypot(verso[0] - p.x, verso[1] - p.y), ang,
+             rientrato: fatto < prima - 0.01 };
   };
   let best = prova(base);
   if (devia && !sorvola && best.stop && best.mm < max - 0.5){
@@ -660,6 +662,13 @@ function percorso(S, u, verso, pollici, { rot = u.rot || 0, ignora = [], unPolli
       if (alt.resta < best.resta - 1) best = alt;
     }
   }
+  /* Chi dopo la ruota cammina senza guardare il bordo e poi torna
+     indietro fin dove sta dentro (`bordo: "fine"`) si e' fermato contro
+     il bordo, e va detto: prima tornava senza un perche', e la Gor Herd
+     della partita contro la Skryre «ruotava di 7° e avanzava di 0″»
+     per due turni di fila senza che il registro dicesse niente. Si
+     guarda dopo le deviazioni, che restano quelle per gli ostacoli. */
+  if (!best.stop && best.rientrato) best = { ...best, stop: { chi: null, perche: "il bordo del tavolo", bordo: true } };
   return { ...best, pollici: r1(inch(best.mm)) };
 }
 
@@ -1966,7 +1975,7 @@ function opzioniMossa(S){
       const fermoDavvero = v => !!v && v.pollici < 0.05 && Math.abs(v.giro || 0) < 0.5;
       if (!fermoDavvero(va)) out.push({ id:"avanza", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
                  dist: d, pollici: r1(va ? va.pollici : pa.resta), muro: !!(va && va.muro), ...ga.campi,
-                 why: `${t.name} è a ${d}″: ${testoRuota(pa, move)}` + (mv.why ? ` (${mv.why})` : "") +
+                 why: `${t.name} è a ${d}″: ${testoStrada(va, pa, move)}` + (mv.why ? ` (${mv.why})` : "") +
                       muroTesto(va) + ga.testo,
                  page: va && va.muro ? 270 : pa.costo ? 124 : 122 });
       /* ACCOSTARSI: il gioco delle distanze. Se dove l'avanzata intera
@@ -1992,7 +2001,7 @@ function opzioniMossa(S){
       if (!bandiera(u, "noMarch") && !macchina(u) && !fermoDavvero(vm)) out.push({ id:"marcia", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
                  dist: d, pollici: r1(vm ? vm.pollici : pm.resta), muro: !!(vm && vm.muro), provaComando: d <= CH.MARCH_WATCH && !vola(u),
                  ...gm.campi,
-                 why: `${t.name} è a ${d}″: ${testoRuota(pm, move * volte, "marcia")}` +
+                 why: `${t.name} è a ${d}″: ${testoStrada(vm, pm, move * volte, "marcia")}` +
                       (volte === 3 ? " (in colonna di marcia: il triplo, p. 101)" : "") +
                       (d <= CH.MARCH_WATCH && !vola(u) ? `, ma a ${CH.MARCH_WATCH}″ da un nemico serve un test di Comando (p. 123)` : "") +
                       muroTesto(vm) + gm.testo,
@@ -2154,6 +2163,19 @@ function pianoRuota(S, u, rot, budget, { marcia = false } = {}){
            giro: Math.sign(giro) * fatti, rot: ((da + Math.sign(giro) * fatti) % 360 + 360) % 360 };
 }
 
+/* Quello che la mossa fa davvero sul tavolo, non quello che la ruota
+   promette sul tavolo vuoto: la Gor Herd a filo del bordo si vedeva
+   offrire «ruota di 7° e avanza di 4.2″» e poi restava ferma. Quando
+   la ruota non ci sta si va dritti, e quando il bordo ferma prima lo si
+   dice con i pollici veri. */
+function testoStrada(v, pr, pollici, verbo = "avanza"){
+  if (v && v.bloccata)
+    return `non ha posto per girarsi: ${verbo} dritta di ${r1(v.pollici)}″` +
+           (v.stop && v.stop.bordo ? ", fino al bordo del tavolo" : "");
+  const testo = testoRuota(pr, pollici, verbo);
+  return v && v.stop && v.stop.bordo && !pr.parziale
+    ? `${testo} — però il bordo del tavolo la ferma a ${r1(v.pollici)}″` : testo;
+}
 /* La ruota in parole, per l'opzione: «ruota di 20°, che costa 2.1″
    (p. 124), e avanza di 1.9″». */
 function testoRuota(pr, pollici, verbo = "avanza"){
@@ -2166,6 +2188,17 @@ function testoRuota(pr, pollici, verbo = "avanza"){
   return `ruota di ${g}°` +
     (libero ? `, ${libero} liberi (Lumbering, p. 195) e ${g - libero} che costano ${r1(pr.costo)}″ (p. 124)`
             : `, che costa ${r1(pr.costo)}″ (p. 124)`) + `, e ${verbo} di ${r1(pr.resta)}″`;
+}
+
+/* Quanto costa girarsi sul posto: un quarto del Movimento ogni 90°
+   (p. 124), e a chi e' Lumbering i primi 90° non costano niente se non
+   marcia (p. 195) — e chi si gira non marcia. La ruota lo faceva gia'
+   (`pianoRuota`), il giro no: il Ghorgon della partita contro la
+   Skryre si girava di 90° pagando 1,8″ dei suoi 7. */
+function costoGiro(u, gradi, move){
+  const liberi = FM.isLumbering(u) ? Math.min(90, Math.abs(gradi)) : 0;
+  const pagati = Math.abs(gradi) - liberi;
+  return { costo: pagati ? move * MV.TURN_COST[pagati] : 0, liberi };
 }
 
 /* Il giro sul posto (p. 124): i modelli dei ranghi completi girano
@@ -2229,14 +2262,16 @@ function opzioniManovra(S, u, t, move, { bloccata = false } = {}){
     const gradi = arco === "retro" ? 180 : (lx >= 0 ? 90 : -90);
     const g = giroSulPosto(S, u, gradi);
     if (g){
-      const costo = move * MV.TURN_COST[Math.abs(gradi)];
+      const { costo, liberi } = costoGiro(u, gradi, move);
       const cambio = g.fronte !== f0
         ? `; il fronte passa da ${f0} a ${g.fronte}` + (colonna(n, g.fronte) ? ", in colonna" : "") +
           `, bonus di ranghi +${ranghi(f0)} → +${ranghi(g.fronte)}` : "";
       out.push({ id:"gira", ...base, gradi, dove: gradi === 180 ? "180°" : `90° a ${gradi > 0 ? "destra" : "sinistra"}`,
         why: `${t.name} le sta ${arco === "retro" ? "alle spalle" : "sul fianco"}, a ${d}″: gira di ` +
              `${Math.abs(gradi)}°${gradi === 180 ? "" : gradi > 0 ? " a destra" : " a sinistra"} ` +
-             `(${r1(costo)}″, ${Math.abs(gradi) === 90 ? "un quarto" : "metà"} del Movimento, p. 124)${cambio}, ` +
+             (liberi >= Math.abs(gradi) ? `(senza costo: Lumbering, p. 195)`
+              : liberi ? `(${r1(costo)}″: 90° liberi, Lumbering p. 195, e gli altri 90° un quarto del Movimento, p. 124)`
+              : `(${r1(costo)}″, ${Math.abs(gradi) === 90 ? "un quarto" : "metà"} del Movimento, p. 124)`) + `${cambio}, ` +
              `e fa dritta i ${r1(move - costo)}″ che restano`,
         page: 124 });
     }
@@ -2355,7 +2390,7 @@ function manovra(S, a){
       const eff = TR.slowMove(pieno, lentiPer(u, pezziFra(S, partenza, partenza)));
       if (eff.slowed){ diciRallenta(S, u, eff); move = eff.move; }
     }
-    const costo = move * MV.TURN_COST[Math.abs(gradi)];
+    const { costo, liberi } = costoGiro(u, gradi, move);
     u.frontage = g.fronte;
     posa(S, u, u.x, u.y, g.rot);
     const ra = g.rot * Math.PI / 180, resta = move - costo;
@@ -2368,7 +2403,8 @@ function manovra(S, a){
     u.moved = { kind: "turn", inches: p.pollici };
     limite(S, "manovre");
     say(S, `${u.name} gira di ${Math.abs(gradi)}°${gradi === 180 ? "" : gradi > 0 ? " a destra" : " a sinistra"} ` +
-           `(${r1(costo)}″)` + (g.fronte !== f0 ? `: il fronte passa da ${f0} a ${g.fronte}` : "") +
+           (liberi >= Math.abs(gradi) ? "senza costo (Lumbering, p. 195)"
+              : `(${r1(costo)}″` + (liberi ? `, ${liberi}° liberi, Lumbering p. 195` : "") + ")") + (g.fronte !== f0 ? `: il fronte passa da ${f0} a ${g.fronte}` : "") +
            (p.pollici ? `, e avanza dritta di ${p.pollici}″` : "") + fermo(p, resta) + ".",
         { army: u.army, page: 124 });
     /* girarsi sul posto e' un movimento: nel pericoloso si tira */
@@ -3918,7 +3954,12 @@ function pianoAvanzata(S, u, t, pr, quanti){
   /* girato in aria e senza un posto dove atterrare, o girato con un
      angolo fuori dal tavolo e senza pollici per rientrare (p. 125):
      resta com'era */
-  if (ruota && ((ruota.inAria && !p.mm) ||
+  /* E girato verso un bersaglio che sta oltre il bordo, a filo del
+     bordo: la ruota ci sta, ma ogni passo dopo esce dal tavolo, e il
+     pezzo pagava la ruota per restare dov'era. Allora non si gira e va
+     dritto, che e' il movimento che il tavolo gli lascia. */
+  const soloRuota = ruota && !ruota.inAria && resta > 0.01 && p.mm < 0.01 && p.stop && p.stop.bordo;
+  if (ruota && ((ruota.inAria && !p.mm) || soloRuota ||
                 !dentroTavolo(S, boxCorners({ ...boxOf(u, S.units), x: p.x, y: p.y, rot })))){ dritta(); p = corsa(); }
   /* il passo avanti prima della ruota e' movimento fatto, e si conta */
   const extra = ruota ? ruota.extra : 0;
@@ -4353,8 +4394,15 @@ function tiroDiFuga(u){
   const swift = MV.swiftOf(u);
   const dadi = roll(swift ? 3 : 2);
   /* «to a minimum of 1»: la Resolute dei Nani e la macchina da guerra */
-  const via = Math.max(1, dadi.reduce((s, v) => s + v, 0) + CB.fleeBonusOf(u).mod);
-  const testo = dadi.slice(0, 2).join(" + ") + (swift ? ` + ${dadi[2]} (Swiftstride, p. 178)` : "");
+  const b = CB.fleeBonusOf(u);
+  const via = Math.max(1, dadi.reduce((s, v) => s + v, 0) + b.mod);
+  /* il bonus si scrive nella somma: prima i Jezzail «fuggivano di
+     1 + 6 = 8″», e lo Scurry Away che faceva l'otto stava solo nella
+     scheda */
+  const chi = String(b.why || "").split(", ").map(x => x.replace(/ [+−-]\d+$/, "")).join(", ");
+  const testo = dadi.slice(0, 2).join(" + ") + (swift ? ` + ${dadi[2]} (Swiftstride, p. 178)` : "") +
+    (b.mod ? ` ${b.mod > 0 ? "+" : "−"} ${Math.abs(b.mod)} (${chi})` : "") +
+    (via > dadi.reduce((s, v) => s + v, 0) + b.mod ? ", al minimo 1" : "");
   return { dadi, via, testo };
 }
 
@@ -6604,9 +6652,17 @@ function menaLaMischia(S, g){
 
   const nomi = l => l.map(u => u.name).join(" e ");
   const parti = sc => sc.parts.map(p => `${p.v} ${p.v === 1 ? p.one : p.many}`).join(" + ");
+  /* Il pareggio rotto dal musico (p. 201) vince con lo scarto a zero, e
+     va detto che e' un pareggio: «Vince Gor Herd di 0» sembrava un conto
+     sbagliato, e il Grey Seer che ci ha tirato la rotta un errore
+     dell'arbitro. */
+  const vincitore = r.cr.winner ? (r.cr.winner === "A" ? nomi(g.A) : nomi(g.B)) : "";
+  const verdetto = !r.cr.winner ? "pareggio"
+    : r.cr.tie ? `pareggio, rotto dal musico: vince ${vincitore}, e chi perde tira con lo scarto a zero (p. 201)`
+    : `vince ${vincitore} di ${r.cr.diff}`;
   say(S, `Risultato: ${nomi(g.A)} ${r.cr.A.total} (${parti(r.cr.A) || "niente"}) contro ` +
          `${nomi(g.B)} ${r.cr.B.total} (${parti(r.cr.B) || "niente"}).` +
-         (r.cr.winner ? ` Vince ${r.cr.winner === "A" ? nomi(g.A) : nomi(g.B)} di ${r.cr.diff}.` : " Pareggio."),
+         ` ${verdetto[0].toUpperCase()}${verdetto.slice(1)}.`,
       { page: ML.PAGE.multiple, army: r.cr.winner || "",
         x: { k: "risultato", u: `${nomi(g.A)} contro ${nomi(g.B)}`,
              f: [["A", g.A], ["B", g.B]].map(([tag, chi]) => ({
@@ -6614,7 +6670,7 @@ function menaLaMischia(S, g){
                f: "mischia" })).concat(
                [...r.cr.A.parts, ...r.cr.B.parts].some(p => p.id === "ground")
                  ? [{ t: "il terreno più alto vale un punto (p. 152)", f: "terreno" }] : []),
-             e: r.cr.winner ? `vince ${r.cr.winner === "A" ? nomi(g.A) : nomi(g.B)} di ${r.cr.diff}` : "pareggio" } });
+             e: verdetto } });
   for (const u of caduti) say(S, `${u.name}: non resta nessuno in piedi.`, { army: u.army });
 
   /* «Any model that loses a round of combat will immediately lose this
