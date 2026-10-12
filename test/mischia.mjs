@@ -729,7 +729,7 @@ console.log('\ngli schermagliatori non stanno in file (p. 101)');
 }
 
 /* ================================================================= */
-console.log('\nla sfida, come duello vero (pp. 211-212)');
+console.log('\nla sfida, come duello vero (pp. 210-211)');
 {
   /* Le due schiere sono due personaggi uniti a due reggimenti: e' il
      caso normale al tavolo, e l'unico in cui la sfida cambia davvero
@@ -756,7 +756,7 @@ console.log('\nla sfida, come duello vero (pp. 211-212)');
   const duello = C.meleeFight(A, B, { challenge: { a: 1, b: 1 } });
   const colpi = duello.steps;
   const daiDue = colpi.filter(s => s.name === 'Kroq-Gar' || s.name === 'Grimgor');
-  ok('i due sfidanti si dirigono i colpi solo addosso (p. 212)',
+  ok('i due sfidanti si dirigono i colpi solo addosso (p. 211)',
      daiDue.length > 0 && daiDue.every(s => s.foe === (s.name === 'Kroq-Gar' ? 'Grimgor' : 'Kroq-Gar')));
   ok('e nessun altro mena addosso a loro due',
      !colpi.some(s => s.name === 'Truppa' && (s.foe === 'Kroq-Gar' || s.foe === 'Grimgor')));
@@ -780,7 +780,7 @@ console.log('\nla sfida, come duello vero (pp. 211-212)');
   ok('chi vince la sfida porta l overkill al suo conto', visto);
   ok('e la truppa, che non duella, non ne porta mai', !senza);
 
-  /* p. 212: la cavalcatura dirige i colpi sul rivale, e se il rivale
+  /* p. 211: la cavalcatura dirige i colpi sul rivale, e se il rivale
      e' gia' caduto li tira lo stesso — contano per l'overkill */
   const dorso = capo('Carnosauro', stCapo,
     { mountId:'carnosauro',
@@ -795,7 +795,7 @@ console.log('\nla sfida, come duello vero (pp. 211-212)');
   })());
 
   /* le ferite date a un rivale gia' a terra non gonfiano il risultato:
-     contano per l'overkill e basta (p. 212, «this is an exception») */
+     contano per l'overkill e basta (p. 211, «this is an exception») */
   ok('un rivale gia caduto non regala ferite al risultato', (() => {
     const s = schiere();
     s.B[1].models = 0;
@@ -955,7 +955,7 @@ console.log('\nnel risultato contano le ferite perse (p. 152)');
   const eroe = () => C.combatant(unit('Saurus Oldblood', { ...prof, WS:'6', S:'7', T:'5', W:'3', A:'5' }, 1, 1));
   const rivale = () => C.combatant(unit('Orc Boss', { ...prof, T:'4', W:'2', A:'1' }, 1, 1));
   const duello = C.meleeFight([eroe()], [rivale()], { challenge: true });
-  ok('e l overkill conta ancora le ferite in più (p. 212)', duello.sides.A[0].overkill === 3);
+  ok('e l overkill conta ancora le ferite in più (p. 211)', duello.sides.A[0].overkill === 3);
   D.setSource(D.seeded(1));
 }
 
@@ -994,7 +994,7 @@ console.log('\nle ferite multiple (Multiple Wounds, p. 175)');
      r.wounds === 2 && Array.isArray(r.losses) && r.losses.join() === '2,2');
   const f = C.meleeFight(carno(), bestia());
   ok('due ferite non salvate abbattono un mostro da tre', f.kills.B[0] === 1);
-  ok('e nel risultato contano le ferite perse, tre e non quattro (p. 212)', f.done.A === 3);
+  ok('e nel risultato contano le ferite perse, tre e non quattro (p. 211)', f.done.A === 3);
   const g = C.meleeForecast(carno(), bestia());
   const piatto = C.meleeForecast(C.combatant(unit('Carnosauro',
     { M:'7',WS:'4',BS:'0',S:'7',T:'5',W:'5',I:'2',A:'2',Ld:'5' }, 1, 1,

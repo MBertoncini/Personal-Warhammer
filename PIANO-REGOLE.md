@@ -1786,7 +1786,7 @@ E una settima, che cambiava la forma di ogni turno:
 E un'ottava, che era l'ultima cosa del combattimento che l'app sapeva
 contare e non sapeva giocare:
 
-8. ~~**le sfide**~~ — fatte (pp. 211-212). Erano tre decisioni e non un
+8. ~~**le sfide**~~ — fatte (pp. 210-211). Erano tre decisioni e non un
    conto, e adesso sono tre domande in sospeso come la reazione alla
    carica: si lancia quando il combattimento viene scelto, prima chi è
    di turno e poi l'altro, una sola per combattimento; chi la subisce
@@ -1798,7 +1798,7 @@ contare e non sapeva giocare:
      fra loro e nessun altro li vede — invece di filtrare i colpi dopo,
      perché l'ingaggio è già la domanda «chi mena a chi», ed è quella
      che la sfida cambia. La cavalcatura segue il cavaliere senza che
-     nessuno gliene parli, e il rivale già caduto non la ferma (p. 212):
+     nessuno gliene parli, e il rivale già caduto non la ferma (p. 211):
      quei colpi contano per l'overkill e non per il risultato;
    - **il ritiro toglie quello che si sa togliere.** Il libro dice che
      chi si ritira non dà più all'unità «Comando, regole speciali o
@@ -1807,7 +1807,7 @@ contare e non sapeva giocare:
      saprebbe togliere senza farlo uscire dal reggimento. È il limite
      `ritirato`, e il registro lo dice;
    - **rifiutare si può solo se nessuno è con le spalle al muro.**
-     «Nowhere to run» (p. 212) è una regola del modello, ma se uno dei
+     «Nowhere to run» (p. 211) è una regola del modello, ma se uno dei
      possibili raccoglitori non può scappare, il rifiuto non è una
      risposta che quella parte possa dare: chi non può scappare «deve
      affrontare la sfida»;
@@ -2072,7 +2072,7 @@ partenza da 30/56 a 44/45, i Nani da 46/45 a 50/40.
 - ~~**«Multiple Wounds»**~~ — fatta (p. 175): ogni ferita non salvata
   tira il suo dado e cade su un modello solo, e l'eccesso non passa al
   vicino. `takeWounds` in `combat.js` scorre ferita per ferita e torna
-  le ferite **perse** (quelle che il risultato conta, p. 212) e quelle
+  le ferite **perse** (quelle che il risultato conta, p. 211) e quelle
   **fatte** (l'overkill di un personaggio); le previsioni usano la
   media del dado tagliata alle ferite del modello (`multiMean`). Sulla
   Bombardata vale solo per il buco (pp. 224, 228). E con lei una

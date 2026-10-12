@@ -90,7 +90,7 @@ for (const s of [1, 7, 19]){
   const G = AR.newBattle({ A, B, scenario:'bm-strada', nomi:{ A:'Lucertole', B:'Orchi' } });
   /* le mosse che l'arbitro non ha accettato si raccolgono qui invece
      che cercando «rifiutat» nel registro: da quando ci sono le sfide
-     (p. 211) una sfida rifiutata è una mossa legale che nel registro
+     (p. 210) una sfida rifiutata è una mossa legale che nel registro
      si scrive proprio così, e la prova la contava come un errore */
   const rifiutate = [];
   const esito = await AG.giocaPartita(AR, G, {
@@ -366,7 +366,7 @@ const conScheda = (l, units) => ({ ...l, prep: { general: null, bsb: null, note:
       onPasso: ({ opzioni, mossa, esito }) => {
         offerti += opzioni.list.filter(x => x.id === 'lancia').length;
         /* non si cerca «rifiutat» nel registro: una sfida rifiutata
-           (p. 211) è una mossa legale che si scrive proprio così */
+           (p. 210) è una mossa legale che si scrive proprio così */
         if (!esito.ok) respinte.push(`${mossa ? mossa.id : '?'}: ${esito.text}`);
       } });
     ok(`seme ${s}: la partita con due maghi finisce`, G.finita && !!G.esito);
@@ -2485,7 +2485,7 @@ console.log('\nil punteggio di Battle March (Battle March p. 27)');
 }
 
 /* ================================================================= */
-console.log('\nle sfide (pp. 211-212)');
+console.log('\nle sfide (pp. 210-211)');
 {
   /* Il tavolo della sfida: la Temple Guard con dentro due personaggi,
      e i Black Orc Mobs con dentro il Warboss, a contatto di fronte. */
@@ -2506,19 +2506,19 @@ console.log('\nle sfide (pp. 211-212)');
     chiede(G).list.find(x => x.id === id && (uidCercato == null || x.uid === uidCercato));
 
   /* 1 · si lancia quando il combattimento viene scelto, e prima la
-     lancia chi è di turno (p. 211) */
+     lancia chi è di turno (p. 210) */
   let G = tavolo(); G.army = 'B';
   AR.apply(G, trova(G, 'combatti'));
   let o = chiede(G);
   ok('scelto il combattimento, la sfida la lancia prima chi è di turno',
-     o.player === 'B' && o.page === 211 && o.list.some(x => x.id === 'sfida' && x.uid === 501));
+     o.player === 'B' && o.page === 210 && o.list.some(x => x.id === 'sfida' && x.uid === 501));
   ok('e l opzione porta i numeri del duello, non solo il nome',
      o.list.filter(x => x.id === 'sfida').every(x =>
        typeof x.vantaggio === 'number' && /ferite a round/.test(x.why)));
   ok('si può anche non lanciarla', o.list.some(x => x.id === 'nessuna'));
 
   /* 1 bis · un campione d'unità nel combattimento: sul libro potrebbe
-     sfidare, qui no, e lo si dice quando conta (p. 211) */
+     sfidare, qui no, e lo si dice quando conta (p. 210) */
   {
     const K = tavolo(); K.army = 'B';
     uid(K, 6).command = { ...(uid(K, 6).command || {}), champion: true };
@@ -2535,9 +2535,9 @@ console.log('\nle sfide (pp. 211-212)');
      o.list.filter(x => x.id === 'accetta').length === 2);
   ok('e dentro un reggimento la si può rifiutare', o.list.some(x => x.id === 'rifiuta'));
 
-  /* 3 · raccolta, i due si menano solo fra loro (p. 212) */
+  /* 3 · raccolta, i due si menano solo fra loro (p. 211) */
   AR.apply(G, trova(G, 'accetta', 1));
-  ok('la sfida raccolta resta nello stato, perché continua nei turni dopo (p. 212)',
+  ok('la sfida raccolta resta nello stato, perché continua nei turni dopo (p. 211)',
      G.sfide.length === 1 && G.sfide[0].a === 1 && G.sfide[0].b === 501);
   ok('e il combattimento si è risolto', G.log.some(x => /Risultato:/.test(x.text)));
   const colpi = G.log.filter(x => /colpi su/.test(x.text));
@@ -2547,17 +2547,17 @@ console.log('\nle sfide (pp. 211-212)');
   ok('e nessuno dei due si prende i colpi della truppa',
      !colpi.some(x => /^(Temple Guard|Black Orc Mobs) colpi su (Black Orc Warboss|Saurus Scar-Veteran)/.test(x.text)));
   ok('il registro dice che si battono in sfida, con la pagina',
-     G.log.some(x => /si battono in sfida/.test(x.text) && x.page === 212));
+     G.log.some(x => /si battono in sfida/.test(x.text) && x.page === 211));
 
   /* 4 · «To The Death!»: finché dura non se ne lancia un altra */
   G.army = 'A'; G.casella = casella('mischia');
   const dopo = trova(G, 'combatti');
   if (dopo) AR.apply(G, dopo);
-  ok('con una sfida in corso non se ne lancia un altra (p. 212)',
+  ok('con una sfida in corso non se ne lancia un altra (p. 211)',
      !G.pending || G.pending.kind !== 'sfida');
 
   /* 5 · rifiutata: chi l ha lanciata sceglie chi si ritira, e chi si
-     ritira esce dal combattimento (p. 211) */
+     ritira esce dal combattimento (p. 210) */
   G = tavolo(); G.army = 'B';
   AR.apply(G, trova(G, 'combatti'));
   AR.apply(G, trova(G, 'sfida', 501));
@@ -2576,7 +2576,7 @@ console.log('\nle sfide (pp. 211-212)');
   ok('il limite di quello che il ritiro non toglie è dichiarato',
      G.log.some(x => x.kind === 'limite' && /tiene il passo e la Forza d.Unità/.test(x.text)));
 
-  /* 5 bis · il Comando che il ritirato non presta più (p. 211). La
+  /* 5 bis · il Comando che il ritirato non presta più (p. 210). La
      Temple Guard ha Comando 8 come il Saurus Scar-Veteran e non se ne
      accorgerebbe: si guarda dove la differenza si vede, cioè dentro
      uno Skink Skirmishers da Comando 5. */
@@ -2595,14 +2595,14 @@ console.log('\nle sfide (pp. 211-212)');
   }
 
   /* 6 · il ritiro scade quando chi lo ha sfidato non gli sta più
-     addosso (p. 211) */
+     addosso (p. 210) */
   const via = uid(G, 503); via.x = 100; via.y = 100;
   uid(G, 501).x = 100; uid(G, 501).y = 100;
   AR.interni.ripulisciSfide(G);
   ok('staccato il nemico, il ritirato torna in prima fila',
      !uid(G, 1).ritiro && G.log.some(x => /torna in prima fila/.test(x.text)));
 
-  /* 7 · «Nowhere To Run» (p. 212): un personaggio da solo non è dentro
+  /* 7 · «Nowhere To Run» (p. 211): un personaggio da solo non è dentro
      nessuna unità, e la sfida non la può rifiutare */
   const H = nuova();
   H.generale = { A: null, B: null };
@@ -2621,7 +2621,7 @@ console.log('\nle sfide (pp. 211-212)');
   ok('e rifiutare lo stesso non si può', AR.apply(H, { id:'rifiuta' }).ok === false);
 
   /* 8 · l altra metà di «Nowhere To Run»: un reggimento ingaggiato su
-     tutti e quattro i lati non ha dove nascondere nessuno (p. 212) */
+     tutti e quattro i lati non ha dove nascondere nessuno (p. 211) */
   {
     const K = nuova();
     const guardia = metti(K, uid(K, 6), 600, 600);
@@ -2658,7 +2658,7 @@ console.log('\nle sfide (pp. 211-212)');
     ok('i quattro nemici toccano i quattro lati',
        AR.contatti(K).filter(c => (c.a === guardia.uid || c.b === guardia.uid) &&
                                   (c.a === guardia.uid ? c.bArmy : c.aArmy) !== 'A').length === 4);
-    ok('e allora non c è dove scappare: la sfida non si rifiuta (p. 212)',
+    ok('e allora non c è dove scappare: la sfida non si rifiuta (p. 211)',
        AR.interni.puoRifiutare(K, capo) === false);
   }
   seme(1);

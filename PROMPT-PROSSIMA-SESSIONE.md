@@ -578,7 +578,7 @@ Già che ci si è: il −1 al tiro contro gli schermagliatori `shoot.js` lo
 dà a ogni unità `loose`, e p. 185 lo dà solo a quelle fatte tutte di
 modelli con Forza d'Unità 1.
 
-## Compito 3 — fatto: le sfide (pp. 211-212)
+## Compito 3 — fatto: le sfide (pp. 210-211)
 
 Tre decisioni, e adesso sono tre domande in sospeso come la reazione
 alla carica: `sfida`/`nessuna`, `accetta`/`rifiuta`, `ritira`. Quello
@@ -592,7 +592,7 @@ che è stato deciso, perché non si rifaccia la stessa strada:
   vanno tenute tutte e due: `true` è la sfida del pannello delle due
   schiere («conta l'overkill»), `{ a, b }` è quella del manuale;
 - **la cavalcatura** segue il cavaliere da sola (eredita `duel` dalla
-  riga dell'ospite), e **il rivale già caduto non la ferma** (p. 212):
+  riga dell'ospite), e **il rivale già caduto non la ferma** (p. 211):
   quei colpi si tirano, contano per l'overkill (`c.oltre`) e **non**
   entrano nel risultato del combattimento, che conta le ferite perse;
 - **l'overkill si misura sulle ferite che il rivale aveva addosso
@@ -602,7 +602,7 @@ che è stato deciso, perché non si rifaccia la stessa strada:
   colpi, il Comando (p. 97) e le regole che il capo presta. Il passo e
   la Forza d'Unità gli restano, ed è il limite `ritirato`;
 - **rifiutare si può solo se nessuno dei possibili raccoglitori è con
-  le spalle al muro** (p. 212: personaggio da solo, o reggimento
+  le spalle al muro** (p. 211: personaggio da solo, o reggimento
   ingaggiato su tutti e quattro i lati). I quattro lati li dice dove
   sta il nemico **intero** e non il punto in cui le basette si
   sfiorano (`circondata`): con il punto più vicino un reggimento preso
@@ -778,7 +778,7 @@ Prove in `test/mischia.mjs` («le ferite multiple») e `test/arbitro.mjs`
   tornano `losses`) e **`takeWounds`** la fa cadere sul modello che ha
   davanti: quello che avanza non passa al vicino. Torna le ferite
   **perse** e quelle **fatte**: nel risultato del combattimento vanno le
-  perse (p. 212, «only the number of Wounds lost»), l'eccesso va in
+  perse (p. 211, «only the number of Wounds lost»), l'eccesso va in
   `oltre` e conta solo per l'overkill di un personaggio;
 - **le previsioni** usano `multiMean`: la media del dado tagliata alle
   ferite del modello. Su un bersaglio da una ferita non cambia niente;

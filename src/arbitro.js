@@ -109,11 +109,11 @@ export const LIMITI = [
     why:"chi ha Random Movement si muove nella casella delle mosse insieme a tutti gli altri, invece che in una sottofase delle mosse obbligatorie tutta sua; va dritto o verso un nemico e, se lo tocca, carica (p. 176). Se invece arriva addosso a un'unità nuova mentre insegue, l'arbitro lo ferma a contatto come fa con tutti, e non conta come carica" },
   { id:"abominio",  what:"gli Abominable Attacks si risolvono prima che si meni", page:144,
     why:"l'Hell Pit Abomination si nutre o travolge prima di tutti gli altri, non al suo passo d'Iniziativa: le ferite che fa entrano nel risultato del combattimento, ma chi cade non mena più. Con Iniziativa 4 è quasi sempre fra i primi" },
-  { id:"campioni",  what:"le sfide le lanciano e le raccolgono solo i personaggi, non i campioni d'unità", page:211,
+  { id:"campioni",  what:"le sfide le lanciano e le raccolgono solo i personaggi, non i campioni d'unità", page:210,
     why:"il libro dice «un personaggio o un campione»; il file di New Recruit segna che il gruppo di comando c'è (`command.champion`) e non dà al campione un profilo suo, e senza profilo non si può duellare" },
   { id:"sciami",    what:"Spawn of Sotek guarisce le ferite appese di uno Jungle Swarm, e non rimette in campo le basette già tolte", page:115,
     why:"il testo dice «regains D3 lost Wounds» e non dice se una basetta tolta torni in piedi: l'arbitro cura quello che il pezzo ha ancora addosso" },
-  { id:"ritirato",  what:"chi si ritira da una sfida esce dal combattimento, ma tiene il passo e la Forza d'Unità del reggimento", page:211,
+  { id:"ritirato",  what:"chi si ritira da una sfida esce dal combattimento, ma tiene il passo e la Forza d'Unità del reggimento", page:210,
     why:"il libro dice che non dà più niente all'unità, «Comando, regole speciali o qualunque altra cosa»: l'arbitro gli toglie i colpi, il Comando e le regole, e gli lascia quello che non saprebbe togliere senza farlo uscire dal reggimento" },
   { id:"oggetti",   what:"gli oggetti magici non fanno niente", page:0,
     why:"i cataloghi li scrivono come testo libero: l'app li mostra e non li applica" },
@@ -315,7 +315,7 @@ export function newBattle({ A, B, scenario = "bm-strada", def = null, nomi = nul
     /* Le sfide in corso, una per combattimento: i due modelli che si
        sono presi a parte. Restano fra un turno e l'altro perche' il
        libro lo dice — «se sopravvivono tutti e due e il combattimento
-       continua, la sfida continua» (p. 212) — e finche' c'e' non se ne
+       continua, la sfida continua» (p. 211) — e finche' c'e' non se ne
        lancia un'altra in quel combattimento. */
     sfide: [],
     /* la magia che si ricorda fra un gesto e l'altro: chi ha gia'
@@ -428,7 +428,7 @@ export const capiDi = (S, u) => FM.attachedTo(S.units, u);
 /* I capi che stanno ancora in prima fila. Chi ha rifiutato una sfida
    si e' ritirato in fondo alle file, e «non conferisce all'unita'
    nessun beneficio in forma di Comando, regole speciali o qualunque
-   altra cosa» (p. 211): sparisce da tutti i conti del combattimento.
+   altra cosa» (p. 210): sparisce da tutti i conti del combattimento.
    Il passo e la Forza d'Unita' gli restano, ed e' il limite `ritirato`. */
 export const capiInFila = (S, u) => capiDi(S, u).filter(c => !c.ritiro);
 const GENERE = { regularInfantry:"fanteria", heavyInfantry:"fanteria", monstrousInfantry:"fanteria",
@@ -1163,7 +1163,7 @@ export function options(S){
   }
 
   /* una sfida, che si lancia quando il combattimento viene scelto
-     (p. 211): prima chi e' di turno, e se non la lancia l'altro */
+     (p. 210): prima chi e' di turno, e se non la lancia l'altro */
   if (S.pending && S.pending.kind === "sfida"){
     return { ...base, player: S.pending.lato, fase: "Corpo a corpo", page: SFIDA,
              what: `${S.nomi[S.pending.lato]} può lanciare una sfida prima che si meni`,
@@ -1246,7 +1246,7 @@ function opzioniRaduno(S){
 function pauraDi(S, u, t, when){
   const me = PS.psychOf(u, { joined: capiInFila(S, u) });
   /* anche di la' contano i capi in prima fila: chi si e' ritirato non
-     fa piu' Paura per conto del suo reggimento (p. 211) */
+     fa piu' Paura per conto del suo reggimento (p. 210) */
   const foe = PS.psychOf(t, { joined: capiInFila(S, t) });
   const tested = u.paura && u.paura.key === chiave(S) ? u.paura : null;
   return PS.fearCheck({ me, foe, meUS: usConCapi(S, u), foeUS: usConCapi(S, t), when, tested, foeName: t.name });
@@ -3546,7 +3546,7 @@ const GESTI = {
     return si("bombardata risolta");
   },
 
-  /* ---- le sfide (pp. 211-212) ---- */
+  /* ---- le sfide (pp. 210-211) ---- */
   sfida: (S, a) => {
     const p = S.pending;
     if (!p || p.kind !== "sfida") return no("non c'è nessuna sfida da lanciare adesso");
@@ -3555,7 +3555,7 @@ const GESTI = {
       return no("quel modello non può lanciare la sfida");
     const uids = p.uids;
     S.pending = null;
-    say(S, `${c.name} lancia una sfida (p. 211).`, { army: c.army, page: SFIDA });
+    say(S, `${c.name} lancia una sfida (p. 210).`, { army: c.army, page: SFIDA });
     return si(chiediRaccolta(S, uids, c));
   },
 
@@ -3570,8 +3570,8 @@ const GESTI = {
     S.sfide = S.sfide || [];
     S.sfide.push({ a: sf.army === "A" ? sf.uid : c.uid, b: sf.army === "A" ? c.uid : sf.uid,
                    turno: S.turno });
-    say(S, `${ML.challenge({ from: sf.name, to: c.name, accepted: true }).text}: da qui in poi i loro colpi vanno solo l'uno sull'altro, e nessun altro può dirigerli su di loro (p. 212).`,
-        { army: sf.army, page: 212 });
+    say(S, `${ML.challenge({ from: sf.name, to: c.name, accepted: true }).text}: da qui in poi i loro colpi vanno solo l'uno sull'altro, e nessun altro può dirigerli su di loro (p. 211).`,
+        { army: sf.army, page: 211 });
     return si(dopoLaSfida(S, uids));
   },
 
@@ -3579,9 +3579,9 @@ const GESTI = {
     const p = S.pending;
     if (!p || p.kind !== "raccogli") return no("non c'è nessuna sfida da rifiutare");
     if (!p.list.some(x => x.id === "rifiuta"))
-      return no("questa sfida non si può rifiutare: non c'è dove scappare (p. 212)");
+      return no("questa sfida non si può rifiutare: non c'è dove scappare (p. 211)");
     const sf = byUid(S, p.sfidante), uids = p.uids;
-    say(S, `${ML.challenge({ from: sf.name, to: "", accepted: false }).text} (p. 211).`,
+    say(S, `${ML.challenge({ from: sf.name, to: "", accepted: false }).text} (p. 210).`,
         { army: sf.army, page: SFIDA });
     return si(chiediRitiro(S, uids, sf));
   },
@@ -3597,7 +3597,7 @@ const GESTI = {
     const suo = unitaDi(S, sf);
     c.ritiro = { sfidante: sf.uid, ospite: suo ? suo.uid : sf.uid, turno: S.turno };
     limite(S, "ritirato");
-    say(S, `${c.name} rifiuta la sfida e si ritira in fondo alle file: non mena, non lo colpisce nessuno, e al suo reggimento non dà più né Comando né regole finché ${sf.name} gli sta addosso (p. 211).`,
+    say(S, `${c.name} rifiuta la sfida e si ritira in fondo alle file: non mena, non lo colpisce nessuno, e al suo reggimento non dà più né Comando né regole finché ${sf.name} gli sta addosso (p. 210).`,
         { army: c.army, page: SFIDA });
     return si(dopoLaSfida(S, uids));
   },
@@ -3617,7 +3617,7 @@ const GESTI = {
     }
     if (p.kind === "ritira"){
       S.pending = null;
-      say(S, "nessuno si ritira: la sfida resta senza risposta (p. 211).", { page: SFIDA });
+      say(S, "nessuno si ritira: la sfida resta senza risposta (p. 210).", { page: SFIDA });
       return si(dopoLaSfida(S, uids));
     }
     return no("qui non si risponde così");
@@ -5903,7 +5903,7 @@ function gruppoCon(S, uids){
   return gruppiInMischia(S).find(g => [...g.A, ...g.B].some(u => uids.includes(u.uid))) || null;
 }
 /* Il combattimento scelto, dalla prima domanda ai dadi. Prima la
-   sfida (p. 211), che e' la cosa che si fa «quando un combattimento
+   sfida (p. 210), che e' la cosa che si fa «quando un combattimento
    viene scelto»; poi gli assalti di chi non e' di turno; poi si mena. */
 function avviaCombattimento(S, uids){
   const g = gruppoCon(S, uids);
@@ -5914,7 +5914,7 @@ function avviaCombattimento(S, uids){
      momento in cui conta. */
   if ([...g.A, ...g.B].some(u => u.command && u.command.champion)) limite(S, "campioni");
   /* «una sola sfida per combattimento», e quella in corso continua
-     finche' non si risolve: «To The Death!» (pp. 211-212) */
+     finche' non si risolve: «To The Death!» (pp. 210-211) */
   if (!sfidaDi(S, g)){
     const q = chiediSfida(S, uids, S.army);
     if (q) return q;
@@ -6117,7 +6117,7 @@ function rigaMago(S, u){
 }
 
 /* ============================================================
-   7 bis · LE SFIDE (pp. 211-212)
+   7 bis · LE SFIDE (pp. 210-211)
 
    Di una sfida l'app sapeva fare una cosa sola: contare l'overkill.
    Chi la lancia, chi la raccoglie e chi la rifiuta sono decisioni, e
@@ -6127,7 +6127,7 @@ function rigaMago(S, u){
    Le tre domande stanno nell'ordine del libro:
 
    1. «le sfide si lanciano quando un combattimento viene scelto»
-      (p. 211), prima il giocatore di turno e poi l'altro, e una sola
+      (p. 210), prima il giocatore di turno e poi l'altro, e una sola
       per combattimento;
    2. chi la subisce nomina chi la raccoglie, se ha qualcuno;
    3. chi rifiuta paga: il giocatore che l'ha lanciata nomina uno dei
@@ -6137,9 +6137,9 @@ function rigaMago(S, u){
 
    E una sfida cominciata non finisce con il turno: «se sopravvivono
    tutti e due e il combattimento continua, la sfida continua»
-   (p. 212). Per questo sta nello stato (`S.sfide`) e non nel gesto.
+   (p. 211). Per questo sta nello stato (`S.sfide`) e non nel gesto.
    ============================================================ */
-const SFIDA = 211;
+const SFIDA = 210;
 
 /* Il modello e l'unita' in cui combatte: un capo unito combatte dentro
    il suo reggimento, un personaggio da solo e' l'unita'. */
@@ -6154,9 +6154,9 @@ const siToccano = (S, a, b) => !!a && !!b && a.uid !== b.uid && contatti(S).some
 
 /* Chi puo' lanciare o raccogliere una sfida, per una parte di un
    combattimento. «Il modello dev'essere nella prima fila o accanto ad
-   essa» (p. 211): l'arbitro non tiene la posizione dentro il
+   essa» (p. 210): l'arbitro non tiene la posizione dentro il
    reggimento, e il libro dice pure che un capo che non e' in prima
-   fila ci si sposta quando il combattimento viene scelto (p. 210) —
+   fila ci si sposta quando il combattimento viene scelto (p. 209) —
    quindi vale ogni personaggio delle unita' in mischia, tranne chi si
    e' gia' ritirato. I campioni d'unita' restano fuori, e non per
    scelta: il file dice che il gruppo di comando c'e' e non da' al
@@ -6173,7 +6173,7 @@ function sfidanti(S, g, army){
 
 /* Chi puo' raccogliere la sfida di QUEL modello. Il libro e' preciso:
    «se nell'unita' nemica non ci sono personaggi o campioni, la sfida
-   resta senza risposta» (p. 211) — l'unita' nemica, non tutta la parte.
+   resta senza risposta» (p. 210) — l'unita' nemica, non tutta la parte.
    In un combattimento a piu' di due sono i personaggi delle unita' che
    il reggimento dello sfidante tocca davvero. */
 function raccoglitori(S, g, sfidante){
@@ -6183,7 +6183,7 @@ function raccoglitori(S, g, sfidante){
   return vicini.length ? vicini : [];
 }
 
-/* «Talvolta una sfida e' impossibile da rifiutare» (p. 212): chi non
+/* «Talvolta una sfida e' impossibile da rifiutare» (p. 211): chi non
    sta dentro un'unita' o e' l'ultimo modello rimasto, e chi sta in
    un'unita' ingaggiata su tutti e quattro i lati. Il primo caso, qui,
    e' il personaggio da solo: un capo unito lo si stacca appena il
@@ -6232,7 +6232,7 @@ function sfidaDi(S, g){
    ritirato torna in prima fila quando la sua unita' non e' piu'
    ingaggiata con il modello che l'aveva sfidato — «finche' la loro
    unita' e' ancora ingaggiata con il modello nemico che ha lanciato la
-   sfida» (p. 211). */
+   sfida» (p. 210). */
 function ripulisciSfide(S){
   S.sfide = (S.sfide || []).filter(x => {
     const a = byUid(S, x.a), b = byUid(S, x.b);
@@ -6245,7 +6245,7 @@ function ripulisciSfide(S){
     if (vivo(c) && vivo(sf) && siToccano(S, unitaDi(S, c), unitaDi(S, sf))) continue;
     c.ritiro = null;
     if (!vivo(c)) continue;
-    say(S, `${c.name} torna in prima fila: ${sf ? sf.name : "chi lo aveva sfidato"} non gli sta più addosso (p. 211).`,
+    say(S, `${c.name} torna in prima fila: ${sf ? sf.name : "chi lo aveva sfidato"} non gli sta più addosso (p. 210).`,
         { army: c.army, page: SFIDA });
   }
 }
@@ -6283,7 +6283,7 @@ function chiediSfida(S, uids, lato){
   const g = gruppoCon(S, uids);
   if (!g) return "";
   /* Una sfida che nessuno puo' raccogliere «resta senza risposta»
-     (p. 211): e' legale e non cambia niente sul tavolo, e questo
+     (p. 210): e' legale e non cambia niente sul tavolo, e questo
      arbitro non offre gesti che non cambiano niente — come non offre
      gli incantesimi che non saprebbe applicare. Quindi si chiede solo
      a chi ha davanti qualcuno che possa rispondergli. */
@@ -6312,33 +6312,33 @@ function chiediRaccolta(S, uids, sfidante){
   const loro = g ? raccoglitori(S, g, sfidante) : [];
   if (!loro.length){
     /* «se nell'unita' nemica non ci sono personaggi o campioni, la
-       sfida resta senza risposta» (p. 211) */
-    say(S, `${sfidante.name} lancia una sfida e non c'è nessuno che possa raccoglierla (p. 211).`,
+       sfida resta senza risposta» (p. 210) */
+    say(S, `${sfidante.name} lancia una sfida e non c'è nessuno che possa raccoglierla (p. 210).`,
         { army: sfidante.army, page: SFIDA });
     return dopoLaSfida(S, uids);
   }
   /* Rifiutare si puo' solo se nessuno di quelli che potrebbero
      raccoglierla e' con le spalle al muro: chi non puo' scappare «deve
-     affrontare la sfida del nemico» (p. 212), e allora il rifiuto non
+     affrontare la sfida del nemico» (p. 211), e allora il rifiuto non
      e' una risposta che quella parte possa dare. */
   const scappa = loro.every(c => puoRifiutare(S, c));
   S.pending = { kind:"raccogli", uids, sfidante: sfidante.uid, lato,
     list: [...loro.map(c => {
              const d = duelloFra(S, c, sfidante);
              return { id:"accetta", uid: c.uid, nome: c.name, contro: sfidante.name,
-                      vantaggio: d.vantaggio, why: d.why, page: 212 };
+                      vantaggio: d.vantaggio, why: d.why, page: 211 };
            }),
            ...(scappa ? [{ id:"rifiuta", contro: sfidante.name,
              why: "nessuno la raccoglie: uno dei personaggi si ritira in fondo alle file e non combatte più",
              page: SFIDA }] : [])] };
   return `${S.nomi[lato]} risponde alla sfida di ${sfidante.name}` +
-         (scappa ? "" : ": non c'è dove scappare (p. 212)");
+         (scappa ? "" : ": non c'è dove scappare (p. 211)");
 }
 
 /* ---- 3. chi si ritira ---- */
 function chiediRitiro(S, uids, sfidante){
   const g = gruppoCon(S, uids);
-  /* «uno dei personaggi che avrebbero potuto raccoglierla» (p. 211):
+  /* «uno dei personaggi che avrebbero potuto raccoglierla» (p. 210):
      non uno qualunque della parte */
   const loro = g ? raccoglitori(S, g, sfidante) : [];
   S.pending = { kind:"ritira", uids, sfidante: sfidante.uid,
@@ -6549,7 +6549,7 @@ function menaLaMischia(S, g){
   g.A.forEach((u, i) => posto.set(u.uid, i));
   g.B.forEach((u, i) => posto.set(u.uid, i));
   /* i personaggi uniti entrano nel gruppo come schiere loro (p. 209);
-     chi si e' ritirato da una sfida non entra affatto (p. 211) */
+     chi si e' ritirato da una sfida non entra affatto (p. 210) */
   for (const [lista, sorgente] of [[A, g.A], [B, g.B]]){
     for (const u of sorgente)
       for (const c of capiInFila(S, u)){
@@ -6559,14 +6559,14 @@ function menaLaMischia(S, g){
   }
   /* La sfida, se c'e': i due si menano solo fra loro, in ordine di
      Iniziativa, e nessun altro puo' dirigere i colpi su di loro
-     (p. 212). `meleeFight` vuole i due posti nelle due parti. */
+     (p. 211). `meleeFight` vuole i due posti nelle due parti. */
   const duello = sfidaDi(S, g);
   const sfida = duello && posto.has(duello.a) && posto.has(duello.b)
     ? { a: posto.get(duello.a), b: posto.get(duello.b) } : null;
   if (sfida){
     const da = byUid(S, duello.a), db = byUid(S, duello.b);
-    say(S, `${da.name} e ${db.name} si battono in sfida: i colpi vanno solo fra loro (p. 212).`,
-        { army: S.army, page: 212 });
+    say(S, `${da.name} e ${db.name} si battono in sfida: i colpi vanno solo fra loro (p. 211).`,
+        { army: S.army, page: 211 });
   }
   const round = (S.turno * 2) + (S.army === "A" ? 0 : 1);
   const r = CB.meleeFight(A, B, { round, challenge: sfida || false });
@@ -7611,7 +7611,7 @@ function inizioTurno(S){
   /* Le sfide e i ritiri si rileggono in testa al turno, e non solo
      quando si sceglie un combattimento: uno sfidante puo' essere caduto
      sotto un tiro, e chi si era ritirato deve tornare in prima fila
-     appena quel nemico non gli sta piu' addosso (p. 211). Senza questa
+     appena quel nemico non gli sta piu' addosso (p. 210). Senza questa
      riga il suo Comando restava fuori dai test di Panico di mezzo turno. */
   ripulisciSfide(S);
   spawnOfSotek(S);

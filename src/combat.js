@@ -1049,7 +1049,7 @@ export function applyWounds(side, wounds, losses = null){
    due ne tolgono uno, e le altre quattro «do not spill over».
 
    Torna i modelli caduti, le ferite PERSE — che sono quello che il
-   risultato del combattimento conta (p. 212) — e quelle FATTE, che
+   risultato del combattimento conta (p. 211) — e quelle FATTE, che
    contano solo per l'overkill di un personaggio. Senza `losses` il
    conto e' quello di sempre, e le due cifre coincidono finche' c'e'
    qualcuno da ferire. */
@@ -1357,7 +1357,7 @@ function reach(e, c, mine, foes){
 }
 
 /* ------------------------------------------------------------------
-   LA SFIDA (pp. 211-212)
+   LA SFIDA (pp. 210-211)
 
    `challenge` ha due forme, e sono due cose diverse.
 
@@ -1368,7 +1368,7 @@ function reach(e, c, mine, foes){
    `{ a, b }` e' la sfida del manuale: due modelli — uno per parte, per
    indice, per uid, per nome o proprio la schiera — che «dirigono tutti
    i loro attacchi l'uno contro l'altro, in ordine di Iniziativa», e a
-   cui nessun altro del combattimento puo' dirigere i suoi (p. 212).
+   cui nessun altro del combattimento puo' dirigere i suoi (p. 211).
    Sono le due meta' della stessa regola: quella di sopra ne conta il
    risultato, questa la combatte.
    ------------------------------------------------------------------ */
@@ -1388,7 +1388,7 @@ function duelOf(challenge, A, B){
    l'ingaggio invece di filtrarlo dopo, perche' l'ingaggio e' la
    domanda «chi mena a chi» ed e' esattamente quella che la sfida
    cambia. Il contatto vero non serve: «se possibile i due modelli
-   vanno portati a contatto di basetta» (p. 212), e quando non e'
+   vanno portati a contatto di basetta» (p. 211), e quando non e'
    pratico si lasciano dove sono e duellano lo stesso. */
 function duelLinks(link, duel){
   link.A.forEach((l, i) => { link.A[i] = i === duel.a ? [duel.b] : l.filter(j => j !== duel.b); });
@@ -1421,7 +1421,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
     const e = { c, at, tag, foes, side, ...aimAt(c, foes, side) };
     /* chi duella non si spartisce la prima fila con nessuno: porta
        tutti i suoi attacchi addosso al rivale, e il rivale e' l'unico
-       che ha davanti (p. 212) */
+       che ha davanti (p. 211) */
     if (duel && ((tag === "A" && at === duel.a) || (tag === "B" && at === duel.b))){
       e.duel = true;
       e.budget = foes.map(() => 0); e.fronts = foes.map(() => 0);
@@ -1488,7 +1488,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
     const me = e.host ? e.host.c : e.c;
     if (!def || me.models <= 0) return null;
     /* «se il rivale cade prima che la cavalcatura meni, i suoi colpi si
-       tirano lo stesso, e contano per l'overkill» (p. 212). Fuori dalla
+       tirano lo stesso, e contano per l'overkill» (p. 211). Fuori dalla
        sfida un morto non si colpisce: e' il caso di sempre. */
     const caduto = def.models <= 0;
     if (caduto && !(e.duel && e.host)) return null;
@@ -1501,7 +1501,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
     const kills = t.kills;
     const me = x.e.host ? x.e.host.c : x.e.c;
     /* l'overkill e' «un'eccezione alla norma: di solito nel risultato
-       si contano solo le ferite perse» (p. 212). Quelle date a un
+       si contano solo le ferite perse» (p. 211). Quelle date a un
        rivale gia' a terra stanno in un mucchio a parte: contano per
        l'overkill e non per il conto del combattimento. */
     /* Nel risultato vanno le ferite PERSE: «each Wound the enemy side
@@ -1510,7 +1510,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
        punti mentre l'unita' accanto restava in piedi. Quello che avanza
        — su un modello, con le «Multiple Wounds» (p. 175), o su chi non
        c'e' piu' — sta nel mucchio a parte, e conta solo per l'overkill
-       di un personaggio in sfida (p. 212). */
+       di un personaggio in sfida (p. 211). */
     const fatte = t.caused, perse = t.lost;
     if (x.caduto) me.oltre = (me.oltre || 0) + fatte;
     else {
@@ -1532,7 +1532,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
      non a chi ci sta dentro. */
   const sotto = e => e.foes.map((j, k) => k).filter(k => {
     const f = e.side[e.foes[k]];
-    /* nella sfida i due stanno basetta contro basetta (p. 212): il
+    /* nella sfida i due stanno basetta contro basetta (p. 211): il
        riparo del reggimento non c'e' piu', e urto e pestoni arrivano */
     if (e.duel) return true;
     return !f.shielded || f.exposed;
@@ -1661,7 +1661,7 @@ export function meleeFight(SA, SB, { round = 1, challenge = false } = {}){
      non tre — e il tetto e' +5 (p. 152).
 
      Con la sfida vera lo contano i due che duellano, e solo loro: le
-     ferite della cavalcatura sono le loro (p. 212, la riga sulle
+     ferite della cavalcatura sono le loro (p. 211, la riga sulle
      cavalcature), quelle della truppa no. Con `challenge: true` — la
      sfida del pannello, dove il combattimento E' la sfida — lo conta
      chiunque, com'e' sempre stato. */
