@@ -147,6 +147,8 @@ export const LIMITI = [
     why:"il libro dice che ci si unisce «salvo che il tipo di truppa lo impedisca» senza fare l'elenco: questa è la lettura dell'app" },
   { id:"solitari",  what:"un personaggio da solo si bersaglia sempre, e non schiva l'inseguimento", page:206,
     why:"la protezione dei 3″ da un reggimento amico e la schivata vogliono il conto dei modelli vicini, che l'arbitro non fa" },
+  { id:"serrarsi",  what:"gli schermagliatori ingaggiati si serrano tutti insieme contro un nemico solo, senza contare quanto cammina ogni modello", page:186,
+    why:"il libro li muove uno per uno, dal più vicino, ognuno al massimo del suo Movimento, e chi non tocca il nemico si mette dietro la fila che combatte (pp. 185-186): l'arbitro rifà la schiera in ranghi senza vuoti, con in prima fila quanti ne stanno sulla faccia di chi ha davanti, e la posa contro quella faccia. A fine Corpo a corpo, se non tocca più nessuno, torna sciolta tenendo il fronte dov'era; se lì non ci sta, resta serrata e riprova alla fine del turno dopo" },
   { id:"pauramischia", what:"chi fallisce la Paura in un combattimento con più nemici ha −1 per colpire contro tutti", page:168,
     why:"il libro lo toglie solo a chi dirige i colpi contro chi fa Paura, e la schiera di `combat.js` ha una bandierina sola" },
 ];
@@ -183,8 +185,10 @@ const isJoined = u => FM.joinedHost(u) != null;
 const layCache = new Map();
 export function layoutOf(u, units = []){
   const chars = FM.attachedTo(units, u);
+  /* il vuoto fra le basette sta nella chiave: gli schermagliatori che si
+     serrano in mischia lo tolgono e lo rimettono (`serra`, `sciogli`) */
   const key = [u.name, alive(u), u.models, u.frontage, u.baseW, u.baseH, u.loose ? 1 : 0,
-               JSON.stringify(u.form || null), (u.fallen || []).join("."), chars.length].join("|");
+               u.formation ? u.formation.spacing : "", JSON.stringify(u.form || null), (u.fallen || []).join("."), chars.length].join("|");
   const hit = layCache.get(u.uid);
   if (hit && hit.key === key) return hit.lay;
   const lay = FM.layout(u, { alive: alive(u), attached: chars });
@@ -1388,14 +1392,16 @@ function opzioniCarica(S){
       }
       const pt = PS.psychOf(t, { joined: capiDi(S, t) });
       if (pu.causesTerror && !pt.immuneTerror) nota += `; fa Terrore: ${t.name} tira, e se fallisce deve fuggire (p. 179)`;
-      const sc = scontroAtteso(S, u, t, d.side, "fronte", { inches: +d.dist || 0 });
+      /* chi e' sciolto si prende sempre di fronte (p. 184) */
+      const lato = t.loose ? "fronte" : d.side;
+      const sc = scontroAtteso(S, u, t, lato, "fronte", { inches: +d.dist || 0 });
       out.push({ id:"carica", uid: u.uid, target: t.uid, nome: u.name, contro: t.name,
-                 dist: +d.dist, need, lato: d.side, esito: sc.valore, rotta: Math.round(sc.rottaLui * 100) / 100,
+                 dist: +d.dist, need, lato, esito: sc.valore, rotta: Math.round(sc.rottaLui * 100) / 100,
                  deve: !!obbligo, ...(obbligo ? { obbligo } : {}),
                  why: (obbligo ? `deve caricare (${obbligo.perche}, p. ${obbligo.page}): ` : "") +
                       `${d.dist}″, ${need ? "serve " + need + "″ di tiro" : "ci arriva camminando"}` +
                       (extra ? ` (${extra}″ per trovare posto sulla faccia)` : "") +
-                      `, riesce il ${Math.round(chance * 100)}%, la prende di ${d.side}` + nota +
+                      `, riesce il ${Math.round(chance * 100)}%, la prende di ${lato}` + nota +
                       `; se arriva, al primo round ${sc.valore >= 0 ? "guadagna" : "perde"} ≈ ${Math.abs(sc.valore)} punti` +
                       (sc.rottaLui > 0.05 ? ` e ${t.name} scappa il ${Math.round(sc.rottaLui * 100)}%` : ""),
                  chance, page: 119 });
@@ -1589,7 +1595,8 @@ export function scontroAtteso(S, att, def, lato = "fronte", faccia = "fronte", c
    delle cariche (`ricerca.js`): quanto aggiunge il secondo caricatore
    a quello che il primo fa gia'. */
 export function scontroDiGruppo(S, attaccanti, def){
-  const lista = attaccanti.filter(a => a && a.u)
+  /* chi e' sciolto non ha fianchi: si prende sempre di fronte (p. 184) */
+  const lista = attaccanti.filter(a => a && a.u).map(a => def.loose ? { ...a, lato: "fronte" } : a)
     .sort((p, q) => (ML.arcToFlank(p.lato) ? 1 : 0) - (ML.arcToFlank(q.lato) ? 1 : 0));
   if (!lista.length) return { date: 0, prese: 0, diff: 0, rottaLui: 0, rottaMia: 0, valore: 0 };
   /* Il bersaglio mena con la fila della faccia da cui e' preso: di
@@ -3619,6 +3626,7 @@ const GESTI = {
   insegui: (S, a) => sceltaInseguimento(S, a),
 
   combatti: (S, a) => {
+    serraIngaggiati(S);
     const g = gruppiInMischia(S)[a.gruppo || 0];
     if (!g) return no("nessun combattimento");
     if (fatto(S, g)) return no("questo combattimento si è già risolto in questo turno");
@@ -4183,14 +4191,16 @@ function muoviCarica(S, u, t, d){
      fermarsi a un decimo di pollice non e' una carica: le basette non
      si toccano, e chi guarda i contatti non vede nessun combattimento. */
   posa(S, u, posto.x, posto.y, posto.rot);
-  u.charged = { target: t.name, uid: t.uid, inches: d.dist, arc: posto.arc };
+  /* chi e' sciolto non ha fianchi ne' retro (p. 184) */
+  const arco = t.loose ? "fronte" : posto.arc;
+  u.charged = { target: t.name, uid: t.uid, inches: d.dist, arc: arco };
   u.moved = { kind:"charge", inches: serve };
   say(S, `${u.name} carica ${t.name} e arriva: ${dadi.join(", ")} → ${out.reach}″ contro ${serve} richiesti, ` +
-         `e la prende di ${posto.arc}` +
+         `e la prende di ${arco}` +
          (posto.scorso ? ` (scorre di ${posto.scorso}″ lungo la faccia: c'era già qualcuno)` : "") + ".",
       { dice: dadi, army: u.army, page: 121,
         x: xCarica(u, t, { dadi, spec, out, serve, posto, tc, scappato, ok: true,
-                           e: `arriva, e la prende di ${posto.arc}` }) });
+                           e: `arriva, e la prende di ${arco}` }) });
   if (anche.length){
     limite(S, "piuBersagli");
     say(S, `${u.name} non arriva su ${t.name} senza toccare ${anche.map(o => o.name).join(" e ")}: ` +
@@ -4207,6 +4217,13 @@ function muoviCarica(S, u, t, d){
   }
   /* e il terreno attraversato presenta il conto, come a ogni movimento */
   terrenoPericoloso(S, u, pezziFra(S, partenza, postiDi(S, u)));
+  /* a contatto, chi e' sciolto si serra (pp. 185-186): prima chi carica
+     contro la faccia che ha preso, poi chi e' caricato contro la fila
+     che combatte di chi lo ha caricato */
+  if (onBoard(u) && onBoard(t)){
+    serra(S, u, t, { faccia: posto.side });
+    serra(S, t, u, { faccia: "fronte" });
+  }
   return "carica a segno";
 }
 
@@ -5110,6 +5127,7 @@ function grappola(S, u, t){
    che lo dice dopo il conto del combattimento e non in mezzo ai colpi. */
 function perdite(S, u, kills, left = null, { zitto = false } = {}){
   let sparita = false;
+  const prima = { lost: u.lost || 0, wounds: u.wounds || 0 };
   if (kills > 0){
     const prima = usConCapi(S, u);
     const pezzo = isJoined(u) ? byUid(S, FM.joinedHost(u)) : u;
@@ -5132,7 +5150,28 @@ function perdite(S, u, kills, left = null, { zitto = false } = {}){
     }
   }
   if (left != null) u.wounds = left;
+  if (!u.dead) feriteCheRestano(S, u, prima);
   return sparita;
+}
+
+/* Le ferite che restano, per chi ne ha piu' di una. Il registro diceva
+   «1 ferita, 0 a terra» e basta: dell'Oldblood sul Carnosauro, sette
+   Ferite, non si sapeva mai quante ne avesse ancora, e sul tavolo il
+   cuore contava quelle prese. Una riga a parte, dopo le perdite, e non
+   una coda alla riga del colpo: quelle righe le rilegge il diario
+   (`archivio.js`), e la loro forma resta quella. */
+function feriteCheRestano(S, u, prima){
+  const { prese, per } = feriteDi(u);
+  if (per <= 1) return;
+  if ((u.lost || 0) === prima.lost && prese === prima.wounds) return;
+  const n = alive(u);
+  if (n <= 0) return;
+  if ((u.models || 1) === 1)
+    say(S, `${u.name}: ${prese ? `ha perso ${prese} ${prese === 1 ? "ferita" : "ferite"} su ${per}` : "nessuna ferita addosso"}, ` +
+           `ne ${per - prese === 1 ? "resta" : "restano"} ${per - prese}.`, { army: u.army });
+  else
+    say(S, `${u.name}: ${n} in piedi da ${per} Ferite` +
+           (prese ? `, e uno ne ha già perse ${prese}` : "") + ".", { army: u.army });
 }
 
 /* Le perdite si tolgono dalla fila di dietro (p. 143): il fronte resta
@@ -6971,13 +7010,188 @@ function facciaToccata(S, chi, da){
       if (distPointToBox(w, bd) <= toll) conta[nome]++;
     }
   const lato = Object.keys(conta).reduce((a, k) => conta[k] > conta[a] ? k : a, "fronte");
-  return conta[lato] > 0 ? lato : null;
+  if (!(conta[lato] > 0)) return null;
+  /* Chi e' in formazione sciolta non ha fianchi ne' retro: «every arc
+     is considered to be their front arc» (p. 184). Anche serrato in
+     mischia, come per il bonus di ranghi (p. 185): nella partita del 12
+     ottobre gli Slayers prendevano gli Skink «di fianco», con il punto
+     del fianco e lo scompiglio. */
+  return chi.loose ? "fronte" : lato;
 }
 
 /* chi, fra i nemici del gruppo, tocca ancora quest'unita' */
 function aContatto(S, u, loro){
   const mio = cornersOf(u, S.units);
   return loro.filter(o => polyDistance(mio, cornersOf(o, S.units)) <= MM * 0.15);
+}
+
+/* ---- gli schermagliatori in mischia (pp. 184-186) ----
+   «When engaged in combat, Skirmishers do not remain in their usual,
+   dispersed formation»: si serrano basetta a basetta contro il nemico,
+   in prima fila quanti toccano la sua faccia e gli altri in ranghi
+   dietro (p. 185). Chi carica degli schermagliatori non si allinea a
+   loro: sono loro a serrarsi contro la fila che combatte di chi li ha
+   caricati (p. 186). Restano serrati finche', alla fine di una fase di
+   Corpo a corpo, non toccano piu' nessuno, e allora tornano sciolti.
+
+   Prima restavano sparsi anche in mischia, con il vuoto fra una basetta
+   e l'altra: toccavano il nemico in pochi, e nella partita del 12
+   ottobre il bosco sotto mezza unita' sparpagliata decideva il terreno
+   di tutti.
+
+   Sul tavolo dell'arbitro la schiera sciolta e' una griglia con il vuoto
+   (`LOOSE_GAP`): serrarsi vuol dire togliere il vuoto, mettere in prima
+   fila quanti ci stanno sulla faccia del nemico e posarla contro quella
+   faccia. Il bonus di ranghi resta negato (p. 185, `isSkirmish` in
+   `melee.js`), e fianchi e retro restano del fronte (`facciaToccata`).
+   Quello che non si fa — i modelli uno per uno, ciascuno entro il suo
+   Movimento — e' il limite `serrarsi`. */
+const FACCE = {
+  "fronte":          { n: [0, -1], lungo: "w" },
+  "retro":           { n: [0, 1],  lungo: "w" },
+  "fianco sinistro": { n: [-1, 0], lungo: "h" },
+  "fianco destro":   { n: [1, 0],  lungo: "h" },
+};
+/* Quale faccia di `e` tocca la schiera `u`: quella con piu' punti
+   addosso, come in `facciaToccata` ma distinguendo i due fianchi. Il
+   centro non basta: una schiera sparsa di venti Skink che carica alle
+   spalle ha il centro oltre lo spigolo, e sembrava presa di fianco. */
+function facciaDiE(S, e, u){
+  const be = boxOf(e, S.units), bu = boxOf(u, S.units);
+  const toll = MM * 0.3;
+  const capi = { "fronte": [[-1, -1], [1, -1]], "retro": [[-1, 1], [1, 1]],
+                 "fianco sinistro": [[-1, -1], [-1, 1]], "fianco destro": [[1, -1], [1, 1]] };
+  let meglio = null, quanti = 0;
+  for (const [nome, [p, q]] of Object.entries(capi)){
+    let n = 0;
+    for (let k = 1; k < 10; k++){
+      const t = k / 10;
+      const w = toWorld([(p[0] + (q[0] - p[0]) * t) * be.w / 2, (p[1] + (q[1] - p[1]) * t) * be.h / 2], be);
+      if (distPointToBox(w, bu) <= toll) n++;
+    }
+    if (n > quanti){ meglio = nome; quanti = n; }
+  }
+  return meglio || (CH.alignTo(bu, be) || {}).side;
+}
+
+/* `faccia`: la faccia di `e` contro cui serrarsi — chi ha caricato la
+   sa, ed e' quella della carica. Senza, quella che la schiera tocca. */
+function serra(S, u, e, { faccia = null } = {}){
+  if (!u.loose || u.serrata || macchina(u) || !onBoard(u) || !onBoard(e) || u.fled) return false;
+  const f = FM.ensureFormation(u);
+  const prima = { frontage: u.frontage, spacing: f.spacing };
+  const be = boxOf(e, S.units);
+  const lato = FACCE[faccia] ? faccia : facciaDiE(S, e, u);
+  const fc = FACCE[lato];
+  if (!fc) return false;
+  const lungo = fc.lungo === "w" ? be.w : be.h, off = fc.lungo === "w" ? be.h / 2 : be.w / 2;
+  const quanti = alive(u) + capiDi(S, u).filter(c => !c.dead).length;
+  const inFila = Math.max(1, Math.min(quanti, Math.floor(lungo / (u.baseW || 25) + 0.01)));
+  u.frontage = inFila;
+  f.spacing = 0;
+  const bu = boxOf(u, S.units);
+  /* la faccia di `e` nel mondo: la normale che esce, la direzione lungo
+     la faccia e la rotazione di chi la guarda, come in `alignTo` */
+  const a = (be.rot || 0) * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
+  const nx = fc.n[0] * ca - fc.n[1] * sa, ny = fc.n[0] * sa + fc.n[1] * ca;
+  const cx = be.x + nx * (off + bu.h / 2), cy = be.y + ny * (off + bu.h / 2);
+  const tx = -ny, ty = nx;
+  const rot = ((Math.round(Math.atan2(-nx, ny) * 180 / Math.PI) % 360) + 360) % 360;
+  /* la prima fila resta tutta sulla faccia quando ci sta, e si posa
+     davanti a dove stava la schiera: si scorre solo se c'e' qualcuno */
+  const lim = Math.max(0, (lungo - bu.w) / 2);
+  const t0 = Math.max(-lim, Math.min(lim, (u.x - cx) * tx + (u.y - cy) * ty));
+  const prove = [t0];
+  for (let s = MM / 2; s <= 2 * lim + MM / 2; s += MM / 2) prove.push(t0 + s, t0 - s);
+  for (const t of prove){
+    if (Math.abs(t) > lim + 0.01) continue;
+    const x = cx + tx * t, y = cy + ty * t;
+    if (ingombro(S, u, { ...bu, x, y, rot }, { ignora: [e.uid], unPollice: false, bordo: true })) continue;
+    posa(S, u, x, y, rot);
+    u.serrata = { ...prima, contro: e.uid };
+    S.cache = null;
+    limite(S, "serrarsi");
+    const dietro = quanti - inFila;
+    say(S, `${u.name} si serra contro ${e.name}: basetta a basetta, ${inFila} in prima fila` +
+           (dietro > 0 ? ` e ${dietro} dietro` : "") + `, e niente bonus di ranghi (p. 185).`,
+        { army: u.army, page: 185 });
+    return true;
+  }
+  /* non c'e' posto: resta com'era, e lo si dice */
+  u.frontage = prima.frontage;
+  f.spacing = prima.spacing;
+  say(S, `${u.name} non trova posto per serrarsi contro ${e.name}: resta sparsa (p. 185).`,
+      { army: u.army, page: 185 });
+  return false;
+}
+
+/* Tornare sciolti, tenendo il fronte dov'era: la schiera si riallarga
+   all'indietro. Se li' non ci sta si prova un po' piu' in qua o in la';
+   se non ci sta da nessuna parte resta serrata, e riprova alla fine
+   della prossima fase di Corpo a corpo. */
+function sciogli(S, u){
+  const p = u.serrata;
+  if (!p) return false;
+  const f = FM.ensureFormation(u);
+  if (!onBoard(u)){
+    u.frontage = p.frontage; f.spacing = p.spacing; u.serrata = null;
+    return true;
+  }
+  const b0 = boxOf(u, S.units);
+  const stretta = { frontage: u.frontage, spacing: f.spacing };
+  u.frontage = p.frontage;
+  f.spacing = p.spacing;
+  const b1 = boxOf(u, S.units);
+  const y0 = -b0.h / 2 + b1.h / 2;
+  const prove = [[0, y0], [0, 0]];
+  for (let k = 1; k <= 8; k++) prove.push([0, y0 + k * MM / 2]);
+  for (let k = 1; k <= 4; k++) prove.push([k * MM / 2, y0], [-k * MM / 2, y0]);
+  for (const q of prove){
+    const [x, y] = toWorld(q, b0);
+    if (ingombro(S, u, { ...b1, x, y }, { unPollice: false, bordo: true })) continue;
+    posa(S, u, x, y, b0.rot);
+    u.serrata = null;
+    S.cache = null;
+    say(S, `${u.name} non è più ingaggiata: torna in formazione sciolta (p. 185).`,
+        { army: u.army, page: 185 });
+    return true;
+  }
+  u.frontage = stretta.frontage;
+  f.spacing = stretta.spacing;
+  if (!p.detto){
+    p.detto = true;
+    say(S, `${u.name} non è più ingaggiata, ma sciolta non ci sta: resta serrata per ora (p. 185).`,
+        { army: u.army, page: 185 });
+  }
+  return false;
+}
+
+/* i nemici che toccano `u`, presi dalla lista dei contatti */
+const nemiciAddosso = (S, u) => contatti(S)
+  .filter(c => (c.a === u.uid || c.b === u.uid) && (c.a === u.uid ? c.bArmy : c.aArmy) !== u.army)
+  .map(c => byUid(S, c.a === u.uid ? c.b : c.a)).filter(Boolean);
+
+/* Prima di menare: chi e' sciolto e ingaggiato senza essersi serrato —
+   ci e' arrivato inseguendo, o ci e' stato portato — si serra adesso.
+   Contro chi l'ha caricato se c'e' (sul suo fronte, p. 186), altrimenti
+   contro chi ha caricato, altrimenti contro il primo che lo tocca. */
+function serraIngaggiati(S){
+  for (const u of S.units){
+    if (!u.loose || u.serrata || !onBoard(u) || u.fled || isJoined(u)) continue;
+    const loro = nemiciAddosso(S, u);
+    if (!loro.length) continue;
+    const chiCarica = loro.find(e => e.charged && e.charged.uid === u.uid);
+    const caricato = u.charged && loro.find(e => e.uid === u.charged.uid);
+    if (chiCarica) serra(S, u, chiCarica, { faccia: "fronte" });
+    else serra(S, u, caricato || loro[0]);
+  }
+}
+
+/* Alla fine della fase di Corpo a corpo (p. 185): chi non tocca piu'
+   nessuno torna sciolto. */
+function sciogliSerrati(S){
+  for (const u of S.units)
+    if (u.serrata && (!onBoard(u) || !ingaggiata(S, u))) sciogli(S, u);
 }
 
 /* La schiera che combatte, con addosso quello che il tavolo sa: chi ha
@@ -7330,6 +7544,7 @@ function iniziaBattaglia(S){
   for (const u of S.units) u.anchor = null;
   say(S, `Schieramento finito: comincia il turno 1, muove ${S.nomi[S.army]}.`, { page: 115 });
   limitiDiPartenza(S);
+  obiettiviSenzaPunti(S);
   inizioTurno(S);
 }
 
@@ -7489,9 +7704,14 @@ function passo(S){
     if (CASELLE[S.casella].id === "cariche") impeti(S);
     if (CASELLE[S.casella].id === "mosse") continuaAFuggire(S);
     if (CASELLE[S.casella].id === "tiro") serpenti(S);
+    /* chi e' sciolto e ingaggiato si serra prima di menare (p. 185) */
+    if (CASELLE[S.casella].id === "mischia") serraIngaggiati(S);
     return `si passa a: ${CASELLE[S.casella].what}`;
   }
 
+  /* finita la fase di Corpo a corpo, chi era serrato e non tocca piu'
+     nessuno torna sciolto (p. 185) */
+  sciogliSerrati(S);
   /* fine del turno di questa parte: si guarda chi tiene gli
      obiettivi (Battle March p. 27, «at the end of each player's turn») */
   segnaObiettivi(S);
@@ -7553,21 +7773,48 @@ export function obiettivi(S){
                     fleeing: !!u.fled, stupid: stupida(S, u) });
     }
     const h = objectiveHolder(vicini);
-    return { kind: OBIETTIVI[t.kind], army: h.held ? h.army : null, by: h.held ? h.by.name : "" };
+    return { kind: OBIETTIVI[t.kind], army: h.held ? h.army : null, by: h.held ? h.by.name : "",
+             conteso: !!h.contested };
   });
 }
 
+/* Una riga a ogni fine turno di giocatore, anche quando nessuno tiene
+   niente: chi tiene che cosa, quanto vale adesso, e il totale fin qui.
+   Prima si scriveva solo chi teneva un obiettivo, e una partita in cui
+   nessuno ci arrivava non diceva mai che gli obiettivi c'erano — ne' che
+   nel formato del Core Rulebook non valgono niente (`obiettiviSenzaPunti`). */
 function segnaObiettivi(S){
   const oggi = obiettivi(S);
   if (!oggi.length) return;
   S.fineTurni.push({ kind: "turn", n: S.turno, army: S.army, objectives: oggi });
   const b = VC.bonuses(S.formato);
-  for (const o of oggi){
+  if (!b.treasure && !b.landmark) return;
+  const pezzi = oggi.map(o => {
     const v = o.kind === "landmark" ? b.landmark : b.treasure;
-    if (o.army && v)
-      say(S, `${o.by} tiene ${o.kind === "landmark" ? "il landmark" : "un tesoro"}: ` +
-             `${v} punti vittoria a ${S.nomi[o.army]}.`, { army: o.army, page: 27 });
+    const nome = o.kind === "landmark" ? "il landmark" : "un tesoro";
+    return o.army ? `${nome} a ${S.nomi[o.army]} (${o.by}, +${v})`
+                  : `${nome} ${o.conteso ? "conteso" : "a nessuno"}`;
+  });
+  const tot = VC.objectivePoints(S.fineTurni, S.formato);
+  for (const o of oggi.filter(x => x.army)){
+    const v = o.kind === "landmark" ? b.landmark : b.treasure;
+    if (v) say(S, `${o.by} tiene ${o.kind === "landmark" ? "il landmark" : "un tesoro"}: ` +
+                  `${v} punti vittoria a ${S.nomi[o.army]}.`, { army: o.army, page: 27 });
   }
+  say(S, `Obiettivi a fine turno: ${pezzi.join(", ")}. Finora ${S.nomi.A} ${tot.A}, ${S.nomi.B} ${tot.B} (Battle March p. 27).`,
+      { page: 27 });
+}
+
+/* I tesori e i landmark sul tavolo di una partita del Core Rulebook non
+   valgono punti: li conta Battle March (p. 27), e il Core Rulebook non ha
+   obiettivi nelle sue battaglie campali (p. 286). Si dice una volta,
+   all'inizio, invece di tacere per sei turni. */
+function obiettiviSenzaPunti(S){
+  const quanti = obiettivi(S).length;
+  const b = VC.bonuses(S.formato);
+  if (!quanti || b.treasure || b.landmark) return;
+  say(S, `Sul tavolo ${quanti === 1 ? "c'è un obiettivo" : `ci sono ${quanti} obiettivi`}, ma in una partita ` +
+         `del Core Rulebook non valgono punti vittoria: li conta Battle March (p. 27).`, { page: 286 });
 }
 
 export function punteggio(S){
@@ -7583,15 +7830,20 @@ export function punteggio(S){
   }, 0);
   const perso = uid => { const u = uid != null ? byUid(S, uid) : null;
                          return !!u && (u.dead || u.fledOff || u.fled); };
-  const bonus = army => {
-    const lui = army === "A" ? "B" : "A";
-    return (perso((S.generale || {})[lui]) ? b.general : 0) +
-           (perso((S.bsb || {})[lui]) ? b.bsb : 0);
-  };
   const ob = VC.objectivePoints(S.fineTurni || [], formato);
-  /* i punti che ho fatto sono quelli che l'altro ha perso */
-  const A = conta("B") + bonus("A") + ob.A, B = conta("A") + bonus("B") + ob.B;
-  return { A, B, formato, obiettivi: ob, ...VC.victory(A, B, formato) };
+  /* i punti che ho fatto sono quelli che l'altro ha perso, e i pezzi del
+     conto restano separati: il registro di fine partita li scrive */
+  const parti = army => {
+    const lui = altro(army);
+    return { unita: conta(lui),
+             generale: perso((S.generale || {})[lui]) ? b.general : 0,
+             stendardo: perso((S.bsb || {})[lui]) ? b.bsb : 0,
+             obiettivi: ob[army] };
+  };
+  const somma = q => q.unita + q.generale + q.stendardo + q.obiettivi;
+  const pa = parti("A"), pb = parti("B");
+  const A = somma(pa), B = somma(pb);
+  return { A, B, formato, obiettivi: ob, parti: { A: pa, B: pb }, ...VC.victory(A, B, formato) };
 }
 
 export function rotto(S, army){
@@ -7612,6 +7864,17 @@ export function fine(S, why, { rotto = null } = {}){
   say(S, `Partita finita (${why}). ${S.nomi.A} ${p.A} punti vittoria, ${S.nomi.B} ${p.B}. ` +
          (p.winner ? `${S.nomi[p.winner]} vince: ${p.label}.` : `${p.label}.`),
       { page: p.page || 292 });
+  /* da dove vengono i punti: le unita' nemiche, il generale e lo
+     stendardo nemici, gli obiettivi — questi solo se sul tavolo ce ne
+     sono, anche quando valgono zero */
+  const conObiettivi = obiettivi(S).length > 0;
+  const conto = q => [`${q.unita} dalle unità nemiche`,
+                      q.generale ? `${q.generale} dal generale nemico` : "",
+                      q.stendardo ? `${q.stendardo} dallo stendardo da battaglia` : "",
+                      conObiettivi ? `${q.obiettivi} dagli obiettivi` : ""].filter(Boolean).join(" + ");
+  if (p.parti)
+    say(S, `Il conto: ${S.nomi.A} ${conto(p.parti.A)}; ${S.nomi.B} ${conto(p.parti.B)}.`,
+        { page: p.page || 292 });
   return S.esito;
 }
 
@@ -7764,6 +8027,10 @@ export const interni = { indietreggia, seguire, fuggi, postoAContatto, percorso,
                          testPanico, ondaPanico, ripulisciSfide, sfidanti, puoRifiutare,
                          /* chi combatte, contato sulle basette (p. 145) */
                          filaCheCombatte, schieraDi, facciaToccata,
+                         /* gli schermagliatori che si serrano e si sciolgono (p. 185) */
+                         serra, sciogli, serraIngaggiati, sciogliSerrati,
+                         /* gli obiettivi che nel Core Rulebook non valgono punti */
+                         obiettiviSenzaPunti,
                          /* le manovre offerte, e verso chi si muove (p. 122) */
                          opzioniManovra, bersagliDellaMossa,
                          /* chi deve caricare (pp. 170, 172) */

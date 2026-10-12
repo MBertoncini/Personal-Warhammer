@@ -1754,6 +1754,16 @@ function drawBoard(){
       t.textContent = s2 + (u.tags.length > 3 ? " +" + (u.tags.length - 3) : "");
       labOf(u, t);
     }
+    /* Le ferite, per chi ne ha piu' di una: quelle che RESTANO su quelle
+       che ha, sempre, come nella partita da rivedere (`replay.js`). Prima
+       il cuore contava le ferite prese e compariva solo dopo il primo
+       colpo: dell'Oldblood sul Carnosauro, sette Ferite, non si vedeva
+       niente fino a quando non era gia' ferito, e poi «♥ 2» si leggeva
+       come due ferite rimaste. E nella partita contro l'AI non compariva
+       mai: li' il tavolo non e' «in partita» (`state.game.on`), e' la
+       sfida (`state.sfida`) a portare le ferite dell'arbitro. */
+    const perW = EX.woundsPerModel(u), presW = EX.woundsOf(u);
+    const cuore = (state.game.on || state.sfida) && (perW > 1 || presW > 0);
     /* Lo stato dell'unità, in due parole sopra la testa.
        È il marcatore che al tavolo si appoggia accanto al reggimento:
        chi è in preda alla Stupidità non si muove, non tira e non
@@ -1764,7 +1774,7 @@ function drawBoard(){
     if (state.game.on){
       const marks = stateMarks(u);
       if (marks.length){
-        const yb = Math.min(...corners(u).map(p => p[1])) - (EX.woundsOf(u) ? 24 : 6);
+        const yb = Math.min(...corners(u).map(p => p[1])) - (cuore ? 24 : 6);
         const t = g(lab, "text", { x:u.x, y:yb, "text-anchor":"middle", "font-size":16,
                                    "font-weight":"600",
                                    fill:"var(--warn)", stroke:"var(--paper)", "stroke-width":"2.6",
@@ -1773,17 +1783,18 @@ function drawBoard(){
         labOf(u, t);
       }
     }
-    if (state.game.on && EX.woundsOf(u)){
+    if (cuore){
       const yb = Math.min(...corners(u).map(p => p[1])) - 6;
       const t = g(lab, "text", { x:u.x, y:yb, "text-anchor":"middle", "font-size":17,
-                                 fill:"var(--bad)", stroke:"var(--paper)", "stroke-width":"2.6",
+                                 fill: presW ? "var(--bad)" : "var(--ink)", stroke:"var(--paper)", "stroke-width":"2.6",
                                  "paint-order":"stroke" });
-      t.textContent = "♥ " + EX.woundsOf(u);
+      /* senza il profilo non si sa quante ne abbia: allora le prese, col meno */
+      t.textContent = perW > 1 ? `♥ ${Math.max(0, perW - presW)}/${perW}` : `♥ −${presW}`;
       labOf(u, t);
     }
     if (selIs("unit", u.uid)){
       const txt = `${u.idx}. ${shortName(u.name)} — ${effModels(u)} mod.` +
-                  (state.game.on && u.lost ? ` (−${u.lost})` : "");
+                  ((state.game.on || state.sfida) && u.lost ? ` (−${u.lost})` : "");
       const wBox = txt.length * 12 + 20;
       const yTop = Math.max(-40, Math.min(...corners(u).map(p => p[1])) - 44);
       labOf(u, g(lab, "rect", { x:u.x - wBox/2, y:yTop, width:wBox, height:30, rx:5, fill:"var(--panel)", stroke:"var(--accent)", "stroke-width":1.4 }));

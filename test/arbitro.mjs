@@ -2440,6 +2440,32 @@ console.log('\nil punteggio di Battle March (Battle March p. 27)');
   AR.apply(G, { id:'avanti' });
   ok('e a fine turno il tesoro vale 10 punti',
      G.fineTurni.length === 1 && AR.punteggio(G).A === prima + 10);
+  const riga = G.log.filter(r => /^Obiettivi a fine turno:/.test(r.text)).pop();
+  ok('e il registro dice ogni obiettivo, anche quelli di nessuno, e il totale fin qui',
+     !!riga && /un tesoro a .+ \(.+, \+10\)/.test(riga.text) && /un tesoro a nessuno/.test(riga.text) &&
+     new RegExp(`Finora ${G.nomi.A} 10, ${G.nomi.B} 0`).test(riga.text));
+  metti(G, grossa, 600, 600);
+  G.casella = AR.CASELLE.length - 1;
+  AR.apply(G, { id:'avanti' });
+  ok('anche il turno in cui nessuno ne tiene uno',
+     G.log.filter(r => /^Obiettivi a fine turno:/.test(r.text)).length === 2 &&
+     !/ a (?!nessuno)\S+ \(/.test(G.log.filter(r => /^Obiettivi a fine turno:/.test(r.text)).pop().text));
+  const pp = AR.punteggio(G);
+  ok('il punteggio tiene separati i pezzi del conto',
+     pp.parti.A.obiettivi === 10 && pp.parti.A.generale === 50 &&
+     pp.A === pp.parti.A.unita + pp.parti.A.generale + pp.parti.A.stendardo + pp.parti.A.obiettivi);
+  const F = AR.clona(G);
+  AR.fine(F, 'prova');
+  ok('e la fine della partita li scrive', F.log.some(r =>
+     /^Il conto: .+ \d+ dalle unità nemiche \+ 50 dal generale nemico \+ 10 dagli obiettivi; /.test(r.text)));
+
+  /* nel Core Rulebook i tesori non valgono niente: si dice, invece di
+     tacere sei turni */
+  const C = AR.newBattle({ A, B, scenario:'bm-strada', primo:'A' });
+  C.schierando = false; C.formato = 'core';
+  AR.interni.obiettiviSenzaPunti(C);
+  ok('nel Core Rulebook gli obiettivi sul tavolo non valgono punti, e lo si dice all inizio',
+     C.log.some(r => /ci sono \d+ obiettivi, ma in una partita del Core Rulebook non valgono punti vittoria/.test(r.text)));
 
   /* il punto di rottura e' uno scenario del Core Rulebook (p. 291),
      non una regola di tutte le partite: in Battle March non c'e' */
@@ -3680,6 +3706,95 @@ console.log('\ntrattenersi, seguire, inseguire (pp. 156-157)');
        AR.options(G).player === 'B');
     seme(1);
   }
+}
+
+console.log('\nle ferite che restano, per chi ne ha più di una');
+{
+  const G = nuova();
+  const bast = metti(G, uid(G, 7), 600, 600);
+  const per = AR.feriteDi(bast).per;
+  AR.interni.perdite(G, bast, 0, 2);
+  ok(`il Bastiladon preso due volte dice quante gliene restano (${per - 2} su ${per})`,
+     per > 2 && G.log.some(r => r.text === `${bast.name}: ha perso 2 ferite su ${per}, ne restano ${per - 2}.`));
+  const n = G.log.length;
+  AR.interni.perdite(G, bast, 0, 2);
+  ok('e se non cambia niente non lo ripete', G.log.length === n);
+  const sk = metti(G, uid(G, 3), 300, 600);
+  AR.interni.perdite(G, sk, 2, 0);
+  ok('chi ha una Ferita sola non ne parla', G.log.length === n);
+}
+
+console.log('\ngli schermagliatori in mischia: si serrano e poi si sciolgono (pp. 184-186)');
+{
+  /* nella partita del 12 ottobre gli Skink restavano sparsi in mischia,
+     e gli Slayers li prendevano «di fianco» con il punto e lo scompiglio */
+  const G = nuova();
+  const sk = metti(G, uid(G, 3), 600, 600, 0);
+  const orchi = metti(G, uid(G, 505), 380, 600, 90);           // sul fianco sinistro degli Skink
+  const largo = AR.boxOf(sk, G.units).w;
+  G.army = 'B'; G.casella = casella('cariche');
+  const c = AR.options(G).list.find(x => x.id === 'carica' && x.uid === orchi.uid);
+  ok('chi è sciolto non ha fianchi: la carica si offre di fronte (p. 184)', !!c && c.lato === 'fronte');
+  AR.apply(G, { id:'carica', uid: orchi.uid, target: sk.uid });
+  D.setSource(() => 5);
+  AR.apply(G, AR.options(G).list.find(x => x.kind === 'hold'));
+  D.setSource(D.seeded(1));
+  ok('e la carica arriva di fronte, non di fianco', orchi.charged && orchi.charged.arc === 'fronte' &&
+     G.log.some(r => /Orc Mobs carica Skink Skirmishers 1 e arriva: .* la prende di fronte/.test(r.text)));
+  const b = AR.boxOf(sk, G.units);
+  ok('a contatto gli Skink si serrano: niente vuoto fra le basette (p. 185)',
+     !!sk.serrata && sk.formation.spacing === 0 && b.w < largo);
+  ok('in prima fila quanti ne stanno sulla faccia degli Orchi, gli altri dietro (150 mm, sei basette da 25)',
+     sk.frontage === 6 && G.log.some(r => /Skink Skirmishers 1 si serra contro Orc Mobs: basetta a basetta, 6 in prima fila e 4 dietro/.test(r.text)));
+  ok('girati contro la fila che combatte di chi li ha caricati (p. 186)',
+     Math.abs(((sk.rot - 270) % 360 + 360) % 360) < 1 && AR.ingaggiata(G, sk));
+  ok('e la faccia toccata è sempre il fronte', AR.interni.facciaToccata(G, sk, orchi) === 'fronte');
+  ok('il limite è detto', G.log.some(r => /^\[limite\] gli schermagliatori ingaggiati si serrano/.test(r.text)));
+
+  /* chi è sciolto non è mai preso di fianco, anche da chi gli arriva di
+     lato senza caricare: niente scompiglio */
+  const G2 = nuova();
+  const sk2 = metti(G2, uid(G2, 3), 600, 600, 0);
+  const or2 = metti(G2, uid(G2, 505), 400, 600, 90);
+  aContattoDi(G2, or2, sk2);                                   // a contatto sul fianco, senza serrarsi
+  AR.interni.terrenoInMischia(G2, { A: [sk2], B: [or2] });
+  ok('preso di lato non si scompagina (p. 184)', !sk2.disruptedFianco &&
+     !G2.log.some(r => /presa di fianco/.test(r.text)));
+  AR.interni.serraIngaggiati(G2);
+  ok('e prima di menare si serra lo stesso, anche senza carica', !!sk2.serrata && AR.ingaggiata(G2, sk2));
+
+  /* finito il combattimento, a fine Corpo a corpo tornano sciolti */
+  orchi.dead = true; orchi.placed = false;
+  G.army = 'B'; G.casella = casella('mischia');
+  AR.apply(G, { id:'avanti' });
+  ok('a fine Corpo a corpo, senza nessuno addosso, tornano sciolti (p. 185)',
+     !sk.serrata && sk.formation.spacing > 0 && sk.frontage === 5 &&
+     G.log.some(r => /Skink Skirmishers 1 non è più ingaggiata: torna in formazione sciolta/.test(r.text)));
+  /* girati a 270°, il fronte guarda a sinistra: si riallargano verso destra */
+  const b2 = AR.boxOf(sk, G.units);
+  ok('tenendo il fronte dov era', Math.abs((b2.x - b2.h / 2) - (b.x - b.h / 2)) < 1 && Math.abs(b2.y - b.y) < 1);
+
+  /* e chi resta in mischia resta serrato */
+  const G3 = nuova();
+  const sk3 = metti(G3, uid(G3, 3), 600, 600, 0);
+  const or3 = metti(G3, uid(G3, 505), 400, 600, 90);
+  aContattoDi(G3, or3, sk3);
+  AR.interni.serraIngaggiati(G3);
+  AR.interni.sciogliSerrati(G3);
+  ok('chi tocca ancora un nemico resta serrato', !!sk3.serrata && sk3.formation.spacing === 0);
+
+  /* e chi carica sciolto si serra contro la faccia che ha preso (p. 186) */
+  const G4 = nuova();
+  const sk4 = metti(G4, uid(G4, 3), 600, 600, 0);
+  const or4 = metti(G4, uid(G4, 505), 600, 420, 180);
+  G4.army = 'A'; G4.casella = casella('cariche');
+  AR.apply(G4, { id:'carica', uid: sk4.uid, target: or4.uid });
+  D.setSource(() => 5);
+  AR.apply(G4, AR.options(G4).list.find(x => x.kind === 'hold'));
+  D.setSource(D.seeded(1));
+  ok('gli Skink che caricano si serrano contro il fronte degli Orchi, sei in prima fila',
+     !!sk4.serrata && sk4.frontage === 6 && AR.ingaggiata(G4, sk4) &&
+     AR.interni.facciaToccata(G4, or4, sk4) === 'fronte');
 }
 
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
