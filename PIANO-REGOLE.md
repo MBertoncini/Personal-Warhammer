@@ -2048,9 +2048,12 @@ partenza da 30/56 a 44/45, i Nani da 46/45 a 50/40.
 - **Il volo**, che vuole una decisione e non un conto: sorvolare
   significa ignorare il terreno e chi sta in mezzo, e oggi il
   movimento dell'arbitro è una linea retta.
-- Delle **macchine da guerra**, i tre modi di sparare che non sono la
-  Bombardata né la palla: la grappola (p. 227, che il cannone spara al
-  posto della palla), l'organo, il lanciafiamme. ~~La palla di cannone~~
+- Delle **macchine da guerra**, i due modi di sparare che non sono la
+  Bombardata, la palla né la grappola: l'organo e il lanciafiamme.
+  ~~La grappola~~ — fatta (2026-10-12, p. 227): gesto `grappola`, entro
+  12″ un dado di artiglieria di colpi automatici a Forza 4 (`SH.GRAPESHOT`).
+  Palla e grappola si sparano anche dal pannello della partita a mano
+  (`runCannon`, `runGrape` in `deploy.js`). ~~La palla di cannone~~
   — fatta (2026-10-12, p. 226): gesto `cannoneggia`. `SH.lineSpans`
   taglia la linea con ogni basetta una volta sola, `SH.cannonHits` dice
   chi è colpito fra il punto d'impatto e la fine del rimbalzo — un

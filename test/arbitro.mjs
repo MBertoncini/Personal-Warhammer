@@ -1066,6 +1066,41 @@ console.log('\nla palla di cannone (p. 226)');
     ok('la macchina a filo del bordo non si gira fuori dal tavolo, e spara lo stesso',
        AR.sulTavolo(G, cn) && cn.shot === true && G.log.some(x => /spara: cade a/.test(x.text)));
   }
+
+  /* la grappola (p. 227): al posto della palla, entro 12″, un dado di
+     artiglieria di colpi automatici a Forza 4 */
+  {
+    const { G, cn, orchi } = tavolo();
+    ok('oltre i 12″ la grappola non si offre',
+       !AR.options(G).list.some(x => x.id === 'grappola' && x.uid === cn.uid));
+  }
+  {
+    const { G, cn, orchi } = tavolo();
+    metti(G, orchi, 600, 650);
+    const g = AR.options(G).list.find(x => x.id === 'grappola' && x.uid === cn.uid);
+    ok('entro 12″ il cannone puo sparare la grappola, e l opzione dice i numeri del libro',
+       !!g && /Forza 4/.test(g.why) && g.page === 227);
+    facce(3);                                  // artiglieria 8, e poi tutti 4
+    AR.apply(G, { id: 'grappola', uid: cn.uid, target: orchi.uid });
+    ok('il dado di artiglieria dice quanti colpi automatici, senza tiro per colpire',
+       G.log.some(x => /spara la grappola su Orc Mobs/.test(x.text) && /fa 8 colpi automatici/.test(x.text)) &&
+       G.log.some(x => /su Orc Mobs: 8 colpi di Forza 4, /.test(x.text)) &&
+       !G.log.some(x => x.text.includes(cn.name) && /a \d\+/.test(x.text)));
+    ok('e la macchina ha sparato', cn.shot === true);
+  }
+  {
+    const { G, cn, orchi } = tavolo();
+    metti(G, orchi, 600, 650);
+    facce(5, 0);                               // Mancato Colpo; tabella: 1
+    AR.apply(G, { id: 'grappola', uid: cn.uid, target: orchi.uid });
+    ok('il Mancato Colpo della grappola va alla tabella della polvere nera',
+       cn.dead === true && G.log.some(x => /polvere nera/.test(x.text)));
+  }
+  {
+    const { G, cn, orchi } = tavolo();
+    const r = AR.apply(G, { id: 'grappola', uid: cn.uid, target: orchi.uid });
+    ok('e chiesta da lontano si rifiuta', r.ok === false && /12″/.test(r.why || r.text || ''));
+  }
   D.setSource(D.seeded(1));
 }
 

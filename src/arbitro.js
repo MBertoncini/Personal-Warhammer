@@ -87,8 +87,8 @@ export const LIMITI = [
     why:"il libro li vuole al passo d'Iniziativa del mago; e le loro ferite tolgono modelli ma non entrano nel risultato del combattimento, che `meleeFight` conta da sé" },
   { id:"armatura",  what:"un mago con armatura lancia lo stesso", page:111,
     why:"la pelle callosa degli Skink Priest conta come armatura leggera, e letto alla lettera il libro toglierebbe loro il lancio: finché una FAQ non lo chiarisce il divieto non si applica" },
-  { id:"sagome",    what:"delle macchine da guerra l'arbitro spara la Bombardata e la palla di cannone, e non la grappola, l'organo e il lanciafiamme", page:227,
-    why:"la Bombardata sceglie un punto, devia e guarda chi resta sotto (pp. 224-226), e la palla di cannone cade, rimbalza e si ferma sul «Crunch» (p. 226): quelle si giocano. La grappola (p. 227), che il cannone può sparare al posto della palla, l'organo e il lanciafiamme vogliono ognuna la sua procedura, e l'arbitro non le offre" },
+  { id:"sagome",    what:"delle macchine da guerra l'arbitro spara la Bombardata, la palla di cannone e la grappola, e non l'organo e il lanciafiamme", page:227,
+    why:"la Bombardata sceglie un punto, devia e guarda chi resta sotto (pp. 224-226), la palla di cannone cade, rimbalza e si ferma sul «Crunch» (p. 226), e la grappola tira un dado di artiglieria di colpi automatici (p. 227): quelle si giocano. L'organo e il lanciafiamme vogliono ognuno la sua procedura, e l'arbitro non le offre" },
   { id:"palla",     what:"la palla di cannone si punta sulla linea che va dal cannone al centro del bersaglio, e la gittata si misura dal bordo della sua basetta", page:226,
     why:"il libro lascia scegliere un punto qualunque entro la gittata e la vista: l'arbitro prova i punti di quella linea, uno per pollice, e tiene quello che in media colpisce di più; il tetto di un modello per rango o per fila vale per tutta l'unità, punto d'impatto compreso" },
   { id:"bombardata", what:"un'arma a Bombardata di cui i libri in casa non dicono la sagoma non spara", page:224,
@@ -1088,6 +1088,7 @@ export const CAMPI = Object.freeze({
   bombarda: ["uid", "target", "dist", "attesa"],
   fulmina:  ["uid", "target", "dist", "attesa"],
   cannoneggia: ["uid", "target", "dist", "mira", "attesa"],
+  grappola: ["uid", "target", "dist", "attesa"],
   lancia:   ["uid", "spell", "chance", "attesa"],
   dissolvi: ["chance"],
 });
@@ -2459,6 +2460,17 @@ function opzioniTiro(S){
                         `modell${f.sotto === 1 ? "o" : "i"} di ${t.name}, ≈ ${f.kills.toFixed(1)} perdite`,
                    attesa: f.kills, page: palla.page });
       }
+      /* e la grappola, sugli stessi bersagli quando stanno entro 12″ */
+      for (const t of nemiciDi(S, u)){
+        if (ingaggiata(S, t)) continue;
+        const d = distanza(S, u, t);
+        if (d > SH.GRAPESHOT.range) continue;
+        if (vistaTagliata(S, u, t, { arco: true })) continue;
+        const f = previsioneGrappola(S, u, t);
+        out.push({ id:"grappola", uid: u.uid, target: t.uid, nome: u.name, contro: t.name, dist: d,
+                   why: `${SH.GRAPESHOT.why}, da ${d}″: in media 5 colpi, ≈ ${f.kills.toFixed(1)} perdite`,
+                   attesa: f.kills, page: SH.GRAPESHOT.page });
+      }
       continue;
     }
     /* il fulmine e' una linea e non una sagoma: la lunghezza si tira,
@@ -3452,6 +3464,23 @@ const GESTI = {
     cannoneggia(S, u, t, arma, row, a.mira != null ? +a.mira : null);
     u.shot = true;
     return si("palla di cannone risolta");
+  },
+
+  /* la grappola: chiodi al posto della palla (p. 227) */
+  grappola: (S, a) => {
+    const u = byUid(S, a.uid), t = byUid(S, a.target);
+    if (!u || !t) return no("unità sconosciuta");
+    if (u.shot) return no("ha già tirato in questo turno");
+    if (u.nonTira && S.turno <= u.nonTira) return no(`è guasta: non tira fino alla fine del round ${u.nonTira}`);
+    if (stupida(S, u)) return no("è in preda alla Stupidità: non tira");
+    const arma = CB.rangedWeapons(u)[0];
+    if (!arma || !SH.cannonOf(arma)) return no("solo un cannone spara la grappola (p. 227)");
+    if (distanza(S, u, t) > SH.GRAPESHOT.range) return no(`la grappola arriva a ${SH.GRAPESHOT.range}″ (p. 227)`);
+    if (ingaggiata(S, t)) return no("non si tira su chi è in mischia (p. 143)");
+    giraLaMacchina(S, u, t);
+    grappola(S, u, t);
+    u.shot = true;
+    return si("grappola risolta");
   },
 
   /* la bombardata: niente tiro per colpire, una sagoma che devia */
@@ -4749,9 +4778,6 @@ function previsioneFulmine(S, u, t, arma){
    La geometria sta in `shoot.js`; qui c'e' quello che solo il tavolo
    sa: di chi e' ogni basetta, in che rango e in che fila sta, e se e' un
    mostro. */
-const GROSSI = new Set(["monstrousCreature", "behemoth"]);
-const FERMANO_LA_PALLA = new Set(["impassable", "highWall"]);
-
 function caselleDellaPalla(S, u){
   const out = [];
   for (const v of S.units){
@@ -4759,15 +4785,13 @@ function caselleDellaPalla(S, u){
     const lay = layoutOf(v, S.units);
     /* in formazione vuol dire in ranghi: chi sta sciolto non ha ne'
        ranghi ne' file, e ogni modello sotto la linea e' colpito */
-    const inRanghi = FM.ensureFormation(v).mode === "ranks";
-    const arco = FM.arcOf([u.x, u.y], boxOf(v, S.units));
-    const fronte = Math.max(1, lay.front || 1);
+    const inRanks = FM.ensureFormation(v).mode === "ranks";
+    const arc = FM.arcOf([u.x, u.y], boxOf(v, S.units));
     for (const c of FM.worldCells(v, lay)){
       const chi = (c.kind === "char" && byUid(S, c.uid)) || v;
-      const lane = !inRanghi || !Number.isInteger(c.cell) ? null
-        : arco === "fianco" ? c.cell % fronte : Math.floor(c.cell / fronte);
-      out.push({ ...c, u: v, group: v.uid, lane,
-                 crunch: GROSSI.has(troopType(chi.troop).id) });
+      out.push({ ...c, u: v, group: v.uid,
+                 lane: SH.cannonLane({ cell: c.cell, front: lay.front, arc, inRanks }),
+                 crunch: SH.CRUNCH_TROOPS.has(troopType(chi.troop).id) });
     }
   }
   return out;
@@ -4782,7 +4806,7 @@ function lineaDellaPalla(S, u, t, row, celle = caselleDellaPalla(S, u)){
   const dir = versoreVerso(u, t);
   const da = bordoVerso(S, u, dir);
   const lung = (row.banda.max || 0) + 20;
-  const muri = (S.terrain || []).filter(p => !p.decor && FERMANO_LA_PALLA.has(TR.catOf(p).id));
+  const muri = (S.terrain || []).filter(p => !p.decor && SH.CRUNCH_TERRAIN.has(TR.catOf(p).id));
   return { dir, da, lung,
            spans: SH.lineSpans(celle, da, dir, lung),
            stops: SH.lineStops(muri, da, dir, lung) };
@@ -4893,6 +4917,50 @@ function cannoneggia(S, u, t, arma, row, scelta = null){
     perdite(S, g.u, toll.kills, toll.left);
     if (toll.kills > 0) panico(S, g.u, `la palla di ${u.name}`, u);
   }
+}
+
+/* ---- la grappola (p. 227) ----
+   Al posto della palla, chiodi e pallottole: entro dodici pollici, un
+   dado di artiglieria, e il numero e' quanti colpi automatici prende il
+   bersaglio. Niente tiro per colpire, niente linea per terra: e' un tiro
+   come un altro, con il bersaglio dichiarato e la Forza del profilo
+   della grappola (`SH.GRAPESHOT`), non quella della palla. */
+function previsioneGrappola(S, u, t){
+  const g = SH.GRAPESHOT;
+  const b = CB.combatant(t);
+  const ferite = SH.GRAPESHOT_MEAN_HITS * chanceOf(woundOn(g.S, b.t)) *
+    (1 - chanceOf(saveOn(b.armour, g.ap))) *
+    (1 - chanceOf(saveOn(b.ward, 0))) * (1 - chanceOf(saveOn(b.regen, 0)));
+  return { kills: ferite / (b.w || 1) };
+}
+
+function grappola(S, u, t){
+  const g = SH.GRAPESHOT;
+  const d = distanza(S, u, t);
+  if (d > g.range){
+    say(S, `${u.name} non arriva con la grappola: ${d}″ con una gittata di ${g.range}″.`, { army: u.army, page: g.page });
+    return;
+  }
+  const art = rollDice({ kind: "artillery", n: 1 }).dice[0];
+  if (art.misfire){
+    say(S, `${u.name} carica la grappola: il dado di artiglieria fa Mancato Colpo.`, { dice: [art.raw], army: u.army, page: g.page });
+    return mancatoColpo(S, u, g.misfire);
+  }
+  const r = CB.strike(CB.combatant(u), CB.combatant(t),
+                      { attacks: art.value, auto: true, strength: g.S, ap: g.ap, multi: null, label: "grappola" });
+  const toll = CB.woundsToll(t, r.wounds, { carried: t.wounds || 0 });
+  inizioFase(S, t);
+  /* due righe, come la palla: il dado, e poi le perdite nella forma
+     «X su Y: N colpi di Forza…» che il diario rifatto dal registro sa
+     leggere (`archivio.js`) */
+  say(S, `${u.name} spara la grappola su ${t.name} da ${d}″: il dado di artiglieria fa ${art.value} colpi automatici.`,
+      { dice: [art.raw], army: u.army, page: g.page,
+        fx: { k: "tiro", da: u.uid, su: t.uid, arma: "Grapeshot gun", tiri: Math.min(8, art.value) } });
+  say(S, `${u.name} su ${t.name}: ${art.value} colpi di Forza ${g.S}, ` +
+         `${r.wounds} ferit${r.wounds === 1 ? "a" : "e"}, ${toll.kills} a terra.`,
+      { army: u.army, page: g.page });
+  perdite(S, t, toll.kills, toll.left);
+  if (toll.kills > 0) panico(S, t, `la grappola di ${u.name}`, u);
 }
 
 /* Torna vero se l'unita' e' appena sparita. `zitto` e' per la mischia,

@@ -1188,3 +1188,37 @@ export function cannonAim(spans = [], { stops = [], max = 0, min = 0, value = ()
   }
   return best;
 }
+
+/* Di chi e' una casella agli occhi della palla. Il tetto di un modello
+   per rango o per fila (p. 226) vuole due cose che solo il tavolo sa —
+   se l'unita' e' in ranghi e da che lato le sta il cannone — e una che
+   sa il layout: in che posto della griglia sta la casella. La griglia
+   si riempie per righe dal fronte (`formation.js`), quindi il rango e'
+   il posto diviso il fronte e la fila e' il resto. Chi sta sciolto non
+   ha ne' ranghi ne' file: `null`, e ogni modello sotto la linea conta. */
+export function cannonLane({ cell = null, front = 1, arc = "fronte", inRanks = true } = {}){
+  if (!inRanks || !Number.isInteger(cell)) return null;
+  const f = Math.max(1, front | 0);
+  return arc === "fianco" ? cell % f : Math.floor(cell / f);
+}
+/* chi ferma la palla quando lo colpisce: il «Crunch» (p. 226) */
+export const CRUNCH_TROOPS = new Set(["monstrousCreature", "behemoth"]);
+/* e i terreni che la fermano: impassabile e ostacolo alto */
+export const CRUNCH_TERRAIN = new Set(["impassable", "highWall"]);
+
+/* La grappola (p. 227): al posto della palla il cannone si carica di
+   chiodi e pallottole. Gittata 12″, Forza 4, perforazione −1, e
+   «Needs More Nails»: si dichiara il bersaglio come per un tiro, si
+   tira un dado di artiglieria, e il numero e' quanti colpi automatici
+   prende il bersaglio — il Mancato Colpo va alla tabella della polvere
+   nera. Non tira per colpire e non ha Multiple Wounds ne' Armour Bane:
+   quelle sono della palla. Il profilo sta qui perche' l'export di New
+   Recruit porta il cannone e non la sua seconda munizione. */
+export const GRAPESHOT = {
+  name: "Grapeshot", range: 12, S: 4, ap: 1, misfire: "cannon", page: 227,
+  rules: "Cumbersome, Move or Shoot, Needs More Nails",
+  why: "grappola: entro 12″, un dado di artiglieria di colpi automatici a Forza 4, perforazione −1 (p. 227)",
+};
+/* in media quanti colpi: le cinque facce col numero, e il Mancato
+   Colpo che ne fa zero — (2+4+6+8+10)/6 */
+export const GRAPESHOT_MEAN_HITS = 5;

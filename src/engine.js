@@ -181,6 +181,20 @@ export const ACTIONS = {
              line: (a, r) => readRolls(r) +
                              (a.text ? " — " + a.text : "") },
 
+  /* La palla di cannone e la grappola (pp. 226-227): non tirano per
+     colpire, tirano dadi di artiglieria — due la palla (caduta e
+     rimbalzo), uno la grappola (quanti colpi). Stanno nella casella del
+     per colpire come la sagoma, perche' quello e' il loro «per colpire». */
+  cannonball: { label:"palla di cannone",
+                needs: () => [{ id:"caduta", kind:"artillery", n:1, why:"di quanto cade oltre il punto" },
+                              { id:"rimbalzo", kind:"artillery", n:1, why:"di quanto rimbalza" }],
+                line: (a, r) => nm(a.unit) + ": palla di cannone — " + readRolls(r) +
+                                (a.text ? " — " + a.text : "") },
+  grapeshot: { label:"grappola",
+               needs: () => [{ id:"grappola", kind:"artillery", n:1, why:"quanti colpi automatici" }],
+               line: (a, r) => nm(a.unit) + ": grappola" + on(a.target, "su") + " — " + readRolls(r) +
+                               (a.text ? " — " + a.text : "") },
+
   misfire: { label:"Mancato Colpo",
              needs: () => [d6("guasto", 1, "tabella del Mancato Colpo")],
              line: (a, r) => nm(a.unit) + ": Mancato Colpo — " + readRolls(r) +

@@ -73,7 +73,7 @@ export const PHASES = [
        Colpo e' l'altro esito dello stesso gesto. */
     { id:"toHit", label:"Per colpire",
       what:"i modificatori si sommano qui: mosso, lunga gittata, copertura",
-      does:["note","roll","toHit","template","scatter","misfire"] },
+      does:["note","roll","toHit","template","scatter","misfire","cannonball","grapeshot"] },
     { id:"toWound", label:"Per ferire e salvezze",
       what:"ferire, armatura, salvezza speciale, rigenerazione",
       does:["note","roll","toWound","save"] },

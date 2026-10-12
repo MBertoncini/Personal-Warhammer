@@ -8,7 +8,7 @@ import { R, T, SCENARIOS, geometry } from './scenarios.js';
 import { saveDoc, loadDoc } from './store.js';
 import { photoForUnit, photoFor, chiaveFoto, catEntry, matchUnitName } from './catalog.js';
 import { rectPoly, pointInRect, boxCorners, polysOverlap,
-         distPointToBox, toWorld, toLocal, polyDistance, closestPoints } from './geom.js';
+         distPointToBox, toWorld, toLocal, polyDistance, closestPoints, boxRadius } from './geom.js';
 import * as CB from './combat.js';
 import * as ML from './melee.js';
 import { stat } from './rules.js';
@@ -33,7 +33,7 @@ import * as SG from './sight.js';
 import * as PS from './psych.js';
 import * as ARM from './armies.js';
 import * as MG from './magic.js';
-import { splitWeaponRules } from './rulebook.js';
+import { splitWeaponRules, readRules } from './rulebook.js';
 import { showDiceGroups } from './dicebox.js';
 import { chartLink } from './charts.js';
 import { askText, askConfirm, askPick, showMenu, closeMenu,
@@ -736,6 +736,10 @@ function renderInspector(){
     b.addEventListener("click", () => putTemplate(u, b.dataset.tmpl));
   for (const b of host.querySelectorAll("[data-bombard]"))
     b.addEventListener("click", () => runBombard(u));
+  for (const b of host.querySelectorAll("[data-cannon]"))
+    b.addEventListener("click", () => runCannon(u, b.dataset.cannon));
+  for (const b of host.querySelectorAll("[data-grape]"))
+    b.addEventListener("click", () => runGrape(u, b.dataset.grape));
   for (const b of host.querySelectorAll("[data-tmpl-off]"))
     b.addEventListener("click", () => act("togli la sagoma", () => setTemplate(null)));
   $("#i-rot-l").addEventListener("click", () => upd(() => { u.rot = (u.rot + 270) % 360; }, "ruota"));
@@ -1083,6 +1087,9 @@ function shootingHTML(u){
      dicono qui, accanto al numero che influenzerebbero: al tavolo e'
      l'unico posto in cui una riga del genere si legge davvero. */
   const dubbie = plan.rules.applied.filter(a => a.daVerificare);
+  /* il cannone non tira per colpire: ogni bersaglio ha la palla e, entro
+     dodici pollici, la grappola (pp. 226-227) */
+  const cannone = plan.weapon ? SH.cannonOf(plan.weapon) : null;
   return `
     <div>
       <div class="readout"><span>Tiro${plan.weapon ? " · " + esc(plan.weapon.name) : ""}</span>
@@ -1095,6 +1102,7 @@ function shootingHTML(u){
           return `<div class="readout near dim"><span>${esc(shortName(r.unit.name))} · ${why}</span>
                     <b>${r.dist.toFixed(1)}″</b></div>`;
         }
+        if (cannone) return cannonRowHTML(u, r, cannone);
         const f = shotOn(u, r, plan);
         const why = f.mods.list.map(m => `${m.v} ${m.why}`).join(", ");
         /* Quanti tirano, e perche' gli altri no: sono le tre cause del
@@ -1115,12 +1123,35 @@ function shootingHTML(u){
                   f.survey.hill ? ` · dalla collina tira anche la seconda fila (p. ${SH.RANK_PAGES.hill})` : ""}${
                   f.survey.volleyOff ? ` · ${esc(f.survey.volleyOff)}` : ""}</p>`;
       }).join("") : `<p class="note">Nessun nemico sul tavolo.</p>`}
-      ${plan.machine ? machineHTML(u, plan) : ""}
+      ${cannone ? cannonNoteHTML() : plan.machine ? machineHTML(u, plan) : ""}
       ${dubbie.length ? `<p class="note">Da verificare sul libro: ${dubbie.map(a =>
           `<b>${esc(a.name)}</b> — ${esc(a.daVerificare)}`).join(" · ")}</p>` : ""}
       ${plan.shots.nota ? `<p class="note">${esc(plan.shots.nota)}</p>` : ""}
       <p class="note">L'arco apre il tiro: i modelli che tirano davvero, i modificatori, i dadi e le perdite, con il test di Panico oltre un quarto (p. ${SH.PAGE.panic}).</p>
     </div>`;
+}
+
+/* ---- il cannone (pp. 226-227) ----
+   Una riga per bersaglio come per l'arco, con due gesti al posto della
+   freccia: la palla, che si punta su un punto della linea verso il
+   bersaglio, e la grappola, che arriva a dodici pollici. Il punto lo
+   sceglie l'app con lo stesso conto dell'arbitro (`SH.cannonAim`), e lo
+   scrive: chi gioca al tavolo ne puo' scegliere un altro e misurare. */
+function cannonRowHTML(u, r, cannone){
+  const p = cannonPlanOn(u, r.unit, cannone);
+  const grappola = r.dist <= SH.GRAPESHOT.range;
+  return `<div class="readout near"><span>${esc(shortName(r.unit.name))} · ${r.dist.toFixed(1)}″</span>
+            <b style="color:var(--ok)">${p ? `a ${p.mira.aim}″ · ≈ ${p.mira.expected.toFixed(1)}` : "—"}</b>
+            <button class="btn tiny" data-cannon="${r.unit.uid}" ${p ? "" : "disabled"}
+                    title="Palla di cannone su ${esc(r.unit.name)}${p ? `: puntata a ${p.mira.aim}″` : ""}">palla</button>
+            ${grappola ? `<button class="btn tiny" data-grape="${r.unit.uid}"
+                    title="Grappola su ${esc(r.unit.name)}: un dado di artiglieria di colpi a Forza ${SH.GRAPESHOT.S}">grappola</button>` : ""}
+          </div>`;
+}
+function cannonNoteHTML(){
+  return `
+    <div class="readout"><span>Cannone</span><b>pp. 226-227</b></div>
+    <p class="note">La <b>palla</b> si punta sulla linea verso il bersaglio: un dado di artiglieria dice di quanto cade oltre, un altro di quanto rimbalza. Colpisce chi sta sotto il punto d'impatto e sotto il rimbalzo, amico o nemico, al massimo un modello per rango (di fianco, per fila), e si ferma su un mostro, un colosso, il terreno impassabile o un ostacolo alto. Il numero accanto è quanti modelli prende in media. La <b>grappola</b>, entro ${SH.GRAPESHOT.range}″, fa tanti colpi automatici a Forza ${SH.GRAPESHOT.S} quanti dice il dado. Il Mancato Colpo va alla tabella della polvere nera (p. ${SH.MISFIRE.page}).</p>`;
 }
 
 /* ---- la macchina da guerra ----
@@ -3883,7 +3914,9 @@ async function runBombard(u){
                                     `Mancato Colpo di ${u.name}`);
     if (!guasto || !guasto.guasto) return;
     const face = (guasto.guasto.dice || [])[0] || 1;
-    const read = SH.misfireRead("stone", face);
+    /* la tabella e' quella dell'arma: il mortaio e' polvere nera */
+    const b = SH.bombardOf(CB.rangedWeapons(u)[0]);
+    const read = SH.misfireRead((b && b.misfire) || "stone", face);
     act("Mancato Colpo", () => {
       if (state.game.on) G.goStep(9);
       G.dispatch({ type:"misfire", unit:u, army:u.army, text: read.text }, guasto);
@@ -3911,10 +3944,11 @@ async function runBombard(u){
 
   /* Quanti per unita': la sagoma non conosce i reggimenti, li conosce
      il tavolo. */
-  const perUnit = new Map();
+  const perUnit = new Map(), buco = new Set();
   for (const i of hits.cells || []){
     const foe = cells[i].foe;
     perUnit.set(foe, (perUnit.get(foe) || 0) + 1);
+    if (i === hits.hole) buco.add(foe);
   }
   const detta = [...perUnit.entries()].map(([f, n]) => `${f.name}: ${n}`).join(", ");
 
@@ -3927,12 +3961,209 @@ async function runBombard(u){
   });
   SC.colpo({ k:"sagoma", da:u.uid, p:[out.to], r:(out.shape && out.shape.r) || 40 }, fotoTavolo());
   if (!perUnit.size) return toast("La sagoma è caduta sul vuoto.");
-  act("perdite dalla sagoma", () => {
-    if (state.game.on) G.goStep(11);
-    for (const [foe, n] of perUnit) G.setLost(foe, (foe.lost || 0) + n);
+  /* Un colpo di sagoma non e' una perdita: si tira per ferire e poi le
+     salvezze, come tutti gli altri (p. 95). Prima il pannello segnava
+     ogni modello sotto la sagoma come caduto. Il modello sotto il buco
+     centrale prende la Forza fra parentesi e le Multiple Wounds (p. 224). */
+  const weapon = CB.rangedWeapons(u)[0] || {};
+  const forza = SH.bracket(weapon.S), pen = SH.bracket(weapon.ap);
+  const multi = readWeaponFlags(weapon).multipleWounds || null;
+  const colpi = [...perUnit].map(([foe, n]) => {
+    const parti = [];
+    const normali = n - (buco.has(foe) ? 1 : 0);
+    if (normali) parti.push({ n: normali, strength: forza.base, ap: Math.abs(pen.base), multi: null, label: "sagoma" });
+    if (buco.has(foe)) parti.push({ n: 1, strength: forza.hole, ap: Math.abs(pen.hole), multi, label: "buco centrale" });
+    return { foe, n, ...colpiAutomatici(u, foe, parti) };
   });
-  for (const [foe, n] of perUnit) await panicCheck(foe, n, `la sagoma di ${u.name}`, u);
-  for (const foe of perUnit.keys()) if (foe.dead) await panicWave("destroyed", foe);
+  await mostraColpi(colpi, u, `Sagoma di ${u.name}: ferire e salvezze`);
+  await segnaColpi(colpi, u, "perdite dalla sagoma", `la sagoma di ${u.name}`);
+}
+
+/* ---- i colpi automatici: sagoma, palla e grappola ----
+   Tutti e tre saltano il per colpire e tirano per ferire con la Forza
+   della loro arma. `parti` sono mucchi con la loro Forza: il buco della
+   sagoma ne ha una sua. Le ferite cadono una per una (`woundsToll`),
+   con le Multiple Wounds quando l'arma le ha. */
+function readWeaponFlags(weapon){
+  const regole = Array.isArray(weapon && weapon.rules) ? weapon.rules : splitWeaponRules(weapon && weapon.rules);
+  return readRules([], regole).flags || {};
+}
+function colpiAutomatici(u, foe, parti, { armourBane = 0 } = {}){
+  const chi = { ...CB.combatant(u) };
+  chi.flags = { ...(chi.flags || {}), armourBane };
+  const bers = CB.combatant(foe);
+  const tiri = parti.map(p => CB.strike(chi, bers, { attacks: p.n, auto: true, strength: p.strength,
+                                                      ap: p.ap, multi: p.multi, label: p.label }));
+  const ferite = tiri.reduce((s, r) => s + r.wounds, 0);
+  const conDado = tiri.some(r => r.losses);
+  const losses = conDado ? tiri.flatMap(r => r.losses || Array(r.wounds).fill(1)) : null;
+  const toll = CB.woundsToll(foe, ferite, { carried: foe.wounds || 0, losses });
+  return { tiri, ferite, toll };
+}
+async function mostraColpi(colpi, u, title){
+  const gruppi = [];
+  for (const c of colpi) for (const r of c.tiri){
+    const add = (label, p) => {
+      if (!p || !(p.dice || []).length || (p.need || 0) >= 7) return;
+      gruppi.push({ kind:"d6", label, dice: asDice(p, p.need), tail: `${p.hits} su ${p.of}` });
+    };
+    add(`${c.foe.name} · ${r.label} a Forza ${r.strength}, ferisce ${r.wound.need}+`, r.wound);
+    add(`${c.foe.name} · armatura ${r.save.need}+`, r.save);
+    add(`${c.foe.name} · speciale ${r.ward.need}+`, r.ward);
+    add(`${c.foe.name} · rigenera ${r.regen.need}+`, r.regen);
+  }
+  if (gruppi.length) await showDiceGroups(gruppi, { title,
+    foot: colpi.flatMap(c => c.tiri.flatMap(r => r.notes || [])).join(" · ") || "Colpi automatici: niente tiro per colpire." });
+}
+async function segnaColpi(colpi, u, label, from){
+  act(label, () => {
+    if (state.game.on) G.goStep(11);
+    for (const c of colpi){
+      if (c.toll.kills > 0) G.setLost(c.foe, (c.foe.lost || 0) + c.toll.kills);
+      if (c.toll.left != null) G.setWounds(c.foe, c.toll.left);
+      G.dispatch({ type:"note", army:u.army,
+        text: `${c.foe.name}: ${c.n} colp${c.n === 1 ? "o" : "i"}, ${c.ferite} ferit${c.ferite === 1 ? "a" : "e"}, ${c.toll.kills} a terra` });
+    }
+  });
+  for (const c of colpi) if (c.toll.kills > 0) await panicCheck(c.foe, c.toll.kills, from, u);
+  for (const c of colpi) if (c.foe.dead) await panicWave("destroyed", c.foe);
+}
+
+/* il Mancato Colpo: il D6 della tabella, e la riga del libro */
+async function mancatoColpoPannello(u, kind){
+  const guasto = await G.askRolls([{ id:"guasto", kind:"d6", n:1, why:"tabella del Mancato Colpo" }],
+                                  `Mancato Colpo di ${u.name}`);
+  if (!guasto || !guasto.guasto) return;
+  const read = SH.misfireRead(kind, (guasto.guasto.dice || [])[0] || 1);
+  act("Mancato Colpo", () => {
+    if (state.game.on) G.goStep(9);
+    G.dispatch({ type:"misfire", unit:u, army:u.army, text: read.text }, guasto);
+  });
+}
+
+/* ---- la palla di cannone (p. 226) ----
+   La stessa geometria dell'arbitro (`shoot.js`): le basette di tutto il
+   tavolo, amiche comprese, con il rango o la fila e il mostro che ferma
+   la palla; i pezzi impassabili e gli ostacoli alti; la linea dal bordo
+   della basetta verso il centro del bersaglio. */
+function cannonCellsFor(u){
+  const out = [];
+  for (const v of state.units){
+    if (!v.placed || v.dead || isJoined(v) || v.uid === u.uid) continue;
+    const lay = layoutOf(v);
+    const inRanks = FM.ensureFormation(v).mode === "ranks";
+    const arc = FM.arcOf([u.x, u.y], boxOf(v));
+    for (const c of FM.worldCells(v, lay)){
+      const chi = (c.kind === "char" && state.units.find(x => x.uid === c.uid)) || v;
+      out.push({ ...c, owner: chi, host: v, group: v.uid,
+                 lane: SH.cannonLane({ cell: c.cell, front: lay.front, arc, inRanks }),
+                 crunch: SH.CRUNCH_TROOPS.has(troopType(chi.troop).id) });
+    }
+  }
+  return out;
+}
+function cannonPlanOn(u, t, cannone){
+  const dx = t.x - u.x, dy = t.y - u.y, d = Math.hypot(dx, dy) || 1;
+  const dir = [dx / d, dy / d];
+  const r = boxRadius(boxOf(u), Math.atan2(dir[1], dir[0]));
+  const da = [u.x + dir[0] * r, u.y + dir[1] * r];
+  const lung = (cannone.banda.max || 0) + 20;
+  const muri = terrainPieces().filter(p => SH.CRUNCH_TERRAIN.has(p.cat && p.cat.id));
+  const spans = SH.lineSpans(cannonCellsFor(u), da, dir, lung);
+  const stops = SH.lineStops(muri, da, dir, lung);
+  const mira = SH.cannonAim(spans, { stops, max: cannone.banda.max,
+    value: c => c.group === t.uid ? 1 : c.host.army === u.army ? -1 : 0 });
+  return mira ? { dir, da, spans, stops, mira } : null;
+}
+
+async function runCannon(u, uid){
+  const t = state.units.find(x => x.uid === +uid);
+  const weapon = CB.rangedWeapons(u)[0];
+  const cannone = weapon && SH.cannonOf(weapon);
+  if (!t || !cannone) return;
+  const p = cannonPlanOn(u, t, cannone);
+  if (!p) return toast(`Nessun punto entro ${cannone.banda.max}″ da cui la palla arrivi su ${t.name}.`);
+  const punto = x => [p.da[0] + p.dir[0] * x * MM, p.da[1] + p.dir[1] * x * MM];
+
+  act("dichiarazione di tiro", () => {
+    if (state.game.on) G.goStep(8);
+    G.dispatch({ type:"declareShot", unit:u, target:t, army:u.army, weapon: weapon.name,
+      text: `${u.name} punta la palla a ${p.mira.aim}″, sulla linea di ${t.name}: in media colpisce ` +
+            `${p.mira.expected.toFixed(1)} modelli (p. 226)` });
+  });
+  const rolls = await G.askRolls([{ id:"caduta", kind:"artillery", n:1, why:"di quanto cade oltre il punto" },
+                                  { id:"rimbalzo", kind:"artillery", n:1, why:"di quanto rimbalza" }],
+                                 `Palla di cannone di ${u.name}`);
+  if (!rolls || !rolls.caduta) return;
+  if (rolls.caduta.misfire){
+    act("palla di cannone", () => {
+      if (state.game.on) G.goStep(9);
+      G.dispatch({ type:"cannonball", unit:u, army:u.army, text: "Mancato Colpo sul primo dado" }, { caduta: rolls.caduta });
+    });
+    return mancatoColpoPannello(u, cannone.misfire);
+  }
+  const impatto = p.mira.aim + (rolls.caduta.total || 0);
+  const pianta = !rolls.rimbalzo || rolls.rimbalzo.misfire;
+  const fine = pianta ? impatto : impatto + (rolls.rimbalzo.total || 0);
+  const esito = SH.cannonHits(p.spans, { strike: impatto, end: fine, stops: p.stops });
+
+  const perUnit = new Map();
+  for (const c of esito.hits){
+    const chi = c.owner;
+    if (!chi || chi.dead) continue;
+    perUnit.set(chi, (perUnit.get(chi) || 0) + 1);
+  }
+  const detta = [...perUnit].map(([f, n]) => `${f.name}: ${n}`).join(", ");
+  const ferma = !esito.stoppedBy ? ""
+    : esito.stoppedBy.by === "monster" ? ` Si ferma su ${esito.stoppedBy.who.owner.name}: il «Crunch».`
+    : ` Si ferma contro il terreno a ${esito.stoppedBy.at}″: il «Crunch».`;
+  const tetto = esito.capped ? ` Il tetto di un modello per rango o per fila ne risparmia ${esito.capped}.` : "";
+  act("palla di cannone", () => {
+    if (state.game.on) G.goStep(9);
+    G.dispatch({ type:"cannonball", unit:u, army:u.army,
+      text: `${u.name} spara: cade a ${impatto}″ e ${pianta ? "si pianta lì" : `rimbalza fino a ${fine}″`}.${ferma}${tetto} ` +
+            `Colpiti: ${detta || "nessuno"}` }, rolls);
+  });
+  SC.colpo({ k:"palla", da:u.uid, su:t.uid, arma:weapon.name,
+             p:[p.da, punto(impatto), punto(esito.end)].map(q => [Math.round(q[0]), Math.round(q[1])]) }, fotoTavolo());
+  if (!perUnit.size) return toast("La palla non ha preso nessuno.");
+
+  /* le ferite: Forza e perforazione della palla, Armour Bane e Multiple
+     Wounds dal profilo dell'arma */
+  const wf = readWeaponFlags(weapon);
+  const colpi = [...perUnit].map(([foe, n]) => ({ foe, n, ...colpiAutomatici(u, foe,
+    [{ n, strength: stat(weapon.S), ap: Math.abs(stat(weapon.ap)), multi: wf.multipleWounds || null, label: "palla" }],
+    { armourBane: wf.armourBane || 0 }) }));
+  await mostraColpi(colpi, u, `Palla di ${u.name}: ferire e salvezze`);
+  await segnaColpi(colpi, u, "perdite dalla palla", `la palla di ${u.name}`);
+}
+
+/* ---- la grappola (p. 227) ---- */
+async function runGrape(u, uid){
+  const t = state.units.find(x => x.uid === +uid);
+  const weapon = CB.rangedWeapons(u)[0];
+  if (!t || !weapon || !SH.cannonOf(weapon)) return;
+  const g = SH.GRAPESHOT;
+  act("dichiarazione di tiro", () => {
+    if (state.game.on) G.goStep(8);
+    G.dispatch({ type:"declareShot", unit:u, target:t, army:u.army, weapon: "grappola",
+      text: `${u.name} carica la grappola su ${t.name} (p. ${g.page})` });
+  });
+  const rolls = await G.askRolls([{ id:"grappola", kind:"artillery", n:1, why:"quanti colpi automatici" }],
+                                 `Grappola di ${u.name}`);
+  if (!rolls || !rolls.grappola) return;
+  act("grappola", () => {
+    if (state.game.on) G.goStep(9);
+    G.dispatch({ type:"grapeshot", unit:u, target:t, army:u.army,
+      text: `${u.name} spara la grappola su ${t.name}: ` +
+            (rolls.grappola.misfire ? "Mancato Colpo" : `${rolls.grappola.total} colpi automatici a Forza ${g.S}`) }, rolls);
+  });
+  if (rolls.grappola.misfire) return mancatoColpoPannello(u, g.misfire);
+  const n = rolls.grappola.total || 0;
+  SC.colpo({ k:"tiro", da:u.uid, su:t.uid, arma:"Grapeshot gun", tiri: Math.min(8, n) }, fotoTavolo());
+  const colpi = [{ foe: t, n, ...colpiAutomatici(u, t, [{ n, strength: g.S, ap: g.ap, multi: null, label: "grappola" }]) }];
+  await mostraColpi(colpi, u, `Grappola di ${u.name}: ferire e salvezze`);
+  await segnaColpi(colpi, u, "perdite dalla grappola", `la grappola di ${u.name}`);
 }
 
 /* ============================================================

@@ -692,9 +692,9 @@ per sparare, che il commento prometteva da sempre — adesso l'opzione
   unità in mezzo. Oggi il movimento dell'arbitro è una linea retta.
   Limite `volo`;
 - ~~**la palla di cannone**~~ (p. 226) — fatta, vedi sotto;
-- **gli altri tre modi di sparare di una macchina**: la grappola (p. 227,
-  che il cannone spara al posto della palla), l'organo, il lanciafiamme.
-  Limite `sagome`;
+- ~~**la grappola**~~ (p. 227) — fatta, vedi sotto;
+- **gli altri due modi di sparare di una macchina**: l'organo e il
+  lanciafiamme. Limite `sagome`;
 - ~~**«Multiple Wounds»**~~ (p. 175) — fatta, vedi sotto;
 - **il tiro indiretto** (p. 225), che è una scelta da dichiarare prima
   di sparare: niente linea di vista, e la deviazione ridotta
@@ -705,9 +705,10 @@ per sparare, che il commento prometteva da sempre — adesso l'opzione
   tiene una riga sola. Limite `macchina`, che dice anche l'altra cosa
   che manca: il giro che **non** conta come essersi mossa, che per
   un'arma «o si muove o tira» è la differenza fra sparare e non sparare;
-- il pannello del tavolo (`deploy.js`, `runBombard`) conta i colpi di
-  sagoma **direttamente come perdite**, senza tirare per ferire né le
-  salvezze. L'arbitro li tira; il pannello no.
+- ~~il pannello del tavolo (`deploy.js`, `runBombard`) conta i colpi di
+  sagoma direttamente come perdite~~ — corretto (2026-10-12): tira per
+  ferire e le salvezze, con la Forza fra parentesi e le Multiple Wounds
+  sotto il buco centrale, e il Mancato Colpo sulla tabella dell'arma.
 
 ---
 
@@ -886,8 +887,21 @@ la stessa strada:
   Thrower. La partenza scritta a mano dei Nani si completa pescando
   fra le voci con un seme fisso: con il Cannon in elenco pesca un
   secondo Grudge Thrower invece del Gyrocopter;
-- **resta**: la grappola (p. 227) non si offre, e il pannello della
-  partita giocata a mano (`deploy.js`) non ha un pulsante per la palla.
+- **la grappola** (p. 227, gesto `grappola`): entro 12″, un dado di
+  artiglieria di colpi automatici a Forza 4 e perforazione −1, senza
+  Multiple Wounds né Armour Bane, che sono della palla. Il profilo sta
+  in `SH.GRAPESHOT`, perché l'export porta il cannone e non la sua
+  seconda munizione. Il Mancato Colpo va alla tabella della polvere nera;
+- **nel pannello della partita a mano** (`deploy.js`) ogni bersaglio di
+  un cannone ha «palla» e, entro 12″, «grappola» al posto dell'arco:
+  `runCannon` e `runGrape`, con i dadi dal vassoio, le azioni
+  `cannonball` e `grapeshot` del motore (casella del per colpire), e
+  le ferite tirate da `colpiAutomatici`. La geometria è la stessa
+  dell'arbitro: `SH.cannonLane`, `SH.CRUNCH_TROOPS`, `SH.CRUNCH_TERRAIN`.
+  Con lo stesso aiuto il bombardamento a mano tira per ferire, invece
+  di contare ogni modello sotto la sagoma come caduto;
+- **resta**: nel pannello il punto della palla lo sceglie l'app; chi
+  gioca può solo leggerlo e misurare al tavolo.
 
 ## Come si lavora qui
 
