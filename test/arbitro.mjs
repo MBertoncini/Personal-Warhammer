@@ -1054,6 +1054,18 @@ console.log('\nla palla di cannone (p. 226)');
     ok('il Mancato Colpo sul rimbalzo la pianta dov e caduta', G.log.some(x => /si pianta lì/.test(x.text)));
     ok('e la macchina resta intera', !cn.dead);
   }
+  /* girarsi gratis (p. 197) non porta fuori dal tavolo: a filo del bordo
+     destro, girata di traverso, la basetta quadrata sporgerebbe */
+  {
+    const { G, cn, orchi } = tavolo();
+    Object.assign(cn, { baseW: 50, baseH: 50 });
+    metti(G, cn, G.table.w - 25, 700, 0);
+    metti(G, orchi, 300, 300);
+    facce(2);
+    AR.apply(G, { id: 'cannoneggia', uid: cn.uid, target: orchi.uid });
+    ok('la macchina a filo del bordo non si gira fuori dal tavolo, e spara lo stesso',
+       AR.sulTavolo(G, cn) && cn.shot === true && G.log.some(x => /spara: cade a/.test(x.text)));
+  }
   D.setSource(D.seeded(1));
 }
 

@@ -3024,12 +3024,17 @@ function coperturaDi(S, u, da = null){
 }
 /* La macchina da guerra «can pivot freely at any time during its turn
    (the better to face the enemy)», e girarsi non e' muoversi (p. 197):
-   prima di sparare si gira verso il bersaglio, se girata ci sta. */
+   prima di sparare si gira verso il bersaglio, se girata ci sta. «Ci
+   sta» vuol dire anche dentro il tavolo: prima il bordo non si guardava,
+   e il Cannon schierato a filo del lato destro si girava verso gli Orchi
+   con un angolo della basetta fuori dal tavolo. Le macchine da guerra
+   sono sciolte e vedono tutto intorno, quindi chi non si puo' girare
+   spara lo stesso: cambia solo dove guarda la basetta. */
 function giraLaMacchina(S, u, t){
   if (!macchina(u) || !t) return;
   const rot = versoDi(t.x - u.x, t.y - u.y);
   if (Math.abs(giroDi(u.rot || 0, rot)) < 1) return;
-  if (ingombro(S, u, { ...boxOf(u, S.units), rot }, { unPollice: false, bordo: false })) return;
+  if (ingombro(S, u, { ...boxOf(u, S.units), rot }, { unPollice: false })) return;
   posa(S, u, u.x, u.y, rot);
 }
 function segmentoTocca(a, b, t){
