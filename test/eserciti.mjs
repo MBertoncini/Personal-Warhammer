@@ -53,6 +53,10 @@ ok('la pelle dei Dragon Ogre migliora l armatura di due: leggera 4+, pesante 3+'
    BH.dragonOgres().armour === 4 && BH.dragonOgres({ heavy: true }).armour === 3);
 ok('il Grudge Thrower spara a bombardata con la sagoma piccola del lanciapietre (Core p. 224)',
    (b => b && b.known && b.template === 'small')(SH.bombardOf(DW.grudge().weapons[0])));
+ok('il Cannon costa 100 punti, e spara la palla di Core p. 226 (Forces of Fantasy p. 31)',
+   DW.cannon().pts === 100 && (c => c && c.banda.max === 48)(SH.cannonOf(DW.cannon().weapons[0])));
+ok('e la sua palla e Forza 8 con Armour Bane (2) e Multiple Wounds (D3)',
+   (w => w.S === '8' && /Armour Bane \(2\)/.test(w.rules) && /Multiple Wounds \(D3\)/.test(w.rules))(DW.cannon().weapons[0]));
 
 /* ================================================================= */
 console.log('\nl Odio vale contro chi la parentesi nomina (p. 171)');
@@ -143,6 +147,11 @@ ok('lo Slayer (Comando 10) non e il generale: e Loner (p. 172), e lo e il Thane'
    l.units[l.prep.general].name === 'Thane');
 ok('e senza un altro personaggio la lista non ha generale',
    N.valida(conSlayer.filter(g => g.k !== 'thane')).includes('nessun generale'));
+const quattro = [...conSlayer.filter(g => g.k !== 'grudge'), { k: 'grudge', o: {} }, { k: 'grudge', o: {} },
+                 { k: 'cannon', o: {} }, { k: 'cannon', o: {} }];
+ok('Grudge Thrower e Cannon stanno nello stesso 0-3 ogni 1.000 punti (p. 11)',
+   N.valida(quattro).some(e => /0-3 ogni 1.000/.test(e)) &&
+   !N.valida(quattro.slice(0, -1)).some(e => /0-3 ogni 1.000/.test(e)));
 const B = spazio('bst', { pool: 'tutte', punti: 1000 });
 ok('un Beastlord e un Doombull insieme a 1.000 punti no (Ravening Hordes p. 91)',
    B.valida([{ k: 'beastlord', o: { weapon: 'great', armour: 'heavy' } }, { k: 'doombull', o: { great: true, armour: 'heavy' } },
@@ -177,7 +186,10 @@ const partenza = f => { const S = spazio(f, { pool: 'tutte', punti: 1000 }); ret
 {
   const { G, testo, rifiutate } = await gioca(partenza('dwf'), orchi, 11);
   ok('e i Nani pure', G.finita && !rifiutate.some(p => p.mossa && p.mossa.id !== 'avanti'));
-  ok('e il Grudge Thrower bombarda', /Grudge Thrower bombarda/.test(testo));
+  /* il numero dopo il nome c'e' quando le macchine sono due: la partenza
+     si completa pescando fra le voci, e con il Cannon in elenco ne pesca
+     un'altra */
+  ok('e il Grudge Thrower bombarda', /Grudge Thrower( \d+)? bombarda/.test(testo));
   /* il diario rifatto dal registro (src/archivio.js) legge anche le
      righe della sagoma: «Grudge Thrower su Orc Mobs: 7 colpi di sagoma,
      … 5 a terra» */
@@ -190,6 +202,27 @@ const partenza = f => { const S = spazio(f, { pool: 'tutte', punti: 1000 }); ret
   const storte = BL.finalUnits(rifatta.rep).filter(f => { const u = vere[f.uid]; return u && !u.dead && f.alive !== u.models - (u.lost || 0); });
   ok('e il diario rifatto dal registro conta anche i caduti sotto la sagoma',
      /colpi di sagoma, [^\n]*[1-9]\d* a terra/.test(testo) && !rifatta.guasti.length && !storte.length);
+}
+/* il Cannon in partita: la stessa partenza con un cannone al posto dei
+   Grudge Thrower. Nessuna lista salvata ne ha uno, e senza questa prova
+   l'euristica potrebbe lasciarlo fermo con la sua opzione in elenco,
+   come succedeva alle macchine prima del gesto «bombarda» */
+{
+  const S = spazio('dwf', { pool: 'tutte', punti: 1000 });
+  const geni = [...S.partenze[0].filter(g => g.k !== 'grudge'), { k: 'cannon', o: {} }];
+  const lista = S.costruisci(geni, { id: 'prova-cannone' });
+  const { G, testo, rifiutate } = await gioca(lista, orchi, 11);
+  ok('i Nani con il Cannon finiscono la partita', G.finita && !rifiutate.some(p => p.mossa && p.mossa.id !== 'avanti'));
+  ok('e il Cannon spara la palla: cade, rimbalza, e il registro lo scrive',
+     /Cannon( \d+)? spara: cade a \d+″/.test(testo));
+  const ARCH = await import('../src/archivio.js'), BL = await import('../src/battlelog.js');
+  const liste = { A: lista, B: orchi };
+  const righe = G.log.map(r => `T${r.turno} ${r.text}${r.page ? ` (p. ${r.page})` : ''}`).join('\n');
+  const G2 = AR.newBattle({ A: liste.A, B: liste.B, scenario: 'bm-strada', nomi: G.nomi });
+  const rifatta = ARCH.dalRegistro({ S: G2, liste, nomi: G.nomi, sc: G.sc, testo: righe });
+  const vere = Object.fromEntries(G.units.map(u => [u.uid, u]));
+  const storte = BL.finalUnits(rifatta.rep).filter(f => { const u = vere[f.uid]; return u && !u.dead && f.alive !== u.models - (u.lost || 0); });
+  ok('e il diario rifatto dal registro conta i caduti sotto la palla', !rifatta.guasti.length && !storte.length);
 }
 
 /* ================================================================= */

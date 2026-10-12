@@ -307,6 +307,25 @@ export function motoreFx({ strato, tipoDi = () => '', colore = a => a === 'B' ? 
     return Math.max(700, L * .9) + 700;
   }
 
+  /* La palla di cannone (p. 226): vola fino al punto d'impatto, alza la
+     polvere, e da li' rimbalza radente fino a dove si ferma. I tre
+     punti li scrive l'arbitro — la bocca, l'impatto, la fine — perche'
+     la palla non va dove sta il bersaglio: va dove l'hanno puntata. */
+  function pallaFx(fx, f, prima){
+    const [p0, p1, p2] = fx.p || [];
+    if (!p0 || !p1) return 0;
+    const L1 = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]);
+    const L2 = p2 ? Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) : 0;
+    const ms1 = Math.max(260, L1 * .35), ms2 = L2 > 2 ? Math.max(200, L2 * .3) : 0;
+    scoppio(p0, { r: 26, ms: 280 }); fumo(p0, { n: 5, r: 24 });
+    volo(p0, p1, { ms: ms1, forma: FORME_FX.palla, ombra: true, arco: 30, fine: q => {
+      polvere(q, { r: 30, ms: 700 });
+      if (ms2) volo(q, p2, { ms: ms2, forma: FORME_FX.palla, ombra: true, arco: 12,
+                             fine: r => polvere(r, { r: 20, ms: 600 }) });
+    } });
+    return ms1 + ms2 + 500;
+  }
+
   /* la runa sotto chi lancia */
   function runa(p, col){
     const g = el('g', { transform: 'translate(' + p[0] + ',' + p[1] + ')' });
@@ -616,7 +635,7 @@ export function motoreFx({ strato, tipoDi = () => '', colore = a => a === 'B' ? 
     }
     return { marce: marce.slice(0, 10), dopoFx: dopoFx.slice(0, 8) };
   }
-  const FX = { tiro: tiroFx, fulmine: fulmineFx, sagoma: sagomaFx, magia: magiaFx, dissolto: dissoltoFx,
+  const FX = { tiro: tiroFx, fulmine: fulmineFx, sagoma: sagomaFx, palla: pallaFx, magia: magiaFx, dissolto: dissoltoFx,
                fiasco: fiascoFx, mischia: mischiaFx, carica: caricaFx, fuga: fugaFx,
                paura: (fx, f, p) => paniconeFx(fx, f, p, '!', '#ff5a4a'),
                perdite: perditeFx, distrutto: distruttoFx, marcia: marciaFx };

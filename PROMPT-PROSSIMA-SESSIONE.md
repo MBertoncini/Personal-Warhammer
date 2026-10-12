@@ -691,10 +691,9 @@ per sparare, che il commento prometteva da sempre — adesso l'opzione
   numero (`Fly (n)`), e sorvolare vuol dire ignorare il terreno e le
   unità in mezzo. Oggi il movimento dell'arbitro è una linea retta.
   Limite `volo`;
-- **gli altri quattro modi di sparare di una macchina**: la palla di
-  cannone con il rimbalzo e il «Crunch» (p. 226 — la linea `lineUnder`
-  c'è già, mancano il tetto di un colpo per rango o per fila e le due
-  cose che la fermano di colpo), la grappola, l'organo, il lanciafiamme.
+- ~~**la palla di cannone**~~ (p. 226) — fatta, vedi sotto;
+- **gli altri tre modi di sparare di una macchina**: la grappola (p. 227,
+  che il cannone spara al posto della palla), l'organo, il lanciafiamme.
   Limite `sagome`;
 - ~~**«Multiple Wounds»**~~ (p. 175) — fatta, vedi sotto;
 - **il tiro indiretto** (p. 225), che è una scelta da dichiarare prima
@@ -820,9 +819,10 @@ riprende:
   of Beasts / Lore of Athel Loren in `dati/magia/domini.json`. Prove in
   `test/eserciti.mjs`;
 - **quello che non ha una voce** perché l'arbitro non lo sa giocare:
-  cannone, organo, lanciafiamme, Bolt Thrower, Gyrobomber, Wardancers e
+  organo, lanciafiamme, Bolt Thrower, Gyrobomber, Wardancers e
   Shadowdancer, Cockatrice, Cygor, Jabberslythe, Gigante. Il primo che si
-  implementa (la palla di cannone, le danze) si aggiunge a `spazio.js`;
+  implementa (le danze, l'organo) si aggiunge a `spazio.js`, come il
+  Cannon (la palla, 2026-10-12);
 - **le letture**: in ordine aperto si schiera in ranghi; lo scudo con
   l'arma a due mani non si compra; il Braystaff sempre in difesa;
 - **i buchi trovati strada facendo, che valevano per tutti**: l'Odio
@@ -848,6 +848,46 @@ riprende:
   Steed) non c'è, la Lore of Athel Loren è quasi tutta testo, e le
   danze dei Wardancers non si giocano. Gli Skaven di Skryre, con il
   motore nuovo, sono scesi al 42%: forse vanno ribilanciati.
+
+## Fatto: la palla di cannone (p. 226), 2026-10-12
+
+Il Compito 4 aveva lasciato la palla scritta a metà: `cannonShot` e
+`cannonLine` sapevano dove cade e dove finisce, e nessuno sapeva chi ci
+finisce sotto. Adesso l'arbitro la spara (gesto `cannoneggia`, campo
+`mira` in pollici). Quello che è stato deciso, perché non si rifaccia
+la stessa strada:
+
+- **la geometria è in `shoot.js` e non sa di chi sono le basette**:
+  `lineSpans` taglia la linea con ogni casella una volta sola (entrata
+  e uscita in pollici), `lineStops` dice a che distanza la linea sta
+  dentro un pezzo che la ferma, `cannonHits` confronta intervalli. Chi
+  chiama marca le caselle con `group` (il reggimento), `lane` (rango o
+  fila) e `crunch` (creatura mostruosa o colosso): `caselleDellaPalla`
+  in `arbitro.js`;
+- **il tetto di uno per rango o per fila vale per tutta l'unità**, punto
+  d'impatto compreso: il libro lo scrive per la palla che rimbalza
+  «through a formed unit». In formazione vuol dire in ranghi: chi sta
+  sciolto non ha tetto. L'arco è quello del cannone visto dal bersaglio;
+- **il «Crunch»** ferma la palla sulla prima creatura mostruosa o
+  colosso colpiti (un personaggio su un mostro dentro un reggimento
+  conta col suo tipo di truppa) e sul terreno impassabile e sugli
+  ostacoli alti. Il volo fino al punto d'impatto passa sopra a tutto;
+- **la mira**: il libro lascia scegliere un punto qualunque entro
+  gittata e vista. L'arbitro prova i punti della linea cannone-bersaglio
+  un pollice alla volta, da dieci prima del bersaglio fino a dove lo
+  lascia, sui venticinque esiti dei due dadi più il Mancato Colpo sul
+  rimbalzo, e tiene il migliore; gli amici sotto la linea contano meno
+  uno. È il limite `palla`. L'opzione si offre anche su chi sta oltre
+  la gittata, fino a venti pollici di caduta e rimbalzo;
+- **Armour Bane (2) e Multiple Wounds (D3)** stanno sull'arma, non
+  sull'equipaggio: `bandierineArma` le passa a `CB.strike`;
+- il **Cannon dei Nani** (Forces of Fantasy p. 31, 100 punti) ha la sua
+  voce in `spazio.js` e sta nello 0-3 delle macchine con il Grudge
+  Thrower. La partenza scritta a mano dei Nani si completa pescando
+  fra le voci con un seme fisso: con il Cannon in elenco pesca un
+  secondo Grudge Thrower invece del Gyrocopter;
+- **resta**: la grappola (p. 227) non si offre, e il pannello della
+  partita giocata a mano (`deploy.js`) non ha un pulsante per la palla.
 
 ## Come si lavora qui
 

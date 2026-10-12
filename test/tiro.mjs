@@ -508,5 +508,74 @@ ok('e con due capi i mucchi sono tre',
 ok('senza nessun capo va tutto all unita', SH.shareHits(7, { models: 5, characters: 0 }).unit === 7);
 
 /* ================================================================= */
+console.log('\nla palla di cannone: chi ci finisce sotto (p. 226)');
+{
+
+/* un blocco di 5 x 4 basette da 25 mm, col fronte verso il cannone che
+   sta a (0, 0) e spara lungo x: i ranghi sono le colonne in x, le file
+   le righe in y. Il primo rango comincia a 20″. */
+const blocco = ({ x0 = 20, group = 'A', lane = 'rank', crunch = false } = {}) => {
+  const out = [];
+  for (let r = 0; r < 4; r++) for (let f = 0; f < 5; f++)
+    out.push({ wx: x0 * MM + (r + 0.5) * 25, wy: (f - 2) * 25, w: 25, h: 25, wrot: 0,
+               group, lane: lane === 'rank' ? r : lane === 'file' ? f : null, crunch, r, f });
+  return out;
+};
+const avanti = [1, 0];
+const spanBlocco = SH.lineSpans(blocco(), [0, 0], avanti, 60);
+ok('la linea dritta al centro attraversa una sola fila: quattro basette',
+   spanBlocco.length === 4 && spanBlocco.every(c => c.f === 2));
+ok('e le trova in ordine, dal primo rango all ultimo',
+   spanBlocco.map(c => c.r).join(',') === '0,1,2,3');
+ok('entra nel primo rango a 20″', near(spanBlocco[0].enter, 20, 1e-6));
+
+const tutta = SH.cannonHits(spanBlocco, { strike: 18, end: 30 });
+ok('rimbalzando dentro un reggimento davanti: un modello per rango', tutta.hits.length === 4);
+ok('chi sta del tutto oltre il rimbalzo non e colpito',
+   SH.cannonHits(spanBlocco, { strike: 18, end: 20.5 }).hits.length === 1);
+ok('chi sta prima del punto d impatto non e colpito: la palla ci passa sopra',
+   SH.cannonHits(spanBlocco, { strike: 22.5, end: 30 }).hits.map(c => c.r).join(',') === '2,3');
+ok('se si pianta, colpisce solo chi sta sotto il punto d impatto',
+   SH.cannonHits(spanBlocco, { strike: 21.5, end: 21.5 }).hits.map(c => c.r).join(',') === '1');
+
+/* di fianco: la palla corre lungo un rango, e il tetto e' una per fila */
+const diFianco = SH.lineSpans(blocco({ lane: 'file' }), [20 * MM + 12.5, -20 * MM], [0, 1], 60);
+ok('di fianco la linea corre lungo un rango: cinque basette', diFianco.length === 5);
+ok('e ognuna sta in una fila sua, quindi le prende tutte e cinque',
+   SH.cannonHits(diFianco, { strike: 15, end: 30 }).hits.length === 5);
+/* lo stesso rango con il tetto per rango: una sola */
+const diFiancoMaPerRango = SH.lineSpans(blocco({ lane: 'rank' }), [20 * MM + 12.5, -20 * MM], [0, 1], 60);
+ok('con il tetto sbagliato ne prenderebbe una: il tetto conta',
+   SH.cannonHits(diFiancoMaPerRango, { strike: 15, end: 30 }).hits.length === 1);
+
+/* il Crunch */
+const mostro = { wx: 22 * MM, wy: 0, w: 50, h: 75, wrot: 0, group: 'M', lane: null, crunch: true };
+const dietro = blocco({ x0: 26, group: 'B' });
+const conMostro = SH.lineSpans([mostro, ...dietro], [0, 0], avanti, 60);
+const crunch = SH.cannonHits(conMostro, { strike: 18, end: 40 });
+ok('una creatura mostruosa colpita ferma la palla', crunch.hits.length === 1 && crunch.stoppedBy.by === 'monster');
+ok('e chi le sta dietro non e colpito', !crunch.hits.some(c => c.group === 'B'));
+const muro = SH.cannonHits(spanBlocco, { strike: 18, end: 30, stops: [20.5, 20.75] });
+ok('il terreno impassabile ferma la palla dove la linea ci entra',
+   muro.stoppedBy && muro.stoppedBy.by === 'terrain' && muro.hits.length === 1 && muro.end === 20.5);
+ok('un muro prima del punto d impatto non conta: la palla ci vola sopra',
+   SH.cannonHits(spanBlocco, { strike: 18, end: 30, stops: [10, 10.25] }).hits.length === 4);
+
+/* dove mirare */
+const mira = SH.cannonAim(spanBlocco, { max: 48 });
+ok('la mira cade prima del reggimento, per farci rimbalzare dentro la palla',
+   mira && mira.aim < 20 && mira.aim >= 10);
+ok('e in media prende piu di un modello', mira.expected > 1);
+ok('la mira non va oltre la gittata', SH.cannonAim(spanBlocco, { max: 12 }).aim <= 12);
+ok('senza niente sotto la linea non c e mira', SH.cannonAim([], { max: 48 }) === null);
+
+const cannone = { name: 'Cannon', range: '48"', S: '8', ap: '-2',
+                  rules: 'Armour Bane (2), Cannon Fire, Cumbersome, Move or Shoot, Multiple Wounds (D3)' };
+ok('il cannone si riconosce dalla sua regola, Cannon Fire', SH.cannonOf(cannone) && SH.cannonOf(cannone).page === 226);
+ok('e un arco no', SH.cannonOf({ name: 'Longbow', range: '30"', S: '3', rules: '-' }) === null);
+ok('la palla usa la tabella della polvere nera', SH.cannonOf(cannone).misfire === 'cannon');
+}
+
+/* ================================================================= */
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

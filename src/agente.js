@@ -302,11 +302,12 @@ export function agenteEuristico({ nome = "euristica", estro = null, piano: sopra
 
       /* TIRO: il bersaglio su cui ci si aspetta di far male di più.
          Le macchine da guerra hanno un gesto loro — «bombarda» per la
-         sagoma, «fulmina» per la linea — e questo filtro cercava solo
+         sagoma, «fulmina» per la linea, «cannoneggia» per la palla — e
+         questo filtro cercava solo
          «tira»: la macchina restava ferma tutta la partita con la sua
-         opzione in elenco e nessuno che la prendesse. Tutte e tre
+         opzione in elenco e nessuno che la prendesse. Tutte
          portano `attesa`, e l'arbitro le ha già messe in ordine. */
-      const tiri = l.filter(x => x.id === "tira" || x.id === "bombarda" || x.id === "fulmina");
+      const tiri = l.filter(x => x.id === "tira" || x.id === "bombarda" || x.id === "fulmina" || x.id === "cannoneggia");
       if (tiri.length){
         const t = fra(tiri);
         return { scelta: t, perche: `${t.nome} tira su ${t.contro}: ${t.why}` };

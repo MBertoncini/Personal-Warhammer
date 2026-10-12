@@ -943,6 +943,120 @@ console.log('\nil fulmine del Warp Lightning Cannon (Legends: Skaven, p. 19)');
   D.setSource(D.seeded(1));
 }
 
+/* La palla di cannone (p. 226): un punto per terra, due dadi di
+   artiglieria, e chi sta sotto il punto d'impatto o sotto il rimbalzo.
+   Nessuna lista salvata ha un cannone: lo si monta qui con il profilo
+   del libro, come il lanciapietre qui sopra, sul tavolo vuoto di
+   terreno perche' le prove non dipendano da dove cade un bosco. */
+console.log('\nla palla di cannone (p. 226)');
+{
+  const cannone = () => ([{ name: 'Cannon', range: '48"', S: '8', ap: '-2',
+    rules: 'Armour Bane (2), Cannon Fire, Cumbersome, Move or Shoot, Multiple Wounds (D3)' }]);
+  const facce = (...seq) => { let i = 0; D.setSource(n => Math.min(n - 1, seq[Math.min(i++, seq.length - 1)])); };
+  const tavolo = ({ rot = 180 } = {}) => {
+    const G = nuova();
+    G.terrain = [];
+    const cn = metti(G, uid(G, 3), 600, 900);
+    Object.assign(cn, { troop: 'War machine', models: 1, frontage: 1, lost: 0, weapons: cannone() });
+    const orchi = metti(G, uid(G, 505), 600, 400, rot);
+    G.casella = casella('tiro'); G.army = 'A';
+    return { G, cn, orchi };
+  };
+  const colpitiDi = (G, nome) => {
+    const r = G.log.find(x => /Colpiti: /.test(x.text));
+    const m = r && new RegExp(nome + ': (\\d+)').exec(r.text);
+    return m ? +m[1] : 0;
+  };
+
+  {
+    const { G, cn, orchi } = tavolo();
+    const o = AR.options(G).list.filter(x => x.uid === cn.uid);
+    const c = o.find(x => x.id === 'cannoneggia' && x.target === orchi.uid);
+    ok('il cannone ha il suo gesto, e non tira come un arco', !!c && !o.some(x => x.id === 'tira'));
+    ok('l opzione dice dove punta, quanti ne prende in media e la pagina',
+       /puntata a \d+″/.test(c.why) && /in media colpisce/.test(c.why) && c.page === 226 && Number.isFinite(c.mira));
+    ok('e punta prima del reggimento, per farci rimbalzare dentro la palla', c.mira < c.dist);
+    const r = AR.apply(G, { id: 'tira', uid: cn.uid, target: orchi.uid });
+    ok('«tira» con un cannone si rifiuta, e dice il gesto giusto', r.ok === false && /cannoneggia/.test(r.why || r.text || ''));
+  }
+
+  /* davanti: un modello per rango. Gli Orc Mobs sono venti su cinque di
+     fronte, quattro ranghi: la palla che li attraversa tutti ne prende
+     quattro, non venti */
+  {
+    const { G, cn, orchi } = tavolo();
+    facce(2);                                  // 6″ di caduta, 6″ di rimbalzo, e poi tutti 3
+    AR.apply(G, { id: 'cannoneggia', uid: cn.uid, target: orchi.uid });
+    ok('la palla cade e rimbalza, e il registro lo scrive',
+       G.log.some(x => /cade a \d+″ \(\+6\) e rimbalza fino a \d+″ \(\+6\)/.test(x.text)));
+    ok('dal davanti, al massimo un modello per rango', colpitiDi(G, 'Orc Mobs') === 4);
+    ok('nessun tiro per colpire: la palla non usa l Abilita Balistica',
+       !G.log.some(x => x.text.includes(cn.name) && /a \d\+/.test(x.text)));
+    ok('ogni ferita vale il dado delle Multiple Wounds (p. 175)',
+       G.log.some(x => /ferite della palla valgono/.test(x.text)));
+    ok('e la macchina ha sparato', cn.shot === true);
+  }
+
+  /* di fianco: la palla corre lungo un rango, e il tetto e' uno per fila */
+  {
+    const { G, cn, orchi } = tavolo({ rot: 90 });
+    facce(2);
+    AR.apply(G, { id: 'cannoneggia', uid: cn.uid, target: orchi.uid });
+    const n = colpitiDi(G, 'Orc Mobs');
+    ok('dal fianco corre lungo un rango, e il tetto e uno per fila: cinque file, cinque modelli', n === 5);
+  }
+
+  /* il «Crunch»: un colosso sulla strada ferma la palla */
+  const colosso = G => {
+    const m = metti(G, AR.unitsOf(G, 'B').find(u => u.uid !== 505), 600, 600);
+    Object.assign(m, { troop: 'Behemoth', models: 1, frontage: 1, lost: 0, wounds: 0, loose: true });
+    return m;
+  };
+  {
+    const { G, cn, orchi } = tavolo();
+    facce(0, 4, 0);                            // 2″ di caduta, 10″ di rimbalzo
+    AR.apply(G, { id: 'cannoneggia', uid: cn.uid, target: orchi.uid, mira: 6 });
+    ok('senza nessuno davanti, puntata a 6″ la palla arriva agli orchi', colpitiDi(G, 'Orc Mobs') > 0);
+  }
+  {
+    const { G, cn, orchi } = tavolo();
+    const m = colosso(G);
+    facce(0, 4, 0);
+    AR.apply(G, { id: 'cannoneggia', uid: cn.uid, target: orchi.uid, mira: 6 });
+    ok('un colosso colpito la ferma: il «Crunch»',
+       colpitiDi(G, m.name) === 1 && G.log.some(x => /Crunch/.test(x.text) && x.text.includes(m.name)));
+    ok('e chi gli sta dietro non e colpito', colpitiDi(G, 'Orc Mobs') === 0);
+  }
+  {
+    const { G, cn, orchi } = tavolo();
+    const muro = { kind: 'monolith', cat: 'impassable', decor: false, label: 'Monolite',
+                   contains: p => Math.abs(p[0] - 600) < 60 && Math.abs(p[1] - 600) < 20 };
+    G.terrain = [muro];
+    facce(0, 4, 0);
+    AR.apply(G, { id: 'cannoneggia', uid: cn.uid, target: orchi.uid, mira: 6 });
+    ok('anche il terreno impassabile la ferma',
+       G.log.some(x => /contro il terreno/.test(x.text)) && colpitiDi(G, 'Orc Mobs') === 0);
+  }
+
+  /* i due Mancato Colpo: sul primo dado va alla tabella, sul secondo la
+     palla si pianta dove e' caduta */
+  {
+    const { G, cn, orchi } = tavolo();
+    facce(5, 0);                               // artiglieria: Mancato Colpo; tabella: 1
+    AR.apply(G, { id: 'cannoneggia', uid: cn.uid, target: orchi.uid });
+    ok('il Mancato Colpo sul primo dado va alla tabella della polvere nera, e un 1 la distrugge',
+       cn.dead === true && G.log.some(x => /polvere nera/.test(x.text)));
+  }
+  {
+    const { G, cn, orchi } = tavolo();
+    facce(2, 5, 2);                            // 6″ di caduta, poi Mancato Colpo sul rimbalzo
+    AR.apply(G, { id: 'cannoneggia', uid: cn.uid, target: orchi.uid });
+    ok('il Mancato Colpo sul rimbalzo la pianta dov e caduta', G.log.some(x => /si pianta lì/.test(x.text)));
+    ok('e la macchina resta intera', !cn.dead);
+  }
+  D.setSource(D.seeded(1));
+}
+
 /* La sfida Michele contro Gemini lo aveva preso per un errore: il
    Bastiladon fallisce il test, avanza di un movimento solo, e poi non
    spara. E' il libro: chi tenta la marcia e fallisce «is considered to

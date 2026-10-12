@@ -710,6 +710,40 @@
         }
       ],
       "notaRighe": "Come il Warp Lightning Cannon: la riga della macchina ha «-» su tutto quello che serve a menare, e quei numeri sono dei serventi; Resistenza e Ferite restano quelle della macchina."
+    },
+    {
+      "nomi": [
+        "Cannon",
+        "Cannons"
+      ],
+      "faction": "Dwarfen Mountain Holds",
+      "M": 3,
+      "da": "Dwarf Crew",
+      "libro": "Forces of Fantasy",
+      "pagina": 31,
+      "nota": "la macchina non si muove da sola: cammina con i serventi, e non può marciare né caricare né inseguire (p. 197)",
+      "righe": [
+        {
+          "chi": "Dwarf Crew",
+          "stats": {
+            "M": 3,
+            "WS": 3,
+            "BS": 3,
+            "S": 3,
+            "I": 2,
+            "A": 3,
+            "Ld": 9
+          }
+        },
+        {
+          "chi": "Cannon",
+          "stats": {
+            "T": 7,
+            "W": 3
+          }
+        }
+      ],
+      "notaRighe": "Come il Warp Lightning Cannon: la riga della macchina ha «-» su tutto quello che serve a menare, e quei numeri sono dei serventi; Resistenza e Ferite restano quelle della macchina."
     }
   ]
 }

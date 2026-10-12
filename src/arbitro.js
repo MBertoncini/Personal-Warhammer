@@ -87,8 +87,10 @@ export const LIMITI = [
     why:"il libro li vuole al passo d'Iniziativa del mago; e le loro ferite tolgono modelli ma non entrano nel risultato del combattimento, che `meleeFight` conta da sé" },
   { id:"armatura",  what:"un mago con armatura lancia lo stesso", page:111,
     why:"la pelle callosa degli Skink Priest conta come armatura leggera, e letto alla lettera il libro toglierebbe loro il lancio: finché una FAQ non lo chiarisce il divieto non si applica" },
-  { id:"sagome",    what:"delle macchine da guerra l'arbitro spara la Bombardata, e non la palla di cannone, la grappola, l'organo e il lanciafiamme", page:226,
-    why:"la Bombardata sceglie un punto, devia e guarda chi resta sotto, e quella si gioca (pp. 224-226); la palla di cannone vuole la linea che rimbalza con il «Crunch», e le altre tre vogliono ognuna la sua procedura" },
+  { id:"sagome",    what:"delle macchine da guerra l'arbitro spara la Bombardata e la palla di cannone, e non la grappola, l'organo e il lanciafiamme", page:227,
+    why:"la Bombardata sceglie un punto, devia e guarda chi resta sotto (pp. 224-226), e la palla di cannone cade, rimbalza e si ferma sul «Crunch» (p. 226): quelle si giocano. La grappola (p. 227), che il cannone può sparare al posto della palla, l'organo e il lanciafiamme vogliono ognuna la sua procedura, e l'arbitro non le offre" },
+  { id:"palla",     what:"la palla di cannone si punta sulla linea che va dal cannone al centro del bersaglio, e la gittata si misura dal bordo della sua basetta", page:226,
+    why:"il libro lascia scegliere un punto qualunque entro la gittata e la vista: l'arbitro prova i punti di quella linea, uno per pollice, e tiene quello che in media colpisce di più; il tetto di un modello per rango o per fila vale per tutta l'unità, punto d'impatto compreso" },
   { id:"bombardata", what:"un'arma a Bombardata di cui i libri in casa non dicono la sagoma non spara", page:224,
     why:"quale sagoma usa sta nelle Note del profilo, e l'export di New Recruit le butta via: fra la sagoma da tre pollici e quella da cinque ce ne sono due di diametro, e sceglierne una a caso vuol dire sbagliare in silenzio" },
   { id:"macchina", what:"una macchina da guerra non marcia, non carica e non insegue, e si gira gratis", page:197,
@@ -1085,6 +1087,7 @@ export const CAMPI = Object.freeze({
   tira:     ["uid", "target", "dist", "attesa"],
   bombarda: ["uid", "target", "dist", "attesa"],
   fulmina:  ["uid", "target", "dist", "attesa"],
+  cannoneggia: ["uid", "target", "dist", "mira", "attesa"],
   lancia:   ["uid", "spell", "chance", "attesa"],
   dissolvi: ["chance"],
 });
@@ -2437,6 +2440,27 @@ function opzioniTiro(S){
     /* una macchina guasta non tira fino alla fine del round successivo
        (p. 226): il divieto vale per la bombardata come per l'arco */
     if (u.nonTira && S.turno <= u.nonTira) continue;
+    /* la palla di cannone: un punto per terra e due dadi di artiglieria.
+       Si offre su ogni nemico che si vede e che la palla puo' prendere
+       da un punto entro la gittata, anche se il bersaglio sta oltre:
+       la caduta e il rimbalzo arrivano fino a venti pollici piu' in la' */
+    const palla = SH.cannonOf(arma);
+    if (palla){
+      const celle = caselleDellaPalla(S, u);
+      for (const t of nemiciDi(S, u)){
+        if (ingaggiata(S, t)) continue;
+        const d = distanza(S, u, t);
+        if (d > palla.banda.max + 20) continue;
+        if (vistaTagliata(S, u, t, { arco: true })) continue;
+        const f = previsionePalla(S, u, t, arma, palla, celle);
+        if (!f) continue;
+        out.push({ id:"cannoneggia", uid: u.uid, target: t.uid, nome: u.name, contro: t.name, dist: d, mira: f.mira,
+                   why: `${palla.why}, da ${d}″: puntata a ${f.mira}″, in media colpisce ${f.sotto.toFixed(1)} ` +
+                        `modell${f.sotto === 1 ? "o" : "i"} di ${t.name}, ≈ ${f.kills.toFixed(1)} perdite`,
+                   attesa: f.kills, page: palla.page });
+      }
+      continue;
+    }
     /* il fulmine e' una linea e non una sagoma: la lunghezza si tira,
        e allora la gittata massima e' quella che i dadi possono dare */
     const fulmine = SH.lineShotOf(arma);
@@ -3385,6 +3409,7 @@ const GESTI = {
     if (!armi.length) return no("non ha armi da tiro");
     if (SH.bombardOf(armi[0])) return no("spara a bombardata: il gesto è «bombarda», non «tira» (p. 224)");
     if (SH.lineShotOf(armi[0])) return no("spara una linea: il gesto è «fulmina», non «tira» (Legends: Skaven, p. 19)");
+    if (SH.cannonOf(armi[0])) return no("è un cannone: il gesto è «cannoneggia», non «tira» (p. 226)");
     giraLaMacchina(S, u, t);
     if (fuoriArco(S, u, t)) return no(`${t.name} le sta fuori dall'arco di vista: si tira solo davanti (pp. 103 e 137)`);
     tiro(S, u, t, armi[0], {});
@@ -3406,6 +3431,22 @@ const GESTI = {
     fulmina(S, u, t, arma, row);
     u.shot = true;
     return si("fulmine risolto");
+  },
+
+  /* la palla di cannone: un punto per terra, la caduta e il rimbalzo */
+  cannoneggia: (S, a) => {
+    const u = byUid(S, a.uid), t = byUid(S, a.target);
+    if (!u || !t) return no("unità sconosciuta");
+    if (u.shot) return no("ha già tirato in questo turno");
+    if (u.nonTira && S.turno <= u.nonTira) return no(`è guasta: non tira fino alla fine del round ${u.nonTira}`);
+    if (stupida(S, u)) return no("è in preda alla Stupidità: non tira");
+    const arma = CB.rangedWeapons(u)[0];
+    const row = arma && SH.cannonOf(arma);
+    if (!row) return no("non è un cannone");
+    giraLaMacchina(S, u, t);
+    cannoneggia(S, u, t, arma, row, a.mira != null ? +a.mira : null);
+    u.shot = true;
+    return si("palla di cannone risolta");
   },
 
   /* la bombardata: niente tiro per colpire, una sagoma che devia */
@@ -4375,7 +4416,7 @@ function tiro(S, u, t, arma, { standAndShoot = false } = {}){
   /* le armi che hanno una procedura loro non passano di qui: se ci
      arrivassero sparerebbero con i numeri letti male — gittata 8″ per
      un «8D6"», Forza dell'equipaggio per una «*» */
-  if (SH.bombardOf(arma) || SH.lineShotOf(arma)){
+  if (SH.bombardOf(arma) || SH.lineShotOf(arma) || SH.cannonOf(arma)){
     say(S, `${u.name} non spara ${arma.name} così: ha una procedura sua.`, { army: u.army, page: 222 });
     return;
   }
@@ -4688,6 +4729,165 @@ function previsioneFulmine(S, u, t, arma){
     (1 - chanceOf(saveOn(b.armour, Math.abs(stat(arma.ap))))) *
     (1 - chanceOf(saveOn(b.ward, 0))) * (1 - chanceOf(saveOn(b.regen, 0)));
   return { sotto: n, kills: (ferite / (b.w || 1)) * (5 / 6) };
+}
+
+/* ---- la palla di cannone (p. 226) ----
+   Il cannone non tira per colpire: si sceglie un punto per terra, il
+   primo dado di artiglieria dice di quanto la palla cade oltre, il
+   secondo di quanto rimbalza, e chi sta sotto il punto d'impatto o sotto
+   il rimbalzo e' colpito — amico o nemico. Due regole tengono la palla
+   onesta: un reggimento in formazione perde al massimo un modello per
+   rango (cannone davanti o dietro) o per fila (cannone di fianco), e il
+   «Crunch» la ferma sulla prima creatura mostruosa o colosso che colpisce,
+   o sul terreno impassabile e sugli ostacoli alti.
+
+   La geometria sta in `shoot.js`; qui c'e' quello che solo il tavolo
+   sa: di chi e' ogni basetta, in che rango e in che fila sta, e se e' un
+   mostro. */
+const GROSSI = new Set(["monstrousCreature", "behemoth"]);
+const FERMANO_LA_PALLA = new Set(["impassable", "highWall"]);
+
+function caselleDellaPalla(S, u){
+  const out = [];
+  for (const v of S.units){
+    if (!onBoard(v) || isJoined(v) || v.uid === u.uid) continue;
+    const lay = layoutOf(v, S.units);
+    /* in formazione vuol dire in ranghi: chi sta sciolto non ha ne'
+       ranghi ne' file, e ogni modello sotto la linea e' colpito */
+    const inRanghi = FM.ensureFormation(v).mode === "ranks";
+    const arco = FM.arcOf([u.x, u.y], boxOf(v, S.units));
+    const fronte = Math.max(1, lay.front || 1);
+    for (const c of FM.worldCells(v, lay)){
+      const chi = (c.kind === "char" && byUid(S, c.uid)) || v;
+      const lane = !inRanghi || !Number.isInteger(c.cell) ? null
+        : arco === "fianco" ? c.cell % fronte : Math.floor(c.cell / fronte);
+      out.push({ ...c, u: v, group: v.uid, lane,
+                 crunch: GROSSI.has(troopType(chi.troop).id) });
+    }
+  }
+  return out;
+}
+
+/* La linea, i pezzi che la fermano, e le caselle tagliate: tutto quello
+   che non dipende dai dadi, fatto una volta per tiro. La linea va dal
+   bordo della basetta verso il centro del bersaglio, ed e' lunga quanto
+   la palla puo' arrivare: la gittata, dieci pollici di caduta e dieci
+   di rimbalzo. */
+function lineaDellaPalla(S, u, t, row, celle = caselleDellaPalla(S, u)){
+  const dir = versoreVerso(u, t);
+  const da = bordoVerso(S, u, dir);
+  const lung = (row.banda.max || 0) + 20;
+  const muri = (S.terrain || []).filter(p => !p.decor && FERMANO_LA_PALLA.has(TR.catOf(p).id));
+  return { dir, da, lung,
+           spans: SH.lineSpans(celle, da, dir, lung),
+           stops: SH.lineStops(muri, da, dir, lung) };
+}
+
+/* Dove puntare: il punto che in media colpisce piu' modelli del
+   bersaglio, e che costa un modello a ogni amico che ci finirebbe sotto.
+   Gli altri nemici non contano nella scelta, ma stanno nella linea: un
+   mostro davanti al bersaglio la ferma comunque. */
+function miraDellaPalla(S, u, t, row, linea){
+  const value = c => c.group === t.uid ? 1 : c.u.army === u.army ? -1 : 0;
+  return SH.cannonAim(linea.spans, { stops: linea.stops, max: row.banda.max, value });
+}
+
+/* le bandierine dell'arma: Armour Bane (2) e Multiple Wounds (D3) stanno
+   sul profilo del cannone, non sull'equipaggio */
+function bandierineArma(arma){
+  const regole = Array.isArray(arma.rules) ? arma.rules.join(", ") : String(arma.rules || "");
+  return readRules([], splitWeaponRules(regole)).flags;
+}
+
+function previsionePalla(S, u, t, arma, row, celle){
+  const linea = lineaDellaPalla(S, u, t, row, celle);
+  const mira = miraDellaPalla(S, u, t, row, linea);
+  if (!mira || mira.expected <= 0) return null;
+  const wf = bandierineArma(arma);
+  const b = CB.combatant(t);
+  const forza = stat(arma.S), ap = Math.abs(stat(arma.ap));
+  const salva = x => chanceOf(saveOn(b.armour, x));
+  const armatura = wf.armourBane ? (5 / 6) * salva(ap) + (1 / 6) * salva(ap + wf.armourBane) : salva(ap);
+  const ferite = mira.expected * chanceOf(woundOn(forza, b.t)) * (1 - armatura) *
+    (1 - chanceOf(saveOn(b.ward, 0))) * (1 - chanceOf(saveOn(b.regen, 0))) *
+    CB.multiMean(wf.multipleWounds, b.w);
+  return { mira: mira.aim, sotto: mira.expected, kills: ferite / (b.w || 1) };
+}
+
+/* Il punto lo sceglie chi spara (p. 226): se il gesto porta `mira`, in
+   pollici dal bordo della basetta lungo la linea del bersaglio, vale
+   quella — purche' stia entro la gittata. Altrimenti lo sceglie
+   l'arbitro, con lo stesso conto che l'opzione ha scritto. */
+function cannoneggia(S, u, t, arma, row, scelta = null){
+  const linea = lineaDellaPalla(S, u, t, row);
+  const mira = Number.isFinite(scelta) && scelta >= 0 && scelta <= row.banda.max
+    ? { aim: scelta } : miraDellaPalla(S, u, t, row, linea);
+  if (!mira){
+    say(S, `${u.name} non trova un punto da cui la palla arrivi su ${t.name}.`, { army: u.army, page: 226 });
+    return;
+  }
+  const punto = d => [linea.da[0] + linea.dir[0] * d * MM, linea.da[1] + linea.dir[1] * d * MM];
+
+  /* 1. il punto: lo sceglie chi spara, prima dei dadi */
+  say(S, `${u.name} punta a ${mira.aim}″, sulla linea di ${t.name}.`,
+      { army: u.army, page: 226 });
+  /* 2. di quanto cade oltre: il Mancato Colpo sta qui */
+  const primo = rollDice({ kind: "artillery", n: 1 }).dice[0];
+  if (primo.misfire){
+    say(S, `${u.name}: il primo dado di artiglieria fa Mancato Colpo.`, { dice: [primo.raw], army: u.army, page: 226 });
+    return mancatoColpo(S, u, row.misfire);
+  }
+  const impatto = mira.aim + primo.value;
+  /* 3. il rimbalzo: con il Mancato Colpo la palla si pianta dov'e' caduta */
+  const secondo = rollDice({ kind: "artillery", n: 1 }).dice[0];
+  const fine = secondo.misfire ? impatto : impatto + secondo.value;
+  const esito = SH.cannonHits(linea.spans, { strike: impatto, end: fine, stops: linea.stops });
+
+  const mucchi = new Map();
+  for (const c of esito.hits){
+    const chi = padroneDi(S, c);
+    if (!chi || chi.dead) continue;
+    const g = mucchi.get(chi.uid) || { u: chi, n: 0 };
+    g.n++;
+    mucchi.set(chi.uid, g);
+  }
+  const detta = [...mucchi.values()].map(g => `${g.u.name}: ${g.n}`).join(", ");
+  const ferma = !esito.stoppedBy ? ""
+    : esito.stoppedBy.by === "monster"
+      ? ` Si ferma su ${padroneDi(S, esito.stoppedBy.who).name}: il «Crunch».`
+      : ` Si ferma contro il terreno a ${esito.stoppedBy.at}″: il «Crunch».`;
+  const tetto = esito.capped
+    ? ` Il tetto di un modello per rango o per fila ne risparmia ${esito.capped}.` : "";
+  say(S, `${u.name} spara: cade a ${impatto}″ (+${primo.value}) e ` +
+         (secondo.misfire ? "si pianta lì (Mancato Colpo sul rimbalzo)." : `rimbalza fino a ${fine}″ (+${secondo.value}).`) +
+         ferma + tetto + ` Colpiti: ${detta || "nessuno"}.`,
+      { dice: [primo.raw, secondo.raw], army: u.army, page: 226,
+        fx: { k: "palla", da: u.uid, su: t.uid, arma: arma.name,
+              p: [puntoFx(linea.da), puntoFx(punto(impatto)), puntoFx(punto(esito.end))] } });
+
+  /* 4. i colpi si tirano per ferire come tutti gli altri, con la Forza
+        e la perforazione del cannone; ogni ferita non salvata vale il
+        suo dado (Multiple Wounds, p. 175) */
+  const wf = bandierineArma(arma);
+  const chiSpara = { ...CB.combatant(u) };
+  chiSpara.flags = { ...(chiSpara.flags || {}), armourBane: wf.armourBane || 0 };
+  const forza = stat(arma.S), ap = Math.abs(stat(arma.ap));
+  for (const g of mucchi.values()){
+    if (g.u.dead) continue;
+    const r = CB.strike(chiSpara, CB.combatant(g.u),
+                        { attacks: g.n, auto: true, strength: forza, ap, multi: wf.multipleWounds || null,
+                          label: "palla di cannone" });
+    const toll = CB.woundsToll(g.u, r.wounds, { carried: g.u.wounds || 0, losses: r.losses || null });
+    inizioFase(S, g.u);
+    if (r.losses)
+      say(S, `${g.u.name}: le ferite della palla valgono ${r.losses.join(", ")} (Multiple Wounds, p. 175).`,
+          { army: g.u.army, page: 175 });
+    say(S, `${u.name} su ${g.u.name}: ${g.n} ${g.n === 1 ? "colpo" : "colpi"} di Forza ${forza}, ` +
+           `${r.wounds} ferit${r.wounds === 1 ? "a" : "e"}, ${toll.kills} a terra.`,
+        { army: u.army, page: 226 });
+    perdite(S, g.u, toll.kills, toll.left);
+    if (toll.kills > 0) panico(S, g.u, `la palla di ${u.name}`, u);
+  }
 }
 
 /* Torna vero se l'unita' e' appena sparita. `zitto` e' per la mischia,

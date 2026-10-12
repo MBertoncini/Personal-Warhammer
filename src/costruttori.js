@@ -435,6 +435,8 @@ const BASE = (w, h = w) => ({ baseId: `${w}x${h}`, baseW: w, baseH: h });
 const pg = o => ({ models: 1, frontage: 1, us: 1, unitSize: '1', slot: 'Characters', ...o });
 
 Object.assign(ARMI, {
+  /* il cannone di Core p. 226: la palla cade e rimbalza (Cannon Fire) */
+  cannon: { name: 'Cannon', range: '48"', S: '8', ap: '-2', rules: 'Armour Bane (2), Cannon Fire, Cumbersome, Move or Shoot, Multiple Wounds (D3)' },
   stone: { name: 'Stone thrower', range: '12-60"', S: '4 (8)', ap: '-1 (-3)', rules: 'Bombardment, Cumbersome, Move or Shoot, Multiple Wounds (D3+1)' },
   crossbow: { name: 'Crossbow', range: '30"', S: '4', ap: '-', rules: 'Armour Bane (2), Ponderous' },
   handgun: { name: 'Handgun', range: '24"', S: '4', ap: '-1', rules: 'Armour Bane (1), Ponderous' },
@@ -876,6 +878,15 @@ export const DW = {
     profiles: [{ name: 'Grudge Thrower', stats: st('- - - - 7 3 - - -') }, { name: 'Dwarf Crew', stats: st('3 3 3 3 4 3 2 3 9') }],
     rules: ['Hatred (Orcs & Goblins)', 'Magic Resistance (-1)', 'Skirmishers', 'Stubborn'],
     weapons: armi(['stone', 'hw']), slot: 'Special' }),
+  /* p. 31: Cannon 100, la palla di Core p. 226 (48″, Forza 8). Stessi
+     serventi e stesse regole del Grudge Thrower, e la basetta da 50 x 50.
+     Le rune d'ingegneria restano fuori, come gli altri oggetti runici. */
+  cannon: () => dw({
+    name: 'Cannon', models: 1, crew: 1, ...BASE(50), frontage: 1, loose: true,
+    pts: 100, us: 0, troop: 'War machine', unitSize: '1', stats: st('- - - - 7 3 - - -'), armour: 6,
+    profiles: [{ name: 'Cannon', stats: st('- - - - 7 3 - - -') }, { name: 'Dwarf Crew', stats: st('3 3 3 3 4 3 2 3 9') }],
+    rules: ['Hatred (Orcs & Goblins)', 'Magic Resistance (-1)', 'Skirmishers', 'Stubborn'],
+    weapons: armi(['cannon', 'hw']), slot: 'Special' }),
 };
 
 /* Una candidata diventa una lista dell'archivio. `id` lo sceglie chi

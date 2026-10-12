@@ -1052,3 +1052,139 @@ export function lineUnder(cells = [], from = null, to = null){
   out.sort((a, b) => a.at - b.at);
   return { cells: out, page: PAGE.machines };
 }
+
+/* ============================================================
+   13 · LA PALLA DI CANNONE (p. 226)
+   Il cannone non tira per colpire e non posa una sagoma: si sceglie un
+   punto sul terreno, il primo dado di artiglieria dice di quanto la
+   palla cade oltre, il secondo di quanto rimbalza, e chi sta sotto il
+   punto d'impatto o sotto il rimbalzo e' colpito. `cannonShot` e
+   `cannonLine` qui sopra sapevano la prima meta' da sempre; mancava
+   chi ci finisce sotto, ed e' la parte con le regole:
+
+   - un'unita' in formazione, attraversata, perde al massimo UN modello
+     per rango se il cannone le sta davanti o dietro, uno per fila se le
+     sta di fianco;
+   - il «Crunch»: una creatura mostruosa o un colosso colpiti fermano la
+     palla, e cosi' il terreno impassabile o un ostacolo alto;
+   - chi sta del tutto oltre il rimbalzo non e' colpito.
+
+   Qui non si sa di chi siano le basette ne' che terreno ci sia: chi
+   chiama marca ogni casella (`group`, `lane`, `crunch`) e passa le
+   distanze a cui la linea e' bloccata. Entrano caselle e pollici,
+   escono le caselle colpite nell'ordine in cui la palla le trova.
+   ============================================================ */
+export const CANNON_FIRE = /^cannon fire$/i;
+
+export function cannonOf(weapon){
+  if (!weapon) return null;
+  const regole = rulesText(weapon).split(/\s*,\s*/).map(x => x.trim());
+  if (!regole.some(x => CANNON_FIRE.test(x))) return null;
+  const banda = rangeBand(weapon);
+  return { kind: "cannon", nome: "Palla di cannone", misfire: "cannon", banda,
+           book: "Core Rulebook", page: 226,
+           why: `palla di cannone: un punto entro ${banda.max}″, poi cade oltre e rimbalza ` +
+                `di un dado di artiglieria ciascuno (p. 226)` };
+}
+
+/* Dove la linea entra in ogni basetta e dove ne esce, in pollici dalla
+   bocca: e' il taglio di un raggio con un rettangolo ruotato, fatto una
+   volta sola. Con questo, sapere chi sta fra il punto d'impatto e la
+   fine del rimbalzo e' un confronto fra intervalli, e la previsione
+   puo' provarne venticinque senza rifare la geometria ogni volta. */
+export function lineSpans(cells = [], from = null, dir = null, len = 0){
+  if (!from || !dir) return [];
+  const lmm = len * MM, out = [];
+  for (const c of cells){
+    const a = rad(c.wrot || c.rot || 0), ca = Math.cos(a), sa = Math.sin(a);
+    const px = from[0] - c.wx, py = from[1] - c.wy;
+    /* il raggio nel riferimento della basetta */
+    const o = [px * ca + py * sa, -px * sa + py * ca];
+    const d = [dir[0] * ca + dir[1] * sa, -dir[0] * sa + dir[1] * ca];
+    const half = [(c.w || MM) / 2, (c.h || MM) / 2];
+    let t0 = -Infinity, t1 = Infinity, fuori = false;
+    for (let k = 0; k < 2; k++){
+      if (Math.abs(d[k]) < 1e-9){ if (Math.abs(o[k]) > half[k]) fuori = true; continue; }
+      const ta = (-half[k] - o[k]) / d[k], tb = (half[k] - o[k]) / d[k];
+      t0 = Math.max(t0, Math.min(ta, tb));
+      t1 = Math.min(t1, Math.max(ta, tb));
+    }
+    if (fuori || t0 > t1 || t1 < 0 || t0 > lmm) continue;
+    out.push({ ...c, enter: Math.max(0, t0) / MM, exit: Math.min(lmm, t1) / MM });
+  }
+  out.sort((x, y) => x.enter - y.enter || x.exit - y.exit);
+  return out;
+}
+
+/* Le distanze, in pollici dalla bocca, a cui la linea sta dentro un
+   pezzo che ferma la palla. A passi di un quarto di pollice: un muro
+   piu' sottile di cosi' sul tavolo non c'e'. */
+export const STOP_STEP = 0.25;
+export function lineStops(pieces = [], from = null, dir = null, len = 0){
+  if (!from || !dir || !pieces.length) return [];
+  const out = [];
+  for (let d = 0; d <= len; d += STOP_STEP){
+    const pt = [from[0] + dir[0] * d * MM, from[1] + dir[1] * d * MM];
+    if (pieces.some(p => p && typeof p.contains === "function" && p.contains(pt))) out.push(r2(d));
+  }
+  return out;
+}
+
+/* Chi la palla colpisce, dato dove cade (`strike`) e dove finirebbe il
+   rimbalzo (`end`), in pollici dalla bocca. Il tetto per rango o per
+   fila vale per tutta l'unita', punto d'impatto compreso: il libro lo
+   scrive per la palla che rimbalza «through a formed unit», e un
+   modello sotto il punto d'impatto sta in un rango come tutti gli
+   altri. */
+export function cannonHits(spans = [], { strike = 0, end = 0, stops = [] } = {}){
+  let cut = Math.max(strike, end), stoppedBy = null;
+  const wall = stops.find(d => d >= strike - 1e-9 && d <= cut + 1e-9);
+  if (wall != null){ cut = wall; stoppedBy = { by: "terrain", at: wall }; }
+  const used = new Set(), hits = [];
+  let capped = 0;
+  for (const c of spans){
+    if (c.exit < strike - 1e-9 || c.enter > cut + 1e-9) continue;
+    if (c.group != null && c.lane != null){
+      const key = c.group + ":" + c.lane;
+      if (used.has(key)){ capped++; continue; }
+      used.add(key);
+    }
+    hits.push(c);
+    if (c.crunch){
+      stoppedBy = { by: "monster", at: r2(Math.max(c.enter, strike)), who: c };
+      break;
+    }
+  }
+  return { hits, capped, strike, end: stoppedBy ? stoppedBy.at : cut, stoppedBy, page: 226 };
+}
+
+/* Dove mirare. Il punto si sceglie prima dei dadi, e i dadi sono due
+   dadi di artiglieria: venticinque esiti con un numero, e il Mancato
+   Colpo. Sul primo dado ferma tutto (zero colpi); sul secondo la palla
+   si pianta dove e' caduta e colpisce solo chi sta li' sotto. Si prova
+   un punto ogni pollice, dieci pollici prima di dove la linea trova il
+   bersaglio fino a dove lo lascia, entro la gittata, e si tiene quello
+   che in media colpisce di piu'. `value` dice quanto vale una casella
+   colpita: di serie una, e chi chiama ci mette il segno meno per gli
+   amici. */
+const ART = [2, 4, 6, 8, 10];
+export function cannonAim(spans = [], { stops = [], max = 0, min = 0, value = () => 1 } = {}){
+  const utili = spans.filter(c => value(c) > 0);
+  if (!utili.length) return null;
+  const primo = Math.min(...utili.map(c => c.enter));
+  const ultimo = Math.max(...utili.map(c => c.exit));
+  const da = Math.max(min, Math.floor(primo) - 10), a = Math.min(max, Math.ceil(ultimo));
+  let best = null;
+  for (let g = da; g <= a; g++){
+    let tot = 0;
+    for (const f of ART){
+      const s = g + f;
+      const pianta = cannonHits(spans, { strike: s, end: s, stops }).hits;
+      tot += pianta.reduce((x, c) => x + value(c), 0) / 36;
+      for (const b of ART)
+        tot += cannonHits(spans, { strike: s, end: s + b, stops }).hits.reduce((x, c) => x + value(c), 0) / 36;
+    }
+    if (!best || tot > best.expected + 1e-9) best = { aim: g, expected: r2(tot) };
+  }
+  return best;
+}

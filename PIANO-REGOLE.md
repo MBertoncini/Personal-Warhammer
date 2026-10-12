@@ -1992,8 +1992,8 @@ in tre file nuovi di `dati/eserciti/`, e le cerca `spazio.js` dal
 serbatoio «tutte». Le decisioni, perché si rifacciano solo se si trova
 di meglio:
 
-- **quello che l'arbitro non sa giocare non ha una voce**: il cannone,
-  l'organo, il lanciafiamme, il Bolt Thrower, i Gyrobomber, i
+- **quello che l'arbitro non sa giocare non ha una voce**: ~~il cannone~~
+  (ha la sua dal 2026-10-12, Forces of Fantasy p. 31), l'organo, il lanciafiamme, il Bolt Thrower, i Gyrobomber, i
   Wardancers, la Cockatrice, il Cygor, il Jabberslythe, il Gigante. Una
   ricerca che li compra misura punti buttati;
 - **chi può stare in ordine aperto si schiera in ranghi**, anche con
@@ -2048,12 +2048,18 @@ partenza da 30/56 a 44/45, i Nani da 46/45 a 50/40.
 - **Il volo**, che vuole una decisione e non un conto: sorvolare
   significa ignorare il terreno e chi sta in mezzo, e oggi il
   movimento dell'arbitro è una linea retta.
-- Delle **macchine da guerra**, i quattro modi di sparare che non sono
-  la Bombardata: la palla di cannone con il suo rimbalzo e il
-  «Crunch», la grappola, l'organo, il lanciafiamme. La palla vuole la
-  linea che attraversa il tavolo — `SH.lineUnder` la sa già dare — più
-  il tetto di un colpo per rango o per fila e le due cose che la
-  fermano di colpo.
+- Delle **macchine da guerra**, i tre modi di sparare che non sono la
+  Bombardata né la palla: la grappola (p. 227, che il cannone spara al
+  posto della palla), l'organo, il lanciafiamme. ~~La palla di cannone~~
+  — fatta (2026-10-12, p. 226): gesto `cannoneggia`. `SH.lineSpans`
+  taglia la linea con ogni basetta una volta sola, `SH.cannonHits` dice
+  chi è colpito fra il punto d'impatto e la fine del rimbalzo — un
+  modello per rango (cannone davanti o dietro) o per fila (di fianco),
+  punto d'impatto compreso, e il «Crunch» su creature mostruose, colossi,
+  terreno impassabile e ostacoli alti —, e `SH.cannonAim` sceglie il
+  punto provando un pollice alla volta sui venticinque esiti dei due
+  dadi. Il Cannon dei Nani ha la sua voce (100 punti, nello 0-3 delle
+  macchine con il Grudge Thrower). Limite `palla`.
 - ~~**«Multiple Wounds»**~~ — fatta (p. 175): ogni ferita non salvata
   tira il suo dado e cade su un modello solo, e l'eccesso non passa al
   vicino. `takeWounds` in `combat.js` scorre ferita per ferita e torna
