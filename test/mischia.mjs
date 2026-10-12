@@ -393,7 +393,12 @@ console.log('\nil combattimento a piu di due (p. 153)');
      ML.combatResult([largo, { ...corto, musician: true }], [largo, corto]).tie === 'A' &&
      ML.combatResult([largo, corto], [largo, corto]).tie === '');
 
-  /* l'assalto vero, in tre */
+  /* l'assalto vero, in tre. Con il seme: con dadi veri, una volta su
+     cento i Saurus perdevano i quattro della fila davanti agli Orchi prima
+     di menare, il passo contro di loro restava a zero attacchi e non si
+     scriveva, e la prova dei due passi diventava rossa senza un errore */
+  const D = await import('../src/dice.js');
+  D.setSource(D.seeded(1));
   const orchi = C.combatant(reg('Orc Mob', 20, 5), { charged: true, chargeInches: 5 });
   const lupi  = C.combatant(unit('Wolf Riders', { ...prof, I:'4' }, 5, 5), { charged: true, chargeInches: 6, flank: 'flank' });
   const saurus = C.combatant(unit('Saurus', { ...prof, T:'4', WS:'4' }, 20, 5,

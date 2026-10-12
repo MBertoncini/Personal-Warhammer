@@ -577,5 +577,24 @@ ok('la palla usa la tabella della polvere nera', SH.cannonOf(cannone).misfire ==
 }
 
 /* ================================================================= */
+console.log('\nil fuoco e la Rigenerazione (p. 169)');
+{
+  const chi = { name: 'Fuoco', s: 5, ap: 0, flags: {} };
+  const troll = () => ({ name: 'Troll', t: 4, w: 3, models: 3, armour: 0, ward: 0, regen: 4,
+                         flags: { flammable: true } });
+  const caldo = C.strike(chi, troll(), { attacks: 20, auto: true, strength: 5, ap: 0, flaming: true });
+  ok('chi e Flammable non rigenera le ferite di un colpo infuocato',
+     caldo.wounds > 0 && caldo.regen.need >= 7 && caldo.regen.hits === 0 && caldo.notes.some(n => /Flammable/.test(n)));
+  const freddo = C.strike(chi, troll(), { attacks: 20, auto: true, strength: 5, ap: 0 });
+  ok('e senza il fuoco la Rigenerazione si tira', freddo.regen.need === 4 && (freddo.regen.dice || []).length > 0);
+  ok('il fuoco del modello vale anche senza dirlo: Flaming Attacks fra le sue regole',
+     C.strike({ ...chi, flags: { flaming: true } }, troll(), { attacks: 20, auto: true, strength: 5, ap: 0 }).regen.need >= 7);
+  ok('e chi non e Flammable rigenera anche contro il fuoco',
+     C.strike(chi, { ...troll(), flags: {} }, { attacks: 20, auto: true, strength: 5, ap: 0, flaming: true }).regen.need === 4);
+  ok('regenAgainst dice il punteggio: 7 contro il fuoco, 4 senza',
+     C.regenAgainst(troll(), true) >= 7 && C.regenAgainst(troll(), false) === 4);
+}
+
+/* ================================================================= */
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);

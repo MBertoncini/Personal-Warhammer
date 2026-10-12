@@ -4034,12 +4034,12 @@ function readWeaponFlags(weapon){
   const regole = Array.isArray(weapon && weapon.rules) ? weapon.rules : splitWeaponRules(weapon && weapon.rules);
   return readRules([], regole).flags || {};
 }
-function colpiAutomatici(u, foe, parti, { armourBane = 0 } = {}){
+function colpiAutomatici(u, foe, parti, { armourBane = 0, flaming = false } = {}){
   const chi = { ...CB.combatant(u) };
   chi.flags = { ...(chi.flags || {}), armourBane };
   const bers = CB.combatant(foe);
   const tiri = parti.map(p => CB.strike(chi, bers, { attacks: p.n, auto: true, strength: p.strength,
-                                                      ap: p.ap, multi: p.multi, label: p.label }));
+                                                      ap: p.ap, multi: p.multi, label: p.label, flaming }));
   const ferite = tiri.reduce((s, r) => s + r.wounds, 0);
   const conDado = tiri.some(r => r.losses);
   const losses = conDado ? tiri.flatMap(r => r.losses || Array(r.wounds).fill(1)) : null;
@@ -4179,7 +4179,7 @@ async function runCannon(u, uid){
   const wf = readWeaponFlags(weapon);
   const colpi = [...perUnit].map(([foe, n]) => ({ foe, n, ...colpiAutomatici(u, foe,
     [{ n, strength: stat(weapon.S), ap: Math.abs(stat(weapon.ap)), multi: wf.multipleWounds || null, label: "palla" }],
-    { armourBane: wf.armourBane || 0 }) }));
+    { armourBane: wf.armourBane || 0, flaming: !!wf.flaming }) }));
   await mostraColpi(colpi, u, `Palla di ${u.name}: ferire e salvezze`);
   await segnaColpi(colpi, u, "perdite dalla palla", `la palla di ${u.name}`);
 }
@@ -4245,7 +4245,8 @@ async function runFlame(u, uid){
   SC.colpo({ k:"tiro", da:u.uid, su:t.uid, arma: weapon.name, tiri: Math.min(8, hits.hits || 1) }, fotoTavolo());
   if (!perUnit.size) return toast("La goccia non ha preso nessuno.");
   const colpi = [...perUnit].map(([foe, n]) => ({ foe, n, ...colpiAutomatici(u, foe,
-    [{ n, strength: stat(weapon.S), ap: Math.abs(stat(weapon.ap)), multi: null, label: "fuoco" }]) }));
+    [{ n, strength: stat(weapon.S), ap: Math.abs(stat(weapon.ap)), multi: null, label: "fuoco" }],
+    { flaming: !!readWeaponFlags(weapon).flaming }) }));
   await mostraColpi(colpi, u, `Fuoco di ${u.name}: ferire e salvezze`);
   await segnaColpi(colpi, u, "perdite dal fuoco", `il fuoco di ${u.name}`);
 }

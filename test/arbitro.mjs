@@ -1182,6 +1182,38 @@ console.log('\nla palla di cannone (p. 226)');
   D.setSource(D.seeded(1));
 }
 
+/* Il fiasco con la sagoma (p. 109): prima colpiva solo il mago, perche'
+   chi altro ci stava sotto non lo sapeva dire nessuno. */
+console.log('\nil fiasco con la sagoma (pp. 95, 109)');
+{
+  const facce = (...seq) => { let i = 0; D.setSource(n => Math.min(n - 1, seq[Math.min(i++, seq.length - 1)])); };
+  const tavolo = () => {
+    const G = nuova(); G.terrain = [];
+    const mago = metti(G, uid(G, 3), 600, 600, 0);
+    const orchi = metti(G, uid(G, 505), 600, 520, 180);
+    return { G, mago, orchi };
+  };
+  {
+    const { G, mago } = tavolo();
+    facce(3);                                  // tutti 4: i parziali passano, e si ferisce
+    AR.interni.colpiDelFiasco(G, mago, MG.MISCAST.find(r => r.id === 'cascade'));
+    const riga = G.log.find(x => /Dimensional Cascade: la sagoma da 5″ centrata su/.test(x.text));
+    ok('la sagoma da 5″ si posa sul mago, e il registro dice chi sta sotto', !!riga && /Sotto: \d+ del tutto/.test(riga.text));
+    ok('sotto ci finisce chi c e, amico o nemico', !!riga && riga.text.includes(mago.name + ':') && /Orc Mobs: \d+/.test(riga.text));
+    ok('e i colpi sono a Forza 10', G.log.some(x => /Orc Mobs: \d+ colpi a Forza 10/.test(x.text)));
+  }
+  {
+    const { G, mago, orchi } = tavolo();
+    metti(G, orchi, 600, 100, 180);
+    facce(3);
+    AR.interni.colpiDelFiasco(G, mago, MG.MISCAST.find(r => r.id === 'detonation'));
+    ok('con nessuno vicino la sagoma da 3″ prende solo chi sta col mago',
+       G.log.some(x => /Calamitous Detonation: la sagoma da 3″/.test(x.text)) &&
+       !G.log.some(x => /Orc Mobs: \d+ colp/.test(x.text)));
+  }
+  D.setSource(D.seeded(1));
+}
+
 /* La sfida Michele contro Gemini lo aveva preso per un errore: il
    Bastiladon fallisce il test, avanza di un movimento solo, e poi non
    spara. E' il libro: chi tenta la marcia e fallisce «is considered to

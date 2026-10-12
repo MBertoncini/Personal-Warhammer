@@ -94,6 +94,16 @@ export const RULEBOOK = [
     what:"il 6 naturale per ferire migliora la perforazione",
     on: (f, name) => { f.armourBane = Math.max(f.armourBane, num(name, 1)); } },
 
+  /* Il fuoco (p. 169): ogni attacco di un modello con la regola, o fatto
+     con un'arma che la porta, e' infuocato; e chi e' Flammable contro un
+     attacco infuocato non tira la Rigenerazione. La Paura che il fuoco
+     fa alle bestie e agli sciami la legge `psych.js`. */
+  { id:"flaming", re:/^flaming attacks/i,
+    what:"gli attacchi sono infuocati: chi è Flammable non rigenera le loro ferite (p. 169)",
+    on: f => { f.flaming = true; } },
+  { id:"flammable", re:/^flammable/i,
+    what:"niente Rigenerazione contro le ferite di un attacco infuocato (p. 169)",
+    on: f => { f.flammable = true; } },
   { id:"killingBlow", re:/^killing blow/i,
     what:"il 6 naturale per ferire salta l'armatura",
     on: f => { f.killingBlow = true; } },
@@ -397,8 +407,6 @@ export const ELSEWHERE = [
     why:"vede a 360° per tirare e per lanciare: l'arbitro non chiude l'arco di tiro a nessuno, e agli incantesimi del carro non chiede il bersaglio davanti" },
   { re:/^cavalry support/i,
     why:"l'attacco d'appoggio lo fa il cavaliere, non la cavalcatura: il conto dà già un attacco solo a testa alle file dietro" },
-  { re:/^flammable/i,
-    why:"niente Rigenerazione contro le ferite infuocate: la Rigenerazione non entra ancora nella risoluzione, e quindi non c'è niente da togliere" },
   { re:/^random attacks/i,
     why:"gli Attacchi si tirano a ogni assalto, uno per modello che mena (p. 176): lo fa la mischia, e la previsione conta la media. La riga di un equipaggio o di una cavalcatura («Rats only») resta al primo numero" },
 ];
@@ -408,6 +416,7 @@ export const ELSEWHERE = [
    ============================================================ */
 export const emptyFlags = () => ({
   furiousCharge:false, poisoned:false, armourBane:0, killingBlow:false, multipleWounds:null,
+  flaming:false, flammable:false,
   handWeaponAP:0, impact:null, impactAP:0, stomp:null, extraRank:false, hatred:false, hatredOf:[],
   gromrilArmour:false, slayer:0, elvenReflexes:false, stoicDefenders:false,
   strikeFirst:false, strikeLast:false, stubborn:false, unbreakable:false,

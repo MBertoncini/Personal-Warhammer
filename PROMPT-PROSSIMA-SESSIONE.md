@@ -694,7 +694,8 @@ per sparare, che il commento prometteva da sempre — adesso l'opzione
 - ~~**la palla di cannone**~~ (p. 226) — fatta, vedi sotto;
 - ~~**la grappola**~~ (p. 227) — fatta, vedi sotto;
 - ~~**l'organo e il lanciafiamme**~~ (pp. 228-229) — fatti, vedi sotto.
-  Il limite `sagome` resta per il soffio e le sagome dei fiaschi;
+  Il limite `sagome` resta per il soffio, che nessuna lista porta; la
+  sagoma del fiasco si posa (`colpiDelFiasco`, 2026-10-12);
 - ~~**«Multiple Wounds»**~~ (p. 175) — fatta, vedi sotto;
 - **il tiro indiretto** (p. 225), che è una scelta da dichiarare prima
   di sparare: niente linea di vista, e la deviazione ridotta
@@ -916,8 +917,26 @@ la stessa strada:
   l'organo tira dall'arco con i suoi dadi, il lanciafiamme ha «fuoco»;
 - **resta**: nel pannello il punto della palla e la distanza della
   goccia li sceglie l'app; chi gioca può solo leggerli e misurare al
-  tavolo. Flaming Attacks non fa niente in tutto il motore (vale anche
-  per drakegun e brimstone gun).
+  tavolo.
+
+## Fatto: il fuoco e la sagoma del fiasco (2026-10-12)
+
+- **Flaming Attacks** (p. 169) e **Flammable** sono bandierine di
+  `rulebook.js`. `CB.regenAgainst(def, flaming)` e' il punto unico in
+  cui la Rigenerazione si toglie a chi e' Flammable davanti al fuoco, e
+  lo usano i colpi (`strike`, con l'opzione `flaming` per le armi da
+  tiro: li' `att.flags` e' del modello), le previsioni della mischia,
+  l'urto e i pestoni, e il tiro. Le macchine passano il fuoco della loro
+  arma. Gli Stone Troll delle liste salvate sono Flammable;
+- la Paura del fuoco: `psychOf` porta `flaming` e `fearsFire` (bestie
+  da guerra e sciami), e `fearCheck` la tratta come la Paura vera — chi
+  la fa gia' non la teme, e serve essere piu' grossi;
+- **resta**: «spells cast by the model are unaffected, as are any attacks
+  made with magic weapons» — l'app non distingue ancora l'arma magica;
+- **il fiasco con la sagoma** (p. 109): la sagoma da 5″ o da 3″ centrata
+  sulla basetta del mago, e chi ci sta sotto e' colpito come per la
+  Bombardata, amici compresi. Il soffio resta nel limite `sagome`:
+  nessuna lista porta un modello che ce l'abbia.
 
 ## Come si lavora qui
 

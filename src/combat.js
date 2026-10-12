@@ -917,7 +917,15 @@ export function fleeBonusOf(u){
 /* ============================================================
    2 · UN COLPO
    ============================================================ */
-export function strike(att, def, { attacks, auto = false, strength, ap, label = "", round = 1, melee = false, multi } = {}){
+/* La Rigenerazione contro un colpo: niente, se il colpo e' infuocato e
+   chi lo prende e' Flammable (p. 169). Un punto solo, perche' i posti in
+   cui la Rigenerazione si tira o si prevede sono cinque. */
+export function regenAgainst(def, flaming){
+  return flaming && def && def.flags && def.flags.flammable ? IMPOSSIBLE : saveOn(def && def.regen, 0);
+}
+const FUOCO = "Flammable: niente Rigenerazione contro un attacco infuocato (p. 169)";
+
+export function strike(att, def, { attacks, auto = false, strength, ap, label = "", round = 1, melee = false, multi, flaming } = {}){
   /* `forcedAttacks` e' il numero corretto a mano nel pannello: chi
      guarda il tavolo vede quanti si toccano meglio di qualsiasi conto */
   const n = Math.max(0, attacks ?? att.forcedAttacks ?? contact(att, def).troop);
@@ -1008,7 +1016,11 @@ export function strike(att, def, { attacks, auto = false, strength, ap, label = 
   const wardNeed = saveOn(def.ward, 0);
   const ward = pool(through, wardNeed);
   const left = through - ward.hits;
-  const regenNeed = saveOn(def.regen, 0);
+  /* il fuoco viene dal modello o dall'arma; chi chiama con un'arma da
+     tiro lo passa (`flaming`), perche' qui `att.flags` e' del modello */
+  const fiery = flaming ?? !!f.flaming;
+  const regenNeed = regenAgainst(def, fiery);
+  if (fiery && def.flags && def.flags.flammable && saveOn(def.regen, 0) < IMPOSSIBLE) notes.push(FUOCO);
   const regen = pool(left, regenNeed);
 
   /* «Multiple Wounds» (p. 175): un dado per ogni ferita non salvata.
@@ -1840,7 +1852,7 @@ function autoForecast(att, def, a, ap, label){
   const s = att.autoS || att.baseS || att.s;
   const w = woundOn(s, def.t);
   const sv = saveOn(def.parryArmour || def.armour, ap || 0);
-  const wd = saveOn(def.ward, 0), rg = saveOn(def.regen, 0);
+  const wd = saveOn(def.ward, 0), rg = regenAgainst(def, !!(att.flags && att.flags.flaming));
   const wounds = n * chance(w) * (1 - chance(sv)) * (1 - chance(wd)) * (1 - chance(rg));
   return { name: label, attacks: n, hitNeed: 0, woundNeed: w, saveNeed: sv, wardNeed: wd, regenNeed: rg,
            hatred: false, wounds, kills: wounds / Math.max(1, def.w || 1) };
@@ -1924,7 +1936,7 @@ function oneForecast(att, def, n0){
   const svChance = f.killingBlow ? (5 / 6) * sOne(sv)
     : f.armourBane ? (5 / 6) * sOne(sv) + (1 / 6) * sOne(saveOn(armour, ap + f.armourBane))
     : sOne(sv);
-  const wd = saveOn(def.ward, 0), rg = saveOn(def.regen, 0);
+  const wd = saveOn(def.ward, 0), rg = regenAgainst(def, !!f.flaming);
   /* le «Multiple Wounds» contano per quello che il modello ha da
      perdere: la media del dado, tagliata alle sue ferite */
   const wounds = n * hChance * wChance * (1 - svChance) * (1 - chance(wd)) * (1 - chance(rg)) *
@@ -1971,7 +1983,7 @@ export function shootForecast(shooter, target, { weapon, mods = 0, shots } = {})
      con l'arma: le due liste di regole si leggono insieme. */
   const f = readRules(shooter.rules || [], splitWeaponRules(weapon && weapon.rules), weapon ? weapon.name : "").flags;
   const wNeed = woundOn(S, t.t), sNeed = saveOn(t.armour, AP);
-  const kNeed = saveOn(t.ward, 0), rNeed = saveOn(t.regen, 0);
+  const kNeed = saveOn(t.ward, 0), rNeed = regenAgainst(t, !!f.flaming);
   const wChance = f.poisoned && need < IMPOSSIBLE
     ? (5 / 6) * chance(wNeed) + (1 / 6) * chance(Math.max(2, wNeed - 2))
     : chance(wNeed);

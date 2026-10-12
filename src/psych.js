@@ -25,6 +25,7 @@
  */
 
 import { flagsOf } from './effects.js';
+import { troopType } from './troops.js';
 
 export const PAGE = {
   panicShooting: 141,   // il quarto perso al tiro
@@ -69,6 +70,8 @@ export const PSYCH_RULES = [
     where:"niente Panico per le unità amiche che non hanno la stessa regola" },
   { id:"ignoreGoblinPanic", re:/^ignore goblin panic/i,
     where:"niente Panico per quello che succede ai Goblin" },
+  { id:"flaming", re:/^flaming attacks/i,
+    where:"fa Paura alle bestie da guerra e agli sciami (p. 169)" },
   { id:"fearOfElves", re:/^fear of elves/i,
     where:"gli Elfi le fanno Paura" },
   { id:"quellImpetuosity", re:/^quell impetuosity/i,
@@ -140,6 +143,11 @@ export function psychOf(u, { joined = [], now = null } = {}){
     ignorePanic:  !!own.ignorePanic,
     ignoreGoblinPanic: !!own.ignoreGoblinPanic,
     fearsElves:   !!own.fearOfElves,
+    /* Flaming Attacks (p. 169): chi li ha «causes Fear» nelle unita' di
+       bestie da guerra e negli sciami. E' Paura come l'altra: chi la fa
+       gia' non la teme */
+    flaming:      any("flaming"),
+    fearsFire:    ["warBeasts", "swarm"].includes(troopType(u && u.troop).id),
     quell:        !!own.quellImpetuosity,
     firstCharge:  !!own.firstCharge,
     bloodFrenzy:  !!own.bloodFrenzy,
@@ -287,9 +295,10 @@ export const FEAR_TO_HIT = -1;
 export function fearCheck({ me = {}, foe = {}, meUS = 0, foeUS = 0, when = "charge",
                             tested = null, foeName = "" } = {}){
   const who = foeName || foe.name || "il nemico";
-  const causes = foe.causesFear || foe.causesTerror || (me.fearsElves && foe.elf);
+  const fire = !!(me.fearsFire && foe.flaming);
+  const causes = foe.causesFear || foe.causesTerror || fire || (me.fearsElves && foe.elf);
   if (!causes) return { must:false, why:"" };
-  const elves = !foe.causesFear && !foe.causesTerror;
+  const elves = !foe.causesFear && !foe.causesTerror && !fire;
   /* chi fa Paura teme lo stesso chi fa Terrore */
   const immune = me.immuneFear && !(foe.causesTerror && !me.immuneTerror) && !elves;
   if (immune) return { must:false, why:"fa Paura anche lei: non teme " + who };
@@ -302,7 +311,9 @@ export function fearCheck({ me = {}, foe = {}, meUS = 0, foeUS = 0, when = "char
   return {
     must:true, auto: ap.auto, autoWhy: ap.why, when,
     fail: FEAR_FAIL[when] || "",
-    why: who + (elves ? " è elfica e le fa Paura (Fear of Elves)" : " fa Paura") +
+    why: who + (elves ? " è elfica e le fa Paura (Fear of Elves)"
+               : fire && !foe.causesFear && !foe.causesTerror ? " ha attacchi infuocati e alle bestie fa Paura (p. 169)"
+               : " fa Paura") +
          " ed è più grossa: Forza d'Unità " + foeUS + " contro " + meUS,
   };
 }

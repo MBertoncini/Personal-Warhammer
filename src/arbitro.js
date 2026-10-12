@@ -87,8 +87,8 @@ export const LIMITI = [
     why:"il libro li vuole al passo d'Iniziativa del mago; e le loro ferite tolgono modelli ma non entrano nel risultato del combattimento, che `meleeFight` conta da sé" },
   { id:"armatura",  what:"un mago con armatura lancia lo stesso", page:111,
     why:"la pelle callosa degli Skink Priest conta come armatura leggera, e letto alla lettera il libro toglierebbe loro il lancio: finché una FAQ non lo chiarisce il divieto non si applica" },
-  { id:"sagome",    what:"le sagome che non sono delle macchine da guerra — il soffio (Breath Weapon) e quelle dei fiaschi magici — non si posano sul tavolo", page:95,
-    why:"le macchine da guerra del Core le spara tutte (Bombardata, palla, grappola, organo, lanciafiamme, pp. 224-229); il soffio di un mostro si tira come un tiro qualunque, e il fiasco con la sagoma colpisce il mago e basta: chi altro ci sta sotto vorrebbe la goccia o il cerchio posati, che l'arbitro qui non posa" },
+  { id:"sagome",    what:"il soffio (Breath Weapon) non posa la goccia: si tira come un tiro qualunque", page:166,
+    why:"le sagome delle macchine da guerra (pp. 224-229) e quelle dei fiaschi magici (p. 109) si posano; il soffio vorrebbe la goccia dal bordo della basetta sopra il bersaglio, una volta per round, e nessuna lista salvata né nessun costruttore porta oggi un modello che ce l'abbia" },
   { id:"fiamma",    what:"la goccia del lanciafiamme si posa sulla linea dal centro del lanciafiamme al centro del bersaglio, e la si allontana di pollici interi", page:229,
     why:"il libro lascia posare la punta stretta ovunque lungo l'arco frontale e allontanarla di quanto si vuole fino alla gittata: l'arbitro tiene la linea verso il centro del bersaglio e prova un pollice alla volta, e tiene quello che in media colpisce di più" },
   { id:"palla",     what:"la palla di cannone si punta sulla linea che va dal cannone al centro del bersaglio, e la gittata si misura dal bordo della sua basetta", page:226,
@@ -4955,7 +4955,7 @@ function cannoneggia(S, u, t, arma, row, scelta = null){
     if (g.u.dead) continue;
     const r = CB.strike(chiSpara, CB.combatant(g.u),
                         { attacks: g.n, auto: true, strength: forza, ap, multi: wf.multipleWounds || null,
-                          label: "palla di cannone" });
+                          label: "palla di cannone", flaming: !!wf.flaming });
     const toll = CB.woundsToll(g.u, r.wounds, { carried: g.u.wounds || 0, losses: r.losses || null });
     inizioFase(S, g.u);
     if (r.losses)
@@ -5004,7 +5004,7 @@ function previsioneFiamma(S, u, t, arma, row, celle){
   const forza = stat(arma.S), ap = Math.abs(stat(arma.ap));
   const ferite = mira.expected * chanceOf(woundOn(forza, b.t)) *
     (1 - chanceOf(saveOn(b.armour, ap))) *
-    (1 - chanceOf(saveOn(b.ward, 0))) * (1 - chanceOf(saveOn(b.regen, 0)));
+    (1 - chanceOf(saveOn(b.ward, 0))) * (1 - chanceOf(CB.regenAgainst(b, !!bandierineArma(arma).flaming)));
   return { mira: mira.aim, sotto: mira.expected, kills: ferite / (b.w || 1) };
 }
 
@@ -5049,7 +5049,9 @@ function fiamma(S, u, t, arma, row, scelta = null){
   for (const g of mucchi.values()){
     if (g.u.dead) continue;
     const r = CB.strike(CB.combatant(u), CB.combatant(g.u),
-                        { attacks: g.n, auto: true, strength: forza, ap, multi: null, label: "colonna di fuoco" });
+                        { attacks: g.n, auto: true, strength: forza, ap, multi: null, label: "colonna di fuoco",
+                          flaming: !!bandierineArma(arma).flaming });
+    for (const n of r.notes || []) if (/Flammable/.test(n)) say(S, `${g.u.name}: ${n}.`, { army: g.u.army, page: 169 });
     const toll = CB.woundsToll(g.u, r.wounds, { carried: g.u.wounds || 0 });
     inizioFase(S, g.u);
     say(S, `${u.name} su ${g.u.name}: ${g.n} ${g.n === 1 ? "colpo" : "colpi"} di Forza ${forza}, ` +
@@ -5652,13 +5654,42 @@ function lancia(S, a){
   return si(`${sp.name} lanciato con ${res.total}: tocca a ${S.nomi[altro(u.army)]} dissolverlo`);
 }
 
-/* Il fiasco con i colpi: la sagoma centrata sul mago prende almeno lui.
-   Chi altro ci sta sotto vuole la posizione modello per modello, e
-   quella resta fra i limiti delle sagome. */
+/* Il fiasco con i colpi (p. 109). Due righe su tre posano una sagoma
+   centrata sul mago — da cinque pollici la Dimensional Cascade, da tre
+   la Calamitous Detonation — e chi ci sta sotto, amico o nemico, rischia
+   il colpo come dice p. 95: sotto del tutto sempre, in parte a 4+. Il
+   mago sta sotto il buco centrale ed e' colpito comunque. Prima colpiva
+   solo lui, perche' le basette sotto una sagoma non le sapeva dire
+   nessuno; adesso le sa `caselleDelTavolo`, come per la Bombardata. */
 function colpiDelFiasco(S, u, row){
   if (!row.hit) return;
-  if (row.hit.template) limite(S, "sagome");
-  colpisci(S, u, { S: row.hit.S, AP: row.hit.AP }, 1, `${row.label}`, { panico: false });
+  const h = { S: row.hit.S, AP: row.hit.AP };
+  if (!row.hit.template) return colpisci(S, u, h, 1, `${row.label}`, { panico: false });
+  const celle = caselleDelTavolo(S);
+  /* la basetta del mago: la sua casella dentro il reggimento, o la sua */
+  const mia = celle.find(c => c.kind === "char" && c.uid === u.uid) || celle.find(c => c.u.uid === u.uid);
+  const centro = mia ? [mia.wx, mia.wy] : [u.x, u.y];
+  const shape = SH.placeTemplate(row.hit.template >= 5 ? "large" : "small", centro, 0);
+  const sotto = SH.modelsUnder(celle, shape);
+  const conto = SH.templateHits(sotto);
+  const dadi = conto.asks ? roll(conto.asks) : [];
+  const colpi = SH.templateHits(sotto, dadi);
+  const mucchi = new Map();
+  for (const i of colpi.cells || []){
+    const chi = padroneDi(S, celle[i]);
+    if (!chi || chi.dead) continue;
+    const g = mucchi.get(chi.uid) || { u: chi, n: 0 };
+    g.n++;
+    mucchi.set(chi.uid, g);
+  }
+  /* il mago e' sotto il buco: se la sua casella non l'ha trovata nessuno
+     (un mago fuori dal tavolo, un layout vuoto) lo si mette lo stesso */
+  if (!mucchi.has(u.uid) && !u.dead) mucchi.set(u.uid, { u, n: 1 });
+  const detta = [...mucchi.values()].map(g => `${g.u.name}: ${g.n}`).join(", ");
+  say(S, `${row.label}: la sagoma da ${row.hit.template}″ centrata su ${u.name}. ` +
+         `Sotto: ${colpi.full} del tutto, ${colpi.partial} in parte — colpiti ${detta}.`,
+      { dice: dadi, army: u.army, page: 95 });
+  for (const g of mucchi.values()) colpisci(S, g.u, h, g.n, `${row.label}`, { panico: false });
 }
 
 /* ---- il dissolvimento (p. 110) ---- */
@@ -7725,7 +7756,7 @@ export function ultimeRighe(S, n = 12){
    e che vanno provati uno per uno con i pezzi messi a mano. */
 export const interni = { indietreggia, seguire, fuggi, postoAContatto, percorso, comandoDi, ldOf, muoviCarica,
                          panico, faseDi, continuaAFuggire, perdite, pauraDi, inizioTurno, ldProprio, movimento,
-                         caselleDelTavolo,
+                         caselleDelTavolo, colpiDelFiasco,
                          /* il terreno: le prove devono poter chiedere che cosa vede chi
                             guarda e che cosa sta sotto a chi sta fermo */
                          guarda, pezziSotto, pezziSulCammino, rallenta, terrenoInMischia,

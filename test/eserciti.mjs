@@ -153,6 +153,19 @@ ok('Organ Gun 120 e Flame Cannon 125, fra le Rare (Forces of Fantasy p. 31)',
    DW.organ().pts === 120 && DW.flame().pts === 125 && DW.organ().slot === 'Rare' && DW.flame().slot === 'Rare');
 ok('l organo e Multi-Barrelled (Core p. 228) e il Flame Cannon spara la colonna di fuoco (p. 229)',
    !!SH.organOf(DW.organ().weapons[0]) && !!SH.flameOf(DW.flame().weapons[0]));
+/* il fuoco contro i Troll (p. 169): gli Stone Troll delle liste salvate
+   hanno Regeneration (5+) e Flammable, e il drakegun e' infuocato */
+{
+  const archivio = dati('liste.json');
+  const troll = archivio.flatMap(l => l.units).find(u => (u.rules || []).includes('Flammable') && /Troll/.test(u.name));
+  const irondrakes = DW.irondrakes({ n: 10 }), balestre = DW.tiratori({ n: 10 });
+  const drake = irondrakes.weapons.find(w => /Drakegun/.test(w.name));
+  const balestra = balestre.weapons.find(w => /Crossbow/.test(w.name));
+  ok('il drakegun toglie la Rigenerazione ai Troll, che sono Flammable',
+     !!troll && C.shootForecast(irondrakes, { ...troll, lost: 0 }, { weapon: drake, shots: 10 }).regenNeed >= 7);
+  ok('e la balestra no: rigenerano a 5+',
+     C.shootForecast(balestre, { ...troll, lost: 0 }, { weapon: balestra, shots: 10 }).regenNeed === 5);
+}
 /* l'organo tira con l'Abilita' Balistica dell'equipaggio (p. 228): la
    riga della macchina dice «-», e il 3 sta sulla riga dei serventi */
 ok('l organo tira con l Abilita Balistica dei serventi, non con il «-» della macchina',

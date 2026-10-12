@@ -346,5 +346,20 @@ ok('e quello che il raduno concede sta scritto accanto',
    /riforma gratis/.test(PS.rallyTest({ ld: 9, dice: [2, 2], models: 20, start: 20 }).then) &&
    /non può caricare/.test(PS.rallyTest({ ld: 9, dice: [2, 2], models: 20, start: 20 }).then));
 
+console.log('\nil fuoco fa Paura alle bestie e agli sciami (p. 169)');
+{
+  const lupi = PS.psychOf({ name: 'Giant Wolves', troop: 'War beasts', rules: [] });
+  const sciame = PS.psychOf({ name: 'Rat Swarm', troop: 'Swarm', rules: [] });
+  const fanti = PS.psychOf({ name: 'Orc Mobs', troop: 'Regular infantry', rules: [] });
+  const fuoco = PS.psychOf({ name: 'Salamandre', troop: 'Monstrous creature', rules: ['Flaming Attacks'] });
+  const c = PS.fearCheck({ me: lupi, foe: fuoco, meUS: 5, foeUS: 9 });
+  ok('chi ha Flaming Attacks fa Paura alle bestie da guerra', c.must && /infuocati/.test(c.why));
+  ok('e agli sciami', PS.fearCheck({ me: sciame, foe: fuoco, meUS: 3, foeUS: 9 }).must);
+  ok('ma non alla fanteria', !PS.fearCheck({ me: fanti, foe: fuoco, meUS: 5, foeUS: 9 }).must);
+  ok('e vale come la Paura: serve essere piu grossi', !PS.fearCheck({ me: lupi, foe: fuoco, meUS: 9, foeUS: 5 }).must);
+  const lupiCheFannoPaura = PS.psychOf({ name: 'Dire Wolves', troop: 'War beasts', rules: ['Fear'] });
+  ok('e chi fa gia Paura non la teme', !PS.fearCheck({ me: lupiCheFannoPaura, foe: fuoco, meUS: 5, foeUS: 9 }).must);
+}
+
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');
 process.exit(fails ? 1 : 0);
