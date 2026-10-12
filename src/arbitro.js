@@ -127,7 +127,9 @@ export const LIMITI = [
     why:"«una parte qualsiasi dell'unità» vorrebbe il rettangolo intero trascinato lungo il percorso: l'arbitro guarda il centro e i quattro angoli, che è molto meglio della linea sola di prima e non è ancora la regola" },
   { id:"seguire",   what:"chi si trattiene non si riforma, chi segue non si gira prima, e chi insegue e arriva addosso a un nemico nuovo si ferma lì", page:156,
     why:"trattenersi, seguire o inseguire si sceglie, e l'arbitro lo chiede a chi ha vinto (p. 156); quello che non fa è la riforma gratuita di chi si trattiene, il giro di 90° o 180° prima di seguire, e la carica di chi inseguendo tocca un'unità nuova (p. 157): si ferma a contatto, e il combattimento comincia al turno dopo senza i bonus della carica" },
-  { id:"ridirezione", what:"chi vede fuggire il bersaglio della carica non la ridirige su un altro", page:121,
+  { id:"piuBersagli", what:"chi non può arrivare sul bersaglio senza toccare un altro nemico lo carica insieme, ma quello non sceglie la sua reazione", page:119,
+    why:"il libro vuole la carica dichiarata anche contro di lui, che reagisce per conto suo (p. 119), e chi non si può allineare a tutti si fa allineare contro e carica disordinato verso di loro (p. 130): l'arbitro cerca prima un posto che tocchi solo il bersaglio, e se non c'è fa entrare l'altro nel combattimento così com'è, fermo dove sta" },
+  { id:"ridirezione",what:"chi vede fuggire il bersaglio della carica non la ridirige su un altro", page:121,
     why:"tira comunque, e se non raggiunge chi fugge fa la carica fallita" },
   { id:"attraversare", what:"chi fugge passa attraverso le unità senza il test di Pericolo", page:133,
     why:"il test c'è in `charge.js` (`perilAsk`), ma vuole sapere quali modelli hanno attraversato" },
@@ -3926,12 +3928,28 @@ const versoDi = (dx, dy) => (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360;
    l'arco da cui si e' dichiarata la carica, e quello non si sceglie
    dopo. Torna anche quanto costa in piu' lo scorrere, perche' il tiro
    di carica deve bastare per arrivare dove si arriva davvero. */
-function postoAContatto(S, u, t){
+/* Gli altri nemici che un posto d'arrivo toccherebbe: «should a unit be
+   unable to charge its intended target without making contact with one
+   or more other enemy units, a charge must also be declared against
+   each of those units» (p. 119). Nella partita del 12 ottobre gli Eternal
+   Guard hanno caricato gli Skink, si sono girati di 62° per allinearsi e
+   hanno messo il fianco addosso ai Saurus, che non avevano dichiarato e
+   che da li' hanno preso il +1 del fianco e tolto loro i ranghi. */
+function toccatiDa(S, u, box, t){
+  const poly = boxCorners(box);
+  return S.units.filter(o => o !== u && o !== t && onBoard(o) && !isJoined(o) && o.army !== u.army &&
+                             polyDistance(poly, cornersOf(o, S.units)) <= MM * 0.15);
+}
+/* `altri`: si accetta anche un posto che tocca un altro nemico. Senza,
+   si cerca solo dove si tocca il bersaglio e basta (`muoviCarica` prova
+   prima quello, e ripiega sull'altro solo se non ci si arriva). */
+function postoAContatto(S, u, t, { altri = false } = {}){
   const bu = boxOf(u, S.units), bt = boxOf(t, S.units);
   const al = CH.alignTo(bu, bt);
   if (!al) return null;
   const libero = (x, y) => !ingombro(S, u, { ...bu, x, y, rot: al.rot },
-                                     { ignora: [t.uid], unPollice: false, bordo: true });
+                                     { ignora: [t.uid], unPollice: false, bordo: true }) &&
+                           (altri || !toccatiDa(S, u, { ...bu, x, y, rot: al.rot }, t).length);
   const lungo = Math.hypot(al.x - bu.x, al.y - bu.y);
   if (libero(al.x, al.y)) return { ...al, extra: 0 };
   /* la direzione della faccia: perpendicolare alla rotazione di chi
@@ -3981,14 +3999,30 @@ function muoviCarica(S, u, t, d){
   const scappato = !!t.fled;
   if (scappato) limite(S, "ridirezione");
   const dist = scappato ? distanza(S, u, t) : d.dist;
-  const posto = scappato ? null : postoAContatto(S, u, t);
-  const serve = r1(dist + (posto && posto.extra ? posto.extra : 0));
   /* `d.move` e' gia' scalato del pollice del terreno (`chargeBands`), e
      `chargeOutcome` lo scala da se': gli si passa il Movimento del
      profilo. Prima il pollice si toglieva due volte, e i Goblin Mobs
      dell'ultima partita (Movimento 4, palude, 1 e 4 ai dadi) sono
      arrivati a 3″ invece di 4″ contro i 3,8″ che servivano. */
-  const out = CH.chargeOutcome({ dice: dadi, spec, move: d.base != null ? d.base : d.move, dist: serve });
+  const esito = p => CH.chargeOutcome({ dice: dadi, spec, move: d.base != null ? d.base : d.move,
+                                        dist: r1(dist + (p && p.extra ? p.extra : 0)) });
+  /* Il posto d'arrivo: prima uno che tocca il bersaglio e nessun altro
+     nemico, anche scorrendo lungo la faccia. Se non c'e', o se con lo
+     scorrere la carica non arriva piu', quello di sempre — e chi tocca
+     entra nella carica (p. 119: «If the charging unit is able to wheel
+     to avoid the unit and complete its charge, it should», p. 131). */
+  let posto = scappato ? null : postoAContatto(S, u, t);
+  let out = esito(posto);
+  let anche = [];
+  if (!scappato && (!posto || posto.pieno || !out.made)){
+    const largo = postoAContatto(S, u, t, { altri: true });
+    const o2 = largo && !largo.pieno ? esito(largo) : null;
+    if (o2 && (o2.made || !posto || posto.pieno)){
+      posto = largo; out = o2;
+      anche = toccatiDa(S, u, { ...boxOf(u, S.units), x: largo.x, y: largo.y, rot: largo.rot }, t);
+    }
+  }
+  const serve = r1(dist + (posto && posto.extra ? posto.extra : 0));
   /* chi e' fuggito fuori dal tavolo non si raggiunge piu' */
   const uscito = scappato && !!t.dead;
   const arriva = out.made && !uscito && !(posto && posto.pieno) && (scappato || posto);
@@ -4043,6 +4077,12 @@ function muoviCarica(S, u, t, d){
       { dice: dadi, army: u.army, page: 121,
         x: xCarica(u, t, { dadi, spec, out, serve, posto, tc, scappato, ok: true,
                            e: `arriva, e la prende di ${posto.arc}` }) });
+  if (anche.length){
+    limite(S, "piuBersagli");
+    say(S, `${u.name} non arriva su ${t.name} senza toccare ${anche.map(o => o.name).join(" e ")}: ` +
+           `la carica vale anche contro ${anche.length === 1 ? "di lei" : "di loro"} (p. 119).`,
+        { army: u.army, page: 119 });
+  }
   /* L'ostacolo difeso (p. 270): non lo si scavalca, e la carica e'
      disordinata — niente bonus di Iniziativa a fine assalto (p. 146).
      Chi vola ci passa sopra. */

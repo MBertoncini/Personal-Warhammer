@@ -595,6 +595,46 @@ console.log('\nla carica che trova il posto occupato');
   ok('e una carica senza posto non si offre nemmeno', !cariche.some(x => x.target === wb.uid));
 }
 
+console.log('\nla carica che toccherebbe un altro nemico (p. 119)');
+{
+  /* la partita del 12 ottobre: gli Eternal Guard caricano gli Skink e
+     si allineano col fianco addosso ai Saurus. Qui il Temple Guard carica
+     gli Orc Mobs, e dove si allineerebbe c'è un Troll sul suo fianco */
+  const prepara = (trollDx, trollSx) => {
+    const G = nuova();
+    const orchi = metti(G, uid(G, 505), 600, 400);
+    const tg = metti(G, uid(G, 6), 600, 650);
+    const al = CH.alignTo(AR.boxOf(tg, G.units), AR.boxOf(orchi, G.units));
+    const mezzo = AR.boxOf(tg, G.units).w / 2;
+    const troll = metti(G, uid(G, 506), al.x + mezzo + 20, al.y);
+    if (trollSx) metti(G, uid(G, 501), al.x - mezzo - 15, al.y);
+    return { G, orchi, tg, troll, al };
+  };
+  const { G, orchi, tg, troll } = prepara();
+  const pulito = IN.postoAContatto(G, tg, orchi);
+  const largo = IN.postoAContatto(G, tg, orchi, { altri: true });
+  ok('dove si allinea toccherebbe il Troll: scorre lungo la faccia', !!pulito && !pulito.pieno && pulito.extra > 0);
+  ok('e chi accetta di toccarlo resta dove si allinea', !!largo && !largo.extra);
+  const d = CH.declareCharge({ charger: { name: tg.name, box: AR.boxOf(tg, G.units), move: 4 },
+                               target: { name: orchi.name, box: AR.boxOf(orchi, G.units) } });
+  D.setSource(() => 5);                                  // tutti sei
+  IN.muoviCarica(G, tg, orchi, d);
+  ok('la carica arriva sugli orchi e non tocca il Troll',
+     AR.distanza(G, tg, orchi) < 0.15 && AR.distanza(G, tg, troll) > 0.15 &&
+     !G.log.some(r => /vale anche contro/.test(r.text)));
+
+  /* con un nemico per parte non c'è dove scorrere: la carica arriva lo
+     stesso, e vale anche contro chi tocca */
+  const due = prepara(true, true);
+  const d2 = CH.declareCharge({ charger: { name: due.tg.name, box: AR.boxOf(due.tg, due.G.units), move: 4 },
+                                target: { name: due.orchi.name, box: AR.boxOf(due.orchi, due.G.units) } });
+  IN.muoviCarica(due.G, due.tg, due.orchi, d2);
+  ok('stretta fra due nemici arriva lo stesso, e il registro dice chi altro carica',
+     AR.distanza(due.G, due.tg, due.orchi) < 0.15 &&
+     due.G.log.some(r => /non arriva su Orc Mobs senza toccare .*la carica vale anche contro/.test(r.text)));
+  D.setSource(D.seeded(1));
+}
+
 console.log('\nla carica su chi è fuggito (p. 121)');
 {
   const G = nuova();
