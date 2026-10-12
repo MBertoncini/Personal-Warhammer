@@ -43,7 +43,7 @@ import * as D from './dice.js';
 import { agenteEuristico } from './agente.js';
 
 const MOSSE = new Set(["avanza", "accosta", "marcia", "ferma", "aggira", "riforma", "gira", "indietro", "lato", "riordina"]);
-const TIRI = new Set(["tira", "bombarda", "fulmina", "cannoneggia", "grappola"]);
+const TIRI = new Set(["tira", "bombarda", "fulmina", "cannoneggia", "grappola", "fiamma"]);
 
 export function agenteRicerca({ AR, base = null, nome = "ricerca", campioni = 3, soglia = 5, seme = 1,
                                avversario = null } = {}){

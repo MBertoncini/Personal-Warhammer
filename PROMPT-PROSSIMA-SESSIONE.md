@@ -693,8 +693,8 @@ per sparare, che il commento prometteva da sempre — adesso l'opzione
   Limite `volo`;
 - ~~**la palla di cannone**~~ (p. 226) — fatta, vedi sotto;
 - ~~**la grappola**~~ (p. 227) — fatta, vedi sotto;
-- **gli altri due modi di sparare di una macchina**: l'organo e il
-  lanciafiamme. Limite `sagome`;
+- ~~**l'organo e il lanciafiamme**~~ (pp. 228-229) — fatti, vedi sotto.
+  Il limite `sagome` resta per il soffio e le sagome dei fiaschi;
 - ~~**«Multiple Wounds»**~~ (p. 175) — fatta, vedi sotto;
 - **il tiro indiretto** (p. 225), che è una scelta da dichiarare prima
   di sparare: niente linea di vista, e la deviazione ridotta
@@ -820,10 +820,10 @@ riprende:
   of Beasts / Lore of Athel Loren in `dati/magia/domini.json`. Prove in
   `test/eserciti.mjs`;
 - **quello che non ha una voce** perché l'arbitro non lo sa giocare:
-  organo, lanciafiamme, Bolt Thrower, Gyrobomber, Wardancers e
-  Shadowdancer, Cockatrice, Cygor, Jabberslythe, Gigante. Il primo che si
-  implementa (le danze, l'organo) si aggiunge a `spazio.js`, come il
-  Cannon (la palla, 2026-10-12);
+  Bolt Thrower, Gyrobomber, Wardancers e Shadowdancer, Cockatrice, Cygor,
+  Jabberslythe, Gigante. Il primo che si implementa (le danze) si
+  aggiunge a `spazio.js`, come il Cannon, l'Organ Gun e il Flame Cannon
+  (2026-10-12);
 - **le letture**: in ordine aperto si schiera in ranghi; lo scudo con
   l'arma a due mani non si compra; il Braystaff sempre in difesa;
 - **i buchi trovati strada facendo, che valevano per tutti**: l'Odio
@@ -900,8 +900,24 @@ la stessa strada:
   dell'arbitro: `SH.cannonLane`, `SH.CRUNCH_TROOPS`, `SH.CRUNCH_TERRAIN`.
   Con lo stesso aiuto il bombardamento a mano tira per ferire, invece
   di contare ogni modello sotto la sagoma come caduto;
-- **resta**: nel pannello il punto della palla lo sceglie l'app; chi
-  gioca può solo leggerlo e misurare al tavolo.
+- **l'organo** (p. 228) non ha un gesto suo: è «tira», con
+  l'Abilità Balistica dei serventi e i colpi dati da due dadi di
+  artiglieria (`SH.organShots`; un Mancato Colpo −1 per colpire, due la
+  tabella). Per farlo tirare a 4+ e non a 7+ `shootForecast` legge
+  l'Abilità Balistica dalla riga dell'equipaggio (`splitStat`) quando
+  quella della macchina dice «-»: il profilo diviso di p. 97;
+- **il lanciafiamme** (p. 229, gesto `fiamma`, campo `mira`): la
+  goccia (`SH.flameShape`) parte dal bordo della basetta verso il
+  centro del bersaglio, si allontana di pollici interi fino alla gittata
+  (`SH.flameAim`) e poi di un dado di artiglieria; chi sta sotto è
+  colpito come per la Bombardata, amico o nemico. Limite `fiamma`;
+- Organ Gun (120) e Flame Cannon (125) dei Nani hanno la loro voce, nello
+  0-2 delle Rare (Forces of Fantasy pp. 11, 31). Nel pannello a mano
+  l'organo tira dall'arco con i suoi dadi, il lanciafiamme ha «fuoco»;
+- **resta**: nel pannello il punto della palla e la distanza della
+  goccia li sceglie l'app; chi gioca può solo leggerli e misurare al
+  tavolo. Flaming Attacks non fa niente in tutto il motore (vale anche
+  per drakegun e brimstone gun).
 
 ## Come si lavora qui
 

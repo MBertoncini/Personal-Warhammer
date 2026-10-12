@@ -1222,3 +1222,97 @@ export const GRAPESHOT = {
 /* in media quanti colpi: le cinque facce col numero, e il Mancato
    Colpo che ne fa zero — (2+4+6+8+10)/6 */
 export const GRAPESHOT_MEAN_HITS = 5;
+
+/* ============================================================
+   14 · L'ORGANO (p. 228)
+   L'organo tira per colpire come un'arma qualunque, con l'Abilita'
+   Balistica dell'equipaggio: quello che cambia e' QUANTI colpi. Prima
+   di tirare per colpire si tirano due dadi di artiglieria, e i colpi
+   sono la somma. Un Mancato Colpo su un dado solo non ferma niente — il
+   dado non conta, e tutti i colpi prendono un −1 in piu' per colpire —
+   e su tutti e due la macchina non spara e va alla tabella della
+   polvere nera.
+   ============================================================ */
+export const MULTI_BARRELLED = /^multi-?barrell?ed$/i;
+
+export function organOf(weapon){
+  if (!weapon) return null;
+  const regole = rulesText(weapon).split(/\s*,\s*/).map(x => x.trim());
+  if (!regole.some(x => MULTI_BARRELLED.test(x))) return null;
+  return { kind: "organ", nome: "Organo", misfire: "cannon", page: 228,
+           why: "organo: due dadi di artiglieria di colpi, con l'Abilità Balistica dell'equipaggio (p. 228)" };
+}
+
+/* Le due facce dell'artiglieria (il numero, o `null` per il Mancato
+   Colpo) diventano colpi e modificatore. */
+export function organShots(faces = []){
+  const numeri = faces.filter(v => v != null);
+  const mancati = faces.length - numeri.length;
+  if (faces.length && !numeri.length)
+    return { shots: 0, mod: 0, misfire: true, page: 228,
+             text: "Mancato Colpo su tutti e due i dadi: non spara, e si va alla tabella" };
+  const shots = numeri.reduce((s, v) => s + v, 0);
+  return { shots, mod: mancati ? -1 : 0, misfire: false, page: 228,
+           text: mancati ? `${shots} colpi, e −1 per colpire: un dado ha fatto Mancato Colpo`
+                         : `${shots} colpi` };
+}
+/* Per le previsioni: con due dadi numerati (25 volte su 36) i colpi
+   sono 12 in media; con un Mancato Colpo solo (10 su 36) sono 6, con
+   il −1; con due (1 su 36) niente. */
+export const ORGAN_SPLIT = [
+  { p: 25 / 36, shots: 12, mod: 0 },
+  { p: 10 / 36, shots: 6, mod: -1 },
+];
+
+/* ============================================================
+   15 · IL LANCIAFIAMME (p. 229)
+   «Column of Fire»: la goccia si posa con la punta stretta sul bordo
+   della basetta, nell'arco frontale, e quella larga verso il bersaglio;
+   chi spara la puo' allontanare in linea retta fino alla gittata
+   (misurata dalla punta stretta), e poi un dado di artiglieria la
+   spinge ancora piu' in la' di tanti pollici. Chi sta sotto e' colpito
+   come dice p. 95: sotto del tutto sempre, sotto in parte a 4+. Il
+   Mancato Colpo va alla tabella della polvere nera.
+   ============================================================ */
+export const COLUMN_OF_FIRE = /^column of fire$/i;
+
+export function flameOf(weapon){
+  if (!weapon) return null;
+  const regole = rulesText(weapon).split(/\s*,\s*/).map(x => x.trim());
+  if (!regole.some(x => COLUMN_OF_FIRE.test(x))) return null;
+  const banda = rangeBand(weapon);
+  return { kind: "flame", nome: "Colonna di fuoco", misfire: "cannon", template: "teardrop", banda,
+           page: 229,
+           why: `colonna di fuoco: la goccia allontanata fino a ${banda.max}″ e poi di un dado ` +
+                `di artiglieria, colpito chi resta sotto (p. 229)` };
+}
+
+/* La goccia a `inches` pollici dalla punta stretta di partenza. */
+export function flameShape(from, dir, inches = 0){
+  if (!from || !dir) return null;
+  const c = [from[0] + dir[0] * inches * MM, from[1] + dir[1] * inches * MM];
+  return placeTemplate("teardrop", c, Math.atan2(dir[1], dir[0]) * 180 / Math.PI);
+}
+
+/* Quanto spostarla prima del dado: un pollice alla volta da zero alla
+   gittata, sulle cinque facce numerate del dado di artiglieria (il
+   Mancato Colpo non spara). Una basetta sotto del tutto vale uno, una
+   sotto in parte la meta' — il 4+ di p. 95. `value` pesa le caselle:
+   il bersaglio uno, gli amici meno uno. */
+export function flameAim(cells = [], from = null, dir = null, { max = 0, value = () => 1 } = {}){
+  if (!from || !dir) return null;
+  const peso = c => value(c);
+  const conto = shape => {
+    const sotto = modelsUnder(cells, shape);
+    const per = i => cells.find(c => c.cell === i);
+    return sotto.full.reduce((s, i) => s + peso(per(i)), 0) +
+           sotto.partial.reduce((s, i) => s + peso(per(i)) * chance(PARTIAL_NEED), 0);
+  };
+  let best = null;
+  for (let g = 0; g <= max; g++){
+    let tot = 0;
+    for (const f of ART) tot += conto(flameShape(from, dir, g + f)) / 6;
+    if (!best || tot > best.expected + 1e-9) best = { aim: g, expected: r2(tot) };
+  }
+  return best && best.expected > 0 ? best : null;
+}

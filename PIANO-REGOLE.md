@@ -1993,7 +1993,7 @@ serbatoio «tutte». Le decisioni, perché si rifacciano solo se si trova
 di meglio:
 
 - **quello che l'arbitro non sa giocare non ha una voce**: ~~il cannone~~
-  (ha la sua dal 2026-10-12, Forces of Fantasy p. 31), l'organo, il lanciafiamme, il Bolt Thrower, i Gyrobomber, i
+  (ha la sua dal 2026-10-12, Forces of Fantasy p. 31), ~~l'organo, il lanciafiamme~~ (anche loro), il Bolt Thrower, i Gyrobomber, i
   Wardancers, la Cockatrice, il Cygor, il Jabberslythe, il Gigante. Una
   ricerca che li compra misura punti buttati;
 - **chi può stare in ordine aperto si schiera in ranghi**, anche con
@@ -2048,9 +2048,15 @@ partenza da 30/56 a 44/45, i Nani da 46/45 a 50/40.
 - **Il volo**, che vuole una decisione e non un conto: sorvolare
   significa ignorare il terreno e chi sta in mezzo, e oggi il
   movimento dell'arbitro è una linea retta.
-- Delle **macchine da guerra**, i due modi di sparare che non sono la
-  Bombardata, la palla né la grappola: l'organo e il lanciafiamme.
-  ~~La grappola~~ — fatta (2026-10-12, p. 227): gesto `grappola`, entro
+- ~~Delle **macchine da guerra**, i modi di sparare che non sono la
+  Bombardata~~ — fatti tutti (2026-10-12). ~~L'organo~~ (p. 228): un tiro
+  vero con l'Abilità Balistica dei serventi (`shootForecast` la prende
+  dalla riga dell'equipaggio quando quella della macchina dice «-»), e
+  i colpi sono due dadi di artiglieria (`SH.organShots`). ~~Il
+  lanciafiamme~~ (p. 229): gesto `fiamma`, la goccia dal bordo verso il
+  bersaglio, allontanata di pollici interi (`SH.flameAim`) e spinta da
+  un dado di artiglieria; limite `fiamma`. Organ Gun e Flame Cannon dei
+  Nani hanno la loro voce, nello 0-2 delle Rare. ~~La grappola~~ — fatta (2026-10-12, p. 227): gesto `grappola`, entro
   12″ un dado di artiglieria di colpi automatici a Forza 4 (`SH.GRAPESHOT`).
   Palla e grappola si sparano anche dal pannello della partita a mano
   (`runCannon`, `runGrape` in `deploy.js`). ~~La palla di cannone~~

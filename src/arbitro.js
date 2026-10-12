@@ -87,8 +87,10 @@ export const LIMITI = [
     why:"il libro li vuole al passo d'Iniziativa del mago; e le loro ferite tolgono modelli ma non entrano nel risultato del combattimento, che `meleeFight` conta da sé" },
   { id:"armatura",  what:"un mago con armatura lancia lo stesso", page:111,
     why:"la pelle callosa degli Skink Priest conta come armatura leggera, e letto alla lettera il libro toglierebbe loro il lancio: finché una FAQ non lo chiarisce il divieto non si applica" },
-  { id:"sagome",    what:"delle macchine da guerra l'arbitro spara la Bombardata, la palla di cannone e la grappola, e non l'organo e il lanciafiamme", page:227,
-    why:"la Bombardata sceglie un punto, devia e guarda chi resta sotto (pp. 224-226), la palla di cannone cade, rimbalza e si ferma sul «Crunch» (p. 226), e la grappola tira un dado di artiglieria di colpi automatici (p. 227): quelle si giocano. L'organo e il lanciafiamme vogliono ognuno la sua procedura, e l'arbitro non le offre" },
+  { id:"sagome",    what:"le sagome che non sono delle macchine da guerra — il soffio (Breath Weapon) e quelle dei fiaschi magici — non si posano sul tavolo", page:95,
+    why:"le macchine da guerra del Core le spara tutte (Bombardata, palla, grappola, organo, lanciafiamme, pp. 224-229); il soffio di un mostro si tira come un tiro qualunque, e il fiasco con la sagoma colpisce il mago e basta: chi altro ci sta sotto vorrebbe la goccia o il cerchio posati, che l'arbitro qui non posa" },
+  { id:"fiamma",    what:"la goccia del lanciafiamme si posa sulla linea dal centro del lanciafiamme al centro del bersaglio, e la si allontana di pollici interi", page:229,
+    why:"il libro lascia posare la punta stretta ovunque lungo l'arco frontale e allontanarla di quanto si vuole fino alla gittata: l'arbitro tiene la linea verso il centro del bersaglio e prova un pollice alla volta, e tiene quello che in media colpisce di più" },
   { id:"palla",     what:"la palla di cannone si punta sulla linea che va dal cannone al centro del bersaglio, e la gittata si misura dal bordo della sua basetta", page:226,
     why:"il libro lascia scegliere un punto qualunque entro la gittata e la vista: l'arbitro prova i punti di quella linea, uno per pollice, e tiene quello che in media colpisce di più; il tetto di un modello per rango o per fila vale per tutta l'unità, punto d'impatto compreso" },
   { id:"bombardata", what:"un'arma a Bombardata di cui i libri in casa non dicono la sagoma non spara", page:224,
@@ -1089,6 +1091,7 @@ export const CAMPI = Object.freeze({
   fulmina:  ["uid", "target", "dist", "attesa"],
   cannoneggia: ["uid", "target", "dist", "mira", "attesa"],
   grappola: ["uid", "target", "dist", "attesa"],
+  fiamma:   ["uid", "target", "dist", "mira", "attesa"],
   lancia:   ["uid", "spell", "chance", "attesa"],
   dissolvi: ["chance"],
 });
@@ -2473,6 +2476,24 @@ function opzioniTiro(S){
       }
       continue;
     }
+    /* il lanciafiamme: la goccia che si allontana (p. 229) */
+    const fiamma = SH.flameOf(arma);
+    if (fiamma){
+      const celle = caselleDellaFiamma(S, u);
+      for (const t of nemiciDi(S, u)){
+        if (ingaggiata(S, t)) continue;
+        const d = distanza(S, u, t);
+        if (d > fiamma.banda.max + 10 + SH.TEMPLATES.teardrop.len) continue;
+        if (vistaTagliata(S, u, t, { arco: true })) continue;
+        const f = previsioneFiamma(S, u, t, arma, fiamma, celle);
+        if (!f) continue;
+        out.push({ id:"fiamma", uid: u.uid, target: t.uid, nome: u.name, contro: t.name, dist: d, mira: f.mira,
+                   why: `${fiamma.why}, da ${d}″: spostata di ${f.mira}″, in media ${f.sotto.toFixed(1)} ` +
+                        `modell${f.sotto === 1 ? "o" : "i"} di ${t.name} colpiti, ≈ ${f.kills.toFixed(1)} perdite`,
+                   attesa: f.kills, page: fiamma.page });
+      }
+      continue;
+    }
     /* il fulmine e' una linea e non una sagoma: la lunghezza si tira,
        e allora la gittata massima e' quella che i dadi possono dare */
     const fulmine = SH.lineShotOf(arma);
@@ -2523,7 +2544,8 @@ function opzioniTiro(S){
       if (vistaTagliata(S, u, t, { arco: true })) continue;
       const mods = modificatori(S, u, t, d, gittata, { arma });
       const rf = raffica(S, u, arma, mods.total);
-      const f = CB.shootForecast(u, t, { weapon: arma, mods: mods.total + rf.mod, shots: rf.shots });
+      const f = SH.organOf(arma) ? previsioneOrgano(u, t, arma, mods.total)
+        : CB.shootForecast(u, t, { weapon: arma, mods: mods.total + rf.mod, shots: rf.shots });
       /* la probabilita' scritta in chiaro: un modello che legge «6+» e
          basta continua a tirare a vuoto per quattro turni */
       const pc = Math.round(SH.hitChance(f.hitNeed, f.hitAgain, f.hitThen) * 100);
@@ -3427,6 +3449,7 @@ const GESTI = {
     if (SH.bombardOf(armi[0])) return no("spara a bombardata: il gesto è «bombarda», non «tira» (p. 224)");
     if (SH.lineShotOf(armi[0])) return no("spara una linea: il gesto è «fulmina», non «tira» (Legends: Skaven, p. 19)");
     if (SH.cannonOf(armi[0])) return no("è un cannone: il gesto è «cannoneggia», non «tira» (p. 226)");
+    if (SH.flameOf(armi[0])) return no("è un lanciafiamme: il gesto è «fiamma», non «tira» (p. 229)");
     giraLaMacchina(S, u, t);
     if (fuoriArco(S, u, t)) return no(`${t.name} le sta fuori dall'arco di vista: si tira solo davanti (pp. 103 e 137)`);
     tiro(S, u, t, armi[0], {});
@@ -3464,6 +3487,22 @@ const GESTI = {
     cannoneggia(S, u, t, arma, row, a.mira != null ? +a.mira : null);
     u.shot = true;
     return si("palla di cannone risolta");
+  },
+
+  /* il lanciafiamme: la goccia allontanata e spinta dal dado (p. 229) */
+  fiamma: (S, a) => {
+    const u = byUid(S, a.uid), t = byUid(S, a.target);
+    if (!u || !t) return no("unità sconosciuta");
+    if (u.shot) return no("ha già tirato in questo turno");
+    if (u.nonTira && S.turno <= u.nonTira) return no(`è guasta: non tira fino alla fine del round ${u.nonTira}`);
+    if (stupida(S, u)) return no("è in preda alla Stupidità: non tira");
+    const arma = CB.rangedWeapons(u)[0];
+    const row = arma && SH.flameOf(arma);
+    if (!row) return no("non è un lanciafiamme");
+    giraLaMacchina(S, u, t);
+    fiamma(S, u, t, arma, row, a.mira != null ? +a.mira : null);
+    u.shot = true;
+    return si("colonna di fuoco risolta");
   },
 
   /* la grappola: chiodi al posto della palla (p. 227) */
@@ -4450,13 +4489,24 @@ function tiro(S, u, t, arma, { standAndShoot = false } = {}){
   /* le armi che hanno una procedura loro non passano di qui: se ci
      arrivassero sparerebbero con i numeri letti male — gittata 8″ per
      un «8D6"», Forza dell'equipaggio per una «*» */
-  if (SH.bombardOf(arma) || SH.lineShotOf(arma) || SH.cannonOf(arma)){
+  if (SH.bombardOf(arma) || SH.lineShotOf(arma) || SH.cannonOf(arma) || SH.flameOf(arma)){
     say(S, `${u.name} non spara ${arma.name} così: ha una procedura sua.`, { army: u.army, page: 222 });
     return;
   }
-  if (sagomaOMacchina(u, arma)) limite(S, "sagome");
+  /* l'organo (p. 228) e' un tiro vero, con l'Abilita' Balistica: i suoi
+     colpi pero' li dicono due dadi di artiglieria, tirati prima */
+  const organo = SH.organOf(arma);
+  if (!organo && sagomaOMacchina(u, arma)) limite(S, "sagome");
   const mods = modificatori(S, u, t, d, gittata, { standAndShoot, arma });
-  const rf = raffica(S, u, arma, mods.total, { standAndShoot, tira: true });
+  let rf = raffica(S, u, arma, mods.total, { standAndShoot, tira: true });
+  if (organo){
+    const dadi = rollDice({ kind: "artillery", n: 2 }).dice;
+    const os = SH.organShots(dadi.map(x => x.misfire ? null : x.value));
+    say(S, `${u.name}: l'organo tira due dadi di artiglieria — ${os.text} (p. 228).`,
+        { dice: dadi.map(x => x.raw), army: u.army, page: 228 });
+    if (os.misfire) return mancatoColpo(S, u, organo.misfire);
+    rf = { shots: os.shots, mod: os.mod, righe: [] };
+  }
   for (const riga of rf.righe) say(S, `${u.name}: ${riga}.`, { army: u.army, page: /Volley/.test(riga) ? 180 : 174 });
   const r = CB.shootRoll(u, t, { weapon: arma, mods: mods.total + rf.mod, shots: rf.shots });
   /* la Forza d'Unita' com'era all'inizio di questa fase: il quarto del
@@ -4916,6 +4966,97 @@ function cannoneggia(S, u, t, arma, row, scelta = null){
         { army: u.army, page: 226 });
     perdite(S, g.u, toll.kills, toll.left);
     if (toll.kills > 0) panico(S, g.u, `la palla di ${u.name}`, u);
+  }
+}
+
+/* ---- l'organo (p. 228) ----
+   Per scegliere: i colpi non si sanno prima, e la previsione e' la media
+   sui due dadi — dodici colpi quando escono due numeri, sei con il −1
+   quando uno fa Mancato Colpo (`SH.ORGAN_SPLIT`). */
+function previsioneOrgano(u, t, arma, mods){
+  const parti = SH.ORGAN_SPLIT.map(x => ({ ...x, f: CB.shootForecast(u, t, { weapon: arma, mods: mods + x.mod, shots: x.shots }) }));
+  const f = parti[0].f;
+  return { ...f, shots: Math.round(parti.reduce((s, x) => s + x.p * x.shots, 0)),
+           kills: parti.reduce((s, x) => s + x.p * x.f.kills, 0) };
+}
+
+/* ---- il lanciafiamme (p. 229) ----
+   La goccia parte dal bordo della basetta verso il bersaglio, chi spara
+   la allontana fino a dodici pollici, e un dado di artiglieria la
+   spinge piu' in la'. Le basette sono quelle di tutto il tavolo, amiche
+   comprese, come per la Bombardata: sotto ci finisce chi c'e'. */
+function caselleDellaFiamma(S, u){
+  return caselleDelTavolo(S).filter(c => c.u.uid !== u.uid).map((c, i) => ({ ...c, cell: i }));
+}
+function rigaDellaFiamma(S, u, t){
+  const dir = versoreVerso(u, t);
+  return { dir, da: bordoVerso(S, u, dir) };
+}
+function miraDellaFiamma(S, u, t, row, celle, riga){
+  const value = c => padroneDi(S, c).uid === t.uid || c.u.uid === t.uid ? 1 : c.u.army === u.army ? -1 : 0;
+  return SH.flameAim(celle, riga.da, riga.dir, { max: row.banda.max, value });
+}
+function previsioneFiamma(S, u, t, arma, row, celle){
+  const riga = rigaDellaFiamma(S, u, t);
+  const mira = miraDellaFiamma(S, u, t, row, celle, riga);
+  if (!mira) return null;
+  const b = CB.combatant(t);
+  const forza = stat(arma.S), ap = Math.abs(stat(arma.ap));
+  const ferite = mira.expected * chanceOf(woundOn(forza, b.t)) *
+    (1 - chanceOf(saveOn(b.armour, ap))) *
+    (1 - chanceOf(saveOn(b.ward, 0))) * (1 - chanceOf(saveOn(b.regen, 0)));
+  return { mira: mira.aim, sotto: mira.expected, kills: ferite / (b.w || 1) };
+}
+
+function fiamma(S, u, t, arma, row, scelta = null){
+  const celle = caselleDellaFiamma(S, u);
+  const riga = rigaDellaFiamma(S, u, t);
+  const mira = Number.isFinite(scelta) && scelta >= 0 && scelta <= row.banda.max
+    ? { aim: scelta } : miraDellaFiamma(S, u, t, row, celle, riga);
+  if (!mira){
+    say(S, `${u.name} non trova dove posare la goccia su ${t.name}.`, { army: u.army, page: 229 });
+    return;
+  }
+  /* 1. la goccia dal bordo, allontanata di quanto ha scelto chi spara */
+  say(S, `${u.name} posa la goccia verso ${t.name} e la allontana di ${mira.aim}″.`, { army: u.army, page: 229 });
+  /* 2. il dado di artiglieria: di quanto la spinge, o il Mancato Colpo */
+  const art = rollDice({ kind: "artillery", n: 1 }).dice[0];
+  if (art.misfire){
+    say(S, `${u.name}: il dado di artiglieria fa Mancato Colpo.`, { dice: [art.raw], army: u.army, page: 229 });
+    return mancatoColpo(S, u, row.misfire);
+  }
+  const shape = SH.flameShape(riga.da, riga.dir, mira.aim + art.value);
+  /* 3. chi resta sotto: del tutto sempre, in parte a 4+ (p. 95) */
+  const sotto = SH.modelsUnder(celle, shape);
+  const conto = SH.templateHits(sotto);
+  const dadi = conto.asks ? roll(conto.asks) : [];
+  const colpi = SH.templateHits(sotto, dadi);
+  const mucchi = new Map();
+  for (const i of colpi.cells || []){
+    const chi = padroneDi(S, celle[i]);
+    if (!chi || chi.dead) continue;
+    const g = mucchi.get(chi.uid) || { u: chi, n: 0 };
+    g.n++;
+    mucchi.set(chi.uid, g);
+  }
+  const detta = [...mucchi.values()].map(g => `${g.u.name}: ${g.n}`).join(", ");
+  say(S, `${u.name} spara la colonna di fuoco: la goccia va ${art.value}″ più in là. ` +
+         `Sotto: ${colpi.full} del tutto, ${colpi.partial} in parte — ${detta ? "colpiti " + detta : "nessuno"}.`,
+      { dice: [art.raw, ...dadi], army: u.army, page: 229,
+        fx: { k: "tiro", da: u.uid, su: t.uid, arma: arma.name, tiri: Math.min(8, colpi.hits || 1) } });
+  /* 4. per ferire e salvezze, con la Forza del lanciafiamme */
+  const forza = stat(arma.S), ap = Math.abs(stat(arma.ap));
+  for (const g of mucchi.values()){
+    if (g.u.dead) continue;
+    const r = CB.strike(CB.combatant(u), CB.combatant(g.u),
+                        { attacks: g.n, auto: true, strength: forza, ap, multi: null, label: "colonna di fuoco" });
+    const toll = CB.woundsToll(g.u, r.wounds, { carried: g.u.wounds || 0 });
+    inizioFase(S, g.u);
+    say(S, `${u.name} su ${g.u.name}: ${g.n} ${g.n === 1 ? "colpo" : "colpi"} di Forza ${forza}, ` +
+           `${r.wounds} ferit${r.wounds === 1 ? "a" : "e"}, ${toll.kills} a terra.`,
+        { army: u.army, page: 229 });
+    perdite(S, g.u, toll.kills, toll.left);
+    if (toll.kills > 0) panico(S, g.u, `il fuoco di ${u.name}`, u);
   }
 }
 

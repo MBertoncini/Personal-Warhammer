@@ -149,6 +149,19 @@ ok('e senza un altro personaggio la lista non ha generale',
    N.valida(conSlayer.filter(g => g.k !== 'thane')).includes('nessun generale'));
 const quattro = [...conSlayer.filter(g => g.k !== 'grudge'), { k: 'grudge', o: {} }, { k: 'grudge', o: {} },
                  { k: 'cannon', o: {} }, { k: 'cannon', o: {} }];
+ok('Organ Gun 120 e Flame Cannon 125, fra le Rare (Forces of Fantasy p. 31)',
+   DW.organ().pts === 120 && DW.flame().pts === 125 && DW.organ().slot === 'Rare' && DW.flame().slot === 'Rare');
+ok('l organo e Multi-Barrelled (Core p. 228) e il Flame Cannon spara la colonna di fuoco (p. 229)',
+   !!SH.organOf(DW.organ().weapons[0]) && !!SH.flameOf(DW.flame().weapons[0]));
+/* l'organo tira con l'Abilita' Balistica dell'equipaggio (p. 228): la
+   riga della macchina dice «-», e il 3 sta sulla riga dei serventi */
+ok('l organo tira con l Abilita Balistica dei serventi, non con il «-» della macchina',
+   C.shootForecast({ ...DW.organ(), lost: 0 }, DW.warriors({ n: 20 }), { weapon: DW.organ().weapons[0], shots: 10 }).bs === 3);
+{
+  const tre = [...conSlayer, { k: 'organ', o: {} }, { k: 'flame', o: {} }, { k: 'organ', o: {} }];
+  ok('Organ Gun e Flame Cannon stanno nello stesso 0-2 ogni 1.000 punti (p. 11)',
+     N.valida(tre).some(e => /0-2 ogni 1.000/.test(e)) && !N.valida(tre.slice(0, -1)).some(e => /0-2 ogni 1.000/.test(e)));
+}
 ok('Grudge Thrower e Cannon stanno nello stesso 0-3 ogni 1.000 punti (p. 11)',
    N.valida(quattro).some(e => /0-3 ogni 1.000/.test(e)) &&
    !N.valida(quattro.slice(0, -1)).some(e => /0-3 ogni 1.000/.test(e)));
@@ -223,6 +236,25 @@ const partenza = f => { const S = spazio(f, { pool: 'tutte', punti: 1000 }); ret
   const vere = Object.fromEntries(G.units.map(u => [u.uid, u]));
   const storte = BL.finalUnits(rifatta.rep).filter(f => { const u = vere[f.uid]; return u && !u.dead && f.alive !== u.models - (u.lost || 0); });
   ok('e il diario rifatto dal registro conta i caduti sotto la palla', !rifatta.guasti.length && !storte.length);
+}
+/* l'organo e il lanciafiamme in partita, al posto dei Grudge Thrower */
+{
+  const S = spazio('dwf', { pool: 'tutte', punti: 1000 });
+  const geni = [...S.partenze[0].filter(g => g.k !== 'grudge'), { k: 'organ', o: {} }, { k: 'flame', o: {} }];
+  const lista = S.costruisci(geni, { id: 'prova-organo' });
+  const { G, testo, rifiutate } = await gioca(lista, orchi, 11);
+  ok('i Nani con l organo e il lanciafiamme finiscono la partita', G.finita && !rifiutate.some(p => p.mossa && p.mossa.id !== 'avanti'));
+  ok('e l organo spara i suoi due dadi di artiglieria, e colpisce con l Abilita Balistica dei serventi',
+     /Organ Gun( \d+)?: l'organo tira due dadi di artiglieria/.test(testo) && /tira su [^\n]*con Organ gun[^\n]*tiri a [2-6]\+/.test(testo));
+  ok('e il lanciafiamme posa la goccia', /Flame Cannon posa la goccia/.test(testo));
+  const ARCH = await import('../src/archivio.js'), BL = await import('../src/battlelog.js');
+  const liste = { A: lista, B: orchi };
+  const righe = G.log.map(r => `T${r.turno} ${r.text}${r.page ? ` (p. ${r.page})` : ''}`).join('\n');
+  const G2 = AR.newBattle({ A: liste.A, B: liste.B, scenario: 'bm-strada', nomi: G.nomi });
+  const rifatta = ARCH.dalRegistro({ S: G2, liste, nomi: G.nomi, sc: G.sc, testo: righe });
+  const vere = Object.fromEntries(G.units.map(u => [u.uid, u]));
+  const storte = BL.finalUnits(rifatta.rep).filter(f => { const u = vere[f.uid]; return u && !u.dead && f.alive !== u.models - (u.lost || 0); });
+  ok('e il diario rifatto dal registro conta i caduti dell organo e del fuoco', !rifatta.guasti.length && !storte.length);
 }
 
 /* ================================================================= */

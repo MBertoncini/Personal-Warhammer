@@ -740,6 +740,8 @@ function renderInspector(){
     b.addEventListener("click", () => runCannon(u, b.dataset.cannon));
   for (const b of host.querySelectorAll("[data-grape]"))
     b.addEventListener("click", () => runGrape(u, b.dataset.grape));
+  for (const b of host.querySelectorAll("[data-flame]"))
+    b.addEventListener("click", () => runFlame(u, b.dataset.flame));
   for (const b of host.querySelectorAll("[data-tmpl-off]"))
     b.addEventListener("click", () => act("togli la sagoma", () => setTemplate(null)));
   $("#i-rot-l").addEventListener("click", () => upd(() => { u.rot = (u.rot + 270) % 360; }, "ruota"));
@@ -1090,6 +1092,10 @@ function shootingHTML(u){
   /* il cannone non tira per colpire: ogni bersaglio ha la palla e, entro
      dodici pollici, la grappola (pp. 226-227) */
   const cannone = plan.weapon ? SH.cannonOf(plan.weapon) : null;
+  /* il lanciafiamme posa la goccia (p. 229), l'organo tira come un arco
+     ma i colpi li dicono due dadi di artiglieria (p. 228) */
+  const fiamma = plan.weapon ? SH.flameOf(plan.weapon) : null;
+  const organo = plan.weapon ? SH.organOf(plan.weapon) : null;
   return `
     <div>
       <div class="readout"><span>Tiro${plan.weapon ? " · " + esc(plan.weapon.name) : ""}</span>
@@ -1103,6 +1109,7 @@ function shootingHTML(u){
                     <b>${r.dist.toFixed(1)}″</b></div>`;
         }
         if (cannone) return cannonRowHTML(u, r, cannone);
+        if (fiamma) return flameRowHTML(u, r, fiamma);
         const f = shotOn(u, r, plan);
         const why = f.mods.list.map(m => `${m.v} ${m.why}`).join(", ");
         /* Quanti tirano, e perche' gli altri no: sono le tre cause del
@@ -1118,12 +1125,13 @@ function shootingHTML(u){
                   <button class="btn tiny shoot-go" data-shoot="${r.unit.uid}"
                           title="Tira su ${esc(r.unit.name)}: ${f.shots} tiri, ${hitText(f)} per colpire">🏹</button>
                 </div>
-                <p class="note">${f.shots} tir${f.shots === 1 ? "o" : "i"} da ${f.survey.n} modell${f.survey.n === 1 ? "o" : "i"}${fuori ? ` · ${esc(fuori)}` : ""}${
+                <p class="note">${organo ? `colpi: due dadi di artiglieria, in media 10 (p. ${organo.page})`
+                  : `${f.shots} tir${f.shots === 1 ? "o" : "i"} da ${f.survey.n} modell${f.survey.n === 1 ? "o" : "i"}`}${fuori ? ` · ${esc(fuori)}` : ""}${
                   f.survey.coverWhy ? ` · riparo: ${esc(f.survey.coverWhy)} (p. ${SG.PAGE.cover})` : ""}${
                   f.survey.hill ? ` · dalla collina tira anche la seconda fila (p. ${SH.RANK_PAGES.hill})` : ""}${
                   f.survey.volleyOff ? ` · ${esc(f.survey.volleyOff)}` : ""}</p>`;
       }).join("") : `<p class="note">Nessun nemico sul tavolo.</p>`}
-      ${cannone ? cannonNoteHTML() : plan.machine ? machineHTML(u, plan) : ""}
+      ${cannone ? cannonNoteHTML() : fiamma ? flameNoteHTML() : organo ? organNoteHTML() : plan.machine ? machineHTML(u, plan) : ""}
       ${dubbie.length ? `<p class="note">Da verificare sul libro: ${dubbie.map(a =>
           `<b>${esc(a.name)}</b> — ${esc(a.daVerificare)}`).join(" · ")}</p>` : ""}
       ${plan.shots.nota ? `<p class="note">${esc(plan.shots.nota)}</p>` : ""}
@@ -1147,6 +1155,24 @@ function cannonRowHTML(u, r, cannone){
             ${grappola ? `<button class="btn tiny" data-grape="${r.unit.uid}"
                     title="Grappola su ${esc(r.unit.name)}: un dado di artiglieria di colpi a Forza ${SH.GRAPESHOT.S}">grappola</button>` : ""}
           </div>`;
+}
+function flameRowHTML(u, r, fiamma){
+  const p = flamePlanOn(u, r.unit, fiamma);
+  return `<div class="readout near"><span>${esc(shortName(r.unit.name))} · ${r.dist.toFixed(1)}″</span>
+            <b style="color:var(--ok)">${p ? `+${p.mira.aim}″ · ≈ ${p.mira.expected.toFixed(1)}` : "—"}</b>
+            <button class="btn tiny" data-flame="${r.unit.uid}" ${p ? "" : "disabled"}
+                    title="Colonna di fuoco su ${esc(r.unit.name)}${p ? `: goccia allontanata di ${p.mira.aim}″` : ""}">fuoco</button>
+          </div>`;
+}
+function flameNoteHTML(){
+  return `
+    <div class="readout"><span>Lanciafiamme</span><b>p. 229</b></div>
+    <p class="note">La goccia parte dal bordo della basetta verso il bersaglio; l'app la allontana dei pollici scritti accanto (fino alla gittata), poi un dado di artiglieria la spinge ancora più in là. Chi sta sotto del tutto è colpito, chi sta sotto in parte a ${SH.PARTIAL_NEED}+ (p. ${SH.PAGE.templates}), amico o nemico; il numero accanto è quanti modelli prende in media. Il Mancato Colpo va alla tabella della polvere nera (p. ${SH.MISFIRE.page}).</p>`;
+}
+function organNoteHTML(){
+  return `
+    <div class="readout"><span>Organo</span><b>p. 228</b></div>
+    <p class="note">Tira per colpire con l'Abilità Balistica dei serventi, ma i colpi sono la somma di due dadi di artiglieria, tirati prima. Un Mancato Colpo su un dado solo: quel dado non conta e tutti i colpi hanno −1 per colpire. Su tutti e due: non spara, e si va alla tabella della polvere nera (p. ${SH.MISFIRE.page}).</p>`;
 }
 function cannonNoteHTML(){
   return `
@@ -2859,16 +2885,36 @@ async function runShot(u, uid){
     G.dispatch({ type:"declareShot", unit:u, target:t, army:u.army,
       weapon: plan.weapon ? plan.weapon.name : "",
       text: `${u.name} prende di mira ${t.name} a ${row.dist.toFixed(1)}″: ` +
-            `${f.shots} tir${f.shots === 1 ? "o" : "i"} da ${f.survey.n} modell${f.survey.n === 1 ? "o" : "i"}` +
+            (plan.weapon && SH.organOf(plan.weapon) ? "i colpi li dicono due dadi di artiglieria"
+              : `${f.shots} tir${f.shots === 1 ? "o" : "i"} da ${f.survey.n} modell${f.survey.n === 1 ? "o" : "i"}`) +
             (why ? ` (${why})` : "") });
   });
   if (!plan.gate.can) toast("Tira lo stesso: l'app propone, non impedisce.");
   if (!f.shots) return toast("Nessun modello vede il bersaglio a gittata.");
 
+  /* l'organo (p. 228): prima del per colpire, due dadi di artiglieria
+     dicono quanti colpi; un Mancato Colpo da' −1, due la tabella */
+  let colpiOrgano = null;
+  const organo = plan.weapon && SH.organOf(plan.weapon);
+  if (organo){
+    const dadi = await G.askRolls([{ id:"canne", kind:"artillery", n:2, why:"quanti colpi spara l'organo" }],
+                                  `Organo di ${u.name}`);
+    if (!dadi || !dadi.canne) return;
+    const facce = (dadi.canne.dice || []).slice(0, 2);
+    while (facce.length < 2) facce.push(null);
+    colpiOrgano = SH.organShots(facce);
+    act("organo", () => {
+      if (state.game.on) G.goStep(9);
+      G.dispatch({ type:"note", army:u.army, text: `${u.name}: l'organo tira due dadi di artiglieria — ${colpiOrgano.text} (p. 228)` });
+    });
+    if (colpiOrgano.misfire) return mancatoColpoPannello(u, organo.misfire);
+  }
+
   /* 2 · la raffica, vista cadere */
   let fotoColpo = null;
   const weapon = plan.weapon || { range: String(plan.range), S: "", ap: "" };
-  const r = CB.shootRoll(u, t, { weapon, mods: f.mods.total, shots: f.shots });
+  const r = CB.shootRoll(u, t, { weapon, mods: f.mods.total + (colpiOrgano ? colpiOrgano.mod : 0),
+                                 shots: colpiOrgano ? colpiOrgano.shots : f.shots });
   await showDiceGroups(shotGroups(r, u.name, t.name), {
     title: `Tiro di ${u.name} su ${t.name}`,
     foot: r.notes.length ? r.notes.join(" · ")
@@ -4136,6 +4182,72 @@ async function runCannon(u, uid){
     { armourBane: wf.armourBane || 0 }) }));
   await mostraColpi(colpi, u, `Palla di ${u.name}: ferire e salvezze`);
   await segnaColpi(colpi, u, "perdite dalla palla", `la palla di ${u.name}`);
+}
+
+/* ---- il lanciafiamme (p. 229) ----
+   La goccia dal bordo della basetta verso il centro del bersaglio, le
+   basette di tutto il tavolo sotto (amiche comprese), e lo stesso conto
+   dell'arbitro per sapere di quanto allontanarla (`SH.flameAim`). */
+function flamePlanOn(u, t, fiamma){
+  const dx = t.x - u.x, dy = t.y - u.y, d = Math.hypot(dx, dy) || 1;
+  const dir = [dx / d, dy / d];
+  const r = boxRadius(boxOf(u), Math.atan2(dir[1], dir[0]));
+  const da = [u.x + dir[0] * r, u.y + dir[1] * r];
+  const cells = cannonCellsFor(u).map((c, i) => ({ ...c, cell: i }));
+  const mira = SH.flameAim(cells, da, dir, { max: fiamma.banda.max,
+    value: c => c.group === t.uid ? 1 : c.host.army === u.army ? -1 : 0 });
+  return mira ? { dir, da, cells, mira } : null;
+}
+
+async function runFlame(u, uid){
+  const t = state.units.find(x => x.uid === +uid);
+  const weapon = CB.rangedWeapons(u)[0];
+  const fiamma = weapon && SH.flameOf(weapon);
+  if (!t || !fiamma) return;
+  const p = flamePlanOn(u, t, fiamma);
+  if (!p) return toast(`La goccia non arriva su ${t.name}.`);
+  act("dichiarazione di tiro", () => {
+    if (state.game.on) G.goStep(8);
+    G.dispatch({ type:"declareShot", unit:u, target:t, army:u.army, weapon: weapon.name,
+      text: `${u.name} posa la goccia verso ${t.name} e la allontana di ${p.mira.aim}″: in media ` +
+            `${p.mira.expected.toFixed(1)} modelli sotto (p. 229)` });
+  });
+  const rolls = await G.askRolls([{ id:"fuoco", kind:"artillery", n:1, why:"di quanto si spinge la goccia" }],
+                                 `Colonna di fuoco di ${u.name}`);
+  if (!rolls || !rolls.fuoco) return;
+  if (rolls.fuoco.misfire){
+    act("Mancato Colpo", () => G.dispatch({ type:"note", army:u.army, text: `${u.name}: il dado di artiglieria fa Mancato Colpo` }));
+    return mancatoColpoPannello(u, fiamma.misfire);
+  }
+  const shape = SH.flameShape(p.da, p.dir, p.mira.aim + (rolls.fuoco.total || 0));
+  const under = SH.modelsUnder(p.cells, shape);
+  let hits = SH.templateHits(under);
+  if (hits.asks){
+    const parziali = await G.askRolls([{ id:"parziali", kind:"d6", n: hits.asks,
+                                         need: SH.PARTIAL_NEED, why:"chi e' sotto solo in parte" }],
+                                      `Goccia di ${u.name}`);
+    if (parziali && parziali.parziali) hits = SH.templateHits(under, parziali.parziali.dice);
+  }
+  const perUnit = new Map();
+  for (const i of hits.cells || []){
+    const chi = p.cells[i].owner;
+    if (!chi || chi.dead) continue;
+    perUnit.set(chi, (perUnit.get(chi) || 0) + 1);
+  }
+  const detta = [...perUnit].map(([f, n]) => `${f.name}: ${n}`).join(", ");
+  act("colonna di fuoco", () => {
+    setTemplate({ id: "teardrop", x: shape.c[0], y: shape.c[1], angle: shape.angle, by: u.uid });
+    if (state.game.on) G.goStep(9);
+    G.dispatch({ type:"note", army:u.army,
+      text: `${u.name} spara la colonna di fuoco: la goccia va ${rolls.fuoco.total}″ più in là. ` +
+            `Sotto: ${hits.full} del tutto, ${hits.partial} in parte — ${detta || "nessuno"}` });
+  });
+  SC.colpo({ k:"tiro", da:u.uid, su:t.uid, arma: weapon.name, tiri: Math.min(8, hits.hits || 1) }, fotoTavolo());
+  if (!perUnit.size) return toast("La goccia non ha preso nessuno.");
+  const colpi = [...perUnit].map(([foe, n]) => ({ foe, n, ...colpiAutomatici(u, foe,
+    [{ n, strength: stat(weapon.S), ap: Math.abs(stat(weapon.ap)), multi: null, label: "fuoco" }]) }));
+  await mostraColpi(colpi, u, `Fuoco di ${u.name}: ferire e salvezze`);
+  await segnaColpi(colpi, u, "perdite dal fuoco", `il fuoco di ${u.name}`);
 }
 
 /* ---- la grappola (p. 227) ---- */

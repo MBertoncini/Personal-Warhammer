@@ -436,6 +436,9 @@ const pg = o => ({ models: 1, frontage: 1, us: 1, unitSize: '1', slot: 'Characte
 
 Object.assign(ARMI, {
   /* il cannone di Core p. 226: la palla cade e rimbalza (Cannon Fire) */
+  /* l'organo e il lanciafiamme di Core pp. 228-229 */
+  organ: { name: 'Organ gun', range: '30"', S: '5', ap: '-1', rules: 'Armour Bane (2), Cumbersome, Move or Shoot, Multi-Barrelled' },
+  fireThrower: { name: 'Fire thrower', range: '12"', S: '5', ap: '-1', rules: 'Column of Fire, Cumbersome, Flaming Attacks, Move or Shoot' },
   cannon: { name: 'Cannon', range: '48"', S: '8', ap: '-2', rules: 'Armour Bane (2), Cannon Fire, Cumbersome, Move or Shoot, Multiple Wounds (D3)' },
   stone: { name: 'Stone thrower', range: '12-60"', S: '4 (8)', ap: '-1 (-3)', rules: 'Bombardment, Cumbersome, Move or Shoot, Multiple Wounds (D3+1)' },
   crossbow: { name: 'Crossbow', range: '30"', S: '4', ap: '-', rules: 'Armour Bane (2), Ponderous' },
@@ -887,6 +890,21 @@ export const DW = {
     profiles: [{ name: 'Cannon', stats: st('- - - - 7 3 - - -') }, { name: 'Dwarf Crew', stats: st('3 3 3 3 4 3 2 3 9') }],
     rules: ['Hatred (Orcs & Goblins)', 'Magic Resistance (-1)', 'Skirmishers', 'Stubborn'],
     weapons: armi(['cannon', 'hw']), slot: 'Special' }),
+  /* p. 31: Organ Gun 120 e Flame Cannon 125, fra le Rare (p. 11). Stessi
+     serventi delle altre macchine; il Flame Cannon ha Resistenza 6 e la
+     basetta da 50 x 75, l'organo quella da 50 x 50. */
+  organ: () => dw({
+    name: 'Organ Gun', models: 1, crew: 1, ...BASE(50), frontage: 1, loose: true,
+    pts: 120, us: 0, troop: 'War machine', unitSize: '1', stats: st('- - - - 7 3 - - -'), armour: 6,
+    profiles: [{ name: 'Organ Gun', stats: st('- - - - 7 3 - - -') }, { name: 'Dwarf Crew', stats: st('3 3 3 3 4 3 2 3 9') }],
+    rules: ['Hatred (Orcs & Goblins)', 'Magic Resistance (-1)', 'Skirmishers', 'Stubborn'],
+    weapons: armi(['organ', 'hw']), slot: 'Rare' }),
+  flame: () => dw({
+    name: 'Flame Cannon', models: 1, crew: 1, ...BASE(50, 75), frontage: 1, loose: true,
+    pts: 125, us: 0, troop: 'War machine', unitSize: '1', stats: st('- - - - 6 3 - - -'), armour: 6,
+    profiles: [{ name: 'Flame Cannon', stats: st('- - - - 6 3 - - -') }, { name: 'Dwarf Crew', stats: st('3 3 3 3 4 3 2 3 9') }],
+    rules: ['Hatred (Orcs & Goblins)', 'Magic Resistance (-1)', 'Skirmishers', 'Stubborn'],
+    weapons: armi(['fireThrower', 'hw']), slot: 'Rare' }),
 };
 
 /* Una candidata diventa una lista dell'archivio. `id` lo sceglie chi

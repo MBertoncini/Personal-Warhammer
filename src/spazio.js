@@ -124,7 +124,7 @@ const LUCERTOLE = [
 /* I tre eserciti scritti dal libro (src/costruttori.js): niente
    archivio da cui copiare, e niente miniature in vetrina — si cercano
    con il serbatoio «tutte». Le unita' che l'arbitro non sa giocare non
-   hanno una voce: l'organo e il lanciafiamme dei Nani, il
+   hanno una voce: il
    Bolt Thrower (la sua «Through & Through» non c'e'), i Gyrobomber, i
    Wardancers e lo Shadowdancer (le danze sono una scelta a ogni
    combattimento che l'arbitro non offre), la Cockatrice, il Cygor, il
@@ -201,6 +201,8 @@ const NANI = [
   { k: 'gyro', pezzo: 'Gyrocopters', n: [1, 3], opz: { gun: ['brimstone', 'clattergun'] }, crea: DW.gyro },
   { k: 'grudge', pezzo: 'Grudge Thrower', max: 3, crea: DW.grudge },
   { k: 'cannon', pezzo: 'Cannon', max: 3, crea: DW.cannon },
+  { k: 'organ', pezzo: 'Organ Gun', max: 2, crea: DW.organ },
+  { k: 'flame', pezzo: 'Flame Cannon', max: 2, crea: DW.flame },
   { k: 'irondrakes', pezzo: 'Irondrakes', n: [5, 20], opz: { c: COMANDO, f: FRONTI }, crea: DW.irondrakes },
 ];
 
@@ -268,6 +270,7 @@ const REGOLE_NANI = [
   { k: ['king', 'runelord'], al: 1, per: true, t: 'King o Runelord, 0-1 ogni 1.000 punti (Forces of Fantasy p. 11)' },
   { k: ['hammerers'], ogni: ['king', 'thane'], t: 'Hammerers, uno per King o Thane (p. 11)' },
   { k: ['grudge', 'cannon'], al: 3, per: true, t: 'macchine da guerra delle Speciali, 0-3 ogni 1.000 punti (p. 11)' },
+  { k: ['organ', 'flame'], al: 2, per: true, t: 'Organ Gun e Flame Cannon, 0-2 ogni 1.000 punti (p. 11)' },
 ];
 function composizione(geni, punti, regole){
   const quanti = ks => geni.filter(g => ks.includes(g.k)).length;

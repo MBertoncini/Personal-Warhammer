@@ -1101,6 +1101,84 @@ console.log('\nla palla di cannone (p. 226)');
     const r = AR.apply(G, { id: 'grappola', uid: cn.uid, target: orchi.uid });
     ok('e chiesta da lontano si rifiuta', r.ok === false && /12″/.test(r.why || r.text || ''));
   }
+
+  /* l'organo (p. 228): tira per colpire, e i colpi sono due dadi di
+     artiglieria */
+  const organo = () => ([{ name: 'Organ gun', range: '30"', S: '5', ap: '-1',
+    rules: 'Armour Bane (2), Cumbersome, Move or Shoot, Multi-Barrelled' }]);
+  {
+    const { G, cn, orchi } = tavolo();
+    cn.weapons = organo();
+    const o = AR.options(G).list.filter(x => x.uid === cn.uid);
+    const tr = o.find(x => x.id === 'tira' && x.target === orchi.uid);
+    ok('l organo tira come un arco, con l Abilita Balistica', !!tr && /colpisce a \d\+/.test(tr.why));
+    ok('e la previsione conta in media dieci colpi', /^10 tiri/.test(tr.why));
+    facce(2, 3, 2);                            // 6 + 8 colpi, e poi tutti 3
+    AR.apply(G, { id: 'tira', uid: cn.uid, target: orchi.uid });
+    ok('i colpi sono la somma dei due dadi di artiglieria',
+       G.log.some(x => /l'organo tira due dadi di artiglieria — 14 colpi/.test(x.text)) &&
+       G.log.some(x => /tira su Orc Mobs con Organ gun[^:]*: 14 tiri/.test(x.text)));
+  }
+  {
+    const { G, cn, orchi } = tavolo();
+    cn.weapons = organo();
+    facce(5, 1, 2);                            // Mancato Colpo e 4
+    AR.apply(G, { id: 'tira', uid: cn.uid, target: orchi.uid });
+    ok('un Mancato Colpo su un dado solo: quel dado non conta, e −1 per colpire',
+       G.log.some(x => /4 colpi, e −1 per colpire/.test(x.text)) && !cn.dead);
+  }
+  {
+    const { G, cn, orchi } = tavolo();
+    cn.weapons = organo();
+    facce(5, 5, 0);                            // due Mancato Colpo; tabella: 1
+    AR.apply(G, { id: 'tira', uid: cn.uid, target: orchi.uid });
+    ok('su tutti e due non spara e va alla tabella della polvere nera',
+       cn.dead === true && G.log.some(x => /polvere nera/.test(x.text)) &&
+       !G.log.some(x => /tira su Orc Mobs con Organ gun/.test(x.text)));
+  }
+
+  /* il lanciafiamme (p. 229): la goccia allontanata, poi spinta dal dado */
+  const lanciafiamme = () => ([{ name: 'Fire thrower', range: '12"', S: '5', ap: '-1',
+    rules: 'Column of Fire, Cumbersome, Flaming Attacks, Move or Shoot' }]);
+  {
+    const { G, cn, orchi } = tavolo();
+    cn.weapons = lanciafiamme();
+    metti(G, orchi, 600, 650);
+    const o = AR.options(G).list.filter(x => x.uid === cn.uid);
+    const fi = o.find(x => x.id === 'fiamma' && x.target === orchi.uid);
+    ok('il lanciafiamme ha il suo gesto, e non tira come un arco',
+       !!fi && !o.some(x => x.id === 'tira') && fi.page === 229 && Number.isFinite(fi.mira));
+    facce(0, 3);                               // il dado spinge di 2″, e poi tutti 4
+    AR.apply(G, { id: 'fiamma', uid: cn.uid, target: orchi.uid, mira: 2 });
+    ok('la goccia va oltre di quanto dice il dado, e chi resta sotto e colpito',
+       G.log.some(x => /la allontana di 2″/.test(x.text)) &&
+       G.log.some(x => /colonna di fuoco: la goccia va 2″ più in là/.test(x.text)) &&
+       G.log.some(x => /su Orc Mobs: \d+ colp\S+ di Forza 5, /.test(x.text)));
+    ok('e la macchina ha sparato', cn.shot === true);
+  }
+  {
+    const { G, cn, orchi } = tavolo();
+    cn.weapons = lanciafiamme();
+    metti(G, orchi, 600, 650);
+    const r = AR.apply(G, { id: 'tira', uid: cn.uid, target: orchi.uid });
+    ok('«tira» con un lanciafiamme si rifiuta, e dice il gesto giusto', r.ok === false && /fiamma/.test(r.why || r.text || ''));
+  }
+  {
+    const { G, cn, orchi } = tavolo();
+    cn.weapons = lanciafiamme();
+    metti(G, orchi, 600, 650);
+    facce(5, 0);                               // Mancato Colpo; tabella: 1
+    AR.apply(G, { id: 'fiamma', uid: cn.uid, target: orchi.uid });
+    ok('il Mancato Colpo del lanciafiamme va alla tabella della polvere nera',
+       cn.dead === true && G.log.some(x => /polvere nera/.test(x.text)));
+  }
+  {
+    const { G, cn, orchi } = tavolo();
+    cn.weapons = lanciafiamme();
+    metti(G, orchi, 600, 50);
+    ok('da lontano la goccia non arriva, e il gesto non si offre',
+       !AR.options(G).list.some(x => x.id === 'fiamma' && x.uid === cn.uid));
+  }
   D.setSource(D.seeded(1));
 }
 

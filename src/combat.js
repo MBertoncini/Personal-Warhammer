@@ -27,7 +27,7 @@ import * as ML from './melee.js';
 import * as SH from './shoot.js';
 import * as PS from './psych.js';
 import { attackRows, herdRows } from './mounts.js';
-import { beastStat } from './profiles.js';
+import { beastStat, splitStat } from './profiles.js';
 import { formationOf } from './formation.js';
 
 /* ============================================================
@@ -1952,7 +1952,12 @@ export const shooters = u => SH.shooterCap({
 });
 
 export function shootForecast(shooter, target, { weapon, mods = 0, shots } = {}){
-  const bs = stat((shooter.stats || {}).BS);
+  /* Il profilo diviso (p. 97): la riga di una macchina da guerra dice
+     «-» all'Abilita' Balistica, e il numero e' dei serventi. Finche'
+     nessuna macchina tirava per colpire non contava; l'organo (p. 228)
+     tira «using the crew's Ballistic Skill», e tirava a 7+. */
+  const bsRiga = (shooter.stats || {}).BS;
+  const bs = /^\s*\d/.test(String(bsRiga ?? "")) ? stat(bsRiga) : (splitStat(shooter, "BS") ?? stat(bsRiga));
   const n = shots ?? shooters(shooter);
   /* Il punteggio non e' piu' un conto scritto qui: l'1 naturale che non
      colpisce mai e il ritiro dell'Abilita' Balistica alta sono due
