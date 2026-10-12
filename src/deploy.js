@@ -40,6 +40,10 @@ import { askText, askConfirm, askPick, showMenu, closeMenu,
          countersHTML, wireCounters, tagsHTML, wireTags } from './uikit.js';
 import * as EX from './extras.js';
 import * as SC from './scena.js';
+import { scenico } from './scenico.js';
+import { coloreTerreno } from './replay.js';
+/* gli elementi scenici, disegnati come nella partita da rivedere */
+const SCENA = scenico();
 import * as MV from './movement.js';
 import * as MN from './minacce.js';
 import { ZONE_KINDS, zoneKind, makeZone, ensureZone, zoneRect, zoneBox,
@@ -1480,53 +1484,32 @@ function drawBoard(){
   }
 
   // terreno
+  /* Il disegno di ogni pezzo e' quello della partita da rivedere
+     (`scenico`, src/scenico.js): alberi, curve di livello, canne, muri
+     rotti, pietre. Il seme degli alberi e' la posizione nell'elenco,
+     come nella pagina, cosi' lo stesso bosco ha gli alberi negli stessi
+     posti nei due tavoli. Qui sopra restano le cose solo dell'app: il
+     bordo rosso o giallo di chi sta male, il raggio sgombro del tesoro
+     e le maniglie della misura. */
   const issues = terrainIssues();
+  g(svg, "defs", {}).innerHTML = SCENA.DEFS;
   const tLayer = g(svg, "g", {});
-  for (const t of state.terrain){
+  state.terrain.forEach((t, i) => {
     const cfg = TERRAIN[t.kind], b = boxOf(t), iss = issues.get(t.tid);
     const gg = g(tLayer, "g", { transform:`translate(${b.x} ${b.y}) rotate(${b.rot})`, class:"piece" });
     gg.dataset.tid = t.tid;
-    const stroke = iss ? (iss.key === "bad" ? "var(--bad)" : "var(--warn)") : cfg.color;
-    const sw = iss ? 3 : 1.6;
-    if (cfg.shape === "circle"){
-      g(gg, "circle", { r:b.w/2, fill:cfg.color, opacity:".78", stroke, "stroke-width":Math.max(sw, 2.2) });
-      g(gg, "circle", { r:Math.max(4, b.w/2 - 8), fill:"none", stroke:"var(--paper)", "stroke-width":1.4, opacity:".5" });
-    } else if (cfg.shape === "token"){
-      g(gg, "circle", { r:TREASURE_CLEAR * MM, fill:"none", stroke:cfg.color,
-                        "stroke-width":1, "stroke-dasharray":"5 7", opacity:".35" });
-      g(gg, "circle", { r:b.w/2, fill:cfg.color, opacity:".85", stroke, "stroke-width":sw });
-    } else if (cfg.shape === "wall"){
-      g(gg, "rect", { x:-b.w/2, y:-b.h/2, width:b.w, height:b.h, fill:cfg.color, opacity:".9", stroke, "stroke-width":sw });
-    } else {
-      g(gg, "rect", { x:-b.w/2, y:-b.h/2, width:b.w, height:b.h, rx:8, fill:cfg.color,
-                      opacity: cfg.pass === "blocked" ? ".72" : ".55", stroke, "stroke-width":sw });
-      g(gg, "rect", { x:-b.w/2, y:-b.h/2, width:b.w, height:b.h, rx:8, fill:"none",
-                      stroke:cfg.color, "stroke-width":2.2, opacity:".95" });
-      if (t.kind === "wood"){
-        const n = Math.max(3, Math.round(b.w / 40));
-        for (let i = 0; i < n; i++){
-          const cx = -b.w/2 + b.w * (i + .5) / n;
-          g(gg, "circle", { cx, cy:0, r:Math.min(b.h * .34, b.w / n * .38), fill:"var(--paper)", opacity:".28" });
-        }
-      }
-      if (t.kind === "hill"){
-        for (const inset of [10, 24]){
-          if (b.w - inset * 2 < 12 || b.h - inset * 2 < 10) break;
-          g(gg, "rect", { x:-b.w/2 + inset, y:-b.h/2 + inset * .7, width:b.w - inset * 2, height:b.h - inset * 1.4,
-                          rx:6, fill:"none", stroke:"var(--paper)", "stroke-width":1.3, opacity:".45" });
-        }
-      }
-      if (t.kind === "marsh"){
-        for (let i = 1; i <= 3; i++){
-          const y = -b.h/2 + b.h * i / 4;
-          g(gg, "line", { x1:-b.w/2 + 8, y1:y, x2:b.w/2 - 8, y2:y, stroke:"var(--paper)",
-                          "stroke-width":1.6, "stroke-dasharray":"12 9", opacity:".4" });
-        }
-      }
-      if (t.kind === "ruins" || t.kind === "pyramid"){
-        g(gg, "line", { x1:-b.w/2, y1:-b.h/2, x2:b.w/2, y2:b.h/2, stroke:"var(--paper)", "stroke-width":1.3, opacity:".35" });
-        g(gg, "line", { x1:b.w/2, y1:-b.h/2, x2:-b.w/2, y2:b.h/2, stroke:"var(--paper)", "stroke-width":1.3, opacity:".35" });
-      }
+    if (cfg.shape === "token")
+      g(gg, "circle", { r:TREASURE_CLEAR * MM, fill:"none", stroke:coloreTerreno(t.kind),
+                        "stroke-width":1, "stroke-dasharray":"5 7", opacity:".5" });
+    g(gg, "g", {}).innerHTML = SCENA.scena({ w:b.w, h:b.h, kind:t.kind, forma:cfg.shape,
+                                             colore:coloreTerreno(t.kind) }, i);
+    if (iss){
+      const stroke = iss.key === "bad" ? "var(--bad)" : "var(--warn)";
+      if (cfg.shape === "circle" || cfg.shape === "token")
+        g(gg, "circle", { r:Math.min(b.w, b.h) / 2 + 2, fill:"none", stroke, "stroke-width":3 });
+      else
+        g(gg, "rect", { x:-b.w/2 - 2, y:-b.h/2 - 2, width:b.w + 4, height:Math.max(b.h, 8) + 4, rx:8,
+                        fill:"none", stroke, "stroke-width":3 });
     }
     if (selIs("terr", t.tid)){
       g(gg, "rect", { x:-b.w/2 - 5, y:-b.h/2 - 5, width:b.w + 10, height:b.h + 10, fill:"none",
@@ -1544,7 +1527,7 @@ function drawBoard(){
         g(hh, "rect", { x:hx - 3.4, y:hy - 3.4, width:6.8, height:6.8, fill:"var(--accent)" });
       }
     }
-  }
+  });
 
   /* ---- il piano dei bersagli ----
      Un pezzo piccolo, a tavolo intero, e' largo tre pixel: prenderlo
