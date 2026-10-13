@@ -46,7 +46,8 @@ export const COLONNE = ["sinistra", "centro-sinistra", "centro", "centro-destra"
 export const PIANO_FISSO = Object.freeze({ carica: 0.5, marcia: 14, sfida: 0.2, tieniTiro: true,
                                            unisci: true, scarto: 0, colonne: null,
                                            schieraPrimo: true, muoviPrimo: true,
-                                           distanze: true, rischio: 0.35, danno: 15, esito: 0 });
+                                           distanze: true, rischio: 0.35, danno: 15, esito: 0,
+                                           obiettivi: true });
 
 export function pianoDa(estro){
   if (!estro) return { ...PIANO_FISSO };
@@ -74,6 +75,8 @@ export function pianoDa(estro){
     rischio: Math.round((0.2 + 0.4 * u()) * 100) / 100,
     danno: Math.round(5 + 30 * u()),
     esito: Math.round(-20 + 40 * u()),                       // da quanti punti attesi si carica
+    /* ancora piu' in fondo: si gioca per gli obiettivi? */
+    obiettivi: u() < 0.8,
   };
 }
 
@@ -247,6 +250,42 @@ export function agenteEuristico({ nome = "euristica", estro = null, piano: sopra
       const rif = l.find(x => x.id === "riforma");
       if (rif) return { scelta: rif, perche: `${rif.nome} ${rif.why}` };
 
+      /* «Cattiva» e' la mossa che finisce dove il nemico carica facile
+         e la carica costa punti: il gioco delle distanze, qui sotto. */
+      const cattiva = x => x && x.danno != null && x.danno >= piano.danno && x.rischio > piano.rischio;
+
+      /* GLI OBIETTIVI (Battle March pp. 25, 27). Prima l'euristica non li
+         vedeva: andava sempre verso il nemico, e un tesoro lo teneva chi
+         ci passava sopra per caso. Chi ne tiene uno resta dov'e' — le
+         cariche le ha gia' dichiarate nella loro fase, e muoversi vuol
+         dire lasciare dieci punti a ogni fine turno. Chi ne puo' prendere
+         uno in questo turno ci va: all'ultimo turno sempre, prima solo
+         se dove arriva non lo caricano a caro prezzo. Fra piu' obiettivi,
+         prima quello da togliere al nemico, poi quello che vale di piu',
+         poi il piu' vicino. Vengono dopo la riforma: chi ha il nemico sul
+         fianco si gira prima, e girandosi sul centro non lascia il tesoro. */
+      if (piano.obiettivi){
+        const tiene = l.find(x => x.id === "ferma" && x.tiene);
+        if (tiene) return { scelta: tiene, perche: `${tiene.nome} ${tiene.why}` };
+        const prendi = l.filter(x => x.id === "obiettivo" && (opzioni.ultimo || !(piano.distanze && cattiva(x))))
+          .sort((a, b) => (b.ruba ? 1 : 0) - (a.ruba ? 1 : 0) || (b.valore || 0) - (a.valore || 0) ||
+                          (a.pollici || 0) - (b.pollici || 0))[0];
+        if (prendi) return { scelta: prendi, perche: `${prendi.nome} va a prendere ${prendi.dove}: ${prendi.why}` };
+      }
+
+      /* L'ULTIMO TURNO. Avanzare verso il nemico serve a caricarlo il
+         turno dopo, e dopo l'ultimo turno non c'e' niente: chi non tira
+         e non lancia resta dov'e', e non si mette sotto le cariche
+         dell'avversario, che magari muove ancora. Chi ha un'arma o un
+         mago puo' ancora avanzare per arrivare a tiro. */
+      if (opzioni.ultimo){
+        const vano = l.find(x => (x.id === "avanza" || x.id === "marcia" || x.id === "aggira" || x.id === "accosta") &&
+                                 !l.some(y => y.id === "avanza" && y.uid === x.uid && y.spara));
+        const sta = vano && l.find(x => x.id === "ferma" && x.uid === vano.uid);
+        if (sta) return { scelta: sta, perche: `${sta.nome} resta dov'è: è l'ultimo turno, e avanzare verso il nemico ` +
+                                               "servirebbe solo a una carica che non ci sarà" };
+      }
+
       /* MOSSE: si va addosso al nemico. Chi ha un'arma da tiro e ce
          l'ha già a tiro resta fermo, perché chi muove tira peggio. */
       /* Chi ha gia' il nemico a tiro e un'arma che «o si muove o tira»
@@ -287,8 +326,7 @@ export function agenteEuristico({ nome = "euristica", estro = null, piano: sopra
            nemico e lascia di piu' a noi: portata meno rischio. Chi dalla
            carica nemica non perde niente — un'incudine, un mostro contro
            dei goblin — va avanti come prima: farsi caricare li' e' un
-           affare. */
-        const cattiva = x => x && x.danno != null && x.danno >= piano.danno && x.rischio > piano.rischio;
+           affare. `cattiva` sta piu' su, con gli obiettivi. */
         if (piano.distanze && cattiva(a)){
           const alt = l.filter(x => x.uid === a.uid && (x.id === "accosta" || x.id === "ferma") && x.rischio != null &&
                                     x.danno < a.danno)
@@ -434,7 +472,11 @@ Come si ragiona in questo gioco:
   pollice fuori dalla carica nemica e dentro la propria è il cuore del movimento; la mossa «accosta» avanza di meno e
   si ferma dove il rischio scende. Farsi caricare va bene solo a chi da quella carica non perde niente;
 - la magia: ogni incantesimo si tenta una volta per turno, e l'avversario prova a dissolverlo subito;
-  quando dissolvi tu, la sorte si usa una volta sola per turno, e un mago che fa doppio 1 rischia la tabella del fiasco.`;
+  quando dissolvi tu, la sorte si usa una volta sola per turno, e un mago che fa doppio 1 rischia la tabella del fiasco;
+- gli obiettivi (tesori e landmark) danno punti vittoria a ogni fine turno a chi li tiene: la mossa «obiettivo» va a
+  prenderne uno, e il «ferma» di chi ne tiene uno lo dice. Lasciarlo vuol dire regalare quei punti a ogni turno;
+- la situazione dice il turno e quanti ce ne sono: all'ultimo turno una mossa che prepara la carica del turno dopo
+  non vale niente.`;
 
 export function agenteGemini({ apiKey, model = "gemini-3.6-flash", fetchFn = null,
                                nome = "Gemini", riserva = null, onError = null,

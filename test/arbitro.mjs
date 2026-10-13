@@ -356,9 +356,14 @@ const conScheda = (l, units) => ({ ...l, prep: { general: null, bsb: null, note:
      dell'Oddnob non arriva: il lancio vero si chiede alle tre partite
      insieme. Cosi' anche il dissolvimento: da quando la ruota si paga
      (p. 124) col seme 3 l'Oddnob fa 8 contro 9, e non c'e' niente da
-     dissolvere. */
+     dissolvere. Da quando l'euristica gioca gli obiettivi il landmark
+     sotto il monolite tira tutti al centro, e col seme 3 i Lizardmen
+     spariscono al terzo turno con lo Skink Priest che non ha mai avuto
+     un bersaglio a portata: i semi sono diventati 4, 6 e 7, in cui i
+     maghi lanciano e si dissolve (con 1, 2 e 3 le tre partite insieme
+     facevano un lancio solo). */
   let lanci = 0, dissolti = 0;
-  for (const s of [1, 2, 3]){
+  for (const s of [4, 6, 7]){
     seme(s);
     const G = AR.newBattle({ A: L1, B: L2, scenario: 'bm-monolite', magia: M });
     let offerti = 0;
@@ -2882,7 +2887,13 @@ console.log('\nil muro che chiude la strada, e come lo si aggira (p. 270)');
 
   /* l'euristica la sceglie: è la riga che prima non c'era, e senza la
      quale «aggira» resterebbe in elenco senza che nessuno la prenda */
-  const euro = AG.agenteEuristico({ nome: 'prova' });
+  /* il monolite di questo scenario e' anche il landmark (Battle March
+     p. 25): chi gioca gli obiettivi lo tiene da li', ed e' giusto. La
+     prova dell'aggiramento si fa con un piano che non li gioca. */
+  const tieni = await AG.agenteEuristico({ nome: 'prova' }).scegli({ opzioni: AR.options(M) });
+  ok('chi gioca gli obiettivi resta sotto il monolite: tiene il landmark',
+     tieni.scelta.id === 'ferma' && tieni.scelta.tiene === 'il landmark');
+  const euro = AG.agenteEuristico({ nome: 'prova', piano: { obiettivi: false } });
   const scelta = await euro.scegli({ opzioni: AR.options(M) });
   ok('l euristica preferisce aggirare invece di andare addosso al muro',
      scelta.scelta.id === 'aggira');
@@ -3881,6 +3892,156 @@ console.log('\ngli schermagliatori in mischia: si serrano e poi si sciolgono (pp
   ok('gli Skink che caricano si serrano contro il fronte degli Orchi, sei in prima fila',
      !!sk4.serrata && sk4.frontage === 6 && AR.ingaggiata(G4, sk4) &&
      AR.interni.facciaToccata(G4, or4, sk4) === 'fronte');
+}
+
+console.log('\nil contatto spigolo contro spigolo: vince il lato che tocca di più (pp. 101, 152)');
+{
+  /* la partita Uomini Bestia contro Nani, seme 7: i Thunderers (dieci
+     di fronte) caricano col fronte il fianco degli Ungor e lo toccano
+     per 14 mm vicino allo spigolo di dietro. Prima risultavano presi di
+     fianco loro: un punto a tutti e due e i ranghi tolti a chi caricava. */
+  const G = nuova();
+  const orchi = metti(G, uid(G, 505), 600, 600, 270);          // guardano a sinistra: il fianco è in alto
+  orchi.frontage = 10;
+  const tg = metti(G, uid(G, 6), 0, 0, 180);
+  tg.frontage = 10;
+  const bo = AR.boxOf(orchi, G.units), bt = AR.boxOf(tg, G.units);
+  /* il fronte della Guardia sul fianco alto degli orchi, 14 mm prima del loro spigolo di dietro */
+  tg.x = 600 + bo.h / 2 - 14 + bt.w / 2; tg.y = 600 - bo.w / 2 - bt.h / 2;
+  ok('le due unità si toccano', AR.interni.filaCheCombatte(G, tg, [orchi]) !== null ||
+     AR.interni.facciaToccata(G, orchi, tg) !== null);
+  ok('gli Orchi sono presi di fianco', AR.interni.facciaToccata(G, orchi, tg) === 'fianco');
+  ok('e la Guardia li tocca col fronte: non è presa di fianco lei', AR.interni.facciaToccata(G, tg, orchi) === 'fronte');
+  AR.interni.terrenoInMischia(G, { A: [tg], B: [orchi] });
+  ok('chi ha caricato non si scompagina', !tg.disruptedFianco &&
+     !G.log.some(r => /^Temple Guard è presa di fianco/.test(r.text)));
+  ok('chi è stato caricato sì', orchi.disruptedFianco &&
+     G.log.some(r => /^Orc Mobs è presa di fianco da Temple Guard/.test(r.text)));
+
+  /* due turni dopo: girati tutti e due a sinistra, il fronte della
+     Guardia tocca per 8 mm il retro degli Orchi. Prima era il fianco
+     della Guardia a risultare toccato, e il punto lo prendevano gli Orchi. */
+  const G2 = nuova();
+  const or2 = metti(G2, uid(G2, 505), 600, 600, 270);
+  or2.frontage = 10;
+  const tg2 = metti(G2, uid(G2, 6), 0, 0, 270);
+  tg2.frontage = 10;
+  const b2 = AR.boxOf(or2, G2.units), t2 = AR.boxOf(tg2, G2.units);
+  tg2.x = 600 + b2.h / 2 + t2.h / 2; tg2.y = 600 - b2.w / 2 + 8 - t2.w / 2;
+  ok('alle spalle per uno spigolo: gli Orchi sono presi alle spalle', AR.interni.facciaToccata(G2, or2, tg2) === 'retro');
+  ok('e la Guardia li tocca col fronte', AR.interni.facciaToccata(G2, tg2, or2) === 'fronte');
+
+  /* e una carica piena sul fianco resta un fianco, anche se tocca lo spigolo del fronte */
+  const G3 = nuova();
+  const or3 = metti(G3, uid(G3, 505), 600, 600, 180);
+  const tg3 = metti(G3, uid(G3, 6), 380, 600, 90);
+  aContattoDi(G3, tg3, or3);
+  ok('una carica allineata sul fianco è un fianco', AR.interni.facciaToccata(G3, or3, tg3) === 'fianco' &&
+     AR.interni.facciaToccata(G3, tg3, or3) === 'fronte');
+}
+
+console.log('\nle unità che si accorciano tornano a contatto (Shrinking Units, p. 158)');
+{
+  /* il Gor Herd della partita col seme 7: perde la fila di dietro, e i
+     Thunderers che gli stavano alle spalle restano a 0,6″ e lo
+     ricaricano al turno dopo */
+  const G = nuova();
+  const orchi = metti(G, uid(G, 505), 600, 600, 0);
+  orchi.frontage = 5;
+  const bo = AR.boxOf(orchi, G.units);
+  const tg = metti(G, uid(G, 6), 600, 0, 0);                   // guardano in su, verso la coda degli orchi
+  tg.y = 600 + bo.h / 2 + AR.boxOf(tg, G.units).h / 2;
+  ok('la Guardia sta alle spalle degli Orchi', AR.interni.facciaToccata(G, orchi, tg) === 'retro');
+  const rot = tg.rot, y0 = tg.y;
+  AR.interni.perdite(G, orchi, 5);
+  const calo = bo.h - AR.boxOf(orchi, G.units).h;
+  ok(`gli Orchi perdono la fila di dietro (${calo} mm)`, calo > 20);
+  ok('e la Guardia si accosta: di nuovo alle spalle', AR.interni.facciaToccata(G, orchi, tg) === 'retro');
+  ok('del minimo che serve, dritta e senza girarsi', tg.rot === rot && tg.x === 600 &&
+     Math.abs((y0 - tg.y) - (calo - MM * 0.05)) < 0.5);
+  ok('e il registro lo dice con la pagina', G.log.some(r => r.page === 158 &&
+     /^Temple Guard si accosta di 1.1″ a Orc Mobs: le perdite li avevano staccati/.test(r.text)));
+
+  /* chi si accosterebbe lasciando un altro nemico non si muove: si
+     accosta allora chi ha perso i modelli, se è libero */
+  const G2 = nuova();
+  const or2 = metti(G2, uid(G2, 505), 600, 600, 0);
+  or2.frontage = 5;
+  const b2 = AR.boxOf(or2, G2.units);
+  const tg2 = metti(G2, uid(G2, 6), 600, 0, 0);
+  const ht = AR.boxOf(tg2, G2.units).h;
+  tg2.y = 600 + b2.h / 2 + ht / 2;
+  const ng = metti(G2, uid(G2, 504), 600, 0, 180);             // altri goblin, alle spalle della Guardia
+  ng.y = tg2.y + ht / 2 + AR.boxOf(ng, G2.units).h / 2;
+  const yg = tg2.y;
+  AR.interni.perdite(G2, or2, 5);
+  ok('la Guardia stretta fra due nemici resta dov’è', tg2.y === yg);
+  ok('e sono gli Orchi a tornarle addosso', AR.interni.facciaToccata(G2, or2, tg2) === 'retro' &&
+     G2.log.some(r => /^Orc Mobs si accosta di [\d.]+″ a Temple Guard/.test(r.text)));
+}
+
+console.log('\nl euristica gioca gli obiettivi e sa quando è l ultimo turno (Battle March pp. 25, 27)');
+{
+  /* nella partita col seme 7 i tesori li teneva chi ci passava per
+     caso, e all'ultimo turno il Ghorgon ne ha lasciato uno per una
+     carica che non sarebbe mai venuta */
+  const G = nuova();
+  const tesoro = G.sc.terrain.find(t => t.kind === 'treasure');
+  const verso = tesoro.y * MM < G.table.h / 2 ? 1 : -1;        // dalla parte del centro del tavolo
+  const tg = metti(G, uid(G, 6), tesoro.x * MM, tesoro.y * MM + verso * 6 * MM, verso > 0 ? 0 : 180);
+  const orchi = metti(G, uid(G, 505), tesoro.x * MM, tesoro.y * MM - verso * 14 * MM, verso > 0 ? 180 : 0);  // davanti, oltre il tesoro
+  G.army = 'A'; G.casella = casella('mosse');
+  const o = AR.options(G);
+  const prendi = o.list.find(x => x.id === 'obiettivo' && x.uid === tg.uid);
+  ok('a sei pollici dal tesoro si offre di andarlo a prendere', !!prendi && prendi.valore === 10 &&
+     prendi.dove === 'un tesoro' && /lo prende — 10 punti vittoria a ogni fine turno/.test(prendi.why));
+  ok('e non è l ultimo turno', o.ultimo === false && o.turno === G.turno && o.rounds === 5);
+  const sc = await AG.agenteEuristico({}).scegli({ opzioni: o, stato: G });
+  ok('l euristica ci va invece di andare verso il nemico', sc.scelta && sc.scelta.id === 'obiettivo' && sc.scelta.uid === tg.uid);
+  const r = AR.apply(G, sc.scelta);
+  ok('e arrivata lo tiene', r.ok && AR.obiettivi(G).some(x => x.kind === 'treasure' && x.army === 'A' && x.uid === tg.uid));
+
+  /* il turno dopo: chi lo tiene resta */
+  tg.moved = null;
+  const o2 = AR.options(G);
+  const sta = o2.list.find(x => x.id === 'ferma' && x.uid === tg.uid);
+  ok('chi tiene il tesoro se lo sente dire', !!sta && sta.tiene === 'un tesoro' && sta.valore === 10 &&
+     /^resta dov'è: tiene un tesoro, che vale 10 punti vittoria/.test(sta.why));
+  ok('e non gli si offre di andarlo a prendere di nuovo', !o2.list.some(x => x.id === 'obiettivo' && x.uid === tg.uid));
+  const sc2 = await AG.agenteEuristico({}).scegli({ opzioni: o2, stato: G });
+  ok('l euristica lo tiene: resta dov è', sc2.scelta && sc2.scelta.id === 'ferma' && sc2.scelta.uid === tg.uid);
+  ok('e con un piano che non gioca gli obiettivi va per la sua strada',
+     (await AG.agenteEuristico({ piano: { obiettivi: false } }).scegli({ opzioni: o2, stato: G })).scelta.id !== 'ferma');
+
+  /* un tesoro del nemico si può rubare: basta stargli più vicino */
+  const G2 = nuova();
+  const t2 = G2.sc.terrain.find(t => t.kind === 'treasure');
+  const v2 = t2.y * MM < G2.table.h / 2 ? 1 : -1;
+  /* gli Orchi col bordo a due pollici dal tesoro da una parte, la
+     Guardia a cinque dall'altra e girata verso di lui */
+  const or2 = metti(G2, uid(G2, 505), 0, 0, v2 > 0 ? 0 : 180);
+  or2.x = t2.x * MM; or2.y = t2.y * MM - v2 * (2 * MM + AR.boxOf(or2, G2.units).h / 2);
+  const tg2 = metti(G2, uid(G2, 6), 0, 0, v2 > 0 ? 0 : 180);
+  tg2.x = t2.x * MM; tg2.y = t2.y * MM + v2 * (5 * MM + AR.boxOf(tg2, G2.units).h / 2);
+  ok('gli Orchi tengono il tesoro', AR.obiettivi(G2).some(x => x.army === 'B' && x.uid === or2.uid));
+  G2.army = 'A'; G2.casella = casella('mosse');
+  const ruba = AR.options(G2).list.find(x => x.id === 'obiettivo' && x.uid === tg2.uid);
+  ok('e la Guardia glielo può portare via', !!ruba && ruba.ruba === 'Orc Mobs' && / e lo prende a Orc Mobs/.test(ruba.why));
+
+  /* l'ultimo turno: avanzare verso il nemico non serve a niente */
+  const G3 = nuova();
+  const tg3 = metti(G3, uid(G3, 6), 300, 450, 0);
+  metti(G3, uid(G3, 505), 300, 100, 180);
+  G3.turno = G3.rounds; G3.army = 'A'; G3.casella = casella('mosse');
+  const o3 = AR.options(G3);
+  ok('all ultimo turno le opzioni lo dicono', o3.ultimo === true);
+  ok('e l avanzata verso il nemico c è ancora', o3.list.some(x => x.id === 'avanza' && x.uid === tg3.uid));
+  const sc3 = await AG.agenteEuristico({}).scegli({ opzioni: o3, stato: G3 });
+  ok('ma l euristica resta dov è, e dice perché', sc3.scelta && sc3.scelta.id === 'ferma' && sc3.scelta.uid === tg3.uid &&
+     /è l'ultimo turno/.test(sc3.perche));
+  G3.turno = G3.rounds - 1;
+  const sc4 = await AG.agenteEuristico({}).scegli({ opzioni: AR.options(G3), stato: G3 });
+  ok('il turno prima invece avanza', sc4.scelta && sc4.scelta.uid === tg3.uid && ['avanza', 'marcia'].includes(sc4.scelta.id));
 }
 
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');

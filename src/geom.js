@@ -100,6 +100,25 @@ export function distPointToBox(pt, b, circle = false){
   return Math.hypot(ox, oy);
 }
 
+/* Quanto di un segmento sta a `toll` o meno da un box: la sua parte
+   dentro il box allargato di `toll` per lato, tagliata con Liang-Barsky
+   nel riferimento del box. Agli spigoli il box allargato ha gli angoli
+   vivi invece che tondi: un errore di qualche decimo di millimetro, su
+   misure che servono a dire quale faccia si tocca di piu'. */
+export function segmentNearBox(p, q, b, toll = 0){
+  const a = toLocal(p, b), c = toLocal(q, b);
+  const dx = c[0] - a[0], dy = c[1] - a[1];
+  const hx = b.w / 2 + toll, hy = b.h / 2 + toll;
+  let t0 = 0, t1 = 1;
+  for (const [pp, qq] of [[-dx, a[0] + hx], [dx, hx - a[0]], [-dy, a[1] + hy], [dy, hy - a[1]]]){
+    if (Math.abs(pp) < 1e-12){ if (qq < 0) return 0; continue; }
+    const r = qq / pp;
+    if (pp < 0){ if (r > t1) return 0; if (r > t0) t0 = r; }
+    else { if (r < t0) return 0; if (r < t1) t1 = r; }
+  }
+  return Math.max(0, t1 - t0) * Math.hypot(dx, dy);
+}
+
 /* il segmento attraversa il poligono? Serve alla linea di vista. */
 export function segIntersectsPoly(p, q, poly){
   for (let i = 0; i < poly.length; i++)

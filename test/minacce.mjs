@@ -106,8 +106,10 @@ console.log('\nil gioco delle distanze, nell arbitro e nell euristica');
      !!ac && ac.pollici < av.pollici && ac.rischio <= av.rischio - 0.15 && ac.fino === ac.pollici);
   /* con la soglia del danno sotto quello che costerebbe: il piano fisso
      ne tollera 15, e gli Skink qui ne perderebbero una dozzina */
+  /* il tesoro centrale di bm-strada sta in mezzo, a (24, 18): l'opzione
+     «obiettivo» qui e' un'altra prova, e la si toglie */
   const ag = AG.agenteEuristico({ piano: { danno: 5 } });
-  const r = await ag.scegli({ opzioni: { player: 'A', list: o.filter(x => x.uid === sk.uid || x.id === 'avanti') } });
+  const r = await ag.scegli({ opzioni: { player: 'A', list: o.filter(x => (x.uid === sk.uid && x.id !== 'obiettivo') || x.id === 'avanti') } });
   ok(`l euristica non si mette dove la caricano: sceglie «${r.scelta.id}»`, r.scelta.id === 'accosta' || r.scelta.id === 'ferma');
   const prima = sk.y;
   const esito = AR.apply(G, ac);
@@ -123,7 +125,7 @@ console.log('\nil gioco delle distanze, nell arbitro e nell euristica');
   bas.placed = true; bas.x = 24 * MM; bas.y = 26 * MM; bas.rot = 0;
   orc.placed = true; orc.x = 24 * MM; orc.y = 10 * MM; orc.rot = 180;
   G2.casella = AR.CASELLE.findIndex(c => c.id === 'mosse'); G2.army = 'A';
-  const o2 = AR.options(G2).list.filter(x => x.uid === bas.uid || x.id === 'avanti');
+  const o2 = AR.options(G2).list.filter(x => (x.uid === bas.uid && x.id !== 'obiettivo') || x.id === 'avanti');
   const av2 = o2.find(x => x.id === 'avanza');
   const r2 = await AG.agenteEuristico({ piano: { danno: 5 } }).scegli({ opzioni: { player: 'A', list: o2 } });
   ok(`chi dalla carica non perde niente va avanti lo stesso (danno ${av2 && av2.danno}: «${r2.scelta.id}»)`,

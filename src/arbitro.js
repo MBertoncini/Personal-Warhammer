@@ -35,7 +35,7 @@
  */
 
 import { MM, inch } from './util.js';
-import { boxCorners, polyDistance, polysOverlap, pointInRect, distPointToBox, boxRadius, toWorld, toLocal } from './geom.js';
+import { boxCorners, polyDistance, polysOverlap, pointInRect, distPointToBox, boxRadius, toWorld, toLocal, segmentNearBox, closestPoints } from './geom.js';
 import * as FM from './formation.js';
 import * as MV from './movement.js';
 import * as CH from './charge.js';
@@ -1087,6 +1087,10 @@ export function opzioniUnione(S, c, { pollici = null } = {}){
      deve      vero se l'unita' e' obbligata a caricare (Frenzy, o il test
                d'Impetuosita' fallito): finche' ne ha una, «basta cariche»
                dichiara per lei la piu' probabile
+     valore    punti vittoria che un obiettivo da' a ogni fine turno; sul
+               «ferma» c'e' solo quando l'unita' ne tiene uno (`tiene`
+               dice quale), sull'«obiettivo» sempre, con `ruba` quando
+               adesso e' del nemico (Battle March p. 27)
    ============================================================ */
 export const CAMPI = Object.freeze({
   primo:    ["cosa", "chi"],
@@ -1098,6 +1102,7 @@ export const CAMPI = Object.freeze({
   accosta:  ["uid", "verso", "dist", "pollici", "fino", "rischio", "danno", "portata"],
   marcia:   ["uid", "verso", "dist", "pollici", "muro", "provaComando", "rischio", "danno", "portata"],
   ferma:    ["uid", "dist"],
+  obiettivo: ["uid", "dove", "dist", "pollici", "marcia", "valore"],
   aggira:   ["uid", "verso", "pollici"],
   tira:     ["uid", "target", "dist", "attesa"],
   bombarda: ["uid", "target", "dist", "attesa"],
@@ -1144,7 +1149,12 @@ export function options(S){
   }
 
   const c = CASELLE[S.casella];
-  const base = { player: S.army, fase: c.fase, casella: c.id, page: c.page, what: c.what };
+  /* l'ultimo turno lo deve sapere chi sceglie: una mossa che prepara
+     la carica del turno dopo, quando il turno dopo non c'e', vale zero
+     — e il Ghorgon della partita col seme 7 ha lasciato un tesoro per
+     farla */
+  const base = { player: S.army, fase: c.fase, casella: c.id, page: c.page, what: c.what,
+                 turno: S.turno, rounds: S.rounds || null, ultimo: !!(S.rounds && S.turno >= S.rounds) };
 
   /* una reazione alla carica sospesa tocca a chi la subisce, e viene
      prima di ogni altra cosa (p. 120) */
@@ -1939,10 +1949,15 @@ function opzioniMossa(S){
     if (d0 <= 1.05){
       /* girarsi o riordinarsi sul posto invece si puo' */
       out.push(...opzioniManovra(S, u, t0, move).filter(x => x.id !== "lato"));
-      out.push({ id:"ferma", uid: u.uid, nome: u.name, dist: d0, why: `resta dov'è: ${t0.name} è a ${d0}″`, page: 122 });
+      const tn = tieneDi(S, u);
+      out.push({ id:"ferma", uid: u.uid, nome: u.name, dist: d0, ...(tn || {}),
+                 why: `resta dov'è: ${t0.name} è a ${d0}″` + testoTiene(tn), page: tn ? 27 : 122 });
       continue;
     }
     const bloccate = new Set();
+    /* chi avanzando puo' ancora tirare o lanciare nel turno: all'ultimo
+       turno e' la sola ragione per avanzare senza caricare */
+    const spara = CB.rangedWeapons(u).length > 0 || !!u.mago || capiDi(S, u).some(c => c.mago && !c.dead);
     for (const [k, t] of bersagliDellaMossa(S, u, t0).entries()){
       const d = distanza(S, u, t);
       /* la ruota si paga (p. 124), e la dice l'opzione: un reggimento
@@ -1975,6 +1990,7 @@ function opzioniMossa(S){
       const fermoDavvero = v => !!v && v.pollici < 0.05 && Math.abs(v.giro || 0) < 0.5;
       if (!fermoDavvero(va)) out.push({ id:"avanza", uid: u.uid, verso: t.uid, nome: u.name, contro: t.name,
                  dist: d, pollici: r1(va ? va.pollici : pa.resta), muro: !!(va && va.muro), ...ga.campi,
+                 ...(spara ? { spara: true } : {}),
                  why: `${t.name} è a ${d}″: ${testoStrada(va, pa, move)}` + (mv.why ? ` (${mv.why})` : "") +
                       muroTesto(va) + ga.testo,
                  page: va && va.muro ? 270 : pa.costo ? 124 : 122 });
@@ -2012,10 +2028,19 @@ function opzioniMossa(S){
       const muro = (va && va.muro) || (vm && vm.muro);
       if (muro && !k) out.push(...opzioniAggiramento(S, u, t, muro, Math.max(va ? va.pollici : 0, vm ? vm.pollici : 0)));
     }
+    out.push(...opzioniObiettivo(S, u, t0, move));
     out.push(...opzioniManovra(S, u, t0, move, { bloccata: bloccate.has(t0.uid) }));
     const gf = guardia(S, u, boxOf(u, S.units), caricatori(S, altro(u.army)), t0, boxOf(t0, S.units), move);
     const rf = restareFermo(S, u, d0);
-    out.push({ id:"ferma", uid: u.uid, nome: u.name, dist: d0, ...gf.campi, ...rf, why: rf.why + gf.testo, page: 138 });
+    const tn = tieneDi(S, u);
+    /* chi tiene un obiettivo resta per quello, e il tiro viene dopo:
+       «chi non muove spara meglio» detto a un Ghorgon era una frase
+       vuota */
+    const perche = !tn ? rf.why
+      : `resta dov'è: tiene ${tn.tiene}, che vale ${tn.valore} punti vittoria a ogni fine turno (Battle March p. 27)` +
+        (rf.tieniIlTiro ? `, e ${rf.why.replace(/^resta dov'è: /, "")}` : "");
+    out.push({ id:"ferma", uid: u.uid, nome: u.name, dist: d0, ...gf.campi, ...rf, ...(tn || {}),
+               why: perche + gf.testo, page: tn ? 27 : 138 });
   }
   /* i capi escono prima che il reggimento si muova (p. 207): in fondo
      all'elenco, perche' e' la mossa che si fa di rado */
@@ -2113,6 +2138,89 @@ const perMarcia = (S, u) => inColonna(S, u) ? 3 : 2;
    soli il conto diceva «niente a tiro»: avanzava verso di loro, perdeva
    il tiro e si faceva caricare. `obbligato` dice che muoversi costa il
    turno intero, e chi sceglie a macchina non lo baratta con la posizione. */
+/* ---- gli obiettivi nelle mosse (Battle March pp. 25, 27) ----
+   Prima le mosse andavano solo verso un nemico: i tesori li teneva chi
+   ci passava sopra per caso, e il Ghorgon della partita col seme 7 ne
+   ha lasciato uno all'ultimo turno per mettersi a portata di una carica
+   che non sarebbe mai venuta. Adesso l'arbitro dice a chi sceglie due
+   cose: chi un obiettivo lo tiene adesso (`tiene` sul «ferma»), e chi ci
+   puo' arrivare in questo turno e prenderlo («obiettivo»). Chi lo tiene
+   lo dice il conto di fine turno (`obiettivi`), rifatto con il pezzo
+   gia' nel posto d'arrivo: entro tre pollici, Forza d'Unita' 5, e il
+   piu' vicino. */
+const pezziObiettivo = S => {
+  const b = VC.bonuses(S.formato || VC.formatFor(S.sc));
+  /* `i` e' il posto nell'elenco di `obiettivi`, che conta solo i pezzi obiettivo */
+  return (S.sc.terrain || []).filter(t => OBIETTIVI[t.kind])
+    .map((t, i) => ({ t, i, val: OBIETTIVI[t.kind] === "landmark" ? b.landmark : b.treasure }))
+    .filter(x => x.val > 0);
+};
+const nomeObiettivo = t => OBIETTIVI[t.kind] === "landmark" ? "il landmark" : "un tesoro";
+function tieneDi(S, u){
+  const pezzi = pezziObiettivo(S);
+  if (!pezzi.length) return null;
+  const ob = obiettivi(S);
+  const miei = pezzi.filter(x => ob[x.i] && ob[x.i].uid === u.uid);
+  if (!miei.length) return null;
+  return { tiene: miei.map(x => nomeObiettivo(x.t)).join(" e "), valore: miei.reduce((s, x) => s + x.val, 0) };
+}
+const testoTiene = tn => tn ? `; tiene ${tn.tiene}, che vale ${tn.valore} punti vittoria a ogni fine turno (Battle March p. 27)` : "";
+/* quanto manca, in pollici, dal bordo dell'unita' al bordo del pezzo:
+   la stessa misura del conto di fine turno */
+function dalPezzo(S, u, t, box = boxOf(u, S.units)){
+  const raggio = ((t.w ?? (TERRAIN[t.kind] || {}).w ?? 0) * MM) / 2;
+  return Math.max(0, distPointToBox([t.x * MM, t.y * MM], box) - raggio) / MM;
+}
+function opzioniObiettivo(S, u, t0, move){
+  if (u.fled || usConCapi(S, u) < OBJECTIVE_US || stupida(S, u)) return [];
+  const pezzi = pezziObiettivo(S);
+  if (!pezzi.length) return [];
+  const prima = obiettivi(S);
+  const out = [];
+  const marcia = !bandiera(u, "noMarch") && !macchina(u);
+  const lontano = move * (marcia ? perMarcia(S, u) : 1) + OBJECTIVE_RANGE;
+  for (const { t, i, val } of pezzi){
+    const p0 = prima[i] || {};
+    if (p0.army === u.army) continue;                           // e' gia' nostro
+    const d = dalPezzo(S, u, t);
+    if (d > lontano + 0.5) continue;
+    const meta = [t.x * MM, t.y * MM];
+    /* prima il passo piu' corto che basta, poi fin sopra: chi e' gia'
+       dentro la portata ma piu' lontano del nemico deve avvicinarsi a
+       lui piu' di lui */
+    const tratti = [...new Set([r1(Math.max(0, d - OBJECTIVE_RANGE + 0.5)), r1(d)])].filter(x => x > 0.05);
+    let scelta = null;
+    for (const m of marcia ? [false, true] : [false]){
+      for (const fino of tratti){
+        const v = stradaVera(S, u, meta, { marcia: m, fino });
+        if (!v || v.pollici < 0.05) continue;
+        const x0 = u.x, y0 = u.y, rot0 = u.rot;
+        posa(S, u, v.x, v.y, v.rot);
+        const dopo = obiettivi(S)[i] || {};
+        posa(S, u, x0, y0, rot0);
+        if (dopo.uid === u.uid){ scelta = { v, m, fino }; break; }
+      }
+      if (scelta) break;
+    }
+    if (!scelta) continue;
+    const { v, m, fino } = scelta;
+    const ga = t0 ? guardia(S, u, { ...boxOf(u, S.units), x: v.x, y: v.y, rot: v.rot },
+                            caricatori(S, altro(u.army)), t0, boxOf(t0, S.units), move) : { campi: {}, testo: "" };
+    const ruba = p0.army && p0.army !== u.army ? p0.by : "";
+    const nome = nomeObiettivo(t);
+    out.push({ id:"obiettivo", uid: u.uid, nome: u.name, dove: nome, punto: meta, fino, marcia: m,
+               dist: r1(d), pollici: v.pollici, valore: val, ...(ruba ? { ruba } : {}), ...ga.campi,
+               why: `${nome} è a ${r1(d)}″: ${m ? "marcia" : "avanza"} di ${v.pollici}″ e lo prende` +
+                    (ruba ? ` a ${ruba}` : p0.conteso ? ", che adesso è conteso" : "") +
+                    ` — ${val} punti vittoria a ogni fine turno in cui lo tiene (Battle March p. 27)` +
+                    (m && t0 && distanza(S, u, t0) <= CH.MARCH_WATCH && !vola(u)
+                      ? `, ma a ${CH.MARCH_WATCH}″ da un nemico per marciare serve un test di Comando (p. 123)` : "") +
+                    ga.testo,
+               page: 27 });
+  }
+  return out;
+}
+
 function restareFermo(S, u, d){
   const arma = CB.rangedWeapons(u)[0];
   if (!arma) return { why: "resta dov'è: chi non muove spara meglio (p. 138)" };
@@ -3464,6 +3572,9 @@ const GESTI = {
      attaccato al muro per girarsi ci scivola accanto, ed e' il passo di
      lato di p. 125 — la stessa manovra, con il perche' scritto meglio. */
   aggira: (S, a) => a.lato ? manovra(S, { ...a, id:"lato" }) : mossa(S, a, !!a.marcia),
+  /* andare a prendere un obiettivo e' avanzare verso un punto, come
+     l'aggiramento: il punto e il tratto li porta l'opzione */
+  obiettivo: (S, a) => !a.punto ? no("obiettivo vuole il punto dove andare") : mossa(S, a, !!a.marcia),
   passi:    (S, a) => passi(S, a),
   gira:     (S, a) => manovra(S, a),
   riforma:  (S, a) => manovra(S, a),
@@ -5180,8 +5291,10 @@ function perdite(S, u, kills, left = null, { zitto = false } = {}){
     const prima = usConCapi(S, u);
     const pezzo = isJoined(u) ? byUid(S, FM.joinedHost(u)) : u;
     const fondo = pezzo && pezzo.placed ? layoutOf(pezzo, S.units).h : null;
+    const toccati = pezzo && onBoard(pezzo) ? aContatto(S, pezzo, nemiciDi(S, pezzo)) : [];
     u.lost = Math.min(u.models, (u.lost || 0) + kills);
     if (fondo != null && !pezzo.dead && alive(pezzo) > 0) tieniIlFronte(S, pezzo, fondo);
+    if (toccati.length && !pezzo.dead && alive(pezzo) > 0) richiudi(S, pezzo, toccati);
     if (alive(u) <= 0){
       /* i capi restano in piedi, da soli, dove stava il reggimento: ognuno
          al suo posto nella fila. Prima restavano tutti nel centro, uno
@@ -5236,6 +5349,53 @@ function tieniIlFronte(S, u, prima){
   if (!(Math.abs(d) > 0.01)) return;
   const a = (u.rot || 0) * Math.PI / 180;
   posa(S, u, u.x + d * Math.sin(a), u.y - d * Math.cos(a));
+}
+
+/* SHRINKING UNITS (p. 158): «The removal of casualties may cause units
+   engaged with one another to no longer be in base contact. In such
+   cases, move the units by the smallest amount possible to bring them
+   back into base contact. This move cannot be used to alter facing».
+   `tieniIlFronte` tiene fermo il fronte, ma chi tocca il fianco vicino
+   alla coda o il retro resta staccato quando la fila di dietro sparisce.
+   Nella partita Uomini Bestia contro Nani (seme 7) i Thunderers alle
+   spalle del Gor Herd si sono trovati a 0,6″ dopo le perdite, e al turno
+   dopo lo hanno ricaricato alle spalle con una carica nuova.
+
+   Si accosta di preferenza il nemico, con una traslazione dritta lungo
+   la distanza piu' corta, senza girarlo; se non si puo' — c'e' qualcuno
+   in mezzo, o muoversi lo staccherebbe da un altro nemico — si accosta
+   chi ha perso i modelli. Se non si puo' nessuno dei due, i due non
+   combattono piu' fra loro (No More Foes, p. 158). */
+function richiudi(S, u, prima){
+  for (const e of prima){
+    if (!onBoard(e) || e.fled || !onBoard(u) || u.fled) continue;
+    if (aContatto(S, u, [e]).length) continue;
+    let fatto = null;
+    for (const [c, p] of [[e, u], [u, e]]){
+      const altri = aContatto(S, c, nemiciDi(S, c).filter(o => o !== p));
+      const cp = closestPoints(cornersOf(c, S.units), cornersOf(p, S.units));
+      const via = cp.d - MM * 0.05;
+      if (!(via > 0) || cp.d > MM * 2) continue;
+      const dx = (cp.b[0] - cp.a[0]) / cp.d * via, dy = (cp.b[1] - cp.a[1]) / cp.d * via;
+      const box = { ...boxOf(c, S.units), x: c.x + dx, y: c.y + dy };
+      if (ingombro(S, c, box, { unPollice: false })) continue;
+      const x0 = c.x, y0 = c.y;
+      posa(S, c, box.x, box.y, c.rot);
+      if (!aContatto(S, c, [p]).length || aContatto(S, c, altri).length < altri.length){
+        posa(S, c, x0, y0, c.rot);
+        continue;
+      }
+      fatto = { c, p, mm: via };
+      break;
+    }
+    S.cache = null;
+    if (fatto)
+      say(S, `${fatto.c.name} si accosta di ${r1(inch(fatto.mm))}″ a ${fatto.p.name}: le perdite li avevano staccati, ` +
+             `e si torna a contatto senza girarsi (p. 158).`, { army: fatto.c.army, page: 158 });
+    else
+      say(S, `${u.name} e ${e.name} non si toccano più: le perdite li hanno staccati e non c'è modo di riaccostarli, ` +
+             `e fra loro non si combatte più (p. 158).`, { army: u.army, page: 158 });
+  }
 }
 
 /* I capi di un reggimento caduto, ognuno al suo posto nella fila e
@@ -7046,26 +7206,40 @@ function filaCheCombatte(S, u, loro){
 }
 
 /* QUALE FACCIA DI `chi` TOCCA `da`: «fronte», «fianco», «retro», o null
-   se non la tocca affatto. Si guarda il contatto vero — nove punti per
-   lato, e vince il lato con piu' punti addosso all'altro — e non il
-   centro: un reggimento largo dieci basette sul fianco corto di una
-   cavalleria ha il centro spostato, e `faceTowards` lo vedeva davanti.
-   Serve al fianco del risultato (p. 152) e allo scompiglio (p. 101), che
-   valgono per tutto il tempo in cui si e' ingaggiati da quella parte, non
-   solo nel turno della carica. */
-function facciaToccata(S, chi, da){
-  const b = boxOf(chi, S.units), bd = boxOf(da, S.units);
+   se non la tocca affatto. Si guarda il contatto vero — quanti
+   millimetri di ogni lato stanno addosso all'altro, e vince il lato piu'
+   lungo — e non il centro: un reggimento largo dieci basette sul fianco
+   corto di una cavalleria ha il centro spostato, e `faceTowards` lo
+   vedeva davanti. Serve al fianco del risultato (p. 152) e allo
+   scompiglio (p. 101), che valgono per tutto il tempo in cui si e'
+   ingaggiati da quella parte, non solo nel turno della carica.
+
+   Prima i lati si provavano a nove punti ciascuno, e nove punti su un
+   fronte di 250 mm stanno a 25 mm l'uno dall'altro, su un fianco di 50
+   a 5: due reggimenti che si toccano spigolo contro spigolo vincevano
+   il lato corto. Nella partita Uomini Bestia contro Nani (seme 7) i
+   Thunderers caricavano il fianco degli Ungor col fronte, 14 mm di
+   contatto, e risultavano «presi di fianco» loro: un punto a tutti e
+   due e i ranghi tolti a chi aveva caricato. Due turni dopo stavano
+   alle spalle degli Ungor, e il punto del fianco lo prendevano gli
+   Ungor. */
+const SEGMENTI_DEI_LATI = [["fronte", [-1, -1], [1, -1]], ["retro", [-1, 1], [1, 1]],
+                           ["fianco sinistro", [-1, -1], [-1, 1]], ["fianco destro", [1, -1], [1, 1]]];
+function contattoDeiLati(b, bd){
   const toll = MM * 0.3;
-  const conta = { fronte: 0, retro: 0, fianco: 0 };
-  const lati = [["fronte", [-1, -1], [1, -1]], ["retro", [-1, 1], [1, 1]],
-                ["fianco", [-1, -1], [-1, 1]], ["fianco", [1, -1], [1, 1]]];
-  for (const [nome, p, q] of lati)
-    for (let k = 1; k < 10; k++){
-      const t = k / 10;
-      const w = toWorld([(p[0] + (q[0] - p[0]) * t) * b.w / 2, (p[1] + (q[1] - p[1]) * t) * b.h / 2], b);
-      if (distPointToBox(w, bd) <= toll) conta[nome]++;
-    }
-  const lato = Object.keys(conta).reduce((a, k) => conta[k] > conta[a] ? k : a, "fronte");
+  const out = {};
+  for (const [nome, p, q] of SEGMENTI_DEI_LATI)
+    out[nome] = segmentNearBox(toWorld([p[0] * b.w / 2, p[1] * b.h / 2], b),
+                               toWorld([q[0] * b.w / 2, q[1] * b.h / 2], b), bd, toll);
+  return out;
+}
+function facciaToccata(S, chi, da){
+  const lungo = contattoDeiLati(boxOf(chi, S.units), boxOf(da, S.units));
+  const conta = { fronte: lungo.fronte, retro: lungo.retro,
+                  fianco: Math.max(lungo["fianco sinistro"], lungo["fianco destro"]) };
+  /* a pari contatto vince il fronte, come prima: un'unita' che tocca
+     solo uno spigolo non regala il fianco a nessuno */
+  const lato = Object.keys(conta).reduce((a, k) => conta[k] > conta[a] + 0.01 ? k : a, "fronte");
   if (!(conta[lato] > 0)) return null;
   /* Chi e' in formazione sciolta non ha fianchi ne' retro: «every arc
      is considered to be their front arc» (p. 184). Anche serrato in
@@ -7114,19 +7288,10 @@ const FACCE = {
    spalle ha il centro oltre lo spigolo, e sembrava presa di fianco. */
 function facciaDiE(S, e, u){
   const be = boxOf(e, S.units), bu = boxOf(u, S.units);
-  const toll = MM * 0.3;
-  const capi = { "fronte": [[-1, -1], [1, -1]], "retro": [[-1, 1], [1, 1]],
-                 "fianco sinistro": [[-1, -1], [-1, 1]], "fianco destro": [[1, -1], [1, 1]] };
+  const lungo = contattoDeiLati(be, bu);
   let meglio = null, quanti = 0;
-  for (const [nome, [p, q]] of Object.entries(capi)){
-    let n = 0;
-    for (let k = 1; k < 10; k++){
-      const t = k / 10;
-      const w = toWorld([(p[0] + (q[0] - p[0]) * t) * be.w / 2, (p[1] + (q[1] - p[1]) * t) * be.h / 2], be);
-      if (distPointToBox(w, bu) <= toll) n++;
-    }
-    if (n > quanti){ meglio = nome; quanti = n; }
-  }
+  for (const [nome] of SEGMENTI_DEI_LATI)
+    if (lungo[nome] > quanti + 0.01){ meglio = nome; quanti = lungo[nome]; }
   return meglio || (CH.alignTo(bu, be) || {}).side;
 }
 
@@ -7830,7 +7995,7 @@ export function obiettivi(S){
     }
     const h = objectiveHolder(vicini);
     return { kind: OBIETTIVI[t.kind], army: h.held ? h.army : null, by: h.held ? h.by.name : "",
-             conteso: !!h.contested };
+             uid: h.held ? h.by.uid : null, conteso: !!h.contested };
   });
 }
 

@@ -98,7 +98,10 @@ console.log('\nchi guarda avanti');
      farsi caricare */
   const G = tavolo([['Skink Skirmishers 1', 24, 26, 0], ['Black Orc Mobs', 24, 10, 180]]);
   G.casella = casella('mosse'); G.army = 'A';
-  const o = AR.options(G);
+  /* in mezzo c'e' il tesoro centrale, a (24, 18): andarlo a prendere e'
+     un'altra domanda, e qui l'opzione si toglie */
+  const o = { ...AR.options(G) };
+  o.list = o.list.filter(x => x.id !== 'obiettivo');
   D.setSource(D.seeded(5));
   const r = await agenteRicerca({ AR }).scegli({ opzioni: o, stato: G });
   const dopo = D.roll(6).join();
