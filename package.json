@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "test": "node test/smoke.mjs && node test/battle.mjs && node test/regole.mjs && node test/motore.mjs && node test/movimento.mjs && node test/mischia.mjs && node test/tiro.mjs && node test/dadi.mjs && node test/psicologia.mjs && node test/magia.mjs && node test/vittoria.mjs && node test/liste.mjs && node test/cerca.mjs && node test/laboratorio.mjs && node test/cavalcature.mjs && node test/eserciti.mjs && node test/arbitro.mjs && node test/statistica.mjs && node test/serie.mjs && node test/minacce.mjs && node test/ricerca.mjs && node test/sync.mjs && node test/spiega.mjs && node test/boot.mjs",
+    "test": "node test/smoke.mjs && node test/battle.mjs && node test/regole.mjs && node test/motore.mjs && node test/movimento.mjs && node test/mischia.mjs && node test/tiro.mjs && node test/dadi.mjs && node test/psicologia.mjs && node test/magia.mjs && node test/vittoria.mjs && node test/liste.mjs && node test/cerca.mjs && node test/laboratorio.mjs && node test/cavalcature.mjs && node test/eserciti.mjs && node test/arbitro.mjs && node test/statistica.mjs && node test/serie.mjs && node test/minacce.mjs && node test/ricerca.mjs && node test/sync.mjs && node test/spiega.mjs && node test/boot.mjs && node test/modelli3d.mjs",
     "start": "python3 -m http.server 8080",
     "icons": "node tools/make-icons.mjs",
     "partita": "node tools/partita.mjs",
@@ -15,7 +15,11 @@
     "torneo": "node tools/liste/torneo.mjs"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
     "fake-indexeddb": "^6.0.0",
-    "jsdom": "^25.0.0"
+    "jsdom": "^25.0.0",
+    "meshoptimizer": "^1.3.0",
+    "three": "^0.170.0"
   }
 }

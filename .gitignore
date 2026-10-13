@@ -12,3 +12,7 @@ mappa*.html
 # le foto di riferimento delle unita che non sono in collezione:
 # immagini dei negozi, restano solo su questo computer
 foto-riferimento/
+
+# i modelli 3D ridotti da tools/modelli-3d.mjs: uso personale,
+# restano solo su questo computer
+modelli-3d/

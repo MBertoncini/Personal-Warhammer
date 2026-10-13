@@ -172,8 +172,24 @@ export function fermaTutto(){
 /* Una mossa dell'arbitro: il fotogramma di adesso e quello prima.
    Torna quanto durano, perche' chi guarda aspetti a passare oltre. */
 export function recita(f, prima){
-  if (!fxm || !attiva() || ritmo === 0) return 0;
-  return fxm.giocaEffetti(f, prima, { ritmo: Math.max(1, ritmo) });
+  if (ritmo === 0) return 0;
+  const tre = avvisa("recita", f, prima, { ritmo: Math.max(1, ritmo) });
+  if (!fxm || !attiva()) return tre;
+  return Math.max(tre, fxm.giocaEffetti(f, prima, { ritmo: Math.max(1, ritmo) }));
+}
+
+/* Chi altro guarda il tavolo: la vista 3D (vista3d.js) riceve gli stessi
+   effetti — la mossa dell'arbitro, il colpo della partita a mano, chi
+   cade — e li fa a modo suo. Torna quanto durano, per chi aspetta. */
+const uditori = new Set();
+export function ascolta(fn){ uditori.add(fn); return () => uditori.delete(fn); }
+function avvisa(...cosa){
+  if (!acceso() || quieto()) return 0;
+  let ms = 0;
+  for (const fn of uditori){
+    try { ms = Math.max(ms, +fn(...cosa) || 0); } catch (err){ console.warn("effetti 3D", err); }
+  }
+  return ms;
 }
 
 /* La partita al tavolo: i dadi li tira chi gioca, e l'app sa che cosa e'
@@ -181,8 +197,10 @@ export function recita(f, prima){
    perdite che il ridisegno scopre aspettano che il colpo arrivi. */
 let attesaPerdite = 0;
 export function colpo(fx, f, prima){
-  if (!fx || !fxm || !attiva()) return 0;
-  const ms = fxm.gioca(fx, f, prima);
+  if (!fx) return 0;
+  const tre = avvisa("colpo", fx, f, prima);
+  if (!fxm || !attiva()){ attesaPerdite = Math.max(attesaPerdite, Math.round(tre * 0.65)); return tre; }
+  const ms = Math.max(tre, fxm.gioca(fx, f, prima));
   attesaPerdite = Math.max(attesaPerdite, Math.round(ms * 0.65));
   return ms;
 }
@@ -198,7 +216,7 @@ export function osserva(f){
   if (k === firmaUltima) return;
   const prima = ultima;
   ultima = f; firmaUltima = k;
-  if (!prima || !fxm || !attiva()) return;
+  if (!prima || !fxm || (!attiva() && !uditori.size)) return;
   const { dopoFx } = fxm.cambiDi(f, prima);
   if (!dopoFx.length || dopoFx.length > 5) return;
   /* il colpo che li ha fatti cadere parte subito dopo questo ridisegno:
@@ -206,7 +224,12 @@ export function osserva(f){
   setTimeout(() => {
     const t = attesaPerdite;
     attesaPerdite = 0;
-    setTimeout(() => { for (const fx of dopoFx) fxm.gioca(fx, f, prima); }, t);
+    setTimeout(() => {
+      for (const fx of dopoFx){
+        avvisa("colpo", fx, f, prima);
+        if (attiva()) fxm.gioca(fx, f, prima);
+      }
+    }, t);
   }, 0);
 }
 

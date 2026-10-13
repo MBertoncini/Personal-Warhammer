@@ -1606,3 +1606,26 @@ svg#board .fxt{font-weight:800;paint-order:stroke;stroke:rgba(0,0,0,.55);stroke-
   .sc-cartello, .sc-cartello.sc-resta, .sc-hud.sc-pop .sc-fase, .sc-hud .sc-pensa i{animation:none;}
   .sc-coriandoli{display:none;}
 }
+
+/* ---------- il tavolo in 3D (src/vista3d.js) ---------- */
+.v3d{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;background:#1d211c;color:#e9e6dc;}
+.v3d[hidden]{display:none;}
+.v3d-barra{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:8px 12px;
+  background:var(--panel);color:var(--ink);border-bottom:1px solid var(--line);}
+.v3d-barra .spacer{flex:1;}
+.v3d-stato{font-size:12px;color:var(--muted);line-height:1.35;}
+.v3d-manca{color:var(--warn);}
+.v3d-corpo{flex:1;min-height:0;display:flex;}
+.v3d-tela{flex:1;min-width:0;position:relative;}
+.v3d-canvas{display:block;width:100%;height:100%;touch-action:none;}
+.v3d-aiuto{position:absolute;left:12px;bottom:8px;margin:0;font-size:12px;opacity:.6;pointer-events:none;}
+.v3d-scelte{width:min(360px,90vw);overflow:auto;padding:10px 12px;background:var(--panel);color:var(--ink);
+  border-left:1px solid var(--line);}
+.v3d-scelte[hidden]{display:none;}
+.v3d-riga{display:block;margin:0 0 10px;}
+.v3d-riga select{width:100%;}
+@media (max-width:700px){
+  .v3d-corpo{flex-direction:column;}
+  .v3d-scelte{width:auto;max-height:45vh;border-left:0;border-top:1px solid var(--line);}
+}
+body.v3d-aperta{overflow:hidden;}

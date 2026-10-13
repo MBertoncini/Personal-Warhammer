@@ -9,6 +9,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="./styles/app.css">
+<!-- three.js serve solo alla vista 3D, e si carica solo quando la si apre -->
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icons/icon-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
@@ -203,6 +207,8 @@
           <button class="btn" id="btn-labels" title="Numeri sulle unità">Numeri sulle unità</button>
           <button class="btn on" id="btn-photos" title="Foto delle miniature sulle basette">Foto delle miniature</button>
           <button class="btn on" id="btn-fx" title="I pezzi che scivolano, frecce, incantesimi e mischie, chi cade che lampeggia, il cartello del turno">Effetti e animazioni</button>
+          <div class="menu-sep"></div>
+          <button class="btn" id="btn-3d" title="Il tavolo con le miniature in 3D, da girare con il mouse: si guarda, non si gioca">Tavolo in 3D</button>
         </div>
       </details>
 

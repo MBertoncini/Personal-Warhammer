@@ -1949,6 +1949,8 @@ function drawBoard(){
      partita a mano chi ha appena perso modelli lampeggia */
   SC.riattacca();
   if (state.game.on && !state.sfida && !drag) SC.osserva(fotoTavolo());
+  /* la vista 3D, se e' aperta, segue il tavolo */
+  if (osservatore3D) osservatore3D();
 }
 
 /* Il tavolo come lo vede `fxmotore.js`: la stessa forma dei fotogrammi
@@ -1966,6 +1968,37 @@ function fotoTavolo(){
                  ...(per > 1 || fp ? { fp, fw:per || fp + 1 } : {}) });
   }
   return { unita, ospiti, testo:[] };
+}
+
+/* Il tavolo per la vista 3D: le stesse caselle del disegno, modello per
+   modello, in millimetri. La vista non sa niente di regole e di
+   formazioni, guarda e basta: se qui c'e' un Black Orc, la' c'e' un
+   Black Orc. I personaggi uniti stanno nelle caselle dell'ospite. */
+let osservatore3D = null;
+/* le armi come le scrive la lista, piu' lo scudo: dicono quale posa
+   prendere quando la scatola ne ha con armi diverse */
+const armiDi = u => [...(u.weapons || []).map(w => w.name), ...(u.shield ? ["Shield"] : [])].filter(Boolean);
+export const osserva3D = fn => { osservatore3D = fn; };
+export function tavolo3D(){
+  const unita = [];
+  for (const u of state.units){
+    if (!u.placed || u.dead || hostOf(u)) continue;
+    const lay = layoutOf(u);
+    const celle = lay.slots.map((c, j) => {
+      const ch = c.kind === "char" ? unitByUid(c.uid) : null;
+      return { lx:c.x, ly:c.y, rot:c.rot || 0, w:c.w, h:c.h, i:c.i ?? j, char:!!ch,
+               catId:c.catId, nome:c.name, ...(ch ? { id:ch.uid, armi:armiDi(ch) } : {}) };
+    });
+    unita.push({ uid:u.uid, esercito:u.army, nome:u.name, catId:u.catId, x:u.x, y:u.y, rot:u.rot || 0,
+                 command:u.command || null, armi:armiDi(u), celle });
+  }
+  const terreno = state.terrain.map(t => {
+    const b = boxOf(t), cfg = TERRAIN[t.kind] || {};
+    return { kind:t.kind, forma:cfg.shape, cat:t.cat || cfg.cat, x:b.x, y:b.y, w:b.w, h:b.h,
+             rot:b.rot || 0, colore:coloreTerreno(t.kind) };
+  });
+  return { W:state.tableW, H:state.tableH, unita, terreno,
+           nomi:{ A:state.armies.A.name, B:state.armies.B.name } };
 }
 
 function shortName(n){
@@ -6117,6 +6150,16 @@ $("#btn-redo").addEventListener("click", doRedo);
 $("#btn-rulers-clear").addEventListener("click", () => act("togli i righelli", () => {
   state.rulers = []; state.measurePts = [];
 }));
+
+/* ---------- il tavolo in 3D ----------
+   three.js e i modelli pesano: si caricano la prima volta che si apre */
+$("#btn-3d").addEventListener("click", async () => {
+  try {
+    const V = await import("./vista3d.js");
+    await V.apriTavolo3D(tavolo3D, { osservatore: osserva3D, nomeCatalogo: id => catEntry(id)?.name || null,
+                                     effetti: SC.ascolta });
+  } catch (err){ toast("Non riesco ad aprire la vista 3D: " + err.message); }
+});
 
 /* ---------- immagine e link ---------- */
 $("#btn-png").addEventListener("click", async () => {

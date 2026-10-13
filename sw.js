@@ -11,7 +11,7 @@
  * di rete. Qui dentro c'e' solo il guscio dell'app.
  */
 
-const VERSION = "v61";
+const VERSION = "v63";
 const SHELL = "shell-" + VERSION;
 const RUNTIME = "runtime-" + VERSION;
 
@@ -40,6 +40,9 @@ const FILES = [
   "./src/lab-motore.js", "./src/lab-esperimento.js", "./src/terreno-casuale.js",
   "./src/phases.js", "./src/engine.js", "./src/charge.js", "./src/melee.js",
   "./src/shoot.js", "./src/psych.js", "./src/magic.js", "./src/charts.js", "./src/victory.js",
+  "./src/vista3d.js", "./src/modelli3d.js", "./src/fx3d.js", "./vendor/three/three.module.min.js",
+  "./vendor/three/addons/controls/OrbitControls.js", "./vendor/three/addons/loaders/GLTFLoader.js",
+  "./vendor/three/addons/utils/BufferGeometryUtils.js", "./vendor/three/addons/libs/meshopt_decoder.module.js",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png",
 ];
 
@@ -92,7 +95,9 @@ self.addEventListener("fetch", e => {
   const sameOrigin = url.origin === self.location.origin;
   /* il codice dell'app: index.html lo serve la rete, e questi devono
      seguirlo. Le immagini no, quelle non cambiano mai. */
-  const isCode = /\.(js|mjs|css|webmanifest)$/.test(url.pathname);
+  /* i modelli 3D li rifa' uno script con lo stesso nome: anche loro
+     prima dalla rete, come il codice */
+  const isCode = /\.(js|mjs|css|webmanifest)$/.test(url.pathname) || url.pathname.includes("/modelli-3d/");
 
   /* I moduli e il foglio di stile: PRIMA la rete, la cache dietro.
      Al contrario si prendeva sempre la copia vecchia e quella nuova

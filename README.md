@@ -306,6 +306,20 @@ La prima volta chiede una cosa sola: **chi hai giocato?**. Non è una formalità
 
 Ci sono anche *Copia il Markdown* senza la richiesta davanti, *Scarica .md* e *Scarica .json* — il JSON è il report intero, per rileggerlo con un programma.
 
+### 7. Il tavolo in 3D
+
+Lo stesso tavolo, con le miniature vere: **Vista → Tavolo in 3D** sopra il tavolo (la partita a mano, la sfida, l'AI contro l'AI) e la spunta **3D** nella partita da rivedere. Si gira trascinando, ci si avvicina con la rotella, il doppio clic guarda un punto. **Si guarda, non si gioca**: le decisioni restano sul disegno 2D, che sa le regole. I pezzi scivolano da un posto all'altro come nel 2D, un reggimento che ruota gira intorno al suo centro, e frecce, palle di cannone, incantesimi, mischie e chi cade sono quelli del disegno — lo stesso motore dice *che cosa* succede, `src/fx3d.js` lo fa vedere.
+
+**I modelli non sono nel repository.** Sono mesh generate da foto (Modly), per uso personale: `tools/modelli-3d.mjs` le riduce da due milioni a dodicimila triangoli (circa 75 KB a posa) e le mette in `modelli-3d/`, che git ignora e la Nuvola non vede.
+
+```bash
+node tools/modelli-3d.mjs --da "I:/Warhammer/3d/Modly/armies"
+```
+
+Aperta dal server locale, l'app li trova da sola; dal sito pubblicato c'è **Cartella dei modelli…** (Chrome ed Edge), e la cartella scelta si ricorda. Dove un modello non c'è, la miniatura è un blocco grande quanto la basetta, e la barra dice chi è rimasto senza.
+
+**Chi è chi.** Un'unità trova il modello per nome — «Black Orc Mobs» e la cartella `black-orc-mob` hanno le stesse parole — ma solo quando le parole tornano davvero: «Orc Mobs» non prende la faccia di un Black Orc. Il resto si sceglie a mano, da **Modelli…** nella vista 3D (anche per le unità avversarie, che in collezione non ci sono) o dal campo *Modello 3D* della voce del catalogo; la scelta vale anche nelle partite da rivedere. Le pose dicono il loro ruolo nel nome: stendardo, musico e campione vanno al centro del primo rango quando la lista li ha, e le varianti di montaggio sono unità loro (i Thunderers dalla scatola dei Quarrellers). Un portastendardo che Modly non ha chiamato così si riconosce dall'altezza, solo nella fanteria; quello che la regola non vede si scrive a mano, `"ruolo": "standard"` sulla posa in `modelli-3d/indice.json`.
+
 ---
 
 ## Una partita giocata dall'app
@@ -658,6 +672,9 @@ src/
   syncui.js           la finestra della Nuvola: campi, pulsanti, salvataggio automatico
   bus.js              eventi, per non far importare i moduli fra loro
   history.js          annulla e ripeti, su copie dello stato del tavolo
+  vista3d.js          il tavolo in 3D (three.js): la scena, la scivolata, la finestra e il pannello dei modelli
+  fx3d.js             frecce, incantesimi, mischie e cadute in 3D, decisi dal motore di fxmotore.js
+  modelli3d.js        i modelli 3D senza three.js: dove stanno, chi è chi, chi va in prima fila, le scelte a mano
   view.js             zoom, scorrimento, pizzico, inquadratura
   imgexport.js        il tavolo come PNG, con i colori risolti
   share.js            schieramento dentro un link, compresso
@@ -781,7 +798,7 @@ Sui dadi le prove sono due, e separate. In `battle.mjs`, senza pagina: che ogni 
 
 `movimento.mjs` prova la carica dove la carica è scritta, senza tavolo: che un tiro di sei riesca undici volte su trentasei contando le facce; che quello che sta dietro non si carichi e che un bosco in mezzo tolga la vista anche alla dichiarazione; che il *tira e tieni* si spenga sotto il Movimento del caricante; che dei due dadi si tenga il maggiore, il peggiore nel terreno difficile, e che il terzo dado del passo lungo si sommi invece di entrare nella scelta; che la **carica disordinata** e il **disordine da terreno** restino due regole diverse, perché costano bonus diversi; che il caricante si fermi a filo sulla faccia **da cui è venuto** e non su quella più vicina; che chi scappa vada via dal nemico più grosso, e in diagonale quando i più grossi sono due.
 
-Prova anche le cose nuove dove si vedono davvero: che i cerchi del movimento restino **fermi sull'ancora** invece di seguire il pezzo e che la riga scriva `4.0″ di 8″`; che una ferita non tolga un modello finché non lo dici tu; che il caricante si appoggi a filo e arrivi dritto anche se lo trascinavi storto; che una zona disegnata a mano faccia risultare *fuori zona* un'unità che lo scenario considerava a posto; che marcatori, zone, etichette e ferite sopravvivano al link condiviso e finiscano nel report. `smoke.mjs` prova a parte i moduli senza DOM, dove le regole di conversione si leggono in una riga. `eserciti.mjs` prova i tre eserciti scritti dal libro: i costi stampati, le loro regole nei dadi (l'Odio che guarda la parentesi, il gromril, lo Slayer, gli Elven Reflexes al primo round, la Razor Tusks solo sulle zanne), chi si unisce a chi, le liste a caso della ricerca, e una partita intera per ognuno con la Primal Fury, il Volley Fire e il Grudge Thrower nel registro.
+Prova anche le cose nuove dove si vedono davvero: che i cerchi del movimento restino **fermi sull'ancora** invece di seguire il pezzo e che la riga scriva `4.0″ di 8″`; che una ferita non tolga un modello finché non lo dici tu; che il caricante si appoggi a filo e arrivi dritto anche se lo trascinavi storto; che una zona disegnata a mano faccia risultare *fuori zona* un'unità che lo scenario considerava a posto; che marcatori, zone, etichette e ferite sopravvivano al link condiviso e finiscano nel report. `modelli3d.mjs` prova chi è chi fra le unità e i modelli 3D: che «Orc Mobs» resti senza modello piuttosto che prenderne uno sbagliato, che stendardo, musico e campione vadano al centro del primo rango e solo se la lista li ha, che la posa da truppa segua le armi dell'unità, che il portastendardo senza nome si riconosca e la lancia alzata no. `smoke.mjs` prova a parte i moduli senza DOM, dove le regole di conversione si leggono in una riga. `eserciti.mjs` prova i tre eserciti scritti dal libro: i costi stampati, le loro regole nei dadi (l'Odio che guarda la parentesi, il gromril, lo Slayer, gli Elven Reflexes al primo round, la Razor Tusks solo sulle zanne), chi si unisce a chi, le liste a caso della ricerca, e una partita intera per ognuno con la Primal Fury, il Volley Fire e il Grudge Thrower nel registro.
 
 ---
 

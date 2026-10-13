@@ -97,8 +97,12 @@ export function pezziDellaPagina(S){
   const out = {};
   for (const u of S.units){
     const tt = troopType(u.troop);
+    /* il gruppo di comando e le armi servono alla vista 3D: lo
+       stendardo in prima fila, la posa con l'arma che l'unita' impugna */
+    const cm = u.command ? (u.command.standard ? "s" : "") + (u.command.musician ? "m" : "") + (u.command.champion ? "c" : "") : "";
+    const ar = [...(u.weapons || []).map(w => w.name), ...(u.shield ? ["Shield"] : [])].filter(Boolean);
     out[u.uid] = { n: u.name, a: u.army, ...(u.catId ? { k: u.catId } : {}), tp: tt.id, tl: tt.label,
-                   m: u.models || 1 };
+                   m: u.models || 1, ...(cm ? { cm } : {}), ...(ar.length ? { ar } : {}) };
   }
   return out;
 }
@@ -201,6 +205,7 @@ ${SPIEGA_CSS}
         <label title="le schede con i dadi, il numero da battere e il perché, sopra il tavolo"><input type="checkbox" id="spiega" checked> perché</label>
         <label title="le foto delle miniature della collezione sulle basette"><input type="checkbox" id="foto" checked> foto</label>
         <label title="frecce, colpi, incantesimi e mischie sul tavolo"><input type="checkbox" id="effetti" checked> effetti</label>
+        <label title="il tavolo con le miniature in 3D: si gira trascinando, si avvicina con la rotella"><input type="checkbox" id="tre"> 3D</label>
       </div>
     </div>
   </section>
@@ -269,6 +274,10 @@ h1{ margin:0; font-size:19px; letter-spacing:.2px; line-height:1.25; }
 .schermo{ display:grid; grid-template-columns:minmax(0,1fr) 380px; min-height:0; }
 .tavolo{ display:flex; flex-direction:column; min-width:0; min-height:0; padding:12px 16px 10px; gap:8px; }
 .campo-box{ position:relative; flex:1 1 auto; min-height:0; }
+.campo3d{ position:absolute; inset:0; display:none; border-radius:10px; overflow:hidden; }
+.campo3d canvas{ display:block; width:100%; height:100%; touch-action:none; }
+body.in3d .campo3d{ display:block; }
+body.in3d #campo, body.in3d #tip{ visibility:hidden; }
 #campo{ display:block; width:100%; height:100%; }
 .piano{ fill:var(--tavolo); stroke:var(--tavolo-bordo); stroke-width:2; }
 .colonna{ display:flex; flex-direction:column; min-height:0; border-left:1px solid var(--linea); background:var(--carta); }
@@ -718,6 +727,65 @@ function cliente(){
     if (r) vai(+r.dataset.k, true);
   });
 
+  /* ---- il tavolo in 3D ----
+     La vista e' quella dell'app (src/vista3d.js): la pagina le passa il
+     fotogramma con le basette una per una, e lei fa scivolare i pezzi.
+     Funziona quando la pagina sta accanto all'app (dentro l'app, o
+     aperta dal suo server): li' ci sono three.js e i modelli. */
+  const tre = $('tre'), MOD = M.modelli || {}, NOMI = M.nomiCatalogo || {};
+  /* dove sta three.js: l'import map la scrive lo script e non la pagina,
+     perche' nella pagina deve esserci un solo blocco <script> (i dati
+     ci stanno dentro, e il test lo conta). Va messa prima di ogni import. */
+  const mappa = document.createElement('script');
+  mappa.type = 'importmap';
+  mappa.textContent = JSON.stringify({ imports: { three: './vendor/three/three.module.min.js', 'three/addons/': './vendor/three/addons/' } });
+  document.head.appendChild(mappa);
+  let v3d = null;
+  function tavolo3D(f){
+    const unita = f.unita.map(u => {
+      const p = PZ[u.id] || {};
+      const s = u.fo != null ? FORME[u.fo] : u.s;
+      /* i personaggi dentro il reggimento: le loro caselle hanno il
+         catId, gli ospiti dicono chi sono */
+      const ospiti = Object.keys(f.ospiti || {}).filter(c => String(f.ospiti[c]) === String(u.id));
+      const presi = new Set();
+      const celle = s ? s.map((c, j) => {
+        if (!c[4]) return { lx: c[0], ly: c[1], w: c[2], h: c[3], rot: c[6] || 0, i: j, char: false, catId: p.k || null, nome: p.n || u.n };
+        const id = ospiti.find(o => !presi.has(o) && (PZ[o] || {}).k === c[5]) || ospiti.find(o => !presi.has(o));
+        if (id != null) presi.add(id);
+        const q = PZ[id] || {};
+        return { lx: c[0], ly: c[1], w: c[2], h: c[3], rot: c[6] || 0, i: j, char: true,
+                 catId: c[5] || q.k || null, nome: q.n || '', id, armi: q.ar || null };
+      }) : [{ lx: 0, ly: 0, w: u.w, h: u.h, i: 0, char: false, blocco: true, catId: p.k || null, nome: p.n || u.n }];
+      const cm = p.cm || '';
+      return { uid: u.id, esercito: u.a || p.a, nome: p.n || u.n, catId: p.k || null, x: u.x, y: u.y, rot: u.r || 0,
+               command: cm ? { standard: cm.includes('s'), musician: cm.includes('m'), champion: cm.includes('c') } : null,
+               armi: p.ar || null, celle };
+    });
+    return { W, H, unita, terreno: M.terreno || [] };
+  }
+  tre.onchange = async () => {
+    if (!tre.checked){ document.body.classList.remove('in3d'); if (v3d) v3d.spegni(); return; }
+    try {
+      if (!v3d){
+        const div = document.createElement('div');
+        div.className = 'campo3d';
+        box.appendChild(div);
+        document.body.classList.add('in3d');
+        const V = await import('./src/vista3d.js');
+        v3d = await V.creaVista(div, {
+          scelta: (k, n, id) => id != null && MOD[id] !== undefined ? MOD[id] : undefined,
+          nomeCatalogo: (k, id) => (id != null && NOMI[id]) || null,
+        });
+      } else { document.body.classList.add('in3d'); v3d.accendi(); }
+      v3d.mostra(tavolo3D(P.frames[i]), { salto: true });
+    } catch (e){
+      tre.checked = false;
+      document.body.classList.remove('in3d');
+      stato.textContent = 'Il 3D si vede solo con la pagina aperta dentro l’app o dal suo server (' + e.message + ')';
+    }
+  };
+
   let i = 0, timer = null;
   function disegna(i, { salto = false } = {}){
     const f = P.frames[i], prima = P.frames[i - 1] || null;
@@ -728,7 +796,13 @@ function cliente(){
     const colpiti = new Set(mostra ? schede.map(r => r.x.su).filter(v => v != null) : []);
     pulisciFx();
     pezzi(f, salto ? null : prima, accesi, colpiti, salto);
-    const durata = salto ? 0 : giocaEffetti(f, prima);
+    let durata = salto ? 0 : giocaEffetti(f, prima);
+    /* la vista 3D fa le sue frecce e i suoi incantesimi, con lo stesso
+       calendario: chi guarda aspetta il piu' lungo dei due */
+    if (v3d && tre.checked){
+      v3d.effetti.pulisci();
+      if (!salto && effetti.checked) durata = Math.max(durata, v3d.effetti.giocaEffetti(f, prima, { ritmo: +velocita.value || 1 }));
+    }
 
     /* sopra il tavolo le ultime schede del fotogramma; le altre restano
        nel registro, sotto la loro riga */
@@ -744,6 +818,7 @@ function cliente(){
     for (const b of $('turni').children) b.classList.toggle('ora', +b.dataset.k <= i &&
       !(b.nextElementSibling && +b.nextElementSibling.dataset.k <= i));
     scriviRegistro(i);
+    if (v3d && tre.checked) v3d.mostra(tavolo3D(f), { salto, durata: 650 / (+velocita.value || 1) });
     return durata;
   }
 

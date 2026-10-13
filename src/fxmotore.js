@@ -676,5 +676,9 @@ export function motoreFx({ strato, tipoDi = () => '', colore = a => a === 'B' ? 
     return FX[fx.k](fx, f, prima || f) || 0;
   }
 
-  return { DEFS, giocaEffetti, gioca, pulisci: pulisciFx, effettiDi, cambiDi, scritta: (p, t, o) => acceso() && scritta(p, t, o) };
+  /* `armaDi`, `stileMagia` e `TINTA` li legge anche la vista 3D (fx3d.js):
+     una freccia e' una freccia e un incantesimo di fuoco e' arancione in
+     tutte e due le viste */
+  return { DEFS, giocaEffetti, gioca, pulisci: pulisciFx, effettiDi, cambiDi, armaDi, stileMagia, TINTA,
+           scritta: (p, t, o) => acceso() && scritta(p, t, o) };
 }

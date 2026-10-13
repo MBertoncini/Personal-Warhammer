@@ -28,6 +28,7 @@ import { loadDoc, saveDoc, deleteDoc, pickImage, shrinkImage, readImage,
 import { emit } from './bus.js';
 import { askConfirm, askPick, say } from './uikit.js';
 import { armiKey, classeDi } from './armi.js';
+import * as M3 from './modelli3d.js';
 
 const CAT_KEY = "catalog:entries";
 
@@ -662,6 +663,7 @@ function editorHTML(){
       <label class="field">Armi, se distinguono il pezzo<input type="text" id="ed-armi" value="${esc(e.armi || "")}" placeholder="Warbows, Shortbows… vuoto = dotazione di base"></label>
       <label class="dice-anim" title="Braccia magnetizzate, o al circolo si gioca per procura: queste miniature coprono anche unità armate diversamente">
         <input type="checkbox" id="ed-altre"${e.altreArmi ? " checked" : ""}> si possono schierare anche con altre armi</label>
+      <label class="field" id="ed-modello-box" hidden>Modello 3D<select id="ed-modello"></select></label>
       <label class="field">Basetta<select id="ed-base">
         ${BASES.map(b => `<option value="${b.id}" ${b.id === e.baseId ? "selected" : ""}>${esc(b.label)}</option>`).join("")}
       </select></label>
@@ -675,7 +677,25 @@ function editorHTML(){
     </div>`;
 }
 
+/* Il modello 3D della voce: la tendina compare solo se i modelli ci sono
+   (tools/modelli-3d.mjs, cartella modelli-3d/). La scelta non sta nella
+   voce ma in modelli3d.js, insieme a quelle delle unita' fuori
+   collezione: una mappa sola, che legge anche la partita da rivedere. */
+async function riempiModello3D(){
+  const s = await M3.trovaSorgente();
+  const box = $("#ed-modello-box"), sel = $("#ed-modello");
+  if (!s || !box || !sel) return;
+  const cat = M3.catalogoModelli(s.indice);
+  await M3.caricaScelte();
+  const e = editing || {};
+  const nome = e.name || "";
+  sel.innerHTML = M3.opzioniModello(cat, e.id ? M3.sceltaPer(e.id, nome) : undefined,
+                                    M3.nomeAutomatico(cat, { catId: e.id, nome, nomeCatalogo: nome }));
+  box.hidden = false;
+}
+
 function wireEditor(){
+  riempiModello3D();
   $("#ed-cancel").addEventListener("click", () => { editing = null; renderCatalog(); });
   $("#ed-save").addEventListener("click", async () => {
     const b = baseById($("#ed-base").value) || { w: 25, h: 25 };
@@ -703,7 +723,7 @@ function wireEditor(){
       }
     }
 
-    await upsertEntry({
+    const id = await upsertEntry({
       id: editing.id || undefined,
       name, faction, armi, altreArmi: $("#ed-altre").checked,
       baseId: $("#ed-base").value, baseW: b.w, baseH: b.h,
@@ -711,6 +731,9 @@ function wireEditor(){
       painted: Math.max(0, +$("#ed-painted").value || 0),
       aliases: editing.aliases || [],
     }, { merge });
+    const sel = $("#ed-modello");
+    if (sel && !$("#ed-modello-box").hidden && id)
+      await M3.salvaScelta(id, name, sel.value === "auto" ? undefined : sel.value);
     editing = null;
     renderCatalog();
   });

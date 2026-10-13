@@ -40,10 +40,11 @@ import { tallyUnknown } from './rulebook.js';
 import { armyFor } from './armies.js';
 import { shotFromTurn, shotSVG, shotCaption } from './tableshot.js';
 import * as RP from './replay.js';
+import * as M3 from './modelli3d.js';
 import * as ARCH from './archivio.js';
 import * as AR from './arbitro.js';
 import * as MG from './magic.js';
-import { photoFor, chiaveFoto } from './catalog.js';
+import { photoFor, chiaveFoto, catEntry } from './catalog.js';
 
 const REP_KEY = "reports:all";
 
@@ -209,6 +210,19 @@ export async function rivedi(idOrRep){
     return say("Questa partita non ha il tavolo passo per passo: si rivede solo quella giocata con l'arbitro " +
                "(la sfida sul tavolo, o AI contro AI) e salvata nel diario.", { title: "Niente da rivedere" });
   const meta = { ...rep.replay.meta };
+  /* la vista 3D della pagina: il modello scelto a mano per ogni pezzo e
+     il nome della sua voce di catalogo, presi prima che la chiave dei
+     pezzi fuori collezione diventi quella della foto di riferimento */
+  await M3.caricaScelte();
+  meta.modelli = {};
+  meta.nomiCatalogo = {};
+  for (const [id, p] of Object.entries(meta.pezzi || {})){
+    if (!p) continue;
+    const sc = M3.sceltaPer(p.k, p.n);
+    if (sc !== undefined) meta.modelli[id] = sc;
+    const e = p.k ? catEntry(p.k) : null;
+    if (e) meta.nomiCatalogo[id] = e.name;
+  }
   const foto = {};
   /* i pezzi che in collezione non ci sono prendono la foto di
      riferimento, se c'e': la chiave si scrive sul pezzo solo in questa
