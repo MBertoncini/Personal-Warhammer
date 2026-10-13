@@ -736,12 +736,28 @@ function renderInspector(){
     b.addEventListener("click", () => putTemplate(u, b.dataset.tmpl));
   for (const b of host.querySelectorAll("[data-bombard]"))
     b.addEventListener("click", () => runBombard(u));
+  /* la mira scelta a mano: il valore del campo della stessa riga */
+  const miraDi = uid => {
+    const inp = host.querySelector(`[data-mira="${uid}"]`);
+    const v = inp ? parseFloat(inp.value) : NaN;
+    return Number.isFinite(v) ? v : null;
+  };
+  for (const inp of host.querySelectorAll("[data-mira]"))
+    inp.addEventListener("input", () => {
+      const t = state.units.find(x => x.uid === +inp.dataset.mira);
+      const w = CB.rangedWeapons(u)[0];
+      const c = w && SH.cannonOf(w), fi = w && SH.flameOf(w);
+      const p = !t ? null : c ? cannonPlanOn(u, t, c, miraDi(t.uid)) : fi ? flamePlanOn(u, t, fi, miraDi(t.uid)) : null;
+      const out = host.querySelector(`[data-attesa="${inp.dataset.mira}"]`);
+      if (out && p) out.textContent = `≈ ${p.mira.expected.toFixed(1)}`;
+      inp.classList.toggle("fuori", !p || !p.mira.scelta);
+    });
   for (const b of host.querySelectorAll("[data-cannon]"))
-    b.addEventListener("click", () => runCannon(u, b.dataset.cannon));
+    b.addEventListener("click", () => runCannon(u, b.dataset.cannon, miraDi(b.dataset.cannon)));
   for (const b of host.querySelectorAll("[data-grape]"))
     b.addEventListener("click", () => runGrape(u, b.dataset.grape));
   for (const b of host.querySelectorAll("[data-flame]"))
-    b.addEventListener("click", () => runFlame(u, b.dataset.flame));
+    b.addEventListener("click", () => runFlame(u, b.dataset.flame, miraDi(b.dataset.flame)));
   for (const b of host.querySelectorAll("[data-tmpl-off]"))
     b.addEventListener("click", () => act("togli la sagoma", () => setTemplate(null)));
   $("#i-rot-l").addEventListener("click", () => upd(() => { u.rot = (u.rot + 270) % 360; }, "ruota"));
@@ -1145,13 +1161,23 @@ function shootingHTML(u){
    bersaglio, e la grappola, che arriva a dodici pollici. Il punto lo
    sceglie l'app con lo stesso conto dell'arbitro (`SH.cannonAim`), e lo
    scrive: chi gioca al tavolo ne puo' scegliere un altro e misurare. */
+/* La mira la propone l'app (il punto che in media colpisce di piu') e la
+   sceglie chi gioca: il campo parte dalla proposta, e cambiandolo il
+   numero accanto si rifa' sul punto nuovo. Il libro lascia scegliere
+   qualunque punto entro la gittata (pp. 226, 229). */
+function miraHTML(uid, p, max, prima){
+  if (!p) return `<b style="color:var(--ok)">—</b>`;
+  return `<span class="mira">${prima}<input type="number" class="mira-in" data-mira="${uid}" min="0" max="${max}" step="0.5"
+            value="${p.mira.aim}" style="width:3.6em" title="Pollici: la proposta dell'app è ${p.best.aim}″">″</span>
+          <b style="color:var(--ok)" data-attesa="${uid}">≈ ${p.mira.expected.toFixed(1)}</b>`;
+}
 function cannonRowHTML(u, r, cannone){
   const p = cannonPlanOn(u, r.unit, cannone);
   const grappola = r.dist <= SH.GRAPESHOT.range;
   return `<div class="readout near"><span>${esc(shortName(r.unit.name))} · ${r.dist.toFixed(1)}″</span>
-            <b style="color:var(--ok)">${p ? `a ${p.mira.aim}″ · ≈ ${p.mira.expected.toFixed(1)}` : "—"}</b>
+            ${miraHTML(r.unit.uid, p, cannone.banda.max, "a ")}
             <button class="btn tiny" data-cannon="${r.unit.uid}" ${p ? "" : "disabled"}
-                    title="Palla di cannone su ${esc(r.unit.name)}${p ? `: puntata a ${p.mira.aim}″` : ""}">palla</button>
+                    title="Palla di cannone su ${esc(r.unit.name)}">palla</button>
             ${grappola ? `<button class="btn tiny" data-grape="${r.unit.uid}"
                     title="Grappola su ${esc(r.unit.name)}: un dado di artiglieria di colpi a Forza ${SH.GRAPESHOT.S}">grappola</button>` : ""}
           </div>`;
@@ -1159,15 +1185,15 @@ function cannonRowHTML(u, r, cannone){
 function flameRowHTML(u, r, fiamma){
   const p = flamePlanOn(u, r.unit, fiamma);
   return `<div class="readout near"><span>${esc(shortName(r.unit.name))} · ${r.dist.toFixed(1)}″</span>
-            <b style="color:var(--ok)">${p ? `+${p.mira.aim}″ · ≈ ${p.mira.expected.toFixed(1)}` : "—"}</b>
+            ${miraHTML(r.unit.uid, p, fiamma.banda.max, "+")}
             <button class="btn tiny" data-flame="${r.unit.uid}" ${p ? "" : "disabled"}
-                    title="Colonna di fuoco su ${esc(r.unit.name)}${p ? `: goccia allontanata di ${p.mira.aim}″` : ""}">fuoco</button>
+                    title="Colonna di fuoco su ${esc(r.unit.name)}">fuoco</button>
           </div>`;
 }
 function flameNoteHTML(){
   return `
     <div class="readout"><span>Lanciafiamme</span><b>p. 229</b></div>
-    <p class="note">La goccia parte dal bordo della basetta verso il bersaglio; l'app la allontana dei pollici scritti accanto (fino alla gittata), poi un dado di artiglieria la spinge ancora più in là. Chi sta sotto del tutto è colpito, chi sta sotto in parte a ${SH.PARTIAL_NEED}+ (p. ${SH.PAGE.templates}), amico o nemico; il numero accanto è quanti modelli prende in media. Il Mancato Colpo va alla tabella della polvere nera (p. ${SH.MISFIRE.page}).</p>`;
+    <p class="note">La goccia parte dal bordo della basetta verso il bersaglio; la si allontana dei pollici scritti nel campo (l'app propone quelli che in media colpiscono di più; fino alla gittata), poi un dado di artiglieria la spinge ancora più in là. Chi sta sotto del tutto è colpito, chi sta sotto in parte a ${SH.PARTIAL_NEED}+ (p. ${SH.PAGE.templates}), amico o nemico; il numero accanto è quanti modelli prende in media. Il Mancato Colpo va alla tabella della polvere nera (p. ${SH.MISFIRE.page}).</p>`;
 }
 function organNoteHTML(){
   return `
@@ -1177,7 +1203,7 @@ function organNoteHTML(){
 function cannonNoteHTML(){
   return `
     <div class="readout"><span>Cannone</span><b>pp. 226-227</b></div>
-    <p class="note">La <b>palla</b> si punta sulla linea verso il bersaglio: un dado di artiglieria dice di quanto cade oltre, un altro di quanto rimbalza. Colpisce chi sta sotto il punto d'impatto e sotto il rimbalzo, amico o nemico, al massimo un modello per rango (di fianco, per fila), e si ferma su un mostro, un colosso, il terreno impassabile o un ostacolo alto. Il numero accanto è quanti modelli prende in media. La <b>grappola</b>, entro ${SH.GRAPESHOT.range}″, fa tanti colpi automatici a Forza ${SH.GRAPESHOT.S} quanti dice il dado. Il Mancato Colpo va alla tabella della polvere nera (p. ${SH.MISFIRE.page}).</p>`;
+    <p class="note">La <b>palla</b> si punta sulla linea verso il bersaglio, ai pollici scritti nel campo (l'app propone il punto che in media colpisce di più): un dado di artiglieria dice di quanto cade oltre, un altro di quanto rimbalza. Colpisce chi sta sotto il punto d'impatto e sotto il rimbalzo, amico o nemico, al massimo un modello per rango (di fianco, per fila), e si ferma su un mostro, un colosso, il terreno impassabile o un ostacolo alto. Il numero accanto è quanti modelli prende in media. La <b>grappola</b>, entro ${SH.GRAPESHOT.range}″, fa tanti colpi automatici a Forza ${SH.GRAPESHOT.S} quanti dice il dado. Il Mancato Colpo va alla tabella della polvere nera (p. ${SH.MISFIRE.page}).</p>`;
 }
 
 /* ---- la macchina da guerra ----
@@ -4119,7 +4145,7 @@ function cannonCellsFor(u){
   }
   return out;
 }
-function cannonPlanOn(u, t, cannone){
+function cannonPlanOn(u, t, cannone, scelta = null){
   const dx = t.x - u.x, dy = t.y - u.y, d = Math.hypot(dx, dy) || 1;
   const dir = [dx / d, dy / d];
   const r = boxRadius(boxOf(u), Math.atan2(dir[1], dir[0]));
@@ -4128,25 +4154,32 @@ function cannonPlanOn(u, t, cannone){
   const muri = terrainPieces().filter(p => SH.CRUNCH_TERRAIN.has(p.cat && p.cat.id));
   const spans = SH.lineSpans(cannonCellsFor(u), da, dir, lung);
   const stops = SH.lineStops(muri, da, dir, lung);
-  const mira = SH.cannonAim(spans, { stops, max: cannone.banda.max,
-    value: c => c.group === t.uid ? 1 : c.host.army === u.army ? -1 : 0 });
-  return mira ? { dir, da, spans, stops, mira } : null;
+  const value = c => c.group === t.uid ? 1 : c.host.army === u.army ? -1 : 0;
+  const best = SH.cannonAim(spans, { stops, max: cannone.banda.max, value });
+  if (!best) return null;
+  const ok = Number.isFinite(scelta) && scelta >= 0 && scelta <= cannone.banda.max;
+  const mira = ok ? { aim: scelta, expected: SH.cannonExpected(spans, { stops, aim: scelta, value }), scelta: true }
+                  : { ...best, scelta: scelta == null };
+  return { dir, da, spans, stops, mira, best };
 }
 
-async function runCannon(u, uid){
+async function runCannon(u, uid, scelta = null){
   const t = state.units.find(x => x.uid === +uid);
   const weapon = CB.rangedWeapons(u)[0];
   const cannone = weapon && SH.cannonOf(weapon);
   if (!t || !cannone) return;
-  const p = cannonPlanOn(u, t, cannone);
+  const p = cannonPlanOn(u, t, cannone, scelta);
   if (!p) return toast(`Nessun punto entro ${cannone.banda.max}″ da cui la palla arrivi su ${t.name}.`);
+  if (scelta != null && !p.mira.scelta)
+    return toast(`Il punto va scelto fra 0 e ${cannone.banda.max}″ (p. 226).`);
   const punto = x => [p.da[0] + p.dir[0] * x * MM, p.da[1] + p.dir[1] * x * MM];
 
   act("dichiarazione di tiro", () => {
     if (state.game.on) G.goStep(8);
     G.dispatch({ type:"declareShot", unit:u, target:t, army:u.army, weapon: weapon.name,
       text: `${u.name} punta la palla a ${p.mira.aim}″, sulla linea di ${t.name}: in media colpisce ` +
-            `${p.mira.expected.toFixed(1)} modelli (p. 226)` });
+            `${p.mira.expected.toFixed(1)} modelli` +
+            (p.mira.aim !== p.best.aim ? ` (l'app proponeva ${p.best.aim}″)` : "") + " (p. 226)" });
   });
   const rolls = await G.askRolls([{ id:"caduta", kind:"artillery", n:1, why:"di quanto cade oltre il punto" },
                                   { id:"rimbalzo", kind:"artillery", n:1, why:"di quanto rimbalza" }],
@@ -4199,29 +4232,36 @@ async function runCannon(u, uid){
    La goccia dal bordo della basetta verso il centro del bersaglio, le
    basette di tutto il tavolo sotto (amiche comprese), e lo stesso conto
    dell'arbitro per sapere di quanto allontanarla (`SH.flameAim`). */
-function flamePlanOn(u, t, fiamma){
+function flamePlanOn(u, t, fiamma, scelta = null){
   const dx = t.x - u.x, dy = t.y - u.y, d = Math.hypot(dx, dy) || 1;
   const dir = [dx / d, dy / d];
   const r = boxRadius(boxOf(u), Math.atan2(dir[1], dir[0]));
   const da = [u.x + dir[0] * r, u.y + dir[1] * r];
   const cells = cannonCellsFor(u).map((c, i) => ({ ...c, cell: i }));
-  const mira = SH.flameAim(cells, da, dir, { max: fiamma.banda.max,
-    value: c => c.group === t.uid ? 1 : c.host.army === u.army ? -1 : 0 });
-  return mira ? { dir, da, cells, mira } : null;
+  const value = c => c.group === t.uid ? 1 : c.host.army === u.army ? -1 : 0;
+  const best = SH.flameAim(cells, da, dir, { max: fiamma.banda.max, value });
+  if (!best) return null;
+  const ok = Number.isFinite(scelta) && scelta >= 0 && scelta <= fiamma.banda.max;
+  const mira = ok ? { aim: scelta, expected: SH.flameExpected(cells, da, dir, { aim: scelta, value }), scelta: true }
+                  : { ...best, scelta: scelta == null };
+  return { dir, da, cells, mira, best };
 }
 
-async function runFlame(u, uid){
+async function runFlame(u, uid, scelta = null){
   const t = state.units.find(x => x.uid === +uid);
   const weapon = CB.rangedWeapons(u)[0];
   const fiamma = weapon && SH.flameOf(weapon);
   if (!t || !fiamma) return;
-  const p = flamePlanOn(u, t, fiamma);
+  const p = flamePlanOn(u, t, fiamma, scelta);
   if (!p) return toast(`La goccia non arriva su ${t.name}.`);
+  if (scelta != null && !p.mira.scelta)
+    return toast(`La goccia si allontana fra 0 e ${fiamma.banda.max}″ (p. 229).`);
   act("dichiarazione di tiro", () => {
     if (state.game.on) G.goStep(8);
     G.dispatch({ type:"declareShot", unit:u, target:t, army:u.army, weapon: weapon.name,
       text: `${u.name} posa la goccia verso ${t.name} e la allontana di ${p.mira.aim}″: in media ` +
-            `${p.mira.expected.toFixed(1)} modelli sotto (p. 229)` });
+            `${p.mira.expected.toFixed(1)} modelli sotto` +
+            (p.mira.aim !== p.best.aim ? ` (l'app proponeva ${p.best.aim}″)` : "") + " (p. 229)" });
   });
   const rolls = await G.askRolls([{ id:"fuoco", kind:"artillery", n:1, why:"di quanto si spinge la goccia" }],
                                  `Colonna di fuoco di ${u.name}`);

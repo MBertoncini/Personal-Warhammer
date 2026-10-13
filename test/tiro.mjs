@@ -568,6 +568,10 @@ ok('la mira cade prima del reggimento, per farci rimbalzare dentro la palla',
 ok('e in media prende piu di un modello', mira.expected > 1);
 ok('la mira non va oltre la gittata', SH.cannonAim(spanBlocco, { max: 12 }).aim <= 12);
 ok('senza niente sotto la linea non c e mira', SH.cannonAim([], { max: 48 }) === null);
+/* la mira scelta a mano (il pannello): lo stesso conto, su un punto dato */
+ok('il valore atteso del punto proposto e quello che la proposta dice',
+   near(SH.cannonExpected(spanBlocco, { aim: mira.aim }), mira.expected, 0.006));
+ok('e un punto peggiore vale meno', SH.cannonExpected(spanBlocco, { aim: 30 }) < mira.expected);
 
 const cannone = { name: 'Cannon', range: '48"', S: '8', ap: '-2',
                   rules: 'Armour Bane (2), Cannon Fire, Cumbersome, Move or Shoot, Multiple Wounds (D3)' };

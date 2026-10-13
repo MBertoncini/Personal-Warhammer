@@ -209,6 +209,11 @@ body:not(.insp-side) .side-scroll > .insp-dock{
 button.statchip{cursor:pointer;border-color:var(--line);}
 button.statchip:hover{border-color:currentColor;background:var(--panel-2);}
 .statchip.warn{color:var(--warn);border-color:var(--warn);}
+/* la mira della palla e della goccia (pannello del tiro): il campo in pollici,
+   e il bordo d'avviso quando sta fuori dalla gittata */
+.mira{white-space:nowrap;font-size:12px;}
+.mira-in{font:inherit;padding:1px 3px;margin-left:2px;}
+.mira-in.fuori{outline:2px solid var(--warn);}
 .statchip.bad{color:var(--bad);border-color:var(--bad);}
 .statchip.turn{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);}
 

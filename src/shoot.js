@@ -1168,6 +1168,20 @@ export function cannonHits(spans = [], { strike = 0, end = 0, stops = [] } = {})
    colpita: di serie una, e chi chiama ci mette il segno meno per gli
    amici. */
 const ART = [2, 4, 6, 8, 10];
+/* Quanto vale in media un punto gia' scelto: e' il conto che `cannonAim`
+   fa per ogni pollice, e che il pannello rifa' quando chi gioca sceglie
+   un punto suo. */
+export function cannonExpected(spans = [], { stops = [], aim = 0, value = () => 1 } = {}){
+  let tot = 0;
+  for (const f of ART){
+    const s = aim + f;
+    tot += cannonHits(spans, { strike: s, end: s, stops }).hits.reduce((x, c) => x + value(c), 0) / 36;
+    for (const b of ART)
+      tot += cannonHits(spans, { strike: s, end: s + b, stops }).hits.reduce((x, c) => x + value(c), 0) / 36;
+  }
+  return tot;
+}
+
 export function cannonAim(spans = [], { stops = [], max = 0, min = 0, value = () => 1 } = {}){
   const utili = spans.filter(c => value(c) > 0);
   if (!utili.length) return null;
@@ -1176,17 +1190,10 @@ export function cannonAim(spans = [], { stops = [], max = 0, min = 0, value = ()
   const da = Math.max(min, Math.floor(primo) - 10), a = Math.min(max, Math.ceil(ultimo));
   let best = null;
   for (let g = da; g <= a; g++){
-    let tot = 0;
-    for (const f of ART){
-      const s = g + f;
-      const pianta = cannonHits(spans, { strike: s, end: s, stops }).hits;
-      tot += pianta.reduce((x, c) => x + value(c), 0) / 36;
-      for (const b of ART)
-        tot += cannonHits(spans, { strike: s, end: s + b, stops }).hits.reduce((x, c) => x + value(c), 0) / 36;
-    }
-    if (!best || tot > best.expected + 1e-9) best = { aim: g, expected: r2(tot) };
+    const tot = cannonExpected(spans, { stops, aim: g, value });
+    if (!best || tot > best.raw + 1e-9) best = { aim: g, raw: tot };
   }
-  return best;
+  return best && { aim: best.aim, expected: r2(best.raw) };
 }
 
 /* Di chi e' una casella agli occhi della palla. Il tetto di un modello
@@ -1299,20 +1306,27 @@ export function flameShape(from, dir, inches = 0){
    Mancato Colpo non spara). Una basetta sotto del tutto vale uno, una
    sotto in parte la meta' — il 4+ di p. 95. `value` pesa le caselle:
    il bersaglio uno, gli amici meno uno. */
-export function flameAim(cells = [], from = null, dir = null, { max = 0, value = () => 1 } = {}){
-  if (!from || !dir) return null;
-  const peso = c => value(c);
+/* Quanto vale in media la goccia allontanata di `aim`: le cinque facce
+   numerate del dado, il Mancato Colpo a zero. */
+export function flameExpected(cells = [], from = null, dir = null, { aim = 0, value = () => 1 } = {}){
+  if (!from || !dir) return 0;
+  const per = new Map(cells.map(c => [c.cell, c]));
   const conto = shape => {
     const sotto = modelsUnder(cells, shape);
-    const per = i => cells.find(c => c.cell === i);
-    return sotto.full.reduce((s, i) => s + peso(per(i)), 0) +
-           sotto.partial.reduce((s, i) => s + peso(per(i)) * chance(PARTIAL_NEED), 0);
+    return sotto.full.reduce((s, i) => s + value(per.get(i)), 0) +
+           sotto.partial.reduce((s, i) => s + value(per.get(i)) * chance(PARTIAL_NEED), 0);
   };
+  let tot = 0;
+  for (const f of ART) tot += conto(flameShape(from, dir, aim + f)) / 6;
+  return tot;
+}
+
+export function flameAim(cells = [], from = null, dir = null, { max = 0, value = () => 1 } = {}){
+  if (!from || !dir) return null;
   let best = null;
   for (let g = 0; g <= max; g++){
-    let tot = 0;
-    for (const f of ART) tot += conto(flameShape(from, dir, g + f)) / 6;
-    if (!best || tot > best.expected + 1e-9) best = { aim: g, expected: r2(tot) };
+    const tot = flameExpected(cells, from, dir, { aim: g, value });
+    if (!best || tot > best.raw + 1e-9) best = { aim: g, raw: tot };
   }
-  return best && best.expected > 0 ? best : null;
+  return best && r2(best.raw) > 0 ? { aim: best.aim, expected: r2(best.raw) } : null;
 }

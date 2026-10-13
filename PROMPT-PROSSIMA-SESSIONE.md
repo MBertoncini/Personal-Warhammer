@@ -915,9 +915,12 @@ la stessa strada:
 - Organ Gun (120) e Flame Cannon (125) dei Nani hanno la loro voce, nello
   0-2 delle Rare (Forces of Fantasy pp. 11, 31). Nel pannello a mano
   l'organo tira dall'arco con i suoi dadi, il lanciafiamme ha «fuoco»;
-- **resta**: nel pannello il punto della palla e la distanza della
-  goccia li sceglie l'app; chi gioca può solo leggerli e misurare al
-  tavolo.
+- ~~nel pannello il punto della palla e la distanza della goccia li
+  sceglie l'app~~ — adesso c'è un campo (2026-10-13): parte dalla
+  proposta (`SH.cannonAim`, `SH.flameAim`) e cambiandolo il valore atteso
+  si rifà con `SH.cannonExpected` e `SH.flameExpected`, lo stesso conto
+  della proposta su un punto dato. Fuori dalla gittata il campo si segna
+  e il tiro non parte.
 
 ## Fatto: il fuoco e la sagoma del fiasco (2026-10-12)
 
