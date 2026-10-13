@@ -118,11 +118,18 @@ const fearful = (need, att) => !att || !att.feared || need <= 0 || need >= IMPOS
   ? need : Math.min(6, need + 1);
 
 /* due tiri separati raccontati come uno solo, per il pannello */
+/* Due mucchi in uno, i dadi di `b` in coda. Se `b` si tirava a un altro
+   punteggio — i colpi avvelenati, i 6 dell'Armour Bane, i mancati
+   ritirati — lo si scrive in `poi`: prima il mucchio diceva solo il
+   punteggio di `a`, e il registro leggeva «ferire 5+ 4 → 1 ferita» per un
+   colpo avvelenato che feriva a 3+, e la scheda spegneva quel dado. */
 function mergePools(a, b){
   if (!b) return a;
   if (!a) return b;
+  if (!a.of && !(a.poi || []).length) return b;
+  const poi = [...(a.poi || []), ...(b.of && b.need !== a.need ? [{ need: b.need, of: b.of }] : []), ...(b.poi || [])];
   return { dice: [...(a.dice || []), ...(b.dice || [])],
-           hits: a.hits + b.hits, need: a.need, of: a.of + b.of };
+           hits: a.hits + b.hits, need: a.need, of: a.of + b.of, ...(poi.length ? { poi } : {}) };
 }
 
 /* Blood Greed (Ravening Hordes p. 115): «whilst Frenzied, this model

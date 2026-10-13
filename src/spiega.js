@@ -159,12 +159,20 @@ function righe_passi(c){
   if (!c.passi.length) return "";
   return `<div class="sp-passi">${c.passi.map(p => {
     const serve = +p.serve || 0;
+    /* `poi`: gli ultimi dadi si tiravano a un altro punteggio — i colpi
+       avvelenati, i 6 dell'Armour Bane — e ognuno si accende col suo */
+    const coda = (p.poi || []).filter(x => x.of && x.need);
+    const soglie = p.d.map(() => serve);
+    let k = p.d.length - coda.reduce((t, x) => t + x.of, 0);
+    for (const x of coda) for (let j = 0; j < x.of && k >= 0 && k < soglie.length; j++) soglie[k++] = +x.need;
     /* `uno`: contano gli 1, e contano male — il terreno pericoloso */
-    const quanti = p.uno ? p.d.filter(v => v === 1).length : serve ? p.d.filter(v => v >= serve).length : null;
-    const stato = v => p.uno ? (v === 1 ? "ko" : "no") : serve ? (v >= serve ? "si" : "no") : "";
+    const quanti = p.uno ? p.d.filter(v => v === 1).length : serve ? p.d.filter((v, i) => v >= soglie[i]).length : null;
+    const stato = (v, i) => p.uno ? (v === 1 ? "ko" : "no") : serve ? (v >= soglie[i] ? "si" : "no") : "";
+    const altri = coda.map(x => `<small>(${x.of === 1 ? "l'ultimo" : `gli ultimi ${x.of}`}` +
+      `${+x.need >= 7 ? (x.of === 1 ? " non può riuscire" : " non possono riuscire") : ` a ${esc(x.need)}+`})</small>`).join("");
     return `<div class="sp-passo">
-      <span class="sp-pt">${esc(p.t)}${serve ? ` <b>${serve}+</b>` : ""}</span>
-      <span class="sp-dadi">${p.d.slice(0, 30).map(v => dadoHTML(v, stato(v))).join("")}${p.d.length > 30 ? `<small>+${p.d.length - 30}</small>` : ""}</span>
+      <span class="sp-pt">${esc(p.t)}${serve ? ` <b>${serve}+</b>${altri}` : ""}</span>
+      <span class="sp-dadi">${p.d.slice(0, 30).map((v, i) => dadoHTML(v, stato(v, i))).join("")}${p.d.length > 30 ? `<small>+${p.d.length - 30}</small>` : ""}</span>
       ${quanti != null ? `<span class="sp-q">${quanti}</span>` : ""}
     </div>`;
   }).join("")}</div>`;
@@ -234,6 +242,7 @@ export const SPIEGA_CSS = `
 .sp .sp-passo{ display:grid; grid-template-columns:86px 1fr auto; align-items:center; gap:6px; }
 .sp .sp-pt{ color:var(--sp-mut); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .sp .sp-pt b{ color:var(--sp-ink); font-family:ui-monospace, Menlo, Consolas, monospace; }
+.sp .sp-pt small{ display:block; white-space:normal; font-size:10px; line-height:1.15; }
 .sp .sp-q{ font:700 13px/1 ui-monospace, Menlo, Consolas, monospace; min-width:1.5em; text-align:right; }
 .sp .sp-passo .sp-d{ width:16px; height:16px; padding:2px; border-radius:4px; }
 .sp .sp-passo .sp-p{ width:3px; height:3px; }

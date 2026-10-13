@@ -825,26 +825,35 @@ function postiNellaZona(S, u, { varchi = false, largo = false } = {}){
      cinghiali e' partito in seconda fila dietro i goblin, e Boar Boyz e
      troll dentro le rovine. */
   const tiro = CB.rangedWeapons(u).length > 0 && !PREP.isCharacter(u);
-  const davanti = (x, y) => {
+  /* `verso` −1 guarda davanti (l'amico che ci copre), +1 dietro (l'amico
+     che copriamo noi). Prima si guardava solo davanti, e chi si schierava
+     DOPO poteva mettersi in corsia davanti a un amico gia' posato: nella
+     partita Elfi contro Nani del 13 ottobre la Grudge Thrower e' finita
+     davanti ai Dwarf Warriors — con il Thane e il Runesmith dentro — e il
+     reggimento ha marciato zero pollici per tutta la partita, in ogni
+     seme. */
+  const inCorsia = (x, y, verso) => {
     const box = { x, y, w: lay.w, h: lay.h, rot: u.rot || 0 };
     const chi = mie.filter(o => !isJoined(o)).map(o => {
       const [lx, ly] = toLocal([o.x, o.y], box);
       const bo = boxOf(o, S.units);
       const corsia = Math.abs(lx) < (lay.w + bo.w) / 2 * 0.8;
       return { o, corsia, ly, d: polyDistance(boxCorners(box), cornersOf(o, S.units)) };
-    }).filter(z => z.corsia && z.ly < 0 && z.d <= ORIZZONTE * MM).sort((a, b) => a.d - b.d)[0];
+    }).filter(z => z.corsia && z.ly * verso > 0 && z.d <= ORIZZONTE * MM).sort((a, b) => a.d - b.d)[0];
     return chi ? chi.o.name : "";
   };
   const offerta = (x, f, p, nome, perche) => {
-    const dietro = davanti(x, p.y);
+    const dietro = inCorsia(x, p.y, -1);
+    const copre = inCorsia(x, p.y, 1);
     return {
       id:"schiera", uid: u.uid, x, y: p.y, rot: u.rot || 0,
       dove: nome + (f ? `, ${f + 1}ª fila` : ""),
       murato: !!p.ter.muro, fila: f,
       lento: lentiPer(u, p.ter.sotto).some(t => t.cat && (t.cat.slow || t.cat.danger || t.cat.disorder)),
       collina: p.ter.sotto.some(t => t.kind === "hill"),
-      dietro, tiro, macchina: macchina(u), sciolto: sciolta(u),
+      dietro, copre, tiro, macchina: macchina(u), sciolto: sciolta(u),
       why: `${perche}${f ? ", dietro" : ", in prima fila"}` + (dietro ? ` a ${dietro}` : "") +
+           (copre ? `, davanti a ${copre} che le resta dietro nella stessa corsia` : "") +
            (p.ter.testo ? ` — ${p.ter.testo}` : ""),
     };
   };
@@ -931,7 +940,7 @@ function perchéFuori(S, u){
    sesto della lista, finiva sempre in seconda fila. */
 function postiConVarchi(S, u){
   const out = postiNellaZona(S, u);
-  if (!out.length || !out.every(x => x.dietro || x.murato || x.lento)) return out;
+  if (!out.length || !out.every(x => x.dietro || x.copre || x.murato || x.lento)) return out;
   const vicino = (a, b) => Math.abs(a.x - b.x) < 1 && Math.abs(a.y - b.y) < 1;
   return [...out, ...postiNellaZona(S, u, { varchi: true, largo: true }).filter(v => !out.some(o => vicino(o, v)))];
 }
@@ -1152,9 +1161,13 @@ export function options(S){
   /* l'ultimo turno lo deve sapere chi sceglie: una mossa che prepara
      la carica del turno dopo, quando il turno dopo non c'e', vale zero
      — e il Ghorgon della partita col seme 7 ha lasciato un tesoro per
-     farla */
+     farla. `ultimaMano` e' di piu': l'ultimo turno di chi muove per
+     secondo, dopo il quale l'avversario non muove piu'. Chi muove per
+     primo all'ultimo turno ha ancora le cariche nemiche davanti. */
+  const ultimo = !!(S.rounds && S.turno >= S.rounds);
   const base = { player: S.army, fase: c.fase, casella: c.id, page: c.page, what: c.what,
-                 turno: S.turno, rounds: S.rounds || null, ultimo: !!(S.rounds && S.turno >= S.rounds) };
+                 turno: S.turno, rounds: S.rounds || null, ultimo,
+                 ultimaMano: ultimo && S.army !== (S.primo || "A") };
 
   /* una reazione alla carica sospesa tocca a chi la subisce, e viene
      prima di ogni altra cosa (p. 120) */
@@ -2229,14 +2242,22 @@ function restareFermo(S, u, d){
   const banda = SH.rangeBand(arma);
   const gittata = linea ? (banda.n || 1) * (banda.die || 6) : bomba ? banda.max : stat(arma.range);
   const minima = bomba ? banda.min : 0;
-  const bersaglio = nemiciDi(S, u).filter(t => onBoard(t) && !ingaggiata(S, t))
+  const aTiro = nemiciDi(S, u).filter(t => onBoard(t) && !ingaggiata(S, t))
     .map(t => ({ t, d: distanza(S, u, t) }))
     .filter(x => x.d <= gittata && x.d >= minima)
     .sort((a, b) => a.d - b.d)
-    .find(x => !vistaTagliata(S, u, x.t, { arco: true }));
+    .filter(x => !vistaTagliata(S, u, x.t, { arco: true }));
+  const bersaglio = aTiro[0];
+  /* Il piu' vicino e' un esempio, non il bersaglio: quello lo sceglie la
+     fase di tiro, che guarda le perdite attese. Prima la frase diceva
+     soltanto «a tiro su Grudge Thrower», e poi la Glade Guard tirava sui
+     Dwarf Warriors — sembrava cambiare idea. */
+  const suChi = () => aTiro.length > 1
+    ? `${aTiro.length} nemici (il più vicino ${bersaglio.t.name}, ${bersaglio.d}″ su ${gittata}″)`
+    : `${bersaglio.t.name} (${bersaglio.d}″ su ${gittata}″)`;
   if (f.moveOrShoot && bersaglio)
     return { tieniIlTiro: true, obbligato: true,
-             why: `resta dov'è: ha ${arma.name} a tiro su ${bersaglio.t.name} (${bersaglio.d}″ su ${gittata}″) e l'arma o si muove o tira (p. 175)` };
+             why: `resta dov'è: ha ${arma.name} a tiro su ${suChi()} e l'arma o si muove o tira (p. 175)` };
   /* E chi tira con un'arma che muovendosi perde qualcosa: il −1 (p. 138),
      −2 con Ponderous (p. 175), e le file dietro del Volley Fire, che
      tirano solo se l'unita' non si e' mossa (p. 180). Il commento
@@ -2251,7 +2272,7 @@ function restareFermo(S, u, d){
     ["monstrousCreature", "behemoth", "heavyChariot", "lightChariot"].includes(troopType(u.troop).id);
   if (perde && !accompagna && bersaglio)
     return { tieniIlTiro: true,
-             why: `resta dov'è: ha ${arma.name} a tiro su ${bersaglio.t.name} (${bersaglio.d}″ su ${gittata}″), e muovendosi tirerebbe con ` +
+             why: `resta dov'è: ha ${arma.name} a tiro su ${suChi()}, e muovendosi tirerebbe con ` +
                   `${f.ponderous ? "−2 (Ponderous, p. 175)" : "−1 (p. 138)"}` +
                   (f.volleyFire && !u.loose ? " e senza le file dietro (Volley Fire, p. 180)" : "") };
   return { why: "resta dov'è: chi non muove spara meglio (p. 138)" };
@@ -7155,10 +7176,16 @@ function passiDi(s){
                         ["ward", "speciale"], ["regen", "rigenerazione"]]){
     const p = s[k];
     if (!p || !p.dice || !p.dice.length || +p.need >= 7) continue;
-    out.push({ t: k === "save" || k === "ward" || k === "regen" ? t + " (salva)" : t, serve: +p.need || 0, d: p.dice });
+    out.push({ t: k === "save" || k === "ward" || k === "regen" ? t + " (salva)" : t, serve: +p.need || 0, d: p.dice,
+               ...(p.poi ? { poi: p.poi } : {}) });
   }
   return out;
 }
+
+/* Gli ultimi dadi del mucchio tirati a un altro punteggio (`poi` di
+   `mergePools`): «ferire 5+ (gli ultimi 2 a 3+)». */
+const codaDi = p => (p.poi || []).filter(x => x.of && x.need)
+  .map(x => ` (${x.of === 1 ? "l'ultimo" : `gli ultimi ${x.of}`}${x.need >= 7 ? (x.of === 1 ? " non può riuscire" : " non possono riuscire") : ` a ${x.need}+`})`).join("");
 
 /* I dadi di un colpo, mucchio per mucchio, e tutti in fila per chi
    legge solo la fila. */
@@ -7171,7 +7198,7 @@ function mucchi(s){
     /* un tiro salvezza che il bersaglio non ha si tira lo stesso a
        7+, e non va mostrato: e' rumore, non un dado della partita */
     if (!p || !p.dice || !p.dice.length || +p.need >= 7) continue;
-    groups.push({ what: p.need ? `${what} ${p.need}+` : what, dice: p.dice });
+    groups.push({ what: p.need ? `${what} ${p.need}+${codaDi(p)}` : what, dice: p.dice });
   }
   return { groups, flat: groups.flatMap(x => x.dice) };
 }

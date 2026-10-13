@@ -21,6 +21,7 @@ import { polysOverlap, boxCorners } from '../src/geom.js';
 import { spawnSync } from 'node:child_process';
 import * as MG from '../src/magic.js';
 import * as EF from '../src/effects.js';
+import * as SP from '../src/spiega.js';
 import * as ARM from '../src/armies.js';
 import { MM } from '../src/util.js';
 
@@ -4042,6 +4043,55 @@ console.log('\nl euristica gioca gli obiettivi e sa quando è l ultimo turno (Ba
   G3.turno = G3.rounds - 1;
   const sc4 = await AG.agenteEuristico({}).scegli({ opzioni: AR.options(G3), stato: G3 });
   ok('il turno prima invece avanza', sc4.scelta && sc4.scelta.uid === tg3.uid && ['avanza', 'marcia'].includes(sc4.scelta.id));
+
+  /* l'ultima mano e' solo di chi muove per secondo: nella partita Elfi
+     contro Nani del 13 ottobre la Glade Guard e' andata a prendersi un
+     tesoro sotto i Thunderers al quinto turno, muovendo per prima, ed e'
+     stata travolta nel turno nanico che restava */
+  G3.turno = G3.rounds; G3.primo = 'A';
+  ok('chi muove per primo all ultimo turno non è all ultima mano', AR.options(G3).ultimaMano === false);
+  G3.primo = 'B';
+  ok('chi muove per secondo sì', AR.options(G3).ultimaMano === true);
+  const sotto = { id: 'obiettivo', uid: tg3.uid, nome: tg3.name, dove: 'un tesoro', valore: 10, danno: 45, rischio: 1, pollici: 2, why: 'x' };
+  const resta = { id: 'ferma', uid: tg3.uid, nome: tg3.name, why: "resta dov'è" };
+  const scegli = async extra => (await AG.agenteEuristico({}).scegli({
+    opzioni: { player: 'A', casella: 'mosse', turno: 5, rounds: 5, ultimo: true, ...extra, list: [sotto, resta, { id: 'avanti', why: 'passa' }] }, stato: G3 })).scelta;
+  ok('un tesoro sotto una carica che costa cara non si prende se il nemico muove ancora',
+     (await scegli({ ultimaMano: false })).id !== 'obiettivo');
+  ok('all ultima mano sì: dopo non carica più nessuno', (await scegli({ ultimaMano: true })).id === 'obiettivo');
+}
+
+console.log('\nlo schieramento non mette nessuno davanti a un amico già posato (p. 115)');
+{
+  /* la partita Elfi contro Nani del 13 ottobre: la Grudge Thrower,
+     schierata per ultima, finiva in corsia davanti ai Dwarf Warriors, e il
+     reggimento col Thane e il Runesmith marciava zero pollici in ogni seme */
+  seme(7);
+  const G = AR.newBattle({ A: lista('lmv3a5cn1indz'), B: lista('lmv3a5cn5yf0u'), scenario: 'bm-strada', primo: 'A' });
+  const ag = { A: AG.agenteEuristico({ nome: 'a' }), B: AG.agenteEuristico({ nome: 'b' }) };
+  const scelte = {};
+  for (let i = 0; i < 200 && G.schierando; i++){
+    const o = AR.options(G);
+    const s = await ag[o.player].scegli({ opzioni: o, stato: G });
+    const u = G.units.find(x => x.uid === s.scelta.uid);
+    if (s.scelta.id === 'schiera' && u) scelte[u.name] = { scelta: s.scelta, offerte: o.list };
+    AR.apply(G, s.scelta);
+  }
+  const gt = scelte['Grudge Thrower'];
+  ok('ogni posto dice anche chi ci resterebbe dietro', gt.offerte.every(x => typeof x.copre === 'string'));
+  ok('e c erano posti davanti ai Dwarf Warriors', gt.offerte.some(x => x.copre === 'Dwarf Warriors'));
+  ok('ma la Grudge Thrower non ci si mette', gt.scelta.copre === '');
+  seme(1);
+}
+
+console.log('\nun mucchio di dadi a due punteggi lo dice (veleno, Armour Bane)');
+{
+  /* i colpi avvelenati feriscono a due in meno: il registro scriveva
+     «ferire 5+ 4 → 1 ferita» e la scheda spegneva il 4 che feriva */
+  const sp = SP.schedaHTML({ titolo: 't', dadi: [], passi: [{ t: 'ferire', serve: 5, d: [2, 4], poi: [{ need: 3, of: 1 }] }],
+                             fattori: [], piu: [] });
+  ok('la scheda dice il punteggio degli ultimi', /l'ultimo a 3\+/.test(sp));
+  ok('e accende il 4 che feriva a 3+', (sp.match(/sp-d-si/g) || []).length === 1);
 }
 
 console.log(fails ? `\n${fails} prove fallite` : '\ntutto a posto');

@@ -536,12 +536,13 @@ export async function salvaNelDiario(p = partita){
   ].filter(Boolean).join("\n\n");
   /* la partita da rivedere: senza foto, che l'app ha nel catalogo e
      mette dentro quando la si apre */
-  const pt = AR.punteggio(S);
   rep.replay = RP.compatta({
     titolo: titolo,
     sotto: `${S.punti.A} contro ${S.punti.B} punti · ${guarda ? `${agenteDi(p, "A").nome} contro ${agenteDi(p, "B").nome}` : `tu con ${S.nomi[p.mia]}`}` +
            (p.seme != null ? ` · seme ${p.seme}` : "") +
-           ` · ${esito ? (esito.winner ? S.nomi[esito.winner] + ", " + esito.label : esito.label) : `punti vittoria ${pt.A} a ${pt.B}, a metà`}`,
+           /* il verdetto sta nell'ultimo fotogramma: qui sopra lo si
+              leggerebbe prima di guardarla */
+           (esito ? "" : ` · interrotta a metà`),
     avvisi: p.avvisi.slice(),
     piede: "Ogni riga porta la pagina del manuale da cui viene. Quello che questa partita non ha giocato: " +
            (non.join("; ") || "niente") + ".",

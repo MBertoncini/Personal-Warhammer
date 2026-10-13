@@ -553,8 +553,10 @@ if (html){
     meta: {
       titolo: `${sc.label} — ${nomi.A} contro ${nomi.B}`,
       avvisi,
-      sotto: `${S.punti.A} contro ${S.punti.B} punti · seme ${seme} · ` +
-             `${agenti.A.nome} contro ${agenti.B.nome} · ${esito.winner ? nomi[esito.winner] + ', ' + esito.label : esito.label}`,
+      /* chi ha vinto lo dice l'ultimo fotogramma, non l'intestazione:
+         e' una partita da guardare, e scritta li' sopra la si sapeva
+         prima di premere «Guarda» */
+      sotto: `${S.punti.A} contro ${S.punti.B} punti · seme ${seme} · ${agenti.A.nome} contro ${agenti.B.nome}`,
       piede: 'Ogni riga porta la pagina del manuale da cui viene. Quello che questa partita non ha giocato: ' +
              ([...S.detto].map(id => (AR.LIMITI.find(x => x.id === id) || {}).what).filter(Boolean).join('; ') || 'niente') + '.',
       w: S.table.w, h: S.table.h, nomi,

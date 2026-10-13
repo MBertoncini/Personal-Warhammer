@@ -134,12 +134,14 @@ export function agenteEuristico({ nome = "euristica", estro = null, piano: sopra
         /* E un posto si guarda anche per quello che c'e' sotto e davanti:
            niente terreno che rallenta sotto i piedi, niente amici davanti
            nella stessa corsia (al primo passo ci si finisce addosso, e chi
-           tira non vede oltre), niente colonna di marcia; chi tira sta
+           tira non vede oltre) e niente amici gia' posati dietro, che per
+           lo stesso motivo resterebbero murati — la Grudge Thrower davanti
+           ai Dwarf Warriors del 13 ottobre —, niente colonna di marcia; chi tira sta
            volentieri sulla collina, e chi va a menare in prima fila. Fra i
            posti migliori si sparpaglia come prima. Prima si sceglieva per
            indice fra tutti, e il carro dei cinghiali della partita del 10
            ottobre e' partito in seconda fila dietro i goblin. */
-        const costo = x => (x.murato ? 100 : 0) + (x.colonna ? 50 : 0) + (x.dietro ? 30 : 0) +
+        const costo = x => (x.murato ? 100 : 0) + (x.colonna ? 50 : 0) + (x.dietro ? 30 : 0) + (x.copre ? 30 : 0) +
           (x.lento && !x.sciolto ? 20 : 0) + (x.fila || 0) * (x.tiro || x.macchina ? 1 : 3) -
           (x.collina && (x.tiro || x.macchina) ? 8 : 0);
         const minimo = Math.min(...posti.map(costo));
@@ -147,6 +149,7 @@ export function agenteEuristico({ nome = "euristica", estro = null, piano: sopra
         const scelto = piano.colonne ? perColonna(usa, piano.colonne, colonna++) : usa[colonna++ % usa.length];
         const scartati = [posti.some(x => x.murato) && !scelto.murato ? "i posti col terreno impassabile davanti" : "",
                           posti.some(x => x.dietro) && !scelto.dietro ? "quelli dietro un amico" : "",
+                          posti.some(x => x.copre) && !scelto.copre ? "quelli davanti a un amico" : "",
                           posti.some(x => x.lento) && !scelto.lento ? "quelli dentro un terreno che rallenta" : "",
                           posti.some(x => x.colonna) && !scelto.colonna ? "la colonna di marcia" : ""].filter(Boolean);
         return { scelta: scelto, perche: `la metto ${scelto.dove}: uno schieramento largo non si fa prendere di fianco` +
@@ -259,15 +262,19 @@ export function agenteEuristico({ nome = "euristica", estro = null, piano: sopra
          ci passava sopra per caso. Chi ne tiene uno resta dov'e' — le
          cariche le ha gia' dichiarate nella loro fase, e muoversi vuol
          dire lasciare dieci punti a ogni fine turno. Chi ne puo' prendere
-         uno in questo turno ci va: all'ultimo turno sempre, prima solo
-         se dove arriva non lo caricano a caro prezzo. Fra piu' obiettivi,
+         uno in questo turno ci va: nell'ultima mano della partita sempre,
+         prima solo se dove arriva non lo caricano a caro prezzo. Prima
+         bastava l'ultimo turno, anche a chi muove per primo: nella partita
+         Elfi contro Nani del 13 ottobre la Glade Guard e' andata a 2″ dai
+         Thunderers per dieci punti, «la caricano il 100%», ed e' stata
+         travolta nel turno nanico che ancora restava. Fra piu' obiettivi,
          prima quello da togliere al nemico, poi quello che vale di piu',
          poi il piu' vicino. Vengono dopo la riforma: chi ha il nemico sul
          fianco si gira prima, e girandosi sul centro non lascia il tesoro. */
       if (piano.obiettivi){
         const tiene = l.find(x => x.id === "ferma" && x.tiene);
         if (tiene) return { scelta: tiene, perche: `${tiene.nome} ${tiene.why}` };
-        const prendi = l.filter(x => x.id === "obiettivo" && (opzioni.ultimo || !(piano.distanze && cattiva(x))))
+        const prendi = l.filter(x => x.id === "obiettivo" && (opzioni.ultimaMano || !(piano.distanze && cattiva(x))))
           .sort((a, b) => (b.ruba ? 1 : 0) - (a.ruba ? 1 : 0) || (b.valore || 0) - (a.valore || 0) ||
                           (a.pollici || 0) - (b.pollici || 0))[0];
         if (prendi) return { scelta: prendi, perche: `${prendi.nome} va a prendere ${prendi.dove}: ${prendi.why}` };
@@ -476,7 +483,8 @@ Come si ragiona in questo gioco:
 - gli obiettivi (tesori e landmark) danno punti vittoria a ogni fine turno a chi li tiene: la mossa «obiettivo» va a
   prenderne uno, e il «ferma» di chi ne tiene uno lo dice. Lasciarlo vuol dire regalare quei punti a ogni turno;
 - la situazione dice il turno e quanti ce ne sono: all'ultimo turno una mossa che prepara la carica del turno dopo
-  non vale niente.`;
+  non vale niente. Ma se all'ultimo turno muovi per primo il nemico muove ancora dopo di te: un tesoro preso
+  dove ti carica facile vale dieci punti e può costarti l'unità intera.`;
 
 export function agenteGemini({ apiKey, model = "gemini-3.6-flash", fetchFn = null,
                                nome = "Gemini", riserva = null, onError = null,
