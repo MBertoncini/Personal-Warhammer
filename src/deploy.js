@@ -3,7 +3,7 @@
 import { MM, $, SVGNS, esc, inch } from './util.js';
 import { BASES, baseById, defaultFrontage } from './bases.js';
 import { parseRoster, parseAny } from './parser.js';
-import { TERRAIN, TREASURE_CLEAR, BM_MAX_SIDE, catOf } from './terrain.js';
+import { TERRAIN, TREASURE_CLEAR, BM_MAX_SIDE, catOf, righeCat } from './terrain.js';
 import { R, T, SCENARIOS, geometry } from './scenarios.js';
 import { saveDoc, loadDoc } from './store.js';
 import { photoForUnit, photoFor, chiaveFoto, catEntry, matchUnitName } from './catalog.js';
@@ -1979,6 +1979,17 @@ let osservatore3D = null;
    prendere quando la scatola ne ha con armi diverse */
 const armiDi = u => [...(u.weapons || []).map(w => w.name), ...(u.shield ? ["Shield"] : [])].filter(Boolean);
 export const osserva3D = fn => { osservatore3D = fn; };
+/* Quello che la scheda della vista 3D dice di un'unita' (tavolo3d.js):
+   le stesse cose delle etichette del disegno. Fuori partita i modelli
+   sono quelli della lista e nessuno e' ferito. */
+function info3D(u){
+  const conta = state.game.on || state.sfida;
+  const per = EX.woundsPerModel(u), prese = EX.woundsOf(u);
+  return { vivi:effModels(u), totale:u.models || 1, tipo:troopType(u.troop).label || "",
+           ferite: conta && per > 1 ? { prese, per } : null,
+           fuga:!!u.fled, mischia: conta ? engagedNow(u) : false,
+           stato: state.game.on ? stateMarks(u).map(m => m.text) : [] };
+}
 export function tavolo3D(){
   const unita = [];
   for (const u of state.units){
@@ -1990,12 +2001,15 @@ export function tavolo3D(){
                catId:c.catId, nome:c.name, ...(ch ? { id:ch.uid, armi:armiDi(ch) } : {}) };
     });
     unita.push({ uid:u.uid, esercito:u.army, nome:u.name, catId:u.catId, x:u.x, y:u.y, rot:u.rot || 0,
-                 command:u.command || null, armi:armiDi(u), celle });
+                 command:u.command || null, armi:armiDi(u), celle, info:info3D(u) });
   }
+  /* il terreno porta anche il suo nome e che cosa fa: passandoci sopra
+     nella vista si legge come nel disegno */
   const terreno = state.terrain.map(t => {
     const b = boxOf(t), cfg = TERRAIN[t.kind] || {};
     return { kind:t.kind, forma:cfg.shape, cat:t.cat || cfg.cat, x:b.x, y:b.y, w:b.w, h:b.h,
-             rot:b.rot || 0, colore:coloreTerreno(t.kind) };
+             rot:b.rot || 0, colore:coloreTerreno(t.kind),
+             label:t.label || cfg.label || t.kind, categoria:catOf(t).label || "", righe:righeCat(t) };
   });
   return { W:state.tableW, H:state.tableH, unita, terreno,
            nomi:{ A:state.armies.A.name, B:state.armies.B.name } };

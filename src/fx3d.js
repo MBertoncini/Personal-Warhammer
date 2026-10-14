@@ -51,7 +51,9 @@ function tessTesto(testo, col){
   return t;
 }
 
-export function motore3D(scena){
+/* `quota(x, y)`: quanto sale il suolo in un punto del tavolo (le colline,
+   tavolo3d.js): un colpo che parte da chi sta in cima parte dalla cima */
+export function motore3D(scena, { quota = () => 0 } = {}){
   const C = motoreFx({});                    // solo per sapere che cosa succede
   const gruppo = new THREE.Group();
   scena.add(gruppo);
@@ -90,7 +92,7 @@ export function motore3D(scena){
     const host = f.ospiti && f.ospiti[id];
     return host != null ? f.unita.find(x => String(x.id) === String(host)) || null : null;
   };
-  const v3 = (p, y = 0) => new THREE.Vector3(p[0], y, p[1]);
+  const v3 = (p, y = 0) => new THREE.Vector3(p[0], y + quota(p[0], p[1]), p[1]);
   function bordo(u, verso){
     const dx = verso[0] - u.x, dy = verso[1] - u.y, L = Math.hypot(dx, dy) || 1;
     const a = -(u.r || 0) * RAD;
@@ -124,10 +126,10 @@ export function motore3D(scena){
     for (let k = 0; k < n; k++){
       const s = luce(p, { col, r: rnd(3, 6), y });
       const a = rnd(0, Math.PI * 2), l = rnd(r * .4, r), su = rnd(4, 18);
-      const x0 = s.position.x, z0 = s.position.z;
+      const x0 = s.position.x, y0 = s.position.y, z0 = s.position.z;
       anima(ms * rnd(.7, 1.2), t => {
         const q = easeOut(t);
-        s.position.set(x0 + Math.cos(a) * l * q, y + su * Math.sin(Math.PI * t), z0 + Math.sin(a) * l * q);
+        s.position.set(x0 + Math.cos(a) * l * q, y0 + su * Math.sin(Math.PI * t), z0 + Math.sin(a) * l * q);
         s.material.opacity = 1 - t;
       }, () => togli(s));
     }
@@ -233,13 +235,14 @@ export function motore3D(scena){
     const r = Math.max(u.w, u.h) * .55;
     const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, alto, 40, 1, true),
       new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
-    m.position.set(u.x, alto / 2, u.y);
+    const giu = quota(u.x, u.y);
+    m.position.set(u.x, giu + alto / 2, u.y);
     gruppo.add(m);
     anima(ms, t => {
       /* additivo su un tavolo chiaro: poca opacita', o diventa un muro bianco */
       m.material.opacity = .22 * Math.sin(Math.PI * t);
       m.scale.y = scende ? 1 - .7 * t : .3 + .7 * easeOut(t);
-      m.position.y = scende ? alto / 2 * (1 - .7 * t) + 10 : alto / 2 * m.scale.y;
+      m.position.y = giu + (scende ? alto / 2 * (1 - .7 * t) + 10 : alto / 2 * m.scale.y);
     }, () => togli(m));
     onda([u.x, u.y], { r: r * 1.4, col, ms: ms * .6 });
   }
@@ -345,13 +348,13 @@ export function motore3D(scena){
     if (tipo === "conveyance"){ dopo(300, () => aura(da, col, { ms: 1100 })); return 1400; }
     if (tipo === "vortex"){
       dopo(300, () => {
-        const r = Math.max(su.w, su.h) * .5;
+        const r = Math.max(su.w, su.h) * .5, giu = quota(su.x, su.y);
         for (let k = 0; k < 14; k++){
           const s = luce([su.x, su.y], { col, r: 14 });
           const a0 = k / 14 * Math.PI * 2;
           anima(1500, t => {
             const a = a0 + t * 9, rr = r * (1 - .6 * t);
-            s.position.set(su.x + Math.cos(a) * rr, 8 + 50 * t, su.y + Math.sin(a) * rr);
+            s.position.set(su.x + Math.cos(a) * rr, giu + 8 + 50 * t, su.y + Math.sin(a) * rr);
             s.material.opacity = Math.sin(Math.PI * t);
           }, () => togli(s));
         }
@@ -381,7 +384,7 @@ export function motore3D(scena){
     const a = v3([da.x, da.y], 30), b = su === da ? v3([da.x, da.y], 90) : v3([su.x, su.y], 30);
     const meta = a.clone().lerp(b, .5);
     dopo(300, () => volo(a, meta, { ms: 450, arco: 15, fare: globo(col, 22), fine: q => {
-      scintille([q.x, q.z], { n: 12, r: 40, col: "#bfe9ff", y: q.y });
+      scintille([q.x, q.z], { n: 12, r: 40, col: "#bfe9ff", y: q.y - quota(q.x, q.z) });
       svanisce(luce(q, { col: "#ffffff", r: 40 }), 400);
     } }));
     return 1300;

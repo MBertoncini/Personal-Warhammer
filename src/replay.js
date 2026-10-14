@@ -760,9 +760,13 @@ function cliente(){
       const cm = p.cm || '';
       return { uid: u.id, esercito: u.a || p.a, nome: p.n || u.n, catId: p.k || null, x: u.x, y: u.y, rot: u.r || 0,
                command: cm ? { standard: cm.includes('s'), musician: cm.includes('m'), champion: cm.includes('c') } : null,
-               armi: p.ar || null, celle };
+               armi: p.ar || null, celle,
+               /* quello che la vista scrive sopra l'unita' e nella sua
+                  scheda: le stesse cose dell'etichetta 2D */
+               info: { vivi: u.v, totale: u.m, tipo: p.tl || '', fuga: !!u.f, mischia: !!u.c,
+                       ferite: u.fw ? { prese: u.fp || 0, per: u.fw } : null } };
     });
-    return { W, H, unita, terreno: M.terreno || [] };
+    return { W, H, unita, terreno: M.terreno || [], nomi: M.nomi || {} };
   }
   tre.onchange = async () => {
     if (!tre.checked){ document.body.classList.remove('in3d'); if (v3d) v3d.spegni(); return; }

@@ -11,7 +11,7 @@
  * di rete. Qui dentro c'e' solo il guscio dell'app.
  */
 
-const VERSION = "v63";
+const VERSION = "v64";
 const SHELL = "shell-" + VERSION;
 const RUNTIME = "runtime-" + VERSION;
 
@@ -40,7 +40,7 @@ const FILES = [
   "./src/lab-motore.js", "./src/lab-esperimento.js", "./src/terreno-casuale.js",
   "./src/phases.js", "./src/engine.js", "./src/charge.js", "./src/melee.js",
   "./src/shoot.js", "./src/psych.js", "./src/magic.js", "./src/charts.js", "./src/victory.js",
-  "./src/vista3d.js", "./src/modelli3d.js", "./src/fx3d.js", "./vendor/three/three.module.min.js",
+  "./src/vista3d.js", "./src/modelli3d.js", "./src/fx3d.js", "./src/tavolo3d.js", "./vendor/three/three.module.min.js",
   "./vendor/three/addons/controls/OrbitControls.js", "./vendor/three/addons/loaders/GLTFLoader.js",
   "./vendor/three/addons/utils/BufferGeometryUtils.js", "./vendor/three/addons/libs/meshopt_decoder.module.js",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png",

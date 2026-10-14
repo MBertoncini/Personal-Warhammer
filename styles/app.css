@@ -1624,8 +1624,27 @@ svg#board .fxt{font-weight:800;paint-order:stroke;stroke:rgba(0,0,0,.55);stroke-
 .v3d-scelte[hidden]{display:none;}
 .v3d-riga{display:block;margin:0 0 10px;}
 .v3d-riga select{width:100%;}
+/* la regia della partita contro l'AI (controai.js): la barra di chi
+   guarda in fondo, le mosse di lato, le schede del perche' sopra la tela.
+   Senza una partita i posti restano chiusi. */
+.v3d:not([data-regia]) .v3d-regia, .v3d:not([data-regia]) [data-v3d="mosse"],
+.v3d:not([data-regia]) .v3d-mosse, .v3d:not([data-regia]) .v3d-pila{display:none;}
+.v3d-regia{border-top-color:#2e2a22;}
+.v3d-regia .btn, .v3d-regia select{background:#2a261f;color:#ece8de;border-color:#423c31;}
+.v3d-regia .btn.primary{background:#d8b24a;color:#1c160b;border-color:#d8b24a;}
+.v3d-regia .btn:disabled{opacity:.4;}
+.v3d-mosse{width:min(360px,90vw);display:flex;flex-direction:column;min-height:0;padding:8px 12px;
+  background:var(--panel);color:var(--ink);border-left:1px solid var(--line);}
+.v3d-mosse[hidden]{display:none;}
+.v3d-mosse .sf-registro{flex:1;max-height:none;margin:0;}
+.v3d-tela .v3d-pila{position:absolute;top:auto;left:8px;right:8px;bottom:8px;width:auto;z-index:3;height:auto;max-height:min(176px,30%);
+  background:transparent;border-top:0;padding:0;align-items:flex-end;}
+.v3d-tela .v3d-pila .sp-voce{pointer-events:auto;box-shadow:0 6px 18px rgba(0,0,0,.35);border-radius:8px;}
+.v3d-tela .v3d-pila:empty::before{content:none;}
+.v3d[data-regia] .v3d-aiuto{top:8px;bottom:auto;}
 @media (max-width:700px){
   .v3d-corpo{flex-direction:column;}
-  .v3d-scelte{width:auto;max-height:45vh;border-left:0;border-top:1px solid var(--line);}
+  .v3d-scelte, .v3d-mosse{width:auto;max-height:40vh;border-left:0;border-top:1px solid var(--line);}
+  .v3d-tela{min-height:45vh;}
 }
 body.v3d-aperta{overflow:hidden;}

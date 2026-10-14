@@ -750,31 +750,38 @@ function righeRegistro(S, n = 40){
    e un clic le fissa finche' non le chiudi.
    ============================================================ */
 const VITA = 9000, QUANTE = 3;
-let pila = null;
+/* due strisce: sotto il campo 2D e sopra la vista 3D, quando e' aperta */
+const pile = { "2d": null, "3d": null };
 
 /* La striscia del perche' sta SOTTO il campo, non sopra: le schede in
    alto a destra coprivano proprio i pezzi di cui parlavano, e a schermo
    intero su un telefono coprivano mezzo tavolo. Ha un'altezza fissa,
    cosi' il tavolo non salta a ogni scheda che entra o esce. */
+function cssSpiega(){
+  if (document.getElementById("sp-css")) return;
+  const st = document.createElement("style");
+  st.id = "sp-css"; st.textContent = SPIEGA_CSS;
+  document.head.appendChild(st);
+}
+/* Con la vista 3D aperta le schede vanno sopra di lei: sotto, il campo
+   2D e' coperto, e il perche' di una mossa non lo vedrebbe nessuno. */
 function contenitore(){
-  if (pila && pila.isConnected) return pila;
+  const tela = vista3D() && vista3D().querySelector(".v3d-tela");
+  const dove = tela ? "3d" : "2d";
+  if (pile[dove] && pile[dove].isConnected) return pile[dove];
   const campo = document.querySelector(".board-scroll");
-  if (!campo) return null;
-  if (!document.getElementById("sp-css")){
-    const st = document.createElement("style");
-    st.id = "sp-css"; st.textContent = SPIEGA_CSS;
-    document.head.appendChild(st);
-  }
-  pila = document.createElement("div");
-  pila.className = "sp-pila sp-striscia";
+  if (!tela && !campo) return null;
+  cssSpiega();
+  const pila = document.createElement("div");
+  pila.className = "sp-pila sp-striscia" + (tela ? " v3d-pila" : "");
   pila.setAttribute("aria-live", "polite");
   pila.setAttribute("aria-label", "il perché delle ultime mosse");
-  campo.after(pila);
-  return pila;
+  if (tela) tela.appendChild(pila); else campo.after(pila);
+  return (pile[dove] = pila);
 }
-function svuotaPila(){ if (pila) pila.innerHTML = ""; }
+function svuotaPila(){ for (const p of Object.values(pile)) if (p) p.innerHTML = ""; }
 /* finita la sfida la striscia se ne va, e il tavolo torna grande */
-function togliPila(){ if (pila){ pila.remove(); pila = null; } }
+function togliPila(){ for (const k of Object.keys(pile)) if (pile[k]){ pile[k].remove(); pile[k] = null; } }
 
 function vattene(v){
   if (!v.isConnected) return;
@@ -882,6 +889,13 @@ function disegnaCinema(){
   const barra = document.getElementById("sf-cinema-barra");
   const p = partita;
   if (!barra || !p) return;
+  riempiBarra(barra, p, { esci: true });
+  if (p.S.finita || p.fermo) document.body.classList.remove("sfc-quieta");
+}
+/* La barra di chi guarda: il punteggio, la fase, avanti e indietro,
+   ferma e riprendi, la velocita'. La stessa a schermo intero e sopra la
+   vista 3D, cosi' in tutti e due i posti si comanda allo stesso modo. */
+function riempiBarra(barra, p, { esci = false } = {}){
   const S = p.S, pt = AR.punteggio(S);
   const fase = S.finita ? (S.esito && S.esito.winner ? `Ha vinto ${S.nomi[S.esito.winner]}: ${S.esito.label}` : "Partita finita")
              : S.preparando ? "Incantesimi" : S.schierando ? "Schieramento"
@@ -891,7 +905,9 @@ function disegnaCinema(){
     <div class="sfc-info">
       <b class="sfc-es" style="background:var(--armyA)">${esc(S.nomi.A)} ${pt.A}</b>
       <b class="sfc-es" style="background:var(--armyB)">${esc(S.nomi.B)} ${pt.B}</b>
-      <span class="sfc-fase">${esc(fase)}${p.pensa && p.chiPensa ? ` · pensa ${esc(S.nomi[p.chiPensa])}` : ""}</span>
+      <span class="sfc-fase">${esc(fase)}${p.pensa && p.chiPensa ? ` · pensa ${esc(S.nomi[p.chiPensa])}` : ""}${
+        p.guardo != null ? ` · <b>stato ${p.guardo + 1} di ${p.storia.length}</b>` : ""}${
+        !esci && p.attesa && !p.gira ? " · tocca a te: la mossa si sceglie nel pannello della sfida" : ""}</span>
     </div>
     <div class="sfc-comandi">
       ${p.storia.length > 1 ? tempoHTML(p) : ""}
@@ -902,17 +918,40 @@ function disegnaCinema(){
       ${guarda ? `<select data-c="velocita" aria-label="velocità">${VELOCITA_SCELTE.map(([v, t]) =>
         `<option value="${v}" ${v === velocita() ? "selected" : ""}>${t}</option>`).join("")}</select>` : ""}
       ${S.finita && p.rec && p.rec.frames.length && !p.salvata ? `<button class="btn tiny primary" data-c="salva">Salva nel diario</button>` : ""}
-      <button class="btn tiny" data-c="esci" title="esci dallo schermo intero (Esc)">✕</button>
+      ${esci ? `<button class="btn tiny" data-c="esci" title="esci dallo schermo intero (Esc)">✕</button>` : ""}
     </div>`;
   const fai = { riprendi, passo: unPasso, ferma, salva: () => salvaNelDiario(p), esci: esciCinema };
+  /* il pulsante premuto non tiene il fuoco: lo spazio deve fermare la
+     partita, non premerlo un'altra volta */
   barra.querySelectorAll("button[data-c]").forEach(b => b.addEventListener("click", e => {
-    e.stopPropagation(); fai[b.dataset.c](); svegliaCinema();
+    e.stopPropagation(); b.blur(); fai[b.dataset.c](); svegliaCinema();
   }));
   agganciaTempo(barra);
   const vel = barra.querySelector('select[data-c="velocita"]');
-  if (vel) vel.addEventListener("change", () => { scrivi(VELOCITA, vel.value === "1" ? "" : vel.value); svegliaCinema(); });
-  if (S.finita || p.fermo) document.body.classList.remove("sfc-quieta");
+  if (vel) vel.addEventListener("change", () => { scrivi(VELOCITA, vel.value === "1" ? "" : vel.value); vel.blur(); svegliaCinema(); });
 }
+
+/* ============================================================
+   5c · SOPRA LA VISTA 3D
+   La vista 3D (vista3d.js) copre tutto il tavolo, e con lui la barra,
+   le schede del perche' e il registro: dentro ci sono i posti vuoti, e
+   qui si riempiono — la barra di chi guarda in fondo, le mosse nel
+   pannello di lato, le schede sopra la tela. La vista dice quando si
+   apre e si chiude con l'evento `v3d`.
+   ============================================================ */
+const vista3D = () => (typeof document !== "undefined" && document.querySelector(".v3d:not([hidden])")) || null;
+function disegna3D(){
+  const box = typeof document !== "undefined" && document.querySelector(".v3d");
+  if (!box) return;
+  const p = partita;
+  box.toggleAttribute("data-regia", !!p);
+  const regia = box.querySelector(".v3d-regia"), mosse = box.querySelector(".v3d-mosse-lista");
+  if (!p){ if (regia) regia.innerHTML = ""; if (mosse) mosse.innerHTML = ""; return; }
+  if (box.hidden) return;
+  if (regia) riempiBarra(regia, p);
+  if (mosse){ cssSpiega(); mosse.innerHTML = righeRegistro(p.S, 80); }
+}
+if (typeof document !== "undefined") document.addEventListener("v3d", () => renderSfida());
 /* il pulsante per entrarci, piccolo, nell'angolo del tavolo: su un
    telefono il pannello della sfida sta nel cassetto, e per guardare
    non lo si deve aprire */
@@ -973,6 +1012,7 @@ export function renderSfida(){
   /* la barra dello schermo intero e il pulsante nell'angolo seguono il
      pannello: si ridisegnano insieme */
   if (cinema) disegnaCinema();
+  disegna3D();
   pulsanteCinema();
   if (partita) cornice(partita);
   const host = $("#sfida");
