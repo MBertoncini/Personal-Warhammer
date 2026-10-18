@@ -1,17 +1,17 @@
 {
   "listA": "lmv3a5cmqm740",
-  "listB": "lmugl4zw1fft7",
+  "listB": "lmuh94k2z9p26",
   "mine": "both",
   "note": "",
   "aiai": {
     "scenario": "sxprova-boschi",
-    "chi": "euristica",
+    "chi": "ricerca",
     "seme": 1,
     "html": true,
     "archivia": true,
     "estro": true,
     "mappa": true,
-    "partite": 10
+    "partite": 1
   },
   "sfidaMia": "A",
   "sfidaScenario": "sxmus3g2dbu3h"
