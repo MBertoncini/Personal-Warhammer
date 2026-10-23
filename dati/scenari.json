@@ -255,5 +255,114 @@
         "rot": 0
       }
     ]
+  },
+  {
+    "id": "sxmvksduqm799",
+    "label": "Tavolo 4007 · Battaglia campale, fitto",
+    "table": [
+      44,
+      30
+    ],
+    "gap": 6,
+    "deploy": "pitched battle",
+    "desc": "Generato dal Laboratorio (seme 4007): 44×30 (Battle March piccolo), Battaglia campale, terreno vario fitto, 2 tesori, regole del Core Rulebook.",
+    "terrain": [
+      {
+        "kind": "hill",
+        "x": 18,
+        "y": 8.75,
+        "w": 8.5,
+        "h": 4.5,
+        "rot": 0
+      },
+      {
+        "kind": "hill",
+        "x": 34.25,
+        "y": 9.75,
+        "w": 10,
+        "h": 4.5,
+        "rot": 0
+      },
+      {
+        "kind": "wall",
+        "x": 6.5,
+        "y": 6.5,
+        "w": 6,
+        "h": 1,
+        "rot": 0
+      },
+      {
+        "kind": "wall",
+        "x": 28.75,
+        "y": 3.5,
+        "w": 7.5,
+        "h": 1,
+        "rot": 0
+      },
+      {
+        "kind": "wall",
+        "x": 39,
+        "y": 2.75,
+        "w": 6,
+        "h": 1,
+        "rot": 0
+      },
+      {
+        "kind": "hill",
+        "x": 26,
+        "y": 21.25,
+        "w": 8.5,
+        "h": 4.5,
+        "rot": 0
+      },
+      {
+        "kind": "hill",
+        "x": 9.75,
+        "y": 20.25,
+        "w": 10,
+        "h": 4.5,
+        "rot": 0
+      },
+      {
+        "kind": "wall",
+        "x": 37.5,
+        "y": 23.5,
+        "w": 6,
+        "h": 1,
+        "rot": 0
+      },
+      {
+        "kind": "wall",
+        "x": 15.25,
+        "y": 26.5,
+        "w": 7.5,
+        "h": 1,
+        "rot": 0
+      },
+      {
+        "kind": "wall",
+        "x": 5,
+        "y": 27.25,
+        "w": 6,
+        "h": 1,
+        "rot": 0
+      },
+      {
+        "kind": "treasure",
+        "x": 6.25,
+        "y": 13.5,
+        "w": 1.575,
+        "h": 1.575,
+        "rot": 0
+      },
+      {
+        "kind": "treasure",
+        "x": 37.75,
+        "y": 16.5,
+        "w": 1.575,
+        "h": 1.575,
+        "rot": 0
+      }
+    ]
   }
 ]
