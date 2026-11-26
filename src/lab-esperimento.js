@@ -17,7 +17,9 @@
  *                    la partita nuova per stasera;
  *   UN TAVOLO      — due liste date, e il tavolo su cui vengono alla
  *                    pari, fra tavoli generati (terreno-casuale.js);
- *   UN TORNEO      — tutte contro tutte fra liste scelte, su ogni scenario.
+ *   UN TORNEO      — tutte contro tutte fra liste scelte, su ogni scenario;
+ *   DUE CONTRO UNO — due liste alleate dalla stessa parte (alleati.js)
+ *                    contro una, o contro altre due: chi vince, e dove.
  *
  * Ogni parte (la fazione che si cerca, e nella sfida anche l'altra) ha
  * le sue unità, una per riga, con quattro scelte: NO (mai), LIBERA (come
@@ -50,6 +52,7 @@ import { loadDoc, saveDoc, deleteDoc, listKeys } from './store.js';
 import { startSfida, inCorso } from './controai.js';
 import { emit } from './bus.js';
 import { askConfirm } from './uikit.js';
+import { unisci } from './alleati.js';
 
 const KEY = "tow-lab-esp";
 const PREFISSO = "lab:esp:";
@@ -59,6 +62,7 @@ export const TIPI = {
   coppia:   { label: "Una sfida alla pari", spiega: "Due liste, una per parte, che si battono alla pari: la partita nuova per stasera." },
   scenario: { label: "Un tavolo per una sfida", spiega: "Due liste date, e il tavolo su cui vengono alla pari, fra tavoli generati." },
   torneo:   { label: "Un torneo", spiega: "Tutte contro tutte fra le liste che scegli, su ogni scenario." },
+  duo:      { label: "Due contro uno", spiega: "Due liste alleate dalla stessa parte, 500 + 500 contro 1000: chi vince, e su quale tavolo." },
 };
 const POOL = { collezione: "solo la mia collezione", tutte: "tutte le unità che si sanno costruire" };
 const STATI = [["no", "No"], ["libera", "Libera"], ["si", "Sì"], ["tante", "Tante"]];
@@ -75,13 +79,15 @@ const DEFAULT = {
   sforzo: "rapido", seme: 1001, lavori: 0, esempi: true, varieta: false,
   sfida: { x: "", y: "", tavoli: 12, conScelti: true },
   torneo: { liste: [], semi: 2 },
+  duo: { x: "", x2: "", y: "", y2: "", semi: 4 },
 };
 let cfg = structuredClone(DEFAULT);
 try {
   const s = JSON.parse(localStorage.getItem(KEY) || "{}");
   cfg = { ...cfg, ...s, A: { ...cfg.A, ...(s.A || {}) }, B: { ...cfg.B, ...(s.B || {}) },
           avversari: { ...cfg.avversari, ...(s.avversari || {}) }, gen: { ...cfg.gen, ...(s.gen || {}) },
-          sfida: { ...cfg.sfida, ...(s.sfida || {}) }, torneo: { ...cfg.torneo, ...(s.torneo || {}) } };
+          sfida: { ...cfg.sfida, ...(s.sfida || {}) }, torneo: { ...cfg.torneo, ...(s.torneo || {}) },
+          duo: { ...cfg.duo, ...(s.duo || {}) } };
 } catch { /* la prima volta */ }
 const ricorda = () => { try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch { /* niente */ } };
 
@@ -343,6 +349,35 @@ function torneoHTML(){
     </div>`;
 }
 
+/* Le due parti del 2 contro 1: una lista per parte, e accanto la sua
+   alleata, facoltativa. Le liste sono tutte, non solo quelle vicine ai
+   punti: il punto è proprio che 500 + 500 stanno contro 1000. */
+function duoHTML(){
+  const note = listeNote(), d = cfg.duo;
+  const opts = (vuota, escludi = "") => [["", vuota], ...note.filter(l => l.id !== escludi)
+    .map(l => [l.id, `${l.name} · ${SIGLA(l.fazione)} · ${l.points} pt · ${FONTE[l.fonte]}`])];
+  const punti = (a, b) => [a, b].map(id => (note.find(l => l.id === id) || {}).points || 0).reduce((s, x) => s + x, 0);
+  const px = punti(d.x, d.x2), py = punti(d.y, d.y2);
+  return `
+    <div class="lab-blocco">
+      <div class="panel-title">Chi gioca</div>
+      <div class="lab-due">
+        <div class="lab-parte"><b>Una parte</b>
+          <label class="field">La lista${sel("le-duo-x", d.x, opts("— scegli —"))}</label>
+          <label class="field">e la sua alleata${sel("le-duo-x2", d.x2, opts("— nessuna —", d.x))}</label>
+          ${px ? `<p class="note mono">${px} punti</p>` : ""}</div>
+        <div class="lab-parte"><b>L'altra</b>
+          <label class="field">La lista${sel("le-duo-y", d.y, opts("— scegli —"))}</label>
+          <label class="field">e la sua alleata${sel("le-duo-y2", d.y2, opts("— nessuna: gioca da sola —", d.y))}</label>
+          ${py ? `<p class="note mono">${py} punti</p>` : ""}</div>
+      </div>
+      <label class="field" style="max-width:220px">Semi per scenario<input type="number" id="le-duo-semi" min="1" max="20" value="${d.semi}"></label>
+      <p class="note">Le due liste alleate muovono nello stesso turno e vincono o perdono insieme; ogni generale ispira solo la sua lista,
+        un capo si schiera solo nei reggimenti della sua, e ogni generale o stendardo perso vale i suoi punti all'altra parte.
+        Ogni seme si gioca due volte, con le parti scambiate di lato. Gli scenari sono quelli spuntati qui sotto, più i tavoli generati.</p>
+    </div>`;
+}
+
 /* ---------------- la ricerca: sforzo, seme, lavoratori ---------------- */
 function stima(){
   const nScen = cfg.scenari.length + (cfg.gen.quanti | 0);
@@ -353,6 +388,7 @@ function stima(){
     n = stimaPartite(P, avv * nScen, 12);
   } else if (cfg.tipo === "coppia") n = stimaCoppia(P, nScen);
   else if (cfg.tipo === "scenario") n = 2 * ((cfg.sfida.tavoli | 0) + (cfg.sfida.conScelti ? cfg.scenari.length : 0)) * 2 + 2 * 3 * 3;
+  else if (cfg.tipo === "duo") n = nScen * Math.max(1, cfg.duo.semi | 0) * 2;
   else { const k = cfg.torneo.liste.length; n = k * (k - 1) / 2 * nScen * cfg.torneo.semi * 2; }
   const lavori = cfg.lavori || lavoriDefault();
   const sec = n / Math.max(0.05, velocita() * lavori);
@@ -514,6 +550,26 @@ async function prepara(scen, ids, P){
     };
   }
 
+  if (cfg.tipo === "duo"){
+    const d = cfg.duo;
+    const parteDi = (a, b) => { const x = perId(a), y = b ? perId(b) : null;
+                                return x ? { lista: y ? unisci(x.lista, y.lista) : x.lista, fazioni: [x, y].filter(Boolean).map(l => l.fazione) } : null; };
+    const X = parteDi(d.x, d.x2), Y = parteDi(d.y, d.y2);
+    if (!X || !Y) return { errore: "Scegli almeno una lista per parte." };
+    if (!d.x2 && !d.y2) return { errore: "Due contro uno vuole un'alleata almeno da una parte: per una lista contro una c'è «Un torneo»." };
+    const semi = Math.max(1, Math.min(20, d.semi | 0));
+    const liste = [{ id: "x", name: X.lista.name, lista: X.lista }, { id: "y", name: Y.lista.name, lista: Y.lista }];
+    const pt = l => (l.units || []).reduce((t, u) => t + (+u.pts || 0), 0);
+    return {
+      titolo: `${X.lista.name} contro ${Y.lista.name} · ${pt(X.lista)} contro ${pt(Y.lista)} pt`,
+      righe: [`scenari: ${ids.map(i => etich[i]).join(", ")}`, `${semi} semi per scenario, ognuno con le parti scambiate di lato`],
+      lancia: c => torneo({ liste, scenari: ids, semi, seme: cfg.seme, ...c }),
+      salva: r => ({ duo: { x: { name: X.lista.name, punti: pt(X.lista), fazioni: X.fazioni, lista: X.lista },
+                            y: { name: Y.lista.name, punti: pt(Y.lista), fazioni: Y.fazioni, lista: Y.lista },
+                            scenari: ids, celle: r.celle } }),
+    };
+  }
+
   /* il torneo */
   const scelte = cfg.torneo.liste.map(perId).filter(Boolean);
   if (scelte.length < 2) return { errore: "Servono almeno due liste per un torneo." };
@@ -629,13 +685,35 @@ function risultatoTorneo(doc){
     <p class="note">In ogni casella le vinte della riga e, piccole, le perse, su tutti gli scenari. Questo torneo si legge anche nella tabella in cima alla scheda «Ricerche del progetto», scenario per scenario.</p>`;
 }
 
+function risultatoDuo(doc){
+  const r = doc.duo, nomi = [r.x.name, r.y.name];
+  const per = {}, tot = { w: 0, l: 0, d: 0, n: 0 };
+  for (const id of r.scenari){
+    const c = r.celle[`${id}|x|y`];
+    if (!c) continue;
+    per[id] = c;
+    for (const k of ["w", "l", "d", "n"]) tot[k] += c[k];
+  }
+  /* il tavolo più alla pari, per giocarla stasera */
+  const pari = Object.entries(per).filter(([, c]) => c.n).sort((a, b) => Math.abs(quota(a[1]) - 0.5) - Math.abs(quota(b[1]) - 0.5))[0];
+  return `<div class="lab-alt">
+    <div class="readout"><span>${esc(nomi[0])} (${r.x.punti} pt) contro ${esc(nomi[1])} (${r.y.punti} pt)</span>
+      <b>${pc(tot.w, tot.n)}–${pc(tot.l, tot.n)}, pari ${pc(tot.d, tot.n)}% <span class="mono">(${tot.n} partite)</span></b></div>
+    <p class="note">${tot.n ? quota(tot) > 0.6 ? `Vince ${esc(nomi[0])}, e non di poco.` : quota(tot) < 0.4 ? `Vince ${esc(nomi[1])}, e non di poco.` : "Stanno vicine: è una sfida alla pari." : ""}
+      ${pari ? ` Il tavolo più alla pari è <b>${esc(nomeSc(doc, pari[0]))}</b>.` : ""}</p>
+    ${barraScenari(doc, per, nomi)}
+    <div class="btn-row">
+      <button class="btn tiny" data-le-duo="${esc(doc.id)}|${esc(pari ? pari[0] : "")}" title="L'euristica da tutte e due le parti, sul tavolo vero">Guardala giocare</button>
+    </div></div>`;
+}
+
 function esperimentiHTML(){
   const tutti = esperimenti();
   if (!tutti.length) return `<p class="empty">Nessun esperimento ancora: configurane uno qui sopra e premi «Avvia».</p>`;
   return tutti.map(doc => {
     const ap = doc.id === aperto;
     const corpo = !ap ? "" : doc.tipo === "lista" ? risultatoLista(doc) : doc.tipo === "coppia" ? risultatoCoppia(doc)
-      : doc.tipo === "scenario" ? risultatoTavolo(doc) : risultatoTorneo(doc);
+      : doc.tipo === "scenario" ? risultatoTavolo(doc) : doc.tipo === "duo" ? risultatoDuo(doc) : risultatoTorneo(doc);
     return `<div class="lab-card${ap ? " lab-aperto" : ""}">
       <div class="lab-card-head">
         <button class="lab-titolo" data-le-apri="${esc(doc.id)}" aria-expanded="${ap}"><b>${esc(doc.titolo)}</b></button>
@@ -663,6 +741,7 @@ export async function renderEsperimento(host, rinfresca){
       <p class="note">Le due parti possono essere della stessa fazione: con la collezione le miniature sono le stesse, e al tavolo vero non si schierano insieme.</p></div>` : ""}
     ${t === "scenario" ? sfidaHTML() : ""}
     ${t === "torneo" ? torneoHTML() : ""}
+    ${t === "duo" ? duoHTML() : ""}
     ${giocoHTML()}
     ${ricercaHTML()}
     <div class="lab-blocco lab-via">
@@ -727,6 +806,12 @@ function collega(host, rinfresca){
   val("#le-sf-tavoli", el => { cfg.sfida.tavoli = Math.max(1, Math.min(40, +el.value | 0)); });
   val("#le-sf-scelti", el => { cfg.sfida.conScelti = el.checked; });
   val("#le-tor-semi", el => { cfg.torneo.semi = Math.max(1, Math.min(10, +el.value | 0)); });
+  for (const k of ["x", "x2", "y", "y2"]) val(`#le-duo-${k}`, el => {
+    cfg.duo[k] = el.value;
+    /* la lista e la sua alleata non sono la stessa */
+    for (const p of ["x", "y"]) if (cfg.duo[p + "2"] && cfg.duo[p + "2"] === cfg.duo[p]) cfg.duo[p + "2"] = "";
+  });
+  val("#le-duo-semi", el => { cfg.duo.semi = Math.max(1, Math.min(20, +el.value | 0)); });
 
   /* il gioco */
   val("#le-punti", el => { cfg.punti = Math.max(300, Math.min(5000, +el.value | 0)); });
@@ -783,6 +868,22 @@ function collega(host, rinfresca){
     const [id, i] = b.dataset.leCoppia.split("|"), c = doc(id).coppia.coppie[+i];
     const r = [await adoptList(c.listaA), await adoptList(c.listaB)];
     fatto(b, r.every(x => !x.nuova) ? "Le avevi già ✓" : "Aggiunte ✓");
+  }));
+  /* guardare una partita su uno scenario dell'esperimento: un tavolo
+     generato prima si salva fra i tuoi, se no la sfida non lo trova */
+  const guarda = async (listA, listB, sc, d) => {
+    const def = (d.scenari || {})[sc];
+    if (def && def.gen){
+      if (!await askConfirm(`«${def.label}» è un tavolo generato: per giocarci lo salvo fra i tuoi scenari.`, { title: "Salvare il tavolo?", ok: "Salva e gioca" })) return;
+      sc = await saveCustom({ name: def.label, table: def.table, gap: def.gap, deploy: def.deploy, desc: def.desc, terrain: def.terrain, formato: def.gen.formato });
+    }
+    if (inCorso() && !await askConfirm("C'è già una sfida in corso: la abbandono e ne comincio un'altra?", { title: "Nuova partita?" })) return;
+    startSfida({ listA, listB, mia: "guarda", scenario: sc || "", seme: d.cfg ? d.cfg.seme : 1 });
+    emit("sfida:show");
+  };
+  host.querySelectorAll("[data-le-duo]").forEach(b => b.addEventListener("click", () => {
+    const [id, sc] = b.dataset.leDuo.split("|"), d = doc(id);
+    guarda(d.duo.x.lista, d.duo.y.lista, sc, d);
   }));
   host.querySelectorAll("[data-le-guarda]").forEach(b => b.addEventListener("click", async () => {
     const [id, i] = b.dataset.leGuarda.split("|"), d = doc(id), c = d.coppia.coppie[+i];

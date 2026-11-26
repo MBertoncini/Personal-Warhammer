@@ -93,6 +93,8 @@ Il verdetto elenca ogni voce con `richiesti/posseduti`, segna in rosso lo scoper
 
 *Porta sul tavolo* carica le due liste negli eserciti A e B del simulatore.
 
+**Due contro uno.** Sotto ogni esercito c'è *con un alleato*: una seconda lista dalla stessa parte, per la serata in cui Tommaso e Kevin portano 500 punti a testa contro i 1000 di Michele (o due contro due). Le due liste diventano un esercito solo (`src/alleati.js`) e tutto il resto della scheda lo vede così — il confronto, la verifica delle miniature (le liste della stessa parte si sommano), *Porta sul tavolo*, la sfida contro l'AI e *AI contro AI*, anche dal terminale con `--liste 35+36,37`. Le due alleate muovono nello stesso turno e vincono o perdono insieme, ma ognuna tiene il suo **generale** e il suo **stendardo da battaglia**: un generale ispira solo le unità della sua lista, un capo si schiera solo nei reggimenti della sua, e ogni generale o stendardo perso vale i suoi punti all'altra parte. Una partita salvata nel diario conta nel palmarès di tutte e due le liste.
+
 ### 4. Tavolo
 
 Scenari Battle March e generici, zone di schieramento, terreno con i controlli (tesori a più di 3″ da ogni elemento, nessun pezzo oltre i 12″ sul lato lungo), rotazione, snap a ¼″, misurazione.
@@ -344,6 +346,7 @@ node tools/partita.mjs --seme 42      # la stessa partita, sempre identica
 node tools/partita.mjs --liste ?      # le liste dell'archivio, numerate
 node tools/partita.mjs --liste 4,9 --scenario bm-rovine
 node tools/partita.mjs --liste lmtl5r4mb97yl,lmubp01267euf   # o per id: il comando che copia la scheda Matchup
+node tools/partita.mjs --liste 35+36,37   # due liste alleate contro una: il 2 contro 1
 node tools/partita.mjs --gemini       # due modelli che si affrontano
 node tools/partita.mjs --gemini A     # solo l'esercito A è il modello
 node tools/partita.mjs --html partita.html   # la partita da GUARDARE
@@ -540,12 +543,15 @@ E strada facendo si sono trovati quattro buchi che valevano per tutti gli eserci
 
 ### Il Laboratorio dalla pagina
 
-Le stesse ricerche girano anche nel browser, senza terminale: la vista **Esperimenti** della scheda Laboratorio le configura e le lancia nei Web Worker, tanti quanti sono i processori meno uno, e con la stessa velocità del terminale — un paio di partite al secondo su un portatile. Il giro di generazioni è uno solo (`src/cerca.js`): `cerca.mjs` lo usa dal terminale, la pagina dai Worker. Quattro domande:
+Le stesse ricerche girano anche nel browser, senza terminale: la vista **Esperimenti** della scheda Laboratorio le configura e le lancia nei Web Worker, tanti quanti sono i processori meno uno, e con la stessa velocità del terminale — un paio di partite al secondo su un portatile. Il giro di generazioni è uno solo (`src/cerca.js`): `cerca.mjs` lo usa dal terminale, la pagina dai Worker. Cinque domande:
 
 - **Una lista** — la migliore di una fazione contro avversari scelti: quelli automatici del terminale, liste che spunti tu (dell'archivio, trovate dalle ricerche, trovate qui), o un **campionario a caso** di un'altra fazione, scritto con i suoi limiti. La più forte, o la più equilibrata.
 - **Una sfida alla pari** — due liste, una per parte, che si battono alla pari: si cercano coppie, e le figlie cambiano più spesso la lista che vince. Ogni coppia dice su quale scenario giocarla, e si guarda giocare sul tavolo vero.
 - **Un tavolo per una sfida** — due liste date, e il tavolo su cui vengono alla pari fra tanti tavoli generati, giocati tutti e i migliori rigiocati su semi nuovi; quello che piace si salva fra i tuoi scenari.
 - **Un torneo** — tutte contro tutte fra le liste spuntate, su ogni scenario: la tabella di «Ricerche del progetto» lo legge come quelli del terminale.
+- **Due contro uno** — due liste alleate da una parte (500 + 500) contro una lista (1000), o contro altre due: la serie sugli scenari spuntati e sui tavoli generati, ogni seme con le parti scambiate di lato. Il risultato dice chi vince, scenario per scenario, e su quale tavolo la sfida è più alla pari; *Guardala giocare* la porta sul tavolo vero.
+
+Le unità fra cui la ricerca sceglie sono quelle che `spazio.js` sa costruire, una voce per unità: un'unità nuova in collezione non compare finché non ha la sua voce. Le ultime arrivate sono gli Skink Cohorts, gli Jungle Swarms e le Salamander Packs del catalogo Renegades, e i Goblin Wolf Rider: il modello è quello che New Recruit ha importato nelle liste dell'archivio, e senza una lista che le schiera la voce resta fuori dicendo perché.
 
 Ogni parte ha le sue unità, una riga ciascuna, con quattro stati — **No** (mai), **Libera**, **Sì** (almeno una), **Tante** (almeno due, reggimenti grandi) — e accanto i numeri per chi li vuole precisi: quante unità, quanti modelli. Sono i `limiti` di `spazio.js`, il tema di `--con`/`--senza` scritto unità per unità. Prima di giocare la pagina controlla che i limiti si possano rispettare — nei punti, e con le miniature che hai — e dice perché no: una ricerca che prova a scrivere liste impossibili si ferma per minuti senza un motivo visibile.
 
@@ -727,7 +733,8 @@ src/
   statistica.js       i conti di un campione: Wilson, regressioni, restringimento, Benjamini-Hochberg
   heatmap.js          la mappa di tante partite: per ogni unità dove parte, dove sta, combatte e muore
   spiega.js           il perché di un tiro: dalla riga del registro alla scheda, per la sfida e per la pagina da guardare
-  matchup.js          disponibilità, confronto, schieramenti salvati
+  matchup.js          disponibilità, confronto, schieramenti salvati, l'alleato di ogni esercito
+  alleati.js          due liste dalla stessa parte: le unisce in una, con un generale e uno stendardo per lista
   laboratorio.js      le liste cercate a macchina e il torneo fra loro: chi batte chi, scenario per scenario
   lab-esperimento.js  il Laboratorio dalla pagina: le parti unità per unità, il gioco, la corsa, i risultati
   cerca.js            la ricerca a generazioni: una lista, una coppia alla pari, il tavolo di una sfida, il torneo

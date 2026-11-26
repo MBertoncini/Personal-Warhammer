@@ -1933,6 +1933,56 @@ console.log('\nla sfida contro l\'AI');
   ok('nessun errore nella partita salvata e rivista', errors.length === 0);
 }
 
+console.log('\ndue contro uno: il matchup e il laboratorio');
+{
+  const LS = await import('../src/lists.js');
+  const MU = await import('../src/matchup.js');
+  const liste = JSON.parse(fs.readFileSync(path.join(root, 'dati', 'liste.json'), 'utf8'));
+  const prendi = async id => (await LS.adoptList(liste.find(l => l.id === id))).list;
+  const tom = await prendi('lmww1t46h12dr'), kev = await prendi('lmww1uky844go'), mic = await prendi('lmww1x3x4zaui');
+  doc.querySelector('[data-tab="matchup"]').dispatchEvent(new window.Event('click'));
+  setField('#mu-a', tom.id); await settle(60);
+  setField('#mu-b', mic.id); await settle(60);
+  ok('accanto a ogni esercito c è la scelta dell alleato', !!doc.querySelector('#mu-a2') && !!doc.querySelector('#mu-b2'));
+  ok('e la lista stessa non si offre come sua alleata',
+     ![...doc.querySelectorAll('#mu-a2 option')].some(o => o.value === tom.id));
+  setField('#mu-a2', kev.id); await settle(60);
+  const A = MU.parte('A');
+  ok('l esercito A diventa le due liste unite', A.alleati && A.name === `${tom.name} + ${kev.name}` &&
+     A.units.length === tom.units.length + kev.units.length);
+  ok('la scheda lo dice', /due liste alleate/.test(doc.querySelector('#matchup').textContent));
+  ok('il confronto conta le unità di tutte e due',
+     new RegExp(`\\b${A.units.length}\\b`).test(doc.querySelector('#matchup').textContent));
+  ok('il comando del terminale le scrive con il più',
+     MU.aiaiCommand().includes(`--liste ${tom.id}+${kev.id},${mic.id}`));
+  click('#mu-board'); await settle(80);
+  const DP = await import('../src/deploy.js');
+  ok('portate sul tavolo, la parte A ha le unità delle due liste',
+     DP.state.units.filter(u => u.army === 'A').length === A.units.length);
+  doc.querySelector('[data-tab="matchup"]').dispatchEvent(new window.Event('click'));
+  setField('#mu-a2', ''); await settle(60);
+  ok('senza alleata torna una lista sola', !MU.parte('A').alleati);
+
+  /* jsdom non scorre la pagina: il laboratorio la riporta in cima a ogni giro */
+  window.scrollTo = () => {};
+  doc.querySelector('[data-tab="laboratorio"]').dispatchEvent(new window.Event('click'));
+  await settle(120);
+  const vista = doc.querySelector('[data-lab-vista="esperimenti"]');
+  if (vista){ vista.dispatchEvent(new window.Event('click')); await settle(200); }
+  const tipo = doc.querySelector('[data-le-tipo="duo"]');
+  ok('il laboratorio ha l esperimento due contro uno', !!tipo);
+  if (tipo){ tipo.dispatchEvent(new window.Event('click')); await settle(200); }
+  ok('con la lista e la sua alleata da ogni parte',
+     ['#le-duo-x', '#le-duo-x2', '#le-duo-y', '#le-duo-y2'].every(s => doc.querySelector(s)));
+  setField('#le-duo-x', tom.id); await settle(150);
+  setField('#le-duo-x2', kev.id); await settle(150);
+  setField('#le-duo-y', mic.id); await settle(150);
+  ok('e i punti delle due parti', /1037 punti/.test(doc.querySelector('#laboratorio').textContent) &&
+     /1025 punti/.test(doc.querySelector('#laboratorio').textContent));
+  window.localStorage.removeItem('tow-lab-esp');
+  ok('nessun errore nel due contro uno', errors.length === 0);
+}
+
 console.log('\nil guscio per stare senza rete');
 {
   const root = path.resolve(here, '..');

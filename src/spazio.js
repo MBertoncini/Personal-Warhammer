@@ -97,6 +97,7 @@ const ORCHI = [
     crea: OG.squigHerd, etichetta: 'Cave Squig nella Squig Herd' },
   { k: 'squigHoppers', pezzo: 'Night Goblin Squig Hopper Mobs', n: [5, 10], crea: OG.squigHoppers },
   { k: 'boarBoys', pezzo: 'Orc Boar Boy Mobs', n: [5, 10], opz: { c: COMANDO, spears: [true, false], shields: SI_NO }, crea: OG.boarBoys },
+  { k: 'wolfRiders', pezzo: 'Goblin Wolf Rider Mobs', n: [5, 15], opz: { c: ['', 'sm'], bows: SI_NO }, crea: OG.wolfRiders },
   { k: 'chariot', pezzo: 'Orc Boar Chariots', crea: OG.chariot },
 ];
 
@@ -114,11 +115,18 @@ const LUCERTOLE = [
   { k: 'saurus', pezzo: 'Saurus Warriors', n: [10, 30], opz: { c: COMANDO, f: FRONTI }, crea: LZ.saurus },
   { k: 'templeGuard', pezzo: 'Temple Guard', n: [10, 30], opz: { c: COMANDO, f: FRONTI }, crea: LZ.templeGuard },
   { k: 'skinks', pezzo: 'Skink Skirmishers', n: [10, 20], crea: LZ.skinks },
+  /* dal catalogo Renegades (la lista «salamander»): senza quella lista
+     nell'archivio non c'è il modello, e la voce resta fuori dicendolo */
+  { k: 'cohorts', pezzo: 'Skink Cohorts', n: [10, 30], crea: LZ.cohorts },
+  { k: 'swarms', pezzo: 'Jungle Swarms', n: [3, 6], crea: LZ.swarms },
   { k: 'krox', pezzo: 'Kroxigor', n: [3, 6], opz: { c: ['', 'c'] }, crea: LZ.krox },
   { k: 'bastiladon', pezzo: 'Bastiladon', max: 1, crea: LZ.bastiladon },
   { k: 'ancientSteg', pezzo: 'Ancient Stegadon', max: 1, crea: LZ.ancientSteg },
   { k: 'terradons', pezzo: 'Terradon Riders', n: [3, 6], crea: LZ.terradons },
   { k: 'coldOnes', pezzo: 'Cold One Riders', n: [5, 10], opz: { c: COMANDO }, crea: LZ.coldOnes },
+  /* un Salamander per unità, con i suoi Handler: le unità di più bestie
+     il motore non le divide */
+  { k: 'salamander', pezzo: 'Salamander Packs', max: 2, crea: LZ.salamander },
 ];
 
 /* I tre eserciti scritti dal libro (src/costruttori.js): niente

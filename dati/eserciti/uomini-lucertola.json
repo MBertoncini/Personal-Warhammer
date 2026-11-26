@@ -3,7 +3,7 @@
   "name": "Uomini Lucertola",
   "matches": ["Lizardmen", "Legends: Lizardmen"],
   "book": { "title": "Legends: Lizardmen" },
-  "nota": "Le regole d'esercito vere del libro non sono ancora trascritte. Qui ci sono quelle delle unita' che le liste salvate schierano, scritte sul testo per esteso che le liste si portano dietro. Cold Blooded, Aquatic e Predatory Fighter sono regole universali e passano dal registro di rulebook.js, non da qui; Shieldwall e Impervious Defence hanno un testo che non nomina nessun esercito, e stanno anche loro nel registro universale, come Skink Riders. Slithering Serpents e Spawn of Sotek vengono dall'Arca di Sotek del catalogo Renegades, e stanno qui.",
+  "nota": "Le regole d'esercito vere del libro non sono ancora trascritte. Qui ci sono quelle delle unita' che le liste salvate schierano, scritte sul testo per esteso che le liste si portano dietro. Cold Blooded, Aquatic e Predatory Fighter sono regole universali e passano dal registro di rulebook.js, non da qui; Shieldwall e Impervious Defence hanno un testo che non nomina nessun esercito, e stanno anche loro nel registro universale, come Skink Riders. Slithering Serpents e Spawn of Sotek vengono dall'Arca di Sotek del catalogo Renegades, e stanno qui. Undisciplined, Beast Handlers, Reserve Move, Insignificant e No One Cares vengono dalle Salamander e dagli Jungle Swarms dello stesso catalogo; Arcane Configuration, Engine Of The Gods, Portent of Warding e Great Horns dal suo Ancient Stegadon.",
   "rules": [
     {
       "id": "arcaneShield",
@@ -67,6 +67,89 @@
       "when": "melee",
       "what": "profilo diviso da carro con piattaforma di tiro: lo Stegadonte e' una cavalcatura da carro",
       "perche": "l'equipaggio e la bestia menano con due profili, e il conto dell'assalto usa ancora quello principale"
+    }
+ ,
+    {
+      "id": "undisciplined",
+      "name": "Undisciplined",
+      "nomi": ["Undisciplined"],
+      "testo": "lista",
+      "when": "leadership",
+      "what": "il generale non gli presta il suo Comando (Inspiring Presence), e lo stendardo da battaglia non gli fa ritirare il test di rotta",
+      "gioca": "arbitro.js",
+      "nota": "in io contro l'AI l'arbitro non gli presta il Comando del generale; il ritiro dello stendardo l'arbitro non lo gioca per nessuno. Con Beast Handlers la regola non vale finche' ci sono gli Handler, e l'arbitro li considera sempre presenti"
+    },
+    {
+      "id": "beastHandlers",
+      "name": "Beast Handlers",
+      "nomi": ["Beast Handlers"],
+      "testo": "lista",
+      "when": "melee",
+      "what": "gli Skink Handler stanno entro 1 pollice dalla bestia, menano con lei, e a ogni ferita non salvata con 5+ muore un Handler invece della bestia",
+      "perche": "gli Handler sono equipaggio sulla stessa basetta: il motore non tira il dado che sceglie chi perde la ferita, e li considera sempre presenti"
+    },
+    {
+      "id": "reserveMove",
+      "name": "Reserve Move",
+      "nomi": ["Reserve Move"],
+      "testo": "lista",
+      "when": "shoot",
+      "what": "alla fine della fase di tiro del suo turno, se non ha caricato, marciato o e' fuggito, puo' fare un altro movimento normale",
+      "perche": "e' un secondo movimento dopo il tiro: l'arbitro non lo offre, al tavolo lo ricorda il registro"
+    },
+    {
+      "id": "insignificant",
+      "name": "Insignificant",
+      "nomi": ["Insignificant"],
+      "testo": "lista",
+      "when": "shoot",
+      "what": "la linea di vista passa sopra lo sciame come se non ci fosse, e non conta per proteggere i personaggi dal tiro",
+      "perche": "la vista dell'app non distingue ancora chi la blocca: lo sciame la blocca come ogni altra unita'"
+    },
+    {
+      "id": "noOneCares",
+      "name": "No One Cares",
+      "nomi": ["No One Cares"],
+      "testo": "lista",
+      "when": "psych",
+      "what": "qualunque cosa succeda allo sciame, le unita' amiche non fanno test di Panico",
+      "perche": "il Panico per gli amici distrutti o in fuga vicino non sa ancora che unita' sia quella: va ignorato a mano"
+    },
+    {
+      "id": "arcaneConfiguration",
+      "name": "Arcane Configuration",
+      "nomi": ["Arcane Configuration"],
+      "testo": "lista",
+      "when": "magic",
+      "what": "un mago amico che lancia un incantesimo legato entro 12 pollici da un Engine of the Gods aggiunge +1 al lancio",
+      "perche": "gli incantesimi legati dell'Engine of the Gods non sono nella magia dell'app"
+    },
+    {
+      "id": "engineOfTheGods",
+      "name": "Engine Of The Gods",
+      "nomi": ["Engine Of The Gods", "Engine of the Gods"],
+      "testo": "lista",
+      "when": "magic",
+      "what": "lancia Burning Alignment come incantesimo legato, Livello di Potere 2",
+      "perche": "e' un incantesimo legato del catalogo Renegades, che la magia dell'app non conosce"
+    },
+    {
+      "id": "portentOfWarding",
+      "name": "Portent of Warding",
+      "nomi": ["Portent of Warding"],
+      "testo": "lista",
+      "when": "magic",
+      "what": "lancia Portent of Warding come incantesimo legato, Livello di Potere 2",
+      "perche": "e' un incantesimo legato del catalogo Renegades, che la magia dell'app non conosce"
+    },
+    {
+      "id": "greatHorns",
+      "name": "Great Horns",
+      "nomi": ["Great Horns"],
+      "testo": "lista",
+      "when": "charge",
+      "what": "gli Impact Hits di questo modello hanno perforazione -3",
+      "perche": "i colpi d'impatto dell'app hanno la perforazione del libro base: va corretta a mano nel pannello dell'assalto"
     }
   ],
   "items": [],

@@ -335,6 +335,16 @@ export function newBattle({ A, B, scenario = "bm-strada", def = null, nomi = nul
     return i != null && (l.units || [])[i] ? from + i + 1 : null;
   };
   S.generale = { A: genDi(A, 0), B: genDi(B, 500) };
+  /* Due liste alleate da una parte (alleati.js): un generale e uno
+     stendardo per lista. `generali[army][k]` e' quello della k-esima;
+     `S.generale` resta quello della prima, per chi conosce un generale
+     solo. */
+  const perContingente = (l, from, chi) => (l.alleati || []).map(c => {
+    const i = c[chi];
+    return i != null && (l.units || [])[i] ? from + i + 1 : null;
+  });
+  S.generali = { A: perContingente(A, 0, "general"), B: perContingente(B, 500, "general") };
+  S.bsbs = { A: perContingente(A, 0, "bsb"), B: perContingente(B, 500, "bsb") };
   /* chi porta lo stendardo da battaglia: serve al punteggio, perche'
      perderlo vale punti all'altro (Battle March p. 27, p. 286) */
   const bsbDi = (l, from) => {
@@ -359,8 +369,21 @@ export const RAGGIO_GENERALE = 12;
 /* e 18″ se il generale e' un Large Target o ne cavalca uno (p. 202) */
 export const RAGGIO_GENERALE_GRANDE = 18;
 const grande = u => ((u && u.rules) || []).some(r => /^large target/i.test(String(r)));
+/* il generale di chi: con due liste alleate, quello della sua lista */
+const generaleDi = (S, u) => {
+  const g = (S.generali || {})[u.army] || [];
+  return g.length && u.alleato != null ? g[u.alleato] : (S.generale || {})[u.army];
+};
+/* Undisciplined (catalogo Renegades): il generale non presta il suo
+   Comando. Con Beast Handlers non vale finche' ci sono gli Handler, che
+   l'arbitro considera sempre presenti. */
+const indisciplinata = u => {
+  const r = (u && u.rules) || [];
+  return r.some(x => /^undisciplined/i.test(String(x))) && !r.some(x => /^beast handlers/i.test(String(x)));
+};
 function comandoGenerale(S, u){
-  const g = byUid(S, (S.generale || {})[u.army]);
+  if (indisciplinata(u)) return null;
+  const g = byUid(S, generaleDi(S, u));
   if (!g || g === u || g.dead || g.fled) return null;
   const host = isJoined(g) ? byUid(S, FM.joinedHost(g)) : g;
   if (!host || !onBoard(host)) return null;
@@ -451,6 +474,9 @@ function puoOspitare(S, c, h){
    scheda delle liste, prima che ci sia una partita. */
 export function stannoInsieme(c, h){
   if (!c || !h || c === h) return false;
+  /* due liste alleate dalla stessa parte (alleati.js): un capo si
+     schiera solo nei reggimenti della sua */
+  if (c.alleato != null && h.alleato != null && c.alleato !== h.alleato) return false;
   if (!PREP.isCharacter(c) || !genere(c) || (c.models || 1) !== 1) return false;
   if (PREP.isCharacter(h) || genere(h) !== genere(c)) return false;
   /* Lumbering non ospita nessuno (p. 195), a chi e' Clumsy si unisce
@@ -8083,9 +8109,13 @@ export function punteggio(S){
      conto restano separati: il registro di fine partita li scrive */
   const parti = army => {
     const lui = altro(army);
+    /* con due liste alleate ogni generale e ogni stendardo perso vale
+       il suo bonus (alleati.js) */
+    const tutti = (k1, k2) => { const l = ((S[k2] || {})[lui] || []).filter(x => x != null);
+                                return l.length ? l : [(S[k1] || {})[lui]]; };
     return { unita: conta(lui),
-             generale: perso((S.generale || {})[lui]) ? b.general : 0,
-             stendardo: perso((S.bsb || {})[lui]) ? b.bsb : 0,
+             generale: tutti("generale", "generali").filter(perso).length * b.general,
+             stendardo: tutti("bsb", "bsbs").filter(perso).length * b.bsb,
              obiettivi: ob[army] };
   };
   const somma = q => q.unita + q.generale + q.stendardo + q.obiettivi;

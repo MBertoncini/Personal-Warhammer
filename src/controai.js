@@ -112,8 +112,9 @@ export function startSfida({ listA, listB, mia = "A", scenario = "", agenti = nu
     if (!p.can) avvisi.push(`${tag} «${l.name}»: ${p.text}`);
   }
   const sc = scenarioPer(listA, listB, scenario);
-  const nomi = { A: (listA.info && listA.info.catalogue) || listA.name,
-                 B: (listB.info && listB.info.catalogue) || listB.name };
+  /* due liste alleate (alleati.js) si chiamano con i loro nomi */
+  const nome = l => l.alleati ? l.name : (l.info && l.info.catalogue) || l.name;
+  const nomi = { A: nome(listA), B: nome(listB) };
   if (nomi.A === nomi.B){ nomi.A += " (A)"; nomi.B += " (B)"; }
   /* `mia` vuota: nessuno dei due eserciti e' tuo, e si guarda l'AI
      giocare contro se stessa. E' la partita di `tools/partita.mjs`, ma

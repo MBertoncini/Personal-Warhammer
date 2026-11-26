@@ -16,6 +16,7 @@ import { $, esc } from './util.js';
 import { copyText, shareUrl } from './share.js';
 import { catEntry, photoFor, paintedOf } from './catalog.js';
 import { allLists, getList } from './lists.js';
+import { unisci } from './alleati.js';
 import { loadDoc, saveDoc } from './store.js';
 import { emit } from './bus.js';
 import { askText, askConfirm } from './uikit.js';
@@ -29,7 +30,7 @@ import { SCENARIOS } from './scenarios.js';
 const MU_KEY = "matchup:current";
 const DEP_KEY = "deployments:all";
 
-let mu = { listA: null, listB: null, mine: "A", note: "", sfidaMia: "A", sfidaScenario: "", sfidaContro: "",
+let mu = { listA: null, listB: null, listA2: null, listB2: null, mine: "A", note: "", sfidaMia: "A", sfidaScenario: "", sfidaContro: "",
            aiai: { scenario: "", chi: "euristica", seme: 1, partite: 1, estro: true, mappa: true, html: true, archivia: false } };
 let deployments = [];
 
@@ -39,6 +40,17 @@ export async function initMatchup(){
   deployments = await loadDoc(DEP_KEY, []) || [];
 }
 
+/* L'esercito di una parte: la sua lista, o le due liste alleate unite
+   in una (alleati.js) — il 2 contro 1, 500 + 500 contro 1000. Tutto
+   quello che segue (il tavolo, la sfida, le serie) riceve una lista
+   sola e non sa che sono due. */
+export function parte(k){
+  const a = getList(mu["list" + k]), b = getList(mu["list" + k + "2"]);
+  return a && b && a.id !== b.id ? unisci(a, b) : a;
+}
+/* gli id per il comando del terminale: «a+b» per due liste alleate */
+const idPer = k => [mu["list" + k], mu["list" + k + "2"]].filter(Boolean).join("+");
+
 const persist = () => Promise.all([saveDoc(MU_KEY, mu), saveDoc(DEP_KEY, deployments)])
   .then(() => emit("matchup:changed"));
 
@@ -46,8 +58,8 @@ const persist = () => Promise.all([saveDoc(MU_KEY, mu), saveDoc(DEP_KEY, deploym
    1 · DISPONIBILITA'
    ============================================================ */
 export function availability(){
-  const which = mu.mine === "both" ? ["listA", "listB"]
-              : mu.mine === "B"    ? ["listB"] : ["listA"];
+  const which = (mu.mine === "both" ? ["listA", "listB"]
+              : mu.mine === "B"    ? ["listB"] : ["listA"]).flatMap(k => [k, k + "2"]);
   const lists = which.map(k => getList(mu[k])).filter(Boolean);
   if (!lists.length) return null;
 
@@ -81,7 +93,7 @@ export function availability(){
     lists, rows, unlinked,
     missing: rows.reduce((s, r) => s + r.short, 0),
     toPaint: rows.reduce((s, r) => s + r.toPaint, 0),
-    conflicts: mu.mine === "both" ? rows.filter(r => r.short > 0 && r.from.length > 1) : [],
+    conflicts: lists.length > 1 ? rows.filter(r => r.short > 0 && r.from.length > 1) : [],
   };
 }
 
@@ -92,8 +104,8 @@ export function availability(){
    ============================================================ */
 export function compare(){
   const out = {};
-  for (const [key, id] of [["A", mu.listA], ["B", mu.listB]]){
-    const l = getList(id);
+  for (const key of ["A", "B"]){
+    const l = parte(key);
     if (!l){ out[key] = null; continue; }
     const units = l.units;
     const cats = {};
@@ -199,7 +211,7 @@ function compareHTML(){
    partenza e' quello del tavolo se l'arbitro lo sa giocare, altrimenti
    quello dei punti delle due liste. */
 function sfidaHTML(){
-  const A = getList(mu.listA), B = getList(mu.listB);
+  const A = parte("A"), B = parte("B");
   const sc = scenarioPer(A, B, mu.sfidaScenario, board.scenario);
   return `
     <div class="panel-title" style="margin-top:16px">Gioca contro l'AI</div>
@@ -250,13 +262,13 @@ function opzioniScenari(sc){
 const quante = () => Math.max(1, Math.floor(+mu.aiai.partite) || 1);
 
 export function aiaiCommand(){
-  const A = getList(mu.listA), B = getList(mu.listB);
+  const A = parte("A"), B = parte("B");
   if (!A || !B) return "";
   const o = mu.aiai;
   const tutti = scenariDelComando();
   const voluto = tutti.some(s => s.id === o.scenario) ? o.scenario : scenarioPer(A, B, "", "");
   const sc = tutti.some(s => s.id === voluto) ? voluto : "bm-strada";
-  const parti = ["node tools/partita.mjs", `--liste ${A.id},${B.id}`, `--scenario ${sc}`, `--seme ${Math.max(1, +o.seme || 1)}`];
+  const parti = ["node tools/partita.mjs", `--liste ${idPer("A")},${idPer("B")}`, `--scenario ${sc}`, `--seme ${Math.max(1, +o.seme || 1)}`];
   /* tante partite si giocano solo con l'euristica, e danno solo il
      conto: il resto non va nel comando, che se no si rifiuta */
   /* l'estro vale per l'euristica: con Gemini da tutte e due le parti
@@ -274,7 +286,7 @@ export function aiaiCommand(){
 }
 
 function aiaiHTML(){
-  const A = getList(mu.listA), B = getList(mu.listB);
+  const A = parte("A"), B = parte("B");
   const o = mu.aiai;
   const sc = aiaiCommand().match(/--scenario (\S+)/)[1];
   const serie = quante() > 1;
@@ -379,7 +391,7 @@ function disegnaSim(){
 }
 
 async function guardaQui(seme = null){
-  const A = getList(mu.listA), B = getList(mu.listB);
+  const A = parte("A"), B = parte("B");
   if (!A || !B) return;
   const o = mu.aiai;
   const sc = aiaiCommand().match(/--scenario (\S+)/)[1];
@@ -393,12 +405,12 @@ async function guardaQui(seme = null){
 function giocaQui(){
   if (quante() <= 1) return guardaQui();
   if (sim && !sim.esito && !sim.errore) return;          // ce n'e' gia' una che gira
-  const A = getList(mu.listA), B = getList(mu.listB);
+  const A = parte("A"), B = parte("B");
   if (!A || !B) return;
   const o = mu.aiai;
   const sc = aiaiCommand().match(/--scenario (\S+)/)[1];
   const def = { ...SCENARIOS, ...customScenarioMap() }[sc];
-  const faz = l => (l.info && l.info.catalogue) || l.name;
+  const faz = l => l.alleati ? l.name : (l.info && l.info.catalogue) || l.name;
   const nomi = { x: faz(A), y: faz(B) };
   if (nomi.x === nomi.y){ nomi.x += " (x)"; nomi.y += " (y)"; }
   const n = quante();
@@ -425,11 +437,21 @@ export function renderMatchup(){
   const opts = sel => `<option value="">\u2014</option>` +
     ls.map(l => `<option value="${l.id}" ${l.id === sel ? "selected" : ""}>${esc(l.name)}</option>`).join("");
 
+  const alleato = k => `<label class="field mu-alleato">con un alleato
+        <select id="mu-${k.toLowerCase()}2" title="una seconda lista dalla stessa parte: due giocatori contro uno">
+          <option value="">\u2014 nessuno: gioca da sola</option>
+          ${ls.filter(l => l.id !== mu["list" + k]).map(l => `<option value="${l.id}" ${l.id === mu["list" + k + "2"] ? "selected" : ""}>${esc(l.name)} \u00b7 ${l.points || 0} pt</option>`).join("")}
+        </select></label>`;
+  const due = ["A", "B"].filter(k => mu["list" + k] && mu["list" + k + "2"]);
   host.innerHTML = `
     <div class="grid2">
       <label class="field">Esercito A<select id="mu-a">${opts(mu.listA)}</select></label>
       <label class="field">Esercito B<select id="mu-b">${opts(mu.listB)}</select></label>
     </div>
+    <div class="grid2">${mu.listA ? alleato("A") : "<span></span>"}${mu.listB ? alleato("B") : "<span></span>"}</div>
+    ${due.length ? `<p class="note">${due.map(k => `L'esercito ${k} è di due liste alleate: <b>${esc(parte(k).name)}</b>, ${parte(k).alleati.map(c => c.points).join(" + ")} punti.`).join(" ")}
+      Muovono nello stesso turno e vincono o perdono insieme; ogni generale ispira solo la sua lista, un capo si schiera solo nei reggimenti della sua,
+      e ogni generale o stendardo perso vale i suoi punti all'altra parte.</p>` : ""}
     <label class="field">Chi porta le miniature
       <select id="mu-mine">
         <option value="A"    ${mu.mine === "A"    ? "selected" : ""}>Solo l'esercito A \u00e8 mio</option>
@@ -446,7 +468,7 @@ export function renderMatchup(){
           : av.unlinked ? `${av.unlinked} unit\u00e0 non agganciate` : "tutto disponibile"}</b></div>
       <div class="readout"><span>Da dipingere per giocarlo</span><b style="color:var(--${av.toPaint ? "warn" : "ok"})">
         ${av.toPaint ? `${av.toPaint} miniature` : "niente, \u00e8 tutto finito"}</b></div>
-      ${mu.mine === "both" ? `<p class="note">Le due liste sono sommate: se una voce compare in entrambe, i modelli non possono essere usati due volte.</p>` : ""}
+      ${av.lists.length > 1 ? `<p class="note">Le ${av.lists.length} liste sono sommate: se una voce compare in più di una, i modelli non possono essere usati due volte.</p>` : ""}
       <div class="tray" style="margin-top:8px">
         ${av.rows.map(r => `
           <div class="row u-row">
@@ -486,14 +508,18 @@ export function renderMatchup(){
         </div>`).join("") : `<p class="empty">Nessuno schieramento salvato.</p>`}
     </div>`;
 
-  $("#mu-a").addEventListener("change", async e => { mu.listA = e.target.value || null; await persist(); renderMatchup(); });
-  $("#mu-b").addEventListener("change", async e => { mu.listB = e.target.value || null; await persist(); renderMatchup(); });
+  $("#mu-a").addEventListener("change", async e => { mu.listA = e.target.value || null; if (!mu.listA || mu.listA2 === mu.listA) mu.listA2 = null; await persist(); renderMatchup(); });
+  $("#mu-b").addEventListener("change", async e => { mu.listB = e.target.value || null; if (!mu.listB || mu.listB2 === mu.listB) mu.listB2 = null; await persist(); renderMatchup(); });
+  for (const k of ["a", "b"]){
+    const el = $(`#mu-${k}2`);
+    if (el) el.addEventListener("change", async e => { mu["list" + k.toUpperCase() + "2"] = e.target.value || null; await persist(); renderMatchup(); });
+  }
   $("#mu-mine").addEventListener("change", async e => { mu.mine = e.target.value; await persist(); renderMatchup(); });
 
   const board = $("#mu-board");
   if (board) board.addEventListener("click", () => {
-    if (mu.listA) loadArmyFromList(getList(mu.listA), "A");
-    if (mu.listB) loadArmyFromList(getList(mu.listB), "B");
+    if (mu.listA) loadArmyFromList(parte("A"), "A");
+    if (mu.listB) loadArmyFromList(parte("B"), "B");
     document.querySelector('[data-tab="deploy"]').click();
   });
   const sf = $("#mu-sfida");
@@ -515,7 +541,7 @@ export function renderMatchup(){
        l'euristica sola contro chi ha la chiave */
     const lui = mu.sfidaMia === "B" ? "A" : "B";
     const agenti = mu.sfidaMia !== "guarda" && mu.sfidaContro ? { [lui]: mu.sfidaContro } : null;
-    startSfida({ listA: getList(mu.listA), listB: getList(mu.listB), mia: mu.sfidaMia, scenario: mu.sfidaScenario, agenti });
+    startSfida({ listA: parte("A"), listB: parte("B"), mia: mu.sfidaMia, scenario: mu.sfidaScenario, agenti });
     emit("sfida:show");
   });
   const aiai = $("#mu-aiai");

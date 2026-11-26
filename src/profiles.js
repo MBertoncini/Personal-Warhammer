@@ -43,7 +43,7 @@ const norm = s => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim
    dichiarata da tutte e due, deve combaciare: due eserciti diversi
    possono chiamare una cavalcatura allo stesso modo. */
 export function profileFor(u){
-  if (!TAVOLA || !u) return null;
+  if (!u) return null;
   /* l'arbitro numera le unita' omonime («Skink Skirmishers 2») e tiene
      il nome del libro a parte */
   const nome = norm(u.baseName || u.name);
@@ -53,11 +53,33 @@ export function profileFor(u){
      fazione non la porta, sul tavolo non trovava piu' nessun profilo e
      giocava con tutte le caratteristiche a zero */
   const fazione = norm(u.faction || "");
-  return TAVOLA.profili.find(p => {
+  return (TAVOLA && TAVOLA.profili.find(p => {
     if (!(p.nomi || []).some(n => norm(n) === nome)) return false;
     if (p.faction && fazione && !sameArmy(norm(p.faction), fazione)) return false;
     return true;
-  }) || null;
+  })) || dalFile(u);
+}
+
+/* Quando la tavola tace ma il file porta la riga della cavalcatura. Le
+   esportazioni recenti di New Recruit la scrivono in `mount` — il Giant
+   Wolf dei Goblin Wolf Rider, Movimento 9 — e buttarla via lasciava il
+   reggimento fermo. Se ne fa un profilo come quelli della tavola, con il
+   Movimento e la riga della bestia, e si dice che viene dal file: il
+   libro e la pagina non ci sono. Un personaggio montato dalla scheda
+   della lista (`mountId`) ha la sua strada, e non passa da qui. */
+function dalFile(u){
+  const m = !u.mountId && u.mount && u.mount.stats ? u.mount : null;
+  if (!m) return null;
+  const s = m.stats, M = String(s.M || "");
+  const numeri = Object.fromEntries(["M", "WS", "S", "I", "A"]
+    .filter(k => /^\d+$/.test(String(s[k] ?? ""))).map(k => [k, +s[k]]));
+  if (!/^\d+$/.test(M) && !/d6/i.test(M)) return null;
+  return {
+    nomi: [u.baseName || u.name], dalFile: true,
+    M: /^\d+$/.test(M) ? +M : 0, random: /d6/i.test(M) ? M.toUpperCase() : "",
+    da: m.name || "la cavalcatura", libro: "", pagina: 0,
+    righe: [{ chi: m.name || "cavalcatura", bestia: true, stats: numeri }],
+  };
 }
 
 /* Lo stesso esercito sotto due nomi. New Recruit scrive nella fazione
@@ -186,7 +208,7 @@ export function moveInfo(u){
     if (+p.M > 0)
       return { ...nulla, m: +p.M, from: p.da || "", book: p.libro || "", page: p.pagina || 0,
                why: `Movimento ${p.M}″ da ${p.da || "la cavalcatura"}` +
-                    (p.libro ? ` (${p.libro}, p. ${p.pagina})` : "") };
+                    (p.libro ? ` (${p.libro}, p. ${p.pagina})` : p.dalFile ? " (dalla riga che il file della lista porta)" : "") };
   }
   return { ...nulla, why: "il file della lista non porta il Movimento: correggilo a mano" };
 }

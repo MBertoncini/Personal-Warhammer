@@ -12,6 +12,7 @@
  *   node tools/partita.mjs --scenario sxmttrgusdc7c   uno dei tuoi, da dati/scenari.json
  *   node tools/partita.mjs --liste 3,9          per numero (le elenca --liste ?)
  *   node tools/partita.mjs --liste lmtl5r4mb97yl,lmubp01267euf   o per id
+ *   node tools/partita.mjs --liste 35+36,37     due liste alleate contro una (2 contro 1)
  *   node tools/partita.mjs --candidate prove.json --liste prova-we,lmugl4zwpzy5r   anche da un file
  *   node tools/partita.mjs --gemini             se GEMINI_API_KEY è nell'ambiente
  *   node tools/partita.mjs --gemini A           solo l'esercito A è il modello
@@ -55,6 +56,7 @@ import { raccoglitore, paginaHeatmap } from './heatmap.mjs';
 import * as ARCH from './archivia.mjs';
 import * as SE from './serie.mjs';
 import { agenteRicerca } from '../src/ricerca.js';
+import { unisci } from '../src/alleati.js';
 
 const qui = path.dirname(fileURLToPath(import.meta.url));
 const dati = f => JSON.parse(fs.readFileSync(path.join(qui, '..', 'dati', f), 'utf8'));
@@ -196,11 +198,21 @@ let iA, iB;
 if (scelte){
   /* un numero, o l'id della lista: il comando copiato dalla scheda
      Matchup usa l'id, che non cambia quando l'archivio si riordina */
-  const trova = p => /^\d+$/.test(p) ? (+p < liste.length ? +p : -1) : liste.findIndex(l => l.id === p);
+  const trova1 = p => /^\d+$/.test(p) ? (+p < liste.length ? +p : -1) : liste.findIndex(l => l.id === p);
+  /* «3+9» sono due liste alleate dalla stessa parte (src/alleati.js): la
+     lista unita si mette in fondo all'elenco, e da li' si gioca come le altre */
+  const trova = p => {
+    if (!p.includes('+')) return trova1(p);
+    const parti = p.split('+').map(x => trova1(x.trim()));
+    if (parti.length !== 2 || parti.some(i => i < 0)) return -1;
+    liste.push(unisci(liste[parti[0]], liste[parti[1]]));
+    return liste.length - 1;
+  };
   const pezzi = scelte.split(',').map(p => p.trim());
   const indici = pezzi.map(trova);
   if (pezzi.length !== 2 || indici.some(i => i < 0)){
-    console.error(`--liste vuole due liste separate da una virgola, per numero (fra 0 e ${liste.length - 1}) o per id ` +
+    console.error(`--liste vuole due liste separate da una virgola, per numero (fra 0 e ${liste.length - 1}) o per id, ` +
+                  `e due liste alleate dalla stessa parte con il più («3+9,12») ` +
                   `(è arrivato «${scelte}»). Le liste si elencano con --liste ?; una lista appena fatta nell'app ` +
                   "arriva in dati/liste.json solo con l'Archivio.");
     process.exit(1);
@@ -221,6 +233,8 @@ if (!A || !B){ console.error('Non trovo le due liste: prova --liste ?'); process
    scritta su ognuna, o quella della tavola dei profili — e se nessuno
    lo sa si dice. */
 const fazioneDi = l => {
+  /* due liste alleate si chiamano con i loro nomi: «Tommaso + Kevin» */
+  if (l.alleati) return { nome: l.name, dedotta: false };
   const c = (l.info || {}).catalogue;
   if (c) return { nome: c, dedotta: false };
   const voti = new Map();

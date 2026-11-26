@@ -82,7 +82,11 @@ export function recordOf(name, list = reports){
        --archivia`) sta nel diario ma non dice come va la lista */
     if (rep.meta && rep.meta.simulata) continue;
     for (const side of ["A", "B"]){
-      if (!keys.has(normName((rep.armies[side] || {}).name))) continue;
+      /* due liste alleate dalla stessa parte (alleati.js): la partita
+         conta per tutte e due */
+      const army = rep.armies[side] || {};
+      const nomi = [army.name, ...((army.info && army.info.alleati) || [])];
+      if (!nomi.some(n => keys.has(normName(n)))) continue;
       const foe = side === "A" ? "B" : "A";
       const sc = scoreOf(rep);
       const mine = sc[side], theirs = sc[foe];

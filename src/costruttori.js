@@ -337,6 +337,15 @@ export const OG = {
   /* p. 16: Goblin Oddnob 135, Livello 4 +30 */
   oddnob: ({ l4 = true } = {}) => da('Goblin Oddnob', { pts: 135 + (l4 ? 30 : 0) }),
   ogdruz: () => da('Ogdruz Swampdigga', { pts: 195 }),
+  /* I Goblin Wolf Rider: il modello è quello importato da New Recruit,
+     che porta anche la riga del Giant Wolf (Movimento 9). I costi sono
+     quelli dei due file dell'archivio, non riletti sul libro: 5 lupi a
+     50 punti, e 5 con stendardo, musico e archi corti a 65 — 10 a
+     modello, 5 lo stendardo, 5 il musico, 1 a modello l'arco. Lo scudo
+     c'è senza l'arco (armatura 6+), con l'arco no. */
+  wolfRiders: ({ n = 5, c = '', bows = false } = {}) => da('Goblin Wolf Rider Mobs', { n, f: Math.min(n, 5), c,
+    pts: n * (10 + (bows ? 1 : 0)) + costoComando(c, { s: 5, m: 5 }),
+    armour: 6, shield: !bows, weapons: bows ? ['hw', 'shortbow'] : ['hw'] }),
 };
 
 /* ================= LUCERTOLE (Legends: Lizardmen) ================= */
@@ -405,6 +414,14 @@ export const LZ = {
   terradons: ({ n = 3 } = {}) => da('Terradon Riders', { n, f: Math.min(n, 3), pts: 32 * n }),
   /* p. 10: Cold One Riders 34; campione, stendardo, musico +7 */
   coldOnes: ({ n = 5, c = '' } = {}) => da('Cold One Riders', { n, f: Math.min(n, 5), c, pts: 34 * n + 7 * c.length }),
+  /* Le tre unità che la collezione ha preso dal catalogo Renegades: il
+     modello è quello che New Recruit ha importato nella lista
+     «salamander», e i costi sono i suoi — 5 a Skink, 40 a basetta di
+     Jungle Swarm, 65 a Salamander con i suoi tre Skink Handler. Il
+     comando delle Cohort non si compra: il file non dice quanto costa. */
+  cohorts: ({ n = 10 } = {}) => da('Skink Cohorts', { n, pts: 5 * n }),
+  swarms: ({ n = 3 } = {}) => da('Jungle Swarms', { n, f: Math.min(n, 3), pts: 40 * n }),
+  salamander: () => da('Salamander Packs', { pts: 65 }),
 };
 
 /* ============ GLI ESERCITI SCRITTI DAL LIBRO, SENZA ARCHIVIO ============
