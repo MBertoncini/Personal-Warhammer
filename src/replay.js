@@ -80,7 +80,10 @@ export function fotogramma(S, { AR, testo = [], chi = "", perche = "", army = nu
                ...(s ? { s } : {}),
                ...(u.catId ? { k: u.catId } : {}),
                tp: troopType(u.troop).id };
-    }),
+    }).concat((S.fanatici || []).filter(f => f.vivo).map(f => ({
+      /* i Fanatici liberati (arbitro.js): una basetta da 25 mm che gira */
+      id: f.fid, n: f.nome, a: f.army, x: Math.round(f.x), y: Math.round(f.y), w: 25, h: 25, r: 0,
+      v: 1, m: 1, f: 0, c: 0, tp: "" }))),
   };
 }
 

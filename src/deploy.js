@@ -6397,6 +6397,7 @@ function applySnapshot(s){
    lo scenario e' quello della partita. `state.sfida` non si salva: una
    pagina ricaricata non ha piu' l'arbitro, e il tavolo torna libero.
    ============================================================ */
+const FANATICO_MID = 900000;
 function mostraSfida(S, { nuova = false } = {}){
   /* dove stavano i pezzi disegnati: da li' scivolano dove li ha messi
      l'arbitro, invece di saltarci (`scena.js`) */
@@ -6420,6 +6421,12 @@ function mostraSfida(S, { nuova = false } = {}){
     return c;
   });
   uidSeq = Math.max(uidSeq, ...state.units.map(u => u.uid + 1));
+  /* i Fanatici liberati (arbitro.js): non sono unita' del tavolo, e si
+     disegnano come marcatori con il loro nome, dove stanno adesso */
+  if (S.fanatici)
+    state.markers = [...state.markers.filter(m => m.mid < FANATICO_MID),
+      ...S.fanatici.filter(f => f.vivo).map(f => EX.makeMarker({ mid: FANATICO_MID + f.fid, x: f.x, y: f.y, shape: "token", w: 1,
+                                                                  label: f.nome, color: f.army }))];
   SC.tipiDiTruppa(state.units.map(u => [u.uid, troopType(u.troop).id]));
   layCache.clear();
   if (nuova) view.fit();

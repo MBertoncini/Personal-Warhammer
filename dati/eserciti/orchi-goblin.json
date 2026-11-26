@@ -160,7 +160,8 @@
       "testo": "lista",
       "when": "turnStart",
       "what": "i Fanatici restano nascosti nell'unita' e si liberano a inizio turno; poi si muovono di 2D6 nelle mosse obbligate",
-      "perche": "sono modelli che il tavolo non ha ancora: si piazzano a mano, e il loro movimento si tira dal vassoio"
+      "gioca": "arbitro.js",
+      "nota": "in io contro l'AI li libera e li dirige l'arbitro (il limite «fanatici»); al tavolo si piazzano a mano, e il movimento si tira dal vassoio"
     },
     {
       "id": "fanaticBallAndChain",
@@ -169,7 +170,8 @@
       "testo": "lista",
       "when": "compulsory",
       "what": "chi attraversa un Fanatico, o viene attraversato, subisce D6 colpi a Forza 5 con perforazione 3",
-      "perche": "si risolve nelle mosse obbligate, quando il Fanatico passa: il pannello del tiro sa tirare i colpi, ma non sa quando un Fanatico attraversa qualcuno"
+      "gioca": "arbitro.js",
+      "nota": "in io contro l'AI i colpi li tira l'arbitro, sia quando il Fanatico attraversa un'unita' sia quando un'unita' gli passa sopra; al tavolo il pannello del tiro sa tirare i colpi, ma non sa quando un Fanatico attraversa qualcuno"
     },
     {
       "id": "squigsGoWild",

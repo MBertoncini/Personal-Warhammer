@@ -30,9 +30,10 @@
  * combat.js, e a parità di perforazione si impugna l'arma con più
  * attacchi), ma offrirla ai costruttori vuol dire rifare le ricerche e
  * non è ancora stato fatto. L'arma che si vuole impugnare va comunque
- * messa per prima — le lance stanno davanti all'arma a una mano. I Fanatici dei Night Goblin e
- * gli attacchi del Gigante sono regole «a mano» (dati/eserciti): un
- * costruttore per loro misurerebbe punti buttati.
+ * messa per prima — le lance stanno davanti all'arma a una mano. Gli
+ * attacchi del Gigante sono regole «a mano» (dati/eserciti): un
+ * costruttore per loro misurerebbe punti buttati. I Fanatici dei Night
+ * Goblin no: li gioca l'arbitro, e sono un'opzione del reggimento.
  */
 import { mountById, mountUnit } from './mounts.js';
 
@@ -254,10 +255,20 @@ export const OG = {
   /* p. 25: 3 pt con scudi, lance +1; Boss +7, stendardo +5, musico +5.
      Oppure archi corti al posto degli scudi, +1: senza scudo niente
      armatura. */
-  nightGoblins: ({ n = 20, c = '', spears = false, bows = false, f } = {}) => da('Night Goblin Mobs', { n, f, c,
-    pts: n * (3 + ((spears || bows) ? 1 : 0)) + costoComando(c, { c: 7, s: 5, m: 5 }),
-    armour: bows ? 0 : 6, shield: !bows, add: BM, weapons: bows ? ['hw', 'shortbow'] : spears ? ['spear', 'hw'] : ['hw'],
-    del: ['Release the Fanatics!', 'Fanatic Ball & Chain'] }),
+  /* I Fanatici: 25 punti l'uno, come tornano i due file dell'archivio
+     che li portano (Kevin e Tommaso: venti goblin con le lance e due
+     Fanatici). Stanno nascosti nel reggimento e li gioca l'arbitro
+     (arbitro.js, «i Fanatici»); senza, via le loro due regole. */
+  nightGoblins: ({ n = 20, c = '', spears = false, bows = false, fan = 0, f } = {}) => {
+    const u = da('Night Goblin Mobs', { n, f, c,
+      pts: n * (3 + ((spears || bows) ? 1 : 0)) + costoComando(c, { c: 7, s: 5, m: 5 }) + 25 * fan,
+      armour: bows ? 0 : 6, shield: !bows, add: [...BM, ...(fan ? ['Release the Fanatics!', 'Fanatic Ball & Chain'] : [])],
+      weapons: bows ? ['hw', 'shortbow'] : spears ? ['spear', 'hw'] : ['hw'],
+      del: fan ? [] : ['Release the Fanatics!', 'Fanatic Ball & Chain'] });
+    u.fanatici = fan; u.crew = fan;
+    u.ruleText = testiDi(u.rules);
+    return u;
+  },
   /* p. 23: 3 pt con scudi, lance +1; Boss +7, stendardo +5, musico +5 */
   goblins: ({ n = 20, c = '', spears = false, f } = {}) => da('Goblin Mobs', { n, f, c,
     pts: n * (3 + (spears ? 1 : 0)) + costoComando(c, { c: 7, s: 5, m: 5 }),

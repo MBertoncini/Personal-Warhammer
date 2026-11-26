@@ -11,7 +11,7 @@
  * di rete. Qui dentro c'e' solo il guscio dell'app.
  */
 
-const VERSION = "v65";
+const VERSION = "v66";
 const SHELL = "shell-" + VERSION;
 const RUNTIME = "runtime-" + VERSION;
 
@@ -109,7 +109,12 @@ self.addEventListener("fetch", e => {
   if (sameOrigin && isCode){
     e.respondWith((async () => {
       try {
-        const fresh = await fetch(req);
+        /* «no-cache» chiede al server se il file e' cambiato invece di
+           fidarsi della cache HTTP del browser: GitHub Pages dice di
+           tenere i file dieci minuti, e per dieci minuti dopo una
+           pubblicazione arrivava il codice di prima anche ricaricando.
+           Se il file e' lo stesso il server risponde 304, e costa poco. */
+        const fresh = await fetch(req, { cache: "no-cache" });
         if (fresh && fresh.ok) (await caches.open(SHELL)).put(req, fresh.clone());
         return fresh;
       } catch (_){

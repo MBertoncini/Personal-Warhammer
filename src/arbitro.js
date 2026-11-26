@@ -71,6 +71,8 @@ import { objectiveHolder, OBJECTIVE_RANGE, OBJECTIVE_US } from './battlemarch.js
    lavoro futuro, non una scusa.
    ============================================================ */
 export const LIMITI = [
+  { id:"fanatici", what:"i Fanatici dei Night Goblin li libera e li dirige l'arbitro, con un'euristica, e non si possono bersagliare", page:0,
+    why:"il libro lascia a chi gioca quando liberarli e, nel turno in cui escono, dove mandarli (Ravening Hordes, «Release the Fanatics!»): l'arbitro li libera a un inizio turno quando un nemico è a portata di 2D6, e li manda dove attraversano più nemici e meno amici. Chi muove non gira loro attorno, e il tiro nemico non li prende di mira come personaggi soli. La basetta è da 25 mm, perché il file non la dice; un doppio li fa cadere dopo aver fatto tutta la strada, e chi esce dal tavolo cade anche lui. I loro punti restano in quelli dell'unità che li nasconde" },
   { id:"cavalleria", what:"un modello a cavallo nella fila che combatte che non tocca il nemico fa il suo attacco solo con il cavaliere, e la bestia di un reggimento mena con le sole regole della sua riga", page:192,
     why:"la bestia mena dai modelli che toccano il nemico e mai d'appoggio (p. 192); chi sta nella fila senza toccare «can make only one attack» (p. 146), e il libro non dice se sia del cavaliere o della bestia. Le regole dell'unità valgono per tutte e due le metà «salvo dove è detto», e il file di New Recruit le scrive senza il «solo per…» che il libro mette accanto: la bestia prende quelle che la sua riga in `dati/profili.json` porta. Senza quella riga, il reggimento mena con il solo cavaliere" },
   { id:"equipaggio", what:"gli skink sopra un bestione senza Howdah menano con la loro riga, e i colpi nemici vanno sull'Abilità del bestione", page:97,
@@ -326,6 +328,7 @@ export function newBattle({ A, B, scenario = "bm-strada", def = null, nomi = nul
   };
   S.usStart.A = totalUS(S, "A");
   S.usStart.B = totalUS(S, "B");
+  preparaFanatici(S);
   /* Il generale: quello che la preparazione della lista dice, e se
      tace quello che `prep.js` propone — il personaggio che lo dichiara,
      o il Comando piu' alto. */
@@ -1801,6 +1804,8 @@ export function clona(S){
     pending: S.pending ? structuredClone(S.pending) : null,
     sfide: structuredClone(S.sfide || []),
     fineTurni: structuredClone(S.fineTurni || []),
+    fanatici: structuredClone(S.fanatici || []),
+    postiPrima: S.postiPrima ? new Map(S.postiPrima) : null,
     tiriPrimo: (S.tiriPrimo || []).slice(),
     esito: S.esito ? { ...S.esito } : null,
     magia: { ...S.magia, fato: { ...S.magia.fato }, stop: { ...S.magia.stop } },
@@ -7881,6 +7886,206 @@ function spawnOfSotek(S){
   }
 }
 
+/* ---- i Fanatici dei Night Goblin (Ravening Hordes) ----
+   «Release the Fanatics!»: i Fanatici non si schierano. Stanno nascosti
+   in un reggimento di Night Goblin, e a qualunque inizio turno — anche
+   dell'avversario — il reggimento che non fugge li libera: si posano
+   entro 3″ da lui. Nelle mosse obbligate del turno in cui escono vanno
+   di 2D6″ dove vuole chi li controlla, e in tutte le mosse obbligate
+   dopo, di entrambe le parti, di 2D6″ in una direzione a caso.
+   Attraversano chiunque, amico o nemico, e ogni unita' attraversata —
+   o che li attraversa — prende D6 colpi a Forza 5, perforazione 3
+   («Fanatic Ball & Chain»). Cadono con un doppio, toccando terreno
+   difficile, pericoloso o impassabile o un ostacolo, o un altro
+   Fanatico; e cadono nascosti se il reggimento muore prima.
+
+   Non sono unita' del tavolo: stanno in `S.fanatici`, cosi' nessuno li
+   carica, nessuno li conta fra le perdite e nessuno gli chiede una
+   mossa. Quanti sono lo dice la lista: `fanatici` se l'ha scritto il
+   Laboratorio, se no `crew` — e' li' che New Recruit li mette, sulle
+   unita' con la regola. Quello che l'arbitro sceglie al posto di chi
+   gioca e' il limite «fanatici». */
+const FAN_R = 12.5;                                // la basetta: 25 mm
+const FAN_FERMA = new Set(["difficult", "dangerous", "impassable", "lowWall", "highWall", "wood"]);
+export const fanaticiDi = u => haRegola(u, /^release the fanatics/i) ? Math.max(0, Math.floor(+(u.fanatici ?? u.crew) || 0)) : 0;
+/* quante volte su 36 il 2D6 fa almeno k */
+const P2D6 = k => k <= 2 ? 1 : k > 12 ? 0 : [...Array(36).keys()].filter(i => (i % 6) + Math.floor(i / 6) + 2 >= k).length / 36;
+const versoXY = deg => [Math.sin(deg * Math.PI / 180), -Math.cos(deg * Math.PI / 180)];
+
+function preparaFanatici(S){
+  S.fanatici = [];
+  for (const u of S.units){
+    const n = fanaticiDi(u);
+    if (n) u.nascosti = n;
+  }
+}
+export const fanaticiVivi = S => (S.fanatici || []).filter(f => f.vivo);
+
+/* La strada di un Fanatico: da dove sta, verso `deg`, per `pollici`, e
+   oltre finche' la basetta tocca qualcuno. Torna chi attraversa (con a
+   quanti pollici lo tocca), dove si ferma, e se ci resta. */
+function stradaFanatico(S, f, deg, pollici, { prova = false } = {}){
+  const [ux, uy] = versoXY(deg);
+  const pezzi = S.units.filter(o => onBoard(o) && !isJoined(o)).map(o => ({ o, b: boxOf(o, S.units) }));
+  const altri = fanaticiVivi(S).filter(g => g !== f);
+  const presi = [];
+  const lim = pollici * MM;
+  let s = 0, fine = null;
+  for (s = PASSO; s < lim + 48 * MM; s += PASSO){
+    const p = [f.x + ux * s, f.y + uy * s];
+    if (p[0] < FAN_R || p[1] < FAN_R || p[0] > S.table.w - FAN_R || p[1] > S.table.h - FAN_R){
+      fine = { muore: "esce dal tavolo" }; break;
+    }
+    const t = S.terrain.find(t => !t.decor && FAN_FERMA.has(t.cat && t.cat.id) && distPointToBox(p, t.box) < FAN_R);
+    if (t){ fine = { muore: `tocca ${t.label.toLowerCase()}` }; break; }
+    const g = altri.find(g => Math.hypot(g.x - p[0], g.y - p[1]) < 2 * FAN_R);
+    if (g){ fine = { muore: "si impiglia in un altro Fanatico", g }; break; }
+    const sotto = pezzi.filter(({ b }) => distPointToBox(p, b) < FAN_R);
+    for (const { o } of sotto) if (!presi.some(x => x.o === o)) presi.push({ o, a: s / MM });
+    if (s >= lim && !sotto.length) break;
+    if (prova && s >= lim) break;
+  }
+  return { presi, fine, x: f.x + ux * s, y: f.y + uy * s, pollici: s / MM };
+}
+
+/* Dove conviene mandarlo: le unita' che la strada attraversa, ognuna
+   per la probabilita' che il 2D6 ci arrivi — i nemici in piu', gli
+   amici in meno e un po' di piu'. Si provano trentasei direzioni e
+   quella dritta verso ogni nemico. */
+function direzioneFanatico(S, f, army){
+  const angoli = [...Array(36).keys()].map(i => i * 10);
+  for (const e of inCampo(S, altro(army))) angoli.push(versoDi(e.x - f.x, e.y - f.y));
+  let meglio = { deg: angoli[0], v: -Infinity, chi: [] };
+  for (const deg of angoli){
+    const r = stradaFanatico(S, f, deg, 12, { prova: true });
+    let v = 0;
+    for (const { o, a } of r.presi) v += (o.army === army ? -1.5 : 1) * P2D6(Math.ceil(a - 0.01));
+    if (v > meglio.v) meglio = { deg, v, chi: r.presi.filter(x => x.o.army !== army).map(x => x.o) };
+  }
+  return meglio;
+}
+
+/* Dove posarlo, uscendo dal reggimento verso `deg`: entro 3″ da lui e
+   senza toccare nessuno. Se di fronte non c'e' posto, un po' di lato. */
+function postoFanatico(S, u, deg){
+  const b = boxOf(u, S.units);
+  for (const giro of [0, 20, -20, 40, -40, 70, -70]){
+    const d = deg + giro, [ux, uy] = versoXY(d);
+    const fuori = boxRadius(b, Math.atan2(uy, ux)) + 2.5 * MM + FAN_R;
+    const p = { x: u.x + ux * fuori, y: u.y + uy * fuori };
+    if (distPointToBox([p.x, p.y], b) > 3 * MM + FAN_R) continue;
+    if (p.x < FAN_R || p.y < FAN_R || p.x > S.table.w - FAN_R || p.y > S.table.h - FAN_R) continue;
+    if (S.units.some(o => onBoard(o) && !isJoined(o) && distPointToBox([p.x, p.y], boxOf(o, S.units)) < FAN_R)) continue;
+    if (fanaticiVivi(S).some(g => Math.hypot(g.x - p.x, g.y - p.y) < 2 * FAN_R)) continue;
+    if (S.terrain.some(t => !t.decor && FAN_FERMA.has(t.cat && t.cat.id) && distPointToBox([p.x, p.y], t.box) < FAN_R)) continue;
+    return p;
+  }
+  return null;
+}
+
+/* A ogni inizio turno, di tutte e due le parti: chi nasconde Fanatici
+   e non fugge li libera quando dal posto in cui uscirebbero un nemico
+   e' a portata di 2D6, uno alla volta. */
+function liberaFanatici(S){
+  for (const u of S.units){
+    if (!u.nascosti) continue;
+    if (u.dead || u.fledOff){
+      say(S, `${u.name} non c'è più: ${u.nascosti === 1 ? "il Fanatico che nascondeva cade" : `i ${u.nascosti} Fanatici che nascondeva cadono`} con lei.`,
+          { army: u.army, page: 0 });
+      u.nascosti = 0;
+      continue;
+    }
+    if (!onBoard(u) || u.fled || isJoined(u)) continue;
+    while (u.nascosti > 0){
+      const verso = direzioneFanatico(S, { x: u.x, y: u.y }, u.army);
+      const p = postoFanatico(S, u, verso.deg);
+      if (!p) break;
+      const f = { fid: 9000 + (S.fanatici.length + 1), army: u.army, x: p.x, y: p.y, da: u.uid, vivo: true };
+      const dove = direzioneFanatico(S, f, u.army);
+      if (dove.v < 0.45) break;
+      f.liberato = chiave(S);
+      f.nome = `Fanatico ${S.fanatici.filter(g => g.army === u.army).length + 1}`;
+      S.fanatici.push(f);
+      u.nascosti--;
+      limite(S, "fanatici");
+      say(S, `${u.name} libera un Fanatico (${f.nome}): esce a ${r1(inch(distPointToBox([f.x, f.y], boxOf(u, S.units))) )}″ dal reggimento, ` +
+             `pronto a lanciarsi verso ${dove.chi.length ? dove.chi.map(o => o.name).join(", ") : "il nemico"} nelle mosse obbligate (Release the Fanatics!).`,
+          { army: u.army, page: 0 });
+    }
+  }
+}
+
+/* le mosse obbligate di ogni turno: tutti i Fanatici in campo, di
+   tutte e due le parti */
+function muoviFanatici(S){
+  for (const f of fanaticiVivi(S)){
+    if (!f.vivo) continue;
+    const scelta = f.liberato === chiave(S);
+    const deg = scelta ? direzioneFanatico(S, f, f.army).deg : deviazione({ distance: "none" }).die.deg;
+    const dadi = roll(2), tot = dadi[0] + dadi[1];
+    const r = stradaFanatico(S, f, deg, tot);
+    f.x = r.x; f.y = r.y;
+    const doppio = dadi[0] === dadi[1];
+    say(S, `${f.nome} (${S.nomi[f.army]}) gira la palla e catena: ${dadi.join(" + ")} = ${tot}″ ` +
+           `${scelta ? "dove vuole chi lo ha liberato" : `in una direzione a caso, verso ${compassDi(deg)}`}` +
+           (r.presi.length ? `, e attraversa ${r.presi.map(x => x.o.name).join(", ")}.` : ", senza attraversare nessuno.") +
+           (r.pollici > tot + 0.3 && !r.fine ? ` Non può fermarsi addosso a nessuno: va avanti fino a ${r1(r.pollici)}″.` : ""),
+        { dice: dadi, army: f.army, page: 0 });
+    for (const { o } of r.presi) colpiDiFanatico(S, o, f);
+    if (r.fine && r.fine.muore){
+      f.vivo = false;
+      if (r.fine.g) r.fine.g.vivo = false;
+      say(S, `${f.nome} ${r.fine.muore}${r.fine.g ? ` (${r.fine.g.nome})` : ""}: ${r.fine.g ? "cadono tutti e due" : "si ferma e cade"}.`, { army: f.army, page: 0 });
+    } else if (doppio){
+      f.vivo = false;
+      say(S, `${f.nome}: doppio ${dadi[0]}, finita la corsa la catena lo strangola e cade.`, { army: f.army, page: 0 });
+    }
+  }
+}
+const compassDi = deg => ["su", "su-destra", "destra", "giù-destra", "giù", "giù-sinistra", "sinistra", "su-sinistra"][Math.round((((deg % 360) + 360) % 360) / 45) % 8];
+
+function colpiDiFanatico(S, o, f){
+  if (o.dead) return;
+  const [n] = roll(1);
+  say(S, `${o.name} è attraversata da ${f.nome}: ${n} colp${n === 1 ? "o" : "i"} (Fanatic Ball & Chain).`, { dice: [n], army: f.army, page: 0 });
+  colpisci(S, o, { S: 5, AP: 3 }, n, "Fanatic Ball & Chain", { da: S.units.find(u => u.uid === f.da) || null });
+}
+
+/* Chi si muove sopra un Fanatico ne prende i colpi, e se ci si ferma
+   addosso il Fanatico si sposta per la via piu' corta. Si guarda a fine
+   casella, sulla strada dritta dal posto di prima a quello di adesso. */
+function fotografaPosti(S){
+  if (!fanaticiVivi(S).length){ S.postiPrima = null; return; }
+  S.postiPrima = new Map(S.units.filter(u => onBoard(u) && !isJoined(u)).map(u => [u.uid, [u.x, u.y]]));
+}
+function attraversaFanatici(S){
+  const prima = S.postiPrima;
+  if (!prima || !fanaticiVivi(S).length) return;
+  for (const u of S.units){
+    if (!onBoard(u) || isJoined(u) || u.dead) continue;
+    const da = prima.get(u.uid);
+    if (!da || (Math.abs(da[0] - u.x) < 1 && Math.abs(da[1] - u.y) < 1)) continue;
+    const b = boxOf(u, S.units), mezzo = Math.min(b.w, b.h) / 2;
+    for (const f of fanaticiVivi(S)){
+      const p = [f.x, f.y];
+      const sopra = distPointToBox(p, b) < FAN_R;
+      const strada = segmentNearBox(da, [u.x, u.y], { x: f.x, y: f.y, w: 2 * (FAN_R + mezzo), h: 2 * (FAN_R + mezzo), rot: 0 }) > 0;
+      if (!sopra && !strada) continue;
+      say(S, `${u.name} passa sopra ${f.nome}.`, { army: u.army, page: 0 });
+      colpiDiFanatico(S, u, f);
+      if (sopra) scostaFanatico(S, f, b);
+    }
+  }
+  S.postiPrima = null;
+}
+function scostaFanatico(S, f, b){
+  const deg = versoDi(f.x - b.x, f.y - b.y), [ux, uy] = versoXY(deg);
+  for (let s = 0; s < 30 * MM; s += PASSO){
+    const p = [f.x + ux * s, f.y + uy * s];
+    if (!S.units.some(o => onBoard(o) && !isJoined(o) && distPointToBox(p, boxOf(o, S.units)) < FAN_R)){ f.x = p[0]; f.y = p[1]; return; }
+  }
+}
+
 function inizioTurno(S){
   /* Le sfide e i ritiri si rileggono in testa al turno, e non solo
      quando si sceglie un combattimento: uno sfidante puo' essere caduto
@@ -7889,6 +8094,8 @@ function inizioTurno(S){
      riga il suo Comando restava fuori dai test di Panico di mezzo turno. */
   ripulisciSfide(S);
   spawnOfSotek(S);
+  liberaFanatici(S);
+  fotografaPosti(S);
   for (const u of inCampo(S, S.army)){
     const p = PS.psychOf(u, { joined: capiInFila(S, u) });
     const c = PS.stupidityCheck({ p, fleeing: !!u.fled, engaged: ingaggiata(S, u) });
@@ -7973,10 +8180,15 @@ function passo(S){
   }
   /* chi si muove di quanto tira non puo' restare fermo (p. 176) */
   if (CASELLE[S.casella] && CASELLE[S.casella].id === "mosse") vaganoDaSoli(S);
+  /* chi in questa casella e' passato sopra un Fanatico ne prende i colpi */
+  attraversaFanatici(S);
   S.casella++;
+  fotografaPosti(S);
   if (S.casella < CASELLE.length){
     if (CASELLE[S.casella].id === "cariche") impeti(S);
-    if (CASELLE[S.casella].id === "mosse") continuaAFuggire(S);
+    /* le mosse obbligate stanno fra le cariche e le mosse restanti:
+       prima i Fanatici, poi chi continua a fuggire */
+    if (CASELLE[S.casella].id === "mosse"){ muoviFanatici(S); continuaAFuggire(S); }
     if (CASELLE[S.casella].id === "tiro") serpenti(S);
     /* chi e' sciolto e ingaggiato si serra prima di menare (p. 185) */
     if (CASELLE[S.casella].id === "mischia") serraIngaggiati(S);

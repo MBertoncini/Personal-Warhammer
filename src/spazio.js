@@ -22,8 +22,9 @@
  * strada più del margine), ha un generale, rispetta le percentuali della
  * Grand Army (`avvisiComposizione`), i limiti di ogni voce e i vincoli
  * della fazione — Da Boyz per gli Orchi Neri. Le regole che il simulatore
- * gioca a mano (Fanatici, Gigante, Squig) non hanno una voce: sarebbero
- * punti che in una serie non fanno niente.
+ * gioca a mano (Gigante, Squig) non hanno una voce: sarebbero punti che
+ * in una serie non fanno niente. I Fanatici si', da quando li gioca
+ * l'arbitro: sono un'opzione dei Night Goblin.
  */
 import { SK, OG, LZ, BH, WE, DW, da, lista, avvisiComposizione } from './costruttori.js';
 import { armiKey, assegna, quanti } from './armi.js';
@@ -88,8 +89,10 @@ const ORCHI = [
   { k: 'orcs', pezzo: 'Orc Mobs', n: [10, 50], opz: { c: COMANDO, spears: SI_NO, bows: SI_NO, big: SI_NO, f: FRONTI }, crea: OG.orcs,
     armi: o => o.bows ? 'Warbows' : '' },
   { k: 'blackOrcs', pezzo: 'Black Orc Mobs', n: [10, 30], opz: { c: COMANDO, great: [true, false], f: FRONTI }, crea: OG.blackOrcs, nero: 'mob' },
-  { k: 'nightGoblins', pezzo: 'Night Goblin Mobs', n: [10, 40], opz: { c: COMANDO, spears: SI_NO, bows: SI_NO, f: FRONTI }, crea: OG.nightGoblins,
-    armi: o => o.bows ? 'Shortbows' : '' },
+  /* i Fanatici sono miniature a sé: con la collezione servono in
+     vetrina, sotto «Night Goblin Fanatics» */
+  { k: 'nightGoblins', pezzo: 'Night Goblin Mobs', n: [10, 40], opz: { c: COMANDO, spears: SI_NO, bows: SI_NO, fan: [0, 1, 2, 3], f: FRONTI }, crea: OG.nightGoblins,
+    armi: o => o.bows ? 'Shortbows' : '', extra: o => o.fan ? [['Night Goblin Fanatics', o.fan, '']] : [] },
   { k: 'goblins', pezzo: 'Goblin Mobs', n: [10, 40], opz: { c: COMANDO, spears: SI_NO, f: FRONTI }, crea: OG.goblins },
   { k: 'trolls', pezzo: 'Stone Troll Mobs', n: [1, 6], crea: OG.trolls },
   /* una mandria di n Squig porta un Herder ogni cinque (p. 27) */
@@ -380,8 +383,8 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
   const quantiDi = (p, k = '') => quanti(k, scorte.get(norm(p)) || []);
 
   /* i pezzi di un'unità: [pezzo, quanti, classe delle armi] */
-  const pezziDi = (v, n, o = {}) => v.pezzi ? v.pezzi(n).map(([p, q]) => [p, q, ''])
-    : [[v.pezzo, v.n ? n : 1, armiKey(v.armi ? v.armi(o) : '')]];
+  const pezziDi = (v, n, o = {}) => [...(v.pezzi ? v.pezzi(n).map(([p, q]) => [p, q, ''])
+    : [[v.pezzo, v.n ? n : 1, armiKey(v.armi ? v.armi(o) : '')]]), ...(v.extra ? v.extra(o) : [])];
   const bastano = (v, n, o) => pezziDi(v, n, o).every(([p, q, k]) => quantiDi(p, k) >= q);
 
   /* le voci che si possono costruire davvero: il modello importato
@@ -402,7 +405,7 @@ export function spazio(fazione, { pool = 'tutte', punti = 800, margine = null, c
          più una scelta. Due giri, perché un'opzione si prova con le
          altre già ristrette. */
       const base = Object.fromEntries(Object.entries(v.opz).map(([k, a]) => [k, a[0]]));
-      if (v.armi) for (let giro = 0; giro < 2; giro++){
+      if (v.armi || v.extra) for (let giro = 0; giro < 2; giro++){
         const opz = {};
         for (const [k, a] of Object.entries(v.opz)){
           const buone = a.filter(x => bastano(v, min, { ...base, [k]: x }));

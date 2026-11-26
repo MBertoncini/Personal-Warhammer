@@ -431,6 +431,11 @@ function giocaQui(){
 export function renderMatchup(){
   const host = $("#matchup");
   if (!host) return;
+  /* Una lista scelta qui e poi cancellata — o sostituita da quella
+     dell'Archivio, con un altro id — lasciava il suo id appeso: il menu
+     mostrava «—», e la sfida cercava il nome di una lista che non c'e'
+     piu' e rompeva la scheda. Chi non c'e' piu' si toglie. */
+  for (const k of ["listA", "listB", "listA2", "listB2"]) if (mu[k] && !getList(mu[k])) mu[k] = null;
   const ls = allLists();
   const av = availability();
 
@@ -492,8 +497,8 @@ export function renderMatchup(){
         <button class="btn" id="mu-link">Copia il link del tavolo</button>
       </div>`}
 
-    ${mu.listA && mu.listB ? sfidaHTML() : ""}
-    ${mu.listA && mu.listB ? aiaiHTML() : ""}
+    ${parte("A") && parte("B") ? sfidaHTML() : ""}
+    ${parte("A") && parte("B") ? aiaiHTML() : ""}
 
     <div class="panel-title" style="margin-top:16px">Schieramenti salvati</div>
     <div class="tray">
@@ -518,8 +523,7 @@ export function renderMatchup(){
 
   const board = $("#mu-board");
   if (board) board.addEventListener("click", () => {
-    if (mu.listA) loadArmyFromList(parte("A"), "A");
-    if (mu.listB) loadArmyFromList(parte("B"), "B");
+    for (const k of ["A", "B"]){ const l = parte(k); if (l) loadArmyFromList(l, k); }
     document.querySelector('[data-tab="deploy"]').click();
   });
   const sf = $("#mu-sfida");

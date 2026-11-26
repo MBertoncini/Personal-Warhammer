@@ -1981,6 +1981,17 @@ console.log('\ndue contro uno: il matchup e il laboratorio');
      /1025 punti/.test(doc.querySelector('#laboratorio').textContent));
   window.localStorage.removeItem('tow-lab-esp');
   ok('nessun errore nel due contro uno', errors.length === 0);
+
+  /* la lista dell'esercito B sparisce (cancellata, o sostituita da
+     quella dell'Archivio con un altro id): la scheda non si rompe */
+  doc.querySelector('[data-tab="matchup"]').dispatchEvent(new window.Event('click'));
+  await settle(60);
+  setField('#mu-b', mic.id); await settle(60);
+  await LS.removeList(mic.id); await settle(60);
+  let rotta = null;
+  try { MU.renderMatchup(); } catch (e){ rotta = e; }
+  ok('una lista scelta e poi cancellata non rompe il matchup', !rotta && !doc.querySelector('#mu-sfida') &&
+     doc.querySelector('#mu-b').value === '');
 }
 
 console.log('\nil guscio per stare senza rete');
