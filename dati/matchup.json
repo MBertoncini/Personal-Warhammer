@@ -1,18 +1,19 @@
 {
-  "listA": "lmww1x3x4zaui",
-  "listB": "lmwxad25962kg",
+  "listA": "lmwxjjw9pf0rp",
+  "listB": "lmww1t46h12dr",
   "mine": "both",
   "note": "",
   "aiai": {
-    "scenario": "sxprova-boschi",
-    "chi": "ricerca",
-    "seme": 1,
-    "partite": 1,
+    "scenario": "sxmus3g2dbu3h",
+    "chi": "gemini",
+    "seme": 12,
+    "html": true,
+    "archivia": true,
     "estro": true,
     "mappa": true,
-    "html": true,
-    "archivia": true
+    "partite": 1
   },
   "sfidaMia": "A",
-  "sfidaScenario": "sxmus3g2dbu3h"
+  "sfidaScenario": "sxmus3g2dbu3h",
+  "listB2": "lmww1uky844go"
 }

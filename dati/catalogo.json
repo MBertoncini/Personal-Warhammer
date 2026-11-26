@@ -220,6 +220,19 @@
     "notes": ""
   },
   {
+    "name": "Night Goblin Fanatics",
+    "faction": "Orc & Goblin Tribes",
+    "baseId": "25x25",
+    "baseW": 25,
+    "baseH": 25,
+    "owned": 2,
+    "painted": 2,
+    "aliases": [],
+    "notes": "",
+    "armi": "",
+    "altreArmi": false
+  },
+  {
     "id": "cmtl5rzttgftf",
     "name": "Night Goblin Mobs",
     "faction": "Orc & Goblin Tribes",
