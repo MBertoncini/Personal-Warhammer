@@ -1,17 +1,17 @@
 {
-  "listA": "lmv3a5cmqm740",
-  "listB": "lmuh94k2z9p26",
+  "listA": "lmww1x3x4zaui",
+  "listB": "lmwxad25962kg",
   "mine": "both",
   "note": "",
   "aiai": {
     "scenario": "sxprova-boschi",
     "chi": "ricerca",
     "seme": 1,
-    "html": true,
-    "archivia": true,
+    "partite": 1,
     "estro": true,
     "mappa": true,
-    "partite": 1
+    "html": true,
+    "archivia": true
   },
   "sfidaMia": "A",
   "sfidaScenario": "sxmus3g2dbu3h"

@@ -1,5 +1,19 @@
 [
   {
+    "id": "cmug2y3o8piet",
+    "name": "Ancient Stegadon",
+    "faction": "Lizardmen",
+    "baseId": "60x100",
+    "baseW": 60,
+    "baseH": 100,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "ancient stegadon"
+    ],
+    "notes": "Ci può salire lo Skink Priest, o giocare da solo."
+  },
+  {
     "id": "cmtl5sfv2x8hd",
     "name": "Bastiladon",
     "faction": "Lizardmen",
@@ -11,20 +25,6 @@
       "bastiladon"
     ],
     "notes": ""
-  },
-  {
-    "id": "cmtl5sw0vizcl",
-    "name": "Cold One Riders",
-    "faction": "Lizardmen",
-    "baseId": "30x60",
-    "baseW": 30,
-    "baseH": 60,
-    "owned": 8,
-    "aliases": [
-      "cold one riders"
-    ],
-    "notes": "",
-    "painted": 0
   },
   {
     "id": "cmug2rvkhxxfp",
@@ -39,6 +39,20 @@
       "carnosaur"
     ],
     "notes": "Le cavalcature dei due Saurus Oldblood."
+  },
+  {
+    "id": "cmtl5sw0vizcl",
+    "name": "Cold One Riders",
+    "faction": "Lizardmen",
+    "baseId": "30x60",
+    "baseW": 30,
+    "baseH": 60,
+    "owned": 8,
+    "aliases": [
+      "cold one riders"
+    ],
+    "notes": "",
+    "painted": 0
   },
   {
     "id": "cmttwt5q1icif",
@@ -109,20 +123,6 @@
     "notes": "Può salire sull'Ancient Stegadon."
   },
   {
-    "id": "cmug2y3o8piet",
-    "name": "Ancient Stegadon",
-    "faction": "Lizardmen",
-    "baseId": "60x100",
-    "baseW": 60,
-    "baseH": 100,
-    "owned": 1,
-    "painted": 0,
-    "aliases": [
-      "ancient stegadon"
-    ],
-    "notes": "Ci può salire lo Skink Priest, o giocare da solo."
-  },
-  {
     "id": "cmtl5rlxm62jk",
     "name": "Skink Skirmishers",
     "faction": "Lizardmen",
@@ -174,6 +174,48 @@
     "owned": 5,
     "aliases": [
       "terradon riders"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "cmwxczuih8oqd",
+    "name": "Jungle Swarms",
+    "faction": "Lizardmen - Renegades v2",
+    "baseId": "40x40",
+    "baseW": 40,
+    "baseH": 40,
+    "owned": 6,
+    "painted": 0,
+    "aliases": [
+      "jungle swarms"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "cmwxd090wsu10",
+    "name": "Salamander Packs",
+    "faction": "Lizardmen - Renegades v2",
+    "baseId": "custom",
+    "baseW": 50,
+    "baseH": 75,
+    "owned": 2,
+    "painted": 0,
+    "aliases": [
+      "salamander packs"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "cmwxd01ow3osd",
+    "name": "Skink Cohorts",
+    "faction": "Lizardmen - Renegades v2",
+    "baseId": "25x25",
+    "baseW": 25,
+    "baseH": 25,
+    "owned": 20,
+    "painted": 0,
+    "aliases": [
+      "skink cohorts"
     ],
     "notes": ""
   },
@@ -252,21 +294,6 @@
     "altreArmi": false
   },
   {
-    "id": "cmttwumnm8axg",
-    "name": "Orc Bigboss",
-    "faction": "Orc and Goblin Tribes",
-    "baseId": "30x60",
-    "baseW": 30,
-    "baseH": 60,
-    "owned": 1,
-    "painted": 0,
-    "aliases": [
-      "orc bigboss",
-      "orc bigboss on war boar"
-    ],
-    "notes": "Sul cinghiale (War Boar)."
-  },
-  {
     "id": "cmtl5r88tb6qt",
     "name": "Black Orc Mobs",
     "faction": "Orc and Goblin Tribes",
@@ -335,6 +362,20 @@
     "notes": ""
   },
   {
+    "id": "cmww1vhzulsed",
+    "name": "Goblin Wolf Rider Mobs",
+    "faction": "Orc and Goblin Tribes",
+    "baseId": "25x50",
+    "baseW": 25,
+    "baseH": 50,
+    "owned": 5,
+    "painted": 0,
+    "aliases": [
+      "goblin wolf rider mobs"
+    ],
+    "notes": ""
+  },
+  {
     "id": "cmtl5rxae4yxy",
     "name": "Night Goblin Bigboss",
     "faction": "Orc and Goblin Tribes",
@@ -343,7 +384,22 @@
     "baseH": 25,
     "owned": 1,
     "aliases": [
-      "night goblin bigboss"
+      "night goblin bigboss",
+      "night goblin warboss"
+    ],
+    "notes": ""
+  },
+  {
+    "id": "cmww1w32ssn3v",
+    "name": "Night Goblin Mobs",
+    "faction": "Orc and Goblin Tribes",
+    "baseId": "25x25",
+    "baseW": 25,
+    "baseH": 25,
+    "owned": 20,
+    "painted": 0,
+    "aliases": [
+      "night goblin mobs"
     ],
     "notes": ""
   },
@@ -386,6 +442,21 @@
       "ogdruz swampdigga"
     ],
     "notes": ""
+  },
+  {
+    "id": "cmttwumnm8axg",
+    "name": "Orc Bigboss",
+    "faction": "Orc and Goblin Tribes",
+    "baseId": "30x60",
+    "baseW": 30,
+    "baseH": 60,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "orc bigboss",
+      "orc bigboss on war boar"
+    ],
+    "notes": "Sul cinghiale (War Boar)."
   },
   {
     "id": "cmtl5rcrcmk1x",
@@ -471,20 +542,6 @@
     "notes": "Sulla Screaming Bell."
   },
   {
-    "id": "cmug2y3o70j93",
-    "name": "Screaming Bell",
-    "faction": "Skaven",
-    "baseId": "60x100",
-    "baseW": 60,
-    "baseH": 100,
-    "owned": 1,
-    "painted": 0,
-    "aliases": [
-      "screaming bell"
-    ],
-    "notes": "La cavalcatura del Grey Seer."
-  },
-  {
     "id": "cmtt5ynmxl3z4",
     "name": "Hell Pit Abomination",
     "faction": "Skaven",
@@ -511,6 +568,20 @@
       "rat ogres"
     ],
     "notes": ""
+  },
+  {
+    "id": "cmug2y3o70j93",
+    "name": "Screaming Bell",
+    "faction": "Skaven",
+    "baseId": "60x100",
+    "baseW": 60,
+    "baseH": 100,
+    "owned": 1,
+    "painted": 0,
+    "aliases": [
+      "screaming bell"
+    ],
+    "notes": "La cavalcatura del Grey Seer."
   },
   {
     "id": "cmtt5xzhi250q",

@@ -1,76 +1,152 @@
 {
   "armies": {
     "A": {
-      "name": "Orc and Goblin Tribes",
+      "name": "Michele",
       "info": {
-        "catalogue": "Lizardmen",
-        "forceName": "Battle March",
-        "limit": 650
+        "catalogue": "Lizardmen - Renegades 2.0",
+        "forceName": "Open War",
+        "limit": 1500
       }
     },
     "B": {
-      "name": "Lizardmen",
+      "name": "Tommaso (variante)",
       "info": {
         "catalogue": "Orc and Goblin Tribes",
-        "forceName": "Battle March",
-        "limit": 650
+        "forceName": "Open War",
+        "limit": 500
       }
     }
   },
   "units": [
     {
-      "uid": 1,
+      "uid": 508,
       "army": "A",
-      "name": "Orc Bigboss",
+      "name": "Saurus Oldblood",
       "models": 1,
       "crew": 0,
-      "baseId": "30x60",
-      "baseW": 30,
-      "baseH": 60,
+      "baseId": "50x100",
+      "baseW": 50,
+      "baseH": 100,
       "frontage": 1,
       "loose": false,
-      "pts": 103,
+      "pts": 310,
       "us": 0,
-      "troop": "Heavy cavalry (character)",
+      "troop": "Behemoth (character)",
       "unitSize": "1",
       "stats": {
         "M": "7",
-        "WS": "5",
-        "BS": "2",
-        "S": "4",
-        "T": "5",
-        "W": "2",
-        "I": "4",
-        "A": "3",
-        "Ld": "7"
+        "WS": "6",
+        "BS": "0",
+        "S": "5",
+        "T": "6",
+        "W": "7",
+        "I": "3",
+        "A": "5",
+        "Ld": "8"
+      },
+      "profiles": [
+        {
+          "name": "Saurus Oldblood",
+          "stats": {
+            "M": "4",
+            "WS": "6",
+            "BS": "0",
+            "S": "5",
+            "T": "5",
+            "W": "3",
+            "I": "3",
+            "A": "5",
+            "Ld": "8"
+          }
+        },
+        {
+          "name": "Carnosaur",
+          "stats": {
+            "M": "7",
+            "WS": "3",
+            "BS": "0",
+            "S": "7",
+            "T": "-",
+            "W": "-",
+            "I": "2",
+            "A": "4",
+            "Ld": "-"
+          }
+        }
+      ],
+      "mount": {
+        "id": "carnosaur",
+        "name": "Carnosaur",
+        "genere": "mostro",
+        "stats": {
+          "M": "7",
+          "WS": "3",
+          "BS": "0",
+          "S": "7",
+          "T": "-",
+          "W": "-",
+          "I": "2",
+          "A": "4",
+          "Ld": "-"
+        },
+        "row": "Carnosaur",
+        "righe": [
+          {
+            "chi": "Carnosaur",
+            "n": 1,
+            "stats": {
+              "M": "7",
+              "WS": "3",
+              "BS": "0",
+              "S": "7",
+              "T": "-",
+              "W": "-",
+              "I": "2",
+              "A": "4",
+              "Ld": "-"
+            },
+            "arma": {
+              "name": "Slashing talons",
+              "S": "S",
+              "ap": "-3",
+              "rules": ""
+            }
+          }
+        ],
+        "forzaUrto": 7,
+        "random": "",
+        "armour": 5,
+        "libro": "Legends: Lizardmen",
+        "pagina": 12,
+        "nota": "La pelle squamosa vale armatura pesante (5+). Le Ferite Multiple (D3) degli artigli valgono solo contro i mostri, e la Blood Frenzy si accende quando il Carnosauro (non il cavaliere) ferisce: tutte e due a mano."
       },
       "rules": [
-        "Choppas",
-        "Furious Charge",
-        "Impetuous",
-        "Ignore Goblin Panic",
+        "Cold Blooded",
+        "Obsidian Blades",
         "Rallying Cry",
-        "Waaagh!",
-        "Warband",
-        "Battle Standard Bearer",
-        "Armoured Hide (1)",
-        "Counter Charge",
+        "Predatory Fighter",
+        "Armoured Hide (2)",
+        "General",
+        "Blood Frenzy",
+        "Close Order",
+        "Large Target",
+        "Stomp Attacks (2)",
         "Swiftstride",
-        "Tusker Charge"
+        "Terror"
       ],
       "ruleText": {
-        "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
-        "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
-        "Impetuous": "If during the Declare Charges & Charge Reactions sub-phase of its turn, a unit that includes one or more Impetuous models is able to declare a charge, it must make a Leadership test. If this test is failed, the unit must declare a charge. If this test is passed, the unit may act as normal.",
-        "Ignore Goblin Panic": "This unit does not have to make a Panic test when a friendly Goblin unit is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly Goblin unit.\n\n Note that, for the purposes of this rule, a Goblin unit is considered to be any unit that is made up entirely of Goblins of any kind, mounted or otherwise. This includes any war machine or chariot that is crewed entirely by Goblins. Should a Goblin unit be joined by an Orc character, it is no longer considered to be a Goblin unit.",
-        "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
-        "Waaagh!": "Once per game, during the Command sub-phase of their turn, this character may attempt to invoke the power of the Waaagh! by making a Leadership test (using their own Leadership). If this test is passed, until your next Start of Turn sub-phase this character, their mount and any Orc unit they have joined may re-roll any rolls To Hit of a natural 1 and, when calculating its combat result, may claim an additional bonus of +1 combat result point.\n\n Note that, for the purposes of this rule, an Orc unit is considered to be any unit that is made up entirely of Orcs or Black Orcs, mounted or otherwise. Should an Orc unit be joined by a Goblin character, it is no longer considered to be an Orc unit. This special rule is not cumulative.",
-        "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
-        "Battle Standard Bearer": "Armies often include a Battle Standard Bearer – a trusted warrior who holds aloft the General’s personal heraldry. A Battle Standard Bearer is a rallying point for the army, from The Battlecan Standard which friendly soldiers take heart and draw strength.\n\nThe Battle Standard Bearer Model\nA Battle Standard Bearer is a heroic model carrying a particularly impressive banner, and it will be presented as an option in your chosen army list. The Battle Standard is carried by a character model and, unless specified otherwise, the model that carries the Battle Standard cannot be the General.\n\nUnlike normal standards, the Battle Standard is lost if the bearer is slain – other models cannot pick it up, even if they are in the same unit.\n\nCombat Result Bonus: A Battle Standard grants a bonus of +1 combat result point. Unlike other standards, a Battle Standard grants this bonus even if another standard is present.\nIf, by some unusual circumstance, there are two Battle Standards on the same side in the combat, you can only count the bonus for one.\n\n“Hold Your Ground”: To represent the Battle Standard’s steadying presence, unless your Battle Standard Bearer is fleeing, friendly units within the Battle Standard Bearer’s Command range may re-roll any failed Panic or Rally test. In addition, friendly units within the Battle Standard Bearer’s Command range may re-roll the 2D6 when making a Break test. However, you must accept the result of the second roll, even if it is worse than the first.",
-        "Armoured Hide (1)": "The hide of some creatures forms natural armour and improves their armour value ( and that of their rider). By how much armour value is improved varies from model to model, as shown in brackets after the name of this special rule.\n\n Note that a model that wears no armour is considerer to have an armour value of 7+ for the purposes of rules that improve armour value.",
-        "Counter Charge": "This special rule can only be used by units that consist entirely of models with this special rule. When a unit with this special rule is charged in its front arc by an enemy unit whose troop type is ‘cavalry,’ ‘chariot’ or ‘monster’, it may declare a ‘Counter Charge’ charge reaction:\n\n Counter Charge: The unit surges forward to meet the enemy charge. Measure the distance between the two units. If the distance is less than the Movement characteristic of the charging unit, the charged unit has not enough time to meet the enemy charge and must either Hold or Flee instead.\n\n Otherwise, pivot the unit about its centre so that it is facing directly towards the centre of the charging enemy unit. After pivoting, the unit moves D3+1\" directly towards the enemy unit. Both units are considered to have charged during this turn.\n\n Fleeing units and units already engaged in combat when charged cannot Counter Charge. A unit can only Counter Charge in response to one charge per turn, even if charged by multiple units. Once all charges have been declared, the inactive player can choose which charging unit to Counter Charge. The unit will then Hold against the other charging units.",
-        "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result.",
-        "Tusker Charge": "During a turn in which it charged, a War Boar’s Tusks (hand weapon) have a Strength characteristic of S+1 and an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to attacks made by a War Boar, not to their rider, a chariot or its crew."
+        "Cold Blooded": "- **Restriction:** models with this rule (Lizardmen)\n- **Timing:** whenever a Leadership Test or Break Test is required\n- **Result:** you may add one D6 to the roll and drop the highest die",
+        "Obsidian Blades": "- **Restriction:** 1 non-magical hand weapon carried by the model, never a mount's\n- **Result:** the weapon has an Armour Piercing characteristic of -1\n  - inactive whenever the model wields a pair of hand weapons or a weapon of another kind",
+        "Rallying Cry": "- **Restriction:** character\n- **Timing:** own Command sub-phase\n- **Condition:** the character is not engaged in combat\n- **Select:** 1× friendly unit that is fleeing, within Command range (optional)\n- **Result:**\n  - The unit takes a Rally test immediately\n  - Test failed: normal rally attempt remains possible in the Rally sub-phase",
+        "Predatory Fighter": "- **Restriction:** the model only, not its mount\n- **Timing:** natural 6 on a To Hit roll in close combat\n- **Result:** +1 Attack, with its To Hit and To Wound rolls made normally\n  - such extra Attacks cannot themselves produce more",
+        "Armoured Hide (2)": "- **Restriction:** models with Armoured Hide\n- **Result:** Armour Value improves by the number in brackets after Armoured Hide, for the model and its rider\n  - No armour worn: counts as Armour Value 7+ when a rule improves Armour Value",
+        "General": "- **Select:** every friendly unit inside the Command range of your General\n- **Result:**\n  - **Inspiring Presence:** a selected unit may use the Leadership characteristic of the General in place of its own.\n  - Does not work while your General is fleeing, so rally the General before anything else.",
+        "Blood Frenzy": "- **Restriction:** this model only, not its rider; Character Mount: a Carnosaur joins an army only as a character's mount, with its points counted toward the rider's total\n- **Timing:** each time it inflicts an unsaved wound on an enemy model\n- **Result:** it gains Frenzy, even if it lost Frenzy earlier in the battle\n  - when Frenzied this way, the rider gets no +1 to its Attacks characteristic",
+        "Close Order": "Such a unit is able to form up in Close Order.",
+        "Large Target": "- **Restriction:** Large Target (Large Targets)\n- **Result:**\n  - Partial and full cover give it no benefit\n  - Line of sight to and from it passes across another unit, unless that unit is also a Large Target\n  - Shooting unit gets 1 additional rank firing at it",
+        "Stomp Attacks (2)": "- **Restriction:** a model with Stomp Attacks (X); X is often a dice roll\n- **Condition:** the attacker touches the enemy in base contact\n- **Result:** **Resolving Stomp Attacks:** carried out after every other attack in combat, Initiative 1 ones included\n  - They hit automatically.\n  - They use the attacker's unmodified Strength.",
+        "Swiftstride": "- **Restriction:** every model of the unit has Swiftstride\n- **Result:**\n  - Charge range ceiling: 3\" higher.\n  - Prior to a Charge, Flee or Pursuit roll, the unit may add +D6 to that roll (optional).",
+        "Terror": "- **Restriction:** model with Terror\n- **Result:** also causes Fear\n  - When a Terror-causing unit declares a charge, its target takes a Leadership test straight away; failing means it must Flee, passing means it chooses its charge reaction as usual. A target that cannot choose to Flee skips this test.\n  - When 1+ Terror-causing units are on the side that wins a combat: each unit on the losing side gets -1 to its Leadership characteristic for its Break test.\n  - Causing Fear gives no protection against the Fear of Terror-causing models. Models causing Terror are immune to Terror; a unit not causing it gains no immunity when a character that does joins it."
       },
       "command": {
         "standard": false,
@@ -79,181 +155,155 @@
       },
       "weapons": [
         {
-          "name": "Great Weapon",
-          "range": "Combat",
-          "S": "S+2",
-          "ap": "-2",
-          "rules": "Armour Bane (1), Requires Two Hands, Strike Last"
-        },
-        {
           "name": "Hand Weapon",
           "range": "Combat",
           "S": "S",
           "ap": "-",
           "rules": "-"
+        },
+        {
+          "name": "Slashing talons",
+          "range": "Combat",
+          "S": "S",
+          "ap": "-3",
+          "rules": "Multiple Wounds (D3)",
+          "di": "Carnosaur"
         }
       ],
       "maxRange": 0,
       "slot": "Characters",
-      "faction": "Orc and Goblin Tribes",
-      "armour": 4,
+      "faction": "Lizardmen - Renegades v2",
+      "armour": 3,
       "ward": 0,
       "regen": 0,
-      "catId": "cmttwus284n2g",
-      "shield": false,
+      "catId": "cmttwt5q1icif",
       "foot": {
         "stats": {
           "M": "4",
-          "WS": "5",
-          "BS": "2",
-          "S": "4",
+          "WS": "6",
+          "BS": "0",
+          "S": "5",
           "T": "5",
-          "W": "2",
-          "I": "4",
-          "A": "3",
-          "Ld": "7"
+          "W": "3",
+          "I": "3",
+          "A": "5",
+          "Ld": "8"
+        },
+        "profiles": [
+          {
+            "name": "Saurus Oldblood",
+            "stats": {
+              "M": "4",
+              "WS": "6",
+              "BS": "0",
+              "S": "5",
+              "T": "5",
+              "W": "3",
+              "I": "3",
+              "A": "5",
+              "Ld": "8"
+            }
+          },
+          {
+            "name": "Carnosaur",
+            "stats": {
+              "M": "7",
+              "WS": "4",
+              "BS": "0",
+              "S": "7",
+              "T": "(+1)",
+              "W": "(+4)",
+              "I": "2",
+              "A": "4",
+              "Ld": "-"
+            }
+          }
+        ],
+        "mount": {
+          "name": "Carnosaur",
+          "stats": {
+            "M": "7",
+            "WS": "4",
+            "BS": "0",
+            "S": "7",
+            "T": "(+1)",
+            "W": "(+4)",
+            "I": "2",
+            "A": "4",
+            "Ld": "-"
+          }
         },
         "baseId": "30x30",
         "baseW": 30,
         "baseH": 30,
-        "troop": "Regular Infantry",
+        "troop": "Heavy infantry",
         "slot": "Characters",
         "frontage": 1,
         "loose": false,
         "rules": [
-          "Choppas",
-          "Furious Charge",
-          "Impetuous",
-          "Ignore Goblin Panic",
+          "Cold Blooded",
+          "Obsidian Blades",
           "Rallying Cry",
-          "Waaagh!",
-          "Warband",
-          "Battle Standard Bearer"
+          "Predatory Fighter",
+          "Armoured Hide (2)",
+          "General",
+          "Blood Frenzy",
+          "Close Order",
+          "Large Target",
+          "Stomp Attacks (2)",
+          "Swiftstride",
+          "Terror"
         ],
         "ruleText": {
-          "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
-          "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
-          "Impetuous": "If during the Declare Charges & Charge Reactions sub-phase of its turn, a unit that includes one or more Impetuous models is able to declare a charge, it must make a Leadership test. If this test is failed, the unit must declare a charge. If this test is passed, the unit may act as normal.",
-          "Ignore Goblin Panic": "This unit does not have to make a Panic test when a friendly Goblin unit is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly Goblin unit.\n\n Note that, for the purposes of this rule, a Goblin unit is considered to be any unit that is made up entirely of Goblins of any kind, mounted or otherwise. This includes any war machine or chariot that is crewed entirely by Goblins. Should a Goblin unit be joined by an Orc character, it is no longer considered to be a Goblin unit.",
-          "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
-          "Waaagh!": "Once per game, during the Command sub-phase of their turn, this character may attempt to invoke the power of the Waaagh! by making a Leadership test (using their own Leadership). If this test is passed, until your next Start of Turn sub-phase this character, their mount and any Orc unit they have joined may re-roll any rolls To Hit of a natural 1 and, when calculating its combat result, may claim an additional bonus of +1 combat result point.\n\n Note that, for the purposes of this rule, an Orc unit is considered to be any unit that is made up entirely of Orcs or Black Orcs, mounted or otherwise. Should an Orc unit be joined by a Goblin character, it is no longer considered to be an Orc unit. This special rule is not cumulative.",
-          "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
-          "Battle Standard Bearer": "Armies often include a Battle Standard Bearer – a trusted warrior who holds aloft the General’s personal heraldry. A Battle Standard Bearer is a rallying point for the army, from The Battlecan Standard which friendly soldiers take heart and draw strength.\n\nThe Battle Standard Bearer Model\nA Battle Standard Bearer is a heroic model carrying a particularly impressive banner, and it will be presented as an option in your chosen army list. The Battle Standard is carried by a character model and, unless specified otherwise, the model that carries the Battle Standard cannot be the General.\n\nUnlike normal standards, the Battle Standard is lost if the bearer is slain – other models cannot pick it up, even if they are in the same unit.\n\nCombat Result Bonus: A Battle Standard grants a bonus of +1 combat result point. Unlike other standards, a Battle Standard grants this bonus even if another standard is present.\nIf, by some unusual circumstance, there are two Battle Standards on the same side in the combat, you can only count the bonus for one.\n\n“Hold Your Ground”: To represent the Battle Standard’s steadying presence, unless your Battle Standard Bearer is fleeing, friendly units within the Battle Standard Bearer’s Command range may re-roll any failed Panic or Rally test. In addition, friendly units within the Battle Standard Bearer’s Command range may re-roll the 2D6 when making a Break test. However, you must accept the result of the second roll, even if it is worse than the first."
+          "Cold Blooded": "- **Restriction:** models with this rule (Lizardmen)\n- **Timing:** whenever a Leadership Test or Break Test is required\n- **Result:** you may add one D6 to the roll and drop the highest die",
+          "Obsidian Blades": "- **Restriction:** 1 non-magical hand weapon carried by the model, never a mount's\n- **Result:** the weapon has an Armour Piercing characteristic of -1\n  - inactive whenever the model wields a pair of hand weapons or a weapon of another kind",
+          "Rallying Cry": "- **Restriction:** character\n- **Timing:** own Command sub-phase\n- **Condition:** the character is not engaged in combat\n- **Select:** 1× friendly unit that is fleeing, within Command range (optional)\n- **Result:**\n  - The unit takes a Rally test immediately\n  - Test failed: normal rally attempt remains possible in the Rally sub-phase",
+          "Predatory Fighter": "- **Restriction:** the model only, not its mount\n- **Timing:** natural 6 on a To Hit roll in close combat\n- **Result:** +1 Attack, with its To Hit and To Wound rolls made normally\n  - such extra Attacks cannot themselves produce more",
+          "Armoured Hide (2)": "- **Restriction:** models with Armoured Hide\n- **Result:** Armour Value improves by the number in brackets after Armoured Hide, for the model and its rider\n  - No armour worn: counts as Armour Value 7+ when a rule improves Armour Value",
+          "General": "- **Select:** every friendly unit inside the Command range of your General\n- **Result:**\n  - **Inspiring Presence:** a selected unit may use the Leadership characteristic of the General in place of its own.\n  - Does not work while your General is fleeing, so rally the General before anything else.",
+          "Blood Frenzy": "- **Restriction:** this model only, not its rider; Character Mount: a Carnosaur joins an army only as a character's mount, with its points counted toward the rider's total\n- **Timing:** each time it inflicts an unsaved wound on an enemy model\n- **Result:** it gains Frenzy, even if it lost Frenzy earlier in the battle\n  - when Frenzied this way, the rider gets no +1 to its Attacks characteristic",
+          "Close Order": "Such a unit is able to form up in Close Order.",
+          "Large Target": "- **Restriction:** Large Target (Large Targets)\n- **Result:**\n  - Partial and full cover give it no benefit\n  - Line of sight to and from it passes across another unit, unless that unit is also a Large Target\n  - Shooting unit gets 1 additional rank firing at it",
+          "Stomp Attacks (2)": "- **Restriction:** a model with Stomp Attacks (X); X is often a dice roll\n- **Condition:** the attacker touches the enemy in base contact\n- **Result:** **Resolving Stomp Attacks:** carried out after every other attack in combat, Initiative 1 ones included\n  - They hit automatically.\n  - They use the attacker's unmodified Strength.",
+          "Swiftstride": "- **Restriction:** every model of the unit has Swiftstride\n- **Result:**\n  - Charge range ceiling: 3\" higher.\n  - Prior to a Charge, Flee or Pursuit roll, the unit may add +D6 to that roll (optional).",
+          "Terror": "- **Restriction:** model with Terror\n- **Result:** also causes Fear\n  - When a Terror-causing unit declares a charge, its target takes a Leadership test straight away; failing means it must Flee, passing means it chooses its charge reaction as usual. A target that cannot choose to Flee skips this test.\n  - When 1+ Terror-causing units are on the side that wins a combat: each unit on the losing side gets -1 to its Leadership characteristic for its Break test.\n  - Causing Fear gives no protection against the Fear of Terror-causing models. Models causing Terror are immune to Terror; a unit not causing it gains no immunity when a character that does joins it."
         },
         "weapons": [
-          {
-            "name": "Great Weapon",
-            "range": "Combat",
-            "S": "S+2",
-            "ap": "-2",
-            "rules": "Armour Bane (1), Requires Two Hands, Strike Last"
-          },
           {
             "name": "Hand Weapon",
             "range": "Combat",
             "S": "S",
             "ap": "-",
             "rules": "-"
+          },
+          {
+            "name": "Slashing talons",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-3",
+            "rules": "Multiple Wounds (D3)"
           }
         ],
         "maxRange": 0,
-        "armour": 5,
+        "armour": 3,
         "ward": 0,
-        "us": 1,
+        "us": 4,
         "models": 1
       },
-      "mountId": "war-boar",
-      "mountFromFile": false,
-      "mountPts": 16,
-      "mount": {
-        "id": "war-boar",
-        "name": "War Boar",
-        "genere": "cavalcatura",
-        "stats": {
-          "M": "7",
-          "WS": "3",
-          "BS": "-",
-          "S": "3",
-          "T": "-",
-          "W": "-",
-          "I": "3",
-          "A": "1",
-          "Ld": "-"
-        },
-        "row": "War Boar",
-        "righe": [
-          {
-            "chi": "War Boar",
-            "n": 1,
-            "stats": {
-              "M": "7",
-              "WS": "3",
-              "BS": "-",
-              "S": "3",
-              "T": "-",
-              "W": "-",
-              "I": "3",
-              "A": "1",
-              "Ld": "-"
-            },
-            "arma": {
-              "name": "Tusks",
-              "S": "S",
-              "ap": "-",
-              "rules": ""
-            }
-          }
-        ],
-        "forzaUrto": 0,
-        "random": "",
-        "armour": 0,
-        "libro": "Ravening Hordes",
-        "pagina": 19,
-        "nota": ""
+      "mountId": "carnosaur",
+      "mountFromFile": true,
+      "mountPts": 0,
+      "prepara": {
+        "weapon": "Slashing talons"
       },
-      "profiles": [
-        {
-          "name": "Orc Bigboss",
-          "stats": {
-            "M": "4",
-            "WS": "5",
-            "BS": "2",
-            "S": "4",
-            "T": "5",
-            "W": "2",
-            "I": "4",
-            "A": "3",
-            "Ld": "7"
-          }
-        },
-        {
-          "name": "War Boar",
-          "stats": {
-            "M": "7",
-            "WS": "3",
-            "BS": "-",
-            "S": "3",
-            "T": "-",
-            "W": "-",
-            "I": "3",
-            "A": "1",
-            "Ld": "-"
-          }
-        }
-      ],
-      "baseName": "Orc Bigboss",
-      "x": 558.8,
-      "y": 106.2,
+      "x": 945,
+      "y": 588.4,
       "rot": 0,
-      "placed": false,
-      "lost": 1,
-      "dead": true,
+      "placed": true,
+      "lost": 0,
+      "dead": false,
       "fled": false,
-      "wounds": 0,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 0,
+      "idx": 1,
       "formation": {
         "mode": "ranks",
         "preset": "block",
@@ -262,39 +312,865 @@
         "slots": null,
         "rev": 0
       },
-      "impeto": {
-        "key": "1:A",
-        "deve": false
-      },
-      "charged": null,
-      "moved": null,
-      "fought": "2:B",
-      "disruptedTerreno": false,
-      "disruptedFianco": true,
-      "disrupted": true,
-      "highGround": false,
-      "inseguito": {
-        "mezzo": 1,
-        "inches": 6,
-        "arc": "fronte"
-      },
-      "shot": false,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "faseTiro": "2:B:4",
-      "usInizioFase": 2,
-      "paura": {
-        "key": "2:B",
-        "passed": true
-      },
-      "join": null,
-      "idx": 1
+      "fallen": [],
+      "anchor": null
     },
     {
-      "uid": 2,
+      "uid": 509,
       "army": "A",
-      "name": "Black Orc Warboss",
+      "name": "Skink Priest",
+      "models": 1,
+      "crew": 5,
+      "baseId": "60x100",
+      "baseW": 60,
+      "baseH": 100,
+      "frontage": 1,
+      "loose": false,
+      "pts": 305,
+      "us": 0,
+      "troop": "Behemoth (character)",
+      "unitSize": "1",
+      "stats": {
+        "M": "6",
+        "WS": "2",
+        "BS": "3",
+        "S": "3",
+        "T": "6",
+        "W": "7",
+        "I": "4",
+        "A": "1",
+        "Ld": "6"
+      },
+      "profiles": [
+        {
+          "name": "Skink Priest",
+          "stats": {
+            "M": "6",
+            "WS": "2",
+            "BS": "3",
+            "S": "3",
+            "T": "2",
+            "W": "2",
+            "I": "4",
+            "A": "1",
+            "Ld": "6"
+          }
+        },
+        {
+          "name": "Ancient Stegadon",
+          "stats": {
+            "M": "6",
+            "WS": "4",
+            "BS": "-",
+            "S": "6",
+            "T": "6",
+            "W": "5",
+            "I": "1",
+            "A": "3",
+            "Ld": "-"
+          }
+        },
+        {
+          "name": "Skink Crew",
+          "stats": {
+            "M": "-",
+            "WS": "2",
+            "BS": "3",
+            "S": "3",
+            "T": "-",
+            "W": "-",
+            "I": "4",
+            "A": "1",
+            "Ld": "6"
+          }
+        }
+      ],
+      "mount": {
+        "id": "ancient-stegadon",
+        "name": "Ancient Stegadon",
+        "genere": "carro",
+        "stats": {
+          "M": "6",
+          "WS": "4",
+          "BS": "-",
+          "S": "6",
+          "T": "6",
+          "W": "5",
+          "I": "1",
+          "A": "3",
+          "Ld": "-"
+        },
+        "row": "Ancient Stegadon",
+        "righe": [
+          {
+            "chi": "Ancient Stegadon",
+            "n": 1,
+            "stats": {
+              "M": "6",
+              "WS": "4",
+              "BS": "-",
+              "S": "6",
+              "T": "6",
+              "W": "5",
+              "I": "1",
+              "A": "3",
+              "Ld": "-"
+            },
+            "arma": {
+              "name": "Great horns",
+              "S": "S",
+              "ap": "-3",
+              "rules": ""
+            }
+          },
+          {
+            "chi": "Skink Crew",
+            "n": 5,
+            "stats": {
+              "M": "-",
+              "WS": "2",
+              "BS": "3",
+              "S": "3",
+              "T": "-",
+              "W": "-",
+              "I": "4",
+              "A": "1",
+              "Ld": "6"
+            },
+            "arma": {
+              "name": "Hand weapon",
+              "S": "S",
+              "ap": "-",
+              "rules": ""
+            }
+          }
+        ],
+        "forzaUrto": 6,
+        "random": "",
+        "armour": 4,
+        "libro": "Legends: Lizardmen",
+        "pagina": 13,
+        "nota": "Con la regola Howdah conta come un carro (p. 13): le Ferite del personaggio si sommano alle sue. Il giant bow si può cambiare gratis con le giant blowpipes, o con l'Engine of the Gods (voce a parte)."
+      },
+      "rules": [
+        "Arcane Vassal",
+        "Armoured Hide (1)",
+        "Aquatic (Rider only, not the mount)",
+        "Cold Blooded",
+        "Lore Of Lustria v2",
+        "Close Order",
+        "Great Horns",
+        "Immune To Psychology",
+        "Impact Hits (D3+1)",
+        "Large Target",
+        "Poisoned Attacks (javelins only)",
+        "Stomp Attacks (D3+2)",
+        "Stubborn",
+        "Terror",
+        "Howdah (Lizardmen)",
+        "Arcane Configuration",
+        "Engine Of The Gods",
+        "Portent of Warding",
+        "Howdah"
+      ],
+      "ruleText": {
+        "Arcane Vassal": "- **Limits:** 1× per turn\n- **Condition:** this model is neither fleeing nor engaged in combat\n- **Select:** 1 friendly Slann Mage-Priest ≤24\" away may 'channel' one of its spells via this model (optional)\n- **Result:** the spell is measured from this model, not from its caster\n  - every effect, targeting restrictions, and its reach (the reach to dispel too, except for a vortex)\n  - any line of sight it needs is drawn from this model",
+        "Armoured Hide (1)": "- **Restriction:** models with Armoured Hide\n- **Result:** Armour Value improves by the number in brackets after Armoured Hide, for the model and its rider\n  - No armour worn: counts as Armour Value 7+ when a rule improves Armour Value",
+        "Aquatic (Rider only, not the mount)": "- **Restriction:** models with this rule\n- **Condition:** the players agree before the game which terrain counts as a 'Water feature' (shallow streams, fords, swamps, fast rivers, ponds, lakes)\n- **Result:** such terrain counts as Open Ground for them\n  - a unit with ≥50% of its models in a 'water feature' gains partial cover",
+        "Cold Blooded": "- **Restriction:** models with this rule (Lizardmen)\n- **Timing:** whenever a Leadership Test or Break Test is required\n- **Result:** you may add one D6 to the roll and drop the highest die",
+        "Lore Of Lustria v2": "- **Restriction:** Wizard with the 'Lore of Lustria v2' special rule\n- **Select:** 1 of its randomly generated spells, discarded as normal (optional)\n- **Result:** the Wizard picks a substitute among\n  - Apotheosis v2\n  - Monsoon v2\n  - the signature spell of the Lore of Magic it chose",
+        "Close Order": "Such a unit is able to form up in Close Order.",
+        "Great Horns": "Each Impact Hits attack by this model resolves with Armour Piercing characteristic -3.",
+        "Immune To Psychology": "- **Restriction:** unit with a majority of Immune to Psychology models\n- **Result:**\n  - Passes Fear, Panic and Terror tests automatically\n  - Cannot choose Flee as a charge reaction\n  - Leadership tests not named here are unaffected",
+        "Impact Hits (D3+1)": "- **Restriction:** charging model that moved 3\"+, touching the enemy base\n- **Result:** causes the number of Impact Hits given in brackets (often dice-determined)\n  - **Resolving Impact Hits:** applied to the charged unit when its combat is picked, at Step 1.1 of the Choose Combat & Fight sub-phase, ahead of challenges\n  - Automatic hits at the attacker's unmodified Strength",
+        "Large Target": "- **Restriction:** Large Target (Large Targets)\n- **Result:**\n  - Partial and full cover give it no benefit\n  - Line of sight to and from it passes across another unit, unless that unit is also a Large Target\n  - Shooting unit gets 1 additional rank firing at it",
+        "Poisoned Attacks (javelins only)": "- **Restriction:** model with Poisoned Attacks\n- **Condition:** natural 6 on a roll To Hit; does not work if a hit roll of 7+ is needed or the attack hits automatically\n- **Result:** +2 on the roll To Wound for that hit (optional)\n  - Valid in shooting and combat unless stated otherwise\n  - Excluded: the model's own spells, attacks from magic weapons",
+        "Stomp Attacks (D3+2)": "- **Restriction:** a model with Stomp Attacks (X); X is often a dice roll\n- **Condition:** the attacker touches the enemy in base contact\n- **Result:** **Resolving Stomp Attacks:** carried out after every other attack in combat, Initiative 1 ones included\n  - They hit automatically.\n  - They use the attacker's unmodified Strength.",
+        "Stubborn": "- **Limits:** only at this unit's first Break test of the battle; if not used then, it is lost\n- **Timing:** this unit would make a Break test\n- **Result:** skips it for an automatic Fall Back in Good Order (optional), even versus a winner with over double Unit Strength\n  - Stubborn does not spread to non-Stubborn units from a joining character\n  - Stubborn characters lose it inside non-Stubborn units",
+        "Terror": "- **Restriction:** model with Terror\n- **Result:** also causes Fear\n  - When a Terror-causing unit declares a charge, its target takes a Leadership test straight away; failing means it must Flee, passing means it chooses its charge reaction as usual. A target that cannot choose to Flee skips this test.\n  - When 1+ Terror-causing units are on the side that wins a combat: each unit on the losing side gets -1 to its Leadership characteristic for its Break test.\n  - Causing Fear gives no protection against the Fear of Terror-causing models. Models causing Terror are immune to Terror; a unit not causing it gains no immunity when a character that does joins it.",
+        "Howdah (Lizardmen)": "- **Restriction:** behemoth with the Howdah special rule\n- **Result:** the behemoth counts as a chariot mount, never a ridden monster (so a Stegadon or Ancient Stegadon is one)\n  - its profile is split\n  - it follows 'Split Profile (Chariots)' and 'Firing Platform'",
+        "Arcane Configuration": "- **Restriction:** friendly model\n- **Timing:** it casts a Bound spell\n- **Condition:** an Engine of the Gods lies ≤12\" from that caster\n- **Result:** Casting roll improves by +1 (optional)",
+        "Engine Of The Gods": "The spell Burning Alignment is available to this model at Power Level 2.",
+        "Portent of Warding": "Spell Portent of Warding becomes castable by this model, at Power Level 2."
+      },
+      "command": {
+        "standard": false,
+        "musician": false,
+        "champion": false
+      },
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat",
+          "S": "S",
+          "ap": "-",
+          "rules": "-"
+        },
+        {
+          "name": "Great horns",
+          "range": "Combat",
+          "S": "S",
+          "ap": "-3",
+          "rules": "-",
+          "di": "Ancient Stegadon"
+        },
+        {
+          "name": "Javelin",
+          "range": "12\"",
+          "S": "S",
+          "ap": "-",
+          "rules": "Move & Shoot, Quick Shot",
+          "di": "Ancient Stegadon"
+        },
+        {
+          "name": "Giant bow",
+          "range": "36\"",
+          "S": "5",
+          "ap": "-2",
+          "rules": "Multiple Wounds (D3), Poisoned Attacks",
+          "di": "Ancient Stegadon"
+        }
+      ],
+      "maxRange": 36,
+      "slot": "Characters",
+      "faction": "Lizardmen - Renegades v2",
+      "armour": 4,
+      "ward": 0,
+      "regen": 0,
+      "catId": "cmtl5rjnhs0zh",
+      "foot": {
+        "stats": {
+          "M": "6",
+          "WS": "2",
+          "BS": "3",
+          "S": "3",
+          "T": "2",
+          "W": "2",
+          "I": "4",
+          "A": "1",
+          "Ld": "6"
+        },
+        "profiles": [
+          {
+            "name": "Skink Priest",
+            "stats": {
+              "M": "6",
+              "WS": "2",
+              "BS": "3",
+              "S": "3",
+              "T": "2",
+              "W": "2",
+              "I": "4",
+              "A": "1",
+              "Ld": "6"
+            }
+          },
+          {
+            "name": "Ancient Stegadon",
+            "stats": {
+              "M": "6",
+              "WS": "4",
+              "BS": "-",
+              "S": "6",
+              "T": "6",
+              "W": "(+6)",
+              "I": "1",
+              "A": "3",
+              "Ld": "-"
+            }
+          },
+          {
+            "name": "Skink Crew",
+            "stats": {
+              "M": "-",
+              "WS": "2",
+              "BS": "3",
+              "S": "3",
+              "T": "-",
+              "W": "-",
+              "I": "4",
+              "A": "1",
+              "Ld": "6"
+            }
+          }
+        ],
+        "mount": {
+          "name": "Ancient Stegadon",
+          "stats": {
+            "M": "6",
+            "WS": "4",
+            "BS": "-",
+            "S": "6",
+            "T": "6",
+            "W": "(+6)",
+            "I": "1",
+            "A": "3",
+            "Ld": "-"
+          }
+        },
+        "baseId": "25x25",
+        "baseW": 25,
+        "baseH": 25,
+        "troop": "Regular infantry",
+        "slot": "Characters",
+        "frontage": 1,
+        "loose": false,
+        "rules": [
+          "Arcane Vassal",
+          "Armoured Hide (1)",
+          "Aquatic (Rider only, not the mount)",
+          "Cold Blooded",
+          "Lore Of Lustria v2",
+          "Close Order",
+          "Great Horns",
+          "Immune To Psychology",
+          "Impact Hits (D3+1)",
+          "Large Target",
+          "Poisoned Attacks (javelins only)",
+          "Stomp Attacks (D3+2)",
+          "Stubborn",
+          "Terror",
+          "Howdah (Lizardmen)",
+          "Arcane Configuration",
+          "Engine Of The Gods",
+          "Portent of Warding"
+        ],
+        "ruleText": {
+          "Arcane Vassal": "- **Limits:** 1× per turn\n- **Condition:** this model is neither fleeing nor engaged in combat\n- **Select:** 1 friendly Slann Mage-Priest ≤24\" away may 'channel' one of its spells via this model (optional)\n- **Result:** the spell is measured from this model, not from its caster\n  - every effect, targeting restrictions, and its reach (the reach to dispel too, except for a vortex)\n  - any line of sight it needs is drawn from this model",
+          "Armoured Hide (1)": "- **Restriction:** models with Armoured Hide\n- **Result:** Armour Value improves by the number in brackets after Armoured Hide, for the model and its rider\n  - No armour worn: counts as Armour Value 7+ when a rule improves Armour Value",
+          "Aquatic (Rider only, not the mount)": "- **Restriction:** models with this rule\n- **Condition:** the players agree before the game which terrain counts as a 'Water feature' (shallow streams, fords, swamps, fast rivers, ponds, lakes)\n- **Result:** such terrain counts as Open Ground for them\n  - a unit with ≥50% of its models in a 'water feature' gains partial cover",
+          "Cold Blooded": "- **Restriction:** models with this rule (Lizardmen)\n- **Timing:** whenever a Leadership Test or Break Test is required\n- **Result:** you may add one D6 to the roll and drop the highest die",
+          "Lore Of Lustria v2": "- **Restriction:** Wizard with the 'Lore of Lustria v2' special rule\n- **Select:** 1 of its randomly generated spells, discarded as normal (optional)\n- **Result:** the Wizard picks a substitute among\n  - Apotheosis v2\n  - Monsoon v2\n  - the signature spell of the Lore of Magic it chose",
+          "Close Order": "Such a unit is able to form up in Close Order.",
+          "Great Horns": "Each Impact Hits attack by this model resolves with Armour Piercing characteristic -3.",
+          "Immune To Psychology": "- **Restriction:** unit with a majority of Immune to Psychology models\n- **Result:**\n  - Passes Fear, Panic and Terror tests automatically\n  - Cannot choose Flee as a charge reaction\n  - Leadership tests not named here are unaffected",
+          "Impact Hits (D3+1)": "- **Restriction:** charging model that moved 3\"+, touching the enemy base\n- **Result:** causes the number of Impact Hits given in brackets (often dice-determined)\n  - **Resolving Impact Hits:** applied to the charged unit when its combat is picked, at Step 1.1 of the Choose Combat & Fight sub-phase, ahead of challenges\n  - Automatic hits at the attacker's unmodified Strength",
+          "Large Target": "- **Restriction:** Large Target (Large Targets)\n- **Result:**\n  - Partial and full cover give it no benefit\n  - Line of sight to and from it passes across another unit, unless that unit is also a Large Target\n  - Shooting unit gets 1 additional rank firing at it",
+          "Poisoned Attacks (javelins only)": "- **Restriction:** model with Poisoned Attacks\n- **Condition:** natural 6 on a roll To Hit; does not work if a hit roll of 7+ is needed or the attack hits automatically\n- **Result:** +2 on the roll To Wound for that hit (optional)\n  - Valid in shooting and combat unless stated otherwise\n  - Excluded: the model's own spells, attacks from magic weapons",
+          "Stomp Attacks (D3+2)": "- **Restriction:** a model with Stomp Attacks (X); X is often a dice roll\n- **Condition:** the attacker touches the enemy in base contact\n- **Result:** **Resolving Stomp Attacks:** carried out after every other attack in combat, Initiative 1 ones included\n  - They hit automatically.\n  - They use the attacker's unmodified Strength.",
+          "Stubborn": "- **Limits:** only at this unit's first Break test of the battle; if not used then, it is lost\n- **Timing:** this unit would make a Break test\n- **Result:** skips it for an automatic Fall Back in Good Order (optional), even versus a winner with over double Unit Strength\n  - Stubborn does not spread to non-Stubborn units from a joining character\n  - Stubborn characters lose it inside non-Stubborn units",
+          "Terror": "- **Restriction:** model with Terror\n- **Result:** also causes Fear\n  - When a Terror-causing unit declares a charge, its target takes a Leadership test straight away; failing means it must Flee, passing means it chooses its charge reaction as usual. A target that cannot choose to Flee skips this test.\n  - When 1+ Terror-causing units are on the side that wins a combat: each unit on the losing side gets -1 to its Leadership characteristic for its Break test.\n  - Causing Fear gives no protection against the Fear of Terror-causing models. Models causing Terror are immune to Terror; a unit not causing it gains no immunity when a character that does joins it.",
+          "Howdah (Lizardmen)": "- **Restriction:** behemoth with the Howdah special rule\n- **Result:** the behemoth counts as a chariot mount, never a ridden monster (so a Stegadon or Ancient Stegadon is one)\n  - its profile is split\n  - it follows 'Split Profile (Chariots)' and 'Firing Platform'",
+          "Arcane Configuration": "- **Restriction:** friendly model\n- **Timing:** it casts a Bound spell\n- **Condition:** an Engine of the Gods lies ≤12\" from that caster\n- **Result:** Casting roll improves by +1 (optional)",
+          "Engine Of The Gods": "The spell Burning Alignment is available to this model at Power Level 2.",
+          "Portent of Warding": "Spell Portent of Warding becomes castable by this model, at Power Level 2."
+        },
+        "weapons": [
+          {
+            "name": "Hand Weapon",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-",
+            "rules": "-"
+          },
+          {
+            "name": "Great horns",
+            "range": "Combat",
+            "S": "S",
+            "ap": "-3",
+            "rules": "-"
+          },
+          {
+            "name": "Javelin",
+            "range": "12\"",
+            "S": "S",
+            "ap": "-",
+            "rules": "Move & Shoot, Quick Shot"
+          }
+        ],
+        "maxRange": 12,
+        "armour": 5,
+        "ward": 0,
+        "us": 0,
+        "models": 1
+      },
+      "mountId": "ancient-stegadon",
+      "mountFromFile": true,
+      "mountPts": 0,
+      "prepara": {
+        "weapon": "Great horns"
+      },
+      "x": 877.3,
+      "y": 588.4,
+      "rot": 0,
+      "placed": true,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 2,
+      "formation": {
+        "mode": "ranks",
+        "preset": "block",
+        "spacing": 0,
+        "align": "left",
+        "slots": null,
+        "rev": 0
+      },
+      "fallen": [],
+      "anchor": null
+    },
+    {
+      "uid": 510,
+      "army": "A",
+      "name": "Skink Skirmishers",
+      "models": 12,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 6,
+      "loose": true,
+      "pts": 72,
+      "us": 12,
+      "troop": "Regular infantry",
+      "unitSize": "10+",
+      "stats": {
+        "M": "6",
+        "WS": "2",
+        "BS": "3",
+        "S": "3",
+        "T": "2",
+        "W": "1",
+        "I": "4",
+        "A": "1",
+        "Ld": "5"
+      },
+      "profiles": [
+        {
+          "name": "Skink",
+          "stats": {
+            "M": "6",
+            "WS": "2",
+            "BS": "3",
+            "S": "3",
+            "T": "2",
+            "W": "1",
+            "I": "4",
+            "A": "1",
+            "Ld": "5"
+          }
+        }
+      ],
+      "mount": null,
+      "rules": [
+        "Aquatic",
+        "Cold Blooded",
+        "Move Through Cover",
+        "Poisoned Attacks (javelins only)",
+        "Skirmishers",
+        "Press of Battle",
+        "Massed Infantry",
+        "Parry"
+      ],
+      "ruleText": {
+        "Aquatic": "- **Restriction:** models with this rule\n- **Condition:** the players agree before the game which terrain counts as a 'Water feature' (shallow streams, fords, swamps, fast rivers, ponds, lakes)\n- **Result:** such terrain counts as Open Ground for them\n  - a unit with ≥50% of its models in a 'water feature' gains partial cover",
+        "Cold Blooded": "- **Restriction:** models with this rule (Lizardmen)\n- **Timing:** whenever a Leadership Test or Break Test is required\n- **Result:** you may add one D6 to the roll and drop the highest die",
+        "Move Through Cover": "- **Timing:** terrain crossing that is difficult or dangerous, and Dangerous Terrain tests\n- **Result:**\n  - bearers take no Movement characteristic modifier from that terrain\n  - Dangerous Terrain tests: a bearer may re-roll each 1 (optional)",
+        "Poisoned Attacks (javelins only)": "- **Restriction:** model with Poisoned Attacks\n- **Condition:** natural 6 on a roll To Hit; does not work if a hit roll of 7+ is needed or the attack hits automatically\n- **Result:** +2 on the roll To Wound for that hit (optional)\n  - Valid in shooting and combat unless stated otherwise\n  - Excluded: the model's own spells, attacks from magic weapons",
+        "Skirmishers": "Such a unit is allowed to take up a Skirmish formation.",
+        "Press of Battle": "- **Restriction:** Unit with this rule, arrayed in combat order\n- **Condition:** It did not charge this turn\n- **Result:** Its fighting rank counts as 2 ranks deep\n  - Models directly behind, in base contact with a model of the actual fighting rank, also count as in the fighting rank",
+        "Massed Infantry": "- **Restriction:** Side fielding at least one unit with this rule\n- **Condition:** When combat results are tallied, that side's Unit Strength is the greater\n- **Result:** It may claim +1 combat result point",
+        "Parry": "- **Restriction:** Model with this rule, carrying a hand weapon plus shield\n- **Condition:** In close combat, and opting to use that weapon and shield combination\n- **Result:** armour value +1, capped at 3+"
+      },
+      "command": {
+        "standard": false,
+        "musician": false,
+        "champion": false
+      },
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat",
+          "S": "S",
+          "ap": "-",
+          "rules": "-"
+        },
+        {
+          "name": "Javelin",
+          "range": "12\"",
+          "S": "S",
+          "ap": "-",
+          "rules": "Move & Shoot, Quick Shot"
+        }
+      ],
+      "maxRange": 12,
+      "slot": "Core",
+      "faction": "Lizardmen - Renegades v2",
+      "armour": 5,
+      "ward": 0,
+      "regen": 0,
+      "shield": true,
+      "catId": "cmtl5rlxm62jk",
+      "prepara": null,
+      "x": 112.75,
+      "y": 569.75,
+      "rot": 0,
+      "placed": true,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 3,
+      "formation": {
+        "mode": "ranks",
+        "preset": "block",
+        "spacing": 12.7,
+        "align": "left",
+        "slots": null,
+        "rev": 0
+      },
+      "fallen": [],
+      "anchor": null
+    },
+    {
+      "uid": 511,
+      "army": "A",
+      "name": "Skink Skirmishers",
+      "models": 12,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 6,
+      "loose": true,
+      "pts": 72,
+      "us": 12,
+      "troop": "Regular infantry",
+      "unitSize": "10+",
+      "stats": {
+        "M": "6",
+        "WS": "2",
+        "BS": "3",
+        "S": "3",
+        "T": "2",
+        "W": "1",
+        "I": "4",
+        "A": "1",
+        "Ld": "5"
+      },
+      "profiles": [
+        {
+          "name": "Skink",
+          "stats": {
+            "M": "6",
+            "WS": "2",
+            "BS": "3",
+            "S": "3",
+            "T": "2",
+            "W": "1",
+            "I": "4",
+            "A": "1",
+            "Ld": "5"
+          }
+        }
+      ],
+      "mount": null,
+      "rules": [
+        "Aquatic",
+        "Cold Blooded",
+        "Move Through Cover",
+        "Poisoned Attacks (javelins only)",
+        "Skirmishers",
+        "Press of Battle",
+        "Massed Infantry",
+        "Parry"
+      ],
+      "ruleText": {
+        "Aquatic": "- **Restriction:** models with this rule\n- **Condition:** the players agree before the game which terrain counts as a 'Water feature' (shallow streams, fords, swamps, fast rivers, ponds, lakes)\n- **Result:** such terrain counts as Open Ground for them\n  - a unit with ≥50% of its models in a 'water feature' gains partial cover",
+        "Cold Blooded": "- **Restriction:** models with this rule (Lizardmen)\n- **Timing:** whenever a Leadership Test or Break Test is required\n- **Result:** you may add one D6 to the roll and drop the highest die",
+        "Move Through Cover": "- **Timing:** terrain crossing that is difficult or dangerous, and Dangerous Terrain tests\n- **Result:**\n  - bearers take no Movement characteristic modifier from that terrain\n  - Dangerous Terrain tests: a bearer may re-roll each 1 (optional)",
+        "Poisoned Attacks (javelins only)": "- **Restriction:** model with Poisoned Attacks\n- **Condition:** natural 6 on a roll To Hit; does not work if a hit roll of 7+ is needed or the attack hits automatically\n- **Result:** +2 on the roll To Wound for that hit (optional)\n  - Valid in shooting and combat unless stated otherwise\n  - Excluded: the model's own spells, attacks from magic weapons",
+        "Skirmishers": "Such a unit is allowed to take up a Skirmish formation.",
+        "Press of Battle": "- **Restriction:** Unit with this rule, arrayed in combat order\n- **Condition:** It did not charge this turn\n- **Result:** Its fighting rank counts as 2 ranks deep\n  - Models directly behind, in base contact with a model of the actual fighting rank, also count as in the fighting rank",
+        "Massed Infantry": "- **Restriction:** Side fielding at least one unit with this rule\n- **Condition:** When combat results are tallied, that side's Unit Strength is the greater\n- **Result:** It may claim +1 combat result point",
+        "Parry": "- **Restriction:** Model with this rule, carrying a hand weapon plus shield\n- **Condition:** In close combat, and opting to use that weapon and shield combination\n- **Result:** armour value +1, capped at 3+"
+      },
+      "command": {
+        "standard": false,
+        "musician": false,
+        "champion": false
+      },
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat",
+          "S": "S",
+          "ap": "-",
+          "rules": "-"
+        },
+        {
+          "name": "Javelin",
+          "range": "12\"",
+          "S": "S",
+          "ap": "-",
+          "rules": "Move & Shoot, Quick Shot"
+        }
+      ],
+      "maxRange": 12,
+      "slot": "Core",
+      "faction": "Lizardmen - Renegades v2",
+      "armour": 5,
+      "ward": 0,
+      "regen": 0,
+      "shield": true,
+      "catId": "cmtl5rlxm62jk",
+      "prepara": null,
+      "x": 338.95,
+      "y": 569.75,
+      "rot": 0,
+      "placed": true,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 4,
+      "formation": {
+        "mode": "ranks",
+        "preset": "block",
+        "spacing": 12.7,
+        "align": "left",
+        "slots": null,
+        "rev": 0
+      },
+      "fallen": [],
+      "anchor": null
+    },
+    {
+      "uid": 512,
+      "army": "A",
+      "name": "Skink Skirmishers",
+      "models": 12,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 6,
+      "loose": true,
+      "pts": 72,
+      "us": 12,
+      "troop": "Regular infantry",
+      "unitSize": "10+",
+      "stats": {
+        "M": "6",
+        "WS": "2",
+        "BS": "3",
+        "S": "3",
+        "T": "2",
+        "W": "1",
+        "I": "4",
+        "A": "1",
+        "Ld": "5"
+      },
+      "profiles": [
+        {
+          "name": "Skink",
+          "stats": {
+            "M": "6",
+            "WS": "2",
+            "BS": "3",
+            "S": "3",
+            "T": "2",
+            "W": "1",
+            "I": "4",
+            "A": "1",
+            "Ld": "5"
+          }
+        }
+      ],
+      "mount": null,
+      "rules": [
+        "Aquatic",
+        "Cold Blooded",
+        "Move Through Cover",
+        "Poisoned Attacks (javelins only)",
+        "Skirmishers",
+        "Press of Battle",
+        "Massed Infantry",
+        "Parry"
+      ],
+      "ruleText": {
+        "Aquatic": "- **Restriction:** models with this rule\n- **Condition:** the players agree before the game which terrain counts as a 'Water feature' (shallow streams, fords, swamps, fast rivers, ponds, lakes)\n- **Result:** such terrain counts as Open Ground for them\n  - a unit with ≥50% of its models in a 'water feature' gains partial cover",
+        "Cold Blooded": "- **Restriction:** models with this rule (Lizardmen)\n- **Timing:** whenever a Leadership Test or Break Test is required\n- **Result:** you may add one D6 to the roll and drop the highest die",
+        "Move Through Cover": "- **Timing:** terrain crossing that is difficult or dangerous, and Dangerous Terrain tests\n- **Result:**\n  - bearers take no Movement characteristic modifier from that terrain\n  - Dangerous Terrain tests: a bearer may re-roll each 1 (optional)",
+        "Poisoned Attacks (javelins only)": "- **Restriction:** model with Poisoned Attacks\n- **Condition:** natural 6 on a roll To Hit; does not work if a hit roll of 7+ is needed or the attack hits automatically\n- **Result:** +2 on the roll To Wound for that hit (optional)\n  - Valid in shooting and combat unless stated otherwise\n  - Excluded: the model's own spells, attacks from magic weapons",
+        "Skirmishers": "Such a unit is allowed to take up a Skirmish formation.",
+        "Press of Battle": "- **Restriction:** Unit with this rule, arrayed in combat order\n- **Condition:** It did not charge this turn\n- **Result:** Its fighting rank counts as 2 ranks deep\n  - Models directly behind, in base contact with a model of the actual fighting rank, also count as in the fighting rank",
+        "Massed Infantry": "- **Restriction:** Side fielding at least one unit with this rule\n- **Condition:** When combat results are tallied, that side's Unit Strength is the greater\n- **Result:** It may claim +1 combat result point",
+        "Parry": "- **Restriction:** Model with this rule, carrying a hand weapon plus shield\n- **Condition:** In close combat, and opting to use that weapon and shield combination\n- **Result:** armour value +1, capped at 3+"
+      },
+      "command": {
+        "standard": false,
+        "musician": false,
+        "champion": false
+      },
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat",
+          "S": "S",
+          "ap": "-",
+          "rules": "-"
+        },
+        {
+          "name": "Javelin",
+          "range": "12\"",
+          "S": "S",
+          "ap": "-",
+          "rules": "Move & Shoot, Quick Shot"
+        }
+      ],
+      "maxRange": 12,
+      "slot": "Core",
+      "faction": "Lizardmen - Renegades v2",
+      "armour": 5,
+      "ward": 0,
+      "regen": 0,
+      "shield": true,
+      "catId": "cmtl5rlxm62jk",
+      "prepara": null,
+      "x": 565.15,
+      "y": 569.75,
+      "rot": 0,
+      "placed": true,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 5,
+      "formation": {
+        "mode": "ranks",
+        "preset": "block",
+        "spacing": 12.7,
+        "align": "left",
+        "slots": null,
+        "rev": 0
+      },
+      "fallen": [],
+      "anchor": null
+    },
+    {
+      "uid": 513,
+      "army": "A",
+      "name": "Temple Guard",
+      "models": 12,
+      "crew": 0,
+      "baseId": "30x30",
+      "baseW": 30,
+      "baseH": 30,
+      "frontage": 5,
+      "loose": false,
+      "pts": 194,
+      "us": 12,
+      "troop": "Heavy infantry",
+      "unitSize": "10+",
+      "stats": {
+        "M": "4",
+        "WS": "4",
+        "BS": "0",
+        "S": "4",
+        "T": "4",
+        "W": "1",
+        "I": "1",
+        "A": "2",
+        "Ld": "8"
+      },
+      "profiles": [
+        {
+          "name": "Temple Guard",
+          "stats": {
+            "M": "4",
+            "WS": "4",
+            "BS": "0",
+            "S": "4",
+            "T": "4",
+            "W": "1",
+            "I": "1",
+            "A": "2",
+            "Ld": "8"
+          }
+        }
+      ],
+      "mount": null,
+      "rules": [
+        "Close Order",
+        "Cold Blooded",
+        "Guardians",
+        "Obsidian Blades",
+        "Predatory Fighter",
+        "Armoured Hide (2)",
+        "Shieldwall",
+        "Stubborn",
+        "Press of Battle",
+        "Massed Infantry",
+        "Parry",
+        "Steady in the Ranks"
+      ],
+      "ruleText": {
+        "Close Order": "Such a unit is able to form up in Close Order.",
+        "Cold Blooded": "- **Restriction:** models with this rule (Lizardmen)\n- **Timing:** whenever a Leadership Test or Break Test is required\n- **Result:** you may add one D6 to the roll and drop the highest die",
+        "Guardians": "- **Restriction:** Temple Guard unit\n- **Result:** a character with Palanquin may join this unit\n  - a model of it inside the Command range of a Slann Mage-Priest issues and accepts challenges exactly like a character",
+        "Obsidian Blades": "- **Restriction:** 1 non-magical hand weapon carried by the model, never a mount's\n- **Result:** the weapon has an Armour Piercing characteristic of -1\n  - inactive whenever the model wields a pair of hand weapons or a weapon of another kind",
+        "Predatory Fighter": "- **Restriction:** the model only, not its mount\n- **Timing:** natural 6 on a To Hit roll in close combat\n- **Result:** +1 Attack, with its To Hit and To Wound rolls made normally\n  - such extra Attacks cannot themselves produce more",
+        "Armoured Hide (2)": "- **Restriction:** models with Armoured Hide\n- **Result:** Armour Value improves by the number in brackets after Armoured Hide, for the model and its rider\n  - No armour worn: counts as Armour Value 7+ when a rule improves Armour Value",
+        "Shieldwall": "- **Restriction:** unit in Close Order formation, with shields equipped and used\n- **Limits:** 1× per game\n- **Condition:** unit was charged this turn\n- **Result:** Give Ground in place of Fall Back in Good Order (optional)",
+        "Stubborn": "- **Limits:** only at this unit's first Break test of the battle; if not used then, it is lost\n- **Timing:** this unit would make a Break test\n- **Result:** skips it for an automatic Fall Back in Good Order (optional), even versus a winner with over double Unit Strength\n  - Stubborn does not spread to non-Stubborn units from a joining character\n  - Stubborn characters lose it inside non-Stubborn units",
+        "Press of Battle": "- **Restriction:** Unit with this rule, arrayed in combat order\n- **Condition:** It did not charge this turn\n- **Result:** Its fighting rank counts as 2 ranks deep\n  - Models directly behind, in base contact with a model of the actual fighting rank, also count as in the fighting rank",
+        "Massed Infantry": "- **Restriction:** Side fielding at least one unit with this rule\n- **Condition:** When combat results are tallied, that side's Unit Strength is the greater\n- **Result:** It may claim +1 combat result point",
+        "Parry": "- **Restriction:** Model with this rule, carrying a hand weapon plus shield\n- **Condition:** In close combat, and opting to use that weapon and shield combination\n- **Result:** armour value +1, capped at 3+",
+        "Steady in the Ranks": "- **Restriction:** heavy infantry unit arrayed in Close Order or Open Order formation\n- **Condition:** an enemy unit with a Unit Strength under 10 engages it in the flank or rear\n- **Result:** it does not become Disrupted"
+      },
+      "command": {
+        "standard": true,
+        "musician": true,
+        "champion": false
+      },
+      "weapons": [
+        {
+          "name": "Hand Weapon",
+          "range": "Combat",
+          "S": "S",
+          "ap": "-",
+          "rules": "-"
+        },
+        {
+          "name": "Halberd",
+          "range": "Combat",
+          "S": "S+1",
+          "ap": "-1 (-2)",
+          "rules": "Armour Bane (1), Requires Two Hands"
+        }
+      ],
+      "maxRange": 0,
+      "slot": "Core",
+      "faction": "Lizardmen - Renegades v2",
+      "armour": 3,
+      "ward": 0,
+      "regen": 0,
+      "shield": true,
+      "catId": "cmtl5sesuq5ux",
+      "prepara": {
+        "weapon": "Halberd"
+      },
+      "x": 759.5999999999999,
+      "y": 583.4,
+      "rot": 0,
+      "placed": true,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 6,
+      "formation": {
+        "mode": "ranks",
+        "preset": "block",
+        "spacing": 0,
+        "align": "left",
+        "slots": null,
+        "rev": 0
+      },
+      "fallen": [],
+      "anchor": null
+    },
+    {
+      "uid": 514,
+      "army": "B",
+      "name": "Black Orc Bigboss",
       "models": 1,
       "crew": 0,
       "baseId": "30x30",
@@ -302,34 +1178,34 @@
       "baseH": 30,
       "frontage": 1,
       "loose": false,
-      "pts": 139,
+      "pts": 75,
       "us": 1,
-      "troop": "Heavy Infantry (character)",
+      "troop": "Heavy Infantry",
       "unitSize": "1",
       "stats": {
         "M": "4",
-        "WS": "7",
+        "WS": "6",
         "BS": "3",
-        "S": "5",
+        "S": "4",
         "T": "5",
-        "W": "3",
-        "I": "6",
-        "A": "4",
-        "Ld": "9"
+        "W": "2",
+        "I": "5",
+        "A": "3",
+        "Ld": "8"
       },
       "profiles": [
         {
-          "name": "Black Orc Warboss",
+          "name": "Black Orc Bigboss",
           "stats": {
             "M": "4",
-            "WS": "7",
+            "WS": "6",
             "BS": "3",
-            "S": "5",
+            "S": "4",
             "T": "5",
-            "W": "3",
-            "I": "6",
-            "A": "4",
-            "Ld": "9"
+            "W": "2",
+            "I": "5",
+            "A": "3",
+            "Ld": "8"
           }
         }
       ],
@@ -349,18 +1225,18 @@
         "General"
       ],
       "ruleText": {
-        "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
-        "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
-        "Da Boyz": "Your army must include one Black Orc Boss for every Black Orc Mob it includes, and vice versa. In other words:\n\n \n• For each Black Orc Mob your army includes, it must also include one Black Orc War Boss or Big Boss.\n\n \n• For each Black Orc War Boss or Big Boss your army includes, it must also include one Black Orc Mob.",
-        "Quell Impetuosity": "Whilst within 6\" of a unit with this special rule, a friendly Impetuous unit may re-roll a failed Leadership test when testing to determine if it must declare a charge or act as normal.",
-        "Ignore Panic": "This unit does not have to make a Panic test when a friendly unit that does not also have this special rule is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly unit that does not have this special rule..",
-        "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
-        "Waaagh!": "Once per game, during the Command sub-phase of their turn, this character may attempt to invoke the power of the Waaagh! by making a Leadership test (using their own Leadership). If this test is passed, until your next Start of Turn sub-phase this character, their mount and any Orc unit they have joined may re-roll any rolls To Hit of a natural 1 and, when calculating its combat result, may claim an additional bonus of +1 combat result point.\n\n Note that, for the purposes of this rule, an Orc unit is considered to be any unit that is made up entirely of Orcs or Black Orcs, mounted or otherwise. Should an Orc unit be joined by a Goblin character, it is no longer considered to be an Orc unit. This special rule is not cumulative.",
-        "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
-        "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
-        "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+.",
-        "Steady in the Ranks": "Due to their solid stature, heavy armour and often elite nature,  heavy infantry  are rarely concerned by inferior numbers. To represent this, a unit of heavy infantry arrayed in either  Close Order  or  Open Order  formation does not become  Disrupted  when engaged in its flank or rear unless the enemy unit has a  Unit Strength  of ten or more.",
-        "General": "Inspiring Presence: Warriors fight all the better under the stern gaze of their General. Unless your General is fleeing, all friendly units within their Command range can use their Leadership characteristic instead of their own (so rally your General first!)."
+        "Choppas": "- **Restriction:** non-magical weapons only, never a mount; does not apply while the model uses a magic weapon\n- **Timing:** turn of a charge by the model\n- **Result:** the model gets:\n  - To Wound rolls of natural 1: re-roll (optional)\n  - Armour Piercing characteristic of its weapon(s): improved by 1 (e.g. - becomes -1)",
+        "Furious Charge": "- **Condition:** made a charge move of 3\"+ this turn\n- **Result:** +1 Attacks characteristic",
+        "Da Boyz": "- **Restriction:** army-list requirement, two-way pairing\n- **Result:** the numbers of Black Orc Mob and Black Orc Boss must match\n  - per Black Orc Mob: also 1 Black Orc War Boss or Big Boss\n  - per Black Orc War Boss or Big Boss: also 1 Black Orc Mob",
+        "Quell Impetuosity": "- **Restriction:** friendly Impetuous unit\n- **Timing:** Leadership test deciding between a compulsory charge declaration and acting as normal\n- **Select:** the unit, while ≤6\" from a unit having this special rule\n- **Result:** failed Leadership test: re-roll (optional)",
+        "Ignore Panic": "- **Restriction:** unit\n- **Timing:** ≤6\" of this unit, a friendly unit lacking this rule is wiped out, or Breaks then flees; or such a unit flees through this unit\n- **Result:** no Panic test is taken by this unit",
+        "Rallying Cry": "- **Restriction:** character\n- **Timing:** own Command sub-phase\n- **Condition:** the character is not engaged in combat\n- **Select:** 1× friendly unit that is fleeing, within Command range (optional)\n- **Result:**\n  - The unit takes a Rally test immediately\n  - Test failed: normal rally attempt remains possible in the Rally sub-phase",
+        "Waaagh!": "- **Restriction:** character; Orc unit = made only of Orcs or Black Orcs (mounted or not), and a Goblin character joining removes that status\n- **Limits:** 1× per game; not cumulative\n- **Timing:** your Command sub-phase\n- **Select:** invoke the Waaagh! (optional): Leadership test with this character's own Leadership\n- **Result:** if passed, the character, its mount and any Orc unit it has joined get:\n  - To Hit rolls of natural 1: re-roll (optional)\n  - combat result: +1 point (optional)\n- **Duration:** to your next Start of Turn sub-phase",
+        "Press of Battle": "- **Restriction:** Unit with this rule, arrayed in combat order\n- **Condition:** It did not charge this turn\n- **Result:** Its fighting rank counts as 2 ranks deep\n  - Models directly behind, in base contact with a model of the actual fighting rank, also count as in the fighting rank",
+        "Massed Infantry": "- **Restriction:** Side fielding at least one unit with this rule\n- **Condition:** When combat results are tallied, that side's Unit Strength is the greater\n- **Result:** It may claim +1 combat result point",
+        "Parry": "- **Restriction:** Model with this rule, carrying a hand weapon plus shield\n- **Condition:** In close combat, and opting to use that weapon and shield combination\n- **Result:** armour value +1, capped at 3+",
+        "Steady in the Ranks": "- **Restriction:** heavy infantry unit arrayed in Close Order or Open Order formation\n- **Condition:** an enemy unit with a Unit Strength under 10 engages it in the flank or rear\n- **Result:** it does not become Disrupted",
+        "General": "- **Select:** every friendly unit inside the Command range of your General\n- **Result:**\n  - **Inspiring Presence:** a selected unit may use the Leadership characteristic of the General in place of its own.\n  - Does not work while your General is fleeing, so rally the General before anything else."
       },
       "command": {
         "standard": false,
@@ -368,13 +1244,6 @@
         "champion": false
       },
       "weapons": [
-        {
-          "name": "Great Weapon",
-          "range": "Combat",
-          "S": "S+2",
-          "ap": "-2",
-          "rules": "Armour Bane (1), Requires Two Hands, Strike Last"
-        },
         {
           "name": "Hand Weapon",
           "range": "Combat",
@@ -389,24 +1258,25 @@
       "armour": 4,
       "ward": 0,
       "regen": 0,
-      "shield": false,
-      "catId": "cmtl5r6z9q5w2",
-      "baseName": "Black Orc Warboss",
-      "x": 832.563399520144,
-      "y": 557.8729273126175,
-      "rot": 335.69636594352073,
-      "placed": true,
+      "catId": "cmttwumnm8axg",
+      "prepara": {
+        "con": 2
+      },
+      "x": 0,
+      "y": 0,
+      "rot": 180,
+      "placed": false,
       "lost": 0,
       "dead": false,
       "fled": false,
-      "wounds": 0,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 1,
       "join": {
-        "host": 5
+        "host": 516,
+        "idx": null,
+        "x": null,
+        "y": null,
+        "rot": null
       },
+      "idx": 1,
       "formation": {
         "mode": "ranks",
         "preset": "block",
@@ -415,232 +1285,22 @@
         "slots": null,
         "rev": 0
       },
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "idx": 2
-    },
-    {
-      "uid": 3,
-      "army": "A",
-      "name": "Night Goblin Oddnob",
-      "models": 1,
-      "crew": 0,
-      "baseId": "25x25",
-      "baseW": 25,
-      "baseH": 25,
-      "frontage": 1,
-      "loose": false,
-      "pts": 160,
-      "us": 1,
-      "troop": "Regular infantry (character)",
-      "unitSize": "1",
-      "stats": {
-        "M": "4",
-        "WS": "4",
-        "BS": "3",
-        "S": "3",
-        "T": "4",
-        "W": "3",
-        "I": "4",
-        "A": "2",
-        "Ld": "6"
-      },
-      "rules": [
-        "Fear of Elves",
-        "Hatred (Dwarfs)",
-        "Lore of Mork",
-        "Warband"
-      ],
-      "weapons": [
-        {
-          "name": "Hand Weapon",
-          "range": "Combat"
-        }
-      ],
-      "maxRange": 0,
-      "slot": "Characters",
-      "faction": "Orc and Goblin Tribes",
-      "catId": "cmtl5ryqy4tp2",
-      "armour": 0,
-      "ruleText": {
-        "Fear of Elves": "Elves of any type cause Fear in models with this special rule.",
-        "Hatred (Dwarfs)": "A model with this special rule may re-roll any failed rolls To Hit made against a hatred enemy during the first round of combat.\n\n Which enemies are hated varies from model to model and will be shown in brackets after the name of this special rule. Some models hate 'all enemies' meaning they hate all enemy models equally.",
-        "Lore of Mork": "A wizard with the Lore of Mork special rule may discard one of their randomly generated spells as normal. When they do it they may select instead the signature spell of their chosen Lore of Magic, or one of the spell listed below.",
-        "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher."
-      },
-      "baseName": "Night Goblin Oddnob",
-      "x": 62.5,
-      "y": 684.6,
-      "rot": 0,
-      "placed": true,
-      "lost": 0,
-      "dead": false,
-      "fled": false,
-      "wounds": 0,
       "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 2,
-      "join": {
-        "host": 8
-      },
-      "formation": {
-        "mode": "ranks",
-        "preset": "block",
-        "spacing": 0,
-        "align": "left",
-        "slots": null,
-        "rev": 0
-      },
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "idx": 3
+      "anchor": null
     },
     {
-      "uid": 4,
-      "army": "A",
-      "name": "Night Goblin Bigboss",
-      "models": 1,
-      "crew": 0,
-      "baseId": "25x25",
-      "baseW": 25,
-      "baseH": 25,
-      "frontage": 1,
-      "loose": false,
-      "pts": 39,
-      "us": 1,
-      "troop": "Regular infantry (character)",
-      "unitSize": "1",
-      "stats": {
-        "M": "4",
-        "WS": "4",
-        "BS": "3",
-        "S": "4",
-        "T": "4",
-        "W": "2",
-        "I": "4",
-        "A": "3",
-        "Ld": "5"
-      },
-      "rules": [
-        "Fear of Elves",
-        "Hatred (Dwarfs)",
-        "Rallying Cry",
-        "Warband"
-      ],
-      "weapons": [
-        {
-          "name": "Great Weapon",
-          "range": "Combat",
-          "S": "S+2",
-          "ap": "-2",
-          "rules": "Armour Bane (1), Requires Two Hands, Strike Last"
-        },
-        {
-          "name": "Hand Weapon",
-          "range": "Combat",
-          "S": "S",
-          "ap": "-",
-          "rules": "-"
-        }
-      ],
-      "maxRange": 0,
-      "slot": "Characters",
-      "faction": "Orc and Goblin Tribes",
-      "catId": "cmtl5rxae4yxy",
-      "mount": null,
-      "profiles": [
-        {
-          "name": "Night Goblin Bigboss",
-          "stats": {
-            "M": "4",
-            "WS": "4",
-            "BS": "3",
-            "S": "4",
-            "T": "4",
-            "W": "2",
-            "I": "4",
-            "A": "3",
-            "Ld": "5"
-          }
-        },
-        {
-          "name": "Giant Cave Squig",
-          "stats": {
-            "M": "3D6",
-            "WS": "4",
-            "BS": "-",
-            "S": "5",
-            "T": "-",
-            "W": "-",
-            "I": "3",
-            "A": "3",
-            "Ld": "-"
-          }
-        }
-      ],
-      "armour": 5,
-      "ward": 0,
-      "ruleText": {
-        "Fear of Elves": "Elves of any type cause Fear in models with this special rule.",
-        "Hatred (Dwarfs)": "A model with this special rule may re-roll any failed rolls To Hit made against a hatred enemy during the first round of combat.\n\n Which enemies are hated varies from model to model and will be shown in brackets after the name of this special rule. Some models hate 'all enemies' meaning they hate all enemy models equally.",
-        "Rallying Cry": "During the Command sub-phase of their turn, if they are not engaged in combat, this character may nominate a single fleeing friendly unit that is within their Command range. The nominated unit immediately makes a Rally test. If this test is failed, the unit may attempt to rally again as normal during the Rally sub-phase.",
-        "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher."
-      },
-      "shield": true,
-      "baseName": "Night Goblin Bigboss",
-      "x": 62.5,
-      "y": 684.6,
-      "rot": 0,
-      "placed": true,
-      "lost": 0,
-      "dead": false,
-      "fled": false,
-      "wounds": 0,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 3,
-      "join": {
-        "host": 8
-      },
-      "formation": {
-        "mode": "ranks",
-        "preset": "block",
-        "spacing": 0,
-        "align": "left",
-        "slots": null,
-        "rev": 0
-      },
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "idx": 4
-    },
-    {
-      "uid": 5,
-      "army": "A",
-      "name": "Orc Mobs 1",
-      "models": 13,
+      "uid": 515,
+      "army": "B",
+      "name": "Orc Mobs",
+      "models": 25,
       "crew": 0,
       "baseId": "30x30",
       "baseW": 30,
       "baseH": 30,
       "frontage": 5,
       "loose": false,
-      "pts": 91,
-      "us": 13,
+      "pts": 150,
+      "us": 25,
       "troop": "Regular Infantry",
       "unitSize": "5+",
       "stats": {
@@ -680,19 +1340,18 @@
         "Furious Charge",
         "Press of Battle",
         "Massed Infantry",
-        "Parry",
-        "Big 'Uns"
+        "Parry"
       ],
       "ruleText": {
-        "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
-        "Ignore Goblin Panic": "This unit does not have to make a Panic test when a friendly Goblin unit is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly Goblin unit.\n\n Note that, for the purposes of this rule, a Goblin unit is considered to be any unit that is made up entirely of Goblins of any kind, mounted or otherwise. This includes any war machine or chariot that is crewed entirely by Goblins. Should a Goblin unit be joined by an Orc character, it is no longer considered to be a Goblin unit.",
-        "Impetuous": "If during the Declare Charges & Charge Reactions sub-phase of its turn, a unit that includes one or more Impetuous models is able to declare a charge, it must make a Leadership test. If this test is failed, the unit must declare a charge. If this test is passed, the unit may act as normal.",
-        "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
-        "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
-        "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
-        "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
-        "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
-        "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+        "Choppas": "- **Restriction:** non-magical weapons only, never a mount; does not apply while the model uses a magic weapon\n- **Timing:** turn of a charge by the model\n- **Result:** the model gets:\n  - To Wound rolls of natural 1: re-roll (optional)\n  - Armour Piercing characteristic of its weapon(s): improved by 1 (e.g. - becomes -1)",
+        "Ignore Goblin Panic": "- **Restriction:** unit; Goblin unit = made only of Goblins of every kind (mounted or not, plus war machine or chariot with all-Goblin crew); an Orc character joining removes that status\n- **Timing:** a friendly Goblin unit ≤6\" of this unit is wiped out, or Breaks then flees; or it flees through this unit\n- **Result:** no Panic test is taken by this unit",
+        "Impetuous": "- **Timing:** Declare Charges & Charge Reactions sub-phase of its turn\n- **Condition:** the unit has 1+ Impetuous models and could declare a charge\n- **Result:** the unit takes a Leadership test\n  - Failed: it must declare a charge\n  - Passed: it acts normally",
+        "Warband": "- **Condition:** the Warband is not fleeing\n- **Result:**\n  - Leadership characteristic +current Rank Bonus, capped at Leadership 10\n  - The bonus is void for a Restraint test, and for an Impetuous unit's test on whether a charge is forced\n  - Majority of models have Warband: re-roll its Charge roll (optional)\n  - A character gets the bonus only if it too has Warband\n  - A Warband unit takes the highest of: its own modified Leadership, a Warband character's modified Leadership, a non-Warband character's unmodified Leadership",
+        "Close Order": "Such a unit is able to form up in Close Order.",
+        "Furious Charge": "- **Condition:** made a charge move of 3\"+ this turn\n- **Result:** +1 Attacks characteristic",
+        "Press of Battle": "- **Restriction:** Unit with this rule, arrayed in combat order\n- **Condition:** It did not charge this turn\n- **Result:** Its fighting rank counts as 2 ranks deep\n  - Models directly behind, in base contact with a model of the actual fighting rank, also count as in the fighting rank",
+        "Massed Infantry": "- **Restriction:** Side fielding at least one unit with this rule\n- **Condition:** When combat results are tallied, that side's Unit Strength is the greater\n- **Result:** It may claim +1 combat result point",
+        "Parry": "- **Restriction:** Model with this rule, carrying a hand weapon plus shield\n- **Condition:** In close combat, and opting to use that weapon and shield combination\n- **Result:** armour value +1, capped at 3+"
       },
       "command": {
         "standard": false,
@@ -708,143 +1367,11 @@
           "rules": "-"
         },
         {
-          "name": "Warbow",
-          "range": "24\"",
-          "S": "S",
-          "ap": "-",
-          "rules": "Volley Fire"
-        }
-      ],
-      "maxRange": 24,
-      "slot": "Core",
-      "faction": "Orc and Goblin Tribes",
-      "armour": 6,
-      "ward": 0,
-      "regen": 0,
-      "catId": "cmtl5r9bak4eg",
-      "shield": false,
-      "baseName": "Orc Mobs",
-      "x": 832.563399520144,
-      "y": 557.8729273126175,
-      "rot": 335.69636594352073,
-      "placed": true,
-      "lost": 1,
-      "dead": false,
-      "fled": false,
-      "wounds": 0,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 4,
-      "formation": {
-        "mode": "ranks",
-        "preset": "block",
-        "spacing": 0,
-        "align": "left",
-        "slots": null,
-        "rev": 0
-      },
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": true,
-      "faseTiro": "5:B:4",
-      "usInizioFase": 12,
-      "impeto": {
-        "key": "5:A",
-        "deve": true
-      },
-      "radunoTentato": "6:A",
-      "join": null,
-      "idx": 5
-    },
-    {
-      "uid": 6,
-      "army": "A",
-      "name": "Orc Mobs 2",
-      "models": 11,
-      "crew": 0,
-      "baseId": "30x30",
-      "baseW": 30,
-      "baseH": 30,
-      "frontage": 7,
-      "loose": false,
-      "pts": 98,
-      "us": 11,
-      "troop": "Regular Infantry",
-      "unitSize": "5+",
-      "stats": {
-        "M": "4",
-        "WS": "3",
-        "BS": "3",
-        "S": "3",
-        "T": "4",
-        "W": "1",
-        "I": "3",
-        "A": "1",
-        "Ld": "6"
-      },
-      "profiles": [
-        {
-          "name": "Orc Boy",
-          "stats": {
-            "M": "4",
-            "WS": "3",
-            "BS": "3",
-            "S": "3",
-            "T": "4",
-            "W": "1",
-            "I": "3",
-            "A": "1",
-            "Ld": "6"
-          }
-        }
-      ],
-      "mount": null,
-      "rules": [
-        "Choppas",
-        "Ignore Goblin Panic",
-        "Impetuous",
-        "Warband",
-        "Close Order",
-        "Furious Charge",
-        "Press of Battle",
-        "Massed Infantry",
-        "Parry",
-        "Big 'Uns"
-      ],
-      "ruleText": {
-        "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
-        "Ignore Goblin Panic": "This unit does not have to make a Panic test when a friendly Goblin unit is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly Goblin unit.\n\n Note that, for the purposes of this rule, a Goblin unit is considered to be any unit that is made up entirely of Goblins of any kind, mounted or otherwise. This includes any war machine or chariot that is crewed entirely by Goblins. Should a Goblin unit be joined by an Orc character, it is no longer considered to be a Goblin unit.",
-        "Impetuous": "If during the Declare Charges & Charge Reactions sub-phase of its turn, a unit that includes one or more Impetuous models is able to declare a charge, it must make a Leadership test. If this test is failed, the unit must declare a charge. If this test is passed, the unit may act as normal.",
-        "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
-        "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
-        "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
-        "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
-        "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
-        "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
-      },
-      "command": {
-        "standard": true,
-        "musician": true,
-        "champion": false
-      },
-      "weapons": [
-        {
-          "name": "Thrusting Spear",
+          "name": "Additional Hand Weapon",
           "range": "Combat",
           "S": "S",
           "ap": "-",
-          "rules": "Fight in Extra Rank"
-        },
-        {
-          "name": "Hand Weapon",
-          "range": "Combat",
-          "S": "S",
-          "ap": "-",
-          "rules": "-"
+          "rules": "Extra Attacks (+1), Requires Two Hands"
         }
       ],
       "maxRange": 0,
@@ -854,20 +1381,17 @@
       "ward": 0,
       "regen": 0,
       "catId": "cmtl5r9bak4eg",
-      "shield": false,
-      "baseName": "Orc Mobs",
-      "x": 331.9,
-      "y": 604.17890625,
-      "rot": 0,
+      "prepara": {
+        "weapon": "Additional Hand Weapon"
+      },
+      "x": 81,
+      "y": 148.60000000000002,
+      "rot": 180,
       "placed": true,
-      "lost": 2,
+      "lost": 0,
       "dead": false,
       "fled": false,
-      "wounds": 0,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 5,
+      "idx": 2,
       "formation": {
         "mode": "ranks",
         "preset": "block",
@@ -876,30 +1400,22 @@
         "slots": null,
         "rev": 0
       },
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "faseTiro": "6:B:4",
-      "usInizioFase": 10,
-      "join": null,
-      "idx": 6
+      "fallen": [],
+      "anchor": null
     },
     {
-      "uid": 7,
-      "army": "A",
+      "uid": 516,
+      "army": "B",
       "name": "Black Orc Mobs",
-      "models": 10,
+      "models": 7,
       "crew": 0,
       "baseId": "30x30",
       "baseW": 30,
       "baseH": 30,
       "frontage": 5,
       "loose": false,
-      "pts": 132,
-      "us": 10,
+      "pts": 96,
+      "us": 7,
       "troop": "Heavy Infantry",
       "unitSize": "5+",
       "stats": {
@@ -972,17 +1488,17 @@
         "Steady in the Ranks"
       ],
       "ruleText": {
-        "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
-        "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
-        "Ignore Panic": "This unit does not have to make a Panic test when a friendly unit that does not also have this special rule is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly unit that does not have this special rule..",
-        "Furious Charge": "During a turn in which it made a charge move of 3\" or more, a model with this special rule gains a +1 modifier to its Attacks characteristic.",
-        "Da Boyz": "Your army must include one Black Orc Boss for every Black Orc Mob it includes, and vice versa. In other words:\n\n \n• For each Black Orc Mob your army includes, it must also include one Black Orc War Boss or Big Boss.\n\n \n• For each Black Orc War Boss or Big Boss your army includes, it must also include one Black Orc Mob.",
-        "Motley Crew": "Units with this special rule may include models of the same type that are equipped differently to one another, and/or models of different types that fight together in a single unit. If necessary, the army list entry for such units will be accompanied by a brief explanation of the unit’s composition.\n\n Different Weapons: The fighting rank of a Motley Crew may contain models that are armed with different weapons. In such cases, the controlling player must roll different batches of dice for the different models, making it clear to their opponent which model’s attacks they represent and where they are being directed. These attacks are made in the Initiative order of the individual models, as usual.\n\n Different Armour: Models within a Motley Crew may have different armour values. In combat, use the armour value of the majority of the models in the fighting rank. Against enemy shooting, use the armour value of the majority of the models in the unit.\n\n Casualty Removal: Against enemy shooting, casualty removal should be divided as equally as possible between the different models within the unit. In combat, casualties should be removed from among the majority of the models that make up the fighting rank. In either case, available models are brought forward from rear ranks to fill any gaps, as chosen by the controlling player.",
-        "Quell Impetuosity": "Whilst within 6\" of a unit with this special rule, a friendly Impetuous unit may re-roll a failed Leadership test when testing to determine if it must declare a charge or act as normal.",
-        "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
-        "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
-        "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+.",
-        "Steady in the Ranks": "Due to their solid stature, heavy armour and often elite nature,  heavy infantry  are rarely concerned by inferior numbers. To represent this, a unit of heavy infantry arrayed in either  Close Order  or  Open Order  formation does not become  Disrupted  when engaged in its flank or rear unless the enemy unit has a  Unit Strength  of ten or more."
+        "Choppas": "- **Restriction:** non-magical weapons only, never a mount; does not apply while the model uses a magic weapon\n- **Timing:** turn of a charge by the model\n- **Result:** the model gets:\n  - To Wound rolls of natural 1: re-roll (optional)\n  - Armour Piercing characteristic of its weapon(s): improved by 1 (e.g. - becomes -1)",
+        "Close Order": "Such a unit is able to form up in Close Order.",
+        "Ignore Panic": "- **Restriction:** unit\n- **Timing:** ≤6\" of this unit, a friendly unit lacking this rule is wiped out, or Breaks then flees; or such a unit flees through this unit\n- **Result:** no Panic test is taken by this unit",
+        "Furious Charge": "- **Condition:** made a charge move of 3\"+ this turn\n- **Result:** +1 Attacks characteristic",
+        "Da Boyz": "- **Restriction:** army-list requirement, two-way pairing\n- **Result:** the numbers of Black Orc Mob and Black Orc Boss must match\n  - per Black Orc Mob: also 1 Black Orc War Boss or Big Boss\n  - per Black Orc War Boss or Big Boss: also 1 Black Orc Mob",
+        "Motley Crew": "- **Restriction:** Motley Crew units\n- **Result:** may field one model type with varied gear, and/or several model types fighting as one unit; the army list entry may explain the make-up\n  - **Different Weapons:** a fighting rank may hold varied weapons; roll a separate batch of dice for each differing model, tell the opponent which model it represents and the target; attacks follow each model's own Initiative\n  - **Different Armour:** in combat, the armour value shared by most of the fighting rank counts; versus shooting, the armour value shared by most of the unit\n  - **Casualty Removal:** versus shooting, spread casualties as evenly as possible across the differing models of the unit (by type or by gear); in combat, take them from the models forming the majority of the fighting rank; owner fills gaps with models from rear ranks",
+        "Quell Impetuosity": "- **Restriction:** friendly Impetuous unit\n- **Timing:** Leadership test deciding between a compulsory charge declaration and acting as normal\n- **Select:** the unit, while ≤6\" from a unit having this special rule\n- **Result:** failed Leadership test: re-roll (optional)",
+        "Press of Battle": "- **Restriction:** Unit with this rule, arrayed in combat order\n- **Condition:** It did not charge this turn\n- **Result:** Its fighting rank counts as 2 ranks deep\n  - Models directly behind, in base contact with a model of the actual fighting rank, also count as in the fighting rank",
+        "Massed Infantry": "- **Restriction:** Side fielding at least one unit with this rule\n- **Condition:** When combat results are tallied, that side's Unit Strength is the greater\n- **Result:** It may claim +1 combat result point",
+        "Parry": "- **Restriction:** Model with this rule, carrying a hand weapon plus shield\n- **Condition:** In close combat, and opting to use that weapon and shield combination\n- **Result:** armour value +1, capped at 3+",
+        "Steady in the Ranks": "- **Restriction:** heavy infantry unit arrayed in Close Order or Open Order formation\n- **Condition:** an enemy unit with a Unit Strength under 10 engages it in the flank or rear\n- **Result:** it does not become Disrupted"
       },
       "command": {
         "standard": true,
@@ -1005,139 +1521,17 @@
       "ward": 0,
       "regen": 0,
       "catId": "cmtl5r88tb6qt",
-      "shield": false,
-      "baseName": "Black Orc Mobs",
-      "x": 837.8295563378432,
-      "y": 411.1806583594251,
-      "rot": 246,
-      "placed": false,
-      "lost": 10,
-      "dead": true,
-      "fled": false,
-      "wounds": 0,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 6,
-      "formation": {
-        "mode": "ranks",
-        "preset": "block",
-        "spacing": 0,
-        "align": "left",
-        "slots": null,
-        "rev": 0
+      "prepara": {
+        "shield": false
       },
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "faseTiro": "3:B:4",
-      "usInizioFase": 10,
-      "fought": "6:B",
-      "disruptedTerreno": false,
-      "disruptedFianco": false,
-      "disrupted": false,
-      "highGround": false,
-      "seguito": 6,
-      "paura": {
-        "key": "6:B",
-        "passed": true
-      },
-      "join": null,
-      "idx": 7
-    },
-    {
-      "uid": 8,
-      "army": "A",
-      "name": "Night Goblin Mobs 1",
-      "models": 10,
-      "crew": 1,
-      "baseId": "25x25",
-      "baseW": 25,
-      "baseH": 25,
-      "frontage": 5,
-      "loose": false,
-      "pts": 50,
-      "us": 0,
-      "troop": "Regular Infantry",
-      "unitSize": "10+",
-      "stats": {
-        "M": "4",
-        "WS": "2",
-        "BS": "3",
-        "S": "3",
-        "T": "3",
-        "W": "1",
-        "I": "3",
-        "A": "1",
-        "Ld": "4"
-      },
-      "rules": [
-        "Close Order",
-        "Fear of Elves",
-        "Hatred (Dwarfs)",
-        "Warband",
-        "Horde",
-        "Immune To Psychology",
-        "Press of Battle",
-        "Massed Infantry",
-        "Parry"
-      ],
-      "ruleText": {
-        "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
-        "Fear of Elves": "Elves of any type cause Fear in models with this special rule.",
-        "Hatred (Dwarfs)": "A model with this special rule may re-roll any failed rolls To Hit made against a hatred enemy during the first round of combat.\n\n Which enemies are hated varies from model to model and will be shown in brackets after the name of this special rule. Some models hate 'all enemies' meaning they hate all enemy models equally.",
-        "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
-        "Horde": "A unit with this special rule may increase the maximum Rank Bonus it can claim (as determined by its troop type) by one.",
-        "Immune To Psychology": "If the majority of the models in a unit are Immune to Psychology, the unit automatically passes any Fear, Panic or Terror tests it is required to make. However, if the majority of the models in a unit have this special rule, the unit cannot choose to Flee as a charge reaction.\n\n Note that this special rule does not make a unit immune to any test made against Leadership not stated here.",
-        "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
-        "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
-        "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
-      },
-      "command": {
-        "standard": true,
-        "musician": true,
-        "champion": false
-      },
-      "weapons": [
-        {
-          "name": "Hand Weapon",
-          "range": "Combat",
-          "S": "S",
-          "ap": "-",
-          "rules": "-"
-        },
-        {
-          "name": "Shortbow",
-          "range": "18\"",
-          "S": "3",
-          "ap": "-",
-          "rules": "Quick Shot, Volley Fire"
-        }
-      ],
-      "maxRange": 18,
-      "slot": "Core",
-      "faction": "Orc and Goblin Tribes",
-      "armour": 0,
-      "ward": 0,
-      "regen": 0,
-      "catId": "cmtl5rzttgftf",
-      "shield": false,
-      "baseName": "Night Goblin Mobs",
-      "x": 62.5,
-      "y": 684.6,
-      "rot": 0,
+      "x": 243.7,
+      "y": 193.60000000000002,
+      "rot": 180,
       "placed": true,
       "lost": 0,
       "dead": false,
       "fled": false,
-      "wounds": 0,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 7,
+      "idx": 3,
       "formation": {
         "mode": "ranks",
         "preset": "block",
@@ -1146,62 +1540,104 @@
         "slots": null,
         "rev": 0
       },
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "join": null,
-      "idx": 8
+      "fallen": [],
+      "anchor": null
     },
     {
-      "uid": 9,
-      "army": "A",
-      "name": "Night Goblin Mobs 2",
-      "models": 11,
-      "crew": 1,
-      "baseId": "25x25",
-      "baseW": 25,
-      "baseH": 25,
-      "frontage": 7,
+      "uid": 517,
+      "army": "B",
+      "name": "Orc Boar Boy Mobs",
+      "models": 8,
+      "crew": 0,
+      "baseId": "30x60",
+      "baseW": 30,
+      "baseH": 60,
+      "frontage": 5,
       "loose": false,
-      "pts": 44,
+      "pts": 120,
       "us": 0,
-      "troop": "Regular Infantry",
-      "unitSize": "10+",
+      "troop": "Heavy Cavalry",
+      "unitSize": "4+",
       "stats": {
-        "M": "4",
-        "WS": "2",
+        "M": "-",
+        "WS": "3",
         "BS": "3",
         "S": "3",
-        "T": "3",
+        "T": "4",
         "W": "1",
         "I": "3",
         "A": "1",
-        "Ld": "4"
+        "Ld": "6"
+      },
+      "profiles": [
+        {
+          "name": "Boar Boy",
+          "stats": {
+            "M": "-",
+            "WS": "3",
+            "BS": "3",
+            "S": "3",
+            "T": "4",
+            "W": "1",
+            "I": "3",
+            "A": "1",
+            "Ld": "6"
+          }
+        },
+        {
+          "name": "War Boar",
+          "stats": {
+            "M": "7",
+            "WS": "3",
+            "BS": "-",
+            "S": "3",
+            "T": "-",
+            "W": "-",
+            "I": "3",
+            "A": "1",
+            "Ld": "-"
+          }
+        }
+      ],
+      "mount": {
+        "name": "War Boar",
+        "stats": {
+          "M": "7",
+          "WS": "3",
+          "BS": "-",
+          "S": "3",
+          "T": "-",
+          "W": "-",
+          "I": "3",
+          "A": "1",
+          "Ld": "-"
+        }
       },
       "rules": [
+        "Choppas",
         "Close Order",
-        "Fear of Elves",
-        "Hatred (Dwarfs)",
+        "Ignore Goblin Panic",
+        "Impetuous",
         "Warband",
-        "Horde",
-        "Immune To Psychology",
-        "Press of Battle",
-        "Massed Infantry",
-        "Parry"
+        "Armoured Hide (1)",
+        "Counter Charge",
+        "Furious Charge (Orc Boar Boys & Boss Only)",
+        "Swiftstride",
+        "Tusker Charge",
+        "Cavalry Support"
       ],
       "ruleText": {
-        "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
-        "Fear of Elves": "Elves of any type cause Fear in models with this special rule.",
-        "Hatred (Dwarfs)": "A model with this special rule may re-roll any failed rolls To Hit made against a hatred enemy during the first round of combat.\n\n Which enemies are hated varies from model to model and will be shown in brackets after the name of this special rule. Some models hate 'all enemies' meaning they hate all enemy models equally.",
-        "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher.",
-        "Horde": "A unit with this special rule may increase the maximum Rank Bonus it can claim (as determined by its troop type) by one.",
-        "Immune To Psychology": "If the majority of the models in a unit are Immune to Psychology, the unit automatically passes any Fear, Panic or Terror tests it is required to make. However, if the majority of the models in a unit have this special rule, the unit cannot choose to Flee as a charge reaction.\n\n Note that this special rule does not make a unit immune to any test made against Leadership not stated here.",
-        "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
-        "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
-        "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
+        "Choppas": "- **Restriction:** non-magical weapons only, never a mount; does not apply while the model uses a magic weapon\n- **Timing:** turn of a charge by the model\n- **Result:** the model gets:\n  - To Wound rolls of natural 1: re-roll (optional)\n  - Armour Piercing characteristic of its weapon(s): improved by 1 (e.g. - becomes -1)",
+        "Close Order": "Such a unit is able to form up in Close Order.",
+        "Ignore Goblin Panic": "- **Restriction:** unit; Goblin unit = made only of Goblins of every kind (mounted or not, plus war machine or chariot with all-Goblin crew); an Orc character joining removes that status\n- **Timing:** a friendly Goblin unit ≤6\" of this unit is wiped out, or Breaks then flees; or it flees through this unit\n- **Result:** no Panic test is taken by this unit",
+        "Impetuous": "- **Timing:** Declare Charges & Charge Reactions sub-phase of its turn\n- **Condition:** the unit has 1+ Impetuous models and could declare a charge\n- **Result:** the unit takes a Leadership test\n  - Failed: it must declare a charge\n  - Passed: it acts normally",
+        "Warband": "- **Condition:** the Warband is not fleeing\n- **Result:**\n  - Leadership characteristic +current Rank Bonus, capped at Leadership 10\n  - The bonus is void for a Restraint test, and for an Impetuous unit's test on whether a charge is forced\n  - Majority of models have Warband: re-roll its Charge roll (optional)\n  - A character gets the bonus only if it too has Warband\n  - A Warband unit takes the highest of: its own modified Leadership, a Warband character's modified Leadership, a non-Warband character's unmodified Leadership",
+        "Armoured Hide (1)": "- **Restriction:** models with Armoured Hide\n- **Result:** Armour Value improves by the number in brackets after Armoured Hide, for the model and its rider\n  - No armour worn: counts as Armour Value 7+ when a rule improves Armour Value",
+        "Counter Charge": "- **Restriction:** a unit consisting only of models with Counter Charge\n- **Timing:** an enemy unit of troop type 'cavalry', 'chariot' or 'monster' charges it into the front arc\n- **Condition:** it is neither fleeing nor already engaged in combat\n- **Result:** may declare the 'Counter Charge' charge reaction (optional)\n  - Distance between units < Movement characteristic of the charger: too late, so it must Hold or Flee\n  - Otherwise: pivot about its centre to face the charger's centre, then advance D3+1\" straight at it; both units count as having charged this turn\n  - 1× per turn however many chargers; after all charges are declared, the inactive player picks the charger to answer and Holds against the others",
+        "Furious Charge (Orc Boar Boys & Boss Only)": "- **Condition:** made a charge move of 3\"+ this turn\n- **Result:** +1 Attacks characteristic",
+        "Swiftstride": "- **Restriction:** every model of the unit has Swiftstride\n- **Result:**\n  - Charge range ceiling: 3\" higher.\n  - Prior to a Charge, Flee or Pursuit roll, the unit may add +D6 to that roll (optional).",
+        "Tusker Charge": "- **Restriction:** War Boar's attacks only; no rider, chariot or crew\n- **Timing:** any turn in which this War Boar made a charge\n- **Result:** the War Boar's Tusks (hand weapon): Strength characteristic S+1, Armour Piercing characteristic -1",
+        "Cavalry Support": "- **Condition:** a cavalry model can make a supporting attack\n- **Result:** the rider alone attacks; the mount does not (a rider reaches over a comrade, a mount cannot)\n\nRelated: Light Cavalry"
       },
       "command": {
         "standard": false,
@@ -1215,159 +1651,38 @@
           "S": "S",
           "ap": "-",
           "rules": "-"
-        },
-        {
-          "name": "Shortbow",
-          "range": "18\"",
-          "S": "3",
-          "ap": "-",
-          "rules": "Quick Shot, Volley Fire"
-        }
-      ],
-      "maxRange": 18,
-      "slot": "Core",
-      "faction": "Orc and Goblin Tribes",
-      "armour": 0,
-      "ward": 0,
-      "regen": 0,
-      "catId": "cmtl5rzttgftf",
-      "shield": false,
-      "baseName": "Night Goblin Mobs",
-      "x": 87.5,
-      "y": 571.4984374999999,
-      "rot": 0,
-      "placed": false,
-      "lost": 11,
-      "dead": true,
-      "fled": false,
-      "wounds": 1,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 8,
-      "formation": {
-        "mode": "ranks",
-        "preset": "block",
-        "spacing": 0,
-        "align": "left",
-        "slots": null,
-        "rev": 0
-      },
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "faseTiro": "3:B:4",
-      "usInizioFase": 2,
-      "panicoFatto": "2:B:4",
-      "join": null,
-      "idx": 9
-    },
-    {
-      "uid": 10,
-      "army": "A",
-      "name": "Night Goblin Squig Herds",
-      "models": 6,
-      "crew": 0,
-      "baseId": "25x25",
-      "baseW": 25,
-      "baseH": 25,
-      "frontage": 9,
-      "loose": true,
-      "pts": 53,
-      "us": 6,
-      "troop": "Regular infantry",
-      "unitSize": "1+/5+",
-      "stats": {
-        "M": "4",
-        "WS": "4",
-        "BS": "0",
-        "S": "5",
-        "T": "3",
-        "W": "1",
-        "I": "4",
-        "A": "2",
-        "Ld": "6"
-      },
-      "rules": [
-        "Hatred (Dwarfs)",
-        "Immune To Psychology",
-        "Impetuous",
-        "Loner",
-        "Motley Crew",
-        "Open Order",
-        "Skirmishers",
-        "Squigs Go Wild",
-        "Warband"
-      ],
-      "ruleText": {
-        "Hatred (Dwarfs)": "A model with this special rule may re-roll any failed rolls To Hit made against a hatred enemy during the first round of combat.\n\n Which enemies are hated varies from model to model and will be shown in brackets after the name of this special rule. Some models hate 'all enemies' meaning they hate all enemy models equally.",
-        "Immune To Psychology": "If the majority of the models in a unit are Immune to Psychology, the unit automatically passes any Fear, Panic or Terror tests it is required to make. However, if the majority of the models in a unit have this special rule, the unit cannot choose to Flee as a charge reaction.\n\n Note that this special rule does not make a unit immune to any test made against Leadership not stated here.",
-        "Impetuous": "If during the Declare Charges & Charge Reactions sub-phase of its turn, a unit that includes one or more Impetuous models is able to declare a charge, it must make a Leadership test. If this test is failed, the unit must declare a charge. If this test is passed, the unit may act as normal.",
-        "Loner": "A character with this special rule cannot be your General and cannot join a unit without this special rule. A unit with this special rule cannot be joined by a character without this special rule.",
-        "Motley Crew": "Units with this special rule may include models of the same type that are equipped differently to one another, and/or models of different types that fight together in a single unit. If necessary, the army list entry for such units will be accompanied by a brief explanation of the unit’s composition.\n\n Different Weapons: The fighting rank of a Motley Crew may contain models that are armed with different weapons. In such cases, the controlling player must roll different batches of dice for the different models, making it clear to their opponent which model’s attacks they represent and where they are being directed. These attacks are made in the Initiative order of the individual models, as usual.\n\n Different Armour: Models within a Motley Crew may have different armour values. In combat, use the armour value of the majority of the models in the fighting rank. Against enemy shooting, use the armour value of the majority of the models in the unit.\n\n Casualty Removal: Against enemy shooting, casualty removal should be divided as equally as possible between the different models within the unit. In combat, casualties should be removed from among the majority of the models that make up the fighting rank. In either case, available models are brought forward from rear ranks to fill any gaps, as chosen by the controlling player.",
-        "Open Order": "A unit consisting of models with this special rule may adopt an Open Order formation.",
-        "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
-        "Squigs Go Wild": "Should a Squig Herd ever Break and flee from combat, the Cave Squigs will go wild. If the Squig Herd contains five or more Cave Squigs, every unit (friend or foe) within 2D6\" of it suffers D3 Strength 5 hits, each with an AP of -1. For every additional five Cave Squigs the Squig Herd contains, apply a +1 modifier to the D3. Once these hits have been resolved, treat the unit as having been completely destroyed in combat and remove it from play.",
-        "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher."
-      },
-      "command": {
-        "standard": false,
-        "musician": false,
-        "champion": false
-      },
-      "weapons": [
-        {
-          "name": "Huge gob",
-          "range": "Combat",
-          "S": "S",
-          "ap": "-1",
-          "rules": "Armour Bane (1)"
         }
       ],
       "maxRange": 0,
-      "slot": "Core",
+      "slot": "Special",
       "faction": "Orc and Goblin Tribes",
-      "armour": 0,
+      "armour": 5,
       "ward": 0,
       "regen": 0,
-      "catId": "cmtl5s189osz2",
-      "shield": false,
-      "baseName": "Night Goblin Squig Herds",
-      "x": 346.2902034200684,
-      "y": 687.4333724271703,
-      "rot": 336.42856505712075,
+      "catId": "cmtl5rae3opun",
+      "prepara": null,
+      "x": 406.4,
+      "y": 163.60000000000002,
+      "rot": 180,
       "placed": true,
       "lost": 0,
       "dead": false,
       "fled": false,
-      "wounds": 0,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 9,
+      "idx": 4,
       "formation": {
         "mode": "ranks",
         "preset": "block",
-        "spacing": 12.7,
+        "spacing": 0,
         "align": "left",
         "slots": null,
         "rev": 0
       },
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "join": null,
-      "idx": 10
+      "fallen": [],
+      "anchor": null
     },
     {
-      "uid": 11,
-      "army": "A",
+      "uid": 518,
+      "army": "B",
       "name": "Orc Boar Chariots",
       "models": 1,
       "crew": 2,
@@ -1464,18 +1779,18 @@
         "Warband"
       ],
       "ruleText": {
-        "Scythed Wheels": "Built to wreak destruction, heavy chariots are adorned with sharpened spikes and scything blades, the better to cut down the foe. Any Impact Hits caused by a heavy chariot have an Armour Piercing characteristic of -2.",
-        "Lumbering": "Perhaps due to their large size, their weight, or a combination of skittish draft animals and slow turning wheels, models with this rule are not especially manoeuvrable. To represent this, a Lumbering model is considered to be, and follows all of the rules for, a Close Order formation, even when included in your army as a single model.\n However, even the largest single model enjoys slightly more manoeuvrability than a tightly formed regiment of many models. Therefore, after moving, unless it charged, marched or fled, a Lumbering model may pivot about its centre to change its facing by up to 90°.\n Finally, a Lumbering model cannot join a unit or be joined by a character.\n\n\nRelated: Heavy Chariots",
-        "Iron Shod Wheels": "Chariots are not designed for use in terrain. This model treats all difficult terrain as dangerous terrain and treats all linear obstacles as impassable terrain. In addition, if this model rolls a 1 when making a Dangerous Terrain test, it loses D3 Wounds.\n\n\nRelated: Light Chariots",
-        "Firing Platform": "From the cab of a chariot, warriors can shoot in all directions. For the purposes of shooting and casting spells, this model has a 360° vision arc.\n\n\nRelated: Light Chariots",
-        "Choppas": "During a turn in which it charged, a model with this special rule may re-roll any rolls To Wound of a natural 1, and improves the Armour Piercing characteristic of its weapon(s) by 1.\n\n Note that this special rule only applies to non-magical weapons and does not apply to a model’s mount (should it have one). If the model is using a magic weapon, this special rule ceases to apply.",
-        "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
-        "Impetuous": "If during the Declare Charges & Charge Reactions sub-phase of its turn, a unit that includes one or more Impetuous models is able to declare a charge, it must make a Leadership test. If this test is failed, the unit must declare a charge. If this test is passed, the unit may act as normal.",
-        "Ignore Goblin Panic": "This unit does not have to make a Panic test when a friendly Goblin unit is destroyed or Breaks and flees from combat whilst within 6\" of it. Nor does this unit have to make a Panic test when it is fled through by a friendly Goblin unit.\n\n Note that, for the purposes of this rule, a Goblin unit is considered to be any unit that is made up entirely of Goblins of any kind, mounted or otherwise. This includes any war machine or chariot that is crewed entirely by Goblins. Should a Goblin unit be joined by an Orc character, it is no longer considered to be a Goblin unit.",
-        "First Charge": "If this unit’s first charge of the game is successful (i.e., if the unit makes contact with the charge target), the charge target becomes Disrupted until the end of the Combat phase of that turn.",
-        "Impact Hits (D6+1)": "The number of Impact Hits caused varies from model to model, and will be shown in brackets after the name of this special rile. Often, this is determined by the roll of a dice.\n\n**Resolving Impact Hits:** Impact Hits can only be made by a charging model that moved 3\" or more and that is in base contact with the enemy. Impact Hits are resolved against the charged unit when the combat is chosen during Step 1.1 of the Choose Combat & Fight sub-phase, before issuing challenges. They hit automatically and use the unmodified Strength of the model making them.",
-        "Tusker Charge": "During a turn in which it charged, a War Boar’s Tusks (hand weapon) have a Strength characteristic of S+1 and an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to attacks made by a War Boar, not to their rider, a chariot or its crew.",
-        "Warband": "Unless it is fleeing, a Warband gains a positive (+) modifier to its Leadership characteristic equal to its current Rank Bonus, up to a maximum of Leadership 10.However, a Warband cannot use this modifier to its Leadership should it ever choose to make a Restraint test or, if it is Impetuous, when testing to see if it must declare a charge or may act as normal. In addition, if the majority of the models in a unit have this special rule, it may re-roll its Charge roll.\n\nNote that unless a character also has this special rule, their Leadership cannot be modified by this special rule. A Warband can use either its own modified Leadership, the modified Leadership of a Warband character, or the unmodified Leadership of a non-Warband character, whichever is the higher."
+        "Scythed Wheels": "- **Restriction:** heavy chariots\n- **Result:** each of their Impact Hits has an Armour Piercing characteristic of -2",
+        "Lumbering": "- **Restriction:** Lumbering models (heavy, with slow turning wheels or draft animals)\n- **Result:**\n  - the model is deemed a Close Order formation and follows its rules, even if it is a single model in your army\n  - once it has moved, if it neither charged, marched nor fled, it may pivot on its centre, altering its facing by ≤90°\n  - it may not join any unit, and no character may join it\n  - Related: Heavy Chariots",
+        "Iron Shod Wheels": "- **Restriction:** Chariots (this model)\n- **Result:**\n  - difficult terrain is handled as dangerous terrain\n  - linear obstacles are handled as impassable terrain\n  - Dangerous Terrain test result of 1: the model loses D3 Wounds\n  - Related: Light Chariots",
+        "Firing Platform": "- **Restriction:** this model\n- **Result:** when it shoots or casts spells, its vision arc spans 360°\n\nRelated: Light Chariots",
+        "Choppas": "- **Restriction:** non-magical weapons only, never a mount; does not apply while the model uses a magic weapon\n- **Timing:** turn of a charge by the model\n- **Result:** the model gets:\n  - To Wound rolls of natural 1: re-roll (optional)\n  - Armour Piercing characteristic of its weapon(s): improved by 1 (e.g. - becomes -1)",
+        "Close Order": "Such a unit is able to form up in Close Order.",
+        "Impetuous": "- **Timing:** Declare Charges & Charge Reactions sub-phase of its turn\n- **Condition:** the unit has 1+ Impetuous models and could declare a charge\n- **Result:** the unit takes a Leadership test\n  - Failed: it must declare a charge\n  - Passed: it acts normally",
+        "Ignore Goblin Panic": "- **Restriction:** unit; Goblin unit = made only of Goblins of every kind (mounted or not, plus war machine or chariot with all-Goblin crew); an Orc character joining removes that status\n- **Timing:** a friendly Goblin unit ≤6\" of this unit is wiped out, or Breaks then flees; or it flees through this unit\n- **Result:** no Panic test is taken by this unit",
+        "First Charge": "- **Restriction:** unit with First Charge\n- **Limits:** 1× per battle, on its opening charge\n- **Result:**\n  - Disrupted: the charge target, expiring when the Combat phase of the same turn finishes\n  - Only applies if the charging unit touches that target (checked once)",
+        "Impact Hits (D6+1)": "- **Restriction:** charging model that moved 3\"+, touching the enemy base\n- **Result:** causes the number of Impact Hits given in brackets (often dice-determined)\n  - **Resolving Impact Hits:** applied to the charged unit when its combat is picked, at Step 1.1 of the Choose Combat & Fight sub-phase, ahead of challenges\n  - Automatic hits at the attacker's unmodified Strength",
+        "Tusker Charge": "- **Restriction:** War Boar's attacks only; no rider, chariot or crew\n- **Timing:** any turn in which this War Boar made a charge\n- **Result:** the War Boar's Tusks (hand weapon): Strength characteristic S+1, Armour Piercing characteristic -1",
+        "Warband": "- **Condition:** the Warband is not fleeing\n- **Result:**\n  - Leadership characteristic +current Rank Bonus, capped at Leadership 10\n  - The bonus is void for a Restraint test, and for an Impetuous unit's test on whether a charge is forced\n  - Majority of models have Warband: re-roll its Charge roll (optional)\n  - A character gets the bonus only if it too has Warband\n  - A Warband unit takes the highest of: its own modified Leadership, a Warband character's modified Leadership, a non-Warband character's unmodified Leadership"
       },
       "command": {
         "standard": false,
@@ -1505,644 +1820,17 @@
       "ward": 0,
       "regen": 0,
       "catId": "cmtl5rcrcmk1x",
-      "baseName": "Orc Boar Chariots",
-      "x": 1047.67,
-      "y": 384.7,
-      "rot": 348,
-      "placed": false,
-      "lost": 1,
-      "dead": true,
-      "fled": false,
-      "wounds": 1,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 10,
-      "formation": {
-        "mode": "ranks",
-        "preset": "block",
-        "spacing": 0,
-        "align": "left",
-        "slots": null,
-        "rev": 0
+      "prepara": {
+        "weapon": "Cavalry Spear"
       },
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "impeto": {
-        "key": "4:A",
-        "deve": false
-      },
-      "fought": "4:A",
-      "disruptedTerreno": false,
-      "disruptedFianco": false,
-      "disrupted": false,
-      "highGround": false,
-      "join": null,
-      "idx": 11
-    },
-    {
-      "uid": 501,
-      "army": "B",
-      "name": "Skink Chief",
-      "models": 1,
-      "crew": 0,
-      "baseId": "25x25",
-      "baseW": 25,
-      "baseH": 25,
-      "frontage": 1,
-      "loose": false,
-      "pts": 45,
-      "us": 1,
-      "troop": "Regular infantry",
-      "unitSize": "1",
-      "stats": {
-        "M": "6",
-        "WS": "4",
-        "BS": "5",
-        "S": "4",
-        "T": "3",
-        "W": "2",
-        "I": "6",
-        "A": "3",
-        "Ld": "6"
-      },
-      "rules": [
-        "Aquatic",
-        "Cold Blooded",
-        "Poisoned Attacks"
-      ],
-      "ruleText": {
-        "Aquatic": "Many of Lustria’s denizens have an affinity for water, moving with equal ease through swamp and river as they do over land.\n\nModels with this special rule do not suffer any modifiers to their Movement characteristic when moving through any difficult or dangerous terrain feature which has been designated a ‘water feature’. This might include shallow streams or fords, swampy ground, fast flowing rivers, ponds or lakes, and players should agree prior to the game if any terrain is a water feature.",
-        "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
-        "Poisoned Attacks": "If a model with Poisoned Attacks rolls a natural 6 when making a roll To Hit, it may apply a +2 modifier to that hit’s roll To Wound. Unless otherwise stated, a model with this special rule may use it when making both shooting and combat attacks. Any spells cast by the model are unaffected, as are any attacks made with magic weapons. Note that if an attack needs a To Hit roll of 7+, or hits automatically, this special rule cannot be used."
-      },
-      "command": {
-        "standard": false,
-        "musician": false,
-        "champion": false
-      },
-      "weapons": [
-        {
-          "name": "Hand Weapon",
-          "range": "Combat",
-          "S": "S",
-          "ap": "-",
-          "rules": "-"
-        }
-      ],
-      "maxRange": 0,
-      "slot": "Characters",
-      "faction": "Lizardmen",
-      "armour": 6,
-      "ward": 0,
-      "regen": 0,
-      "catId": "cmtl5sccvalla",
-      "baseName": "Skink Chief",
-      "x": 1114.2092013004424,
-      "y": 88.30801168920246,
-      "rot": 27.5464861738987,
-      "placed": false,
-      "lost": 0,
-      "dead": true,
-      "fled": true,
-      "wounds": 0,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 0,
-      "join": {
-        "host": 502
-      },
-      "formation": {
-        "mode": "ranks",
-        "preset": "block",
-        "spacing": 0,
-        "align": "left",
-        "slots": null,
-        "rev": 0
-      },
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "fledOff": true,
-      "idx": 1
-    },
-    {
-      "uid": 502,
-      "army": "B",
-      "name": "Saurus Warriors",
-      "models": 18,
-      "crew": 0,
-      "baseId": "30x30",
-      "baseW": 30,
-      "baseH": 30,
-      "frontage": 5,
-      "loose": false,
-      "pts": 252,
-      "us": 18,
-      "troop": "Heavy infantry",
-      "unitSize": "10+",
-      "stats": {
-        "M": "4",
-        "WS": "3",
-        "BS": "0",
-        "S": "4",
-        "T": "4",
-        "W": "1",
-        "I": "1",
-        "A": "2",
-        "Ld": "8"
-      },
-      "profiles": [
-        {
-          "name": "Saurus Warrior",
-          "stats": {
-            "M": "4",
-            "WS": "3",
-            "BS": "0",
-            "S": "4",
-            "T": "4",
-            "W": "1",
-            "I": "1",
-            "A": "2",
-            "Ld": "8"
-          }
-        }
-      ],
-      "mount": null,
-      "rules": [
-        "Close Order",
-        "Cold Blooded",
-        "Obsidian Blades",
-        "Press of Battle",
-        "Massed Infantry",
-        "Parry"
-      ],
-      "ruleText": {
-        "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
-        "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
-        "Obsidian Blades": "Lizardmen favour weapons studded with shards of razor sharp volcanic glass that cut through flesh and armour with ease.\n\nA hand weapon carried by a model with this special rule has an Armour Piercing characteristic of -1.\n\nNote that this special rule only applies to a single, non-magical hand weapon and does not apply to a model’s mount (should it have one). If the model is using two hand weapons or any other sort of weapon, this special rule ceases to apply.",
-        "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
-        "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
-        "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
-      },
-      "command": {
-        "standard": false,
-        "musician": false,
-        "champion": false
-      },
-      "weapons": [
-        {
-          "name": "Hand Weapon",
-          "range": "Combat",
-          "S": "S",
-          "ap": "-",
-          "rules": "-"
-        }
-      ],
-      "maxRange": 0,
-      "slot": "Core",
-      "faction": "Lizardmen",
-      "armour": 4,
-      "ward": 0,
-      "regen": 0,
-      "shield": true,
-      "catId": "cmtl5rksor06z",
-      "baseName": "Saurus Warriors",
-      "x": 1114.2092013004424,
-      "y": 88.30801168920246,
-      "rot": 27.5464861738987,
-      "placed": false,
-      "lost": 3,
-      "dead": true,
-      "fled": true,
-      "wounds": 0,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 1,
-      "formation": {
-        "mode": "ranks",
-        "preset": "block",
-        "spacing": 0,
-        "align": "left",
-        "slots": null,
-        "rev": 0
-      },
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "faseTiro": "2:A:4",
-      "usInizioFase": 18,
-      "fought": "4:B",
-      "disruptedTerreno": false,
-      "disruptedFianco": true,
-      "disrupted": true,
-      "highGround": false,
-      "fledOff": true,
-      "join": null,
-      "idx": 2
-    },
-    {
-      "uid": 503,
-      "army": "B",
-      "name": "Skink Skirmishers 1",
-      "models": 13,
-      "crew": 0,
-      "baseId": "25x25",
-      "baseW": 25,
-      "baseH": 25,
-      "frontage": 7,
-      "loose": true,
-      "pts": 65,
-      "us": 13,
-      "troop": "Regular infantry",
-      "unitSize": "10+",
-      "stats": {
-        "M": "6",
-        "WS": "2",
-        "BS": "3",
-        "S": "3",
-        "T": "2",
-        "W": "1",
-        "I": "4",
-        "A": "1",
-        "Ld": "5"
-      },
-      "profiles": [
-        {
-          "name": "Skink",
-          "stats": {
-            "M": "6",
-            "WS": "2",
-            "BS": "3",
-            "S": "3",
-            "T": "2",
-            "W": "1",
-            "I": "4",
-            "A": "1",
-            "Ld": "5"
-          }
-        }
-      ],
-      "mount": null,
-      "rules": [
-        "Aquatic",
-        "Cold Blooded",
-        "Move Through Cover",
-        "Poisoned Attacks (javelins only)",
-        "Skirmishers",
-        "Press of Battle",
-        "Massed Infantry",
-        "Parry"
-      ],
-      "ruleText": {
-        "Aquatic": "Many of Lustria’s denizens have an affinity for water, moving with equal ease through swamp and river as they do over land.\n\nModels with this special rule do not suffer any modifiers to their Movement characteristic when moving through any difficult or dangerous terrain feature which has been designated a ‘water feature’. This might include shallow streams or fords, swampy ground, fast flowing rivers, ponds or lakes, and players should agree prior to the game if any terrain is a water feature.",
-        "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
-        "Move Through Cover": "Models with this special rule do not suffer any modifiers to their Movement characteristic for moving through difficult or dangerous terrain. In addition, a model with this special rule may re-roll any rolls of 1 when making Dangerous Terrain tests.",
-        "Poisoned Attacks (javelins only)": "If a model with Poisoned Attacks rolls a natural 6 when making a roll To Hit, it may apply a +2 modifier to that hit’s roll To Wound. Unless otherwise stated, a model with this special rule may use it when making both shooting and combat attacks. Any spells cast by the model are unaffected, as are any attacks made with magic weapons. Note that if an attack needs a To Hit roll of 7+, or hits automatically, this special rule cannot be used.",
-        "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
-        "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
-        "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
-        "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
-      },
-      "command": {
-        "standard": false,
-        "musician": false,
-        "champion": false
-      },
-      "weapons": [
-        {
-          "name": "Hand Weapon",
-          "range": "Combat",
-          "S": "S",
-          "ap": "-",
-          "rules": "-"
-        },
-        {
-          "name": "Javelin",
-          "range": "12\"",
-          "S": "S",
-          "ap": "-",
-          "rules": "Move & Shoot, Quick Shot"
-        }
-      ],
-      "maxRange": 12,
-      "slot": "Core",
-      "faction": "Lizardmen - Renegades v2",
-      "armour": 5,
-      "ward": 0,
-      "regen": 0,
-      "catId": "cmtl5rlxm62jk",
-      "shield": false,
-      "baseName": "Skink Skirmishers",
-      "x": 125.60000000000001,
-      "y": 286.15000000000003,
-      "rot": 180,
-      "placed": true,
-      "lost": 4,
-      "dead": false,
-      "fled": false,
-      "wounds": 0,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 2,
-      "formation": {
-        "mode": "ranks",
-        "preset": "block",
-        "spacing": 12.7,
-        "align": "left",
-        "slots": null,
-        "rev": 0
-      },
-      "faseTiro": "6:A:4",
-      "usInizioFase": 10,
-      "panicoFatto": "1:A:5",
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "join": null,
-      "idx": 3
-    },
-    {
-      "uid": 504,
-      "army": "B",
-      "name": "Skink Skirmishers 2",
-      "models": 17,
-      "crew": 0,
-      "baseId": "25x25",
-      "baseW": 25,
-      "baseH": 25,
-      "frontage": 9,
-      "loose": true,
-      "pts": 85,
-      "us": 17,
-      "troop": "Regular infantry",
-      "unitSize": "10+",
-      "stats": {
-        "M": "6",
-        "WS": "2",
-        "BS": "3",
-        "S": "3",
-        "T": "2",
-        "W": "1",
-        "I": "4",
-        "A": "1",
-        "Ld": "5"
-      },
-      "profiles": [
-        {
-          "name": "Skink",
-          "stats": {
-            "M": "6",
-            "WS": "2",
-            "BS": "3",
-            "S": "3",
-            "T": "2",
-            "W": "1",
-            "I": "4",
-            "A": "1",
-            "Ld": "5"
-          }
-        }
-      ],
-      "mount": null,
-      "rules": [
-        "Aquatic",
-        "Cold Blooded",
-        "Move Through Cover",
-        "Poisoned Attacks (javelins only)",
-        "Skirmishers",
-        "Press of Battle",
-        "Massed Infantry",
-        "Parry"
-      ],
-      "ruleText": {
-        "Aquatic": "Many of Lustria’s denizens have an affinity for water, moving with equal ease through swamp and river as they do over land.\n\nModels with this special rule do not suffer any modifiers to their Movement characteristic when moving through any difficult or dangerous terrain feature which has been designated a ‘water feature’. This might include shallow streams or fords, swampy ground, fast flowing rivers, ponds or lakes, and players should agree prior to the game if any terrain is a water feature.",
-        "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
-        "Move Through Cover": "Models with this special rule do not suffer any modifiers to their Movement characteristic for moving through difficult or dangerous terrain. In addition, a model with this special rule may re-roll any rolls of 1 when making Dangerous Terrain tests.",
-        "Poisoned Attacks (javelins only)": "If a model with Poisoned Attacks rolls a natural 6 when making a roll To Hit, it may apply a +2 modifier to that hit’s roll To Wound. Unless otherwise stated, a model with this special rule may use it when making both shooting and combat attacks. Any spells cast by the model are unaffected, as are any attacks made with magic weapons. Note that if an attack needs a To Hit roll of 7+, or hits automatically, this special rule cannot be used.",
-        "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
-        "Press of Battle": "In the heat of battle, orderly ranks become a swirling melee. Except during a turn in which it charged, the fighting rank of a unit that has this rule and is arrayed in combat order is not one, but two ranks deep. In other words, models that are directly behind and in base contact with models in the unit’s actual fighting rank are also considered to be within its fighting rank.",
-        "Massed Infantry": "Numbers alone can sometimes overcome the foe. When determining combat results, if one side has a higher Unit Strength than the other and includes one or more units with this rule, that side may claim a bonus of +1 combat result point.",
-        "Parry": "With sword and shield, warriors attempt to deflect enemy attacks. Whilst engaged in close combat, a model with this rule that is equipped with and chooses to use a hand weapon and shield improves its armour value by 1, to a maximum of 3+."
-      },
-      "command": {
-        "standard": false,
-        "musician": false,
-        "champion": false
-      },
-      "weapons": [
-        {
-          "name": "Hand Weapon",
-          "range": "Combat",
-          "S": "S",
-          "ap": "-",
-          "rules": "-"
-        },
-        {
-          "name": "Javelin",
-          "range": "12\"",
-          "S": "S",
-          "ap": "-",
-          "rules": "Move & Shoot, Quick Shot"
-        }
-      ],
-      "maxRange": 12,
-      "slot": "Core",
-      "faction": "Lizardmen - Renegades v2",
-      "armour": 5,
-      "ward": 0,
-      "regen": 0,
-      "catId": "cmtl5rlxm62jk",
-      "shield": false,
-      "baseName": "Skink Skirmishers",
-      "x": 558.8,
-      "y": -37.89999999999997,
-      "rot": 180,
-      "placed": false,
-      "lost": 9,
-      "dead": true,
-      "fled": false,
-      "wounds": 0,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 3,
-      "formation": {
-        "mode": "ranks",
-        "preset": "block",
-        "spacing": 12.7,
-        "align": "left",
-        "slots": null,
-        "rev": 0
-      },
-      "fought": "1:B",
-      "disruptedTerreno": false,
-      "disruptedFianco": false,
-      "disrupted": false,
-      "highGround": false,
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "fledOff": true,
-      "join": null,
-      "idx": 4
-    },
-    {
-      "uid": 505,
-      "army": "B",
-      "name": "Bastiladon",
-      "models": 1,
-      "crew": 3,
-      "baseId": "60x100",
-      "baseW": 60,
-      "baseH": 100,
-      "frontage": 1,
-      "loose": false,
-      "pts": 160,
-      "us": 4,
-      "troop": "Monstrous creature",
-      "unitSize": "1",
-      "stats": {
-        "M": "4",
-        "WS": "3",
-        "BS": "-",
-        "S": "4",
-        "T": "5",
-        "W": "4",
-        "I": "1",
-        "A": "3",
-        "Ld": "-"
-      },
-      "profiles": [
-        {
-          "name": "Bastiladon",
-          "stats": {
-            "M": "4",
-            "WS": "3",
-            "BS": "-",
-            "S": "4",
-            "T": "5",
-            "W": "4",
-            "I": "1",
-            "A": "3",
-            "Ld": "-"
-          }
-        },
-        {
-          "name": "Skink Crew",
-          "stats": {
-            "M": "-",
-            "WS": "2",
-            "BS": "3",
-            "S": "3",
-            "T": "-",
-            "W": "-",
-            "I": "4",
-            "A": "1",
-            "Ld": "6"
-          }
-        }
-      ],
-      "mount": null,
-      "rules": [
-        "Lumbering",
-        "Close Order",
-        "Cold Blooded",
-        "Immune To Psychology",
-        "Impact Hits (D3)",
-        "Impervious Defence",
-        "Large Target",
-        "Poisoned Attacks (javelins only)",
-        "Stomp Attacks (D3+1)",
-        "Skink Riders",
-        "Stubborn",
-        "Terror",
-        "Slithering Serpents v2",
-        "Spawn of Sotek"
-      ],
-      "ruleText": {
-        "Lumbering": "Perhaps due to their large size, their weight, or a combination of skittish draft animals and slow turning wheels, models with this rule are not especially manoeuvrable. To represent this, a Lumbering model is considered to be, and follows all of the rules for, a Close Order formation, even when included in your army as a single model.\n However, even the largest single model enjoys slightly more manoeuvrability than a tightly formed regiment of many models. Therefore, after moving, unless it charged, marched or fled, a Lumbering model may pivot about its centre to change its facing by up to 90°.\n Finally, a Lumbering model cannot join a unit or be joined by a character.\n\n\nRelated: Heavy Chariots",
-        "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
-        "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
-        "Immune To Psychology": "If the majority of the models in a unit are Immune to Psychology, the unit automatically passes any Fear, Panic or Terror tests it is required to make. However, if the majority of the models in a unit have this special rule, the unit cannot choose to Flee as a charge reaction.\n\n Note that this special rule does not make a unit immune to any test made against Leadership not stated here.",
-        "Impact Hits (D3)": "The number of Impact Hits caused varies from model to model, and will be shown in brackets after the name of this special rile. Often, this is determined by the roll of a dice.\n\n**Resolving Impact Hits:** Impact Hits can only be made by a charging model that moved 3\" or more and that is in base contact with the enemy. Impact Hits are resolved against the charged unit when the combat is chosen during Step 1.1 of the Choose Combat & Fight sub-phase, before issuing challenges. They hit automatically and use the unmodified Strength of the model making them.",
-        "Impervious Defence": "Enemy units cannot claim any bonus combat result points for being engaged with this model’s flank or rear arc.",
-        "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
-        "Poisoned Attacks (javelins only)": "If a model with Poisoned Attacks rolls a natural 6 when making a roll To Hit, it may apply a +2 modifier to that hit’s roll To Wound. Unless otherwise stated, a model with this special rule may use it when making both shooting and combat attacks. Any spells cast by the model are unaffected, as are any attacks made with magic weapons. Note that if an attack needs a To Hit roll of 7+, or hits automatically, this special rule cannot be used.",
-        "Stomp Attacks (D3+1)": "The number of Stomp Attacks caused varies from model to model and will be shown in brackets after the name of this special rule. Often, this is determined by the roll of a dice.\n\n**Resolving Stomp Attacks:** Stomp Attacks can only be made by a model that is in base contact with the enemy. Stomp Attacks are attacks made in combat that must be made last, after all other attacks have been made, including attacks made at Initiative 1. They hit automatically and use the unmodified Strength of the model making them.",
-        "Skink Riders": "Attacks made against this unit are resolved against the weapon skill of the rider, the crew, or monster, whichever is higher.",
-        "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
-        "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does.",
-        "Slithering Serpents v2": "During the Shooting phase of its turn, every enemy unit within D6\" of this model suffers 2D6 Strength 2 hits, each with an  AP  of - with the Poison Attacks special rule.\n\n\nRelated: Ark of Sotek",
-        "Spawn of Sotek": "During the  Command  sub-phase of its turn, roll a D6. On a roll of 4+, a single Jungle Swarm within 6\" of this model regains D3 lost Wounds.\n\n\nRelated: Ark of Sotek"
-      },
-      "command": {
-        "standard": false,
-        "musician": false,
-        "champion": false
-      },
-      "weapons": [
-        {
-          "name": "Thunderous bludgeon",
-          "range": "Combat",
-          "S": "+3",
-          "ap": "-3",
-          "rules": "Strike Last, Multiple Wounds (D3)"
-        },
-        {
-          "name": "Hand Weapon",
-          "range": "Combat",
-          "S": "S",
-          "ap": "-",
-          "rules": "-"
-        },
-        {
-          "name": "Javelin",
-          "range": "12\"",
-          "S": "S",
-          "ap": "-",
-          "rules": "Move & Shoot, Quick Shot"
-        }
-      ],
-      "maxRange": 12,
-      "slot": "Special",
-      "faction": "Lizardmen - Renegades v2",
-      "armour": 0,
-      "ward": 0,
-      "regen": 0,
-      "catId": "cmtl5sfv2x8hd",
-      "baseName": "Bastiladon",
-      "x": 493.8,
-      "y": 261.45,
+      "x": 1079.5,
+      "y": 173.60000000000002,
       "rot": 180,
       "placed": true,
       "lost": 0,
       "dead": false,
       "fled": false,
-      "wounds": 0,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 4,
+      "idx": 5,
       "formation": {
         "mode": "ranks",
         "preset": "block",
@@ -2151,184 +1839,40 @@
         "slots": null,
         "rev": 0
       },
-      "panicoFatto": "1:B:5",
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "serpenti": "6:B",
-      "fought": "2:B",
-      "disruptedTerreno": false,
-      "disruptedFianco": false,
-      "disrupted": false,
-      "highGround": false,
-      "faseTiro": "5:A:4",
-      "usInizioFase": 4,
-      "join": null,
-      "idx": 5
+      "fallen": [],
+      "anchor": null
     },
     {
-      "uid": 506,
+      "uid": 519,
       "army": "B",
-      "crew": 5,
-      "loose": false,
-      "mount": {
-        "id": "ancient-stegadon",
-        "name": "Ancient Stegadon",
-        "genere": "carro",
-        "stats": {
-          "M": "6",
-          "WS": "4",
-          "BS": "-",
-          "S": "6",
-          "T": "6",
-          "W": "5",
-          "I": "1",
-          "A": "3",
-          "Ld": "-"
-        },
-        "row": "",
-        "righe": [
-          {
-            "chi": "Skink Crew",
-            "n": 5,
-            "stats": {
-              "M": "-",
-              "WS": "2",
-              "BS": "3",
-              "S": "3",
-              "T": "-",
-              "W": "-",
-              "I": "4",
-              "A": "1",
-              "Ld": "6"
-            },
-            "arma": {
-              "name": "Hand weapon",
-              "S": "S",
-              "ap": "-",
-              "rules": ""
-            }
-          }
-        ],
-        "forzaUrto": 6,
-        "random": "",
-        "armour": 4,
-        "libro": "Legends: Lizardmen",
-        "pagina": 13,
-        "nota": ""
-      },
-      "profiles": [
-        {
-          "name": "Ancient Stegadon",
-          "stats": {
-            "M": "6",
-            "WS": "4",
-            "BS": "3",
-            "S": "6",
-            "T": "6",
-            "W": "5",
-            "I": "1",
-            "A": "3",
-            "Ld": "6"
-          }
-        }
-      ],
-      "command": {
-        "standard": false,
-        "musician": false,
-        "champion": false
-      },
-      "faction": "Lizardmen",
-      "ward": 0,
-      "regen": 0,
-      "name": "Ancient Stegadon",
+      "name": "Night Goblin Bigboss",
       "models": 1,
-      "baseId": "60x100",
-      "baseW": 60,
-      "baseH": 100,
+      "crew": 0,
+      "baseId": "50x50",
+      "baseW": 50,
+      "baseH": 50,
       "frontage": 1,
-      "pts": 230,
+      "loose": false,
+      "pts": 86,
       "us": 0,
-      "troop": "Behemoth",
-      "unitSize": "1",
-      "stats": {
-        "M": "6",
-        "WS": "4",
-        "BS": "3",
-        "S": "6",
-        "T": "6",
-        "W": "5",
-        "I": "1",
-        "A": "3",
-        "Ld": "6"
-      },
-      "armour": 4,
-      "rules": [
-        "Close Order",
-        "Cold Blooded",
-        "Howdah",
-        "Immune to Psychology",
-        "Impact Hits (D3+1)",
-        "Large Target",
-        "Stomp Attacks (D3+2)",
-        "Stubborn",
-        "Terror",
-        "Poisoned Attacks (javelins only)"
-      ],
-      "weapons": [
-        {
-          "name": "Great horns",
-          "range": "Combat",
-          "S": "S",
-          "ap": "-3",
-          "rules": ""
-        },
-        {
-          "name": "Giant bow",
-          "range": "36\"",
-          "S": "5",
-          "ap": "-2",
-          "rules": "Multiple Wounds (D3), Poisoned Attacks"
-        },
-        {
-          "name": "Javelin",
-          "range": "12\"",
-          "S": "S",
-          "ap": "-",
-          "rules": "Move & Shoot, Quick Shot, Poisoned Attacks"
-        }
-      ],
-      "slot": "Rare",
-      "maxRange": 36,
-      "ruleText": {
-        "Close Order": "A unit consisting of models with this special rule may adopt a Close Order formation.",
-        "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
-        "Impact Hits (D3+1)": "The number of Impact Hits caused varies from model to model, and will be shown in brackets after the name of this special rile. Often, this is determined by the roll of a dice.\n\n**Resolving Impact Hits:** Impact Hits can only be made by a charging model that moved 3\" or more and that is in base contact with the enemy. Impact Hits are resolved against the charged unit when the combat is chosen during Step 1.1 of the Choose Combat & Fight sub-phase, before issuing challenges. They hit automatically and use the unmodified Strength of the model making them.",
-        "Large Target": "Large Targets do not benefit from partial or full cover. In addition, a unit can draw a line of sight to a Large Target over or through another unit, and vice versa, provided that unit is not also a Large Target. Finally, a unit that shoots at a Large Target can shoot with one additional rank. For example, a unit armed with crossbows can shoot with its first two ranks when shooting at a Large Target, or with its first three if also standing on a hill.",
-        "Stomp Attacks (D3+2)": "The number of Stomp Attacks caused varies from model to model and will be shown in brackets after the name of this special rule. Often, this is determined by the roll of a dice.\n\n**Resolving Stomp Attacks:** Stomp Attacks can only be made by a model that is in base contact with the enemy. Stomp Attacks are attacks made in combat that must be made last, after all other attacks have been made, including attacks made at Initiative 1. They hit automatically and use the unmodified Strength of the model making them.",
-        "Stubborn": "The first time this unit is required to make a Break test it may choose not to and will automatically Fall Back in Good Order instead, even if the Unit Strength of the winning side is more than twice that of the losing side. A unit that is not Stubborn does not become Stubborn when joined by a character that is. A Stubborn character cannot use this special rule whilst part of a unit that is not Stubborn.",
-        "Terror": "Models with this special rule cause Terror. Models that cause Terror also cause Fear:\n- When a unit that causes Terror declares a charge, the charge target must immediately make a Leadership test. If this test is failed, it must Flee. If this test is passed, it can declare its charge reaction normally.\n- If the winning side of a combat includes one or more units that cause Terror, each unit that belongs to the losing side must apply a -1 modifier to its Leadership characteristic when making its Break test.\n\nNote that if a charged unit cannot choose to Flee, it does not make this Leadership test.\n\nModels with the Fear special rule Fear models that cause Terror. Models that cause Terror are immune to Terror. A unit that does not cause Terror does not become immune to Terror when joined by a character that does.",
-        "Poisoned Attacks (javelins only)": "If a model with Poisoned Attacks rolls a natural 6 when making a roll To Hit, it may apply a +2 modifier to that hit’s roll To Wound. Unless otherwise stated, a model with this special rule may use it when making both shooting and combat attacks. Any spells cast by the model are unaffected, as are any attacks made with magic weapons. Note that if an attack needs a To Hit roll of 7+, or hits automatically, this special rule cannot be used."
-      },
-      "mountId": "ancient-stegadon",
-      "mountPts": 0,
-      "mountFromFile": true,
-      "baseName": "Ancient Stegadon",
-      "x": 811.8281464041487,
-      "y": 462.9464856452324,
-      "rot": 155.69636594352073,
+      "troop": "",
+      "unitSize": "",
+      "stats": null,
+      "rules": [],
+      "weapons": [],
+      "maxRange": 0,
+      "slot": "",
+      "faction": "",
+      "catId": "cmtl5rxae4yxy",
+      "prepara": null,
+      "x": 969.7,
+      "y": 196.85,
+      "rot": 180,
       "placed": true,
       "lost": 0,
       "dead": false,
       "fled": false,
-      "wounds": 0,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 5,
+      "idx": 6,
       "formation": {
         "mode": "ranks",
         "preset": "block",
@@ -2337,284 +1881,221 @@
         "slots": null,
         "rev": 0
       },
-      "panicoFatto": "1:B:5",
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": true,
-      "fought": "6:B",
-      "disruptedTerreno": false,
-      "disruptedFianco": false,
-      "disrupted": false,
-      "highGround": false,
-      "seguito": 10,
-      "join": null,
-      "idx": 6
+      "fallen": [],
+      "anchor": null
     },
     {
-      "uid": 507,
+      "uid": 520,
       "army": "B",
-      "name": "Terradon Riders",
+      "name": "Night Goblin Oddnob",
+      "models": 1,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 1,
+      "loose": false,
+      "pts": 130,
+      "us": 0,
+      "troop": "",
+      "unitSize": "",
+      "stats": null,
+      "rules": [],
+      "weapons": [],
+      "maxRange": 0,
+      "slot": "",
+      "faction": "",
+      "catId": "cmtl5ryqy4tp2",
+      "prepara": null,
+      "x": 1028.7,
+      "y": 209.54999999999998,
+      "rot": 180,
+      "placed": true,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 7,
+      "formation": {
+        "mode": "ranks",
+        "preset": "block",
+        "spacing": 0,
+        "align": "left",
+        "slots": null,
+        "rev": 0
+      },
+      "fallen": [],
+      "anchor": null
+    },
+    {
+      "uid": 521,
+      "army": "B",
+      "name": "Goblin Wolf Rider Mobs",
       "models": 5,
       "crew": 0,
-      "baseId": "40x40",
-      "baseW": 40,
-      "baseH": 40,
-      "frontage": 3,
-      "loose": true,
-      "pts": 160,
-      "us": 15,
-      "troop": "Monstrous cavalry",
-      "unitSize": "3+",
-      "stats": {
-        "M": "-",
-        "WS": "2",
-        "BS": "3",
-        "S": "3",
-        "T": "3",
-        "W": "2",
-        "I": "4",
-        "A": "1",
-        "Ld": "5"
-      },
-      "profiles": [
-        {
-          "name": "Terradon Rider",
-          "stats": {
-            "M": "-",
-            "WS": "2",
-            "BS": "3",
-            "S": "3",
-            "T": "3",
-            "W": "2",
-            "I": "4",
-            "A": "1",
-            "Ld": "5"
-          }
-        },
-        {
-          "name": "Terradon",
-          "stats": {
-            "M": "2",
-            "WS": "3",
-            "BS": "-",
-            "S": "4",
-            "T": "-",
-            "W": "-",
-            "I": "2",
-            "A": "2",
-            "Ld": "-"
-          }
-        }
-      ],
-      "mount": {
-        "name": "Terradon",
-        "stats": {
-          "M": "2",
-          "WS": "3",
-          "BS": "-",
-          "S": "4",
-          "T": "-",
-          "W": "-",
-          "I": "2",
-          "A": "2",
-          "Ld": "-"
-        }
-      },
-      "rules": [
-        "Armoured Hide (1)",
-        "Cold Blooded",
-        "Drop Rocks",
-        "Fear",
-        "Fly (10)",
-        "Poisoned Attacks (javelins only)",
-        "Skirmishers",
-        "Swiftstride",
-        "Clumsy"
-      ],
-      "ruleText": {
-        "Armoured Hide (1)": "The hide of some creatures forms natural armour and improves their armour value ( and that of their rider). By how much armour value is improved varies from model to model, as shown in brackets after the name of this special rule.\n\n Note that a model that wears no armour is considerer to have an armour value of 7+ for the purposes of rules that improve armour value.",
-        "Cold Blooded": "To other races, the cold blooded Lizardmen seem incapable of emotion.\n\nWhen required to make a Fear, Panic or Terror test, models with this special rule may roll an extra D6 and discard the highest result.",
-        "Drop Rocks": "Skinks train Terradons to glide over the battlefield clutching great rocks in their talons.\n\nOnce per game, a unit with this special rule may perform a ‘Drop Rocks’ attack against a single enemy unit that is not engaged in combat. To do so, this unit must move (by flying) over the unit it wishes to attack during the Remaining Moves sub-phase. Once this unit’s movement is complete, the enemy unit suffers D3 Strength 4 hits, each with an AP of -, for each model in this unit that moved over it.",
-        "Fear": "Models with this special rule cause Fear:\n\n \n• \tIf a unit wishes to declare a charge against an enemy unit that both causes Fear and has a higher Unit Strength, it must first make a Leadership test. If this test is failed, the unit cannot charge. It does not move and is considered to have made a failed charge. If this test is passed, the unit can charge as normal.\n\n \n• \tIf a unit is engaged with an enemy unit that both causes Fear and has a higher Unit Strength when its combat is chosen during any Choose & Fight Combat sub-phase, it must make a Leadership test. If this test is failed, any models in the unit that direct their attacks against the Fear-causing enemy suffer a -1 modifier to their rolls To Hit.\n\n A unit only needs to make one Fear test per turn. Models that cause Fear are immune to Fear. A unit that does not cause Fear does not become immune to Fear when joined by a character that does.",
-        "Fly (10)": "Except when following up or pursuing, a model with this special rule can choose to move by flying through the air, rather than moving across the ground as normal. When a model flies it uses a special ‘Fly Movement’ characteristic, shown in brackets after the name of this special rule (shown here as ‘X’). Models that choose to move by flying:\n\n- May move as normal (i.e. they may charge, march and manoeuvre as if moving on the ground), except that they are able to pass freely above other models, units and terrain features without any penalty, and they can march whilst within 8\" of an enemy unit without first having to make a Leadership test.\n\n- May end their movement in terrain, but will suffer its effects if they do. They cannot end their movement 'on top' of impassable terrain or another unit, or within 1\" of an enemy unit.\n\nModels that can Fly must begin and end all their movement on the ground. A character with this special rule cannot join a unit without this special rule, and vice versa.",
-        "Poisoned Attacks (javelins only)": "If a model with Poisoned Attacks rolls a natural 6 when making a roll To Hit, it may apply a +2 modifier to that hit’s roll To Wound. Unless otherwise stated, a model with this special rule may use it when making both shooting and combat attacks. Any spells cast by the model are unaffected, as are any attacks made with magic weapons. Note that if an attack needs a To Hit roll of 7+, or hits automatically, this special rule cannot be used.",
-        "Skirmishers": "A unit consisting of models with this special rule may adopt a Skirmish formation.",
-        "Swiftstride": "A unit which consists entirely of models with this special rule increases its maximum possible charge range by 3\" and, before making a Charge, Flee or Pursuit roll, may choose to apply a +D6 modifier to the result.",
-        "Clumsy": "A unit with this rule can only be joined by a  character  that also has this rule. Smaller characters are unwilling to risk being trampled.\n\n\nRelated: Monstrous Infantry"
-      },
-      "command": {
-        "standard": false,
-        "musician": false,
-        "champion": false
-      },
-      "weapons": [
-        {
-          "name": "Hand Weapon",
-          "range": "Combat",
-          "S": "S",
-          "ap": "-",
-          "rules": "-"
-        },
-        {
-          "name": "Javelin",
-          "range": "12\"",
-          "S": "S",
-          "ap": "-",
-          "rules": "Move & Shoot, Quick Shot"
-        }
-      ],
-      "maxRange": 12,
-      "slot": "Special",
-      "faction": "Lizardmen - Renegades v2",
-      "armour": 6,
-      "ward": 0,
-      "regen": 0,
-      "catId": "cmtl5ro8mphs3",
-      "baseName": "Terradon Riders",
-      "x": 327.57310808032986,
-      "y": 270.3625591600493,
-      "rot": 179.25737979887435,
+      "baseId": "25x50",
+      "baseW": 25,
+      "baseH": 50,
+      "frontage": 5,
+      "loose": false,
+      "pts": 50,
+      "us": 0,
+      "troop": "",
+      "unitSize": "",
+      "stats": null,
+      "rules": [],
+      "weapons": [],
+      "maxRange": 0,
+      "slot": "",
+      "faction": "",
+      "catId": "cmww1vhzulsed",
+      "prepara": null,
+      "x": 556.5999999999999,
+      "y": 198.60000000000002,
+      "rot": 180,
       "placed": true,
       "lost": 0,
       "dead": false,
       "fled": false,
-      "wounds": 0,
-      "fallen": [],
-      "effects": [],
-      "anchor": null,
-      "listaIdx": 6,
+      "idx": 8,
       "formation": {
         "mode": "ranks",
         "preset": "block",
-        "spacing": 12.7,
+        "spacing": 0,
         "align": "left",
         "slots": null,
         "rev": 0
       },
-      "moved": null,
-      "shot": false,
-      "charged": null,
-      "unito": null,
-      "radunata": false,
-      "giaInMischia": false,
-      "panicoFatto": "1:B:5",
-      "join": null,
-      "idx": 7
+      "fallen": [],
+      "anchor": null
+    },
+    {
+      "uid": 522,
+      "army": "B",
+      "name": "Night Goblin Mobs",
+      "models": 20,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "loose": false,
+      "pts": 0,
+      "us": 0,
+      "troop": "",
+      "unitSize": "",
+      "stats": null,
+      "rules": [],
+      "weapons": [],
+      "maxRange": 0,
+      "slot": "",
+      "faction": "",
+      "catId": "cmww1w32ssn3v",
+      "prepara": null,
+      "x": 694.3,
+      "y": 173.60000000000002,
+      "rot": 180,
+      "placed": true,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 9,
+      "formation": {
+        "mode": "ranks",
+        "preset": "block",
+        "spacing": 0,
+        "align": "left",
+        "slots": null,
+        "rev": 0
+      },
+      "fallen": [],
+      "anchor": null
+    },
+    {
+      "uid": 523,
+      "army": "B",
+      "name": "Night Goblin Mobs",
+      "models": 10,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "loose": false,
+      "pts": 40,
+      "us": 0,
+      "troop": "",
+      "unitSize": "",
+      "stats": null,
+      "rules": [],
+      "weapons": [],
+      "maxRange": 0,
+      "slot": "",
+      "faction": "",
+      "catId": "cmww1w32ssn3v",
+      "prepara": null,
+      "x": 831.8499999999999,
+      "y": 196.85,
+      "rot": 180,
+      "placed": true,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 10,
+      "formation": {
+        "mode": "ranks",
+        "preset": "block",
+        "spacing": 0,
+        "align": "left",
+        "slots": null,
+        "rev": 0
+      },
+      "fallen": [],
+      "anchor": null
+    },
+    {
+      "uid": 524,
+      "army": "B",
+      "name": "Night Goblin Squig Hopper Mobs",
+      "models": 5,
+      "crew": 0,
+      "baseId": "25x25",
+      "baseW": 25,
+      "baseH": 25,
+      "frontage": 5,
+      "loose": false,
+      "pts": 60,
+      "us": 0,
+      "troop": "",
+      "unitSize": "",
+      "stats": null,
+      "rules": [],
+      "weapons": [],
+      "maxRange": 0,
+      "slot": "",
+      "faction": "",
+      "catId": "cmtl5s66okaez",
+      "prepara": null,
+      "x": 969.7,
+      "y": 159.35,
+      "rot": 180,
+      "placed": true,
+      "lost": 0,
+      "dead": false,
+      "fled": false,
+      "idx": 11,
+      "formation": {
+        "mode": "ranks",
+        "preset": "block",
+        "spacing": 0,
+        "align": "left",
+        "slots": null,
+        "rev": 0
+      },
+      "fallen": [],
+      "anchor": null
     }
   ],
-  "terrain": [
-    {
-      "tid": 144,
-      "kind": "hill",
-      "x": 457.2,
-      "y": 222.25,
-      "w": 8.5,
-      "h": 4.5,
-      "rot": 0
-    },
-    {
-      "tid": 145,
-      "kind": "hill",
-      "x": 869.9499999999999,
-      "y": 247.64999999999998,
-      "w": 10,
-      "h": 4.5,
-      "rot": 0
-    },
-    {
-      "tid": 146,
-      "kind": "wall",
-      "x": 165.1,
-      "y": 165.1,
-      "w": 6,
-      "h": 1,
-      "rot": 0
-    },
-    {
-      "tid": 147,
-      "kind": "wall",
-      "x": 730.25,
-      "y": 88.89999999999999,
-      "w": 7.5,
-      "h": 1,
-      "rot": 0
-    },
-    {
-      "tid": 148,
-      "kind": "wall",
-      "x": 990.5999999999999,
-      "y": 69.85,
-      "w": 6,
-      "h": 1,
-      "rot": 0
-    },
-    {
-      "tid": 149,
-      "kind": "hill",
-      "x": 660.4,
-      "y": 539.75,
-      "w": 8.5,
-      "h": 4.5,
-      "rot": 0
-    },
-    {
-      "tid": 150,
-      "kind": "hill",
-      "x": 247.64999999999998,
-      "y": 514.35,
-      "w": 10,
-      "h": 4.5,
-      "rot": 0
-    },
-    {
-      "tid": 151,
-      "kind": "wall",
-      "x": 952.5,
-      "y": 596.9,
-      "w": 6,
-      "h": 1,
-      "rot": 0
-    },
-    {
-      "tid": 152,
-      "kind": "wall",
-      "x": 387.34999999999997,
-      "y": 673.0999999999999,
-      "w": 7.5,
-      "h": 1,
-      "rot": 0
-    },
-    {
-      "tid": 153,
-      "kind": "wall",
-      "x": 127,
-      "y": 692.15,
-      "w": 6,
-      "h": 1,
-      "rot": 0
-    },
-    {
-      "tid": 154,
-      "kind": "treasure",
-      "x": 158.75,
-      "y": 342.9,
-      "w": 1.575,
-      "h": 1.575,
-      "rot": 0
-    },
-    {
-      "tid": 155,
-      "kind": "treasure",
-      "x": 958.8499999999999,
-      "y": 419.09999999999997,
-      "w": 1.575,
-      "h": 1.575,
-      "rot": 0
-    }
-  ],
+  "terrain": [],
   "scenario": "sxmvksduqm799",
   "markers": [],
   "zones": [],
